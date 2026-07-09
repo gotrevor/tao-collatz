@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# TaoCollatz green-gate: a commit that touches Lean/build files must `lake build` clean.
+#
+# Build-only by design. A repo-local core.hooksPath REPLACES the global hook (it is
+# single-valued), so this intentionally drops the global protected-branch guard — `main`
+# is this repo's working branch and direct commits are expected.
+#
+# Enable on a fresh clone (core.hooksPath is local config, NOT tracked):
+#     git config core.hooksPath .githooks
+set -euo pipefail
+
+# --no-renames so a rename emits its two literal paths (old + new) and is not skipped.
+changed=$(git diff --cached --name-only --no-renames)
+
+if printf '%s\n' "$changed" | grep -qE '\.lean$|lakefile\.(toml|lean)$|lake-manifest\.json$|^lean-toolchain$'; then
+  echo "tao-collatz pre-commit: lake build…"
+  if ! lake build; then
+    echo "❌ lake build failed — commit aborted (fix or use 'git commit --no-verify' to override)." >&2
+    exit 1
+  fi
+  echo "✅ build green."
+fi
