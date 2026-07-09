@@ -1,0 +1,25 @@
+\documentclass{report}
+
+\usepackage{amssymb, amsthm, amsmath}
+\usepackage{hyperref}
+\usepackage[showmore, dep_graph, coverage, project=../../, thms=theorem+definition+lemma+proposition]{blueprint}
+
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\home{https://github.com/gotrevor/tao-collatz}
+\github{https://github.com/gotrevor/tao-collatz}
+% Relative on purpose: blueprint pages live at <site>/blueprint/ and docs at <site>/docs/
+% so the Lean \lean{} links resolve locally while the repo is private.
+\dochome{../docs}
+
+\title{Tao 2019 Collatz Blueprint}
+\author{TaoCollatz}
+
+\begin{document}
+\maketitle
+\input{content}
+\end{document}

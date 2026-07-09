@@ -1,0 +1,1082 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dependency graph</title>
+  <meta name="generator" content="plasTeX" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles/theme-white.css" />
+  <link rel="stylesheet" href="styles/dep_graph.css" />
+  
+  <script type="text/x-mathjax-config">
+  
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+  
+  </script>
+
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">  </script>
+
+
+<link rel="stylesheet" href="styles/extra_styles.css" />
+
+</head>
+
+<body>
+<header>
+  <a class="toc" href="index.html">Home</a>
+  <h1 id="doc_title">Dependencies</h1>
+</header>
+<div class="wrapper">
+<div class="content">
+  <div id="Legend">
+    <span id="legend_title" class="title">Legend
+    <div class="btn">
+       <div class="bar"></div>
+       <div class="bar"></div>
+       <div class="bar"></div>
+    </div></span> 
+    <dl class="legend">
+      
+      <dt>Boxes</dt><dd>definitions</dd>
+      
+      <dt>Ellipses</dt><dd>theorems and lemmas</dd>
+      
+      <dt>Blue border</dt><dd>the <em>statement</em> of this result is ready to be formalized; all prerequisites are done</dd>
+      
+      <dt>Orange border</dt><dd>the <em>statement</em> of this result is not ready to be formalized; the blueprint needs more work</dd>
+      
+      <dt>Blue background</dt><dd>the <em>proof</em> of this result is ready to be formalized; all prerequisites are done</dd>
+      
+      <dt>Green border</dt><dd>the <em>statement</em> of this result is formalized</dd>
+      
+      <dt>Green background</dt><dd>the <em>proof</em> of this result is formalized</dd>
+      
+      <dt>Dark green background</dt><dd>the <em>proof</em> of this result and all its ancestors are formalized</dd>
+      
+      <dt>Dark green border</dt><dd>this is in Mathlib</dd>
+      
+    </dl>
+  </div>
+    <div id="graph"></div>
+<div id="statements">
+
+    
+    <div class="dep-modal-container" id="C1_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="C1" style="display: none">
+    <div class="thm_thmheading">
+      <span class="definition_thmcaption">
+      Definition
+      </span>
+      <span class="definition_thmlabel">3.1</span><span class="definition_thmtitle">Collatz and Syracuse maps; the reduction (1.2)</span></div>
+    <div class="thm_thmcontent"><p>  The Collatz map \(\mathrm{col}(N)=3N+1\) if \(N\) is odd and \(N/2\) otherwise; its orbit minimum \(\mathrm{Colmin}(N)=\inf _k \mathrm{col}^{[k]}(N)\). The odd part \(\mathrm{oddPart}(N)=N/2^{v_2(N)}\), the <b class="bfseries">Syracuse map</b> \(\mathrm{syr}(N)=\mathrm{oddPart}(3N+1)\) (odd \(\to \) odd), and its orbit minimum \(\mathrm{Syrmin}\). The elementary reduction (paper (1.2)) that lets the entire problem be studied on the odd numbers: </p>
+<div class="displaymath" id="a0000000020">
+  \[  0{\lt}N \; \Longrightarrow \;  \mathrm{Colmin}(N) = \mathrm{Syrmin}(\mathrm{oddPart}\, N).  \]
+</div>
+<p> Also the cheap odd-preservation and positivity facts (\(\mathrm{syr}\) maps odds to odds, etc.). </p>
+</div>
+
+    <a class="latex_link" href="chp-dictionary.html#C1">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/col" class="lean_decl">col</a></li>
+        
+           <li><a href="../docs/find/#doc/colMin" class="lean_decl">colMin</a></li>
+        
+           <li><a href="../docs/find/#doc/oddPart" class="lean_decl">oddPart</a></li>
+        
+           <li><a href="../docs/find/#doc/syr" class="lean_decl">syr</a></li>
+        
+           <li><a href="../docs/find/#doc/syrMin" class="lean_decl">syrMin</a></li>
+        
+           <li><a href="../docs/find/#doc/colMin_eq_syrMin_oddPart" class="lean_decl">colMin_eq_syrMin_oddPart</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="C10_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="C10" style="display: none">
+    <div class="thm_thmheading">
+      <span class="proposition_thmcaption">
+      Proposition
+      </span>
+      <span class="proposition_thmlabel">6.1</span><span class="proposition_thmtitle">Fine-scale mixing; Prop 1.14 \(\Leftarrow \) Prop 1.17</span></div>
+    <div class="thm_thmcontent"><p>   <b class="bfseries">Proposition 1.14</b>: the Syracuse law is asymptotically equidistributed at fine scales, </p>
+<div class="displaymath" id="a0000000027">
+  \[  \forall A{\gt}0,\  \exists C{\gt}0,\  \forall \,  1\le m\le n:\quad \mathrm{Osc}_{m,n}\bigl(Y\mapsto (\texttt{syracZ}\, n)(Y)\bigr) \le C\, m^{-A}.  \]
+</div>
+<p> Deduced from the <b class="bfseries">character-sum decay</b> Prop&#160;1.17 (node&#160;<a href="chp-crux.html#X11">7.11</a>, the head of the §7 crux “X-chain”) by Plancherel on \(\mathbb {Z}/3^n\mathbb {Z}\). The §6 machinery around it: Lemma&#160;6.2 (\(F_n\) injective), Cor&#160;6.3 (\(3\)-adic separation of the offsets), the event \(E\) (6.2), the stopping time \(k\), and the Plancherel step. </p>
+</div>
+
+    <a class="latex_link" href="chp-mixing.html#C10">LaTeX</a>
+    
+    
+  <a class="lean_link lean_decl" href="../docs/find/#doc/fine_scale_mixing">Lean</a>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="C2_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="C2" style="display: none">
+    <div class="thm_thmheading">
+      <span class="lemma_thmcaption">
+      Lemma
+      </span>
+      <span class="lemma_thmlabel">3.2</span><span class="lemma_thmtitle">Valuation vector, integer offset, and the iteration identity (1.7)</span></div>
+    <div class="thm_thmcontent"><p>   The \(n\)-step <b class="bfseries">valuation vector</b> (paper (1.8)) \(\vec a^{(n)}(N)_i = v_2\bigl(3\, \mathrm{syr}^{[i]}(N)+1\bigr)\), the integerified offset (design D2) \(\texttt{fnat}\, n\, a = \sum _{m{\lt}n} 3^{\, n-1-m}\, 2^{\, a_{[1,m]}}\), and the load-bearing <b class="bfseries">iteration identity</b>, the paper’s (1.7) multiplied through by \(2^{|a|}\) so it holds in \(\mathbb {N}\): for odd \(N\), with \(a=\vec a^{(n)}(N)\), </p>
+<div class="displaymath" id="a0000000021">
+  \[  2^{\, a_{[1,n]}}\cdot \mathrm{syr}^{[n]}(N) = 3^n N + \texttt{fnat}\, n\, a .  \]
+</div>
+<p> (By induction on \(n\); the step is \(2^{a_{n+1}}\mathrm{syr}(\mathrm{syr}^{[n]}N) = 3\, \mathrm{syr}^{[n]}N + 1\).) Together with Lemma&#160;2.1: the valuation vector is the <em>unique</em> tuple with all entries \(\ge 1\) making the affine quotient odd. </p>
+</div>
+
+    <a class="latex_link" href="chp-dictionary.html#C2">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/valVec" class="lean_decl">valVec</a></li>
+        
+           <li><a href="../docs/find/#doc/fnat" class="lean_decl">fnat</a></li>
+        
+           <li><a href="../docs/find/#doc/syr_iterate_key" class="lean_decl">syr_iterate_key</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="C3_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="C3" style="display: none">
+    <div class="thm_thmheading">
+      <span class="definition_thmcaption">
+      Definition
+      </span>
+      <span class="definition_thmlabel">3.3</span><span class="definition_thmtitle">Logarithmic density and the reduction Thm 1.6 \(\Rightarrow \) Thm 1.3</span></div>
+    <div class="thm_thmcontent"><p>   The logarithmic-density apparatus: <span class="ttfamily">logSum</span>, <span class="ttfamily">logProb</span>, the sampling window <span class="ttfamily">posInterval</span>, the predicate <span class="ttfamily">HasLogDensity</span>, and the “almost all” quantifiers <span class="ttfamily">AlmostAllPos</span> and its odd-window form <span class="ttfamily">AlmostAllOdd</span> (logarithmic density restricted to \(2\mathbb {N}+1\)). With the harmonic-sum integral tests (paper (5.25)(5.26)) and the elementary splitting reducing the even-index statement Thm&#160;1.6 to the main theorem Thm&#160;1.3 (node&#160;<a href="chp-mainthm.html#C6">5.1</a>) by passing to odd parts. </p>
+</div>
+
+    <a class="latex_link" href="chp-dictionary.html#C3">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/logProb" class="lean_decl">logProb</a></li>
+        
+           <li><a href="../docs/find/#doc/posInterval" class="lean_decl">posInterval</a></li>
+        
+           <li><a href="../docs/find/#doc/HasLogDensity" class="lean_decl">HasLogDensity</a></li>
+        
+           <li><a href="../docs/find/#doc/AlmostAllPos" class="lean_decl">AlmostAllPos</a></li>
+        
+           <li><a href="../docs/find/#doc/AlmostAllOdd" class="lean_decl">AlmostAllOdd</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="C4_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="C4" style="display: none">
+    <div class="thm_thmheading">
+      <span class="definition_thmcaption">
+      Definition
+      </span>
+      <span class="definition_thmlabel">4.1</span><span class="definition_thmtitle">The Syracuse random variable \(\mathrm{Syrac}(\mathbb {Z}/3^n\mathbb {Z})\)</span></div>
+    <div class="thm_thmcontent"><p>   The law <span class="ttfamily">syracZ</span> \(n\) on \(\mathbb {Z}/3^n\mathbb {Z}\) (paper (1.21)/(1.26), in the <em>reversed</em> variable order deliberately, per footnote&#160;6): the pushforward of \(\mathrm{Geom}(2)^{\otimes n}\) under </p>
+<div class="displaymath" id="a0000000022">
+  \[  a \; \longmapsto \;  \sum _{j{\lt}n} 3^{\, j}\, (2^{-1})^{\, a_{[1,j+1]}} \in \mathbb {Z}/3^n\mathbb {Z},  \]
+</div>
+<p> where \(2^{-1}\) is the inverse of the unit \(2\) mod \(3^n\). With the projection compatibility (paper (1.22)): <span class="ttfamily">syracZ</span> \(n\) pushes forward to <span class="ttfamily">syracZ</span> \(k\) under \(\mathbb {Z}/3^n\mathbb {Z}\to \mathbb {Z}/3^k\mathbb {Z}\) for \(k\le n\); and the recursion Lemma&#160;1.12 (Euler’s theorem plus a geometric-series normalization \((1-2^{-2\cdot 3^n})^{-1}\)). </p>
+</div>
+
+    <a class="latex_link" href="chp-syracuse.html#C4">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/syracZ" class="lean_decl">syracZ</a></li>
+        
+           <li><a href="../docs/find/#doc/syracZ_map_cast" class="lean_decl">syracZ_map_cast</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="C5_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="C5" style="display: none">
+    <div class="thm_thmheading">
+      <span class="proposition_thmcaption">
+      Proposition
+      </span>
+      <span class="proposition_thmlabel">4.2</span><span class="proposition_thmtitle">Valuation \(\approx \) geometric; Prop 1.9 and the §4 tail bound</span></div>
+    <div class="thm_thmcontent"><p>   <b class="bfseries">Proposition 1.9.</b> There are \(c_1,C{\gt}0\) such that for all \(n,n'\) and every law \(X\) supported on odd numbers that is \(\ll 2^{-n'}\)-close in total variation to uniform modulo \(2^{n'}\), provided \((2+c_0)n\le n'\), </p>
+<div class="displaymath" id="a0000000023">
+  \[  d_{\mathrm{TV}}\! \bigl(X_*\vec a^{(n)},\  \mathrm{Geom}(2)^{\otimes n}\bigr) \le C\, 2^{-c_1 n}.  \]
+</div>
+<p> I.e. the Syracuse valuation vector of an equidistributed-mod-\(2^{n'}\) input is exponentially close to \(n\) independent geometric variables. Includes the §4 tail bound Lemma&#160;4.1 controlling \(\mathbb {P}(a_{[1,n]}\ge n')\). </p>
+</div>
+
+    <a class="latex_link" href="chp-syracuse.html#C5">LaTeX</a>
+    
+    
+  <a class="lean_link lean_decl" href="../docs/find/#doc/valuation_dist">Lean</a>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="C6_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="C6" style="display: none">
+    <div class="thm_thmheading">
+      <span class="theorem_thmcaption">
+      Theorem
+      </span>
+      <span class="theorem_thmlabel">5.1</span><span class="theorem_thmtitle">Main theorem: Thm 1.3, Thm 1.6, quantitative Thm 3.1</span></div>
+    <div class="thm_thmcontent"><p>   <b class="bfseries">Theorem 1.3</b> (the summit): for every \(f:\mathbb {N}\to \mathbb {R}\) with \(f(N)\to \infty \), \(\mathrm{Colmin}(N){\lt}f(N)\) for almost all \(N\) in logarithmic density. It follows from the intermediate <b class="bfseries">Theorem 1.6</b> (almost all orbits attain almost bounded values) which in turn follows from the <b class="bfseries">quantitative Theorem 3.1</b>: there exist \(c,C{\gt}0\) so that for all \(N_0,x\ge 2\), </p>
+<div class="displaymath" id="a0000000024">
+  \[  \mathrm{logProb}_{[1,x]}\bigl(\{ N : \mathrm{Colmin}(N)\le N_0\} \bigr) \; \ge \;  1 - C/(\log N_0)^{c}.  \]
+</div>
+<p> Thm&#160;3.1 is obtained from the stabilization estimate Prop&#160;1.11 (node&#160;<a href="chp-mainthm.html#C9">5.4</a>) by iterating over dyadic scales (§3). </p>
+</div>
+
+    <a class="latex_link" href="chp-mainthm.html#C6">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/tao_collatz" class="lean_decl">tao_collatz</a></li>
+        
+           <li><a href="../docs/find/#doc/tao_collatz_quantitative" class="lean_decl">tao_collatz_quantitative</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="C7_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="C7" style="display: none">
+    <div class="thm_thmheading">
+      <span class="lemma_thmcaption">
+      Lemma
+      </span>
+      <span class="lemma_thmlabel">5.2</span><span class="lemma_thmtitle">First-passage non-escape; (1.19)</span></div>
+    <div class="thm_thmcontent"><p>   The first-passage data: \(\mathrm{passes}(x,N)\) (\(=T_x(N){\lt}\infty \), the orbit reaches \(\le x\)), the passage time \(\mathrm{passTime}\), and the passage location \(\mathrm{Pass}_x = \mathrm{passLoc}\) (with the convention \(\mathrm{Syr}^\infty := 1\)). Estimate (paper (1.19)): the probability that a log-uniformly chosen odd \(N_y\) in a window around \(y\) <em>never</em> descends to \(\le x\) is small, </p>
+<div class="displaymath" id="a0000000025">
+  \[  \mathbb {P}\bigl(T_x(N_y)=\infty \bigr) \ll x^{-c}.  \]
+</div>
+</div>
+
+    <a class="latex_link" href="chp-mainthm.html#C7">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/passes" class="lean_decl">passes</a></li>
+        
+           <li><a href="../docs/find/#doc/passTime" class="lean_decl">passTime</a></li>
+        
+           <li><a href="../docs/find/#doc/passLoc" class="lean_decl">passLoc</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="C8_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="C8" style="display: none">
+    <div class="thm_thmheading">
+      <span class="proposition_thmcaption">
+      Proposition
+      </span>
+      <span class="proposition_thmlabel">5.3</span><span class="proposition_thmtitle">Approximate first-passage formula; Prop 5.2</span></div>
+    <div class="thm_thmcontent"><p>  <b class="bfseries">Proposition 5.2</b>, the approximate formula (paper (5.8)) for the law of the first-passage location, built from the bookkeeping events \(\mathcal{A}^{(n')}\) (5.11), \(E'\) (5.10), and \(I_y\) (5.9), through the \(B_{n,y}\) equivalence chain relating the passage location to the affine images of the input window. This is where the Prop&#160;1.9 geometric approximation is fed into the concrete window statistics. </p>
+</div>
+
+    <a class="latex_link" href="chp-mainthm.html#C8">LaTeX</a>
+    
+    
+  
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="C9_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="C9" style="display: none">
+    <div class="thm_thmheading">
+      <span class="proposition_thmcaption">
+      Proposition
+      </span>
+      <span class="proposition_thmlabel">5.4</span><span class="proposition_thmtitle">Stabilization across scales; Prop 1.11</span></div>
+    <div class="thm_thmcontent"><p>   <b class="bfseries">Proposition 1.11</b>, the spine’s key input. With \(\alpha =1.001\) (paper (1.18)): there are \(c,C,x_0{\gt}0\) so that for \(x\ge x_0\), the first-passage location laws seen from two successive scales \(x^{\alpha }\) and \(x^{\alpha ^2}\) agree up to </p>
+<div class="displaymath" id="a0000000026">
+  \[  d_{\mathrm{TV}}\Bigl( \bigl(\mathrm{logUnifOdd}_{[x^{\alpha },\, x^{\alpha ^2}]}\bigr)_*\mathrm{Pass}_{\lfloor x\rfloor }, \bigl(\mathrm{logUnifOdd}_{[x^{\alpha ^2},\, x^{\alpha ^3}]}\bigr)_*\mathrm{Pass}_{\lfloor x\rfloor } \Bigr) \le C(\log x)^{-c},  \]
+</div>
+<p> together with the non-escape control on each window. Proved via Lemma&#160;5.3 (\(c_n(X)\ll 1\)) and (5.18)–(5.21), applying the fine-scale mixing Prop&#160;1.14 (node&#160;<a href="chp-mixing.html#C10">6.1</a>) at a base scale \(m_0\). </p>
+</div>
+
+    <a class="latex_link" href="chp-mainthm.html#C9">LaTeX</a>
+    
+    
+  <a class="lean_link lean_decl" href="../docs/find/#doc/stabilization">Lean</a>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="S1_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="S1" style="display: none">
+    <div class="thm_thmheading">
+      <span class="definition_thmcaption">
+      Definition
+      </span>
+      <span class="definition_thmlabel">2.1</span><span class="definition_thmtitle">Discrete-probability calculus</span></div>
+    <div class="thm_thmcontent"><p>  Total variation distance \(d_{\mathrm{TV}}(p,q) := \sum _a' |(p\, a).\mathrm{toReal} - (q\, a).\mathrm{toReal}|\), real and complex expectations \(\mathbb {E}_p[f] := \sum _a' (p\, a).\mathrm{toReal}\cdot f(a)\), and the \(n\)-fold i.i.d. product \(p^{\otimes n}\) on \(\mathrm{Fin}\, n\to \alpha \) (node D1). Together with the coupling inequality (paper (1.10)), stated in indicator-expectation form to avoid <span class="ttfamily">OuterMeasure</span> friction: for any event \(E\subseteq \alpha \), </p>
+<div class="displaymath" id="a0000000017">
+  \[  \bigl|\mathbb {E}_p[\mathbf1_E] - \mathbb {E}_q[\mathbf1_E]\bigr| \le d_{\mathrm{TV}}(p,q).  \]
+</div>
+<p> Basic algebra of \(d_{\mathrm{TV}}\) (symmetry, non-negativity) and the support/apply lemmas of the i.i.d. product are part of this node. </p>
+</div>
+
+    <a class="latex_link" href="chp-support.html#S1">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/PMF.dTV" class="lean_decl">PMF.dTV</a></li>
+        
+           <li><a href="../docs/find/#doc/PMF.expect" class="lean_decl">PMF.expect</a></li>
+        
+           <li><a href="../docs/find/#doc/PMF.cexpect" class="lean_decl">PMF.cexpect</a></li>
+        
+           <li><a href="../docs/find/#doc/PMF.iid" class="lean_decl">PMF.iid</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="S2_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="S2" style="display: none">
+    <div class="thm_thmheading">
+      <span class="definition_thmcaption">
+      Definition
+      </span>
+      <span class="definition_thmlabel">2.2</span><span class="definition_thmtitle">Geometric and Pascal laws; negative binomial</span></div>
+    <div class="thm_thmcontent"><p>   The lattice laws driving the Syracuse valuation: \(\mathrm{Geom}(2)\) with \(\mathbb {P}(a)=2^{-a}\) for \(a\ge 1\) (<span class="ttfamily">geomHalf</span>); \(\mathrm{Geom}(4)\) (<span class="ttfamily">geomQuarter</span>); \(\mathrm{Pascal}\), the law of \(a_1+a_2\) with \(a_i\sim \mathrm{Geom}(2)\), i.e. \(\mathbb {P}(b)=(b-1)2^{-b}\) for \(b\ge 2\) (<span class="ttfamily">pascal</span>); and its conditioning off \(b=3\) (<span class="ttfamily">pascalNe3</span>). The load-bearing computation is the exact <b class="bfseries">negative-binomial point mass</b> for the sum of \(n\) i.i.d. \(\mathrm{Geom}(2)\) variables, </p>
+<div class="displaymath" id="a0000000018">
+  \[  \mathbb {P}\! \Bigl(\textstyle \sum _{i{\lt}n} a_i = L\Bigr) = \binom {L-1}{n-1}\, 2^{-L}, \qquad L\ge n\ge 1  \]
+</div>
+<p> (compositions of \(L\) into \(n\) positive parts), together with the moment generating functions and the one-dimensional Chernoff upper-tail bounds derived from them. </p>
+</div>
+
+    <a class="latex_link" href="chp-support.html#S2">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/geomHalf" class="lean_decl">geomHalf</a></li>
+        
+           <li><a href="../docs/find/#doc/geomQuarter" class="lean_decl">geomQuarter</a></li>
+        
+           <li><a href="../docs/find/#doc/pascal" class="lean_decl">pascal</a></li>
+        
+           <li><a href="../docs/find/#doc/pascalNe3" class="lean_decl">pascalNe3</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="S3_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="S3" style="display: none">
+    <div class="thm_thmheading">
+      <span class="lemma_thmcaption">
+      Lemma
+      </span>
+      <span class="lemma_thmlabel">2.3</span><span class="lemma_thmtitle">Local 2-D Gaussian-type bound; Lemma 2.2</span></div>
+    <div class="thm_thmcontent"><p>  <b class="bfseries">Risk kernel 1.</b> Lemma&#160;2.2(i)(ii): local-limit / Gaussian-type <em>upper</em> bounds on the point masses of sums of \(k\) i.i.d. copies of the relevant lattice distributions (\(\mathrm{Geom}(2)\), \(\mathrm{Geom}(4)\), \(\mathrm{Pascal}\), and the holding law \(\mathrm{Hold}\) of §7), uniform in the shift, of the shape \(\mathbb {P}(S_k = v)\ll k^{-d/2}\) with \(d\) the lattice dimension; together with the weight function \(G_n\) (paper (2.2)). Proved not by the paper’s contour/Morera route but by explicit generating functions plus real-variable exponential tilting (design decision D5): for the \(d=2\) holding sums this is the circle-method form \(\mathbb {P}(S_k=v)=(2\pi )^{-2}M(\lambda )^k e^{-\lambda \cdot v}\int _{[-\pi ,\pi ]^2} |\varphi _\lambda (t)|^k\, dt\) with \(\varphi _\lambda ,M\) explicit rational functions. </p>
+</div>
+
+    <a class="latex_link" href="chp-support.html#S3">LaTeX</a>
+    
+    
+  
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="S4_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="S4" style="display: none">
+    <div class="thm_thmheading">
+      <span class="definition_thmcaption">
+      Definition
+      </span>
+      <span class="definition_thmlabel">2.4</span><span class="definition_thmtitle">Additive characters and the oscillation functional</span></div>
+    <div class="thm_thmcontent"><p>  The additive character \(e(\theta ):=\exp (2\pi i\theta )\) on \(\mathbb {Q}\), the discrete Fourier transform and Parseval identity on \(\mathbb {Z}/3^n\mathbb {Z}\), and the <b class="bfseries">oscillation functional</b> \(\mathrm{Osc}_{m,n}\) (paper (1.24)) measuring how far a weight \(c:\mathbb {Z}/3^n\mathbb {Z}\to \mathbb {R}\) is from being constant on the fibres of the projection to \(\mathbb {Z}/3^m\mathbb {Z}\): </p>
+<div class="displaymath" id="a0000000019">
+  \[  \mathrm{Osc}_{m,n}(c)=\sum _{Y}\Bigl|\, c(Y)-3^{\, m-n}\! \! \sum _{Y'\mapsto \bar Y} c(Y')\, \Bigr|, \qquad m\le n.  \]
+</div>
+<p> Includes the Remark&#160;1.18 triangle inequality that lets \(\mathrm{Osc}\) be controlled scale by scale. </p>
+</div>
+
+    <a class="latex_link" href="chp-support.html#S4">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/eC" class="lean_decl">eC</a></li>
+        
+           <li><a href="../docs/find/#doc/osc" class="lean_decl">osc</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="X1_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="X1" style="display: none">
+    <div class="thm_thmheading">
+      <span class="definition_thmcaption">
+      Definition
+      </span>
+      <span class="definition_thmlabel">7.1</span><span class="definition_thmtitle">§7 setup: character, pairing, factorization</span></div>
+    <div class="thm_thmcontent"><p>  The character \(\chi \) (paper (7.1)) and the reduction of Prop&#160;1.17 to a bound on \(\mathbb {E}\, \chi \) through the reversed form (1.26); the <b class="bfseries">pairing</b> \(b_j = a_{2j-1}+a_{2j}\sim \mathrm{Pascal}\) that groups the geometric valuations two at a time; and the conditional <b class="bfseries">factorization</b> (7.4)/(7.5) of the Fourier coefficient into a product of per-pair factors \(f\) (with the low-order piece \(g\) split off). </p>
+</div>
+
+    <a class="latex_link" href="chp-crux.html#X1">LaTeX</a>
+    
+    
+  
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="X10_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="X10" style="display: none">
+    <div class="thm_thmheading">
+      <span class="lemma_thmcaption">
+      Lemma
+      </span>
+      <span class="lemma_thmlabel">7.10</span><span class="lemma_thmtitle">Large triangles rarely encountered; Lemma 7.10</span></div>
+    <div class="thm_thmcontent"><p>  <b class="bfseries">Risk kernel 3b.</b> <b class="bfseries">Lemma 7.10</b> (paper (7.60)–(7.65)): after a lengthy crossing, large triangles are rarely encountered, by a separated-\(\Sigma \) counting argument over the triangle family (node&#160;<a href="chp-crux.html#X3">7.3</a>) using the first-passage location law (node&#160;<a href="chp-crux.html#X6">7.6</a>). This is the complementary tail to Case&#160;2. </p>
+</div>
+
+    <a class="latex_link" href="chp-crux.html#X10">LaTeX</a>
+    
+    
+  
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="X11_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="X11" style="display: none">
+    <div class="thm_thmheading">
+      <span class="proposition_thmcaption">
+      Proposition
+      </span>
+      <span class="proposition_thmlabel">7.11</span><span class="proposition_thmtitle">Case 3 assembly; Prop 7.8 \(\to \) 7.3 \(\to \) 7.1 \(\to \) Prop 1.17</span></div>
+    <div class="thm_thmcontent"><p>   <b class="bfseries">Case 3</b> assembly (paper (7.48)/(7.49), (7.52)–(7.67)): the events \(E_*,F_*\), the choice \(R=\lfloor A^2/\varepsilon ^4\rfloor \), and the deterministic claim (7.67), combining Lemma&#160;7.9 (node&#160;<a href="chp-crux.html#X9">7.9</a>) and Lemma&#160;7.10 (node&#160;<a href="chp-crux.html#X10">7.10</a>). This closes Prop&#160;7.8, hence Prop&#160;7.3 (node&#160;<a href="chp-crux.html#X4">7.4</a>) and Prop&#160;7.1, hence the <b class="bfseries">crux</b> <b class="bfseries">Proposition 1.17</b> (character-sum decay): for every \(A{\gt}0\) there is \(C{\gt}0\) with, for all \(n\ge 1\) and all \(\xi \) with \(3\nmid \xi \), </p>
+<div class="displaymath" id="a0000000031">
+  \[  \Bigl\| \, \mathbb {E}_{Y\sim \texttt{syracZ}\, n}\,  e\bigl(-\xi \,  Y/3^{n}\bigr)\Bigr\|  \; \le \;  C\, n^{-A}.  \]
+</div>
+<p> This is the single Fourier-analytic input the whole spine reduces to (feeds node&#160;<a href="chp-mixing.html#C10">6.1</a>). </p>
+</div>
+
+    <a class="latex_link" href="chp-crux.html#X11">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/charFn_decay" class="lean_decl">charFn_decay</a></li>
+        
+           <li><a href="../docs/find/#doc/key_fourier_decay" class="lean_decl">key_fourier_decay</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="X2_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="X2" style="display: none">
+    <div class="thm_thmheading">
+      <span class="lemma_thmcaption">
+      Lemma
+      </span>
+      <span class="lemma_thmlabel">7.2</span><span class="lemma_thmtitle">Phase identities and white-point cancellation; Lemma 7.2</span></div>
+    <div class="thm_thmcontent"><p>   The phase \(\theta (j,l)\) (paper (7.7)/(7.8)), a signed fractional part of \(\xi \cdot 3^{2j-2}\cdot 2^{\, 1-l}/3^n\), and its two scaling identities (7.13)/(7.14): there are integers \(k\) with </p>
+<div class="displaymath" id="a0000000028">
+  \[  \theta (j{+}1,l) = 9\, \theta (j,l) + k, \qquad \theta (j,l{-}1) = 2\, \theta (j,l) + k .  \]
+</div>
+<p> The black/white dichotomy (7.9) with \(\varepsilon = 10^{-4}\): a point is <em>black</em> when \(|\theta (j,l)|\le \varepsilon \), <em>white</em> otherwise. <b class="bfseries">Lemma 7.2</b> (white-point cancellation): at a white point the per-pair factor contracts, \(|f| \le |\cos (\pi \theta )| \le \exp (-\varepsilon ^3)\). </p>
+</div>
+
+    <a class="latex_link" href="chp-crux.html#X2">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/sfrac" class="lean_decl">sfrac</a></li>
+        
+           <li><a href="../docs/find/#doc/θq" class="lean_decl">θq</a></li>
+        
+           <li><a href="../docs/find/#doc/θq_succ_j" class="lean_decl">θq_succ_j</a></li>
+        
+           <li><a href="../docs/find/#doc/θq_pred_l" class="lean_decl">θq_pred_l</a></li>
+        
+           <li><a href="../docs/find/#doc/black" class="lean_decl">black</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="X3_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="X3" style="display: none">
+    <div class="thm_thmheading">
+      <span class="lemma_thmcaption">
+      Lemma
+      </span>
+      <span class="lemma_thmlabel">7.3</span><span class="lemma_thmtitle">Black set = separated triangles; Lemma 7.4</span></div>
+    <div class="thm_thmcontent"><p>   <b class="bfseries">Risk kernel 2.</b> With a triangle (paper (7.11)) the set \(\{ (j,l) : j_0\le j,\  l\le l_0,\  (j-j_0)\log 9 + (l_0-l)\log 2 \le s\} \), Lemma&#160;7.4 asserts the black set inside the strip is a disjoint union of triangles that are (i) confined to the strip \(j+1\le \lfloor n/2\rfloor - \tfrac {1}{10}\log (1/\varepsilon )\), and (ii) pairwise Euclidean-separated by at least \(\tfrac {1}{10}\log (1/\varepsilon )\): </p>
+<div class="displaymath" id="a0000000029">
+  \[  \{ (j,l) : j{+}1\le \lfloor n/2\rfloor ,\  \text{black}(j,l)\}  \; =\;  \bigsqcup _{t\in T} \mathrm{triangle}(t).  \]
+</div>
+<p> Proved through the phase identities (7.12)–(7.15), the weakly-black claims (i)–(iii), the \(l^*/j^*\) construction, and Claim&#160;(\(*\)) Cases&#160;1–3. </p>
+</div>
+
+    <a class="latex_link" href="chp-crux.html#X3">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/triangle" class="lean_decl">triangle</a></li>
+        
+           <li><a href="../docs/find/#doc/black_structure" class="lean_decl">black_structure</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="X4_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="X4" style="display: none">
+    <div class="thm_thmheading">
+      <span class="proposition_thmcaption">
+      Proposition
+      </span>
+      <span class="proposition_thmlabel">7.4</span><span class="proposition_thmtitle">Holding law, the \(Q\) recursion, and Prop 7.3</span></div>
+    <div class="thm_thmcontent"><p>   The <b class="bfseries">holding law</b> \(\mathrm{Hold}\) on \(\mathbb {N}\times \mathbb {Z}\) (§7.3), whose first coordinate is always \(\ge 1\), governing how the renewal walk steps between pairs. Design decision D6 replaces the paper’s infinite renewal product (7.34) by the <em>defined</em> downward recursion \(Q:\mathbb {N}\times \mathbb {Z}\to \mathbb {R}\) (paper (7.35)), </p>
+<div class="displaymath" id="a0000000030">
+  \[  Q(j,l) = 1 \  \  (j{\gt}\lfloor n/2\rfloor ); \qquad Q(j,l) = e^{-\varepsilon ^3\mathbf1_W(j,l)}\cdot \! \! \sum _{d}\! (\mathrm{Hold}\, d)\, Q\bigl((j,l)+d\bigr) \  \  (j\le \lfloor n/2\rfloor ),  \]
+</div>
+<p> well-founded on \(\lfloor n/2\rfloor - j\) (Hold’s first coordinate is \(\ge 1\)), with \(0\le Q\le 1\). The bridge (7.28)/(7.34)–(7.36) makes \(\mathbb {E}\, Q(\mathrm{Hold})\ll _A n^{-A}\) equivalent to <b class="bfseries">Proposition 7.3</b> (the renewal white-encounter count, in the finite-vector form over \(\mathrm{Pascal}^{\otimes \lfloor n/2\rfloor }\)). This node exists to validate the D6 finitization. </p>
+</div>
+
+    <a class="latex_link" href="chp-crux.html#X4">LaTeX</a>
+    
+    
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        
+           <li><a href="../docs/find/#doc/hold" class="lean_decl">hold</a></li>
+        
+           <li><a href="../docs/find/#doc/Q_rec" class="lean_decl">Q_rec</a></li>
+        
+           <li><a href="../docs/find/#doc/Q_boundary" class="lean_decl">Q_boundary</a></li>
+        
+           <li><a href="../docs/find/#doc/renewal_white_encounters" class="lean_decl">renewal_white_encounters</a></li>
+        
+      </ul>
+  </div>
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="X5_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="X5" style="display: none">
+    <div class="thm_thmheading">
+      <span class="lemma_thmcaption">
+      Lemma
+      </span>
+      <span class="lemma_thmlabel">7.5</span><span class="lemma_thmtitle">Holding-law basics; Lemma 7.6</span></div>
+    <div class="thm_thmcontent"><p>  <b class="bfseries">Lemma 7.6</b>: the explicit distribution of \(\mathrm{Hold}\), its exponential tail, aperiodicity, and mean vector \((4,16)\). These are the renewal-theory inputs (drift and spread) for the first-passage analysis of the walk. </p>
+</div>
+
+    <a class="latex_link" href="chp-crux.html#X5">LaTeX</a>
+    
+    
+  
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="X6_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="X6" style="display: none">
+    <div class="thm_thmheading">
+      <span class="lemma_thmcaption">
+      Lemma
+      </span>
+      <span class="lemma_thmlabel">7.6</span><span class="lemma_thmtitle">First-passage location of the holding walk; Lemma 7.7</span></div>
+    <div class="thm_thmcontent"><p>  <b class="bfseries">Lemma 7.7</b>: the distribution of the location at which the \(\mathrm{Hold}\) renewal walk first crosses a prescribed level is close to uniform on the relevant scale, quantitatively. Uses the local 2-D bound (node&#160;<a href="chp-support.html#S3">2.3</a>) applied to the holding sums. </p>
+</div>
+
+    <a class="latex_link" href="chp-crux.html#X6">LaTeX</a>
+    
+    
+  
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="X7_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="X7" style="display: none">
+    <div class="thm_thmheading">
+      <span class="proposition_thmcaption">
+      Proposition
+      </span>
+      <span class="proposition_thmlabel">7.7</span><span class="proposition_thmtitle">Monotone functional \(Q_m\); Prop 7.8 skeleton; Case 1</span></div>
+    <div class="thm_thmcontent"><p>  The truncated functional \(Q_m\) (paper (7.38)) and the skeleton of <b class="bfseries">Proposition 7.8</b> (the quantitative white-encounter bound), together with <b class="bfseries">Case 1</b> (paper (7.42)/(7.43)): when the walk starts at a white point, the \(e^{-\varepsilon ^3}\) contraction from Lemma&#160;7.2 (node&#160;<a href="chp-crux.html#X2">7.2</a>) already delivers the required decay. </p>
+</div>
+
+    <a class="latex_link" href="chp-crux.html#X7">LaTeX</a>
+    
+    
+  
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="X8_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="X8" style="display: none">
+    <div class="thm_thmheading">
+      <span class="lemma_thmcaption">
+      Lemma
+      </span>
+      <span class="lemma_thmlabel">7.8</span><span class="lemma_thmtitle">Case 2: shallow inside a triangle</span></div>
+    <div class="thm_thmcontent"><p>  <b class="bfseries">Risk kernel 3a.</b> <b class="bfseries">Case 2</b> (paper (7.44)–(7.51)): the walk starts shallow inside a triangle; the analysis produces the \(\gg 1\) white-exit bound (7.50)/(7.51) showing the walk leaves the triangle through many white points with high probability. Combines the triangle geometry (node&#160;<a href="chp-crux.html#X3">7.3</a>), the first-passage location law (node&#160;<a href="chp-crux.html#X6">7.6</a>), and the Case-1 contraction (node&#160;<a href="chp-crux.html#X7">7.7</a>). </p>
+</div>
+
+    <a class="latex_link" href="chp-crux.html#X8">LaTeX</a>
+    
+    
+  
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+
+
+    
+    <div class="dep-modal-container" id="X9_modal">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">
+<svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        
+  <div class="thm" id="X9" style="display: none">
+    <div class="thm_thmheading">
+      <span class="lemma_thmcaption">
+      Lemma
+      </span>
+      <span class="lemma_thmlabel">7.9</span><span class="lemma_thmtitle">Many triangles \(\Rightarrow \) many white points; Lemma 7.9</span></div>
+    <div class="thm_thmcontent"><p>  <b class="bfseries">Lemma 7.9</b>: an induction on \(R\) over the \(Q\)-recursion (node&#160;<a href="chp-crux.html#X4">7.4</a>) showing that a walk crossing many triangles must encounter many white points, so the accumulated \(e^{-\varepsilon ^3}\) factors give the exponential decay. </p>
+</div>
+
+    <a class="latex_link" href="chp-crux.html#X9">LaTeX</a>
+    
+    
+  
+    
+    
+  
+    
+  </div>
+    
+      </div>
+    </div>
+</div>
+</div> <!-- content -->
+</div> <!-- wrapper -->
+<script src="js/jquery.min.js" type="text/javascript"></script>
+
+<script src="js/d3.min.js"></script>
+<script src="js/hpcc.min.js"></script>
+<script src="js/d3-graphviz.js"></script>
+
+<script type="text/javascript">
+const graphContainer = d3.select("#graph");
+const width = graphContainer.node().clientWidth;
+const height = graphContainer.node().clientHeight;
+
+
+graphContainer.graphviz({useWorker: true})
+    .width(width)
+    .height(height)
+    .fit(true)
+    .renderDot(`strict digraph "" {	graph [bgcolor=transparent];	node [label="\N",		penwidth=1.8	];	edge [arrowhead=vee];	C7	[color="#FFAA33",		label=C7,		shape=ellipse];	C8	[color="#FFAA33",		label=C8,		shape=ellipse];	C7 -> C8	[style=dashed];	C9	[color="#FFAA33",		label=C9,		shape=ellipse];	C8 -> C9	[style=dashed];	C6	[color="#FFAA33",		label=C6,		shape=ellipse];	C9 -> C6	[style=dashed];	X3	[color="#FFAA33",		label=X3,		shape=ellipse];	X10	[color="#FFAA33",		label=X10,		shape=ellipse];	X3 -> X10	[style=dashed];	X8	[color="#FFAA33",		label=X8,		shape=ellipse];	X3 -> X8	[style=dashed];	X11	[color="#FFAA33",		label=X11,		shape=ellipse];	X10 -> X11	[style=dashed];	X9	[color="#FFAA33",		label=X9,		shape=ellipse];	X8 -> X9	[style=dashed];	C10	[color="#FFAA33",		label=C10,		shape=ellipse];	X11 -> C10	[style=dashed];	X9 -> X11	[style=dashed];	C5	[color="#FFAA33",		label=C5,		shape=ellipse];	C5 -> C7	[style=dashed];	C3	[color="#FFAA33",		label=C3,		shape=box];	C3 -> C6	[style=dashed];	S3	[color="#FFAA33",		label=S3,		shape=ellipse];	X6	[color="#FFAA33",		label=X6,		shape=ellipse];	S3 -> X6	[style=dashed];	X6 -> X10	[style=dashed];	X6 -> X8	[style=dashed];	C1	[color="#FFAA33",		label=C1,		shape=box];	C1 -> C3	[style=dashed];	C2	[color="#FFAA33",		label=C2,		shape=ellipse];	C1 -> C2	[style=dashed];	C2 -> C5	[style=dashed];	C4	[color="#FFAA33",		label=C4,		shape=box];	C2 -> C4	[style=dashed];	X1	[color="#FFAA33",		label=X1,		shape=box];	C4 -> X1	[style=dashed];	X2	[color="#FFAA33",		label=X2,		shape=ellipse];	X1 -> X2	[style=dashed];	X2 -> X3	[style=dashed];	X4	[color="#FFAA33",		label=X4,		shape=ellipse];	X2 -> X4	[style=dashed];	C10 -> C9	[style=dashed];	X5	[color="#FFAA33",		label=X5,		shape=ellipse];	X4 -> X5	[style=dashed];	X7	[color="#FFAA33",		label=X7,		shape=ellipse];	X4 -> X7	[style=dashed];	X5 -> X6	[style=dashed];	X7 -> X8	[style=dashed];	S4	[color="#FFAA33",		label=S4,		shape=box];	S4 -> C10	[style=dashed];	S2	[color="#FFAA33",		label=S2,		shape=box];	S2 -> C5	[style=dashed];	S2 -> S3	[style=dashed];	S2 -> X1	[style=dashed];	S1	[color="#FFAA33",		label=S1,		shape=box];	S1 -> C4	[style=dashed];	S1 -> S2	[style=dashed];}`)
+    .on("end", interactive);
+
+latexLabelEscaper = function(label) {
+  return label.replace(/\./g, '\\.').replace(/:/g, '\\:')
+}
+
+clickNode = function() {
+  $("#statements div").hide()
+  var node_id = $('text', this).text();
+  $('.thm').hide();
+  $('#'+latexLabelEscaper(node_id)).show().children().show();
+}
+function interactive() {
+    $("span#legend_title").on("click", function () {
+           $(this).siblings('dl').toggle();
+        })
+
+    d3.selectAll('.node')
+        .attr('pointer-events', 'fill')
+        .on('click', function () {
+           var title = d3.select(this).selectAll('title').text().trim();
+           $('#statements > div').hide()
+           $('.thm').hide();
+           $('#'+latexLabelEscaper(title)+'_modal').show().children().show().children().show();
+           $('#statements').show()
+        });
+
+    d3.selectAll('.dep-closebtn').on('click', function() {
+        var modal =
+            d3.select(this).node().parentNode.parentNode.parentNode ;
+        d3.select(modal).style('display', 'none');
+    });
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,4 @@
+# This file configures the latexmk command for the printable blueprint.
+$pdf_mode = 1;
+$pdflatex = 'xelatex -synctex=1';
+@default_files = ('print.tex');

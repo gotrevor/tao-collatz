@@ -1,0 +1,57 @@
+import TaoCollatz.Syracuse.SyracRV
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
+
+/-!
+# §4: valuation distribution ≈ `Geom(2)ⁿ` (node C5) — statements only
+
+Paper anchors: Tao 2019 §4, Lemma 4.1, Proposition 1.9.
+
+`valuation_dist` is Prop 1.9 (the `n`-Syracuse valuation vector is close in total
+variation to `Geom(2)ⁿ`, with geometric error), and `valuation_tail` is Lemma 4.1
+(the total valuation rarely exceeds `n'`). Both carry `sorry`.
+-/
+
+open scoped ENNReal
+
+namespace TaoCollatz
+
+-- RATIFY-DRIFT: `PMF.uniformOfFinset` is absent in mathlib v4.31; `unifOddMod` is built
+-- with `PMF.ofFinset` over the odd residues. Normalization (`∑ = 1`) needs `n' ≥ 1`
+-- (for `n' = 0` there are no odd residues), so it is `sorry`ed here rather than carried
+-- as a hypothesis. Mathematical content (uniform on `{z : z.val odd}`) is unchanged.
+/-- Uniform distribution on the odd residues mod `2ⁿ'`. -/
+noncomputable def unifOddMod (n' : ℕ) : PMF (ZMod (2 ^ n')) :=
+  PMF.ofFinset
+    (fun z => if z.val % 2 = 1 then
+        ((Finset.univ.filter fun w : ZMod (2 ^ n') => w.val % 2 = 1).card : ℝ≥0∞)⁻¹ else 0)
+    (Finset.univ.filter fun z : ZMod (2 ^ n') => z.val % 2 = 1)
+    (by sorry)
+    (by
+      intro a ha
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha
+      rw [if_neg ha])
+
+/-- **Proposition 1.9.** If `X` is a distribution on odd numbers whose reduction mod `2ⁿ'`
+is close to uniform (with `n' ≥ (2 + c₀)n`), then the valuation vector `valVec · n` is
+close in total variation to `Geom(2)ⁿ`, with error `2^{-c₁ n}`. -/
+theorem valuation_dist (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
+    ∃ c₁ C : ℝ, 0 < c₁ ∧ 0 < C ∧ ∀ (n n' : ℕ) (X : PMF ℕ),
+      (2 + c₀) * n ≤ (n' : ℝ) →
+      (∀ N ∈ X.support, N % 2 = 1) →
+      PMF.dTV (X.map fun N => (N : ZMod (2 ^ n'))) (unifOddMod n') ≤ K * (2 : ℝ) ^ (-(n' : ℝ)) →
+      PMF.dTV (X.map fun N => valVec N n) (PMF.iid geomHalf n)
+        ≤ C * (2 : ℝ) ^ (-c₁ * (n : ℝ)) := by
+  sorry
+
+/-- **Lemma 4.1** (tail bound): under the same hypotheses, the total valuation
+`|a⁽ⁿ⁾(N)|` rarely exceeds `n'`. -/
+theorem valuation_tail (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
+    ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ (n n' : ℕ) (X : PMF ℕ),
+      (2 + c₀) * n ≤ (n' : ℝ) →
+      (∀ N ∈ X.support, N % 2 = 1) →
+      PMF.dTV (X.map fun N => (N : ZMod (2 ^ n'))) (unifOddMod n') ≤ K * (2 : ℝ) ^ (-(n' : ℝ)) →
+      (X.map fun N => pre (valVec N n) n).expect (Set.indicator {L | n' ≤ L} 1)
+        ≤ C * (2 : ℝ) ^ (-c * (n : ℝ)) := by
+  sorry
+
+end TaoCollatz

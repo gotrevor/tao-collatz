@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  MathJax = { 
+    tex: {
+		    inlineMath: [['$','$'], ['\\(','\\)']]
+	} }
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<meta name="generator" content="plasTeX" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The crux: character decay via renewal versus triangles (§7)</title>
+<link rel="prev" href="chp-mixing.html" title="Fine-scale mixing (§6)" />
+<link rel="up" href="index.html" title="Tao 2019 Collatz Blueprint" />
+<link rel="stylesheet" href="styles/theme-white.css" />
+<link rel="stylesheet" href="styles/amsthm.css" />
+<link rel="stylesheet" href="styles/showmore.css" />
+<link rel="stylesheet" href="styles/blueprint.css" />
+<link rel="stylesheet" href="styles/extra_styles.css" />
+</head>
+
+<body>
+<header>
+<svg  id="toc-toggle" class="icon icon-list-numbered "><use xlink:href="symbol-defs.svg#icon-list-numbered"></use></svg>
+<h1 id="doc_title"><a href="index.html">Tao 2019 Collatz Blueprint</a></h1>
+</header>
+
+<div class="wrapper">
+<nav class="toc">
+<ul class="sub-toc-0">
+<li class="">
+  <a href="sect0001.html"><span class="toc_ref">1</span> <span class="toc_entry">Program overview</span></a>
+  <span class="expand-toc">▶</span>
+  <ul class="sub-toc-1">
+     <li class="">
+  <a href="sect0001.html#a0000000003"><span class="toc_ref">1.1</span> <span class="toc_entry">The spine</span></a>
+ </li>
+<li class="">
+  <a href="sect0001.html#a0000000005"><span class="toc_ref">1.2</span> <span class="toc_entry">The three risk kernels</span></a>
+ </li>
+<li class="">
+  <a href="sect0001.html#a0000000006"><span class="toc_ref">1.3</span> <span class="toc_entry">Global modelling decisions</span></a>
+ </li>
+
+  </ul>
+ </li>
+<li class="">
+  <a href="chp-support.html"><span class="toc_ref">2</span> <span class="toc_entry">The support layer</span></a>
+  <span class="expand-toc">▶</span>
+  <ul class="sub-toc-1">
+     <li class="">
+  <a href="chp-support.html#a0000000007"><span class="toc_ref">2.1</span> <span class="toc_entry">PMF calculus</span></a>
+ </li>
+<li class="">
+  <a href="chp-support.html#a0000000008"><span class="toc_ref">2.2</span> <span class="toc_entry">The geometric family and local bounds</span></a>
+ </li>
+<li class="">
+  <a href="chp-support.html#a0000000009"><span class="toc_ref">2.3</span> <span class="toc_entry">Fourier analysis on \(\mathbb {Z}/3^n\mathbb {Z}\)</span></a>
+ </li>
+
+  </ul>
+ </li>
+<li class="">
+  <a href="chp-dictionary.html"><span class="toc_ref">3</span> <span class="toc_entry">The Collatz–Syracuse dictionary and logarithmic density</span></a>
+ </li>
+<li class="">
+  <a href="chp-syracuse.html"><span class="toc_ref">4</span> <span class="toc_entry">The Syracuse random variable and its valuation</span></a>
+ </li>
+<li class="">
+  <a href="chp-mainthm.html"><span class="toc_ref">5</span> <span class="toc_entry">First passage, stabilization, and the main theorem</span></a>
+  <span class="expand-toc">▶</span>
+  <ul class="sub-toc-1">
+     <li class="">
+  <a href="chp-mainthm.html#a0000000010"><span class="toc_ref">5.1</span> <span class="toc_entry">The main theorem</span></a>
+ </li>
+<li class="">
+  <a href="chp-mainthm.html#a0000000011"><span class="toc_ref">5.2</span> <span class="toc_entry">First passage (§5)</span></a>
+ </li>
+
+  </ul>
+ </li>
+<li class="">
+  <a href="chp-mixing.html"><span class="toc_ref">6</span> <span class="toc_entry">Fine-scale mixing (§6)</span></a>
+ </li>
+<li class=" active current">
+  <a href="chp-crux.html"><span class="toc_ref">7</span> <span class="toc_entry">The crux: character decay via renewal versus triangles (§7)</span></a>
+  <span class="expand-toc">▼</span>
+  <ul class="sub-toc-1 active">
+     <li class="">
+  <a href="chp-crux.html#a0000000012"><span class="toc_ref">7.1</span> <span class="toc_entry">Setup and the phase functions</span></a>
+ </li>
+<li class="">
+  <a href="chp-crux.html#a0000000013"><span class="toc_ref">7.2</span> <span class="toc_entry">The triangle structure of the black set</span></a>
+ </li>
+<li class="">
+  <a href="chp-crux.html#a0000000014"><span class="toc_ref">7.3</span> <span class="toc_entry">The holding process and its finitized renewal recursion (D6)</span></a>
+ </li>
+<li class="">
+  <a href="chp-crux.html#a0000000015"><span class="toc_ref">7.4</span> <span class="toc_entry">The three cases of Prop 7.8</span></a>
+ </li>
+<li class="">
+  <a href="chp-crux.html#a0000000016"><span class="toc_ref">7.5</span> <span class="toc_entry">Assembly: Prop 1.17</span></a>
+ </li>
+
+  </ul>
+ </li>
+<li ><a href="dep_graph_document.html">Dependency graph</a></li>
+</ul>
+</nav>
+
+<div class="content">
+<div class="content-wrapper">
+
+
+<div class="main-text">
+<h1 id="chp:crux">7 The crux: character decay via renewal versus triangles (§7)</h1>
+
+<p>The entire descent bottoms out at Prop&#160;1.17. §7 proves it by studying the phase functions \(\theta (j,l)\) attached to the paired valuations, splitting the index set into “white” points (where the character sum contracts) and “black” points (where it does not), showing the black set is a union of separated triangles, and running a renewal process that is forced to hit many white points — unless it is trapped in a large triangle, which is rare. </p>
+<h1 id="a0000000012">7.1 Setup and the phase functions</h1>
+<div class="definition_thmwrapper theorem-style-definition" id="X1">
+  <div class="definition_thmheading">
+    <span class="definition_thmcaption">
+    Definition
+    </span>
+    <span class="definition_thmlabel">7.1</span>
+    <span class="definition_thmtitle">§7 setup: character, pairing, factorization</span>
+    <div class="thm_header_extras">
+
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-crux.html#X1">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-syracuse.html#C4">Definition 4.1</a></li>
+          
+          <li><a href="chp-support.html#S2">Definition 2.2</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+        </div>
+  </div>
+  <div class="definition_thmcontent">
+  <p>  The character \(\chi \) (paper (7.1)) and the reduction of Prop&#160;1.17 to a bound on \(\mathbb {E}\, \chi \) through the reversed form (1.26); the <b class="bfseries">pairing</b> \(b_j = a_{2j-1}+a_{2j}\sim \mathrm{Pascal}\) that groups the geometric valuations two at a time; and the conditional <b class="bfseries">factorization</b> (7.4)/(7.5) of the Fourier coefficient into a product of per-pair factors \(f\) (with the low-order piece \(g\) split off). </p>
+
+  </div>
+</div>
+<div class="lemma_thmwrapper theorem-style-definition" id="X2">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">7.2</span>
+    <span class="lemma_thmtitle">Phase identities and white-point cancellation; Lemma 7.2</span>
+    <div class="thm_header_extras">
+
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-crux.html#X2">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-crux.html#X1">Definition 7.1</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/sfrac" class="lean_decl">sfrac</a></li>
+          
+          <li><a href="../docs/find/#doc/θq" class="lean_decl">θq</a></li>
+          
+          <li><a href="../docs/find/#doc/θq_succ_j" class="lean_decl">θq_succ_j</a></li>
+          
+          <li><a href="../docs/find/#doc/θq_pred_l" class="lean_decl">θq_pred_l</a></li>
+          
+          <li><a href="../docs/find/#doc/black" class="lean_decl">black</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>   The phase \(\theta (j,l)\) (paper (7.7)/(7.8)), a signed fractional part of \(\xi \cdot 3^{2j-2}\cdot 2^{\, 1-l}/3^n\), and its two scaling identities (7.13)/(7.14): there are integers \(k\) with </p>
+<div class="displaymath" id="a0000000028">
+  \[  \theta (j{+}1,l) = 9\, \theta (j,l) + k, \qquad \theta (j,l{-}1) = 2\, \theta (j,l) + k .  \]
+</div>
+<p> The black/white dichotomy (7.9) with \(\varepsilon = 10^{-4}\): a point is <em>black</em> when \(|\theta (j,l)|\le \varepsilon \), <em>white</em> otherwise. <b class="bfseries">Lemma 7.2</b> (white-point cancellation): at a white point the per-pair factor contracts, \(|f| \le |\cos (\pi \theta )| \le \exp (-\varepsilon ^3)\). </p>
+
+  </div>
+</div>
+<h1 id="a0000000013">7.2 The triangle structure of the black set</h1>
+<div class="lemma_thmwrapper theorem-style-definition" id="X3">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">7.3</span>
+    <span class="lemma_thmtitle">Black set = separated triangles; Lemma 7.4</span>
+    <div class="thm_header_extras">
+
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-crux.html#X3">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-crux.html#X2">Lemma 7.2</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/triangle" class="lean_decl">triangle</a></li>
+          
+          <li><a href="../docs/find/#doc/black_structure" class="lean_decl">black_structure</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>   <b class="bfseries">Risk kernel 2.</b> With a triangle (paper (7.11)) the set \(\{ (j,l) : j_0\le j,\  l\le l_0,\  (j-j_0)\log 9 + (l_0-l)\log 2 \le s\} \), Lemma&#160;7.4 asserts the black set inside the strip is a disjoint union of triangles that are (i) confined to the strip \(j+1\le \lfloor n/2\rfloor - \tfrac {1}{10}\log (1/\varepsilon )\), and (ii) pairwise Euclidean-separated by at least \(\tfrac {1}{10}\log (1/\varepsilon )\): </p>
+<div class="displaymath" id="a0000000029">
+  \[  \{ (j,l) : j{+}1\le \lfloor n/2\rfloor ,\  \text{black}(j,l)\}  \; =\;  \bigsqcup _{t\in T} \mathrm{triangle}(t).  \]
+</div>
+<p> Proved through the phase identities (7.12)–(7.15), the weakly-black claims (i)–(iii), the \(l^*/j^*\) construction, and Claim&#160;(\(*\)) Cases&#160;1–3. </p>
+
+  </div>
+</div>
+<h1 id="a0000000014">7.3 The holding process and its finitized renewal recursion (D6)</h1>
+<div class="proposition_thmwrapper theorem-style-definition" id="X4">
+  <div class="proposition_thmheading">
+    <span class="proposition_thmcaption">
+    Proposition
+    </span>
+    <span class="proposition_thmlabel">7.4</span>
+    <span class="proposition_thmtitle">Holding law, the \(Q\) recursion, and Prop 7.3</span>
+    <div class="thm_header_extras">
+
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-crux.html#X4">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-support.html#S2">Definition 2.2</a></li>
+          
+          <li><a href="chp-crux.html#X2">Lemma 7.2</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/hold" class="lean_decl">hold</a></li>
+          
+          <li><a href="../docs/find/#doc/Q_rec" class="lean_decl">Q_rec</a></li>
+          
+          <li><a href="../docs/find/#doc/Q_boundary" class="lean_decl">Q_boundary</a></li>
+          
+          <li><a href="../docs/find/#doc/renewal_white_encounters" class="lean_decl">renewal_white_encounters</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="proposition_thmcontent">
+  <p>   The <b class="bfseries">holding law</b> \(\mathrm{Hold}\) on \(\mathbb {N}\times \mathbb {Z}\) (§7.3), whose first coordinate is always \(\ge 1\), governing how the renewal walk steps between pairs. Design decision D6 replaces the paper’s infinite renewal product (7.34) by the <em>defined</em> downward recursion \(Q:\mathbb {N}\times \mathbb {Z}\to \mathbb {R}\) (paper (7.35)), </p>
+<div class="displaymath" id="a0000000030">
+  \[  Q(j,l) = 1 \  \  (j{\gt}\lfloor n/2\rfloor ); \qquad Q(j,l) = e^{-\varepsilon ^3\mathbf1_W(j,l)}\cdot \! \! \sum _{d}\! (\mathrm{Hold}\, d)\, Q\bigl((j,l)+d\bigr) \  \  (j\le \lfloor n/2\rfloor ),  \]
+</div>
+<p> well-founded on \(\lfloor n/2\rfloor - j\) (Hold’s first coordinate is \(\ge 1\)), with \(0\le Q\le 1\). The bridge (7.28)/(7.34)–(7.36) makes \(\mathbb {E}\, Q(\mathrm{Hold})\ll _A n^{-A}\) equivalent to <b class="bfseries">Proposition 7.3</b> (the renewal white-encounter count, in the finite-vector form over \(\mathrm{Pascal}^{\otimes \lfloor n/2\rfloor }\)). This node exists to validate the D6 finitization. </p>
+
+  </div>
+</div>
+<div class="lemma_thmwrapper theorem-style-definition" id="X5">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">7.5</span>
+    <span class="lemma_thmtitle">Holding-law basics; Lemma 7.6</span>
+    <div class="thm_header_extras">
+
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-crux.html#X5">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-crux.html#X4">Proposition 7.4</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>  <b class="bfseries">Lemma 7.6</b>: the explicit distribution of \(\mathrm{Hold}\), its exponential tail, aperiodicity, and mean vector \((4,16)\). These are the renewal-theory inputs (drift and spread) for the first-passage analysis of the walk. </p>
+
+  </div>
+</div>
+<div class="lemma_thmwrapper theorem-style-definition" id="X6">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">7.6</span>
+    <span class="lemma_thmtitle">First-passage location of the holding walk; Lemma 7.7</span>
+    <div class="thm_header_extras">
+
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-crux.html#X6">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-support.html#S3">Lemma 2.3</a></li>
+          
+          <li><a href="chp-crux.html#X5">Lemma 7.5</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>  <b class="bfseries">Lemma 7.7</b>: the distribution of the location at which the \(\mathrm{Hold}\) renewal walk first crosses a prescribed level is close to uniform on the relevant scale, quantitatively. Uses the local 2-D bound (node&#160;<a href="chp-support.html#S3">2.3</a>) applied to the holding sums. </p>
+
+  </div>
+</div>
+<h1 id="a0000000015">7.4 The three cases of Prop 7.8</h1>
+<div class="proposition_thmwrapper theorem-style-definition" id="X7">
+  <div class="proposition_thmheading">
+    <span class="proposition_thmcaption">
+    Proposition
+    </span>
+    <span class="proposition_thmlabel">7.7</span>
+    <span class="proposition_thmtitle">Monotone functional \(Q_m\); Prop 7.8 skeleton; Case 1</span>
+    <div class="thm_header_extras">
+
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-crux.html#X7">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-crux.html#X4">Proposition 7.4</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+        </div>
+  </div>
+  <div class="proposition_thmcontent">
+  <p>  The truncated functional \(Q_m\) (paper (7.38)) and the skeleton of <b class="bfseries">Proposition 7.8</b> (the quantitative white-encounter bound), together with <b class="bfseries">Case 1</b> (paper (7.42)/(7.43)): when the walk starts at a white point, the \(e^{-\varepsilon ^3}\) contraction from Lemma&#160;7.2 (node&#160;<a href="chp-crux.html#X2">7.2</a>) already delivers the required decay. </p>
+
+  </div>
+</div>
+<div class="lemma_thmwrapper theorem-style-definition" id="X8">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">7.8</span>
+    <span class="lemma_thmtitle">Case 2: shallow inside a triangle</span>
+    <div class="thm_header_extras">
+
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-crux.html#X8">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-crux.html#X3">Lemma 7.3</a></li>
+          
+          <li><a href="chp-crux.html#X6">Lemma 7.6</a></li>
+          
+          <li><a href="chp-crux.html#X7">Proposition 7.7</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>  <b class="bfseries">Risk kernel 3a.</b> <b class="bfseries">Case 2</b> (paper (7.44)–(7.51)): the walk starts shallow inside a triangle; the analysis produces the \(\gg 1\) white-exit bound (7.50)/(7.51) showing the walk leaves the triangle through many white points with high probability. Combines the triangle geometry (node&#160;<a href="chp-crux.html#X3">7.3</a>), the first-passage location law (node&#160;<a href="chp-crux.html#X6">7.6</a>), and the Case-1 contraction (node&#160;<a href="chp-crux.html#X7">7.7</a>). </p>
+
+  </div>
+</div>
+<div class="lemma_thmwrapper theorem-style-definition" id="X9">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">7.9</span>
+    <span class="lemma_thmtitle">Many triangles \(\Rightarrow \) many white points; Lemma 7.9</span>
+    <div class="thm_header_extras">
+
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-crux.html#X9">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-crux.html#X4">Proposition 7.4</a></li>
+          
+          <li><a href="chp-crux.html#X8">Lemma 7.8</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>  <b class="bfseries">Lemma 7.9</b>: an induction on \(R\) over the \(Q\)-recursion (node&#160;<a href="chp-crux.html#X4">7.4</a>) showing that a walk crossing many triangles must encounter many white points, so the accumulated \(e^{-\varepsilon ^3}\) factors give the exponential decay. </p>
+
+  </div>
+</div>
+<div class="lemma_thmwrapper theorem-style-definition" id="X10">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">7.10</span>
+    <span class="lemma_thmtitle">Large triangles rarely encountered; Lemma 7.10</span>
+    <div class="thm_header_extras">
+
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-crux.html#X10">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-crux.html#X3">Lemma 7.3</a></li>
+          
+          <li><a href="chp-crux.html#X6">Lemma 7.6</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>  <b class="bfseries">Risk kernel 3b.</b> <b class="bfseries">Lemma 7.10</b> (paper (7.60)–(7.65)): after a lengthy crossing, large triangles are rarely encountered, by a separated-\(\Sigma \) counting argument over the triangle family (node&#160;<a href="chp-crux.html#X3">7.3</a>) using the first-passage location law (node&#160;<a href="chp-crux.html#X6">7.6</a>). This is the complementary tail to Case&#160;2. </p>
+
+  </div>
+</div>
+<h1 id="a0000000016">7.5 Assembly: Prop 1.17</h1>
+<div class="proposition_thmwrapper theorem-style-definition" id="X11">
+  <div class="proposition_thmheading">
+    <span class="proposition_thmcaption">
+    Proposition
+    </span>
+    <span class="proposition_thmlabel">7.11</span>
+    <span class="proposition_thmtitle">Case 3 assembly; Prop 7.8 \(\to \) 7.3 \(\to \) 7.1 \(\to \) Prop 1.17</span>
+    <div class="thm_header_extras">
+
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-crux.html#X11">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-crux.html#X9">Lemma 7.9</a></li>
+          
+          <li><a href="chp-crux.html#X10">Lemma 7.10</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/charFn_decay" class="lean_decl">charFn_decay</a></li>
+          
+          <li><a href="../docs/find/#doc/key_fourier_decay" class="lean_decl">key_fourier_decay</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="proposition_thmcontent">
+  <p>   <b class="bfseries">Case 3</b> assembly (paper (7.48)/(7.49), (7.52)–(7.67)): the events \(E_*,F_*\), the choice \(R=\lfloor A^2/\varepsilon ^4\rfloor \), and the deterministic claim (7.67), combining Lemma&#160;7.9 (node&#160;<a href="chp-crux.html#X9">7.9</a>) and Lemma&#160;7.10 (node&#160;<a href="chp-crux.html#X10">7.10</a>). This closes Prop&#160;7.8, hence Prop&#160;7.3 (node&#160;<a href="chp-crux.html#X4">7.4</a>) and Prop&#160;7.1, hence the <b class="bfseries">crux</b> <b class="bfseries">Proposition 1.17</b> (character-sum decay): for every \(A{\gt}0\) there is \(C{\gt}0\) with, for all \(n\ge 1\) and all \(\xi \) with \(3\nmid \xi \), </p>
+<div class="displaymath" id="a0000000031">
+  \[  \Bigl\| \, \mathbb {E}_{Y\sim \texttt{syracZ}\, n}\,  e\bigl(-\xi \,  Y/3^{n}\bigr)\Bigr\|  \; \le \;  C\, n^{-A}.  \]
+</div>
+<p> This is the single Fourier-analytic input the whole spine reduces to (feeds node&#160;<a href="chp-mixing.html#C10">6.1</a>). </p>
+
+  </div>
+</div>
+
+</div> <!--main-text -->
+</div> <!-- content-wrapper -->
+</div> <!-- content -->
+</div> <!-- wrapper -->
+
+<nav class="prev_up_next">
+  <svg  id="showmore-minus" class="icon icon-eye-minus showmore"><use xlink:href="symbol-defs.svg#icon-eye-minus"></use></svg>
+
+  <svg  id="showmore-plus" class="icon icon-eye-plus showmore"><use xlink:href="symbol-defs.svg#icon-eye-plus"></use></svg>
+
+  <a href="chp-mixing.html" title="Fine-scale mixing (§6)"><svg  class="icon icon-arrow-left "><use xlink:href="symbol-defs.svg#icon-arrow-left"></use></svg>
+</a>
+  <a href="index.html" title="Tao 2019 Collatz Blueprint"><svg  class="icon icon-arrow-up "><use xlink:href="symbol-defs.svg#icon-arrow-up"></use></svg>
+</a>
+</nav>
+
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/plastex.js"></script>
+<script type="text/javascript" src="js/svgxuse.js"></script>
+<script type="text/javascript" src="js/js.cookie.min.js"></script>
+<script type="text/javascript" src="js/showmore.js"></script>
+</body>
+</html>

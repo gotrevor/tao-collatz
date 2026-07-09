@@ -1,0 +1,504 @@
+% ======================================================================================
+%  Tao 2019 — "Almost all orbits of the Collatz map attain almost bounded values"
+%  Lean 4 formalization blueprint (arXiv:1909.03562v5).
+%
+%  This is the reviewer-facing proof map: LaTeX narrative + `\lean{}` bindings (to the
+%  canonical declaration names fixed in SKELETON-SPEC.md) + `\uses{}` dependency edges
+%  (following the "depends" column of BLUEPRINT.md's node ledger) + `\leanok`/`\notready`
+%  status.  Node ids are the labels: S1--S4 (support), C1--C10 (core spine), X1--X11
+%  (the §7 crux).  The prose statement of each node is transcribed from BLUEPRINT.md's
+%  descriptions and SKELETON-SPEC.md's Lean statements; where the paper equation is not
+%  reproduced verbatim here a `% TODO-PRECISE` marks the coarse spot.
+%
+%  STATUS DISCIPLINE (this pass):
+%    * Every node carries `\notready`.  Nothing is proved yet (Phase-A skeleton only), and
+%      this authoring pass verifies no build; a machine reconciler will flip statuses to
+%      `\leanok` later from the actual Lean state / `#print axioms`.
+%    * Nodes with a canonical Lean name in SKELETON-SPEC.md carry `\lean{...}`.  Nodes the
+%      spec leaves un-named (e.g. Lemma 2.2, Prop 5.2, several §7 case lemmas) carry no
+%      `\lean{}` and are described in prose; they will be bound once named.
+% ======================================================================================
+
+\chapter{Program overview}
+
+This is a blueprint for a \emph{full Lean~4 formalization of Terence Tao's 2019 theorem}
+(\texttt{arXiv:1909.03562v5}) that almost all Collatz orbits attain almost bounded values.
+The summit is \textbf{Theorem~1.3}: for every \(f:\mathbb{N}\to\mathbb{R}\) with
+\(f(N)\to\infty\), one has \(\mathrm{Colmin}(N) < f(N)\) for almost all \(N\) in the sense of
+\emph{logarithmic density}, where \(\mathrm{Colmin}(N)\) is the minimum of the Collatz orbit
+of \(N\).  As of this writing the theorem is formalized in \emph{no} proof assistant, by any
+route; a Lean proof is a first.
+
+\section{The spine}
+
+The whole argument is a chain of reductions.  Read right-to-left, each arrow is
+``is proved from'':
+\[
+  \underbrace{\text{Thm 1.3}}_{\text{main}}
+  \Longleftarrow \text{Thm 1.6}
+  \Longleftarrow \underbrace{\text{Thm 3.1}}_{\text{quantitative}}
+  \Longleftarrow \underbrace{\text{Prop 1.11}}_{\text{stabilization}}
+  \Longleftarrow \big[\,\text{Prop 1.9} + \text{Prop 1.14}\,\big]
+  \Longleftarrow \underbrace{\text{Prop 1.17}}_{\text{character decay}}
+  \Longleftarrow \text{Prop 7.1}
+  \Longleftarrow \text{Prop 7.3}
+  \Longleftarrow \text{Prop 7.8}.
+\]
+The passage from the analytic main theorem to a purely arithmetic statement about the
+\emph{Syracuse} map (the odd-to-odd accelerated Collatz map) happens at
+Thm~1.6/Thm~3.1 (node~\ref{C6}), and drives everything down to a single Fourier-analytic
+input, the \textbf{character-sum decay} Prop~1.17 (node~\ref{X11}).  Prop~1.17 is proved in
+§7 by a renewal-process argument played against the geometry of the ``black'' set of the
+phase functions --- the deepest part of the paper.
+
+\section{The three risk kernels}
+
+Almost all of the completion risk concentrates in three clusters; everything outside them is
+standard treadmill fare (counting, harmonic sums, \(\mathbb{Z}/3^n\mathbb{Z}\) arithmetic,
+PMF calculus).
+\begin{itemize}
+  \item \textbf{S3 --- the local 2-D bound} (Lemma~2.2, node~\ref{S3}): Gaussian-type local
+        limit upper bounds for sums of the lattice distributions.  Classical analysis;
+        long but self-contained via explicit formulas and exponential tilting (D5).
+  \item \textbf{X3 --- the triangle structure} (Lemma~7.4, node~\ref{X3}): the black set of
+        the phase function is a disjoint union of well-separated triangles.  Finite,
+        elementary, delicate case analysis.
+  \item \textbf{X8/X10 --- renewal versus triangles} (Case~2 and Lemma~7.10,
+        nodes~\ref{X8},~\ref{X10}): the paper's pinnacle.  The design decision D6 finitizes
+        the infinite renewal process into an explicit downward recursion \(Q\), turning the
+        stopping-time measure theory into strong inductions over that recursion.
+\end{itemize}
+The critical path is
+\(\text{S3}\to\text{X6}\to\{\text{X8},\text{X10}\}\to\text{X11}\to\text{C10}\to\text{C9}
+  \to\text{C6}\).
+
+\section{Global modelling decisions}
+
+The Lean development departs from the paper's presentation in eight deliberate ways
+(full rationale in \texttt{BLUEPRINT.md} §0); the ones that shape the statements below are:
+\begin{itemize}
+  \item[\textbf{D1}] \emph{Probability is discrete.}  Every random variable is a \texttt{PMF}
+        on a countable type; expectations are \texttt{tsum}s and total variation is
+        \(d_{\mathrm{TV}}(p,q)=\sum_a |p(a)-q(a)|\).  No measure theory (node~\ref{S1}).
+  \item[\textbf{D2}] \(\mathbb{Z}[1/2]\) \emph{is eliminated.}  The paper's offset map is
+        replaced by its integer multiple \(\texttt{fnat}\,n\,a = \sum_{m<n} 3^{n-1-m}
+        2^{\,a_{[1,m]}}\), so the iteration identity (1.7)\(\times 2^{|a|}\) lives entirely
+        in \(\mathbb{N}\) (node~\ref{C2}).
+  \item[\textbf{D3}] \emph{Asymptotics are reified.}  \(X\ll Y\) becomes
+        \(\exists C>0,\ X\le C\,Y\); \(\ll_A\) becomes \(\forall A>0,\exists C>0\).  No
+        \texttt{IsBigO}/filters in load-bearing statements (uniformity in \(n,\xi\) is
+        exactly what filter-\(O\) would hide).
+  \item[\textbf{D4}] \emph{The small constant is a numeral.}  \(\varepsilon := 10^{-4}\)
+        (candidate; validated per-site).
+  \item[\textbf{D6}] \emph{The infinite renewal process is finitized} by the downward
+        recursion \(Q\) (node~\ref{X4}) --- the single most important de-risking decision.
+\end{itemize}
+Throughout, tuples are \(0\)-indexed (\(a:\mathrm{Fin}\,n\to\mathbb{N}\); paper index \(i\)
+is Lean index \(i-1\)), and \(a_{[1,m]}\) denotes the prefix sum \(\sum_{i<m} a_i\).
+
+
+\chapter{The support layer}\label{chp:support}
+
+Discrete-probability, generating-function, and Fourier scaffolding used everywhere below.
+
+\section{PMF calculus}
+
+\begin{definition}[Discrete-probability calculus]\label{S1}
+  \lean{PMF.dTV, PMF.expect, PMF.cexpect, PMF.iid}
+  \notready
+Total variation distance \(d_{\mathrm{TV}}(p,q) := \sum_a' |(p\,a).\mathrm{toReal} - (q\,a).\mathrm{toReal}|\),
+real and complex expectations \(\mathbb{E}_p[f] := \sum_a' (p\,a).\mathrm{toReal}\cdot f(a)\),
+and the \(n\)-fold i.i.d.\ product \(p^{\otimes n}\) on \(\mathrm{Fin}\,n\to\alpha\)
+(node D1).  Together with the coupling inequality (paper (1.10)), stated in indicator-expectation
+form to avoid \texttt{OuterMeasure} friction: for any event \(E\subseteq\alpha\),
+\[
+  \bigl|\mathbb{E}_p[\mathbf 1_E] - \mathbb{E}_q[\mathbf 1_E]\bigr| \le d_{\mathrm{TV}}(p,q).
+\]
+Basic algebra of \(d_{\mathrm{TV}}\) (symmetry, non-negativity) and the support/apply lemmas of
+the i.i.d.\ product are part of this node.
+\end{definition}
+
+\section{The geometric family and local bounds}
+
+\begin{definition}[Geometric and Pascal laws; negative binomial]\label{S2}
+  \lean{geomHalf, geomQuarter, pascal, pascalNe3}
+  \uses{S1}
+  \notready
+The lattice laws driving the Syracuse valuation: \(\mathrm{Geom}(2)\) with
+\(\mathbb{P}(a)=2^{-a}\) for \(a\ge 1\) (\texttt{geomHalf}); \(\mathrm{Geom}(4)\)
+(\texttt{geomQuarter}); \(\mathrm{Pascal}\), the law of \(a_1+a_2\) with
+\(a_i\sim\mathrm{Geom}(2)\), i.e.\ \(\mathbb{P}(b)=(b-1)2^{-b}\) for \(b\ge 2\)
+(\texttt{pascal}); and its conditioning off \(b=3\) (\texttt{pascalNe3}).  The load-bearing
+computation is the exact \textbf{negative-binomial point mass} for the sum of \(n\) i.i.d.\
+\(\mathrm{Geom}(2)\) variables,
+\[
+  \mathbb{P}\!\Bigl(\textstyle\sum_{i<n} a_i = L\Bigr)
+    = \binom{L-1}{n-1}\,2^{-L}, \qquad L\ge n\ge 1
+\]
+(compositions of \(L\) into \(n\) positive parts), together with the moment generating
+functions and the one-dimensional Chernoff upper-tail bounds derived from them.
+\end{definition}
+
+\begin{lemma}[Local 2-D Gaussian-type bound; Lemma 2.2]\label{S3}
+  \uses{S2}
+  \notready
+\textbf{Risk kernel 1.}  Lemma~2.2(i)(ii): local-limit / Gaussian-type \emph{upper} bounds on
+the point masses of sums of \(k\) i.i.d.\ copies of the relevant lattice distributions
+(\(\mathrm{Geom}(2)\), \(\mathrm{Geom}(4)\), \(\mathrm{Pascal}\), and the holding law
+\(\mathrm{Hold}\) of §7), uniform in the shift, of the shape
+\(\mathbb{P}(S_k = v)\ll k^{-d/2}\) with \(d\) the lattice dimension; together with the weight
+function \(G_n\) (paper (2.2)).  Proved not by the paper's contour/Morera route but by explicit
+generating functions plus real-variable exponential tilting (design decision D5): for the
+\(d=2\) holding sums this is the circle-method form
+\(\mathbb{P}(S_k=v)=(2\pi)^{-2}M(\lambda)^k e^{-\lambda\cdot v}\int_{[-\pi,\pi]^2}
+|\varphi_\lambda(t)|^k\,dt\) with \(\varphi_\lambda,M\) explicit rational functions.
+% TODO-PRECISE: exact Gaussian window / constant in Lemma 2.2(i)(ii) not transcribed here.
+\end{lemma}
+
+\section{Fourier analysis on \(\mathbb{Z}/3^n\mathbb{Z}\)}
+
+\begin{definition}[Additive characters and the oscillation functional]\label{S4}
+  \lean{eC, osc}
+  \notready
+The additive character \(e(\theta):=\exp(2\pi i\theta)\) on \(\mathbb{Q}\), the discrete
+Fourier transform and Parseval identity on \(\mathbb{Z}/3^n\mathbb{Z}\), and the
+\textbf{oscillation functional} \(\mathrm{Osc}_{m,n}\) (paper (1.24)) measuring how far a
+weight \(c:\mathbb{Z}/3^n\mathbb{Z}\to\mathbb{R}\) is from being constant on the fibres of the
+projection to \(\mathbb{Z}/3^m\mathbb{Z}\):
+\[
+  \mathrm{Osc}_{m,n}(c)=\sum_{Y}\Bigl|\,c(Y)-3^{\,m-n}\!\!\sum_{Y'\mapsto \bar Y} c(Y')\,\Bigr|,
+  \qquad m\le n.
+\]
+Includes the Remark~1.18 triangle inequality that lets \(\mathrm{Osc}\) be controlled scale by
+scale.
+\end{definition}
+
+
+\chapter{The Collatz--Syracuse dictionary and logarithmic density}\label{chp:dictionary}
+
+\begin{definition}[Collatz and Syracuse maps; the reduction (1.2)]\label{C1}
+  \lean{col, colMin, oddPart, syr, syrMin, colMin_eq_syrMin_oddPart}
+  \notready
+The Collatz map \(\mathrm{col}(N)=3N+1\) if \(N\) is odd and \(N/2\) otherwise; its orbit
+minimum \(\mathrm{Colmin}(N)=\inf_k \mathrm{col}^{[k]}(N)\).  The odd part
+\(\mathrm{oddPart}(N)=N/2^{v_2(N)}\), the \textbf{Syracuse map}
+\(\mathrm{syr}(N)=\mathrm{oddPart}(3N+1)\) (odd \(\to\) odd), and its orbit minimum
+\(\mathrm{Syrmin}\).  The elementary reduction (paper (1.2)) that lets the entire problem be
+studied on the odd numbers:
+\[
+  0<N \;\Longrightarrow\; \mathrm{Colmin}(N) = \mathrm{Syrmin}(\mathrm{oddPart}\,N).
+\]
+Also the cheap odd-preservation and positivity facts (\(\mathrm{syr}\) maps odds to odds, etc.).
+\end{definition}
+
+\begin{lemma}[Valuation vector, integer offset, and the iteration identity (1.7)]\label{C2}
+  \lean{valVec, fnat, syr_iterate_key}
+  \uses{C1}
+  \notready
+The \(n\)-step \textbf{valuation vector} (paper (1.8))
+\(\vec a^{(n)}(N)_i = v_2\bigl(3\,\mathrm{syr}^{[i]}(N)+1\bigr)\), the integerified offset
+(design D2) \(\texttt{fnat}\,n\,a = \sum_{m<n} 3^{\,n-1-m}\,2^{\,a_{[1,m]}}\), and the
+load-bearing \textbf{iteration identity}, the paper's (1.7) multiplied through by \(2^{|a|}\)
+so it holds in \(\mathbb{N}\): for odd \(N\), with \(a=\vec a^{(n)}(N)\),
+\[
+  2^{\,a_{[1,n]}}\cdot \mathrm{syr}^{[n]}(N) = 3^n N + \texttt{fnat}\,n\,a .
+\]
+(By induction on \(n\); the step is \(2^{a_{n+1}}\mathrm{syr}(\mathrm{syr}^{[n]}N)
+= 3\,\mathrm{syr}^{[n]}N + 1\).)  Together with Lemma~2.1: the valuation vector is the
+\emph{unique} tuple with all entries \(\ge 1\) making the affine quotient odd.
+% TODO-PRECISE: exact uniqueness shape (RATIFY-2 in the spec) still open.
+\end{lemma}
+
+\begin{definition}[Logarithmic density and the reduction Thm 1.6 \(\Rightarrow\) Thm 1.3]\label{C3}
+  \lean{logProb, posInterval, HasLogDensity, AlmostAllPos, AlmostAllOdd}
+  \uses{C1}
+  \notready
+The logarithmic-density apparatus: \texttt{logSum}, \texttt{logProb}, the sampling window
+\texttt{posInterval}, the predicate \texttt{HasLogDensity}, and the ``almost all''
+quantifiers \texttt{AlmostAllPos} and its odd-window form \texttt{AlmostAllOdd}
+(logarithmic density restricted to \(2\mathbb{N}+1\)).  With the harmonic-sum integral tests
+(paper (5.25)(5.26)) and the elementary splitting reducing the even-index statement
+Thm~1.6 to the main theorem Thm~1.3 (node~\ref{C6}) by passing to odd parts.
+\end{definition}
+
+
+\chapter{The Syracuse random variable and its valuation}\label{chp:syracuse}
+
+\begin{definition}[The Syracuse random variable \(\mathrm{Syrac}(\mathbb{Z}/3^n\mathbb{Z})\)]\label{C4}
+  \lean{syracZ, syracZ_map_cast}
+  \uses{C2, S1}
+  \notready
+The law \texttt{syracZ}\,\(n\) on \(\mathbb{Z}/3^n\mathbb{Z}\) (paper (1.21)/(1.26), in the
+\emph{reversed} variable order deliberately, per footnote~6): the pushforward of
+\(\mathrm{Geom}(2)^{\otimes n}\) under
+\[
+  a \;\longmapsto\; \sum_{j<n} 3^{\,j}\,(2^{-1})^{\,a_{[1,j+1]}} \in \mathbb{Z}/3^n\mathbb{Z},
+\]
+where \(2^{-1}\) is the inverse of the unit \(2\) mod \(3^n\).  With the projection
+compatibility (paper (1.22)): \texttt{syracZ}\,\(n\) pushes forward to \texttt{syracZ}\,\(k\)
+under \(\mathbb{Z}/3^n\mathbb{Z}\to\mathbb{Z}/3^k\mathbb{Z}\) for \(k\le n\); and the recursion
+Lemma~1.12 (Euler's theorem plus a geometric-series normalization
+\((1-2^{-2\cdot 3^n})^{-1}\)).
+\end{definition}
+
+\begin{proposition}[Valuation \(\approx\) geometric; Prop 1.9 and the §4 tail bound]\label{C5}
+  \lean{valuation_dist}
+  \uses{C2, S2}
+  \notready
+\textbf{Proposition 1.9.}  There are \(c_1,C>0\) such that for all \(n,n'\) and every law
+\(X\) supported on odd numbers that is \(\ll 2^{-n'}\)-close in total variation to uniform
+modulo \(2^{n'}\), provided \((2+c_0)n\le n'\),
+\[
+  d_{\mathrm{TV}}\!\bigl(X_*\vec a^{(n)},\ \mathrm{Geom}(2)^{\otimes n}\bigr)
+    \le C\,2^{-c_1 n}.
+\]
+I.e.\ the Syracuse valuation vector of an equidistributed-mod-\(2^{n'}\) input is
+exponentially close to \(n\) independent geometric variables.  Includes the §4 tail bound
+Lemma~4.1 controlling \(\mathbb{P}(a_{[1,n]}\ge n')\).
+\end{proposition}
+
+
+\chapter{First passage, stabilization, and the main theorem}\label{chp:mainthm}
+
+\section{The main theorem}
+
+\begin{theorem}[Main theorem: Thm 1.3, Thm 1.6, quantitative Thm 3.1]\label{C6}
+  \lean{tao_collatz, tao_collatz_quantitative}
+  \uses{C3, C7, C8, C9}
+  \notready
+\textbf{Theorem 1.3} (the summit): for every \(f:\mathbb{N}\to\mathbb{R}\) with
+\(f(N)\to\infty\), \(\mathrm{Colmin}(N)<f(N)\) for almost all \(N\) in logarithmic density.
+It follows from the intermediate \textbf{Theorem 1.6} (almost all orbits attain almost bounded
+values) which in turn follows from the \textbf{quantitative Theorem 3.1}: there exist
+\(c,C>0\) so that for all \(N_0,x\ge 2\),
+\[
+  \mathrm{logProb}_{[1,x]}\bigl(\{N : \mathrm{Colmin}(N)\le N_0\}\bigr)
+    \;\ge\; 1 - C/(\log N_0)^{c}.
+\]
+Thm~3.1 is obtained from the stabilization estimate Prop~1.11 (node~\ref{C9}) by iterating
+over dyadic scales (§3).
+\end{theorem}
+
+\section{First passage (§5)}
+
+\begin{lemma}[First-passage non-escape; (1.19)]\label{C7}
+  \lean{passes, passTime, passLoc}
+  \uses{C5, S2}
+  \notready
+The first-passage data: \(\mathrm{passes}(x,N)\) (\(=T_x(N)<\infty\), the orbit reaches
+\(\le x\)), the passage time \(\mathrm{passTime}\), and the passage location
+\(\mathrm{Pass}_x = \mathrm{passLoc}\) (with the convention \(\mathrm{Syr}^\infty := 1\)).
+Estimate (paper (1.19)): the probability that a log-uniformly chosen odd \(N_y\) in a window
+around \(y\) \emph{never} descends to \(\le x\) is small,
+\[
+  \mathbb{P}\bigl(T_x(N_y)=\infty\bigr) \ll x^{-c}.
+\]
+\end{lemma}
+
+\begin{proposition}[Approximate first-passage formula; Prop 5.2]\label{C8}
+  \uses{C2, C5, C7}
+  \notready
+\textbf{Proposition 5.2}, the approximate formula (paper (5.8)) for the law of the
+first-passage location, built from the bookkeeping events
+\(\mathcal{A}^{(n')}\) (5.11), \(E'\) (5.10), and \(I_y\) (5.9), through the
+\(B_{n,y}\) equivalence chain relating the passage location to the affine images of the input
+window.  This is where the Prop~1.9 geometric approximation is fed into the concrete window
+statistics.
+% TODO-PRECISE: Prop 5.2 has no canonical Lean name in SKELETON-SPEC yet; bound when named.
+\end{proposition}
+
+\begin{proposition}[Stabilization across scales; Prop 1.11]\label{C9}
+  \lean{stabilization}
+  \uses{C8, C10}
+  \notready
+\textbf{Proposition 1.11}, the spine's key input.  With \(\alpha=1.001\) (paper (1.18)):
+there are \(c,C,x_0>0\) so that for \(x\ge x_0\), the first-passage location laws seen from two
+successive scales \(x^{\alpha}\) and \(x^{\alpha^2}\) agree up to
+\[
+  d_{\mathrm{TV}}\Bigl(
+      \bigl(\mathrm{logUnifOdd}_{[x^{\alpha},\,x^{\alpha^2}]}\bigr)_*\mathrm{Pass}_{\lfloor x\rfloor},\
+      \bigl(\mathrm{logUnifOdd}_{[x^{\alpha^2},\,x^{\alpha^3}]}\bigr)_*\mathrm{Pass}_{\lfloor x\rfloor}
+    \Bigr) \le C(\log x)^{-c},
+\]
+together with the non-escape control on each window.  Proved via Lemma~5.3
+(\(c_n(X)\ll 1\)) and (5.18)--(5.21), applying the fine-scale mixing Prop~1.14
+(node~\ref{C10}) at a base scale \(m_0\).
+% TODO-PRECISE: window endpoints (nested \(\alpha\)-powers, RATIFY-3) to be ratified.
+\end{proposition}
+
+
+\chapter{Fine-scale mixing (§6)}\label{chp:mixing}
+
+\begin{proposition}[Fine-scale mixing; Prop 1.14 \(\Leftarrow\) Prop 1.17]\label{C10}
+  \lean{fine_scale_mixing}
+  \uses{C4, S2, S4, X11}
+  \notready
+\textbf{Proposition 1.14}: the Syracuse law is asymptotically equidistributed at fine scales,
+\[
+  \forall A>0,\ \exists C>0,\ \forall\, 1\le m\le n:\quad
+  \mathrm{Osc}_{m,n}\bigl(Y\mapsto (\texttt{syracZ}\,n)(Y)\bigr) \le C\,m^{-A}.
+\]
+Deduced from the \textbf{character-sum decay} Prop~1.17 (node~\ref{X11}, the head of the §7
+crux ``X-chain'') by Plancherel on \(\mathbb{Z}/3^n\mathbb{Z}\).  The §6 machinery around it:
+Lemma~6.2 (\(F_n\) injective), Cor~6.3 (\(3\)-adic separation of the offsets), the event \(E\)
+(6.2), the stopping time \(k\), and the Plancherel step.
+\end{proposition}
+
+
+\chapter{The crux: character decay via renewal versus triangles (§7)}\label{chp:crux}
+
+The entire descent bottoms out at Prop~1.17.  §7 proves it by studying the phase functions
+\(\theta(j,l)\) attached to the paired valuations, splitting the index set into ``white''
+points (where the character sum contracts) and ``black'' points (where it does not), showing
+the black set is a union of separated triangles, and running a renewal process that is forced
+to hit many white points --- unless it is trapped in a large triangle, which is rare.
+
+\section{Setup and the phase functions}
+
+\begin{definition}[§7 setup: character, pairing, factorization]\label{X1}
+  \uses{C4, S2}
+  \notready
+The character \(\chi\) (paper (7.1)) and the reduction of Prop~1.17 to a bound on
+\(\mathbb{E}\,\chi\) through the reversed form (1.26); the \textbf{pairing}
+\(b_j = a_{2j-1}+a_{2j}\sim\mathrm{Pascal}\) that groups the geometric valuations two at a
+time; and the conditional \textbf{factorization} (7.4)/(7.5) of the Fourier coefficient into a
+product of per-pair factors \(f\) (with the low-order piece \(g\) split off).
+% TODO-PRECISE: no canonical Lean name for the §7.1 setup in SKELETON-SPEC yet.
+\end{definition}
+
+\begin{lemma}[Phase identities and white-point cancellation; Lemma 7.2]\label{X2}
+  \lean{sfrac, θq, θq_succ_j, θq_pred_l, black}
+  \uses{X1}
+  \notready
+The phase \(\theta(j,l)\) (paper (7.7)/(7.8)), a signed fractional part of
+\(\xi\cdot 3^{2j-2}\cdot 2^{\,1-l}/3^n\), and its two scaling identities (7.13)/(7.14): there
+are integers \(k\) with
+\[
+  \theta(j{+}1,l) = 9\,\theta(j,l) + k, \qquad \theta(j,l{-}1) = 2\,\theta(j,l) + k .
+\]
+The black/white dichotomy (7.9) with \(\varepsilon = 10^{-4}\): a point is \emph{black} when
+\(|\theta(j,l)|\le\varepsilon\), \emph{white} otherwise.  \textbf{Lemma 7.2} (white-point
+cancellation): at a white point the per-pair factor contracts,
+\(|f| \le |\cos(\pi\theta)| \le \exp(-\varepsilon^3)\).
+\end{lemma}
+
+\section{The triangle structure of the black set}
+
+\begin{lemma}[Black set = separated triangles; Lemma 7.4]\label{X3}
+  \lean{triangle, black_structure}
+  \uses{X2}
+  \notready
+\textbf{Risk kernel 2.}  With a triangle (paper (7.11)) the set
+\(\{(j,l) : j_0\le j,\ l\le l_0,\ (j-j_0)\log 9 + (l_0-l)\log 2 \le s\}\), Lemma~7.4 asserts
+the black set inside the strip is a disjoint union of triangles that are (i) confined to the
+strip \(j+1\le \lfloor n/2\rfloor - \tfrac{1}{10}\log(1/\varepsilon)\), and (ii) pairwise
+Euclidean-separated by at least \(\tfrac{1}{10}\log(1/\varepsilon)\):
+\[
+  \{(j,l) : j{+}1\le \lfloor n/2\rfloor,\ \text{black}(j,l)\}
+    \;=\; \bigsqcup_{t\in T} \mathrm{triangle}(t).
+\]
+Proved through the phase identities (7.12)--(7.15), the weakly-black claims (i)--(iii), the
+\(l^*/j^*\) construction, and Claim~(\(*\)) Cases~1--3.
+% TODO-PRECISE: exact conjunction spelling (RATIFY-5) is implementer's choice.
+\end{lemma}
+
+\section{The holding process and its finitized renewal recursion (D6)}
+
+\begin{proposition}[Holding law, the \(Q\) recursion, and Prop 7.3]\label{X4}
+  \lean{hold, Q_rec, Q_boundary, renewal_white_encounters}
+  \uses{S2, X2}
+  \notready
+The \textbf{holding law} \(\mathrm{Hold}\) on \(\mathbb{N}\times\mathbb{Z}\) (§7.3), whose first
+coordinate is always \(\ge 1\), governing how the renewal walk steps between pairs.  Design
+decision D6 replaces the paper's infinite renewal product (7.34) by the \emph{defined}
+downward recursion \(Q:\mathbb{N}\times\mathbb{Z}\to\mathbb{R}\) (paper (7.35)),
+\[
+  Q(j,l) = 1 \ \ (j>\lfloor n/2\rfloor); \qquad
+  Q(j,l) = e^{-\varepsilon^3\mathbf 1_W(j,l)}\cdot\!\!\sum_{d}\!(\mathrm{Hold}\,d)\,Q\bigl((j,l)+d\bigr)
+  \ \ (j\le\lfloor n/2\rfloor),
+\]
+well-founded on \(\lfloor n/2\rfloor - j\) (Hold's first coordinate is \(\ge 1\)), with
+\(0\le Q\le 1\).  The bridge (7.28)/(7.34)--(7.36) makes
+\(\mathbb{E}\,Q(\mathrm{Hold})\ll_A n^{-A}\) equivalent to \textbf{Proposition 7.3}
+(the renewal white-encounter count, in the finite-vector form over \(\mathrm{Pascal}^{\otimes\lfloor n/2\rfloor}\)).
+This node exists to validate the D6 finitization.
+\end{proposition}
+
+\begin{lemma}[Holding-law basics; Lemma 7.6]\label{X5}
+  \uses{X4}
+  \notready
+\textbf{Lemma 7.6}: the explicit distribution of \(\mathrm{Hold}\), its exponential tail,
+aperiodicity, and mean vector \((4,16)\).  These are the renewal-theory inputs (drift and
+spread) for the first-passage analysis of the walk.
+% TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
+\end{lemma}
+
+\begin{lemma}[First-passage location of the holding walk; Lemma 7.7]\label{X6}
+  \uses{S3, X5}
+  \notready
+\textbf{Lemma 7.7}: the distribution of the location at which the \(\mathrm{Hold}\) renewal
+walk first crosses a prescribed level is close to uniform on the relevant scale, quantitatively.
+Uses the local 2-D bound (node~\ref{S3}) applied to the holding sums.
+% TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
+\end{lemma}
+
+\section{The three cases of Prop 7.8}
+
+\begin{proposition}[Monotone functional \(Q_m\); Prop 7.8 skeleton; Case 1]\label{X7}
+  \uses{X4}
+  \notready
+The truncated functional \(Q_m\) (paper (7.38)) and the skeleton of \textbf{Proposition 7.8}
+(the quantitative white-encounter bound), together with \textbf{Case 1} (paper (7.42)/(7.43)):
+when the walk starts at a white point, the \(e^{-\varepsilon^3}\) contraction from Lemma~7.2
+(node~\ref{X2}) already delivers the required decay.
+% TODO-PRECISE: no canonical Lean name for Prop 7.8 in SKELETON-SPEC yet.
+\end{proposition}
+
+\begin{lemma}[Case 2: shallow inside a triangle]\label{X8}
+  \uses{X3, X6, X7}
+  \notready
+\textbf{Risk kernel 3a.}  \textbf{Case 2} (paper (7.44)--(7.51)): the walk starts shallow
+inside a triangle; the analysis produces the \(\gg 1\) white-exit bound (7.50)/(7.51) showing
+the walk leaves the triangle through many white points with high probability.  Combines the
+triangle geometry (node~\ref{X3}), the first-passage location law (node~\ref{X6}), and the
+Case-1 contraction (node~\ref{X7}).
+% TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
+\end{lemma}
+
+\begin{lemma}[Many triangles \(\Rightarrow\) many white points; Lemma 7.9]\label{X9}
+  \uses{X4, X8}
+  \notready
+\textbf{Lemma 7.9}: an induction on \(R\) over the \(Q\)-recursion (node~\ref{X4}) showing that
+a walk crossing many triangles must encounter many white points, so the accumulated
+\(e^{-\varepsilon^3}\) factors give the exponential decay.
+% TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
+\end{lemma}
+
+\begin{lemma}[Large triangles rarely encountered; Lemma 7.10]\label{X10}
+  \uses{X3, X6}
+  \notready
+\textbf{Risk kernel 3b.}  \textbf{Lemma 7.10} (paper (7.60)--(7.65)): after a lengthy crossing,
+large triangles are rarely encountered, by a separated-\(\Sigma\) counting argument over the
+triangle family (node~\ref{X3}) using the first-passage location law (node~\ref{X6}).  This is
+the complementary tail to Case~2.
+% TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
+\end{lemma}
+
+\section{Assembly: Prop 1.17}
+
+\begin{proposition}[Case 3 assembly; Prop 7.8 \(\to\) 7.3 \(\to\) 7.1 \(\to\) Prop 1.17]\label{X11}
+  \lean{charFn_decay, key_fourier_decay}
+  \uses{X9, X10}
+  \notready
+\textbf{Case 3} assembly (paper (7.48)/(7.49), (7.52)--(7.67)): the events \(E_*,F_*\), the
+choice \(R=\lfloor A^2/\varepsilon^4\rfloor\), and the deterministic claim (7.67), combining
+Lemma~7.9 (node~\ref{X9}) and Lemma~7.10 (node~\ref{X10}).  This closes Prop~7.8, hence
+Prop~7.3 (node~\ref{X4}) and Prop~7.1, hence the \textbf{crux} \textbf{Proposition 1.17}
+(character-sum decay): for every \(A>0\) there is \(C>0\) with, for all \(n\ge 1\) and all
+\(\xi\) with \(3\nmid\xi\),
+\[
+  \Bigl\|\,\mathbb{E}_{Y\sim\texttt{syracZ}\,n}\, e\bigl(-\xi\, Y/3^{n}\bigr)\Bigr\|
+    \;\le\; C\,n^{-A}.
+\]
+This is the single Fourier-analytic input the whole spine reduces to (feeds node~\ref{C10}).
+\end{proposition}
