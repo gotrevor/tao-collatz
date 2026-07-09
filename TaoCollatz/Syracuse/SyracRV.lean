@@ -28,18 +28,21 @@ theorem syracZ_map_cast {k n : ℕ} (hkn : k ≤ n) :
     (syracZ n).map (ZMod.castHom (pow_dvd_pow 3 hkn) (ZMod (3 ^ k))) = syracZ k := by
   sorry
 
+-- RATIFY-DRIFT: the "divide by 3" step of Lemma 1.12 is spelled in ℕ
+-- (`(2^a · x.val - 1) / 3`, exact under the guard `(2^a · x.val) % 3 = 1`) rather than
+-- with `(3 : ZMod (3^(n+1)))⁻¹`, because 3 is a zero-divisor there and `ZMod.inv` is
+-- junk on non-units. Mathematical content identical (harness check 5 computes exactly
+-- this ℕ form). Judge against paper Lemma 1.12.
 /-- Lemma 1.12 recursion: the point mass of `Syrac(ℤ/3ⁿ⁺¹ℤ)` at `x` is obtained by
-summing the appropriate `2⁻ᵃ`-weighted point masses of `Syrac(ℤ/3ⁿℤ)`, normalized by
-`(1 - 2^{-2·3ⁿ})⁻¹`. (Numeric harness check 5.) -/
+summing the appropriate `2⁻ᵃ`-weighted point masses of `Syrac(ℤ/3ⁿℤ)` over
+`1 ≤ a ≤ 2·3ⁿ` with `2^a·x ≡ 1 (mod 3)`, normalized by `(1 - 2^{-2·3ⁿ})⁻¹`.
+(Numeric harness check 5.) -/
 theorem syracZ_recursion (n : ℕ) (x : ZMod (3 ^ (n + 1))) :
     (syracZ (n + 1)) x
       = (1 - 2⁻¹ ^ (2 * 3 ^ n))⁻¹ *
           ∑ a ∈ Finset.Icc 1 (2 * 3 ^ n),
-            (if (2 : ZMod (3 ^ (n + 1))) ^ a * x - 1 ∈ Set.range
-                  (fun y : ZMod (3 ^ n) => (3 : ZMod (3 ^ (n + 1))) * (y.val : ZMod (3 ^ (n + 1))))
-              then 2⁻¹ ^ a *
-                (syracZ n) (((2 : ZMod (3 ^ (n + 1))) ^ a * x - 1) *
-                  (3 : ZMod (3 ^ (n + 1)))⁻¹ |>.val)
+            (if (2 ^ a * x.val) % 3 = 1
+              then 2⁻¹ ^ a * (syracZ n) (((2 ^ a * x.val - 1) / 3 : ℕ) : ZMod (3 ^ n))
               else 0) := by
   sorry
 
