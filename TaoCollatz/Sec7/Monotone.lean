@@ -7,10 +7,15 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 Paper anchors: Tao 2019 §7.4, (7.38), Proposition 7.8, Case 1 (7.42)–(7.43).
 
-* `Qm` — the worst-case renewal value at depth `m` (paper (7.38)): the sup of
-  `Q` over starting points at least `m` columns deep into the strip.
-* `prop_7_8` — the key decay estimate `Q_m ≤ (1 - ε⁸)^{⌊m/C⌋}`-shaped statement,
-  reified with explicit constants per D3/D7. Statement only (`sorry`).
+* `Qm` — paper (7.38): the weighted sup of `Q` over starting points within `m`
+  columns of the strip's far edge, `Q_m := ⨆_{j ≥ ⌊n/2⌋-m, l} max(⌊n/2⌋-j, 1)^A · Q(j,l)`.
+  The polynomial weight is INSIDE the sup and `m` measures depth from the FAR edge
+  (ratified against the paper 2026-07-09, replacing an earlier inverted guess).
+* `Qm_le_rpow` — the trivial base bound (7.39): `Q_m ≤ m^A`.
+* `prop_7_8` — **Proposition 7.8 (Monotonicity)**: `Q_m ≤ Q_{m-1}` for
+  `C_{A,ε} ≤ m ≤ ⌊n/2⌋`. Statement only (`sorry`).
+* `Q_polynomial_decay` — the consequence (7.37) of (7.39) + Prop 7.8 by induction on `m`:
+  `Q(j,l) ≪_A max(⌊n/2⌋-j, 1)^{-A}`, which feeds (7.36) `E Q(Hold) ≪_A n^{-A}` in Decay.lean.
 
 The white set fed to `Q` is the §7.1 white set of `(n, ξ)` (paper (7.9)); `Q`'s `W`
 parameter is the set where the `exp(-ε³)` damping applies — i.e. the WHITE points.
@@ -24,20 +29,35 @@ namespace TaoCollatz
 the renewal value `Q`). -/
 def whiteSet (n ξ : ℕ) : Set (ℕ × ℤ) := {p | white n ξ p.1 p.2}
 
--- RATIFY-7: (7.38) is a supremum over starting locations `(j,l)` with `j ≥ m`. We use
--- `⨆` over the subtype with `Real.iSup` semantics (bounded by `Q_le_one`, nonempty).
--- Judge the paper's exact indexing (depth measured from strip start) against §7.4 p.45.
-/-- The worst-case renewal value at depth `m` (paper (7.38)):
-`Q_m = sup {Q (j,l) : j ≥ m}`. -/
-noncomputable def Qm (half : ℕ) (n ξ : ℕ) (ε : ℝ) (m : ℕ) : ℝ :=
-  ⨆ p : {p : ℕ × ℤ // m ≤ p.1}, Q half (whiteSet n ξ) ε p.1.1 p.1.2
+-- RATIFY-7 (resolved 2026-07-09 against paper p.45): (7.38) is
+-- `Q_m := sup_{(j,l) : j ≥ ⌊n/2⌋ - m} max(⌊n/2⌋ - j, 1)^A · Q(j,l)` — the sup runs over
+-- points within `m` columns of the FAR edge and carries the polynomial weight inside.
+-- `half - p.1.1` is ℕ-truncated subtraction, which matches `max(⌊n/2⌋ - j, 1)` for `j > half`
+-- via the `max · 1`. `⨆` is `Real.iSup` (set is nonempty; bounded via `Q_le_one` + weight ≤ m^A).
+/-- Paper (7.38): the weighted worst-case renewal value at depth `m` from the far edge. -/
+noncomputable def Qm (half : ℕ) (n ξ : ℕ) (ε A : ℝ) (m : ℕ) : ℝ :=
+  ⨆ p : {p : ℕ × ℤ // half - m ≤ p.1},
+    ((max (half - p.1.1) 1 : ℕ) : ℝ) ^ A * Q half (whiteSet n ξ) ε p.1.1 p.1.2
 
-/-- **Proposition 7.8** (skeleton): for suitable `C_{A,ε}`, once `n` is large the
-worst-case renewal value decays geometrically in depth: `Q_0 ≤ C·n^{-A}`-shaped decay
-through the strip. Reified with explicit constants (D3/D7). -/
+/-- Paper (7.39), the induction base: `Q_m ≤ m^A` (from `Q ≤ 1` and the weight bound). -/
+theorem Qm_le_rpow (half n ξ : ℕ) (A : ℝ) (hA : 0 ≤ A) (m : ℕ) (hm : 1 ≤ m) :
+    Qm half n ξ (epsBW : ℝ) A m ≤ (m : ℝ) ^ A := by
+  sorry
+
+/-- **Proposition 7.8 (Monotonicity)**, paper p.45: `Q_m ≤ Q_{m-1}` whenever
+`C_{A,ε} ≤ m ≤ ⌊n/2⌋`, for a sufficiently large threshold `C_{A,ε}` depending only on
+`A` (our `ε = epsBW` is a fixed numeral, D4). Uniform in `n, ξ`. -/
 theorem prop_7_8 (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∃ n₀ : ℕ, ∀ n ξ : ℕ, n₀ ≤ n → ¬ 3 ∣ ξ →
-      Qm (n / 2) n ξ (epsBW : ℝ) 0 ≤ C * (n : ℝ) ^ (-A) := by
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  sorry
+
+/-- Paper (7.37), the consequence of (7.39) + Proposition 7.8 by forward induction on `m`:
+`Q(j,l) ≪_A max(⌊n/2⌋ - j, 1)^{-A}`, uniformly in `n, ξ, j, l`. This is what feeds
+(7.36) `E Q(Hold) ≪_A n^{-A}` and hence Proposition 7.3 in `Decay.lean`. -/
+theorem Q_polynomial_decay (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ),
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l ≤ C * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
   sorry
 
 /-- **Case 1** of Prop 7.8 ((7.42)–(7.43)): if the starting point is white, one step of
