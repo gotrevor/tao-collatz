@@ -178,15 +178,193 @@ theorem hold_tsum_step (g : ℕ × ℤ → ℝ≥0∞) :
   congr 1
   exact tsum_congr fun b => by rw [hpas b, hR b]
 
+/-- Real-valued corollary of `hold_tsum_step` for `[0,1]`-valued observables (all the
+`toReal` bookkeeping done once; the `ℝ≥0∞` sums are finite because `f ≤ 1`). -/
+theorem hold_tsum_step_real (f : ℕ × ℤ → ℝ) (hf0 : ∀ d, 0 ≤ f d) (hf1 : ∀ d, f d ≤ 1) :
+    ∑' d : ℕ × ℤ, (hold d).toReal * f d
+      = 4⁻¹ * f (1, 3)
+        + ∑' b : ℕ, (if b = 3 then 0 else (pascal b).toReal)
+            * ∑' d : ℕ × ℤ, (hold d).toReal * f (d.1 + 1, d.2 + b) := by
+  classical
+  have hstep := hold_tsum_step fun d => ENNReal.ofReal (f d)
+  -- toReal of a hold-weighted ofReal-sum is the corresponding real sum
+  have hcv : ∀ F : ℕ × ℤ → ℕ × ℤ,
+      (∑' d : ℕ × ℤ, hold d * ENNReal.ofReal (f (F d))).toReal
+        = ∑' d : ℕ × ℤ, (hold d).toReal * f (F d) := by
+    intro F
+    rw [ENNReal.tsum_toReal_eq
+      (fun d => ENNReal.mul_ne_top (hold.apply_ne_top d) ENNReal.ofReal_ne_top)]
+    exact tsum_congr fun d => by
+      rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hf0 _)]
+  have hcv0 : (∑' d : ℕ × ℤ, hold d * ENNReal.ofReal (f d)).toReal
+      = ∑' d : ℕ × ℤ, (hold d).toReal * f d := hcv id
+  have hcvb : ∀ b : ℕ,
+      (∑' d : ℕ × ℤ, hold d * ENNReal.ofReal (f (d.1 + 1, d.2 + (b : ℤ)))).toReal
+        = ∑' d : ℕ × ℤ, (hold d).toReal * f (d.1 + 1, d.2 + (b : ℤ)) :=
+    fun b => hcv fun d => (d.1 + 1, d.2 + (b : ℤ))
+  -- the shifted inner sums are ≤ 1, hence finite
+  have hTle : ∀ b : ℕ,
+      ∑' d : ℕ × ℤ, hold d * ENNReal.ofReal (f (d.1 + 1, d.2 + (b : ℤ))) ≤ 1 := by
+    intro b
+    calc ∑' d : ℕ × ℤ, hold d * ENNReal.ofReal (f (d.1 + 1, d.2 + (b : ℤ)))
+        ≤ ∑' d : ℕ × ℤ, hold d * 1 :=
+          ENNReal.tsum_le_tsum fun d => mul_le_mul_left'
+            (ENNReal.ofReal_le_one.mpr (hf1 _)) _
+      _ = 1 := by rw [tsum_congr fun d => mul_one (hold d), hold.tsum_coe]
+  have hcb : ∀ b : ℕ, (if b = 3 then (0 : ℝ≥0∞) else pascal b) ≤ pascal b := by
+    intro b; split_ifs <;> simp
+  have htail_ne : (∑' b : ℕ, (if b = 3 then (0 : ℝ≥0∞) else pascal b)
+      * ∑' d : ℕ × ℤ, hold d * ENNReal.ofReal (f (d.1 + 1, d.2 + (b : ℤ)))) ≠ ∞ := by
+    refine ne_top_of_le_ne_top (by simp : (1 : ℝ≥0∞) ≠ ∞) ?_
+    calc ∑' b : ℕ, (if b = 3 then (0 : ℝ≥0∞) else pascal b)
+          * ∑' d : ℕ × ℤ, hold d * ENNReal.ofReal (f (d.1 + 1, d.2 + (b : ℤ)))
+        ≤ ∑' b : ℕ, pascal b * 1 :=
+          ENNReal.tsum_le_tsum fun b => mul_le_mul' (hcb b) (hTle b)
+      _ = 1 := by rw [tsum_congr fun b => mul_one (pascal b), pascal.tsum_coe]
+  -- take toReal of hstep
+  have h := congrArg ENNReal.toReal hstep
+  rw [hcv0, ENNReal.toReal_add
+      (ENNReal.mul_ne_top (by finiteness) ENNReal.ofReal_ne_top) htail_ne,
+    ENNReal.toReal_mul, ENNReal.tsum_toReal_eq (fun b => ENNReal.mul_ne_top
+      (ne_top_of_le_ne_top (PMF.apply_ne_top _ _) (hcb b))
+      (ne_top_of_le_ne_top (by simp : (1 : ℝ≥0∞) ≠ ∞) (hTle b)))] at h
+  rw [h, ENNReal.toReal_ofReal (hf0 _)]
+  congr 1
+  · norm_num [ENNReal.toReal_inv]
+  · refine tsum_congr fun b => ?_
+    rw [ENNReal.toReal_mul, hcvb b]
+    congr 1
+    split_ifs <;> simp
+
 /-- **Bridge, renewal side** ((7.27) ≡ (7.28), D6 form): the column recursion equals
 the holding-jump average of `Q` — the walk from `(j,l)` to its first renewal point is
 one `Hold` draw, and `Q` at that point self-applies the damping (`Q_rec`).
-OPEN (X5): downward induction on `half - j`; the inductive step is `hold_tsum_step`
-matched against `Rcol`'s one-column unfolding and `Q_rec` at renewal landings. -/
-theorem bridge_renewal (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (j : ℕ) (l : ℤ) :
+PROVED (X5): downward induction on `half - j`; the inductive step is
+`hold_tsum_step_real` matched against `Rcol`'s one-column unfolding and `Q_rec` at the
+renewal landing `b = 3`; boundary `half ≤ j` pushes every `hold`-atom past the strip. -/
+theorem bridge_renewal (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (hε : 0 ≤ ε) (j : ℕ) (l : ℤ) :
     Rcol half W ε j l
       = ∑' d : ℕ × ℤ, (hold d).toReal * Q half W ε (j + d.1) (l + d.2) := by
-  sorry
+  classical
+  -- uniform facts about the hold-averaged Q sums
+  have hQ0 := Q_nonneg half W ε
+  have hQ1 := Q_le_one half W ε hε
+  have hSterm : ∀ (j' : ℕ) (l' : ℤ) (d : ℕ × ℤ),
+      (hold d).toReal * Q half W ε (j' + d.1) (l' + d.2) ≤ (hold d).toReal := by
+    intro j' l' d
+    calc (hold d).toReal * Q half W ε (j' + d.1) (l' + d.2)
+        ≤ (hold d).toReal * 1 :=
+          mul_le_mul_of_nonneg_left (hQ1 _ _) ENNReal.toReal_nonneg
+      _ = (hold d).toReal := mul_one _
+  have hSnn : ∀ (j' : ℕ) (l' : ℤ) (d : ℕ × ℤ),
+      0 ≤ (hold d).toReal * Q half W ε (j' + d.1) (l' + d.2) :=
+    fun j' l' d => mul_nonneg ENNReal.toReal_nonneg (hQ0 _ _)
+  have hSsum : ∀ (j' : ℕ) (l' : ℤ),
+      Summable fun d : ℕ × ℤ => (hold d).toReal * Q half W ε (j' + d.1) (l' + d.2) :=
+    fun j' l' => Summable.of_nonneg_of_le (hSnn j' l') (hSterm j' l') hold_summable_toReal
+  have hSle : ∀ (j' : ℕ) (l' : ℤ),
+      ∑' d : ℕ × ℤ, (hold d).toReal * Q half W ε (j' + d.1) (l' + d.2) ≤ 1 :=
+    fun j' l' => le_trans
+      ((hSsum j' l').tsum_le_tsum (hSterm j' l') hold_summable_toReal)
+      hold_tsum_toReal.le
+  have hSnn' : ∀ (j' : ℕ) (l' : ℤ),
+      0 ≤ ∑' d : ℕ × ℤ, (hold d).toReal * Q half W ε (j' + d.1) (l' + d.2) :=
+    fun j' l' => tsum_nonneg (hSnn j' l')
+  have hp3 : (pascal 3).toReal = 4⁻¹ := by
+    have h3 : pascal 3 = ((2 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ 3 := rfl
+    rw [h3, ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_inv]
+    norm_num
+  have hdamp01 : ∀ (P : Prop) [Decidable P],
+      0 ≤ (if P then Real.exp (-(ε ^ 3)) else 1)
+        ∧ (if P then Real.exp (-(ε ^ 3)) else 1) ≤ 1 := by
+    intro P _
+    constructor
+    · split_ifs <;> [exact (Real.exp_pos _).le; exact zero_le_one]
+    · split_ifs
+      · rw [Real.exp_le_one_iff, neg_nonpos]; positivity
+      · exact le_refl 1
+  -- main downward induction on half - j
+  have key : ∀ n j l, half - j = n → Rcol half W ε j l
+      = ∑' d : ℕ × ℤ, (hold d).toReal * Q half W ε (j + d.1) (l + d.2) := by
+    intro n
+    induction n using Nat.strong_induction_on with
+    | _ n IH =>
+      intro j l hn
+      rcases Nat.lt_or_ge j half with hj | hj
+      · -- interior: j < half
+        rw [Rcol, if_neg (by omega : ¬ half ≤ j)]
+        -- rewrite each Rcol (j+1) (l+b) via the inductive hypothesis
+        have hIH : ∀ b : ℕ, Rcol half W ε (j + 1) (l + (b : ℤ))
+            = ∑' d : ℕ × ℤ, (hold d).toReal
+                * Q half W ε (j + 1 + d.1) (l + (b : ℤ) + d.2) :=
+          fun b => IH (half - (j + 1)) (by omega) _ _ rfl
+        -- the real self-similarity at f d := Q (j + d.1) (l + d.2)
+        have hfr := hold_tsum_step_real
+          (fun d => Q half W ε (j + d.1) (l + d.2))
+          (fun d => hQ0 _ _) (fun d => hQ1 _ _)
+        rw [hfr]
+        -- LHS: split off the b = 3 renewal landing
+        have hterm_eq : ∀ b : ℕ,
+            (pascal b).toReal
+              * (if b = 3 ∧ ((j + 1 : ℕ), l + (b : ℤ)) ∈ W
+                  then Real.exp (-(ε ^ 3)) else 1)
+              * Rcol half W ε (j + 1) (l + (b : ℤ))
+            = (pascal b).toReal
+              * (if b = 3 ∧ ((j + 1 : ℕ), l + (b : ℤ)) ∈ W
+                  then Real.exp (-(ε ^ 3)) else 1)
+              * ∑' d : ℕ × ℤ, (hold d).toReal
+                  * Q half W ε (j + 1 + d.1) (l + (b : ℤ) + d.2) :=
+          fun b => by rw [hIH b]
+        rw [tsum_congr hterm_eq]
+        have hsummable : Summable fun b : ℕ =>
+            (pascal b).toReal
+              * (if b = 3 ∧ ((j + 1 : ℕ), l + (b : ℤ)) ∈ W
+                  then Real.exp (-(ε ^ 3)) else 1)
+              * ∑' d : ℕ × ℤ, (hold d).toReal
+                  * Q half W ε (j + 1 + d.1) (l + (b : ℤ) + d.2) := by
+          refine Summable.of_nonneg_of_le
+            (fun b => mul_nonneg (mul_nonneg ENNReal.toReal_nonneg (hdamp01 _).1)
+              (hSnn' _ _))
+            (fun b => ?_)
+            (ENNReal.summable_toReal pascal.tsum_coe_ne_top)
+          calc (pascal b).toReal * _ * _
+              ≤ (pascal b).toReal * 1 * 1 :=
+                mul_le_mul (mul_le_mul_of_nonneg_left (hdamp01 _).2
+                  ENNReal.toReal_nonneg) (hSle _ _) (hSnn' _ _)
+                  (by positivity)
+            _ = (pascal b).toReal := by ring
+        rw [hsummable.tsum_eq_add_tsum_ite 3]
+        congr 1
+        · -- the b = 3 head equals 4⁻¹ · Q (j+1) (l+3) via Q_rec
+          simp only [Nat.cast_ofNat]
+          have hrec := Q_rec half W ε (j + 1) (l + 3) (by omega)
+          by_cases hW : ((j + 1 : ℕ), l + (3 : ℤ)) ∈ W
+          · rw [hp3, if_pos ⟨trivial, hW⟩, hrec, Set.indicator_of_mem hW,
+              Pi.one_apply, mul_one, mul_assoc]
+          · rw [hp3, if_neg (fun h => hW h.2), hrec, Set.indicator_of_notMem hW,
+              mul_zero, Real.exp_zero, one_mul, mul_assoc, one_mul]
+        · -- the b ≠ 3 tail matches the hold_tsum_step_real tail
+          refine tsum_congr fun b => ?_
+          by_cases hb3 : b = 3
+          · rw [if_pos hb3, if_pos hb3, zero_mul]
+          · rw [if_neg hb3, if_neg hb3,
+              if_neg (fun h => hb3 h.1), mul_one]
+            congr 1
+            refine tsum_congr fun d => ?_
+            congr 2
+            · omega
+            · ring
+      · -- boundary: half ≤ j — every hold-atom exits the strip
+        rw [Rcol, if_pos hj]
+        symm
+        calc ∑' d : ℕ × ℤ, (hold d).toReal * Q half W ε (j + d.1) (l + d.2)
+            = ∑' d : ℕ × ℤ, (hold d).toReal := by
+              refine tsum_congr fun d => ?_
+              rcases Nat.eq_zero_or_pos d.1 with h0 | hpos
+              · rw [hold_zero_of_fst_zero h0, ENNReal.toReal_zero, zero_mul]
+              · rw [Q_boundary _ _ _ _ _ (by omega), mul_one]
+          _ = 1 := hold_tsum_toReal
+  exact key _ j l rfl
 
 open Classical in
 /-- **Proposition 7.3** (finitized, D6 form; moved from `Holding.lean` 2026-07-10):
@@ -266,7 +444,7 @@ theorem renewal_white_encounters (A : ℝ) (hA : 0 < A) :
       have h : 1 ≤ n / 2 := le_trans hC11 hhalf1
       exact_mod_cast h
     -- Step 1: the two bridges
-    rw [bridge_vector n ξ, bridge_renewal (n / 2) (whiteSet n ξ) (epsBW : ℝ) 0 0]
+    rw [bridge_vector n ξ, bridge_renewal (n / 2) (whiteSet n ξ) (epsBW : ℝ) hε0 0 0]
     -- Step 2: Q_polynomial_decay pointwise (hold-support has d₁ ≥ 1)
     have hpt : ∀ d : ℕ × ℤ,
         (hold d).toReal * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (0 + d.1) (0 + d.2)
