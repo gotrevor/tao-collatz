@@ -8,7 +8,8 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 Paper anchors: Tao 2019 §7.2, (7.11)–(7.15), Lemma 7.4.
 
 `triangle` is the upper-left corner triangle (7.11) in the `(j,l)` lattice under the
-`(log 9, log 2)` metric. `black_structure` (Lemma 7.4) — statement only (`sorry`).
+`(log 9, log 2)` metric. `black_structure` (Lemma 7.4) — PROVED (2026-07-10 box session):
+corner map + fibre identity + Claim (*) row propagation + corner invariance + assembly.
 -/
 
 open scoped Real
@@ -1093,6 +1094,49 @@ theorem corner_eq {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ ξ)
   · rw [hls]
     exact jstar_maximal hξ h2j hb
 
+/-- The corner triple of a point: the apex `(j*, l*)` and size `s* = log(ε/|θ*|)` of its
+corner triangle. -/
+noncomputable def cornerTriple (n ξ : ℕ) (p : ℕ × ℤ) : ℕ × ℤ × ℝ :=
+  (jstar n ξ p.1 p.2, lstar n ξ p.1 p.2,
+    Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)|))
+
+/-- Distinct lattice points are at squared Euclidean distance ≥ 1. -/
+theorem lattice_sq_dist_ge_one {q q' : ℕ × ℤ} (h : q ≠ q') :
+    (1:ℝ) ≤ ((q.1 : ℝ) - q'.1) ^ 2 + ((q.2 : ℝ) - q'.2) ^ 2 := by
+  have hcase : q.1 ≠ q'.1 ∨ q.2 ≠ q'.2 := by
+    by_contra hc
+    push_neg at hc
+    exact h (Prod.ext hc.1 hc.2)
+  rcases hcase with hne | hne
+  · have h1 : (1:ℤ) ≤ |(q.1 : ℤ) - (q'.1 : ℤ)| := Int.one_le_abs (by omega)
+    have h2 : (1:ℝ) ≤ |(q.1 : ℝ) - (q'.1 : ℝ)| := by exact_mod_cast h1
+    nlinarith [mul_le_mul h2 h2 (by norm_num) (abs_nonneg ((q.1 : ℝ) - q'.1)),
+      sq_abs ((q.1 : ℝ) - q'.1), sq_nonneg ((q.2 : ℝ) - q'.2)]
+  · have h1 : (1:ℤ) ≤ |q.2 - q'.2| := Int.one_le_abs (by omega)
+    have h2 : (1:ℝ) ≤ |(q.2 : ℝ) - (q'.2 : ℝ)| := by exact_mod_cast h1
+    nlinarith [mul_le_mul h2 h2 (by norm_num) (abs_nonneg ((q.2 : ℝ) - q'.2)),
+      sq_abs ((q.2 : ℝ) - q'.2), sq_nonneg ((q.1 : ℝ) - q'.1)]
+
+/-- The separation constant `(1/10)·log(1/ε)` at `ε = 10⁻⁴` has square ≤ 1 (via
+`10¹² ≤ 2⁴⁰`, giving `log 10 ≤ (10/3)·log 2 < 2.311`). -/
+theorem sep_const_sq_le_one : ((1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) ^ 2 ≤ 1 := by
+  have h1 : (1:ℝ) / (epsBW : ℝ) = 10 ^ 4 := by
+    rw [show epsBW = 1 / 10 ^ 4 from rfl]
+    push_cast
+    norm_num
+  have h3 : (12:ℝ) * Real.log 10 ≤ 40 * Real.log 2 := by
+    have h := Real.log_le_log (show (0:ℝ) < 10 ^ 12 by positivity)
+      (show (10:ℝ) ^ 12 ≤ 2 ^ 40 by norm_num)
+    rw [Real.log_pow, Real.log_pow] at h
+    push_cast at h
+    linarith
+  have h4 : Real.log ((10:ℝ) ^ 4) = 4 * Real.log 10 := by
+    rw [Real.log_pow]; push_cast; ring
+  have h5 : (0:ℝ) ≤ Real.log 10 := Real.log_nonneg (by norm_num)
+  have h6 : Real.log 10 ≤ 2.311 := by linarith [Real.log_two_lt_d9]
+  rw [h1, h4]
+  nlinarith [h5, h6, mul_le_mul h6 h6 h5 (by norm_num : (0:ℝ) ≤ 2.311)]
+
 -- RATIFY-5 (resolved 2026-07-10 against paper pp.36–41 + harness check 8): the paper's
 -- separation is between the triangle POINT SETS ("using the Euclidean metric on
 -- [n/2] × ℤ ⊂ ℝ²"), not merely between top-left corners — Case 2's white-exit ring
@@ -1119,6 +1163,74 @@ theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
           ≤ ((p.1 : ℝ) - p'.1) ^ 2 + ((p.2 : ℝ) - p'.2) ^ 2) ∧
       (∀ t ∈ T, ∀ p ∈ triangle t.1 t.2.1 t.2.2,
         (p.1 : ℝ) + 1 ≤ (n : ℝ) / 2 - (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) := by
-  sorry
+  classical
+  have hstrip : ∀ m : ℕ, m + 1 ≤ n / 2 → 2 * m + 1 ≤ n := by
+    intro m hm
+    have := (Nat.le_div_iff_mul_le (by norm_num : 0 < 2)).mp hm
+    omega
+  refine ⟨cornerTriple n ξ '' {p : ℕ × ℤ | p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2},
+    ?_, ?_, ?_, ?_⟩
+  · -- sizes are nonnegative: the corner is black, so |θ*| ≤ ε
+    rintro t ⟨p, ⟨hps, hpb⟩, rfl⟩
+    have h2j := hstrip p.1 hps
+    have hJle : jstar n ξ p.1 p.2 ≤ p.1 := by unfold jstar; omega
+    have hcb : |θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2)| ≤ epsBW :=
+      black_of_jstar_le hξ h2j hpb le_rfl hJle
+    have hθpos := corner_phase_pos hξ h2j hpb
+    show (0:ℝ) ≤ Real.log
+      ((epsBW : ℝ) / |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)|)
+    apply Real.log_nonneg
+    have hθposR : (0:ℝ) < |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)| := by
+      rw [← Rat.cast_abs]; exact_mod_cast hθpos
+    rw [le_div_iff₀ hθposR, one_mul, ← Rat.cast_abs]
+    exact_mod_cast hcb
+  · -- the black strip is exactly the union of the corner triangles
+    ext q
+    simp only [Set.mem_setOf_eq, Set.mem_iUnion, exists_prop]
+    constructor
+    · rintro ⟨hqs, hqb⟩
+      refine ⟨cornerTriple n ξ q, ⟨q, ⟨hqs, hqb⟩, rfl⟩, ?_⟩
+      have := black_mem_corner_triangle hξ (hstrip q.1 hqs) hqb
+      simpa [cornerTriple] using this
+    · rintro ⟨t, ⟨w, ⟨hws, hwb⟩, rfl⟩, hq⟩
+      have h2j := hstrip w.1 hws
+      have hq' : q ∈ triangle (jstar n ξ w.1 w.2) (lstar n ξ w.1 w.2)
+          (Real.log ((epsBW : ℝ)
+            / |(θq n ξ (jstar n ξ w.1 w.2) (lstar n ξ w.1 w.2) : ℝ)|)) := hq
+      refine ⟨?_, black_of_mem_corner_triangle hξ h2j hwb hq'⟩
+      have hconf := corner_triangle_confined hξ h2j hwb hq'
+      have hS : (0:ℝ) ≤ Real.log (1 / (epsBW : ℝ)) := by
+        apply Real.log_nonneg
+        rw [show epsBW = 1 / 10 ^ 4 from rfl]
+        push_cast
+        norm_num
+      have h2 : (2 * q.1 + 2 : ℝ) ≤ (n : ℝ) := by push_cast; linarith
+      have h2' : 2 * q.1 + 2 ≤ n := by exact_mod_cast h2
+      rw [Nat.le_div_iff_mul_le (by norm_num : 0 < 2)]
+      omega
+  · -- separation: distinct triangles are disjoint fibres, and the separation
+    -- constant has square ≤ 1 ≤ any nonzero lattice distance squared
+    rintro t ⟨w, ⟨hws, hwb⟩, rfl⟩ t' ⟨w', ⟨hws', hwb'⟩, rfl⟩ hne p hp p' hp'
+    have h2j := hstrip w.1 hws
+    have h2j' := hstrip w'.1 hws'
+    have hp2 : p ∈ triangle (jstar n ξ w.1 w.2) (lstar n ξ w.1 w.2)
+        (Real.log ((epsBW : ℝ)
+          / |(θq n ξ (jstar n ξ w.1 w.2) (lstar n ξ w.1 w.2) : ℝ)|)) := hp
+    have hp2' : p' ∈ triangle (jstar n ξ w'.1 w'.2) (lstar n ξ w'.1 w'.2)
+        (Real.log ((epsBW : ℝ)
+          / |(θq n ξ (jstar n ξ w'.1 w'.2) (lstar n ξ w'.1 w'.2) : ℝ)|)) := hp'
+    have hc := corner_eq hξ h2j hwb hp2
+    have hc' := corner_eq hξ h2j' hwb' hp2'
+    have hpp : p ≠ p' := by
+      rintro rfl
+      apply hne
+      have hj : jstar n ξ w.1 w.2 = jstar n ξ w'.1 w'.2 := by rw [← hc.2, ← hc'.2]
+      have hl : lstar n ξ w.1 w.2 = lstar n ξ w'.1 w'.2 := by rw [← hc.1, ← hc'.1]
+      simp [cornerTriple, hj, hl]
+    have hlat := lattice_sq_dist_ge_one hpp
+    linarith [sep_const_sq_le_one]
+  · -- confinement
+    rintro t ⟨w, ⟨hws, hwb⟩, rfl⟩ p hp
+    exact corner_triangle_confined hξ (hstrip w.1 hws) hwb hp
 
 end TaoCollatz

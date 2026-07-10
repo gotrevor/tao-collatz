@@ -1,5 +1,30 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## After laps 6–10 (2026-07-10, second box session): **X3 HEAD CLOSED — Lemma 7.4 PROVED**
+
+`black_structure` is now a theorem, `#print axioms` = `[propext, Classical.choice,
+Quot.sound]`. The whole chain, all in `Sec7/Triangles.lean`:
+`θq_left_run` → `θq_fibre_eq` (exact ℚ fibre identity `θ(j,l) = 9^{j-j*}2^{l*-l}θ*`)
+→ `fibre_le_eps`/`corner_phase_pos`/`black_mem_corner_triangle` (Δ*-membership) →
+`wb_row_left/right` + `white_row_above` (Claim (*) Cases 2–3 engine) + `lstar_eq_of`/
+`jstar_eq_of` (Nat.find corner characterization) → `black_of_mem_corner_triangle`
+(Δ* black) + `corner_triangle_confined`/`_strip` (confinement, log numerics) →
+`corner_eq` (corner invariance = fibre equality) → assembly via `cornerTriple` image,
+`lattice_sq_dist_ge_one`, `sep_const_sq_le_one` (`10¹² ≤ 2⁴⁰` trick for
+`(1/10)log(10⁴) < 1`). Note: at ε = 10⁻⁴ the separation conjunct reduces to lattice
+disjointness — Case 1 proper was not needed for Lemma 7.4 itself (our fibre identity is
+exact where the paper's (7.18) is an inequality). Also done: `unifOddMod` normalization
+(judge follow-up a).
+
+**Judge follow-ups still open**: (b) the (7.36)-bridge harness check in
+`tools/check_blueprint.py` (judge item 9); (c) Case 1 proper statement per judge item 8
+spec (needed for the Q-recursion / Lemma 7.9 series, NOT for Lemma 7.4 — see above).
+
+**Next hardest open obligations** (X3 done → move up the chain): Lemma 7.9 induction
+skeleton over `Q_rec` (X9) consuming `Q_white_contract`/Case 1; the (7.45) unrolling
+statement design (X8); S3's d=1 negative-binomial half; `renewal_white_encounters`
+(Prop 7.3) probabilistic side.
+
 ## After lap 5 (2026-07-10)
 
 **Done** (axiom-clean): (a) (7.18) inequality forms — `sfrac_mem`/`sfrac_eq_self`/
