@@ -196,20 +196,6 @@ theorem Q_le_one (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (hε : 0 ≤ ε)
           _ = 1 := mul_one 1
   exact fun j l => key _ j l rfl
 
-open Classical in
-/-- **Proposition 7.3** (finitized, D6 form): the expected damping factor
-`exp(-ε³ · #white encounters)` over the paired valuation vector `b ~ Pascal^{⌊n/2⌋}`
-decays super-polynomially: `≤ C·n^{-A}` for every `A`. The count is over indices `j`
-with `b_j = 3` landing at a white point `(j, b_{[1,j+1]})`. -/
-theorem renewal_white_encounters (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → 1 ≤ n →
-      (PMF.iid pascal (n / 2)).expect (fun b =>
-        Real.exp (-((epsBW : ℝ) ^ 3) *
-          ((Finset.univ.filter fun j : Fin (n / 2) =>
-            b j = 3 ∧ white n ξ (j : ℕ) ((pre b ((j : ℕ) + 1) : ℤ))).card : ℝ)))
-        ≤ C * (n : ℝ) ^ (-A) := by
-  sorry
-
 /-- **Proposition 7.1** (= Prop 1.17 restated through the (1.26) reversed form): the
 character sum over the raw valuation vector `a ~ Geom(2)ⁿ` decays polynomially,
 uniformly in `ξ` coprime to 3. Reduction chain (7.4)/(7.5) lives in grind laps. -/

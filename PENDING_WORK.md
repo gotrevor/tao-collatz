@@ -84,6 +84,25 @@ unconstrained). Next: the (7.36) seam in Decay.lean (E Q(Hold) ≪ n^{-A} from
 `Q_polynomial_decay` + `hold_tsum_fst`-style Geom(4) tail), or start Lemma 7.7's
 D6 statement for `Q_black_edge`.
 
+## Lap 17 (2026-07-10): Prop 7.3 (`renewal_white_encounters`) ASSEMBLED — X5 seam named
+
+New `Sec7/Bridge.lean`: `Rcol` (the per-column D6 form of the (7.28) product) and
+`renewal_white_encounters` (MOVED from Holding.lean) now PROVED modulo three named
+X5 sorries, all numerically pre-validated by harness check12:
+- `bridge_vector` — iid-Pascal-vector expectation = `Rcol 0 0` (induction on length
+  peeling `Fin.cons`; `pre (cons a v) (i+1) = a + pre v i`, `Fin.succ` filter reindex);
+- `hold_tsum_step` — the (7.29) one-column self-similarity of `hold` in tsum/ℝ≥0∞ form
+  (split `geomQuarter` at `k = 1`, peel one `pascalNe3` off `PMF.iid`);
+- `bridge_renewal` — `Rcol j l = Σ' d, hold(d)·Q((j,l)+d)` (downward induction on
+  `half - j` via `hold_tsum_step` + `Q_rec`; boundary `j ≥ half` needs `d₁ ≥ 1`).
+The analytic assembly (trivial small-n bound; `Q_polynomial_decay` pointwise +
+`hold_weight_expect` at `m = n/2` + `(n/2)^{-A} ≤ 3^A n^{-A}`) is fully proved.
+
+**Open ledger for the §7 probability side is now**: `Q_black_edge` (X8/X10 kernel) +
+the three X5 bridge sorries + `key_fourier_decay`'s reduction chain (X1/X2, Fourier
+side) + upstream S-chain. Next: prove `hold_tsum_step` (most mechanical of the three),
+then `bridge_renewal`, then `bridge_vector`.
+
 ## After laps 6–10 (2026-07-10, second box session): **X3 HEAD CLOSED — Lemma 7.4 PROVED**
 
 `black_structure` is now a theorem, `#print axioms` = `[propext, Classical.choice,
