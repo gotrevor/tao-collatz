@@ -10,17 +10,20 @@
 %  descriptions and SKELETON-SPEC.md's Lean statements; where the paper equation is not
 %  reproduced verbatim here a `% TODO-PRECISE` marks the coarse spot.
 %
-%  STATUS DISCIPLINE (this pass):
-%    * Every node carries `\notready`.  Nothing is proved yet (Phase-A skeleton only), and
-%      this authoring pass verifies no build; a machine reconciler will flip statuses to
-%      `\leanok` later from the actual Lean state / `#print axioms`.
+%  STATUS DISCIPLINE (updated 2026-07-10, post judge pass):
+%    * Statement-`\leanok` is set on the 16 nodes whose `\lean{}`-bound statements are
+%      landed, compiled, and judge-ratified (S1 S2 S4 C1--C7 C9 C10 X2 X3 X4 X11).  The
+%      9 nodes with no canonical Lean name yet (S3 C8 X1 X5--X10) keep `\notready` until
+%      their statements are pinned.  PROOF-`\leanok` (green background) stays off until
+%      the g-i machine reconciler (BlueprintAudit / `#print axioms`) is transplanted --
+%      no proof status is hand-maintained.
 %    * Nodes with a canonical Lean name in SKELETON-SPEC.md carry `\lean{...}`.  Nodes the
 %      spec leaves un-named (e.g. Lemma 2.2, Prop 5.2, several §7 case lemmas) carry no
 %      `\lean{}` and are described in prose; they will be bound once named.
-%    * Every incomplete (`\notready`) node carries a `\lapsrisk{laps}{risk}{conf}` campaign
+%    * Every node whose PROOF is open carries a `\lapsrisk{laps}{risk}{conf}` campaign
 %      estimate mirroring BLUEPRINT.md §2's ledger (laps = expected Opus-treadmill laps,
 %      risk word from the as-stated confidence: >=85 low, 75-80 medium, <=70 high).
-%      Drop the line when a node flips to `\leanok`; re-sync numbers from the ledger.
+%      Drop the line only when the node's proof is done; re-sync numbers from the ledger.
 % ======================================================================================
 
 % Campaign estimate annotation (one per incomplete node). Defined here so both the
@@ -114,7 +117,7 @@ Discrete-probability, generating-function, and Fourier scaffolding used everywhe
 
 \begin{definition}[Discrete-probability calculus]\label{S1}
   \lean{PMF.dTV, PMF.expect, PMF.cexpect, PMF.iid}
-  \notready
+  \leanok
 Total variation distance \(d_{\mathrm{TV}}(p,q) := \sum_a' |(p\,a).\mathrm{toReal} - (q\,a).\mathrm{toReal}|\),
 real and complex expectations \(\mathbb{E}_p[f] := \sum_a' (p\,a).\mathrm{toReal}\cdot f(a)\),
 and the \(n\)-fold i.i.d.\ product \(p^{\otimes n}\) on \(\mathrm{Fin}\,n\to\alpha\)
@@ -133,7 +136,7 @@ the i.i.d.\ product are part of this node.
 \begin{definition}[Geometric and Pascal laws; negative binomial]\label{S2}
   \lean{geomHalf, geomQuarter, pascal, pascalNe3}
   \uses{S1}
-  \notready
+  \leanok
 The lattice laws driving the Syracuse valuation: \(\mathrm{Geom}(2)\) with
 \(\mathbb{P}(a)=2^{-a}\) for \(a\ge 1\) (\texttt{geomHalf}); \(\mathrm{Geom}(4)\)
 (\texttt{geomQuarter}); \(\mathrm{Pascal}\), the law of \(a_1+a_2\) with
@@ -171,7 +174,7 @@ generating functions plus real-variable exponential tilting (design decision D5)
 
 \begin{definition}[Additive characters and the oscillation functional]\label{S4}
   \lean{eC, osc}
-  \notready
+  \leanok
 The additive character \(e(\theta):=\exp(2\pi i\theta)\) on \(\mathbb{Q}\), the discrete
 Fourier transform and Parseval identity on \(\mathbb{Z}/3^n\mathbb{Z}\), and the
 \textbf{oscillation functional} \(\mathrm{Osc}_{m,n}\) (paper (1.24)) measuring how far a
@@ -191,7 +194,7 @@ scale.
 
 \begin{definition}[Collatz and Syracuse maps; the reduction (1.2)]\label{C1}
   \lean{col, colMin, oddPart, syr, syrMin, colMin_eq_syrMin_oddPart}
-  \notready
+  \leanok
 The Collatz map \(\mathrm{col}(N)=3N+1\) if \(N\) is odd and \(N/2\) otherwise; its orbit
 minimum \(\mathrm{Colmin}(N)=\inf_k \mathrm{col}^{[k]}(N)\).  The odd part
 \(\mathrm{oddPart}(N)=N/2^{v_2(N)}\), the \textbf{Syracuse map}
@@ -208,7 +211,7 @@ Also the cheap odd-preservation and positivity facts (\(\mathrm{syr}\) maps odds
 \begin{lemma}[Valuation vector, integer offset, and the iteration identity (1.7)]\label{C2}
   \lean{valVec, fnat, syr_iterate_key}
   \uses{C1}
-  \notready
+  \leanok
 The \(n\)-step \textbf{valuation vector} (paper (1.8))
 \(\vec a^{(n)}(N)_i = v_2\bigl(3\,\mathrm{syr}^{[i]}(N)+1\bigr)\), the integerified offset
 (design D2) \(\texttt{fnat}\,n\,a = \sum_{m<n} 3^{\,n-1-m}\,2^{\,a_{[1,m]}}\), and the
@@ -227,7 +230,7 @@ so it holds in \(\mathbb{N}\): for odd \(N\), with \(a=\vec a^{(n)}(N)\),
 \begin{definition}[Logarithmic density and the reduction Thm 1.6 \(\Rightarrow\) Thm 1.3]\label{C3}
   \lean{logProb, posInterval, HasLogDensity, AlmostAllPos, AlmostAllOdd}
   \uses{C1}
-  \notready
+  \leanok
 The logarithmic-density apparatus: \texttt{logSum}, \texttt{logProb}, the sampling window
 \texttt{posInterval}, the predicate \texttt{HasLogDensity}, and the ``almost all''
 quantifiers \texttt{AlmostAllPos} and its odd-window form \texttt{AlmostAllOdd}
@@ -243,7 +246,7 @@ Thm~1.6 to the main theorem Thm~1.3 (node~\ref{C6}) by passing to odd parts.
 \begin{definition}[The Syracuse random variable \(\mathrm{Syrac}(\mathbb{Z}/3^n\mathbb{Z})\)]\label{C4}
   \lean{syracZ, syracZ_map_cast}
   \uses{C2, S1}
-  \notready
+  \leanok
 The law \texttt{syracZ}\,\(n\) on \(\mathbb{Z}/3^n\mathbb{Z}\) (paper (1.21)/(1.26), in the
 \emph{reversed} variable order deliberately, per footnote~6): the pushforward of
 \(\mathrm{Geom}(2)^{\otimes n}\) under
@@ -261,7 +264,7 @@ Lemma~1.12 (Euler's theorem plus a geometric-series normalization
 \begin{proposition}[Valuation \(\approx\) geometric; Prop 1.9 and the §4 tail bound]\label{C5}
   \lean{valuation_dist}
   \uses{C2, S2}
-  \notready
+  \leanok
 \textbf{Proposition 1.9.}  There are \(c_1,C>0\) such that for all \(n,n'\) and every law
 \(X\) supported on odd numbers that is \(\ll 2^{-n'}\)-close in total variation to uniform
 modulo \(2^{n'}\), provided \((2+c_0)n\le n'\),
@@ -283,7 +286,7 @@ Lemma~4.1 controlling \(\mathbb{P}(a_{[1,n]}\ge n')\).
 \begin{theorem}[Main theorem: Thm 1.3, Thm 1.6, quantitative Thm 3.1]\label{C6}
   \lean{tao_collatz, tao_collatz_quantitative}
   \uses{C3, C7, C8, C9}
-  \notready
+  \leanok
 \textbf{Theorem 1.3} (the summit): for every \(f:\mathbb{N}\to\mathbb{R}\) with
 \(f(N)\to\infty\), \(\mathrm{Colmin}(N)<f(N)\) for almost all \(N\) in logarithmic density.
 It follows from the intermediate \textbf{Theorem 1.6} (almost all orbits attain almost bounded
@@ -303,7 +306,7 @@ over dyadic scales (§3).
 \begin{lemma}[First-passage non-escape; (1.19)]\label{C7}
   \lean{passes, passTime, passLoc}
   \uses{C5, S2}
-  \notready
+  \leanok
 The first-passage data: \(\mathrm{passes}(x,N)\) (\(=T_x(N)<\infty\), the orbit reaches
 \(\le x\)), the passage time \(\mathrm{passTime}\), and the passage location
 \(\mathrm{Pass}_x = \mathrm{passLoc}\) (with the convention \(\mathrm{Syr}^\infty := 1\)).
@@ -331,7 +334,7 @@ statistics.
 \begin{proposition}[Stabilization across scales; Prop 1.11]\label{C9}
   \lean{stabilization}
   \uses{C8, C10}
-  \notready
+  \leanok
 \textbf{Proposition 1.11}, the spine's key input.  With \(\alpha=1.001\) (paper (1.18)):
 there are \(c,C,x_0>0\) so that for \(x\ge x_0\), the first-passage location laws seen from two
 successive scales \(x^{\alpha}\) and \(x^{\alpha^2}\) agree up to
@@ -354,7 +357,7 @@ together with the non-escape control on each window.  Proved via Lemma~5.3
 \begin{proposition}[Fine-scale mixing; Prop 1.14 \(\Leftarrow\) Prop 1.17]\label{C10}
   \lean{fine_scale_mixing}
   \uses{C4, S2, S4, X11}
-  \notready
+  \leanok
 \textbf{Proposition 1.14}: the Syracuse law is asymptotically equidistributed at fine scales,
 \[
   \forall A>0,\ \exists C>0,\ \forall\, 1\le m\le n:\quad
@@ -393,7 +396,7 @@ product of per-pair factors \(f\) (with the low-order piece \(g\) split off).
 \begin{lemma}[Phase identities and white-point cancellation; Lemma 7.2]\label{X2}
   \lean{sfrac, θq, θq_succ_j, θq_pred_l, black}
   \uses{X1}
-  \notready
+  \leanok
 The phase \(\theta(j,l)\) (paper (7.7)/(7.8)), a signed fractional part of
 \(\xi\cdot 3^{2j-2}\cdot 2^{\,1-l}/3^n\), and its two scaling identities (7.13)/(7.14): there
 are integers \(k\) with
@@ -412,7 +415,7 @@ cancellation): at a white point the per-pair factor contracts,
 \begin{lemma}[Black set = separated triangles; Lemma 7.4]\label{X3}
   \lean{triangle, black_structure}
   \uses{X2}
-  \notready
+  \leanok
 \textbf{Risk kernel 2.}  With a triangle (paper (7.11)) the set
 \(\{(j,l) : j_0\le j,\ l\le l_0,\ (j-j_0)\log 9 + (l_0-l)\log 2 \le s\}\), Lemma~7.4 asserts
 the black set inside the strip is a disjoint union of triangles that are (i) confined to the
@@ -433,7 +436,7 @@ Proved through the phase identities (7.12)--(7.15), the weakly-black claims (i)-
 \begin{proposition}[Holding law, the \(Q\) recursion, and Prop 7.3]\label{X4}
   \lean{hold, Q_rec, Q_boundary, renewal_white_encounters}
   \uses{S2, X2}
-  \notready
+  \leanok
 The \textbf{holding law} \(\mathrm{Hold}\) on \(\mathbb{N}\times\mathbb{Z}\) (§7.3), whose first
 coordinate is always \(\ge 1\), governing how the renewal walk steps between pairs.  Design
 decision D6 replaces the paper's infinite renewal product (7.34) by the \emph{defined}
@@ -522,7 +525,7 @@ the complementary tail to Case~2.
 \begin{proposition}[Case 3 assembly; Prop 7.8 \(\to\) 7.3 \(\to\) 7.1 \(\to\) Prop 1.17]\label{X11}
   \lean{charFn_decay, key_fourier_decay}
   \uses{X9, X10}
-  \notready
+  \leanok
 \textbf{Case 3} assembly (paper (7.48)/(7.49), (7.52)--(7.67)): the events \(E_*,F_*\), the
 choice \(R=\lfloor A^2/\varepsilon^4\rfloor\), and the deterministic claim (7.67), combining
 Lemma~7.9 (node~\ref{X9}) and Lemma~7.10 (node~\ref{X10}).  This closes Prop~7.8, hence
