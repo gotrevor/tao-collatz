@@ -205,6 +205,306 @@ def check6(n=14, xi=1, eps=0.02):
           f"j-range {min((p[0] for p in black), default='-')}-{max((p[0] for p in black), default='-')} "
           f"(claim j <~ {jmax_claim:.1f}), column-runs sane: {runs_ok}")
 
+# ---------------------------------------------------------------------------
+# §7 kernel de-risk checks (added 2026-07-10, first box lap). Anchors:
+# pairing identity p.33, (7.4)-(7.9), Lemma 7.4 pp.36-41, Case 2 (7.44)-(7.51),
+# Lemma 7.10 pp.51-54. Conventions match the Lean skeleton:
+#   paper j (1-indexed) = Lean j + 1;  white point of index j is (j, b_{[1,j]}).
+# ---------------------------------------------------------------------------
+import cmath
+
+def theta_exact(n: int, xi: int, j: int, l: int) -> Fraction:
+    """theta(j,l) (7.8), EXACT: signed frac of xi*3^{2j-2}*(2^{-l+1} mod 3^n)/3^n,
+    valued in (-1/2, 1/2]. Paper-indexed j >= 1, l in Z."""
+    mod = 3 ** n
+    v = (xi * pow(3, 2 * j - 2, mod) * pow(2, -(l - 1), mod) if l >= 1
+         else xi * pow(3, 2 * j - 2, mod) * pow(2, 1 - l, mod)) % mod
+    f = Fraction(v, mod)
+    return f - 1 if f > Fraction(1, 2) else f
+
+def chi(n: int, xi: int, num: int, k: int) -> complex:
+    """chi(x) (7.1) for x = num / 2^k in Z[1/2]: e^{-2 pi i xi (x mod 3^n)/3^n}."""
+    mod = 3 ** n
+    v = (xi * num * pow(2, -k, mod)) % mod
+    return cmath.exp(-2j * cmath.pi * v / mod)
+
+def f_cond(n: int, xi: int, num: int, k: int, b: int) -> complex:
+    """f(x,b) (7.4) with x = num/2^k: E(chi(x(2^{a2}+3)) | a1+a2=b); a2 uniform on [1,b-1]."""
+    return sum(chi(n, xi, num * (2 ** a2 + 3), k) for a2 in range(1, b)) / (b - 1)
+
+def check7():
+    """Coordinate-convention anchor for Prop 7.3 / renewal_white_encounters.
+
+    (a) pairing identity p.33 (exact, Fractions);
+    (b) (7.7): chi(3^{2j-2} 2^{-l+1}) = e^{-2 pi i theta(j,l)};
+    (c) |f(3^{2j-2} 2^{-b_{[1,j]}}, 3)| = |cos(pi*theta(j, b_{[1,j]}))|  -- the white
+        point tested by index j is EXACTLY (j, b_{[1,j]}) = Lean (j_lean, pre b (j_lean+1));
+    (d) end-to-end: |S_chi(n)| <= E prod_j |f| <= E exp(-eps^3 #white encounters).
+    """
+    rng = random.Random(11)
+    # (a) pairing identity: sum_{m=1}^n 3^{m-1} 2^{-a_[1,m]}
+    #     = sum_{j in [n/2]} 3^{2j-2} 2^{-b_[1,j]} (2^{a_2j}+3)  (+ 3^{n-1}2^{-a_[1,n]} if n odd)
+    for _ in range(300):
+        n = rng.randrange(2, 12)
+        a = [rng.randrange(1, 12) for _ in range(n)]
+        lhs = sum(Fraction(3 ** (m - 1), 2 ** sum(a[:m])) for m in range(1, n + 1))
+        b = [a[2 * j - 2] + a[2 * j - 1] for j in range(1, n // 2 + 1)]
+        rhs = sum(Fraction(3 ** (2 * j - 2), 2 ** sum(b[:j])) * (2 ** a[2 * j - 1] + 3)
+                  for j in range(1, n // 2 + 1))
+        if n % 2 == 1:
+            rhs += Fraction(3 ** (n - 1), 2 ** sum(a))
+        assert lhs == rhs, (n, a)
+    # (b) + (c)
+    for _ in range(400):
+        n = rng.randrange(2, 9)
+        xi = rng.choice([x for x in range(1, 3 ** n) if x % 3 != 0])
+        j = rng.randrange(1, max(n // 2, 1) + 1)
+        l = rng.randrange(-30, 60)
+        th = theta_exact(n, xi, j, l)
+        num, k = 3 ** (2 * j - 2), l - 1
+        if k < 0:
+            num, k = num * 2 ** (-k), 0
+        assert abs(chi(n, xi, num, k) - cmath.exp(-2j * cmath.pi * float(th))) < 1e-9
+        fv = f_cond(n, xi, 3 ** (2 * j - 2) * (2 ** max(0, -l)), max(l, 0), 3)
+        assert abs(abs(fv) - abs(cmath.cos(cmath.pi * float(th)))) < 1e-9, (n, xi, j, l)
+    # (d) end-to-end at n = 4 (even: no g factor), truncated a_i <= amax
+    eps = Fraction(1, 10 ** 4)
+    for xi in (1, 5, 7, 20):
+        n, amax = 4, 14
+        import itertools
+        S = 0 + 0j; rhs = 0.0; mass = Fraction(0)
+        for a in itertools.product(range(1, amax + 1), repeat=n):
+            w = Fraction(1, 2 ** sum(a))
+            mass += w
+            num = sum(3 ** (m - 1) * 2 ** (sum(a) - sum(a[:m])) for m in range(1, n + 1))
+            S += float(w) * chi(n, xi, num, sum(a))
+            b = [a[0] + a[1], a[2] + a[3]]
+            cnt = sum(1 for j in (1, 2)
+                      if b[j - 1] == 3 and abs(theta_exact(n, xi, j, sum(b[:j]))) > eps)
+            rhs += float(w) * 2.718281828459045 ** (-float(eps) ** 3 * cnt)
+        err = float(1 - mass) * 1.05  # truncated tail, |chi|<=1
+        assert abs(S) <= rhs + 2 * err, (xi, abs(S), rhs, err)
+    print("7. §7 pairing identity, (7.7), |f|=|cos(pi theta)|, |S_chi| <= E exp(-eps^3 #W)  OK")
+
+def decompose_black(n: int, xi: int, eps: Fraction, jmax: int, lwin: range):
+    """Implement the paper's l*/j* construction (pp.38-39) on the actual black set,
+    EXACTLY (rational theta).  Returns (blacks, corners) where corners maps each black
+    point in the window to its triangle corner (j*, l*), plus theta* values."""
+    black = {}
+    for j in range(1, jmax + 1):
+        for l in lwin:
+            th = theta_exact(n, xi, j, l)
+            if abs(th) <= eps:
+                black[(j, l)] = th
+    corner = {}
+    for (j, l) in black:
+        lstar = l
+        while (j, lstar + 1) in black:
+            lstar += 1
+        jstar = j
+        while jstar > 1 and (jstar - 1, lstar) in black:
+            jstar -= 1
+        corner[(j, l)] = (jstar, lstar)
+    return black, corner
+
+def check8(n=30, xi=7, eps=Fraction(9, 1000), jmax=None, L=1500):
+    """Lemma 7.4, full structural validation at a concrete instance (EXACT arithmetic).
+
+    Builds the l*/j* decomposition and verifies, for every triangle with corner
+    (j*,l*), |theta*| = eps*exp(-s*):
+      (1) lattice-triangle (7.11) with size s* = log(eps/|theta*|) equals EXACTLY
+          the set of black points sharing that corner, via the exact test
+          9^{j-j*} 2^{l*-l} |theta*| <= eps  (equality case of (7.18));
+      (2) member phases obey the (7.18) EQUALITY |theta(j,l)| = 9^{dj} 2^{dl} |theta*|
+          whenever rhs < 1/2;
+      (3) pairwise Euclidean separation of triangle point-SETS >= (1/10) log(1/eps);
+      (4) strip confinement j <= n/2 - (1/10) log(1/eps).
+    Window-edge triangles are excluded from completeness claims."""
+    jmax = jmax or n // 2
+    lwin = range(-L, L)
+    black, corner = decompose_black(n, xi, eps, jmax, lwin)
+    margin = 80  # exclude anything near the l-window edge
+    safe = lambda p: -L + margin <= p[1] <= L - 1 - margin
+    tris = {}
+    for p, c in corner.items():
+        tris.setdefault(c, set()).add(p)
+    n_checked = 0
+    logeps_inv = log(1 / float(eps))
+    for (js, ls), members in tris.items():
+        if not all(safe(p) for p in members) or not safe((js, ls)):
+            continue
+        n_checked += 1
+        tstar = abs(black[(js, ls)])
+        assert tstar <= eps and tstar > 0
+        # (1) exact triangle membership == corner fibre; size s* = log(eps/theta*)
+        sstar = log(float(eps) / float(tstar))
+        smax_j = int(sstar / log(9)) + 2
+        smax_l = int(sstar / log(2)) + 3
+        tri_pts = set()
+        for j in range(js, min(js + smax_j + 1, jmax + 1)):
+            for l in range(ls - smax_l, ls + 1):
+                if 9 ** (j - js) * 2 ** (ls - l) * tstar <= eps:
+                    tri_pts.add((j, l))
+        assert tri_pts == members, ((js, ls), sorted(tri_pts ^ members))
+        # (2) equality case of (7.18)
+        for (j, l) in members:
+            scaled = 9 ** (j - js) * 2 ** (ls - l) * tstar
+            if scaled < Fraction(1, 2):
+                assert abs(black[(j, l)]) == scaled, ((js, ls), (j, l))
+        # (4) strip confinement
+        for (j, l) in members:
+            assert j <= n / 2 - logeps_inv / 10, ((js, ls), (j, l), n)
+    # (3) pairwise set separation (only fully-safe triangles, brute force over pairs)
+    keys = [c for c, ms in tris.items() if all(safe(p) for p in ms) and safe(c)]
+    sep2 = (logeps_inv / 10) ** 2
+    for i in range(len(keys)):
+        for k in range(i + 1, len(keys)):
+            c1, c2 = keys[i], keys[k]
+            if (c1[0] - c2[0]) ** 2 + (c1[1] - c2[1]) ** 2 > (200) ** 2:
+                continue
+            d2 = min((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2
+                     for p in tris[c1] for q in tris[c2])
+            assert d2 >= sep2, (c1, c2, d2, sep2)
+    sizes = sorted(round(log(float(eps) / float(abs(black[c]))), 2) for c in keys)
+    print(f"8. Lemma 7.4 EXACT decomposition n={n} xi={xi} eps={eps}: "
+          f"{len(black)} black pts -> {n_checked} triangles validated "
+          f"(partition/equality/separation/strip), sizes up to {sizes[-1] if sizes else 0}")
+    return black, {c: tris[c] for c in keys}
+
+def check9(n=30, xi=7, eps=Fraction(9, 1000), samples=4000):
+    """Case 2 white-exit probability (7.50)/(7.51), Monte Carlo.
+
+    From a shallow start inside a triangle, run the renewal walk with iid Hold
+    steps to first passage above l_Delta, and record whether the passage location
+    is white. Paper claims this probability is >> 1 (absolute constant).
+    Also reports the Lemma 7.9 epsilon-site: need c0 >= (1-e^{-eps})/(1-1/e)."""
+    rng = random.Random(2027)
+    # re-run the (check8-validated) decomposition to get a triangle inventory
+    black, corner = decompose_black(n, xi, eps, n // 2, range(-1500, 1500))
+    tris = {}
+    for p, c in corner.items():
+        tris.setdefault(c, set()).add(p)
+    big = sorted(tris.items(), key=lambda kv: -len(kv[1]))[:6]
+
+    def sample_geom_half():
+        a = 1
+        while rng.random() < 0.5:
+            a += 1
+        return a
+
+    def sample_pascal_ne3():
+        while True:
+            b = sample_geom_half() + sample_geom_half()
+            if b != 3:
+                return b
+
+    def sample_hold():
+        k = 1
+        while rng.random() < 0.75:
+            k += 1
+        return (k, 3 + sum(sample_pascal_ne3() for _ in range(k - 1)))
+
+    total_ok = 0; total = 0
+    for (js, ls), members in big:
+        # shallow starts: l within 3 of l_Delta (Case 2 regime s <= m/log^2 m)
+        starts = [p for p in members if ls - p[1] <= 3]
+        for _ in range(samples // len(big)):
+            j, l = rng.choice(starts)
+            s = ls - l
+            jj, ll = j, l
+            while ll - l <= s:  # first passage: l_[1,k] > s
+                dj, dl = sample_hold()
+                jj += dj; ll += dl
+            if jj <= n // 2:
+                th = theta_exact(n, xi, jj, ll)
+                total += 1
+                total_ok += (abs(th) > eps)
+    c0 = total_ok / total
+    need = (1 - 2.718281828 ** (-1e-4)) / (1 - 1 / 2.718281828)
+    assert c0 > 0.5, c0   # empirically the exit is white with high probability
+    assert c0 >= need
+    print(f"9. Case 2 white-exit Monte Carlo: P(exit in W) ~= {c0:.3f} over {total} walks "
+          f"(needs >= {need:.2e} for Lemma 7.9 with eps=1e-4)  OK")
+
+def check10(n=30, xi=7, eps=Fraction(9, 1000)):
+    """Lemma 7.10 deterministic core: row-interval disjointness + Sigma separation.
+
+    (i) at every level l, the j-extents (rows) of distinct triangles are disjoint
+        integer intervals (this is the mechanism behind the 'no common integer
+        point' step on p.54);
+    (ii) for pairs of triangles with size >= s' whose bottom tips are aligned
+        within 10 (the (7.65) configuration), corner j's are >= (log2/(2 log9)) s'
+        - O(alignment) apart."""
+    black, corner = decompose_black(n, xi, eps, n // 2, range(-1500, 1500))
+    tris = {}
+    for p, c in corner.items():
+        tris.setdefault(c, set()).add(p)
+    rows = {}  # level -> list of (corner, jmin, jmax)
+    for c, ms in tris.items():
+        by_l = {}
+        for (j, l) in ms:
+            by_l.setdefault(l, []).append(j)
+        for l, js in by_l.items():
+            js.sort()
+            assert js == list(range(js[0], js[-1] + 1)), (c, l, js)  # rows contiguous
+            rows.setdefault(l, []).append((c, js[0], js[-1]))
+    for l, ivs in rows.items():
+        ivs.sort(key=lambda t: t[1])
+        for (c1, a1, b1), (c2, a2, b2) in zip(ivs, ivs[1:]):
+            assert b1 < a2, (l, c1, c2)  # (i) disjoint rows
+    log2, log9 = log(2), log(9)
+    sizes = {c: log(float(eps) / float(abs(black[c]))) for c in tris}
+    checked_pairs = 0
+    for sp in (2.0, 4.0, 6.0):
+        cand = [c for c in tris if sizes[c] >= sp]
+        for i in range(len(cand)):
+            for k in range(i + 1, len(cand)):
+                c1, c2 = cand[i], cand[k]
+                tip1 = c1[1] - sizes[c1] / log2
+                tip2 = c2[1] - sizes[c2] / log2
+                if abs(tip1 - tip2) <= 10:
+                    gap = abs(c1[0] - c2[0])
+                    lower = (log2 / (2 * log9)) * sp - (log2 / log9) * 10 - 1
+                    assert gap >= lower, (sp, c1, c2, gap, lower)
+                    checked_pairs += 1
+    print(f"10. Lemma 7.10 core: rows disjoint at every level; {checked_pairs} aligned "
+          f"big-triangle pairs obey the Sigma j-separation bound  OK")
+
+def check11():
+    """Every §7 usage site of the D4 constant eps = 1/10^4 (and the 1/100 weakly-black
+    threshold), as concrete numeric inequalities."""
+    e = 1e-4
+    assert 0 < e < 1 / 100                                   # standing hypothesis §7
+    # Lemma 7.2 Taylor site: |theta| > eps => cos(pi theta) <= exp(-eps^3)
+    ths = [e * (1 + k / 500) for k in range(1, 2000)] + [0.01, 0.1, 0.25, 0.5]
+    for th in ths:
+        assert abs(cmath.cos(cmath.pi * th)) <= 2.718281828 ** (-e ** 3), th
+    l2, l9, l18 = log(2), log(9), log(18)
+    # Claim (*) Case 1 (p.39): eps^{1 - log18/10} in (eps, 1/2)
+    assert 0 < 1 - l18 / 10 and e ** (1 - l18 / 10) < 0.5 and e ** (1 - l18 / 10) > e
+    # Case 2 (p.40): eps^{1-log2/10} and eps^{1-log9/10} <= 1/100 (weakly black)
+    assert e ** (1 - l2 / 10) <= 1 / 100 and e ** (1 - l9 / 10) <= 1 / 100
+    # Case 3 (p.40): eps^{1-(log9+log2)/10} <= 1/100
+    assert e ** (1 - l18 / 10) <= 1 / 100
+    # weakly-black claims (i)-(iii) (p.38): threshold arithmetic at 1/100
+    assert 1 / 100 + 4 / 100 <= 5 / 100 + 1e-15 and 9 * (5 / 100) < 0.5
+    assert 9 * (1 / 100) < 0.5 and 2 * (9 / 100) < 0.5
+    # strip constant (7.16): black => j <= n/2 + 1/2 - log(1/eps)/(2 log 3); need
+    # this to be <= n/2 - (1/10) log(1/eps), i.e. (1/2 - l2? no:) numeric:
+    L = log(1 / e)
+    assert 0.5 - L / (2 * log(3)) <= -L / 10
+    # Case 1 of Prop 7.8 (7.43): exp(-eps^3/2) sanity: exp(-e^3) <= 1 - e^3/4... wait,
+    # (7.46)->(7.47) uses exp(-eps^3/2) <= 1 - eps^3/4: check
+    assert 2.718281828 ** (-e ** 3 / 2) <= 1 - e ** 3 / 4
+    # Figure 3 slope room: E Hold = (4,16) mean slope 16/4 = 4 > log9/log2
+    assert 16 / 4 > l9 / l2
+    print("11. eps = 1/10^4 survives every §7 usage site (7.2, Claim (*) Cases 1-3, "
+          "weakly-black constants, (7.16) strip, (7.47), slope)  OK")
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
+    check7()
+    check8(); check8(n=26, xi=101, eps=Fraction(1, 101))
+    check8(n=30, xi=1, eps=Fraction(1, 10 ** 4))  # the D4 value itself
+    check9(); check10(); check11()
     print("ALL CHECKS PASS ✅")

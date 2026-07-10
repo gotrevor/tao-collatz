@@ -20,21 +20,30 @@ def triangle (j₀ : ℕ) (l₀ : ℤ) (s : ℝ) : Set (ℕ × ℤ) :=
   {p | j₀ ≤ p.1 ∧ p.2 ≤ l₀ ∧
     ((p.1 : ℝ) - j₀) * Real.log 9 + ((l₀ : ℝ) - p.2) * Real.log 2 ≤ s}
 
--- RATIFY-5: the three Lemma 7.4 claims (partition into triangles, `(1/10)log(1/ε)`
--- pairwise separation, and confinement to the strip `j+1 ≤ n/2 - (1/10)log(1/ε)`) spelled
--- as an explicit conjunction; separation is stated squared to avoid `Real.sqrt`. Judge
--- against §7.2 pp.36–41.
+-- RATIFY-5 (resolved 2026-07-10 against paper pp.36–41 + harness check 8): the paper's
+-- separation is between the triangle POINT SETS ("using the Euclidean metric on
+-- [n/2] × ℤ ⊂ ℝ²"), not merely between top-left corners — Case 2's white-exit ring
+-- (7.50)/(7.51) and Lemma 7.10's Σ-counting both consume set-separation. Statement
+-- fixed accordingly (an earlier draft only separated corners). Separation is stated
+-- squared to avoid `Real.sqrt`; disjointness of the union follows from set-separation
+-- since `(1/10)·log(1/ε) > 0`. The union equality is parenthesized explicitly (an
+-- un-parenthesized `= ⋃ t ∈ T, S t ∧ P` risks the `∧` parsing into the `⋃` body).
+-- Numerically validated (exact ℚ arithmetic, l*/j* construction): check_blueprint
+-- check 8 at (n,ξ,ε) = (30,7,9e-3), (26,101,1/101), (30,1,1e-4) — incl. giant
+-- triangles of size ≈ n·log 3 from tiny |θ| corners.
 /-- **Lemma 7.4.** For `ξ` not divisible by 3, the black set (within the strip
-`j+1 ≤ n/2`) is a finite union of corner triangles that are pairwise Euclidean-separated
-by `≥ (1/10)·log(1/ε)` and confined to `j+1 ≤ n/2 - (1/10)·log(1/ε)`. -/
+`j+1 ≤ n/2`) is a union of corner triangles whose point sets are pairwise
+Euclidean-separated by `≥ (1/10)·log(1/ε)` and confined to
+`j+1 ≤ n/2 - (1/10)·log(1/ε)`. -/
 theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
     ∃ T : Set (ℕ × ℤ × ℝ),
       (∀ t ∈ T, 0 ≤ t.2.2) ∧
-      {p : ℕ × ℤ | p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2}
-        = ⋃ t ∈ T, triangle t.1 t.2.1 t.2.2 ∧
+      ({p : ℕ × ℤ | p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2}
+        = ⋃ t ∈ T, triangle t.1 t.2.1 t.2.2) ∧
       (∀ t ∈ T, ∀ t' ∈ T, t ≠ t' →
+        ∀ p ∈ triangle t.1 t.2.1 t.2.2, ∀ p' ∈ triangle t'.1 t'.2.1 t'.2.2,
         ((1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) ^ 2
-          ≤ ((t.1 : ℝ) - t'.1) ^ 2 + ((t.2.1 : ℝ) - t'.2.1) ^ 2) ∧
+          ≤ ((p.1 : ℝ) - p'.1) ^ 2 + ((p.2 : ℝ) - p'.2) ^ 2) ∧
       (∀ t ∈ T, ∀ p ∈ triangle t.1 t.2.1 t.2.2,
         (p.1 : ℝ) + 1 ≤ (n : ℝ) / 2 - (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) := by
   sorry

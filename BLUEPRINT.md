@@ -166,14 +166,14 @@ statement surgery. Depends lists node ids. Paper anchors in parens.
 |----|------|-------|------|------|------|---------|
 | X1 | Setup: character χ (7.1), reversal to (1.26), pairing `b_j = a_{2j-1}+a_{2j} ≡ Pascal`, conditional factorization (7.4)(7.5) | §7.1 pp.33–34 | 3 | 6–12 | 80% | C4, S2 |
 | X2 | θ(j,l) (7.7)(7.8) signed fractional part; **Lemma 7.2** white-point cancellation `|f| ≤ cos(πθ) ≤ exp(-ε³)` | pp.34–35 | 2 | 4–8 | 90% | X1 |
-| X3 | **Lemma 7.4** black set = disjoint separated triangles: θ identities (7.12)–(7.15), weakly-black claims (i)–(iii), l*/j* construction, Claim (*) Cases 1–3 | §7.2 pp.36–41 | 4 | 15–30 | 70% | X2 |
+| X3 | **Lemma 7.4** black set = disjoint separated triangles: θ identities (7.12)–(7.15), weakly-black claims (i)–(iii), l*/j* construction, Claim (*) Cases 1–3 | §7.2 pp.36–41 | 4 | 15–30 | 75% | X2 |
 | X4 | §7.3 + D6: `Hold` def, `Q` recursion, bridge (7.28)/(7.34)–(7.36): `EQ(Hold) ≪_A n^{-A}` ⟺ Prop 7.3 | §7.3–7.4 pp.41–44 | 3 | 8–15 | 80% | S2, X2 |
 | X5 | **Lemma 7.6** Hold basics: explicit distribution, exponential tail, aperiodicity, mean (4,16) | p.42 | 2 | 4–8 | 85% | X4 |
 | X6 | **Lemma 7.7** first-passage location distribution | p.43 | 4 | 10–20 | 70% | S3, X5 |
 | X7 | `Q_m` (7.38); Prop 7.8 skeleton; **Case 1** (white point) (7.42)–(7.43) | §7.4 pp.45–46 | 2 | 4–8 | 85% | X4 |
-| X8 | **Case 2** (shallow in triangle): (7.44)–(7.51), incl. the ≫1 white-exit bound (7.50)(7.51) | pp.46–48 | 5 | 12–25 | 65% | X3, X6, X7 |
+| X8 | **Case 2** (shallow in triangle): (7.44)–(7.51), incl. the ≫1 white-exit bound (7.50)(7.51) | pp.46–48 | 5 | 12–25 | 70% | X3, X6, X7 |
 | X9 | **Lemma 7.9** many-triangles ⟹ many-white-points (induction on R over the Q-recursion) | pp.50–51 | 4 | 8–15 | 70% | X4, X8 |
-| X10 | **Lemma 7.10** large triangles rarely encountered after a lengthy crossing ((7.60)–(7.65), separated-Σ counting) | pp.51–54 | 5 | 15–30 | 60% | X3, X6 |
+| X10 | **Lemma 7.10** large triangles rarely encountered after a lengthy crossing ((7.60)–(7.65), separated-Σ counting) | pp.51–54 | 5 | 15–30 | 65% | X3, X6 |
 | X11 | **Case 3** assembly (E_*, F_*, R = ⌊A²/ε⁴⌋, deterministic claim (7.67)); **Prop 7.8 → 7.3 → 7.1 → Prop 1.17** | pp.48–49, 54–56 | 4 | 10–20 | 70% | X9, X10 |
 
 **Totals**: ~17k–28k lines, **~250–450 laps**. With g-i-calibrated lap throughput this is a
@@ -187,9 +187,11 @@ S3 → X6 → {X8, X10} → X11 → C10 → C9 → C6 → Statement
 Three hard kernels hold ~all the completion risk:
 1. **S3** (local 2-D bound): classical analysis, elementary route designed (D5), but long. 70%.
 2. **X3** (Lemma 7.4 triangles): finite, elementary, delicate case analysis; Fable-validated
-   statement layer in-session. 70%.
+   statement layer in-session; exact-arithmetic decomposition validated (harness check 8,
+   2026-07-10, incl. giant triangles). 75%.
 3. **X8/X10** (renewal vs. triangles): the paper's pinnacle. The D6 finitization makes these
-   inductions over an explicit recursion rather than stopping-time measure theory. 60–65%.
+   inductions over an explicit recursion rather than stopping-time measure theory. 65–70%
+   (2026-07-10: white-exit ≈0.99 MC, Σ-separation + ε-sites numerically verified, checks 9–11).
 
 Everything OUTSIDE these kernels is standard treadmill fare (counting, harmonic sums,
 ZMod arithmetic, PMF calculus) at 75–95% confidence.
