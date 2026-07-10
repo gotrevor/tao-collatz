@@ -17,7 +17,16 @@
 %    * Nodes with a canonical Lean name in SKELETON-SPEC.md carry `\lean{...}`.  Nodes the
 %      spec leaves un-named (e.g. Lemma 2.2, Prop 5.2, several §7 case lemmas) carry no
 %      `\lean{}` and are described in prose; they will be bound once named.
+%    * Every incomplete (`\notready`) node carries a `\lapsrisk{laps}{risk}{conf}` campaign
+%      estimate mirroring BLUEPRINT.md §2's ledger (laps = expected Opus-treadmill laps,
+%      risk word from the as-stated confidence: >=85 low, 75-80 medium, <=70 high).
+%      Drop the line when a node flips to `\leanok`; re-sync numbers from the ledger.
 % ======================================================================================
+
+% Campaign estimate annotation (one per incomplete node). Defined here so both the
+% plasTeX web build (web.tex) and the pdf build (print.tex) pick it up via \input.
+\newcommand{\lapsrisk}[3]{\par\smallskip\noindent\textit{\textbf{Campaign estimate:}
+#1 treadmill laps; risk \textbf{#2} (#3 confidence the node completes as stated).}}
 
 \chapter{Program overview}
 
@@ -116,6 +125,7 @@ form to avoid \texttt{OuterMeasure} friction: for any event \(E\subseteq\alpha\)
 \]
 Basic algebra of \(d_{\mathrm{TV}}\) (symmetry, non-negativity) and the support/apply lemmas of
 the i.i.d.\ product are part of this node.
+\lapsrisk{8--15}{low}{90\%}
 \end{definition}
 
 \section{The geometric family and local bounds}
@@ -137,6 +147,7 @@ computation is the exact \textbf{negative-binomial point mass} for the sum of \(
 \]
 (compositions of \(L\) into \(n\) positive parts), together with the moment generating
 functions and the one-dimensional Chernoff upper-tail bounds derived from them.
+\lapsrisk{6--12}{low}{90\%}
 \end{definition}
 
 \begin{lemma}[Local 2-D Gaussian-type bound; Lemma 2.2]\label{S3}
@@ -153,6 +164,7 @@ generating functions plus real-variable exponential tilting (design decision D5)
 \(\mathbb{P}(S_k=v)=(2\pi)^{-2}M(\lambda)^k e^{-\lambda\cdot v}\int_{[-\pi,\pi]^2}
 |\varphi_\lambda(t)|^k\,dt\) with \(\varphi_\lambda,M\) explicit rational functions.
 % TODO-PRECISE: exact Gaussian window / constant in Lemma 2.2(i)(ii) not transcribed here.
+\lapsrisk{20--40}{high --- risk kernel 1}{70\%}
 \end{lemma}
 
 \section{Fourier analysis on \(\mathbb{Z}/3^n\mathbb{Z}\)}
@@ -171,6 +183,7 @@ projection to \(\mathbb{Z}/3^m\mathbb{Z}\):
 \]
 Includes the Remark~1.18 triangle inequality that lets \(\mathrm{Osc}\) be controlled scale by
 scale.
+\lapsrisk{4--8}{low}{85\%}
 \end{definition}
 
 
@@ -189,6 +202,7 @@ studied on the odd numbers:
   0<N \;\Longrightarrow\; \mathrm{Colmin}(N) = \mathrm{Syrmin}(\mathrm{oddPart}\,N).
 \]
 Also the cheap odd-preservation and positivity facts (\(\mathrm{syr}\) maps odds to odds, etc.).
+\lapsrisk{3--6}{low}{95\%}
 \end{definition}
 
 \begin{lemma}[Valuation vector, integer offset, and the iteration identity (1.7)]\label{C2}
@@ -207,6 +221,7 @@ so it holds in \(\mathbb{N}\): for odd \(N\), with \(a=\vec a^{(n)}(N)\),
 = 3\,\mathrm{syr}^{[n]}N + 1\).)  Together with Lemma~2.1: the valuation vector is the
 \emph{unique} tuple with all entries \(\ge 1\) making the affine quotient odd.
 % TODO-PRECISE: exact uniqueness shape (RATIFY-2 in the spec) still open.
+\lapsrisk{5--10}{low}{90\%}
 \end{lemma}
 
 \begin{definition}[Logarithmic density and the reduction Thm 1.6 \(\Rightarrow\) Thm 1.3]\label{C3}
@@ -219,6 +234,7 @@ quantifiers \texttt{AlmostAllPos} and its odd-window form \texttt{AlmostAllOdd}
 (logarithmic density restricted to \(2\mathbb{N}+1\)).  With the harmonic-sum integral tests
 (paper (5.25)(5.26)) and the elementary splitting reducing the even-index statement
 Thm~1.6 to the main theorem Thm~1.3 (node~\ref{C6}) by passing to odd parts.
+\lapsrisk{6--12}{low}{85\%}
 \end{definition}
 
 
@@ -239,6 +255,7 @@ compatibility (paper (1.22)): \texttt{syracZ}\,\(n\) pushes forward to \texttt{s
 under \(\mathbb{Z}/3^n\mathbb{Z}\to\mathbb{Z}/3^k\mathbb{Z}\) for \(k\le n\); and the recursion
 Lemma~1.12 (Euler's theorem plus a geometric-series normalization
 \((1-2^{-2\cdot 3^n})^{-1}\)).
+\lapsrisk{5--10}{low}{85\%}
 \end{definition}
 
 \begin{proposition}[Valuation \(\approx\) geometric; Prop 1.9 and the §4 tail bound]\label{C5}
@@ -255,6 +272,7 @@ modulo \(2^{n'}\), provided \((2+c_0)n\le n'\),
 I.e.\ the Syracuse valuation vector of an equidistributed-mod-\(2^{n'}\) input is
 exponentially close to \(n\) independent geometric variables.  Includes the §4 tail bound
 Lemma~4.1 controlling \(\mathbb{P}(a_{[1,n]}\ge n')\).
+\lapsrisk{10--18}{medium}{80\%}
 \end{proposition}
 
 
@@ -277,6 +295,7 @@ values) which in turn follows from the \textbf{quantitative Theorem 3.1}: there 
 \]
 Thm~3.1 is obtained from the stabilization estimate Prop~1.11 (node~\ref{C9}) by iterating
 over dyadic scales (§3).
+\lapsrisk{8--15}{low}{85\%}
 \end{theorem}
 
 \section{First passage (§5)}
@@ -293,6 +312,7 @@ around \(y\) \emph{never} descends to \(\le x\) is small,
 \[
   \mathbb{P}\bigl(T_x(N_y)=\infty\bigr) \ll x^{-c}.
 \]
+\lapsrisk{5--10}{low}{85\%}
 \end{lemma}
 
 \begin{proposition}[Approximate first-passage formula; Prop 5.2]\label{C8}
@@ -305,6 +325,7 @@ first-passage location, built from the bookkeeping events
 window.  This is where the Prop~1.9 geometric approximation is fed into the concrete window
 statistics.
 % TODO-PRECISE: Prop 5.2 has no canonical Lean name in SKELETON-SPEC yet; bound when named.
+\lapsrisk{15--30}{medium}{75\%}
 \end{proposition}
 
 \begin{proposition}[Stabilization across scales; Prop 1.11]\label{C9}
@@ -324,6 +345,7 @@ together with the non-escape control on each window.  Proved via Lemma~5.3
 (\(c_n(X)\ll 1\)) and (5.18)--(5.21), applying the fine-scale mixing Prop~1.14
 (node~\ref{C10}) at a base scale \(m_0\).
 % TODO-PRECISE: window endpoints (nested \(\alpha\)-powers, RATIFY-3) to be ratified.
+\lapsrisk{10--20}{medium}{75\%}
 \end{proposition}
 
 
@@ -342,6 +364,7 @@ Deduced from the \textbf{character-sum decay} Prop~1.17 (node~\ref{X11}, the hea
 crux ``X-chain'') by Plancherel on \(\mathbb{Z}/3^n\mathbb{Z}\).  The §6 machinery around it:
 Lemma~6.2 (\(F_n\) injective), Cor~6.3 (\(3\)-adic separation of the offsets), the event \(E\)
 (6.2), the stopping time \(k\), and the Plancherel step.
+\lapsrisk{15--30}{medium}{75\%}
 \end{proposition}
 
 
@@ -364,6 +387,7 @@ The character \(\chi\) (paper (7.1)) and the reduction of Prop~1.17 to a bound o
 time; and the conditional \textbf{factorization} (7.4)/(7.5) of the Fourier coefficient into a
 product of per-pair factors \(f\) (with the low-order piece \(g\) split off).
 % TODO-PRECISE: no canonical Lean name for the §7.1 setup in SKELETON-SPEC yet.
+\lapsrisk{6--12}{medium}{80\%}
 \end{definition}
 
 \begin{lemma}[Phase identities and white-point cancellation; Lemma 7.2]\label{X2}
@@ -380,6 +404,7 @@ The black/white dichotomy (7.9) with \(\varepsilon = 10^{-4}\): a point is \emph
 \(|\theta(j,l)|\le\varepsilon\), \emph{white} otherwise.  \textbf{Lemma 7.2} (white-point
 cancellation): at a white point the per-pair factor contracts,
 \(|f| \le |\cos(\pi\theta)| \le \exp(-\varepsilon^3)\).
+\lapsrisk{4--8}{low}{90\%}
 \end{lemma}
 
 \section{The triangle structure of the black set}
@@ -400,6 +425,7 @@ Euclidean-separated by at least \(\tfrac{1}{10}\log(1/\varepsilon)\):
 Proved through the phase identities (7.12)--(7.15), the weakly-black claims (i)--(iii), the
 \(l^*/j^*\) construction, and Claim~(\(*\)) Cases~1--3.
 % TODO-PRECISE: exact conjunction spelling (RATIFY-5) is implementer's choice.
+\lapsrisk{15--30}{high --- risk kernel 2}{70\%}
 \end{lemma}
 
 \section{The holding process and its finitized renewal recursion (D6)}
@@ -422,6 +448,7 @@ well-founded on \(\lfloor n/2\rfloor - j\) (Hold's first coordinate is \(\ge 1\)
 \(\mathbb{E}\,Q(\mathrm{Hold})\ll_A n^{-A}\) equivalent to \textbf{Proposition 7.3}
 (the renewal white-encounter count, in the finite-vector form over \(\mathrm{Pascal}^{\otimes\lfloor n/2\rfloor}\)).
 This node exists to validate the D6 finitization.
+\lapsrisk{8--15}{medium}{80\%}
 \end{proposition}
 
 \begin{lemma}[Holding-law basics; Lemma 7.6]\label{X5}
@@ -431,6 +458,7 @@ This node exists to validate the D6 finitization.
 aperiodicity, and mean vector \((4,16)\).  These are the renewal-theory inputs (drift and
 spread) for the first-passage analysis of the walk.
 % TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
+\lapsrisk{4--8}{low}{85\%}
 \end{lemma}
 
 \begin{lemma}[First-passage location of the holding walk; Lemma 7.7]\label{X6}
@@ -440,6 +468,7 @@ spread) for the first-passage analysis of the walk.
 walk first crosses a prescribed level is close to uniform on the relevant scale, quantitatively.
 Uses the local 2-D bound (node~\ref{S3}) applied to the holding sums.
 % TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
+\lapsrisk{10--20}{high}{70\%}
 \end{lemma}
 
 \section{The three cases of Prop 7.8}
@@ -452,6 +481,7 @@ The truncated functional \(Q_m\) (paper (7.38)) and the skeleton of \textbf{Prop
 when the walk starts at a white point, the \(e^{-\varepsilon^3}\) contraction from Lemma~7.2
 (node~\ref{X2}) already delivers the required decay.
 % TODO-PRECISE: no canonical Lean name for Prop 7.8 in SKELETON-SPEC yet.
+\lapsrisk{4--8}{low}{85\%}
 \end{proposition}
 
 \begin{lemma}[Case 2: shallow inside a triangle]\label{X8}
@@ -463,6 +493,7 @@ the walk leaves the triangle through many white points with high probability.  C
 triangle geometry (node~\ref{X3}), the first-passage location law (node~\ref{X6}), and the
 Case-1 contraction (node~\ref{X7}).
 % TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
+\lapsrisk{12--25}{high --- risk kernel 3a}{65\%}
 \end{lemma}
 
 \begin{lemma}[Many triangles \(\Rightarrow\) many white points; Lemma 7.9]\label{X9}
@@ -472,6 +503,7 @@ Case-1 contraction (node~\ref{X7}).
 a walk crossing many triangles must encounter many white points, so the accumulated
 \(e^{-\varepsilon^3}\) factors give the exponential decay.
 % TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
+\lapsrisk{8--15}{high}{70\%}
 \end{lemma}
 
 \begin{lemma}[Large triangles rarely encountered; Lemma 7.10]\label{X10}
@@ -482,6 +514,7 @@ large triangles are rarely encountered, by a separated-\(\Sigma\) counting argum
 triangle family (node~\ref{X3}) using the first-passage location law (node~\ref{X6}).  This is
 the complementary tail to Case~2.
 % TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
+\lapsrisk{15--30}{high --- risk kernel 3b}{60\%}
 \end{lemma}
 
 \section{Assembly: Prop 1.17}
@@ -501,4 +534,5 @@ Prop~7.3 (node~\ref{X4}) and Prop~7.1, hence the \textbf{crux} \textbf{Propositi
     \;\le\; C\,n^{-A}.
 \]
 This is the single Fourier-analytic input the whole spine reduces to (feeds node~\ref{C10}).
+\lapsrisk{10--20}{high}{70\%}
 \end{proposition}
