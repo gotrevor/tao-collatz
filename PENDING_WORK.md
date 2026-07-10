@@ -1,5 +1,30 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## After lap 11 (2026-07-10, third box session): `hold_weight_expect` PROVED
+
+**Done** (axiom-clean): the (7.43) Case-1 geometric-expectation leaf
+`hold_weight_expect` — `E[max(m-d₁,1)^{-A}] ≤ exp(ε³/2)·m^{-A}` for `m ≥ C_A`.
+Chain: `hold_map_fst` (first marginal of `hold` is `geomQuarter`, by PMF monad laws) →
+`hold_fst_marginal`/`hold_tsum_fst` (ℕ×ℤ-tsum marginalization via `ENNReal.tsum_prod'`)
+in `Sec7/Holding.lean`; `geomQuarter_toReal`/`_tsum_toReal`/`_summable_toReal`/
+`geomQuarter_tail` (exact tail `(3/4)^t`, injective-shift `hasSum`) in
+`Prob/Geometric.lean`; then in `Monotone.lean` the three-region split
+(head `k ≤ K` weight `(m-K)^{-A} ≤ (1+δ/3)m^{-A}` via `c := (1+δ/3)^{1/A}`;
+middle `K < k ≤ m/2` mass `(3/4)^K ≤ (δ/3)2^{-A}` and weight `≤ 2^A m^{-A}`;
+tail `k > m/2` mass `(3/4)^{m/2} ≤ (δ/3)m^{-A}` via
+`summable_norm_pow_mul_geometric_of_norm_lt_one` → tendsto → threshold `T`).
+
+**Next (X7)**: `Q_white_case1` (Case 1 proper) — consume `Q_rec` + `Q_le_Qm` +
+`hold_weight_expect`. Route: one step of `Q_rec` at the white start `(n/2 - m, l)`
+pulls `exp(-ε³)`; each hold-atom `d` lands at `j = n/2 - m + d₁` with
+`n/2 - (m-1) ≤ j` (d₁ ≥ 1), so `Q_le_Qm` (depth `m-1`) bounds the landed value by
+`max(n/2 - j, 1)^{-A}·Q_{m-1}`; note `n/2 - (n/2 - m + d₁) = m - d₁` (ℕ, m ≤ n/2),
+matching `hold_weight_expect`'s weight; needs `Qm_nonneg` to pull the constant
+`Q_{m-1}` out of the tsum. Combine: `exp(-ε³)·exp(ε³/2) = exp(-ε³/2)`.
+Then Case 2 (paper (7.44), black start) and the Prop 7.8 induction (X9).
+Judge follow-up (b), the (7.36)-bridge harness check in `tools/check_blueprint.py`,
+still open.
+
 ## After laps 6–10 (2026-07-10, second box session): **X3 HEAD CLOSED — Lemma 7.4 PROVED**
 
 `black_structure` is now a theorem, `#print axioms` = `[propext, Classical.choice,

@@ -132,14 +132,240 @@ theorem Qm_nonneg (half n ξ : ℕ) (ε A : ℝ) (m : ℕ) : 0 ≤ Qm half n ξ 
 /-- **The Case 1 geometric-expectation leaf** ((7.43) numerics): the holding step's
 first coordinate is `Geom(4)`-distributed, so the expected depth-weight ratio is
 `1 + o(1)`; quantitatively `E[max(m - d₁, 1)^{-A}] ≤ exp(ε³/2)·m^{-A}` once
-`m ≥ C_A`. Route: split at `d₁ ≤ m/2` — there `(m/(m-d₁))^A ≤ exp(2A·d₁/m)` and the
-`Geom(4)` MGF `E[e^{c·d₁}] = (e^c/4)/(1-(3/4)e^c) → 1` as `c = 2A/m → 0`; the tail
-`P(d₁ > m/2) ≤ (3/4)^{m/2}` is super-polynomial vs `m^{-A}`. Open leaf. -/
+`m ≥ C_A`. Proof (2026-07-10): marginalize to `geomQuarter` via `hold_tsum_fst`, then a
+three-region split with `δ := exp(ε³/2) - 1 > 0`: head `k ≤ K` (full mass, weight
+`≤ (m-K)^{-A} ≤ (1+δ/3)m^{-A}` once `m ≥ ⌈Kc/(c-1)⌉` with `c := (1+δ/3)^{1/A}`),
+middle `K < k ≤ m/2` (tail mass `(3/4)^K ≤ (δ/3)2^{-A}` by choice of `K`, weight
+`≤ 2^A m^{-A}`), tail `k > m/2` (weight `≤ 1`, mass `(3/4)^{m/2} ≤ (δ/3)m^{-A}` for
+large `m` since geometric beats polynomial). -/
 theorem hold_weight_expect (A : ℝ) (hA : 0 < A) :
     ∃ Cthr : ℕ, 1 ≤ Cthr ∧ ∀ m : ℕ, Cthr ≤ m →
       ∑' d : ℕ × ℤ, (hold d).toReal * ((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A)
         ≤ Real.exp ((epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A) := by
-  sorry
+  set E := Real.exp ((epsBW : ℝ) ^ 3 / 2) with hEdef
+  have hεpos : (0 : ℝ) < (epsBW : ℝ) ^ 3 / 2 := by
+    have h0 : (0 : ℚ) < epsBW := by unfold epsBW; norm_num
+    have h1 : (0 : ℝ) < (epsBW : ℝ) := by exact_mod_cast h0
+    positivity
+  have hδ : 0 < E - 1 := by
+    have h2 := Real.add_one_le_exp ((epsBW : ℝ) ^ 3 / 2)
+    rw [hEdef]; linarith
+  set δ := E - 1 with hδdef
+  have hE1 : E = 1 + δ := by rw [hδdef]; ring
+  -- middle-region cutoff K: geometric tail beats the δ/3-budget over the 2^A weight
+  obtain ⟨K, hK⟩ := exists_pow_lt_of_lt_one
+    (show (0 : ℝ) < δ / 3 * (2 : ℝ) ^ (-A) by positivity)
+    (show (3 / 4 : ℝ) < 1 by norm_num)
+  -- head-region constant c > 1 with c^A = 1 + δ/3
+  set c := (1 + δ / 3) ^ A⁻¹ with hcdef
+  have hc1 : 1 < c := by
+    rw [hcdef, Real.one_lt_rpow_iff_of_pos (by linarith)]
+    exact Or.inl ⟨by linarith, by positivity⟩
+  have hcA : c ^ A = 1 + δ / 3 := by
+    rw [hcdef, ← Real.rpow_mul (by linarith), inv_mul_cancel₀ hA.ne', Real.rpow_one]
+  set M1 := ⌈(K : ℝ) * c / (c - 1)⌉₊ with hM1def
+  -- tail-region threshold T from geometric × polynomial → 0
+  set kA := ⌈A⌉₊ with hkAdef
+  have htend : Filter.Tendsto (fun t : ℕ => (t : ℝ) ^ kA * (3 / 4 : ℝ) ^ t)
+      Filter.atTop (nhds 0) := by
+    have hs : Summable fun t : ℕ => (t : ℝ) ^ kA * (3 / 4 : ℝ) ^ t := by
+      apply Summable.of_norm
+      have h := summable_norm_pow_mul_geometric_of_norm_lt_one (R := ℝ) kA
+        (r := (3 / 4 : ℝ)) (by rw [Real.norm_eq_abs]; norm_num)
+      simpa using h
+    exact hs.tendsto_atTop_zero
+  obtain ⟨T, hT⟩ := Filter.eventually_atTop.mp
+    (htend.eventually_lt_const (show (0 : ℝ) < δ / 3 * (3 : ℝ) ^ (-A) by positivity))
+  refine ⟨K + M1 + 2 * T + 4, by omega, fun m hm => ?_⟩
+  have hm0 : (0 : ℝ) < (m : ℝ) := by
+    have : 0 < m := by omega
+    exact_mod_cast this
+  -- marginalize the ℕ×ℤ sum onto the first coordinate
+  refine le_trans (le_of_eq (hold_tsum_fst (fun k => ((max (m - k) 1 : ℕ) : ℝ) ^ (-A))
+    (fun k => Real.rpow_nonneg (Nat.cast_nonneg _) _))) ?_
+  show ∑' k : ℕ, (geomQuarter k).toReal * ((max (m - k) 1 : ℕ) : ℝ) ^ (-A)
+    ≤ E * (m : ℝ) ^ (-A)
+  -- notation
+  have hp0 : ∀ k, (0 : ℝ) ≤ (geomQuarter k).toReal := fun _ => ENNReal.toReal_nonneg
+  have hw0 : ∀ k, (0 : ℝ) ≤ ((max (m - k) 1 : ℕ) : ℝ) ^ (-A) :=
+    fun _ => Real.rpow_nonneg (Nat.cast_nonneg _) _
+  have hw1 : ∀ k, ((max (m - k) 1 : ℕ) : ℝ) ^ (-A) ≤ 1 := fun k =>
+    Real.rpow_le_one_of_one_le_of_nonpos
+      (by exact_mod_cast Nat.le_max_right (m - k) 1) (by linarith)
+  have hterm_le : ∀ k, (geomQuarter k).toReal * ((max (m - k) 1 : ℕ) : ℝ) ^ (-A)
+      ≤ (geomQuarter k).toReal := fun k => by
+    calc (geomQuarter k).toReal * ((max (m - k) 1 : ℕ) : ℝ) ^ (-A)
+        ≤ (geomQuarter k).toReal * 1 := mul_le_mul_of_nonneg_left (hw1 k) (hp0 k)
+      _ = (geomQuarter k).toReal := mul_one _
+  have hterm0 : ∀ k, (0 : ℝ) ≤ (geomQuarter k).toReal * ((max (m - k) 1 : ℕ) : ℝ) ^ (-A) :=
+    fun k => mul_nonneg (hp0 k) (hw0 k)
+  have hpsum := geomQuarter_summable_toReal
+  -- the three regions
+  set g1 : ℕ → ℝ := fun k => if k ≤ K then
+    (geomQuarter k).toReal * ((max (m - k) 1 : ℕ) : ℝ) ^ (-A) else 0 with hg1def
+  set g2 : ℕ → ℝ := fun k => if K < k ∧ k ≤ m / 2 then
+    (geomQuarter k).toReal * ((max (m - k) 1 : ℕ) : ℝ) ^ (-A) else 0 with hg2def
+  set g3 : ℕ → ℝ := fun k => if K < k ∧ m / 2 < k then
+    (geomQuarter k).toReal * ((max (m - k) 1 : ℕ) : ℝ) ^ (-A) else 0 with hg3def
+  have hsplit : ∀ k, (geomQuarter k).toReal * ((max (m - k) 1 : ℕ) : ℝ) ^ (-A)
+      = g1 k + g2 k + g3 k := by
+    intro k
+    simp only [hg1def, hg2def, hg3def]
+    rcases le_or_gt k K with h1 | h1
+    · rw [if_pos h1, if_neg (by omega), if_neg (by omega)]; ring
+    · rcases le_or_gt k (m / 2) with h2 | h2
+      · rw [if_neg (by omega), if_pos ⟨h1, h2⟩, if_neg (by omega)]; ring
+      · rw [if_neg (by omega), if_neg (by omega), if_pos ⟨h1, h2⟩]; ring
+  have hg1sum : Summable g1 := Summable.of_nonneg_of_le
+    (fun k => by simp only [hg1def]; split_ifs; exacts [hterm0 k, le_rfl])
+    (fun k => by simp only [hg1def]; split_ifs; exacts [hterm_le k, hp0 k]) hpsum
+  have hg2sum : Summable g2 := Summable.of_nonneg_of_le
+    (fun k => by simp only [hg2def]; split_ifs; exacts [hterm0 k, le_rfl])
+    (fun k => by simp only [hg2def]; split_ifs; exacts [hterm_le k, hp0 k]) hpsum
+  have hg3sum : Summable g3 := Summable.of_nonneg_of_le
+    (fun k => by simp only [hg3def]; split_ifs; exacts [hterm0 k, le_rfl])
+    (fun k => by simp only [hg3def]; split_ifs; exacts [hterm_le k, hp0 k]) hpsum
+  -- region 1 bound: full mass, weight ≤ (m-K)^{-A} ≤ (1+δ/3) m^{-A}
+  have hmKpos : (0 : ℝ) < ((m - K : ℕ) : ℝ) := by
+    have h : 1 ≤ m - K := by omega
+    exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one h
+  have hW1 : ((m - K : ℕ) : ℝ) ^ (-A) ≤ (1 + δ / 3) * (m : ℝ) ^ (-A) := by
+    have hcast : ((m - K : ℕ) : ℝ) = (m : ℝ) - K := by
+      rw [Nat.cast_sub (by omega)]
+    have hcpos : (0 : ℝ) < c - 1 := by linarith
+    have hmge : (K : ℝ) * c / (c - 1) ≤ (m : ℝ) := by
+      calc (K : ℝ) * c / (c - 1) ≤ (M1 : ℝ) := Nat.le_ceil _
+        _ ≤ (m : ℝ) := by exact_mod_cast (by omega : M1 ≤ m)
+    have hKc : (K : ℝ) * c ≤ (m : ℝ) * (c - 1) := by
+      rw [div_le_iff₀ hcpos] at hmge; linarith
+    have hmc : (m : ℝ) / c ≤ (m : ℝ) - K := by
+      rw [div_le_iff₀ (by linarith : (0 : ℝ) < c)]
+      nlinarith
+    have hstep : ((m : ℝ) - K) ^ (-A) ≤ ((m : ℝ) / c) ^ (-A) :=
+      Real.rpow_le_rpow_of_nonpos (by positivity) hmc (by linarith)
+    have hdiv : ((m : ℝ) / c) ^ (-A) = (m : ℝ) ^ (-A) * (1 + δ / 3) := by
+      rw [Real.div_rpow hm0.le (by linarith : (0 : ℝ) ≤ c), Real.rpow_neg
+        (by linarith : (0 : ℝ) ≤ c), div_inv_eq_mul, hcA]
+    rw [hcast]
+    calc ((m : ℝ) - K) ^ (-A) ≤ ((m : ℝ) / c) ^ (-A) := hstep
+      _ = (1 + δ / 3) * (m : ℝ) ^ (-A) := by rw [hdiv]; ring
+  have hreg1w : ∀ k, k ≤ K → ((max (m - k) 1 : ℕ) : ℝ) ^ (-A) ≤ ((m - K : ℕ) : ℝ) ^ (-A) :=
+    fun k hk => Real.rpow_le_rpow_of_nonpos hmKpos
+      (by exact_mod_cast (by omega : m - K ≤ max (m - k) 1)) (by linarith)
+  have hb1 : ∑' k, g1 k ≤ (1 + δ / 3) * (m : ℝ) ^ (-A) := by
+    have hle : ∀ k, g1 k ≤ (geomQuarter k).toReal * ((m - K : ℕ) : ℝ) ^ (-A) := fun k => by
+      simp only [hg1def]; split_ifs with h
+      · exact mul_le_mul_of_nonneg_left (hreg1w k h) (hp0 k)
+      · exact mul_nonneg (hp0 k) (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+    calc ∑' k, g1 k
+        ≤ ∑' k, (geomQuarter k).toReal * ((m - K : ℕ) : ℝ) ^ (-A) :=
+          hg1sum.tsum_le_tsum hle (hpsum.mul_right _)
+      _ = ((m - K : ℕ) : ℝ) ^ (-A) := by
+          rw [tsum_mul_right, geomQuarter_tsum_toReal, one_mul]
+      _ ≤ (1 + δ / 3) * (m : ℝ) ^ (-A) := hW1
+  -- region 2 bound: tail mass (3/4)^K, weight ≤ 2^A m^{-A}
+  have hreg2w : ∀ k, k ≤ m / 2 →
+      ((max (m - k) 1 : ℕ) : ℝ) ^ (-A) ≤ (2 : ℝ) ^ A * (m : ℝ) ^ (-A) := by
+    intro k hk
+    have hb : (m : ℝ) / 2 ≤ ((max (m - k) 1 : ℕ) : ℝ) := by
+      have h2 : m ≤ 2 * max (m - k) 1 := by omega
+      have h2' : (m : ℝ) ≤ 2 * ((max (m - k) 1 : ℕ) : ℝ) := by exact_mod_cast h2
+      linarith
+    have hstep : ((max (m - k) 1 : ℕ) : ℝ) ^ (-A) ≤ ((m : ℝ) / 2) ^ (-A) :=
+      Real.rpow_le_rpow_of_nonpos (by positivity) hb (by linarith)
+    have hdiv : ((m : ℝ) / 2) ^ (-A) = (2 : ℝ) ^ A * (m : ℝ) ^ (-A) := by
+      rw [Real.div_rpow hm0.le (by norm_num : (0 : ℝ) ≤ 2), Real.rpow_neg
+        (by norm_num : (0 : ℝ) ≤ 2), div_inv_eq_mul]
+      ring
+    calc ((max (m - k) 1 : ℕ) : ℝ) ^ (-A) ≤ ((m : ℝ) / 2) ^ (-A) := hstep
+      _ = (2 : ℝ) ^ A * (m : ℝ) ^ (-A) := hdiv
+  have htailsum : Summable (fun k => if K < k then (geomQuarter k).toReal else 0) :=
+    Summable.of_nonneg_of_le
+      (fun k => by split_ifs; exacts [hp0 k, le_rfl])
+      (fun k => by split_ifs; exacts [le_rfl, hp0 k]) hpsum
+  have hb2 : ∑' k, g2 k ≤ δ / 3 * (m : ℝ) ^ (-A) := by
+    have hle : ∀ k, g2 k
+        ≤ (if K < k then (geomQuarter k).toReal else 0)
+          * ((2 : ℝ) ^ A * (m : ℝ) ^ (-A)) := by
+      intro k
+      simp only [hg2def]
+      split_ifs with h1 h2
+      · exact mul_le_mul_of_nonneg_left (hreg2w k h1.2) (hp0 k)
+      · exact absurd h1.1 h2
+      · exact mul_nonneg (hp0 k) (by positivity)
+      · rw [zero_mul]
+    calc ∑' k, g2 k
+        ≤ ∑' k, (if K < k then (geomQuarter k).toReal else 0)
+            * ((2 : ℝ) ^ A * (m : ℝ) ^ (-A)) :=
+          hg2sum.tsum_le_tsum hle (htailsum.mul_right _)
+      _ = (3 / 4 : ℝ) ^ K * ((2 : ℝ) ^ A * (m : ℝ) ^ (-A)) := by
+          rw [tsum_mul_right, geomQuarter_tail]
+      _ ≤ δ / 3 * (2 : ℝ) ^ (-A) * ((2 : ℝ) ^ A * (m : ℝ) ^ (-A)) :=
+          mul_le_mul_of_nonneg_right hK.le (by positivity)
+      _ = δ / 3 * ((2 : ℝ) ^ (-A) * (2 : ℝ) ^ A) * (m : ℝ) ^ (-A) := by ring
+      _ = δ / 3 * (m : ℝ) ^ (-A) := by
+          rw [← Real.rpow_add (by norm_num : (0 : ℝ) < 2), neg_add_cancel,
+            Real.rpow_zero, mul_one]
+  -- region 3 bound: weight ≤ 1, geometric tail mass beats the polynomial
+  have htail3 : (3 / 4 : ℝ) ^ (m / 2) ≤ δ / 3 * (m : ℝ) ^ (-A) := by
+    have ht1 : 1 ≤ m / 2 := by omega
+    have htT : T ≤ m / 2 := by omega
+    have htpos : (1 : ℝ) ≤ ((m / 2 : ℕ) : ℝ) := by exact_mod_cast ht1
+    have hhead := (hT (m / 2) htT).le
+    have hm3t : (m : ℝ) ≤ 3 * ((m / 2 : ℕ) : ℝ) := by
+      have h : m ≤ 3 * (m / 2) := by omega
+      exact_mod_cast h
+    -- (3/4)^t ≤ (δ/3 · 3^{-A}) · t^{-kA}
+    have hcancel : ((m / 2 : ℕ) : ℝ) ^ (kA : ℝ) * ((m / 2 : ℕ) : ℝ) ^ (-(kA : ℝ)) = 1 := by
+      rw [← Real.rpow_add (by linarith), add_neg_cancel, Real.rpow_zero]
+    have h1 : (3 / 4 : ℝ) ^ (m / 2)
+        = ((m / 2 : ℕ) : ℝ) ^ kA * (3 / 4 : ℝ) ^ (m / 2) * ((m / 2 : ℕ) : ℝ) ^ (-(kA : ℝ)) := by
+      rw [mul_comm (((m / 2 : ℕ) : ℝ) ^ kA), mul_assoc, ← Real.rpow_natCast _ kA, hcancel,
+        mul_one]
+    have h2 : (3 / 4 : ℝ) ^ (m / 2)
+        ≤ δ / 3 * (3 : ℝ) ^ (-A) * ((m / 2 : ℕ) : ℝ) ^ (-(kA : ℝ)) := by
+      rw [h1]
+      exact mul_le_mul_of_nonneg_right hhead (Real.rpow_nonneg (by linarith) _)
+    have h3 : ((m / 2 : ℕ) : ℝ) ^ (-(kA : ℝ)) ≤ ((m / 2 : ℕ) : ℝ) ^ (-A) := by
+      apply Real.rpow_le_rpow_of_exponent_le htpos
+      have := Nat.le_ceil A
+      rw [neg_le_neg_iff]
+      exact_mod_cast this
+    have h4 : (3 : ℝ) ^ (-A) * ((m / 2 : ℕ) : ℝ) ^ (-A) ≤ (m : ℝ) ^ (-A) := by
+      rw [← Real.mul_rpow (by norm_num) (by linarith)]
+      exact Real.rpow_le_rpow_of_nonpos hm0 hm3t (by linarith)
+    calc (3 / 4 : ℝ) ^ (m / 2)
+        ≤ δ / 3 * (3 : ℝ) ^ (-A) * ((m / 2 : ℕ) : ℝ) ^ (-(kA : ℝ)) := h2
+      _ ≤ δ / 3 * (3 : ℝ) ^ (-A) * ((m / 2 : ℕ) : ℝ) ^ (-A) :=
+          mul_le_mul_of_nonneg_left h3 (by positivity)
+      _ = δ / 3 * ((3 : ℝ) ^ (-A) * ((m / 2 : ℕ) : ℝ) ^ (-A)) := by ring
+      _ ≤ δ / 3 * (m : ℝ) ^ (-A) := mul_le_mul_of_nonneg_left h4 (by positivity)
+  have htail2sum : Summable (fun k => if m / 2 < k then (geomQuarter k).toReal else 0) :=
+    Summable.of_nonneg_of_le
+      (fun k => by split_ifs; exacts [hp0 k, le_rfl])
+      (fun k => by split_ifs; exacts [le_rfl, hp0 k]) hpsum
+  have hb3 : ∑' k, g3 k ≤ δ / 3 * (m : ℝ) ^ (-A) := by
+    have hle : ∀ k, g3 k ≤ (if m / 2 < k then (geomQuarter k).toReal else 0) := by
+      intro k
+      simp only [hg3def]
+      split_ifs with h1 h2
+      · exact hterm_le k
+      · exact absurd h1.2 h2
+      · exact hp0 k
+      · exact le_rfl
+    calc ∑' k, g3 k
+        ≤ ∑' k, (if m / 2 < k then (geomQuarter k).toReal else 0) :=
+          hg3sum.tsum_le_tsum hle htail2sum
+      _ = (3 / 4 : ℝ) ^ (m / 2) := geomQuarter_tail (m / 2)
+      _ ≤ δ / 3 * (m : ℝ) ^ (-A) := htail3
+  -- assemble
+  calc ∑' k : ℕ, (geomQuarter k).toReal * ((max (m - k) 1 : ℕ) : ℝ) ^ (-A)
+      = ∑' k, g1 k + ∑' k, g2 k + ∑' k, g3 k := by
+        rw [tsum_congr hsplit, (hg1sum.add hg2sum).tsum_add hg3sum, hg1sum.tsum_add hg2sum]
+    _ ≤ (1 + δ / 3) * (m : ℝ) ^ (-A) + δ / 3 * (m : ℝ) ^ (-A) + δ / 3 * (m : ℝ) ^ (-A) :=
+        add_le_add (add_le_add hb1 hb2) hb3
+    _ = (1 + δ) * (m : ℝ) ^ (-A) := by ring
+    _ = E * (m : ℝ) ^ (-A) := by rw [← hE1]
 
 /-- **Case 1 proper** of Proposition 7.8 (paper (7.41)–(7.43), stated per the judge
 item 8 spec, 2026-07-09): a white start at depth `m` from the far edge contracts by

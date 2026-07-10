@@ -54,6 +54,51 @@ theorem hold_zero_of_fst_zero {d : ℕ × ℤ} (h0 : d.1 = 0) : hold d = 0 := by
   intro hd
   exact absurd (hold_support_fst_pos d hd) (by omega)
 
+/-- The first marginal of `hold` is `Geom(4)` (the `k`-draw is passed through). -/
+theorem hold_map_fst : hold.map Prod.fst = geomQuarter := by
+  rw [hold, PMF.map_bind]
+  have h : ∀ k : ℕ,
+      (((pascalNe3.iid (k - 1)).map fun v => (k, (3 + ∑ i, v i : ℤ))).map Prod.fst)
+        = PMF.pure k := by
+    intro k
+    rw [PMF.map_comp]
+    exact PMF.map_const _ _
+  simp only [h]
+  exact PMF.bind_pure _
+
+/-- Slicing `hold` at a fixed first coordinate recovers the `geomQuarter` mass. -/
+theorem hold_fst_marginal (k : ℕ) : ∑' l : ℤ, hold (k, l) = geomQuarter k := by
+  have h1 : hold.map Prod.fst k = ∑' l : ℤ, hold (k, l) := by
+    rw [PMF.map_apply, ENNReal.tsum_prod']
+    rw [tsum_eq_single k (fun k' hk' => by simp [Ne.symm hk'])]
+    exact tsum_congr fun l => by simp
+  rw [← h1, hold_map_fst]
+
+/-- Expectations of first-coordinate functions under `hold` reduce to `geomQuarter`. -/
+theorem hold_tsum_fst (f : ℕ → ℝ) (hf : ∀ k, 0 ≤ f k) :
+    ∑' d : ℕ × ℤ, (hold d).toReal * f d.1 = ∑' k : ℕ, (geomQuarter k).toReal * f k := by
+  have hEN : ∑' d : ℕ × ℤ, hold d * ENNReal.ofReal (f d.1)
+      = ∑' k : ℕ, geomQuarter k * ENNReal.ofReal (f k) := by
+    rw [ENNReal.tsum_prod']
+    refine tsum_congr fun k => ?_
+    have : ∀ l : ℤ, hold (k, l) * ENNReal.ofReal (f (k, l).1)
+        = hold (k, l) * ENNReal.ofReal (f k) := fun l => rfl
+    rw [tsum_congr this, ENNReal.tsum_mul_right, hold_fst_marginal]
+  calc ∑' d : ℕ × ℤ, (hold d).toReal * f d.1
+      = ∑' d : ℕ × ℤ, (hold d * ENNReal.ofReal (f d.1)).toReal :=
+        tsum_congr fun d => by
+          rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hf _)]
+    _ = (∑' d : ℕ × ℤ, hold d * ENNReal.ofReal (f d.1)).toReal :=
+        (ENNReal.tsum_toReal_eq fun d =>
+          ENNReal.mul_ne_top (hold.apply_ne_top d) ENNReal.ofReal_ne_top).symm
+    _ = (∑' k : ℕ, geomQuarter k * ENNReal.ofReal (f k)).toReal := by rw [hEN]
+    _ = ∑' k : ℕ, (geomQuarter k * ENNReal.ofReal (f k)).toReal :=
+        ENNReal.tsum_toReal_eq fun k =>
+          ENNReal.mul_ne_top (geomQuarter.apply_ne_top k) ENNReal.ofReal_ne_top
+    _ = ∑' k : ℕ, (geomQuarter k).toReal * f k :=
+        tsum_congr fun k => by
+          rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hf _)]
+
 /-- `∑' d, (hold d).toReal = 1` (holding is a genuine probability distribution). -/
 theorem hold_tsum_toReal : ∑' d : ℕ × ℤ, (hold d).toReal = 1 := by
   rw [← ENNReal.tsum_toReal_eq (fun d => hold.apply_ne_top d), hold.tsum_coe,

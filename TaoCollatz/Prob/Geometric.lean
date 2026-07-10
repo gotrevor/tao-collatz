@@ -55,6 +55,57 @@ noncomputable def geomQuarter : PMF ℕ :=
       rw [hden, inv_inv, ENNReal.inv_mul_cancel (by norm_num) (by finiteness)]
     rw [← h]; exact ENNReal.summable.hasSum⟩
 
+/-- Pointwise real mass of `geomQuarter`: `4⁻¹·(3/4)^(a-1)` for `a ≥ 1`. -/
+theorem geomQuarter_toReal (k : ℕ) :
+    (geomQuarter k).toReal = if k = 0 then 0 else 4⁻¹ * (3 / 4 : ℝ) ^ (k - 1) := by
+  have h : geomQuarter k
+      = if k = 0 then (0 : ℝ≥0∞) else 4⁻¹ * (3 * 4⁻¹) ^ (k - 1) := rfl
+  rw [h]
+  split_ifs with h0
+  · simp
+  · rw [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_mul,
+      ENNReal.toReal_inv]
+    norm_num
+
+/-- `geomQuarter` real masses sum to `1`. -/
+theorem geomQuarter_tsum_toReal : ∑' k : ℕ, (geomQuarter k).toReal = 1 := by
+  rw [← ENNReal.tsum_toReal_eq (fun k => geomQuarter.apply_ne_top k),
+    geomQuarter.tsum_coe, ENNReal.toReal_one]
+
+/-- `fun k => (geomQuarter k).toReal` is summable. -/
+theorem geomQuarter_summable_toReal : Summable fun k : ℕ => (geomQuarter k).toReal :=
+  ENNReal.summable_toReal geomQuarter.tsum_coe_ne_top
+
+/-- Exact geometric tail: the `geomQuarter` mass beyond `t` is `(3/4)^t`. -/
+theorem geomQuarter_tail (t : ℕ) :
+    ∑' k : ℕ, (if t < k then (geomQuarter k).toReal else 0) = (3 / 4 : ℝ) ^ t := by
+  have hinj : Function.Injective (fun i : ℕ => t + 1 + i) := add_right_injective (t + 1)
+  have hzero : ∀ k ∉ Set.range (fun i : ℕ => t + 1 + i),
+      (if t < k then (geomQuarter k).toReal else 0) = 0 := by
+    intro k hk
+    have hlt : ¬ t < k := fun h => hk ⟨k - (t + 1), by show t + 1 + (k - (t + 1)) = k; omega⟩
+    rw [if_neg hlt]
+  have heq : ((fun k => if t < k then (geomQuarter k).toReal else 0)
+        ∘ (fun i : ℕ => t + 1 + i))
+      = fun i : ℕ => (4⁻¹ * (3 / 4 : ℝ) ^ t) * (3 / 4 : ℝ) ^ i := by
+    funext i
+    simp only [Function.comp]
+    rw [if_pos (by omega : t < t + 1 + i), geomQuarter_toReal,
+      if_neg (by omega : ¬ t + 1 + i = 0),
+      show t + 1 + i - 1 = t + i from by omega, pow_add]
+    ring
+  have hgeo : HasSum (fun i : ℕ => (3 / 4 : ℝ) ^ i) 4 := by
+    have h := hasSum_geometric_of_lt_one (r := (3 / 4 : ℝ)) (by norm_num) (by norm_num)
+    norm_num at h
+    exact h
+  have hcomp : HasSum ((fun k => if t < k then (geomQuarter k).toReal else 0)
+      ∘ (fun i : ℕ => t + 1 + i)) ((3 / 4 : ℝ) ^ t) := by
+    rw [heq]
+    have h := hgeo.mul_left (4⁻¹ * (3 / 4 : ℝ) ^ t)
+    have hval : 4⁻¹ * (3 / 4 : ℝ) ^ t * 4 = (3 / 4 : ℝ) ^ t := by ring
+    rwa [hval] at h
+  exact ((hinj.hasSum_iff hzero).mp hcomp).tsum_eq
+
 /-- Real-valued normalization for `pascal`: `∑_{b≥2} (b-1)·2⁻ᵇ = 1` over ℝ, from the
 `∑ n·rⁿ = r/(1-r)²` closed form. -/
 theorem pascalR_hasSum :
