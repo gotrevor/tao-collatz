@@ -114,6 +114,15 @@ theorem expect_iid_succ (p : PMF α) (n : ℕ) (h : (Fin (n + 1) → α) → ℝ
   rw [ENNReal.toReal_mul, toReal_tsum_mul_ofReal (p.iid n) _ (fun w => h0 _)]
   rfl
 
+/-- Pushforward can only merge mass: `p a ≤ (p.map f) (f a)`. With `f = mod-N
+reduction` this is the free truncation step of the finite circle method. -/
+theorem apply_le_map_apply {β : Type*} (p : PMF α) (f : α → β) (a : α) :
+    p a ≤ (p.map f) (f a) := by
+  classical
+  rw [PMF.map_apply]
+  calc p a = if f a = f a then p a else 0 := by rw [if_pos rfl]
+    _ ≤ ∑' a', if f a = f a' then p a' else 0 := ENNReal.le_tsum a
+
 /-- Every coordinate of a vector in the support of `p.iid n` lies in `p.support`. -/
 theorem iid_support_coord (p : PMF α) :
     ∀ (n : ℕ) (v : Fin n → α), v ∈ (p.iid n).support → ∀ i, v i ∈ p.support := by

@@ -1,5 +1,30 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 24 (2026-07-10, fifth box session): circle-method probe — iidSum generic + mod-N entry PROVED
+
+`iidSum` GENERALIZED to any `AddCommMonoid` (same proofs, omega→add_assoc);
+`iidSum_map` (additive pushforward commutes with iid sums), `PMF.apply_le_map_apply`
+(pushforward merges mass — the free-truncation observation: upper bounds via mod-N
+reduction need NO tail argument), `holdSum_eq_iidSum` (Prod.fst_sum/snd_sum bridge),
+`modPair`, and **`holdSum_le_modPair`** — circle-method step 1 for `hold_local_bound`:
+`P(Hold_[1,n] = v) ≤ P(iid walk on ZMod N × ZMod N = v mod N)` for EVERY `N`. All
+axiom-clean.
+
+**Remaining S3 decomposition for `hold_local_bound`** (route now concrete):
+(C2) finite Fourier inversion bound on `ZMod N × ZMod N`: `(r x).toReal ≤ N⁻² ∑_ξ
+‖charFn r ξ‖` with `charFn r ξ := ∑_y (r y).toReal • eC((ξ₁ y₁ + ξ₂ y₂)/N)` (finite
+sums; orthogonality of roots of unity — check mathlib `ZMod.dft`/`AddChar` inversion
+or prove directly from geometric sums of `eC`);
+(C3) `charFn (iidSum r n) ξ = (charFn r ξ)^n` (convolution multiplicativity via
+`iidSum_succ` + cexpect product splitting);
+(D) character decay `‖charFn (hold.map (modPair N)) ξ‖ ≤ exp(-c ‖ξ/N‖²)` for ξ ≠ 0
+(the analytic crux; from hold's explicit mass: `hold (1, 3) = 1/4`, `hold (2, b)`
+atoms give nondegeneracy in both directions — two-atom |φ|² identity);
+(E) Gaussian summation `N⁻² ∑_ξ exp(-cn‖ξ/N‖²) ≤ C/n` with `N ≈ ⌈√n⌉`;
+(F) exponential tilting wrapper for the off-center/exp regime + Hold MGF finiteness
+on a strip (= Lemma 7.6 engine, (7.30)).
+Choose N per (j,l)? No — N only enters (E); pick `N = ⌈√n⌉ + 1` uniformly.
+
 ## Lap 23 (2026-07-10, fifth box session): d=1 warm-up PROVED — negBinomial_apply + pascal_eq_map_iid
 
 **Done (axiom-clean)**: `negBinomial_apply` — exact negative-binomial point mass

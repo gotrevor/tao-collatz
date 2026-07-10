@@ -252,6 +252,37 @@ theorem hold_tail_bound :
         ≤ C * Gweight (1 + n) (c * lam) := by
   sorry
 
+/-- `holdSum` is the generic iid sum of `hold` in the product monoid `ℕ × ℤ`. -/
+theorem holdSum_eq_iidSum (n : ℕ) : holdSum n = iidSum hold n := by
+  rw [holdSum, iidSum]
+  have hf : (fun v : Fin n → ℕ × ℤ => ((∑ i, (v i).1, ∑ i, (v i).2) : ℕ × ℤ))
+      = fun v : Fin n → ℕ × ℤ => ∑ i, v i := by
+    funext v
+    refine Prod.ext ?_ ?_
+    · rw [Prod.fst_sum]
+    · rw [Prod.snd_sum]
+  rw [hf]
+
+/-- The mod-`N` reduction of the renewal lattice `ℕ × ℤ`. -/
+def modPair (N : ℕ) (d : ℕ × ℤ) : ZMod N × ZMod N := ((d.1 : ZMod N), (d.2 : ZMod N))
+
+/-- **Circle-method entry for `hold_local_bound`** (D5, step 1 of the finite circle
+method): the lattice point mass of the `n`-fold `Hold` walk is dominated — for EVERY
+modulus `N` — by the corresponding point mass of the iid walk on the finite group
+`ZMod N × ZMod N`. Upper bounds need no tail truncation: reduction only merges mass.
+What remains for `hold_local_bound`'s Gaussian regime (next steps, node S3):
+finite Fourier inversion `(r x).toReal ≤ N⁻² ∑_ξ ‖r̂ ξ‖^…` with `r̂` multiplicative
+in iid sums, character decay for (tilted) `hold`, and the exponential tilting wrapper
+for the off-center regime. -/
+theorem holdSum_le_modPair (n N : ℕ) (v : ℕ × ℤ) :
+    (holdSum n) v ≤ (iidSum (hold.map (modPair N)) n) (modPair N v) := by
+  rw [holdSum_eq_iidSum]
+  calc (iidSum hold n) v ≤ ((iidSum hold n).map (modPair N)) (modPair N v) :=
+        PMF.apply_le_map_apply _ _ _
+    _ = (iidSum (hold.map (modPair N)) n) (modPair N v) := by
+        rw [iidSum_map hold (modPair N) (by simp [modPair])
+          (fun a b => by simp [modPair, Prod.ext_iff])]
+
 /-- **Lemma 7.7 (Distribution of first passage location), D6 statement** (paper p.43,
 (7.30)–(7.33)): the first-passage endpoint mass at `(j, l)` is Gaussian-concentrated —
 `j` near `s/4` at scale `(1+s)^{1/2}`, `l` within `O(1)` of `s`. For `l ≤ s` the left

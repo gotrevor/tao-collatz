@@ -55,24 +55,28 @@ theorem Gweight_le_two (t x : ℝ) (ht : 0 ≤ t) : Gweight t x ≤ 2 := by
   calc Gweight t x ≤ 1 + 1 := add_le_add h1 h2
     _ = 2 := by norm_num
 
-/-- The law of the sum `v₁ + ⋯ + vₙ` of `n` iid copies of `p` (paper `v_{[1,n]}`). -/
-noncomputable def iidSum (p : PMF ℕ) (n : ℕ) : PMF ℕ :=
+variable {M : Type*} [AddCommMonoid M]
+
+/-- The law of the sum `v₁ + ⋯ + vₙ` of `n` iid copies of `p` (paper `v_{[1,n]}`),
+for `p` on any additive commutative monoid (ℕ for the d=1 instances, `ℕ × ℤ` for
+the `Hold` walk). -/
+noncomputable def iidSum (p : PMF M) (n : ℕ) : PMF M :=
   (p.iid n).map fun v => ∑ i, v i
 
-theorem iidSum_zero (p : PMF ℕ) : iidSum p 0 = PMF.pure 0 := by
+theorem iidSum_zero (p : PMF M) : iidSum p 0 = PMF.pure 0 := by
   rw [iidSum, show p.iid 0 = PMF.pure (fun i : Fin 0 => i.elim0) from rfl,
     PMF.pure_map]
   simp
 
 /-- Peel the head draw off an iid sum: `S_{n+1} = a + S_n` in law. -/
-theorem iidSum_succ (p : PMF ℕ) (n : ℕ) :
+theorem iidSum_succ (p : PMF M) (n : ℕ) :
     iidSum p (n + 1) = p.bind fun a => (iidSum p n).map (a + ·) := by
   rw [iidSum, show p.iid (n + 1) = p.bind fun a => (p.iid n).map (Fin.cons a) from rfl,
     PMF.map_bind]
   refine congrArg _ (funext fun a => ?_)
   rw [PMF.map_comp, iidSum, PMF.map_comp]
-  have hf : ((fun v : Fin (n + 1) → ℕ => ∑ i, v i) ∘ Fin.cons a)
-      = ((a + ·) ∘ fun w : Fin n → ℕ => ∑ i, w i) := by
+  have hf : ((fun v : Fin (n + 1) → M => ∑ i, v i) ∘ Fin.cons a)
+      = ((a + ·) ∘ fun w : Fin n → M => ∑ i, w i) := by
     funext w
     simp only [Function.comp_apply]
     rw [Fin.sum_cons]
@@ -80,12 +84,12 @@ theorem iidSum_succ (p : PMF ℕ) (n : ℕ) :
 
 /-- Renewal additivity of iid sums: `S_{k+n} = S_k + S'_n` with the two blocks
 independent. -/
-theorem iidSum_add (p : PMF ℕ) (k n : ℕ) :
+theorem iidSum_add (p : PMF M) (k n : ℕ) :
     iidSum p (k + n) = (iidSum p k).bind fun s => (iidSum p n).map (s + ·) := by
   induction k with
   | zero =>
     rw [Nat.zero_add, iidSum_zero, PMF.pure_bind]
-    have h : (fun x : ℕ => (0 : ℕ) + x) = id := funext fun x => Nat.zero_add x
+    have h : (fun x : M => (0 : M) + x) = id := funext fun x => zero_add x
     rw [h, PMF.map_id]
   | succ k IH =>
     rw [show k + 1 + n = (k + n) + 1 from by omega, iidSum_succ, iidSum_succ,
@@ -98,11 +102,11 @@ theorem iidSum_add (p : PMF ℕ) (k n : ℕ) :
     have hf : ((a + ·) ∘ (s + ·)) = ((a + s) + ·) := by
       funext x
       simp only [Function.comp_apply]
-      omega
+      rw [add_assoc]
     rw [hf]
 
 /-- Iterated iid sums flatten: `n` iid copies of `S_k` sum to `S_{nk}`. -/
-theorem iidSum_iidSum (p : PMF ℕ) (k n : ℕ) :
+theorem iidSum_iidSum (p : PMF M) (k n : ℕ) :
     iidSum (iidSum p k) n = iidSum p (n * k) := by
   induction n with
   | zero => rw [Nat.zero_mul, iidSum_zero, iidSum_zero]
@@ -110,6 +114,24 @@ theorem iidSum_iidSum (p : PMF ℕ) (k n : ℕ) :
     rw [iidSum_succ, show (n + 1) * k = k + n * k from by ring, iidSum_add]
     refine congrArg _ (funext fun s => ?_)
     rw [IH]
+
+/-- Additive pushforward commutes with iid sums (circle-method entry: apply with
+`φ = mod-N reduction` to turn a lattice local mass into a finite-group mass). -/
+theorem iidSum_map (p : PMF M) {M' : Type*} [AddCommMonoid M'] (φ : M → M')
+    (hφ0 : φ 0 = 0) (hφ : ∀ a b, φ (a + b) = φ a + φ b) (n : ℕ) :
+    (iidSum p n).map φ = iidSum (p.map φ) n := by
+  induction n with
+  | zero => rw [iidSum_zero, iidSum_zero, PMF.pure_map, hφ0]
+  | succ n IH =>
+    rw [iidSum_succ, iidSum_succ, PMF.map_bind, PMF.bind_map]
+    refine congrArg _ (funext fun a => ?_)
+    simp only [Function.comp_apply]
+    rw [PMF.map_comp, ← IH, PMF.map_comp]
+    have hf : (φ ∘ (a + ·)) = ((φ a + ·) ∘ φ) := by
+      funext x
+      simp only [Function.comp_apply]
+      rw [hφ]
+    rw [hf]
 
 /-- `pascal` is the two-fold iid `Geom(2)` sum. -/
 theorem pascal_eq_iidSum : pascal = iidSum geomHalf 2 := by
