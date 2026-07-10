@@ -644,6 +644,127 @@ theorem jstar_maximal (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n 
 
 end CornerSpec
 
+/-! ### Weakly-black row propagation (Claim (*) Cases 2–3 engine, paper pp.39–41)
+
+The paper's Cases 2 and 3 both run the same argument: a black point in the row just
+above a black row segment propagates weak blackness sideways (claims (ii)/(iii)) until
+it sits above a column known to be white there — then claim (i) upgrades it to black,
+a contradiction. We package the propagation and the contradiction once. -/
+
+/-- Leftward weakly-black propagation along the row above a black segment:
+if `(j'', L)` is black on `[jlo, jhi]` and `(jhi, L+1)` is weakly black, then all of
+row `L+1` over `[jlo, jhi]` is weakly black (iterated claim (ii)). -/
+theorem wb_row_left {n ξ : ℕ} {L : ℤ} {jlo jhi : ℕ}
+    (hb : ∀ j'', jlo ≤ j'' → j'' ≤ jhi → black n ξ j'' L)
+    (hwb : weaklyBlack n ξ jhi (L + 1)) :
+    ∀ j'', jlo ≤ j'' → j'' ≤ jhi → weaklyBlack n ξ j'' (L + 1) := by
+  have key : ∀ i : ℕ, i ≤ jhi - jlo → weaklyBlack n ξ (jhi - i) (L + 1) := by
+    intro i
+    induction i with
+    | zero => intro _; simpa using hwb
+    | succ i IH =>
+      intro hi
+      have hIH := IH (by omega)
+      have hstep : jhi - i = (jhi - (i + 1)) + 1 := by omega
+      have h1 : weaklyBlack n ξ ((jhi - (i + 1)) + 1) (L + 1) := by
+        rw [← hstep]; exact hIH
+      have h2 : weaklyBlack n ξ (jhi - (i + 1)) ((L + 1) - 1) := by
+        rw [show L + 1 - 1 = L from by ring]
+        exact weaklyBlack_of_black (hb _ (by omega) (by omega))
+      exact weaklyBlack_of_succ_j_pred_l h1 h2
+  intro j'' h1 h2
+  have := key (jhi - j'') (by omega)
+  rwa [show jhi - (jhi - j'') = j'' from by omega] at this
+
+/-- Rightward weakly-black propagation along the row above a black segment:
+if `(j'', L)` is black on `[jlo, jhi]` and `(jlo, L+1)` is weakly black, then all of
+row `L+1` over `[jlo, jhi]` is weakly black (iterated claim (iii)). -/
+theorem wb_row_right {n ξ : ℕ} {L : ℤ} {jlo jhi : ℕ}
+    (hb : ∀ j'', jlo ≤ j'' → j'' ≤ jhi → black n ξ j'' L)
+    (hwb : weaklyBlack n ξ jlo (L + 1)) :
+    ∀ j'', jlo ≤ j'' → j'' ≤ jhi → weaklyBlack n ξ j'' (L + 1) := by
+  have key : ∀ i : ℕ, jlo + i ≤ jhi → weaklyBlack n ξ (jlo + i) (L + 1) := by
+    intro i
+    induction i with
+    | zero => intro _; simpa using hwb
+    | succ i IH =>
+      intro hi
+      have hIH := IH (by omega)
+      have h2 : weaklyBlack n ξ ((jlo + i) + 1) ((L + 1) - 1) := by
+        rw [show L + 1 - 1 = L from by ring]
+        exact weaklyBlack_of_black (hb _ (by omega) (by omega))
+      have h3 := weaklyBlack_of_pred_j_pred_l hIH h2
+      rwa [show jlo + (i + 1) = (jlo + i) + 1 from by omega]
+  intro j'' h1 h2
+  have := key (j'' - jlo) (by omega)
+  rwa [show jlo + (j'' - jlo) = j'' from by omega] at this
+
+/-- **Row-above whiteness** (Claim (*) Cases 2–3 core): if a row segment `[jlo, jhi]`
+at height `L` is black and one point `(jc, L+1)` directly above it is white, then the
+whole row `L+1` over the segment is white. -/
+theorem white_row_above {n ξ : ℕ} {L : ℤ} {jlo jhi jc : ℕ}
+    (hb : ∀ j'', jlo ≤ j'' → j'' ≤ jhi → black n ξ j'' L)
+    (hc1 : jlo ≤ jc) (hc2 : jc ≤ jhi) (hw : ¬ black n ξ jc (L + 1)) :
+    ∀ j', jlo ≤ j' → j' ≤ jhi → ¬ black n ξ j' (L + 1) := by
+  intro j' h1 h2 hb'
+  have hwb' : weaklyBlack n ξ j' (L + 1) := weaklyBlack_of_black hb'
+  have hwbc : weaklyBlack n ξ jc (L + 1) := by
+    rcases le_or_gt jc j' with h | h
+    · exact wb_row_left (jlo := jc) (jhi := j')
+        (fun j'' ha hb'' => hb j'' (by omega) (by omega)) hwb' jc le_rfl h
+    · exact wb_row_right (jlo := j') (jhi := jc)
+        (fun j'' ha hb'' => hb j'' (by omega) (by omega)) hwb' jc (by omega) le_rfl
+  have hblk : black n ξ jc ((L + 1) - 1) := by
+    rw [show L + 1 - 1 = L from by ring]; exact hb jc hc1 hc2
+  exact hw (black_of_weaklyBlack_pred_l hwbc hblk)
+
+/-! ### Corner characterization: `lstar`/`jstar` from explicit runs
+
+`Nat.find` uniqueness: an explicit black run with a white boundary pins the corner. -/
+
+/-- `lstar` is characterized by a black column run `[l, L]` with `(j, L+1)` white. -/
+theorem lstar_eq_of {n ξ : ℕ} {j : ℕ} {l L : ℤ} (hl : l ≤ L)
+    (hb : ∀ l'' : ℤ, l ≤ l'' → l'' ≤ L → black n ξ j l'')
+    (hw : ¬ black n ξ j (L + 1)) : lstar n ξ j l = L := by
+  classical
+  have hex : ∃ t : ℕ, ¬ black n ξ j (l + t) :=
+    ⟨(L + 1 - l).toNat, by
+      rw [show l + ((L + 1 - l).toNat : ℤ) = L + 1 from by omega]; exact hw⟩
+  unfold lstar upRun
+  rw [dif_pos hex]
+  have hle : Nat.find hex ≤ (L + 1 - l).toNat := Nat.find_le (by
+    rw [show l + ((L + 1 - l).toNat : ℤ) = L + 1 from by omega]; exact hw)
+  have hge : (L + 1 - l).toNat ≤ Nat.find hex := by
+    by_contra hcon
+    push_neg at hcon
+    have hspec := Nat.find_spec hex
+    exact hspec (hb _ (by omega) (by omega))
+  omega
+
+/-- `jstar` is characterized by a black row run `[J, j]` at height `lstar` with a white
+(or wall) left boundary. -/
+theorem jstar_eq_of {n ξ : ℕ} {j J : ℕ} {l : ℤ} (hJ : J ≤ j)
+    (hb : ∀ j'' : ℕ, J ≤ j'' → j'' ≤ j → black n ξ j'' (lstar n ξ j l))
+    (hw : J = 0 ∨ ¬ black n ξ (J - 1) (lstar n ξ j l)) : jstar n ξ j l = J := by
+  classical
+  have hexJ : ∃ a : ℕ, j < a ∨ ¬ black n ξ (j - a) (lstar n ξ j l) := ⟨j + 1, by omega⟩
+  have hfind : Nat.find hexJ = j - J + 1 := by
+    apply le_antisymm
+    · apply Nat.find_le
+      rcases hw with h0 | hwhite
+      · left; omega
+      · right; rwa [show j - (j - J + 1) = J - 1 from by omega]
+    · by_contra hcon
+      push_neg at hcon
+      have hspec := Nat.find_spec hexJ
+      rcases hspec with h | h
+      · omega
+      · exact h (hb _ (by omega) (by omega))
+  have hlr : leftRun n ξ j l = Nat.find hexJ := rfl
+  unfold jstar
+  rw [hlr, hfind]
+  omega
+
 /-! ### The fibre identity: `θ(j,l) = 9^{j-j*}·2^{l*-l}·θ*` (paper p.39)
 
 Mirror of `θq_up_run` along the black row at height `l*`, composed with the upward run:
