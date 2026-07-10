@@ -1,5 +1,33 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 27 (2026-07-10, fifth box session): (D) analytic core PROVED — pair bound + Jordan
+
+`Prob/CharFn.lean`: `pairChar_conj`/`pairChar_mul_conj` (conjugate = negated argument),
+`sum_toReal_eq_one` (finite PMF mass), **`charFn_normSq_pair_bound`** — the two-atom
+anti-concentration bound `2·m₀·m₁·(1 - Re pairChar ξ (y₀-y₁)) ≤ 1 - ‖charFn r ξ‖²`
+(double-sum expansion of normSq, all cross terms nonneg, single out (y₀,y₁)+(y₁,y₀));
+**`one_sub_re_stdAddChar_ge`** — Jordan bound `8·(min(val, N-val)/N)² ≤ 1 - Re e(j/N)`
+(cos → 2sin², Real.mul_le_sin both halves). Axiom-clean.
+
+**(D) remaining assembly (next lap)**:
+1. Push the four hold atoms through modPair N (apply_le_map_apply gives
+   (hold.map (modPair N)) (y mod N) ≥ atom mass; equality not needed).
+   Distinctness of images needs N ≥ 6 (atoms (2,5),(2,7),(2,8) differ in 2nd coord by
+   2,3 < N; (1,3) vs (2,·) differ in 1st coord needs N ≥ 2; second coords 5,7,8 distinct
+   mod N for N ≥ 6... actually 5≡8 mod 3 fine since 1st coords equal — need N ∤ 2, N ∤ 3,
+   N ∤ 1 in coord combos: N ≥ 4 suffices for pairs used: check per-pair).
+2. Per-pair: apply charFn_normSq_pair_bound with (y₀,y₁) ∈ {((2,5),(1,3)), ((2,7),(2,5)),
+   ((2,8),(2,5))} — differences (1,2),(0,2),(0,3) — then Jordan at j = ξ·(1,2), ξ·(0,2),
+   ξ·(0,3). Masses ≥ 1/16·1/4, 3/64·1/16, 1/32·1/16 → constants.
+3. Triangle argument: dist(ξ₁/N,ℤ) + dist(ξ₂/N,ℤ) ≤ 2(d₁+d₂+d₃) where
+   d_i = min-val-dist of the three pinned args (val arithmetic on ZMod: (ξ·(0,2)).val
+   vs 2ξ₂.val mod N — work with the val-dist function zdist j := min(j.val, N-j.val)/N;
+   key subadditivity: zdist(a+b) ≤ zdist a + zdist b, zdist(k·a) ≤ k·zdist a).
+4. Combine: 1 - ‖φ‖² ≥ c·(zdist ξ₁² + zdist ξ₂²), c = 1/384-ish → ‖φ‖ ≤ exp(-c'·…),
+   ‖φ‖ⁿ ≤ exp(-c'n(...)²).
+5. (E): N⁻² Σ_ξ exp(-c'n·(zdist ξ₁²+zdist ξ₂²)) factorizes into 1-D sums; at N=⌈√n⌉+1
+   the 1-D sum is O(1) (geometric domination); yields center-regime C/(1+n) bound.
+
 ## Lap 26 (2026-07-10, fifth box session): (D) nondegeneracy atoms PROVED
 
 `Sec7/Holding.lean`: `hold_apply_pin` (first-coordinate pinning of hold atoms),
