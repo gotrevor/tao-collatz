@@ -31,7 +31,21 @@ noncomputable def unifOddMod (n' : ℕ) : PMF (ZMod (2 ^ n')) :=
     (fun z => if z.val % 2 = 1 then
         ((Finset.univ.filter fun w : ZMod (2 ^ n') => w.val % 2 = 1).card : ℝ≥0∞)⁻¹ else 0)
     (Finset.univ.filter fun z : ZMod (2 ^ n') => z.val % 2 = 1)
-    (by sorry)
+    (by
+      have h2 : 1 < 2 ^ n' := by
+        calc 1 < 2 := one_lt_two
+          _ ≤ 2 ^ n' := Nat.le_self_pow _h 2
+      haveI : Fact (1 < 2 ^ n') := ⟨h2⟩
+      haveI : NeZero (2 ^ n') := ⟨by omega⟩
+      have hmem : (1 : ZMod (2 ^ n')) ∈
+          Finset.univ.filter fun z : ZMod (2 ^ n') => z.val % 2 = 1 := by
+        simp [Finset.mem_filter, ZMod.val_one]
+      rw [Finset.sum_congr rfl fun z hz =>
+        if_pos (Finset.mem_filter.mp hz).2]
+      rw [Finset.sum_const, nsmul_eq_mul]
+      rw [ENNReal.mul_inv_cancel]
+      · exact_mod_cast Finset.card_ne_zero_of_mem hmem
+      · exact ENNReal.natCast_ne_top _)
     (by
       intro a ha
       simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha
