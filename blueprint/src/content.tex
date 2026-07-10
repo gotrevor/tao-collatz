@@ -11,9 +11,9 @@
 %  reproduced verbatim here a `% TODO-PRECISE` marks the coarse spot.
 %
 %  STATUS DISCIPLINE (updated 2026-07-10, post judge pass):
-%    * Statement-`\leanok` is set on the 16 nodes whose `\lean{}`-bound statements are
-%      landed, compiled, and judge-ratified (S1 S2 S4 C1--C7 C9 C10 X2 X3 X4 X11).  The
-%      9 nodes with no canonical Lean name yet (S3 C8 X1 X5--X10) keep `\notready` until
+%    * Statement-`\leanok` is set on the 18 nodes whose `\lean{}`-bound statements are
+%      landed, compiled, and judge-ratified (S1 S2 S4 C1--C7 C9 C10 X2 X3 X4 X6 X7 X11).
+%      The 7 nodes with no canonical Lean name yet (S3 C8 X1 X5 X8 X9 X10) keep `\notready` until
 %      their statements are pinned.  PROOF-`\leanok` (green background) is set ONLY on a
 %      dated judge-run `#print axioms` verification of the bound decls -- the manual form
 %      of the future BlueprintAudit reconciler; never on a worker's claim alone.
@@ -474,25 +474,32 @@ spread) for the first-passage analysis of the walk.
 \end{lemma}
 
 \begin{lemma}[First-passage location of the holding walk; Lemma 7.7]\label{X6}
+  \lean{fpDist, fpDist_location_bound}
   \uses{S3, X5}
-  \notready
-\textbf{Lemma 7.7}: the distribution of the location at which the \(\mathrm{Hold}\) renewal
-walk first crosses a prescribed level is close to uniform on the relevant scale, quantitatively.
+  \leanok
+\textbf{Lemma 7.7} (paper p.43): the first-passage endpoint mass satisfies
+\(\mathbb{P}(\mathbf{v}_{[1,\mathbf{k}]}=(j,l)) \ll e^{-c(l-s)}(1+s)^{-1/2}
+G_{1+s}(c(j-s/4))\).  D6 form: \texttt{fpDist} (budget-recursive endpoint PMF, support
+facts proved) and \texttt{fpDist\_location\_bound}, judge-ratified vs the p.43 display
+2026-07-10 (unconditional in \(l\) since the support fact kills \(l\le s\)).
 Uses the local 2-D bound (node~\ref{S3}) applied to the holding sums.
-% TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
 \lapsrisk{10--20}{high}{70\%}
 \end{lemma}
 
 \section{The three cases of Prop 7.8}
 
 \begin{proposition}[Monotone functional \(Q_m\); Prop 7.8 skeleton; Case 1]\label{X7}
+  \lean{Qm, prop_7_8, Q_white_case1, Q_polynomial_decay}
   \uses{X4}
-  \notready
+  \leanok
 The truncated functional \(Q_m\) (paper (7.38)) and the skeleton of \textbf{Proposition 7.8}
 (the quantitative white-encounter bound), together with \textbf{Case 1} (paper (7.42)/(7.43)):
 when the walk starts at a white point, the \(e^{-\varepsilon^3}\) contraction from Lemma~7.2
-(node~\ref{X2}) already delivers the required decay.
-% TODO-PRECISE: no canonical Lean name for Prop 7.8 in SKELETON-SPEC yet.
+(node~\ref{X2}) already delivers the required decay.  Judge-ratified 2026-07-10 vs pp.45--46:
+(7.38)\(\to\)\texttt{Qm}, (7.40)\(\to\)\texttt{prop\_7\_8}, (7.43)\(\to\)\texttt{Q\_white\_case1}
+(verbatim incl.\ \(e^{-\varepsilon^3/2}\)), (7.37)\(\to\)\texttt{Q\_polynomial\_decay}.  Case 1
+is \emph{proved}; the skeleton delegates the black edge to \texttt{Q\_black\_edge}
+(nodes~\ref{X8}/\ref{X10}).
 \lapsrisk{4--8}{low}{85\%}
 \end{proposition}
 

@@ -460,6 +460,8 @@
     <span class="lemma_thmtitle">First-passage location of the holding walk; Lemma 7.7</span>
     <div class="thm_header_extras">
 
+    
+    ✓
         </div>
     <div class="thm_header_hidden_extras">
 
@@ -489,10 +491,31 @@
 
     
     
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/fpDist" class="lean_decl">fpDist</a></li>
+          
+          <li><a href="../docs/find/#doc/fpDist_location_bound" class="lean_decl">fpDist_location_bound</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
         </div>
   </div>
   <div class="lemma_thmcontent">
-  <p>  <b class="bfseries">Lemma 7.7</b>: the distribution of the location at which the \(\mathrm{Hold}\) renewal walk first crosses a prescribed level is close to uniform on the relevant scale, quantitatively. Uses the local 2-D bound (node&#160;<a href="chp-support.html#S3">2.3</a>) applied to the holding sums. </p>
+  <p>   <b class="bfseries">Lemma 7.7</b> (paper p.43): the first-passage endpoint mass satisfies \(\mathbb {P}(\mathbf{v}_{[1,\mathbf{k}]}=(j,l)) \ll e^{-c(l-s)}(1+s)^{-1/2} G_{1+s}(c(j-s/4))\). D6 form: <span class="ttfamily">fpDist</span> (budget-recursive endpoint PMF, support facts proved) and <span class="ttfamily">fpDist_location_bound</span>, judge-ratified vs the p.43 display 2026-07-10 (unconditional in \(l\) since the support fact kills \(l\le s\)). Uses the local 2-D bound (node&#160;<a href="chp-support.html#S3">2.3</a>) applied to the holding sums. </p>
 <p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 10–20 treadmill laps; risk <b class="bfseries">high</b> (70% confidence the node completes as stated).</i> </p>
 
   </div>
@@ -507,6 +530,8 @@
     <span class="proposition_thmtitle">Monotone functional \(Q_m\); Prop 7.8 skeleton; Case 1</span>
     <div class="thm_header_extras">
 
+    
+    ✓
         </div>
     <div class="thm_header_hidden_extras">
 
@@ -534,10 +559,35 @@
 
     
     
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/Qm" class="lean_decl">Qm</a></li>
+          
+          <li><a href="../docs/find/#doc/prop_7_8" class="lean_decl">prop_7_8</a></li>
+          
+          <li><a href="../docs/find/#doc/Q_white_case1" class="lean_decl">Q_white_case1</a></li>
+          
+          <li><a href="../docs/find/#doc/Q_polynomial_decay" class="lean_decl">Q_polynomial_decay</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
         </div>
   </div>
   <div class="proposition_thmcontent">
-  <p>  The truncated functional \(Q_m\) (paper (7.38)) and the skeleton of <b class="bfseries">Proposition 7.8</b> (the quantitative white-encounter bound), together with <b class="bfseries">Case 1</b> (paper (7.42)/(7.43)): when the walk starts at a white point, the \(e^{-\varepsilon ^3}\) contraction from Lemma&#160;7.2 (node&#160;<a href="chp-crux.html#X2">7.2</a>) already delivers the required decay. </p>
+  <p>   The truncated functional \(Q_m\) (paper (7.38)) and the skeleton of <b class="bfseries">Proposition 7.8</b> (the quantitative white-encounter bound), together with <b class="bfseries">Case 1</b> (paper (7.42)/(7.43)): when the walk starts at a white point, the \(e^{-\varepsilon ^3}\) contraction from Lemma&#160;7.2 (node&#160;<a href="chp-crux.html#X2">7.2</a>) already delivers the required decay. Judge-ratified 2026-07-10 vs pp.45–46: (7.38)\(\to \)<span class="ttfamily">Qm</span>, (7.40)\(\to \)<span class="ttfamily">prop_7_8</span>, (7.43)\(\to \)<span class="ttfamily">Q_white_case1</span> (verbatim incl. \(e^{-\varepsilon ^3/2}\)), (7.37)\(\to \)<span class="ttfamily">Q_polynomial_decay</span>. Case 1 is <em>proved</em>; the skeleton delegates the black edge to <span class="ttfamily">Q_black_edge</span> (nodes&#160;<a href="chp-crux.html#X8">7.8</a>/<a href="chp-crux.html#X10">7.10</a>). </p>
 <p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 4–8 treadmill laps; risk <b class="bfseries">low</b> (85% confidence the node completes as stated).</i> </p>
 
   </div>

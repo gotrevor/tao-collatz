@@ -136,6 +136,19 @@ Legend: **Difficulty** 1–5 (5 = summit). **Laps** = estimated Opus-treadmill l
 (g-i lap conventions). **Conf** = confidence the node completes as stated without
 statement surgery. Depends lists node ids. Paper anchors in parens.
 
+**Campaign steering rule (Trevor, 2026-07-10): de-risk breadth-first.** The expedition
+verdict is binary (full-discharge-or-abandon), so laps buy the most when they reduce the
+odds of a late fatal wall — spend them turning **red nodes yellow** (statement pinned +
+ratified, route validated, hardest sub-lemma stated or probed) before polishing yellow
+or green nodes to completion. Priority order: red → yellow everywhere, then yellow →
+light green, completion polish last. Two carve-outs: (a) **dependency order gates
+assessability** — a red node whose risk can't be probed without upstream machinery
+(X8 needed X3's triangles + X6's Lemma 7.7) waits for that machinery, not for its turn;
+(b) **finish-when-downhill** — a node mid-flight whose completion is clearly ≤ a few
+laps gets finished, because a completed axiom-clean proof is ground truth that re-rates
+its neighbors (X3's exact fibre identity re-rated X8), and abandoning cheap completions
+buys nothing. A completed node is the *only* estimate that can't be wrong.
+
 ### Support layer
 
 | id | node | paper | diff | laps | conf | depends |
