@@ -37,6 +37,23 @@ agreement 1e-11 at n=14/16, incl. amplified damping (1/e, 0.5) where any
 coordinate off-by-one would show at O(1). Renewal identity (7.26)≡(7.27) and the
 paper-vs-0-based seam are pinned end-to-end. All judge follow-ups now closed.
 
+## Lap 14 (2026-07-10): (7.45) unrolling — `Qstop`/`Qstop_eq` PROVED (X8/X9 entry)
+
+New `Sec7/Unroll.lean` (axiom-clean): `hold_support_snd_ge`/`hold_zero_of_snd_lt`
+(second coord of `hold` ≥ 3), `Qstop half W ε s j l` — the D6 stopped value (well-
+founded on the height budget `s`; a step with `d₂ > s` = the paper's first passage
+`l_{[1,k]} > s` lands on plain `Q`), and `Qstop_eq : Qstop s j l = Q j l` (∀ s) —
+paper (7.45) verbatim, by strong induction on `s` over `Q_rec`. No stopping-time
+measure theory needed. Case 2 (X8) and Lemma 7.9 (X9) both enter through this:
+pick `s := l_Δ - l` per triangle; the overshoot branch's endpoint is what the
+white-exit bound (7.50)/(7.51) + `Q_le_Qm` control.
+
+**X8 next steps**: (a) a `Qstop_le` bound isolating the overshoot-branch endpoint
+expectation (Case 2's (7.46)); (b) the endpoint-distribution facts need Lemma 7.7
+(Chernoff for the 2D renewal walk) — the genuinely hard probabilistic kernel;
+(c) the white-exit constant (7.50)/(7.51) consumes Lemma 7.4's structure
+(`black_structure` proved) + 7.7. **X9**: `Z R j l` recursion on `R` over `Qstop`.
+
 ## After laps 6–10 (2026-07-10, second box session): **X3 HEAD CLOSED — Lemma 7.4 PROVED**
 
 `black_structure` is now a theorem, `#print axioms` = `[propext, Classical.choice,

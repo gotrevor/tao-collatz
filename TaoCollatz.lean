@@ -12,6 +12,7 @@ import TaoCollatz.Sec7.Setup
 import TaoCollatz.Sec7.White
 import TaoCollatz.Sec7.Triangles
 import TaoCollatz.Sec7.Holding
+import TaoCollatz.Sec7.Unroll
 import TaoCollatz.Sec7.Monotone
 import TaoCollatz.Sec7.Decay
 import TaoCollatz.Statement
