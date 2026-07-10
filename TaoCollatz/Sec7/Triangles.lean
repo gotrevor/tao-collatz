@@ -1,5 +1,6 @@
 import TaoCollatz.Sec7.Setup
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # §7.2: the black set is a union of separated triangles (node X3)
@@ -891,6 +892,150 @@ theorem black_mem_corner_triangle {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 �
       = (a : ℝ) * Real.log 9 + (b : ℝ) * Real.log 2 := by rw [hca, hcb]
     _ = Real.log ((9:ℝ) ^ a * 2 ^ b) := hlogx.symm
     _ ≤ Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|) := hlog
+
+/-- **Δ* is black** (paper p.39): every point of the corner triangle of a black strip
+point is itself black (exponentiate the size inequality and apply (7.18)). -/
+theorem black_of_mem_corner_triangle {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ ξ)
+    (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) {p : ℕ × ℤ}
+    (hp : p ∈ triangle (jstar n ξ j l) (lstar n ξ j l)
+      (Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|))) :
+    black n ξ p.1 p.2 := by
+  obtain ⟨hj1, hl1, hlog⟩ := hp
+  set θs : ℚ := θq n ξ (jstar n ξ j l) (lstar n ξ j l) with hθs
+  have hθpos : (0:ℝ) < |(θs : ℝ)| := by
+    have := corner_phase_pos hξ h2j hb
+    rw [← hθs] at this
+    rw [← Rat.cast_abs]; exact_mod_cast this
+  have hε : (0:ℝ) < (epsBW : ℝ) := by
+    have : (0:ℚ) < epsBW := by unfold epsBW; norm_num
+    exact_mod_cast this
+  have hdivpos : (0:ℝ) < (epsBW : ℝ) / |(θs : ℝ)| := div_pos hε hθpos
+  set a := p.1 - jstar n ξ j l with hadef
+  set b := (lstar n ξ j l - p.2).toNat with hbdef
+  have hca : ((p.1 : ℝ) - (jstar n ξ j l : ℝ)) = (a : ℝ) := by
+    rw [hadef, Nat.cast_sub hj1]
+  have hcb : ((lstar n ξ j l : ℝ) - (p.2 : ℝ)) = (b : ℝ) := by
+    have hz : ((lstar n ξ j l - p.2).toNat : ℤ) = lstar n ξ j l - p.2 := by omega
+    have : ((b : ℤ) : ℝ) = ((lstar n ξ j l - p.2 : ℤ) : ℝ) := by rw [hbdef, hz]
+    push_cast at this
+    linarith
+  have hlogx : Real.log ((9:ℝ) ^ a * 2 ^ b)
+      = (a : ℝ) * Real.log 9 + (b : ℝ) * Real.log 2 := by
+    rw [Real.log_mul (by positivity) (by positivity), Real.log_pow, Real.log_pow]
+  have hXY : (9:ℝ) ^ a * 2 ^ b ≤ (epsBW : ℝ) / |(θs : ℝ)| := by
+    have h1 : Real.log ((9:ℝ) ^ a * 2 ^ b)
+        ≤ Real.log ((epsBW : ℝ) / |(θs : ℝ)|) := by
+      rw [hlogx, ← hca, ← hcb]
+      exact hlog
+    calc (9:ℝ) ^ a * 2 ^ b
+        = Real.exp (Real.log ((9:ℝ) ^ a * 2 ^ b)) :=
+          (Real.exp_log (by positivity)).symm
+      _ ≤ Real.exp (Real.log ((epsBW : ℝ) / |(θs : ℝ)|)) := Real.exp_le_exp.mpr h1
+      _ = (epsBW : ℝ) / |(θs : ℝ)| := Real.exp_log hdivpos
+  have hq : (9:ℚ) ^ a * 2 ^ b * |θs| ≤ epsBW := by
+    have := (le_div_iff₀ hθpos).mp hXY
+    rw [← Rat.cast_abs] at this
+    exact_mod_cast this
+  have hp1 : p.1 = jstar n ξ j l + a := by omega
+  have hp2 : p.2 = lstar n ξ j l - b := by omega
+  show |θq n ξ p.1 p.2| ≤ epsBW
+  rw [hp1, hp2]
+  calc |θq n ξ (jstar n ξ j l + a) (lstar n ξ j l - b)|
+      ≤ 9 ^ a * 2 ^ b * |θs| := θq_iterate_abs_le n ξ _ _ a b
+    _ ≤ epsBW := hq
+
+/-- **Δ* strip confinement, real form** (paper p.39 / (7.16)): every point of the
+corner triangle satisfies `p.1 + 1 ≤ n/2 - (1/10)·log(1/ε)`. -/
+theorem corner_triangle_confined {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ ξ)
+    (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) {p : ℕ × ℤ}
+    (hp : p ∈ triangle (jstar n ξ j l) (lstar n ξ j l)
+      (Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|))) :
+    (p.1 : ℝ) + 1 ≤ (n : ℝ) / 2 - (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ)) := by
+  obtain ⟨hj1, hl1, hlog⟩ := hp
+  set θs : ℚ := θq n ξ (jstar n ξ j l) (lstar n ξ j l) with hθs
+  have hjj : jstar n ξ j l ≤ j := by unfold jstar; omega
+  have h2j' : 2 * jstar n ξ j l + 1 ≤ n := by omega
+  have hθpos : (0:ℝ) < |(θs : ℝ)| := by
+    have := corner_phase_pos hξ h2j hb
+    rw [← hθs] at this
+    rw [← Rat.cast_abs]; exact_mod_cast this
+  have hε : (0:ℝ) < (epsBW : ℝ) := by
+    have : (0:ℚ) < epsBW := by unfold epsBW; norm_num
+    exact_mod_cast this
+  -- the corner lower bound in log form: -log|θ*| ≤ (n - 2j*)·log 3
+  have hlb : (1 : ℚ) / 3 ^ (n - 2 * jstar n ξ j l) ≤ |θs| :=
+    θq_lower_bound n ξ hξ _ (lstar n ξ j l) h2j'
+  have hlbR : (1 : ℝ) / 3 ^ (n - 2 * jstar n ξ j l) ≤ |(θs : ℝ)| := by
+    have h := (Rat.cast_le (K := ℝ)).mpr hlb
+    rw [Rat.cast_abs] at h
+    push_cast at h
+    exact_mod_cast h
+  have hloglb : -Real.log |(θs : ℝ)|
+      ≤ ((n - 2 * jstar n ξ j l : ℕ) : ℝ) * Real.log 3 := by
+    have h1 : Real.log ((1:ℝ) / 3 ^ (n - 2 * jstar n ξ j l)) ≤ Real.log |(θs : ℝ)| :=
+      Real.log_le_log (by positivity) hlbR
+    rw [Real.log_div (by norm_num) (by positivity), Real.log_one, Real.log_pow] at h1
+    linarith
+  -- unpack the size inequality, dropping the nonneg log-2 term
+  set S := Real.log (1 / (epsBW : ℝ)) with hS
+  have hSε : Real.log (epsBW : ℝ) = -S := by
+    rw [hS, one_div, Real.log_inv, neg_neg]
+  have hsize : ((p.1 : ℝ) - (jstar n ξ j l : ℝ)) * Real.log 9
+      ≤ -S + ((n - 2 * jstar n ξ j l : ℕ) : ℝ) * Real.log 3 := by
+    have hlog2 : (0:ℝ) ≤ ((lstar n ξ j l : ℝ) - (p.2 : ℝ)) * Real.log 2 := by
+      apply mul_nonneg _ (Real.log_nonneg (by norm_num))
+      have : (p.2 : ℝ) ≤ (lstar n ξ j l : ℝ) := by exact_mod_cast hl1
+      linarith
+    have hsplit : Real.log ((epsBW : ℝ) / |(θs : ℝ)|)
+        = -S - Real.log |(θs : ℝ)| := by
+      rw [Real.log_div (by positivity) (by positivity), hSε]
+    rw [hsplit] at hlog
+    linarith [hloglb]
+  -- numerics: log 9 = 2·log 3, log 3 ≤ 1.3863, S ≥ 9
+  have hlog9 : Real.log 9 = 2 * Real.log 3 := by
+    rw [show (9:ℝ) = 3 ^ 2 from by norm_num, Real.log_pow]; push_cast; ring
+  have hlog3pos : (0:ℝ) < Real.log 3 := Real.log_pos (by norm_num)
+  have hlog3le : Real.log 3 ≤ 1.0987 := by linarith [Real.log_three_lt_d9]
+  have hSge : (9:ℝ) ≤ S := by
+    have h1 : (1:ℝ) / (epsBW : ℝ) = 10 ^ 4 := by
+      have : (epsBW : ℝ) = 1 / 10 ^ 4 := by
+        have : epsBW = 1 / 10 ^ 4 := rfl
+        rw [this]; push_cast; norm_num
+      rw [this]; norm_num
+    rw [hS, h1]
+    calc (9:ℝ) ≤ 13 * Real.log 2 := by linarith [Real.log_two_gt_d9]
+      _ = Real.log (2 ^ 13) := by rw [Real.log_pow]; push_cast; ring
+      _ ≤ Real.log (10 ^ 4) := Real.log_le_log (by positivity) (by norm_num)
+  -- assemble: 2·(p.1 - j*)·log3 ≤ -S + (n - 2j*)·log3 ⇒ p.1 + 1 ≤ n/2 - S/10
+  have hcastk : ((n - 2 * jstar n ξ j l : ℕ) : ℝ)
+      = (n : ℝ) - 2 * (jstar n ξ j l : ℝ) := by
+    push_cast [Nat.cast_sub (by omega : 2 * jstar n ξ j l ≤ n)]; ring
+  rw [hlog9, hcastk] at hsize
+  set y : ℝ := (n : ℝ) - 2 * (p.1 : ℝ) with hy
+  have hyS : S ≤ y * Real.log 3 := by
+    have hx : ((p.1 : ℝ) - (jstar n ξ j l : ℝ)) * (2 * Real.log 3)
+        = 2 * (p.1 : ℝ) * Real.log 3 - 2 * (jstar n ξ j l : ℝ) * Real.log 3 := by ring
+    nlinarith [hsize]
+  have hy6 : (6:ℝ) ≤ y := by nlinarith [hyS, hSge, hlog3le, hlog3pos]
+  have hfin : 10 * (p.1 : ℝ) + 10 + S ≤ 5 * (n : ℝ) := by
+    nlinarith [hyS, hlog3le, hy6, hSge]
+  linarith
+
+/-- Δ* strip confinement, discrete corollary: `2·p.1 + 1 ≤ n` for triangle points
+(the strip hypothesis needed to run the corner machinery at `p`). -/
+theorem corner_triangle_strip {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ ξ)
+    (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) {p : ℕ × ℤ}
+    (hp : p ∈ triangle (jstar n ξ j l) (lstar n ξ j l)
+      (Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|))) :
+    2 * p.1 + 1 ≤ n := by
+  have hreal := corner_triangle_confined hξ h2j hb hp
+  have hSpos : (0:ℝ) ≤ Real.log (1 / (epsBW : ℝ)) := by
+    apply Real.log_nonneg
+    rw [show (epsBW : ℝ) = 1 / 10 ^ 4 from by
+      rw [show epsBW = 1 / 10 ^ 4 from rfl]; push_cast; norm_num]
+    norm_num
+  have h2 : 2 * (p.1 : ℝ) + 2 ≤ (n : ℝ) := by linarith
+  exact_mod_cast (by push_cast; linarith : (2 * p.1 + 1 : ℝ) ≤ (n : ℝ))
 
 -- RATIFY-5 (resolved 2026-07-10 against paper pp.36–41 + harness check 8): the paper's
 -- separation is between the triangle POINT SETS ("using the Euclidean metric on
