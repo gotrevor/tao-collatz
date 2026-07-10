@@ -260,6 +260,9 @@
 
     <a class="icon proof" href="chp-crux.html#X3">#</a>
     
+    <a class="icon proof" href="chp-crux.html#a0000000029"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
 </button>
@@ -307,11 +310,22 @@
   </div>
   <div class="lemma_thmcontent">
   <p>   <b class="bfseries">Risk kernel 2.</b> With a triangle (paper (7.11)) the set \(\{ (j,l) : j_0\le j,\  l\le l_0,\  (j-j_0)\log 9 + (l_0-l)\log 2 \le s\} \), Lemma&#160;7.4 asserts the black set inside the strip is a disjoint union of triangles that are (i) confined to the strip \(j+1\le \lfloor n/2\rfloor - \tfrac {1}{10}\log (1/\varepsilon )\), and (ii) pairwise Euclidean-separated by at least \(\tfrac {1}{10}\log (1/\varepsilon )\): </p>
-<div class="displaymath" id="a0000000029">
+<div class="displaymath" id="a0000000030">
   \[  \{ (j,l) : j{+}1\le \lfloor n/2\rfloor ,\  \text{black}(j,l)\}  \; =\;  \bigsqcup _{t\in T} \mathrm{triangle}(t).  \]
 </div>
 <p> Proved through the phase identities (7.12)–(7.15), the weakly-black claims (i)–(iii), the \(l^*/j^*\) construction, and Claim&#160;(\(*\)) Cases&#160;1–3. </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 15–30 treadmill laps; risk <b class="bfseries">high — risk kernel 2</b> (75% (2026-07-10: exact-arithmetic \(l_*/j_*\) decomposition validated at three instances incl. giant triangles; set-separation statement ratified) confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000029">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p><span class="ttfamily">black_structure</span> in <span class="ttfamily">Sec7/Triangles.lean</span>, via the exact fibre identity \(\theta (j,l) = 9^{j-j^*}2^{l^*-l}\theta ^*\) (sharper than the paper’s (7.18) inequality; at \(\varepsilon = 10^{-4}\) the separation conjunct reduces to lattice disjointness). Judge-verified <span class="ttfamily">#print axioms</span>: <span class="ttfamily">[propext, Classical.choice, Quot.sound]</span> (2026-07-10, host <span class="ttfamily">lake env lean</span>). </p>
 
   </div>
 </div>
@@ -385,7 +399,7 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   The <b class="bfseries">holding law</b> \(\mathrm{Hold}\) on \(\mathbb {N}\times \mathbb {Z}\) (§7.3), whose first coordinate is always \(\ge 1\), governing how the renewal walk steps between pairs. Design decision D6 replaces the paper’s infinite renewal product (7.34) by the <em>defined</em> downward recursion \(Q:\mathbb {N}\times \mathbb {Z}\to \mathbb {R}\) (paper (7.35)), </p>
-<div class="displaymath" id="a0000000030">
+<div class="displaymath" id="a0000000031">
   \[  Q(j,l) = 1 \  \  (j{\gt}\lfloor n/2\rfloor ); \qquad Q(j,l) = e^{-\varepsilon ^3\mathbf1_W(j,l)}\cdot \! \! \sum _{d}\! (\mathrm{Hold}\, d)\, Q\bigl((j,l)+d\bigr) \  \  (j\le \lfloor n/2\rfloor ),  \]
 </div>
 <p> well-founded on \(\lfloor n/2\rfloor - j\) (Hold’s first coordinate is \(\ge 1\)), with \(0\le Q\le 1\). The bridge (7.28)/(7.34)–(7.36) makes \(\mathbb {E}\, Q(\mathrm{Hold})\ll _A n^{-A}\) equivalent to <b class="bfseries">Proposition 7.3</b> (the renewal white-encounter count, in the finite-vector form over \(\mathrm{Pascal}^{\otimes \lfloor n/2\rfloor }\)). This node exists to validate the D6 finitization. </p>
@@ -734,7 +748,7 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   <b class="bfseries">Case 3</b> assembly (paper (7.48)/(7.49), (7.52)–(7.67)): the events \(E_*,F_*\), the choice \(R=\lfloor A^2/\varepsilon ^4\rfloor \), and the deterministic claim (7.67), combining Lemma&#160;7.9 (node&#160;<a href="chp-crux.html#X9">7.9</a>) and Lemma&#160;7.10 (node&#160;<a href="chp-crux.html#X10">7.10</a>). This closes Prop&#160;7.8, hence Prop&#160;7.3 (node&#160;<a href="chp-crux.html#X4">7.4</a>) and Prop&#160;7.1, hence the <b class="bfseries">crux</b> <b class="bfseries">Proposition 1.17</b> (character-sum decay): for every \(A{\gt}0\) there is \(C{\gt}0\) with, for all \(n\ge 1\) and all \(\xi \) with \(3\nmid \xi \), </p>
-<div class="displaymath" id="a0000000031">
+<div class="displaymath" id="a0000000032">
   \[  \Bigl\| \, \mathbb {E}_{Y\sim \texttt{syracZ}\, n}\,  e\bigl(-\xi \,  Y/3^{n}\bigr)\Bigr\|  \; \le \;  C\, n^{-A}.  \]
 </div>
 <p> This is the single Fourier-analytic input the whole spine reduces to (feeds node&#160;<a href="chp-mixing.html#C10">6.1</a>). </p>
