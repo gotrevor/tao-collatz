@@ -124,6 +124,23 @@ theorem Q_le_Qm (half n ξ : ℕ) (ε A : ℝ) (hA : 0 ≤ A) (hε : 0 ≤ ε) (
     _ ≤ (((max (half - p1) 1 : ℕ) : ℝ) ^ A)⁻¹ * Qm half n ξ ε A m :=
         mul_le_mul_of_nonneg_left hle (inv_nonneg.mpr hApos.le)
 
+/-- `Qm ≥ 0` (sup of nonnegative terms over a nonempty index). -/
+theorem Qm_nonneg (half n ξ : ℕ) (ε A : ℝ) (m : ℕ) : 0 ≤ Qm half n ξ ε A m :=
+  Real.iSup_nonneg fun p =>
+    mul_nonneg (Real.rpow_nonneg (by positivity) _) (Q_nonneg _ _ _ _ _)
+
+/-- **The Case 1 geometric-expectation leaf** ((7.43) numerics): the holding step's
+first coordinate is `Geom(4)`-distributed, so the expected depth-weight ratio is
+`1 + o(1)`; quantitatively `E[max(m - d₁, 1)^{-A}] ≤ exp(ε³/2)·m^{-A}` once
+`m ≥ C_A`. Route: split at `d₁ ≤ m/2` — there `(m/(m-d₁))^A ≤ exp(2A·d₁/m)` and the
+`Geom(4)` MGF `E[e^{c·d₁}] = (e^c/4)/(1-(3/4)e^c) → 1` as `c = 2A/m → 0`; the tail
+`P(d₁ > m/2) ≤ (3/4)^{m/2}` is super-polynomial vs `m^{-A}`. Open leaf. -/
+theorem hold_weight_expect (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, 1 ≤ Cthr ∧ ∀ m : ℕ, Cthr ≤ m →
+      ∑' d : ℕ × ℤ, (hold d).toReal * ((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A)
+        ≤ Real.exp ((epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A) := by
+  sorry
+
 /-- **Case 1 proper** of Proposition 7.8 (paper (7.41)–(7.43), stated per the judge
 item 8 spec, 2026-07-09): a white start at depth `m` from the far edge contracts by
 `exp(-ε³/2)·m^{-A}` against `Q_{m-1}`.

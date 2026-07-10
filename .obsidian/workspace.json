@@ -185,6 +185,8 @@
   },
   "active": "c4b72140923c6227",
   "lastOpenFiles": [
+    "AxCheck.lean",
+    "HANDOFF-2026-07-10.md",
     "blueprint/build.sh",
     "blueprint/annotate_dep_graph.py",
     "PENDING_WORK.md",
