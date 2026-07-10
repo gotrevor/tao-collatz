@@ -16,12 +16,18 @@ open scoped ENNReal
 namespace TaoCollatz
 
 -- RATIFY-DRIFT: `PMF.uniformOfFinset` is absent in mathlib v4.31; `unifOddMod` is built
--- with `PMF.ofFinset` over the odd residues. Normalization (`∑ = 1`) needs `n' ≥ 1`
--- (for `n' = 0` there are no odd residues), so it is `sorry`ed here rather than carried
--- as a hypothesis. Mathematical content (uniform on `{z : z.val odd}`) is unchanged.
-/-- Uniform distribution on the odd residues mod `2ⁿ'`. -/
+-- with `PMF.ofFinset` over the odd residues.
+-- JUDGE DECISION (2026-07-09 pass, queue item 2): the `n' = 0` degeneracy is junk-guarded
+-- (`PMF.pure 0` on the trivial `ZMod 1`) rather than threaded as a `1 ≤ n'` hypothesis
+-- through `valuation_dist`/`valuation_tail` — the pre-fix def carried a FALSE `sorry`
+-- (normalization over an empty odd-residue set). The remaining normalization `sorry` is
+-- now TRUE and grindable: for `n' ≥ 1`, `2 ≤ 2 ^ n'` so `(1 : ZMod (2 ^ n')).val = 1` is
+-- odd → the filter is nonempty → the sum is `card • card⁻¹ = 1` (card ≠ 0, ≠ ⊤).
+/-- Uniform distribution on the odd residues mod `2ⁿ'` (junk `PMF.pure 0` at `n' = 0`,
+where there are no odd residues). -/
 noncomputable def unifOddMod (n' : ℕ) : PMF (ZMod (2 ^ n')) :=
-  PMF.ofFinset
+  if _h : n' = 0 then PMF.pure 0
+  else PMF.ofFinset
     (fun z => if z.val % 2 = 1 then
         ((Finset.univ.filter fun w : ZMod (2 ^ n') => w.val % 2 = 1).card : ℝ≥0∞)⁻¹ else 0)
     (Finset.univ.filter fun z : ZMod (2 ^ n') => z.val % 2 = 1)

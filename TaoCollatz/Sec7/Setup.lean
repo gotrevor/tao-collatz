@@ -19,7 +19,10 @@ Paper anchors: Tao 2019 §7.1, (7.7), (7.8), (7.9), (7.13), (7.14).
 
 namespace TaoCollatz
 
-/-- Signed fractional part `q - round q`, valued in `(-1/2, 1/2]`. Paper's `‖·‖`-frac. -/
+/-- Signed fractional part `q - round q`, valued in `[-1/2, 1/2)` (mathlib `round` is
+half-UP). The paper's `{·}` lands in `(-1/2, 1/2]` instead; the two conventions differ
+only at exact half-integers, which the phases here never attain (their denominators are
+odd powers of 3, so `θ ≡ 1/2 (mod 1)` is impossible) — ratified, 2026-07-09 judge pass. -/
 def sfrac (q : ℚ) : ℚ := q - round q
 
 /-- The unit `2 ∈ (ZMod (3ⁿ))ˣ` (2 is coprime to `3ⁿ`). -/

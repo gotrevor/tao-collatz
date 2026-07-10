@@ -18,6 +18,10 @@ than as an infinite product over an infinite iid sequence. This file validates D
 -- RATIFY-6: `Q` uses `j : ℕ` (paper coordinate; the renewal walk only increases `j`),
 -- `l : ℤ`. Well-founded on `half + 1 - j`. `Q_le_one` takes `0 ≤ ε` (the paper's ε is a
 -- fixed positive numeral, so this is free at every use site).
+-- JUDGE ADDENDUM (2026-07-09, ratified vs (7.34)/(7.35) p.44): because `Q`'s `j` is the
+-- paper's 1-based coordinate, any `W` fed to `Q` must be a PAPER-coordinate set —
+-- `whiteSet` in `Monotone.lean` is the shift adapter onto the 0-based `white` (RATIFY-4).
+-- `Q`/`Q_rec`/`Q_boundary` themselves are generic in `W` and verbatim (7.34)/(7.35).
 -/
 
 open scoped ENNReal
