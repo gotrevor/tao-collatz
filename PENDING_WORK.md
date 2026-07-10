@@ -1,5 +1,30 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 26 (2026-07-10, fifth box session): (D) nondegeneracy atoms PROVED
+
+`Sec7/Holding.lean`: `hold_apply_pin` (first-coordinate pinning of hold atoms),
+`hold_apply_two` (`hold (2, 3+b) = geomQuarter 2 · pascalNe3 b`), `pascalNe3_toReal`,
+and the four numeric atoms `hold_apply_one_three/two_five/two_seven/two_eight`
+(masses 1/4, 1/16, 3/64, 1/32 at (1,3),(2,5),(2,7),(2,8)). Difference set
+{(1,2),(0,2),(0,3)} affinely generates ℤ² — the nondegeneracy input for (D).
+All axiom-clean.
+
+**(D) continued — next lap plan** (decay of `‖charFn (hold.map (modPair N)) ξ‖`):
+1. `normSq_charFn_pair_bound`: for r : PMF (pair group) and atoms y₀ y₁,
+   `‖charFn r ξ‖² ≤ 1 - 2·(r y₀).toReal·(r y₁).toReal·(1 - Re(pairChar ξ (y₀ - y₁)))`
+   — expand `normSq (Σ m_y u_y)` as double sum (`Finset.sum_mul_sum` + `Complex.re` map_sum),
+   `Σ_y m_y = 1` on finite group (PMF tsum_coe → Finset), drop nonneg off-pair terms
+   (1 - Re(u ū') ≥ 0 via Complex.re_le_norm, norms 1).
+2. `Re pairChar = cos(2π(ξ·w).val/N)` via ZMod.toCircle_apply + Complex.exp_re? — or
+   avoid cos: `1 - Re(stdAddChar j) ≥ 8·(min j.val (N - j.val)/N)²` directly
+   (1 - cos(2πt) = 2 sin²(πt), Jordan |sin πt| ≥ 2·dist(t,ℤ)).
+3. Push hold atoms through modPair: (hold.map (modPair N)) y ≥ hold-atom mass at a
+   preimage (apply_le_map_apply! already proved). For N ≥ 9 the four atoms map to
+   DISTINCT pairs — mind collisions for small N (N ≤ 8 handle by crude bound or n small).
+4. Assemble: three pair-terms give `1 - ‖φ‖² ≥ c·dist(ξ/N, ℤ²)²` (elementary triangle
+   argument on t·(1,2), t·(0,2), t·(0,3); constant ≈ 1/384), then `‖φ‖ⁿ ≤ exp(-cn·dist²)`.
+5. (E) Gaussian summation at N = ⌈√n⌉+1 → center-regime C/n local bound.
+
 ## Lap 25 (2026-07-10, fifth box session): (C2)+(C3) PROVED — finite Fourier inversion + charFn powers
 
 `Prob/CharFn.lean` NEW, fully proved, axiom-clean: `sum_stdAddChar_mul` (1-D

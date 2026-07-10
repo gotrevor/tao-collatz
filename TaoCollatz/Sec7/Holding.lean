@@ -99,6 +99,93 @@ theorem hold_tsum_fst (f : ℕ → ℝ) (hf : ∀ k, 0 ≤ f k) :
         tsum_congr fun k => by
           rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hf _)]
 
+/-- Pin the first coordinate of a `hold` atom: only the matching `Geom(4)` draw
+contributes, leaving the pushed-forward increment law. -/
+theorem hold_apply_pin (k₀ : ℕ) (y : ℤ) :
+    hold (k₀, y) = geomQuarter k₀ *
+      ((pascalNe3.iid (k₀ - 1)).map fun v => ((3 : ℤ) + ∑ i, (v i : ℤ))) y := by
+  classical
+  rw [hold, PMF.bind_apply]
+  rw [tsum_eq_single k₀ (fun k hk => by
+    have hz : ((pascalNe3.iid (k - 1)).map fun v => ((k : ℕ), ((3 : ℤ) + ∑ i, (v i : ℤ)))) (k₀, y)
+        = 0 := by
+      rw [PMF.map_apply]
+      refine ENNReal.tsum_eq_zero.mpr fun v => ?_
+      rw [if_neg (fun h => hk ((congrArg Prod.fst h).symm : k = k₀))]
+    rw [hz, mul_zero])]
+  congr 1
+  rw [PMF.map_apply, PMF.map_apply]
+  refine tsum_congr fun v => ?_
+  congr 1
+  rw [Prod.ext_iff]
+  simp
+
+/-- `hold` at `(1, 3)`: the single-step atom (real mass `1/4`). -/
+theorem hold_apply_one_three : (hold (1, 3)).toReal = 4⁻¹ := by
+  rw [hold_apply_pin]
+  have h0 : pascalNe3.iid (1 - 1) = PMF.pure (fun i : Fin 0 => i.elim0) := rfl
+  rw [h0, PMF.pure_map]
+  have hval : ((3 : ℤ) + ∑ i : Fin 0, (((fun i : Fin 0 => i.elim0) i : ℕ) : ℤ)) = 3 := by
+    simp
+  rw [hval, PMF.pure_apply, if_pos rfl, mul_one, geomQuarter_toReal]
+  norm_num
+
+/-- `hold` at `(2, 3 + b)`: one `pascalNe3` increment on top of the base offset `3`. -/
+theorem hold_apply_two (b : ℕ) : hold (2, 3 + (b : ℤ)) = geomQuarter 2 * pascalNe3 b := by
+  classical
+  rw [hold_apply_pin]
+  congr 1
+  have hiid1 : pascalNe3.iid (2 - 1)
+      = pascalNe3.map fun a => Fin.cons (α := fun _ => ℕ) a (fun i : Fin 0 => i.elim0) := by
+    show pascalNe3.bind
+        (fun a => (PMF.pure (fun i : Fin 0 => i.elim0)).map (Fin.cons (α := fun _ => ℕ) a)) = _
+    rw [PMF.map]
+    refine congrArg _ (funext fun a => ?_)
+    rw [PMF.pure_map]
+    rfl
+  rw [hiid1, PMF.map_comp, PMF.map_apply]
+  rw [tsum_eq_single b (fun a ha => by
+    rw [if_neg (fun h => ha (by
+      simp only [Function.comp_apply, Fin.sum_cons] at h
+      have h' : (3 : ℤ) + b = 3 + a := by simpa using h
+      omega))]),
+    if_pos (by
+      simp only [Function.comp_apply, Fin.sum_cons]
+      simp)]
+
+/-- Real mass of `pascalNe3`. -/
+theorem pascalNe3_toReal (b : ℕ) :
+    (pascalNe3 b).toReal = if b < 2 ∨ b = 3 then 0
+      else (4 / 3) * (((b - 1 : ℕ) : ℝ) * 2⁻¹ ^ b) := by
+  rw [show pascalNe3 b = if b < 2 ∨ b = 3 then 0
+      else (4 / 3) * (((b - 1 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ b) from rfl]
+  split_ifs with h
+  · simp
+  · rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_inv,
+      ENNReal.toReal_natCast, ENNReal.toReal_div]
+    norm_num
+
+/-- Numeric `hold` atoms for the character-decay nondegeneracy ((D) of node S3):
+`(1,3), (2,5), (2,7), (2,8)` carry masses `1/4, 1/16, 3/64, 1/32`, and the
+difference set `{(1,2), (0,2), (0,3)}` affinely generates `ℤ²`. -/
+theorem hold_apply_two_five : (hold (2, 5)).toReal = 16⁻¹ := by
+  have h := hold_apply_two 2
+  rw [show ((3 : ℤ) + ((2 : ℕ) : ℤ)) = 5 from by norm_num] at h
+  rw [h, ENNReal.toReal_mul, geomQuarter_toReal, pascalNe3_toReal]
+  norm_num
+
+theorem hold_apply_two_seven : (hold (2, 7)).toReal = 3 / 64 := by
+  have h := hold_apply_two 4
+  rw [show ((3 : ℤ) + ((4 : ℕ) : ℤ)) = 7 from by norm_num] at h
+  rw [h, ENNReal.toReal_mul, geomQuarter_toReal, pascalNe3_toReal]
+  norm_num
+
+theorem hold_apply_two_eight : (hold (2, 8)).toReal = 32⁻¹ := by
+  have h := hold_apply_two 5
+  rw [show ((3 : ℤ) + ((5 : ℕ) : ℤ)) = 8 from by norm_num] at h
+  rw [h, ENNReal.toReal_mul, geomQuarter_toReal, pascalNe3_toReal]
+  norm_num
+
 /-- `∑' d, (hold d).toReal = 1` (holding is a genuine probability distribution). -/
 theorem hold_tsum_toReal : ∑' d : ℕ × ℤ, (hold d).toReal = 1 := by
   rw [← ENNReal.tsum_toReal_eq (fun d => hold.apply_ne_top d), hold.tsum_coe,
