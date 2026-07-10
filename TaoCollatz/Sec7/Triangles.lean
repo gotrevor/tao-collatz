@@ -644,11 +644,132 @@ theorem jstar_maximal (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n 
 
 end CornerSpec
 
+/-! ### The fibre identity: `θ(j,l) = 9^{j-j*}·2^{l*-l}·θ*` (paper p.39)
+
+Mirror of `θq_up_run` along the black row at height `l*`, composed with the upward run:
+every black strip point's phase is an exact `9^a·2^b` multiple of its corner phase. -/
+
+/-- Along a black row the phase 9-multiplies rightward exactly: if `(j+i, L)` is black
+for `0 ≤ i < t` then `θ(j+t, L) = 9^t·θ(j, L)`. -/
+theorem θq_left_run (n ξ : ℕ) (j : ℕ) (L : ℤ) (t : ℕ)
+    (hb : ∀ i : ℕ, i < t → black n ξ (j + i) L) :
+    θq n ξ (j + t) L = 9 ^ t * θq n ξ j L := by
+  induction t with
+  | zero => simp
+  | succ t IH =>
+    have hbt : black n ξ (j + t) L := hb t (by omega)
+    have hsmall : |θq n ξ (j + t) L| < 1 / 18 := by
+      have : |θq n ξ (j + t) L| ≤ epsBW := hbt
+      unfold epsBW at this; linarith
+    have hstep := θq_succ_j_exact n ξ (j + t) L hsmall
+    rw [show j + (t + 1) = (j + t) + 1 from by omega, hstep,
+      IH (fun i h => hb i (by omega))]
+    ring
+
+section FibreIdentity
+
+variable {n ξ : ℕ} {j : ℕ} {l : ℤ}
+
+/-- **Fibre identity** (paper p.39): a black strip point's phase is an exact
+`9^{j-j*}·2^{l*-l}` multiple of the corner phase `θ* = θ(j*, l*)`. -/
+theorem θq_fibre_eq (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) :
+    θq n ξ j l = 9 ^ (j - jstar n ξ j l) * 2 ^ (lstar n ξ j l - l).toNat
+      * θq n ξ (jstar n ξ j l) (lstar n ξ j l) := by
+  set j' := jstar n ξ j l with hj'
+  set L := lstar n ξ j l with hL
+  have hll : l ≤ L := le_lstar hξ h2j hb
+  have hjj : j' ≤ j := by rw [hj']; unfold jstar; omega
+  set b := (L - l).toNat with hbdef
+  set a := j - j' with hadef
+  -- upward run: θ(j,l) = 2^b · θ(j, L)
+  have hup : θq n ξ j l = 2 ^ b * θq n ξ j L := by
+    have hcast : l + (b : ℤ) = L := by omega
+    have := θq_up_run n ξ j l b (fun i h1 h2 => by
+      apply black_of_le_lstar hξ h2j hb (by omega)
+      rw [← hL]; omega)
+    rwa [hcast] at this
+  -- leftward run: θ(j, L) = 9^a · θ(j', L)
+  have hleft : θq n ξ j L = 9 ^ a * θq n ξ j' L := by
+    have hja : j' + a = j := by omega
+    have := θq_left_run n ξ j' L a (fun i h => by
+      apply black_of_jstar_le hξ h2j hb (by rw [← hj']; omega) (by omega))
+    rwa [hja] at this
+  rw [hup, hleft]; ring
+
+/-- **Δ*-membership as a ℚ-inequality**: for a black strip point,
+`9^{j-j*}·2^{l*-l}·|θ*| ≤ ε`. -/
+theorem fibre_le_eps (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) :
+    (9 : ℚ) ^ (j - jstar n ξ j l) * 2 ^ (lstar n ξ j l - l).toNat
+      * |θq n ξ (jstar n ξ j l) (lstar n ξ j l)| ≤ epsBW := by
+  have heq := θq_fibre_eq hξ h2j hb
+  have hble : |θq n ξ j l| ≤ epsBW := hb
+  calc (9 : ℚ) ^ (j - jstar n ξ j l) * 2 ^ (lstar n ξ j l - l).toNat
+        * |θq n ξ (jstar n ξ j l) (lstar n ξ j l)|
+      = |θq n ξ j l| := by
+        rw [heq, abs_mul, abs_mul,
+          abs_of_nonneg (by positivity : (0:ℚ) ≤ (9:ℚ) ^ (j - jstar n ξ j l)),
+          abs_of_nonneg (by positivity : (0:ℚ) ≤ (2:ℚ) ^ (lstar n ξ j l - l).toNat)]
+    _ ≤ epsBW := hble
+
+/-- The corner phase is nonzero (via the (7.16) lower bound at column `j*`). -/
+theorem corner_phase_pos (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) :
+    0 < |θq n ξ (jstar n ξ j l) (lstar n ξ j l)| := by
+  have hjj : jstar n ξ j l ≤ j := by unfold jstar; omega
+  have h2j' : 2 * jstar n ξ j l + 1 ≤ n := by omega
+  calc (0:ℚ) < 1 / 3 ^ (n - 2 * jstar n ξ j l) := by positivity
+    _ ≤ |θq n ξ (jstar n ξ j l) (lstar n ξ j l)| :=
+        θq_lower_bound n ξ hξ _ _ h2j'
+
+end FibreIdentity
+
 /-- The corner triangle with apex `(j₀, l₀)` and size `s` (paper (7.11)): points to the
 lower-right of the apex within `(log 9)·Δj + (log 2)·Δl ≤ s`. -/
 def triangle (j₀ : ℕ) (l₀ : ℤ) (s : ℝ) : Set (ℕ × ℤ) :=
   {p | j₀ ≤ p.1 ∧ p.2 ≤ l₀ ∧
     ((p.1 : ℝ) - j₀) * Real.log 9 + ((l₀ : ℝ) - p.2) * Real.log 2 ≤ s}
+
+/-- **Δ*-membership, log form** (paper p.39): every black strip point lies in the
+corner triangle with apex `(j*, l*)` and size `s* = log(ε/|θ*|)`. -/
+theorem black_mem_corner_triangle {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ ξ)
+    (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) :
+    (j, l) ∈ triangle (jstar n ξ j l) (lstar n ξ j l)
+      (Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|)) := by
+  have hjj : jstar n ξ j l ≤ j := by unfold jstar; omega
+  have hll : l ≤ lstar n ξ j l := le_lstar hξ h2j hb
+  set a := j - jstar n ξ j l with hadef
+  set b := (lstar n ξ j l - l).toNat with hbdef
+  set θs : ℚ := θq n ξ (jstar n ξ j l) (lstar n ξ j l) with hθs
+  have hθpos : (0:ℝ) < |(θs : ℝ)| := by
+    have := corner_phase_pos hξ h2j hb
+    rw [← hθs] at this
+    rw [← Rat.cast_abs]
+    exact_mod_cast this
+  have hq : (9 : ℝ) ^ a * 2 ^ b * |(θs : ℝ)| ≤ (epsBW : ℝ) := by
+    have := fibre_le_eps hξ h2j hb
+    rw [← hθs, ← hadef, ← hbdef] at this
+    rw [← Rat.cast_abs]
+    exact_mod_cast this
+  refine ⟨hjj, hll, ?_⟩
+  have hx : (0:ℝ) < (9:ℝ) ^ a * 2 ^ b := by positivity
+  have hdiv : (9:ℝ) ^ a * 2 ^ b ≤ (epsBW : ℝ) / |(θs : ℝ)| :=
+    (le_div_iff₀ hθpos).mpr hq
+  have hlog := Real.log_le_log hx hdiv
+  have hlogx : Real.log ((9:ℝ) ^ a * 2 ^ b)
+      = (a : ℝ) * Real.log 9 + (b : ℝ) * Real.log 2 := by
+    rw [Real.log_mul (by positivity) (by positivity), Real.log_pow, Real.log_pow]
+  have hca : ((j : ℝ) - (jstar n ξ j l : ℝ)) = (a : ℝ) := by
+    rw [hadef, Nat.cast_sub hjj]
+  have hcb : ((lstar n ξ j l : ℝ) - (l : ℝ)) = (b : ℝ) := by
+    have hz : ((lstar n ξ j l - l).toNat : ℤ) = lstar n ξ j l - l := by omega
+    have : ((b : ℤ) : ℝ) = ((lstar n ξ j l - l : ℤ) : ℝ) := by
+      rw [hbdef, hz]
+    push_cast at this
+    linarith
+  calc ((j : ℝ) - (jstar n ξ j l : ℝ)) * Real.log 9
+        + ((lstar n ξ j l : ℝ) - (l : ℝ)) * Real.log 2
+      = (a : ℝ) * Real.log 9 + (b : ℝ) * Real.log 2 := by rw [hca, hcb]
+    _ = Real.log ((9:ℝ) ^ a * 2 ^ b) := hlogx.symm
+    _ ≤ Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|) := hlog
 
 -- RATIFY-5 (resolved 2026-07-10 against paper pp.36–41 + harness check 8): the paper's
 -- separation is between the triangle POINT SETS ("using the Euclidean metric on
