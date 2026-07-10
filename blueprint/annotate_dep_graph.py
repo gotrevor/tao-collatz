@@ -61,18 +61,23 @@ def read_estimates() -> dict[str, tuple[str, str, str]]:
 
 def patch_node(m: re.Match, est: dict) -> str:
     node_id, attrs = m.group("id"), m.group("attrs")
-    if node_id not in est or "tooltip=" in attrs:
+    if "class=" in attrs:  # already processed (idempotency)
         return m.group(0)
-    laps, risk, conf = est[node_id]
-    # Two-line label: id + lap range. The file holds \\n so the JS template
-    # literal collapses it to \n, which graphviz renders as a line break.
-    attrs = re.sub(rf"label={node_id}\b", f'label="{node_id}\\\\n{laps}"', attrs)
-    attrs += f',\t\ttooltip="{laps} laps · risk {risk} · {conf} confidence"'
-    if "fillcolor" not in attrs:  # never override a leanblueprint status fill
-        # class= flows through graphviz into the SVG node, letting the injected
-        # CSS force dark label text on the tint in BOTH light and dark themes.
-        attrs += (f',\t\tstyle=filled,\t\tfillcolor="{TINT[risk]}"'
-                  ',\t\tclass="lapsrisk-tinted"')
+    if node_id in est and "tooltip=" not in attrs:
+        laps, risk, conf = est[node_id]
+        # Two-line label: id + lap range. The file holds \\n so the JS template
+        # literal collapses it to \n, which graphviz renders as a line break.
+        attrs = re.sub(rf"label={node_id}\b", f'label="{node_id}\\\\n{laps}"', attrs)
+        attrs += f',\t\ttooltip="{laps} laps · risk {risk} · {conf} confidence"'
+        if "fillcolor" not in attrs:  # never override a leanblueprint status fill
+            attrs += f',\t\tstyle=filled,\t\tfillcolor="{TINT[risk]}"'
+    # EVERY filled node — our risk tints AND leanblueprint's own status fills
+    # (proved green #9CEC8B, ready blue, ...) — is a light pastel, so the dark
+    # theme's light label text is unreadable on it (X3 went invisible the moment
+    # it earned its status fill). class= flows through graphviz into the SVG,
+    # letting the injected CSS force dark text in BOTH themes.
+    if "fillcolor" in attrs:
+        attrs += ',\t\tclass="lightfill"'
     return f"{m.group('pre')}{node_id}\t[{attrs}]"
 
 
@@ -84,14 +89,15 @@ LEGEND_EXTRA = (
     "\n      \n      <dt>Pale green background</dt><dd>campaign risk: <em>low</em></dd>"
 )
 
-# Tinted nodes always carry a light pastel fill, so force near-black label text on
-# them regardless of the page theme (the dark theme's light link-text was unreadable
-# on the tints). Scoped to the class the DOT sets, so status-filled/unfilled nodes
-# keep their theme styling.
-CSS_MARKER = "/* lapsrisk-tinted */"
+# Filled nodes always carry a light pastel (risk tint or leanblueprint status
+# fill), so force near-black label text on them regardless of the page theme (the
+# dark theme's light link-text was unreadable on the tints, then again on X3's
+# proved-green). Scoped to the class the DOT sets, so unfilled nodes keep their
+# theme styling.
+CSS_MARKER = "/* lightfill */"
 CSS_EXTRA = (
-    f"\n<style>{CSS_MARKER} #graph .lapsrisk-tinted text, "
-    "#graph .lapsrisk-tinted a, #graph .lapsrisk-tinted a text "
+    f"\n<style>{CSS_MARKER} #graph .lightfill text, "
+    "#graph .lightfill a, #graph .lightfill a text "
     "{ fill: #1b1b1b !important; color: #1b1b1b !important; }</style>\n"
 )
 
