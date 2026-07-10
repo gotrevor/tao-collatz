@@ -455,7 +455,7 @@ theorem Q_white_case1 (A : ℝ) (hA : 0 < A) :
     _ = Real.exp (-ε ^ 3 / 2) * ((m : ℝ) ^ (-A) * QM) := by
         rw [← Real.exp_add]
         congr 1
-        ring
+        ring_nf
     _ = Real.exp (-ε ^ 3 / 2) * (m : ℝ) ^ (-A) * QM := by ring
 
 /-- **Case 1, warm-up form** ((7.42)–(7.43)): if the starting point is white, one step of
