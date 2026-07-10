@@ -379,14 +379,84 @@ depth `≤ m - d₁ ≤ m - 1`, so `Q_le_Qm` bounds its value by
 estimate (first marginal of `hold` is `Geom(4)`): split at `d₁ ≤ m/2`, where the
 weight ratio `(m - d₁)^{-A}/m^{-A} ≤ 2^A` needs only `exp(ε³/2)`-room from the
 sub-1 mass at `d₁ ≥ 1`, and the tail `P(d₁ > m/2) ≤ (3/4)^{m/2}` is
-super-polynomial. That geometric-expectation leaf is the open sorry. -/
+super-polynomial (that leaf is `hold_weight_expect`, proved). -/
 theorem Q_white_case1 (A : ℝ) (hA : 0 < A) :
     ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ,
       (n / 2 - m, l) ∈ whiteSet n ξ →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
         ≤ Real.exp (-(epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A)
           * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
-  sorry
+  obtain ⟨C0, hC0one, hC0⟩ := hold_weight_expect A hA
+  refine ⟨C0, fun n ξ _ m hm hmn l hw => ?_⟩
+  set half := n / 2 with hhalf
+  set ε : ℝ := (epsBW : ℝ) with hεdef
+  have hε0 : (0 : ℝ) ≤ ε := by
+    rw [hεdef]
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  have hm1 : 1 ≤ m := le_trans hC0one hm
+  set QM := Qm half n ξ ε A (m - 1) with hQMdef
+  have hQM0 : 0 ≤ QM := Qm_nonneg _ _ _ _ _ _
+  rw [Q_rec _ _ _ _ _ (Nat.sub_le _ _)]
+  have hind : Set.indicator (whiteSet n ξ) (1 : ℕ × ℤ → ℝ) (half - m, l) = 1 :=
+    Set.indicator_of_mem hw 1
+  -- per-atom: each hold-atom lands at depth ≤ m-1 with weight max(m-d₁,1)^{-A}
+  have hatom : ∀ d : ℕ × ℤ,
+      (hold d).toReal * Q half (whiteSet n ξ) ε (half - m + d.1) (l + d.2)
+        ≤ (hold d).toReal * (((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) := by
+    intro d
+    rcases Nat.eq_zero_or_pos d.1 with h0 | hpos
+    · rw [hold_zero_of_fst_zero h0, ENNReal.toReal_zero, zero_mul, zero_mul]
+    · apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+      have h1 : 1 ≤ half - m + d.1 := by omega
+      have h2 : half - (m - 1) ≤ half - m + d.1 := by omega
+      have hkey := Q_le_Qm half n ξ ε A hA.le hε0 (m - 1) (l := l + d.2) h1 h2
+      have heq : half - (half - m + d.1) = m - d.1 := by omega
+      rwa [heq] at hkey
+  have hble : ∀ d : ℕ × ℤ,
+      (hold d).toReal * (((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM)
+        ≤ (hold d).toReal * QM := by
+    intro d
+    apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+    calc ((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM
+        ≤ 1 * QM := mul_le_mul_of_nonneg_right
+          (Real.rpow_le_one_of_one_le_of_nonpos
+            (by exact_mod_cast Nat.le_max_right (m - d.1) 1) (by linarith)) hQM0
+      _ = QM := one_mul _
+  have hsumR : Summable fun d : ℕ × ℤ =>
+      (hold d).toReal * (((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) :=
+    Summable.of_nonneg_of_le
+      (fun d => mul_nonneg ENNReal.toReal_nonneg
+        (mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _) hQM0))
+      hble (hold_summable_toReal.mul_right QM)
+  have hsumL : Summable fun d : ℕ × ℤ =>
+      (hold d).toReal * Q half (whiteSet n ξ) ε (half - m + d.1) (l + d.2) :=
+    Summable.of_nonneg_of_le
+      (fun d => mul_nonneg ENNReal.toReal_nonneg (Q_nonneg _ _ _ _ _))
+      (fun d => (hatom d).trans (hble d)) (hold_summable_toReal.mul_right QM)
+  have htsum : ∑' d : ℕ × ℤ,
+      (hold d).toReal * Q half (whiteSet n ξ) ε (half - m + d.1) (l + d.2)
+        ≤ Real.exp (ε ^ 3 / 2) * (m : ℝ) ^ (-A) * QM := by
+    calc ∑' d : ℕ × ℤ, (hold d).toReal * Q half (whiteSet n ξ) ε (half - m + d.1) (l + d.2)
+        ≤ ∑' d : ℕ × ℤ, (hold d).toReal * (((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) :=
+          hsumL.tsum_le_tsum hatom hsumR
+      _ = ∑' d : ℕ × ℤ, ((hold d).toReal * ((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A)) * QM :=
+          tsum_congr fun d => (mul_assoc _ _ _).symm
+      _ = (∑' d : ℕ × ℤ, (hold d).toReal * ((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A)) * QM :=
+          tsum_mul_right
+      _ ≤ Real.exp (ε ^ 3 / 2) * (m : ℝ) ^ (-A) * QM :=
+          mul_le_mul_of_nonneg_right (hC0 m hm) hQM0
+  rw [hind, mul_one]
+  calc Real.exp (-ε ^ 3) *
+        ∑' d : ℕ × ℤ, (hold d).toReal * Q half (whiteSet n ξ) ε (half - m + d.1) (l + d.2)
+      ≤ Real.exp (-ε ^ 3) * (Real.exp (ε ^ 3 / 2) * (m : ℝ) ^ (-A) * QM) :=
+        mul_le_mul_of_nonneg_left htsum (Real.exp_pos _).le
+    _ = (Real.exp (-ε ^ 3) * Real.exp (ε ^ 3 / 2)) * ((m : ℝ) ^ (-A) * QM) := by ring
+    _ = Real.exp (-ε ^ 3 / 2) * ((m : ℝ) ^ (-A) * QM) := by
+        rw [← Real.exp_add]
+        congr 1
+        ring
+    _ = Real.exp (-ε ^ 3 / 2) * (m : ℝ) ^ (-A) * QM := by ring
 
 /-- **Case 1, warm-up form** ((7.42)–(7.43)): if the starting point is white, one step of
 the recursion (7.35) already contracts by `exp(-ε³)`:

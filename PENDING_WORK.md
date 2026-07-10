@@ -14,7 +14,15 @@ middle `K < k ≤ m/2` mass `(3/4)^K ≤ (δ/3)2^{-A}` and weight `≤ 2^A m^{-A
 tail `k > m/2` mass `(3/4)^{m/2} ≤ (δ/3)m^{-A}` via
 `summable_norm_pow_mul_geometric_of_norm_lt_one` → tendsto → threshold `T`).
 
-**Next (X7)**: `Q_white_case1` (Case 1 proper) — consume `Q_rec` + `Q_le_Qm` +
+**Lap 12 addendum**: `Q_white_case1` (Case 1 proper, (7.41)–(7.43)) PROVED,
+axiom-clean — one `Q_rec` step at the white start pulls `exp(-ε³)`, `Q_le_Qm` at
+depth `m-1` bounds each hold-atom landing (`half - (half-m+d₁) = m - d₁` by omega),
+`hold_weight_expect` gives the `exp(ε³/2)m^{-A}` expectation, and
+`exp(-ε³)·exp(ε³/2) = exp(-ε³/2)`. X7's remaining open pieces: Case 2 (black start,
+paper (7.44) — needs the triangle/renewal input), the `prop_7_8` assembly from the
+two cases, then `Q_polynomial_decay` by induction on `m` from (7.39) + Prop 7.8.
+
+**Original route note (superseded)**: consume `Q_rec` + `Q_le_Qm` +
 `hold_weight_expect`. Route: one step of `Q_rec` at the white start `(n/2 - m, l)`
 pulls `exp(-ε³)`; each hold-atom `d` lands at `j = n/2 - m + d₁` with
 `n/2 - (m-1) ≤ j` (d₁ ≥ 1), so `Q_le_Qm` (depth `m-1`) bounds the landed value by
