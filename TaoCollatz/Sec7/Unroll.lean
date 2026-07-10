@@ -298,6 +298,162 @@ theorem holdSum_toReal_le_charFn (n N : ℕ) [NeZero N] (v : ℕ × ℤ) :
     (holdSum_le_modPair n N v)) ?_
   exact iidSum_apply_toReal_le (hold.map (modPair N)) n (modPair N v)
 
+/-- Transfer a two-atom anti-concentration bound through mass lower bounds and a
+Jordan bound (helper for `charFn_hold_decay`). -/
+theorem pair_transfer {X m0 m1 c0 c1 R u : ℝ} (hm0 : c0 ≤ m0) (hm1 : c1 ≤ m1)
+    (hc0 : 0 ≤ c0) (hc1 : 0 ≤ c1) (hJ : 8 * u ^ 2 ≤ 1 - R)
+    (hb : 2 * m0 * m1 * (1 - R) ≤ X) : 2 * c0 * c1 * (8 * u ^ 2) ≤ X := by
+  have h1R : 0 ≤ 1 - R := le_trans (by positivity) hJ
+  have hm0' : 0 ≤ m0 := le_trans hc0 hm0
+  have hm1' : 0 ≤ m1 := le_trans hc1 hm1
+  calc 2 * c0 * c1 * (8 * u ^ 2) ≤ 2 * c0 * c1 * (1 - R) :=
+        mul_le_mul_of_nonneg_left hJ (by positivity)
+    _ ≤ 2 * m0 * m1 * (1 - R) := by
+        have hcm : c0 * c1 ≤ m0 * m1 := mul_le_mul hm0 hm1 hc1 hm0'
+        nlinarith
+    _ ≤ X := hb
+
+/-! ### Character decay for `hold mod N` -/
+
+/-- **Character decay for the projected holding distribution** ((D) of node S3):
+uniformly in the modulus `N ≥ 4`, the characteristic function of `hold mod N` decays
+quadratically in the cyclic distance of the frequency. Nondegeneracy comes from the
+four explicit atoms `(1,3), (2,5), (2,7), (2,8)` whose differences `(1,2), (0,2),
+(0,3)` affinely generate `ℤ²`. -/
+theorem charFn_hold_decay {N : ℕ} [NeZero N] (hN : 4 ≤ N) (ξ : ZMod N × ZMod N) :
+    ‖charFn (hold.map (modPair N)) ξ‖ ^ 2
+      ≤ 1 - (((nd ξ.1 : ℝ) / N) ^ 2 + ((nd ξ.2 : ℝ) / N) ^ 2) / 768 := by
+  have hNpos : (0 : ℝ) < N := by
+    have : 0 < N := by omega
+    exact_mod_cast this
+  set r := hold.map (modPair N) with hr
+  -- transferred atom masses
+  have hmass : ∀ (d : ℕ × ℤ), (hold d).toReal ≤ (r (modPair N d)).toReal := fun d =>
+    ENNReal.toReal_mono (r.apply_ne_top _) (PMF.apply_le_map_apply hold (modPair N) d)
+  have hm13 : (4⁻¹ : ℝ) ≤ (r (modPair N (1, 3))).toReal := by
+    have h := hmass (1, 3)
+    rwa [hold_apply_one_three] at h
+  have hm25 : (16⁻¹ : ℝ) ≤ (r (modPair N (2, 5))).toReal := by
+    have h := hmass (2, 5)
+    rwa [hold_apply_two_five] at h
+  have hm27 : (3 / 64 : ℝ) ≤ (r (modPair N (2, 7))).toReal := by
+    have h := hmass (2, 7)
+    rwa [hold_apply_two_seven] at h
+  have hm28 : (32⁻¹ : ℝ) ≤ (r (modPair N (2, 8))).toReal := by
+    have h := hmass (2, 8)
+    rwa [hold_apply_two_eight] at h
+  -- distinctness of the projected atoms (any collision forces N ∣ 1, 2 or 3)
+  have hdvd : ∀ k : ℕ, 0 < k → k < 4 → ¬ ((k : ZMod N) = 0) := by
+    intro k hk0 hk4 h
+    have := (ZMod.natCast_eq_zero_iff k N).mp h
+    have := Nat.le_of_dvd hk0 this
+    omega
+  have hd1 : modPair N (2, 5) ≠ modPair N (1, 3) := by
+    intro h
+    have h1 : ((2 : ℕ) : ZMod N) = ((1 : ℕ) : ZMod N) := by
+      have := congrArg Prod.fst h
+      simpa [modPair] using this
+    exact hdvd 1 (by omega) (by omega) (by
+      have : ((2 : ℕ) : ZMod N) - ((1 : ℕ) : ZMod N) = 0 := by rw [h1, sub_self]
+      calc ((1 : ℕ) : ZMod N) = ((2 : ℕ) : ZMod N) - ((1 : ℕ) : ZMod N) := by
+            push_cast
+            ring
+        _ = 0 := this)
+  have hd2 : modPair N (2, 7) ≠ modPair N (2, 5) := by
+    intro h
+    have h1 : ((7 : ℤ) : ZMod N) = ((5 : ℤ) : ZMod N) := by
+      have := congrArg Prod.snd h
+      simpa [modPair] using this
+    exact hdvd 2 (by omega) (by omega) (by
+      have : ((7 : ℤ) : ZMod N) - ((5 : ℤ) : ZMod N) = 0 := by rw [h1, sub_self]
+      calc ((2 : ℕ) : ZMod N) = ((7 : ℤ) : ZMod N) - ((5 : ℤ) : ZMod N) := by
+            push_cast
+            ring
+        _ = 0 := this)
+  have hd3 : modPair N (2, 8) ≠ modPair N (2, 5) := by
+    intro h
+    have h1 : ((8 : ℤ) : ZMod N) = ((5 : ℤ) : ZMod N) := by
+      have := congrArg Prod.snd h
+      simpa [modPair] using this
+    exact hdvd 3 (by omega) (by omega) (by
+      have : ((8 : ℤ) : ZMod N) - ((5 : ℤ) : ZMod N) = 0 := by rw [h1, sub_self]
+      calc ((3 : ℕ) : ZMod N) = ((8 : ℤ) : ZMod N) - ((5 : ℤ) : ZMod N) := by
+            push_cast
+            ring
+        _ = 0 := this)
+  -- the three atom differences
+  have hw1 : modPair N (2, 5) - modPair N (1, 3) = (((1 : ℕ) : ZMod N), ((2 : ℕ) : ZMod N)) := by
+    rw [modPair, modPair, Prod.ext_iff]
+    constructor <;> (show _ - _ = _) <;> push_cast <;> ring
+  have hw2 : modPair N (2, 7) - modPair N (2, 5) = (((0 : ℕ) : ZMod N), ((2 : ℕ) : ZMod N)) := by
+    rw [modPair, modPair, Prod.ext_iff]
+    constructor <;> (show _ - _ = _) <;> push_cast <;> ring
+  have hw3 : modPair N (2, 8) - modPair N (2, 5) = (((0 : ℕ) : ZMod N), ((3 : ℕ) : ZMod N)) := by
+    rw [modPair, modPair, Prod.ext_iff]
+    constructor <;> (show _ - _ = _) <;> push_cast <;> ring
+  -- pinned frequencies
+  set j1 : ZMod N := ξ.1 * ((1 : ℕ) : ZMod N) + ξ.2 * ((2 : ℕ) : ZMod N) with hj1
+  set j2 : ZMod N := ξ.1 * ((0 : ℕ) : ZMod N) + ξ.2 * ((2 : ℕ) : ZMod N) with hj2
+  set j3 : ZMod N := ξ.1 * ((0 : ℕ) : ZMod N) + ξ.2 * ((3 : ℕ) : ZMod N) with hj3
+  set u1 : ℝ := (nd j1 : ℝ) / N with hu1
+  set u2 : ℝ := (nd j2 : ℝ) / N with hu2
+  set u3 : ℝ := (nd j3 : ℝ) / N with hu3
+  -- Jordan bounds
+  have hJ1 : 8 * u1 ^ 2 ≤ 1 - (pairChar ξ (((1 : ℕ) : ZMod N), ((2 : ℕ) : ZMod N))).re :=
+    one_sub_re_stdAddChar_ge' j1
+  have hJ2 : 8 * u2 ^ 2 ≤ 1 - (pairChar ξ (((0 : ℕ) : ZMod N), ((2 : ℕ) : ZMod N))).re :=
+    one_sub_re_stdAddChar_ge' j2
+  have hJ3 : 8 * u3 ^ 2 ≤ 1 - (pairChar ξ (((0 : ℕ) : ZMod N), ((3 : ℕ) : ZMod N))).re :=
+    one_sub_re_stdAddChar_ge' j3
+  -- pair anti-concentration bounds
+  have hb1 := charFn_normSq_pair_bound r ξ _ _ hd1
+  have hb2 := charFn_normSq_pair_bound r ξ _ _ hd2
+  have hb3 := charFn_normSq_pair_bound r ξ _ _ hd3
+  rw [hw1] at hb1
+  rw [hw2] at hb2
+  rw [hw3] at hb3
+  -- combined per-pair lower bounds on 1 - ‖φ‖²
+  set X : ℝ := 1 - ‖charFn r ξ‖ ^ 2 with hX
+  have hA1 : 2 * 16⁻¹ * 4⁻¹ * (8 * u1 ^ 2) ≤ X :=
+    pair_transfer hm25 hm13 (by norm_num) (by norm_num) hJ1 hb1
+  have hA2 : 2 * (3 / 64) * 16⁻¹ * (8 * u2 ^ 2) ≤ X :=
+    pair_transfer hm27 hm25 (by norm_num) (by norm_num) hJ2 hb2
+  have hA3 : 2 * 32⁻¹ * 16⁻¹ * (8 * u3 ^ 2) ≤ X :=
+    pair_transfer hm28 hm25 (by norm_num) (by norm_num) hJ3 hb3
+  have hu1X : u1 ^ 2 ≤ 4 * X := by linarith
+  have hu2X : u2 ^ 2 ≤ (64 / 3) * X := by linarith
+  have hu3X : u3 ^ 2 ≤ 32 * X := by linarith
+  -- triangle: recover ξ from the pinned frequencies
+  have ht1 : nd ξ.1 ≤ nd j1 + nd j2 := by
+    have h := nd_sub_le j1 j2
+    have hsub : j1 - j2 = ξ.1 := by
+      rw [hj1, hj2]
+      push_cast
+      ring
+    rwa [hsub] at h
+  have ht2 : nd ξ.2 ≤ nd j3 + nd j2 := by
+    have h := nd_sub_le j3 j2
+    have hsub : j3 - j2 = ξ.2 := by
+      rw [hj3, hj2]
+      push_cast
+      ring
+    rwa [hsub] at h
+  have ht1R : (nd ξ.1 : ℝ) / N ≤ u1 + u2 := by
+    rw [hu1, hu2, ← add_div]
+    gcongr
+    exact_mod_cast ht1
+  have ht2R : (nd ξ.2 : ℝ) / N ≤ u3 + u2 := by
+    rw [hu3, hu2, ← add_div]
+    gcongr
+    exact_mod_cast ht2
+  have hnd1nn : (0 : ℝ) ≤ (nd ξ.1 : ℝ) / N := by positivity
+  have hnd2nn : (0 : ℝ) ≤ (nd ξ.2 : ℝ) / N := by positivity
+  have ha2 : ((nd ξ.1 : ℝ) / N) ^ 2 ≤ 2 * u1 ^ 2 + 2 * u2 ^ 2 := by
+    nlinarith [ht1R, hnd1nn, sq_nonneg (u1 - u2)]
+  have hb2' : ((nd ξ.2 : ℝ) / N) ^ 2 ≤ 2 * u3 ^ 2 + 2 * u2 ^ 2 := by
+    nlinarith [ht2R, hnd2nn, sq_nonneg (u3 - u2)]
+  linarith [ha2, hb2', hu1X, hu2X, hu3X, sq_nonneg u1, sq_nonneg u2, sq_nonneg u3]
+
 /-- **Lemma 7.7 (Distribution of first passage location), D6 statement** (paper p.43,
 (7.30)–(7.33)): the first-passage endpoint mass at `(j, l)` is Gaussian-concentrated —
 `j` near `s/4` at scale `(1+s)^{1/2}`, `l` within `O(1)` of `s`. For `l ≤ s` the left

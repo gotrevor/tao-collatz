@@ -1,5 +1,29 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 28 (2026-07-10, fifth box session): (D) CHARACTER DECAY PROVED — charFn_hold_decay
+
+`Prob/CharFn.lean`: `nd` (cyclic distance min(val, N-val)), **`nd_le_natAbs`** (any ℤ
+representative bounds nd; emod/ediv case split, generalize-then-omega),
+`exists_natAbs_eq_nd`, **`nd_sub_le`** (subadditivity via representatives),
+`nd_cast`, `one_sub_re_stdAddChar_ge'` (Jordan in nd form).
+`Sec7/Unroll.lean`: `pair_transfer` (helper) + **`charFn_hold_decay`**:
+for N ≥ 4, `‖charFn (hold.map (modPair N)) ξ‖² ≤ 1 - ((nd ξ₁/N)² + (nd ξ₂/N)²)/768`.
+Route: four atom masses through apply_le_map_apply, distinctness via N ∤ 1,2,3,
+three pair anti-concentration bounds at differences (1,2),(0,2),(0,3), Jordan at the
+pinned frequencies, nd-subadditivity triangle (ξ₁ = j₁ - j₂, ξ₂ = j₃ - j₂), linarith
+assembly. ALL AXIOM-CLEAN. S3's 2-D kernel now needs only:
+
+**(E) Gaussian summation (next lap)**: from `holdSum_toReal_le_charFn` +
+`charFn_hold_decay`: P(holdSum n = v) ≤ N⁻² Σ_ξ (1 - (nd²-sum)/768N²·)^{n/2}...
+concretely: ‖φ‖ⁿ = (‖φ‖²)^{n/2} ≤ (1 - D/768)^{n/2} ≤ exp(-nD/1536), D = (ndξ₁/N)²+(ndξ₂/N)².
+Sum factorizes: N⁻²(Σ_{t : ZMod N} exp(-n(nd t/N)²/1536))². 1-D sum: index by
+m = nd t ∈ [0, N/2], each m hit ≤ 2 times: ≤ 2Σ_{m≤N/2} exp(-nm²/(1536N²)).
+At N = ⌈√n⌉+1 ≥ √n: n/N² ∈ [c,1], sum ≤ 2Σ_m exp(-m²·c/1536) = O(1) — bound the
+series by geometric: exp(-am²) ≤ exp(-am) for m ≥ 1: Σ ≤ 1 + 1/(1-e^{-a}) etc.
+→ **center-regime local bound**: P(holdSum n = v) ≤ C/(1+n) for ALL v (no Gweight
+needed in center; the Gaussian factor of Lemma 2.2(i) comes from tilting (F) later).
+Then state `hold_local_center` and wire toward `hold_local_bound`.
+
 ## Lap 27 (2026-07-10, fifth box session): (D) analytic core PROVED — pair bound + Jordan
 
 `Prob/CharFn.lean`: `pairChar_conj`/`pairChar_mul_conj` (conjugate = negated argument),

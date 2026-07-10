@@ -398,4 +398,82 @@ theorem one_sub_re_stdAddChar_ge (j : ZMod N) :
   have hmin0 : 0 ≤ min t (1 - t) := le_min ht0 (by linarith)
   nlinarith [hsin, hmin0, sq_nonneg (Real.sin (Real.pi * t) - 2 * min t (1 - t))]
 
+/-! ### The cyclic distance `nd` and its subadditivity -/
+
+/-- Distance of `j` to `0` on the cycle `ZMod N`: `min(val, N - val)`. -/
+def nd (j : ZMod N) : ℕ := min j.val (N - j.val)
+
+/-- Any integer representative bounds the cyclic distance. -/
+theorem nd_le_natAbs (x : ℤ) : nd ((x : ZMod N)) ≤ x.natAbs := by
+  have hN : 0 < N := Nat.pos_of_ne_zero (NeZero.ne N)
+  have hNz : (N : ℤ) ≠ 0 := by exact_mod_cast hN.ne'
+  have hNI : (0 : ℤ) < N := by exact_mod_cast hN
+  have hval : (((x : ZMod N)).val : ℤ) = x % N := ZMod.val_intCast x
+  have h0 : 0 ≤ x % N := Int.emod_nonneg x hNz
+  have hlt : x % N < N := Int.emod_lt_of_pos x hNI
+  have hq := Int.ediv_add_emod x N
+  rcases le_or_gt 0 x with hx | hx
+  · have hqnn : 0 ≤ x / N := Int.ediv_nonneg hx hNI.le
+    have hNq : 0 ≤ (N : ℤ) * (x / N) := mul_nonneg hNI.le hqnn
+    rw [nd]
+    generalize (N : ℤ) * (x / N) = t at hq hNq
+    generalize x % N = r at hval h0 hlt hq
+    omega
+  · have hqle : x / N ≤ -1 := by
+      by_contra hcon
+      push_neg at hcon
+      have hge : 0 ≤ x / N := by omega
+      have hprod : 0 ≤ (N : ℤ) * (x / N) := mul_nonneg hNI.le hge
+      linarith [hq, h0]
+    have hNq : (N : ℤ) * (x / N) ≤ (N : ℤ) * (-1) :=
+      mul_le_mul_of_nonneg_left hqle hNI.le
+    rw [nd]
+    generalize (N : ℤ) * (x / N) = t at hq hNq
+    generalize x % N = r at hval h0 hlt hq
+    omega
+
+/-- The cyclic distance is attained by a representative. -/
+theorem exists_natAbs_eq_nd (j : ZMod N) :
+    ∃ x : ℤ, (x : ZMod N) = j ∧ x.natAbs = nd j := by
+  have hvlt : j.val < N := ZMod.val_lt j
+  rcases le_or_gt (j.val) (N - j.val) with h | h
+  · refine ⟨(j.val : ℤ), ?_, ?_⟩
+    · rw [Int.cast_natCast, ZMod.natCast_zmod_val]
+    · rw [nd, min_eq_left h, Int.natAbs_natCast]
+  · refine ⟨(j.val : ℤ) - N, ?_, ?_⟩
+    · rw [Int.cast_sub, Int.cast_natCast, Int.cast_natCast, ZMod.natCast_zmod_val,
+        ZMod.natCast_self, sub_zero]
+    · rw [nd, min_eq_right h.le]
+      omega
+
+/-- Subadditivity of the cyclic distance over differences. -/
+theorem nd_sub_le (a b : ZMod N) : nd (a - b) ≤ nd a + nd b := by
+  obtain ⟨x, hxa, hxn⟩ := exists_natAbs_eq_nd a
+  obtain ⟨y, hyb, hyn⟩ := exists_natAbs_eq_nd b
+  have hab : a - b = ((x - y : ℤ) : ZMod N) := by
+    rw [Int.cast_sub, hxa, hyb]
+  calc nd (a - b) = nd ((x - y : ℤ) : ZMod N) := by rw [hab]
+    _ ≤ (x - y).natAbs := nd_le_natAbs _
+    _ ≤ x.natAbs + y.natAbs := Int.natAbs_sub_le x y
+    _ = nd a + nd b := by rw [hxn, hyn]
+
+/-- Real form of `nd` matching the Jordan bound's distance expression. -/
+theorem nd_cast (j : ZMod N) :
+    ((nd j : ℕ) : ℝ) = min (j.val : ℝ) ((N : ℝ) - j.val) := by
+  have hvlt : j.val ≤ N := (ZMod.val_lt j).le
+  rw [nd]
+  rcases le_or_gt (j.val) (N - j.val) with h | h
+  · rw [min_eq_left h, min_eq_left (by
+      rw [← Nat.cast_sub hvlt]
+      exact_mod_cast h)]
+  · rw [min_eq_right h.le, min_eq_right (by
+      rw [← Nat.cast_sub hvlt]
+      exact_mod_cast h.le), ← Nat.cast_sub hvlt]
+
+/-- Jordan bound in `nd` form. -/
+theorem one_sub_re_stdAddChar_ge' (j : ZMod N) :
+    8 * ((nd j : ℝ) / N) ^ 2 ≤ 1 - (ZMod.stdAddChar j).re := by
+  have h := one_sub_re_stdAddChar_ge j
+  rwa [← nd_cast] at h
+
 end TaoCollatz
