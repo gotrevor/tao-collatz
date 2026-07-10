@@ -67,14 +67,6 @@ theorem Qm_le_rpow (half n ξ : ℕ) (A : ℝ) (hA : 0 ≤ A) (m : ℕ) (hm : 1 
         exact Real.rpow_nonneg (Nat.cast_nonneg m) A
     _ = (m : ℝ) ^ A := mul_one _
 
-/-- **Proposition 7.8 (Monotonicity)**, paper p.45: `Q_m ≤ Q_{m-1}` whenever
-`C_{A,ε} ≤ m ≤ ⌊n/2⌋`, for a sufficiently large threshold `C_{A,ε}` depending only on
-`A` (our `ε = epsBW` is a fixed numeral, D4). Uniform in `n, ξ`. -/
-theorem prop_7_8 (A : ℝ) (hA : 0 < A) :
-    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
-      Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
-  sorry
-
 /-- Paper (7.37), the consequence of (7.39) + Proposition 7.8 by forward induction on `m`:
 `Q(j,l) ≪_A max(⌊n/2⌋ - j, 1)^{-A}`, uniformly in `n, ξ, j, l`. This is what feeds
 (7.36) `E Q(Hold) ≪_A n^{-A}` and hence Proposition 7.3 in `Decay.lean`. -/
@@ -488,5 +480,87 @@ theorem Q_white_contract (half : ℕ) (n ξ : ℕ) (ε : ℝ) (hε : 0 ≤ ε) (
       ≤ Real.exp (-(ε ^ 3) * Set.indicator (whiteSet n ξ) 1 (j, l)) * 1 :=
         mul_le_mul_of_nonneg_left htsum (Real.exp_pos _).le
     _ = Real.exp (-(ε ^ 3)) := by rw [hind, mul_one, mul_one]
+
+/-- **The (7.41) edge bound for BLACK starts** (Cases 2–3 of Proposition 7.8, paper
+(7.44)–(7.67), pp.46–49). A non-white point at depth `m` from the far edge (which is
+black, hence lies in a Lemma 7.4 triangle) still contracts to `m^{-A}·Q_{m-1}`.
+
+OPEN (nodes X8/X10): entry point is `Qstop_eq` (the (7.45) unrolling in `Unroll.lean`)
+with height budget `s := l_Δ - l`. Case 2 (`s ≤ m/log²m`): the overshoot endpoint is
+white with probability `≫ 1` ((7.50)/(7.51), consuming `black_structure`'s triangle
+separation) and the weight degradation `exp(O(A log m/m · j_{[1,k]}))` is negligible
+(Lemma 7.7 Chernoff, (7.48)/(7.49)). Case 3 (`s` large): Lemma 7.9's induction on `R`
+locates `≍ A²/ε⁴` white points. Both need Lemma 7.7 — the remaining hard
+probabilistic kernel. -/
+theorem Q_black_edge (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ,
+      1 ≤ n / 2 - m → (n / 2 - m, l) ∉ whiteSet n ξ →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  sorry
+
+/-- **Proposition 7.8 (Monotonicity)**, paper p.45: `Q_m ≤ Q_{m-1}` whenever
+`C_{A,ε} ≤ m ≤ ⌊n/2⌋`, for a sufficiently large threshold `C_{A,ε}` depending only on
+`A` (our `ε = epsBW` is a fixed numeral, D4). Uniform in `n, ξ`.
+
+Proof: the `Qm m` sup splits. Interior points (`p₁ > ⌊n/2⌋ - m`) are admissible at
+depth `m-1` with the same weight, so `le_Qm` bounds them by `Q_{m-1}` directly. Edge
+points (`p₁ = ⌊n/2⌋ - m`, weight `m^A`) satisfy (7.41) `Q ≤ m^{-A}·Q_{m-1}`: white
+starts by `Q_white_case1` (Case 1, proved), black starts by `Q_black_edge`
+(Cases 2–3, the open X8/X10 kernel). -/
+theorem prop_7_8 (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  obtain ⟨C1, hC1⟩ := Q_white_case1 A hA
+  obtain ⟨C2, hC2⟩ := Q_black_edge A hA
+  refine ⟨max (max C1 C2) 1, fun n ξ hξ m hm hmn => ?_⟩
+  have hmC1 : C1 ≤ m := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hm
+  have hmC2 : C2 ≤ m := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hm
+  have hm1 : 1 ≤ m := le_trans (le_max_right _ _) hm
+  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  have hm0 : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm1
+  have hQM0 : 0 ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := Qm_nonneg _ _ _ _ _ _
+  have hcancel : (m : ℝ) ^ A * (m : ℝ) ^ (-A) = 1 := by
+    rw [← Real.rpow_add hm0, add_neg_cancel, Real.rpow_zero]
+  refine Real.iSup_le (fun p => ?_) hQM0
+  obtain ⟨⟨p1, l⟩, hp1, hpm⟩ := p
+  have hp1' : 1 ≤ p1 := hp1
+  have hpm' : n / 2 - m ≤ p1 := hpm
+  show ((max (n / 2 - p1) 1 : ℕ) : ℝ) ^ A * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) p1 l
+    ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)
+  rcases eq_or_lt_of_le hpm' with heq | hlt
+  · -- edge point: p1 = n/2 - m, weight = m^A
+    have hp1eq : p1 = n / 2 - m := heq.symm
+    have hwt : (max (n / 2 - p1) 1 : ℕ) = m := by omega
+    have hedge : Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) p1 l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+      by_cases hw : (p1, l) ∈ whiteSet n ξ
+      · have h := hC1 n ξ hξ m hmC1 hmn l (hp1eq ▸ hw)
+        rw [hp1eq]
+        calc Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+            ≤ Real.exp (-(epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A)
+              * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := h
+          _ ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+              apply mul_le_mul_of_nonneg_right _ hQM0
+              have hexp : Real.exp (-(epsBW : ℝ) ^ 3 / 2) ≤ 1 := by
+                rw [Real.exp_le_one_iff]
+                have h3 : (0 : ℝ) ≤ (epsBW : ℝ) ^ 3 := by positivity
+                linarith
+              calc Real.exp (-(epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A)
+                  ≤ 1 * (m : ℝ) ^ (-A) :=
+                    mul_le_mul_of_nonneg_right hexp (Real.rpow_nonneg hm0.le _)
+                _ = (m : ℝ) ^ (-A) := one_mul _
+      · exact hp1eq ▸ hC2 n ξ hξ m hmC2 hmn l (by omega) (hp1eq ▸ hw)
+    calc ((max (n / 2 - p1) 1 : ℕ) : ℝ) ^ A * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) p1 l
+        ≤ ((max (n / 2 - p1) 1 : ℕ) : ℝ) ^ A
+            * ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :=
+          mul_le_mul_of_nonneg_left hedge (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+      _ = (m : ℝ) ^ A * (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+          rw [hwt]; ring
+      _ = Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by rw [hcancel, one_mul]
+  · -- interior point: admissible at depth m-1 with the same weight
+    exact le_Qm (n / 2) n ξ (epsBW : ℝ) A hA.le hε0 (m - 1) hp1 (by omega)
 
 end TaoCollatz

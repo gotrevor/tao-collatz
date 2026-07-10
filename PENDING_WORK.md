@@ -54,6 +54,24 @@ expectation (Case 2's (7.46)); (b) the endpoint-distribution facts need Lemma 7.
 (c) the white-exit constant (7.50)/(7.51) consumes Lemma 7.4's structure
 (`black_structure` proved) + 7.7. **X9**: `Z R j l` recursion on `R` over `Qstop`.
 
+## Lap 15 (2026-07-10): `prop_7_8` ASSEMBLED — open core narrowed to `Q_black_edge`
+
+`prop_7_8` (Prop 7.8, Q_m ≤ Q_{m-1}) is now PROVED modulo one named sorry:
+`Q_black_edge` (Monotone.lean) — the (7.41) edge bound for black starts
+(Cases 2–3, paper (7.44)–(7.67)). The assembly: `Real.iSup_le` over the `Qm m`
+sup; interior points (`p₁ > half - m`) drop to `Q_{m-1}` via `le_Qm` at depth
+`m-1` (same weight); edge points (`p₁ = half - m`, weight `m^A`) use
+`Q_white_case1` (white) or `Q_black_edge` (black), with the `m^A·m^{-A}` rpow
+cancellation. Gotcha: the sup-subtype projections `(⟨(p1,l),_⟩).1` block omega —
+normalize with defeq `have`/`show` bridges first.
+
+**The X7→X11 chain now rests entirely on `Q_black_edge`**, whose route is:
+`Qstop_eq` (proved) + Lemma 7.7 Chernoff (X6, the hard probabilistic kernel) +
+white-exit (7.50)/(7.51) (consumes `black_structure`, proved) for Case 2; +
+Lemma 7.9 induction (X9) for Case 3. Next: state Lemma 7.7 (D6 form) and the
+Case 2/3 split of `Q_black_edge`; then `Q_polynomial_decay` from `prop_7_8` +
+`Qm_le_rpow` by forward induction on m (tractable now).
+
 ## After laps 6–10 (2026-07-10, second box session): **X3 HEAD CLOSED — Lemma 7.4 PROVED**
 
 `black_structure` is now a theorem, `#print axioms` = `[propext, Classical.choice,
