@@ -1,5 +1,32 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 21 (2026-07-10, fourth box session): Lemma 7.7 D6 layer — `fpDist` + (7.45) inequality
+
+`Sec7/Unroll.lean` extended (all proved, axiom-clean, except the one named sorry):
+* `fpDist : ℕ → PMF (ℕ × ℤ)` — the first-passage endpoint distribution (paper
+  `v_{[1,k]}`, (7.44)) by budget recursion mirroring `Qstop`; normalization free
+  from PMF combinators. Junk guard `d.2 ≤ 0` fires only on hold-null atoms.
+* `fpDist_support_fst_pos`, `fpDist_support_snd_gt` — endpoints move right and
+  overshoot the budget (`s < e₂`).
+* `Q_le_fpDist_expect` — the (7.45) inequality in ℝ≥0∞ form:
+  `ofReal (Q j l) ≤ Σ' e, fpDist s e · ofReal (Q (j+e₁) (l+e₂))` for every budget s.
+  Strong induction over `Q_rec`, damping dropped (each factor ≤ 1). This is Case 2's
+  (7.46) entry and Case 3's (7.53) at P = 0.
+* `Gweight t x = exp(-x²/t) + exp(-|x|)` (paper (2.2)) and
+  **`fpDist_location_bound` — Lemma 7.7 stated as the NEW NAMED SORRY** (X6):
+  `(fpDist s (j,l)).toReal ≤ C·(e^{-c(l-s)}/√(1+s))·Gweight (1+s) (c(j-s/4))`,
+  unconditional (LHS vanishes for l ≤ s by the support lemma).
+  Numeric sanity: MC at s=40 → mode j ∈ {10,11,12} ≈ s/4+1, l ∈ {41,42,43} ✓.
+
+**Attack routes for `fpDist_location_bound`** (the paper's pp.43–44 proof):
+union bound over the last step (mirror: one `fpDist` unfold), `Hold` exponential
+tail (Lemma 7.6 — provable from geomQuarter/pascalNe3 MGFs, finite products), and
+the 2-D local bound Lemma 2.2 for iid `Hold` sums (node S3, the real wall; D5:
+exponential tilting + circle method — `P(S_k = v) = (2π)^{-2} M(λ)^k e^{-λ·v} ∫|φ_λ|^k`).
+NOTE: `fpDist` has no k-index — the D6 route needs a k-free reformulation of the
+union bound, e.g. induction on s with the Gaussian weight as the induction invariant
+(the paper's (7.33) reduction is already k-summed, which suits this form).
+
 ## Laps 18–20 (2026-07-10, fourth box session): X5 FULLY CLOSED — all three bridge sorries PROVED
 
 **Done (axiom-clean)**: `hold_tsum_step` (7.29), `bridge_renewal` (7.27)≡(7.28),
