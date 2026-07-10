@@ -219,17 +219,157 @@ noncomputable def pascalNe3 : PMF ℕ :=
   ⟨fun b => if b < 2 ∨ b = 3 then 0 else (4 / 3) * (((b - 1 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ b),
     pascalNe3Fun_hasSum⟩
 
-/-- Definitional bridge: `pascal` is the pushforward of `geomHalf.iid 2` under summation
-of the two coordinates. -/
-theorem pascal_eq_map_iid :
-    pascal = (PMF.iid geomHalf 2).map (fun v => v 0 + v 1) := by
-  sorry
+/-- Pointwise mass of `geomHalf`. -/
+theorem geomHalf_apply (a : ℕ) : geomHalf a = if a = 0 then 0 else 2⁻¹ ^ a := rfl
+
+/-- Any iid `geomHalf` vector with total `0` has zero mass (each coordinate is `≥ 1`
+on the support). -/
+theorem iid_geomHalf_sum_zero {n : ℕ} (hn : 1 ≤ n) (w : Fin n → ℕ)
+    (hw : ∑ i, w i = 0) : (geomHalf.iid n) w = 0 := by
+  rw [PMF.apply_eq_zero_iff]
+  intro hsupp
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  have h0 : w 0 ∈ geomHalf.support := PMF.iid_support_coord geomHalf _ w hsupp 0
+  have hz : w 0 = 0 := Finset.sum_eq_zero_iff.mp hw 0 (Finset.mem_univ _)
+  rw [PMF.mem_support_iff, hz] at h0
+  exact h0 rfl
+
+/-- The pushforward mass of an iid sum, in weighted-indicator form. -/
+theorem map_sum_apply (p : PMF ℕ) (n L : ℕ) :
+    ((p.iid n).map fun v => ∑ i, v i) L
+      = ∑' v : Fin n → ℕ, (p.iid n) v * (if L = ∑ i, v i then 1 else 0) := by
+  rw [PMF.map_apply]
+  exact tsum_congr fun v => by split_ifs <;> simp
+
+/-- Column sums of Pascal's triangle (hockey stick): `∑_{j<K} C(j,m) = C(K, m+1)`. -/
+theorem sum_range_choose_col (K m : ℕ) :
+    ∑ j ∈ Finset.range K, j.choose m = K.choose (m + 1) := by
+  induction K with
+  | zero => simp
+  | succ K IH =>
+    rw [Finset.sum_range_succ, IH, Nat.choose_succ_succ, Nat.succ_eq_add_one]
+    omega
+
+/-- Reindexed hockey stick for the convolution step of `negBinomial_apply`. -/
+theorem sum_Ico_choose_shift (m L : ℕ) :
+    ∑ a ∈ Finset.Ico 1 L, (L - a - 1).choose m = (L - 1).choose (m + 1) := by
+  rw [← sum_range_choose_col (L - 1) m]
+  refine Finset.sum_nbij' (i := fun a => L - 1 - a) (j := fun b => L - 1 - b)
+    ?_ ?_ ?_ ?_ ?_
+  · intro a ha
+    rw [Finset.mem_Ico] at ha
+    rw [Finset.mem_range]
+    omega
+  · intro b hb
+    rw [Finset.mem_range] at hb
+    rw [Finset.mem_Ico]
+    omega
+  · intro a ha
+    rw [Finset.mem_Ico] at ha
+    omega
+  · intro b hb
+    rw [Finset.mem_range] at hb
+    omega
+  · intro a ha
+    rw [Finset.mem_Ico] at ha
+    congr 1
+    omega
 
 /-- Negative binomial exact point mass (paper §2): the law of the total `|Geom(2)ⁿ|`
 puts mass `(L-1).choose (n-1)·2⁻ᴸ` at `L`, for `L, n ≥ 1`. -/
 theorem negBinomial_apply (n L : ℕ) (hn : 1 ≤ n) (hL : 1 ≤ L) :
     ((PMF.iid geomHalf n).map (fun v => ∑ i, v i)) L
       = (L - 1).choose (n - 1) * 2⁻¹ ^ L := by
-  sorry
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  clear hn
+  simp only [Nat.add_sub_cancel]
+  induction m generalizing L with
+  | zero =>
+    rw [map_sum_apply, PMF.tsum_iid_succ_mul]
+    have hinner : ∀ a : ℕ,
+        geomHalf a * (∑' w : Fin 0 → ℕ, (geomHalf.iid 0) w
+          * (if L = ∑ i, Fin.cons (α := fun _ => ℕ) a w i then 1 else 0))
+        = geomHalf a * (if L = a then (1 : ℝ≥0∞) else 0) := by
+      intro a
+      congr 1
+      rw [PMF.tsum_iid_zero_mul]
+      have hiff : (L = ∑ i, Fin.cons (α := fun _ => ℕ) a (fun i : Fin 0 => i.elim0) i)
+          ↔ L = a := by
+        rw [Fin.sum_cons]
+        simp
+      exact if_congr hiff rfl rfl
+    rw [tsum_congr hinner,
+      tsum_eq_single L (fun a ha => by rw [if_neg (Ne.symm ha), mul_zero]),
+      if_pos rfl, mul_one, geomHalf_apply, if_neg (by omega), Nat.choose_zero_right,
+      Nat.cast_one, one_mul]
+  | succ m IH =>
+    rw [map_sum_apply, PMF.tsum_iid_succ_mul]
+    have hinner : ∀ a : ℕ,
+        geomHalf a * (∑' w : Fin (m + 1) → ℕ, (geomHalf.iid (m + 1)) w
+          * (if L = ∑ i, Fin.cons (α := fun _ => ℕ) a w i then 1 else 0))
+        = if a ∈ Finset.Ico 1 L
+            then ((L - a - 1).choose m : ℝ≥0∞) * 2⁻¹ ^ L else 0 := by
+      intro a
+      rcases Nat.eq_zero_or_pos a with rfl | ha1
+      · rw [geomHalf_apply, if_pos rfl, zero_mul,
+          if_neg (by rw [Finset.mem_Ico]; omega)]
+      rcases lt_or_ge a L with haL | haL
+      · -- 1 ≤ a < L: the inner sum is the (m+1)-fold iid sum mass at L - a
+        have hin : (∑' w : Fin (m + 1) → ℕ, (geomHalf.iid (m + 1)) w
+              * (if L = ∑ i, Fin.cons (α := fun _ => ℕ) a w i then 1 else 0))
+            = ((geomHalf.iid (m + 1)).map fun v => ∑ i, v i) (L - a) := by
+          rw [map_sum_apply]
+          refine tsum_congr fun w => ?_
+          congr 1
+          have hiff : (L = ∑ i, Fin.cons (α := fun _ => ℕ) a w i)
+              ↔ (L - a = ∑ i, w i) := by
+            rw [Fin.sum_cons]
+            omega
+          exact if_congr hiff rfl rfl
+        rw [hin, IH (L - a) (by omega), if_pos (by rw [Finset.mem_Ico]; omega),
+          geomHalf_apply, if_neg (by omega), ← mul_assoc,
+          mul_comm ((2 : ℝ≥0∞)⁻¹ ^ a), mul_assoc, ← pow_add,
+          show a + (L - a) = L from by omega]
+      · -- a ≥ L: every atom needs total > L or a sum-zero iid tail (mass 0)
+        have hin : (∑' w : Fin (m + 1) → ℕ, (geomHalf.iid (m + 1)) w
+              * (if L = ∑ i, Fin.cons (α := fun _ => ℕ) a w i then 1 else 0)) = 0 := by
+          refine ENNReal.tsum_eq_zero.mpr fun w => ?_
+          rw [Fin.sum_cons]
+          split_ifs with h
+          · rw [iid_geomHalf_sum_zero (by omega) w (by omega), zero_mul]
+          · rw [mul_zero]
+        rw [hin, mul_zero, if_neg (by rw [Finset.mem_Ico]; omega)]
+    rw [tsum_congr hinner,
+      tsum_eq_sum (s := Finset.Ico 1 L) (fun a ha => if_neg ha),
+      Finset.sum_congr rfl (fun a ha => if_pos ha), ← Finset.sum_mul,
+      ← Nat.cast_sum, sum_Ico_choose_shift]
+
+/-- Definitional bridge: `pascal` is the pushforward of `geomHalf.iid 2` under summation
+of the two coordinates. -/
+theorem pascal_eq_map_iid :
+    pascal = (PMF.iid geomHalf 2).map (fun v => v 0 + v 1) := by
+  have hsum : (fun v : Fin 2 → ℕ => v 0 + v 1) = fun v : Fin 2 → ℕ => ∑ i, v i := by
+    funext v
+    rw [Fin.sum_univ_two]
+  rw [hsum]
+  refine PMF.ext fun b => ?_
+  rcases b with _ | b
+  · -- `b = 0`: both sides vanish
+    rw [show pascal 0 = 0 from rfl, map_sum_apply]
+    refine (ENNReal.tsum_eq_zero.mpr fun v => ?_).symm
+    split_ifs with h
+    · rw [iid_geomHalf_sum_zero (by omega) v (by omega), zero_mul]
+    · rw [mul_zero]
+  · -- `b + 1 ≥ 1`: the negative-binomial mass at `n = 2` is the Pascal mass
+    rw [negBinomial_apply 2 (b + 1) (by omega) (by omega)]
+    have h1 : (b + 1 - 1).choose (2 - 1) = b := by
+      simp [Nat.choose_one_right]
+    rw [h1]
+    show (if b + 1 < 2 then (0 : ℝ≥0∞) else ((b + 1 - 1 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ (b + 1))
+      = (b : ℝ≥0∞) * 2⁻¹ ^ (b + 1)
+    rcases Nat.eq_zero_or_pos b with rfl | hb
+    · rw [if_pos (by omega)]
+      simp
+    · rw [if_neg (by omega), Nat.add_sub_cancel]
 
 end TaoCollatz

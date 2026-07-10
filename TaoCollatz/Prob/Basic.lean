@@ -114,6 +114,23 @@ theorem expect_iid_succ (p : PMF α) (n : ℕ) (h : (Fin (n + 1) → α) → ℝ
   rw [ENNReal.toReal_mul, toReal_tsum_mul_ofReal (p.iid n) _ (fun w => h0 _)]
   rfl
 
+/-- Every coordinate of a vector in the support of `p.iid n` lies in `p.support`. -/
+theorem iid_support_coord (p : PMF α) :
+    ∀ (n : ℕ) (v : Fin n → α), v ∈ (p.iid n).support → ∀ i, v i ∈ p.support := by
+  intro n
+  induction n with
+  | zero => intro v _ i; exact i.elim0
+  | succ n IH =>
+    intro v hv i
+    rw [show p.iid (n + 1) = p.bind fun a => (p.iid n).map (Fin.cons a) from rfl,
+      PMF.mem_support_bind_iff] at hv
+    obtain ⟨a, ha, hv⟩ := hv
+    rw [PMF.mem_support_map_iff] at hv
+    obtain ⟨w, hw, rfl⟩ := hv
+    refine Fin.cases ?_ (fun j => ?_) i
+    · simpa using ha
+    · simpa using IH w hw j
+
 /-- Total variation is symmetric. -/
 theorem dTV_comm (p q : PMF α) : dTV p q = dTV q p := by
   unfold dTV

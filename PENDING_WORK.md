@@ -1,5 +1,34 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 23 (2026-07-10, fifth box session): d=1 warm-up PROVED — negBinomial_apply + pascal_eq_map_iid
+
+**Done (axiom-clean)**: `negBinomial_apply` — exact negative-binomial point mass
+`P(|Geom(2)_n| = L) = C(L-1, n-1)·2^{-L}` by induction on `n` over the iid peel
+(`tsum_iid_succ_mul`), convolution step = reindexed hockey stick
+(`sum_range_choose_col`, `sum_Ico_choose_shift`); `pascal_eq_map_iid` — `pascal` IS
+the 2-fold `Geom(2)` sum, immediate from `negBinomial_apply` at `n = 2` plus a
+sum-zero support argument (`iid_geomHalf_sum_zero`, generic `PMF.iid_support_coord`
+added to Prob/Basic). These give S3's Pascal instance an exact formula to work from:
+`iidSum pascal n` = law of `|Geom(2)_{2n}|`, mass `C(L-1, 2n-1)·2^{-L}`.
+
+**NEXT (S3 continued, per session mission)**: (a) the `iidSum pascal n =
+iidSum geomHalf (2n)` splice (iid concat lemma) so `pascal_local_bound` reduces to
+binomial estimates on `C(L-1, 2n-1)·2^{-L}` (Stirling recipe in corpus:
+2026-06-19-mathlib-stirling-factorial-bounds.md); (b) probe the ZMod circle-method
+decomposition for `hold_local_bound` (finite Fourier inversion on `ZMod N × ZMod N`,
+exponential-tail truncation replaces the paper's `[-π,π]²` integral — no measure
+theory); state the key intermediate lemmas.
+
+## Lap 22 (2026-07-10, fifth box session): S3 front OPENED — Lemma 2.2 statements pinned
+
+`Prob/LocalBound.lean` NEW: `Gweight` (2.2) factored from Unroll + `Gweight_pos/
+_nonneg/_le_two`, `iidSum`, and Lemma 2.2(i)(ii) STATED (sorries) for `geomHalf`
+(mean 2), `geomQuarter` (mean 4), `pascal` (mean 4): `*_local_bound` =
+`C/√(1+n)·Gweight(1+n)(c(L-μn))`, `*_tail_bound` = indicator-tsum `≤ C·Gweight(1+n)(cλ)`.
+`Sec7/Unroll.lean`: `holdSum` + `hold_local_bound`/`hold_tail_bound` (d=2, mean (4,16),
+sup-norm; RATIFY-DRIFT notes: Gweight(1+n) vs G_n, ℕ index set, sup vs Euclidean norm).
+Judge should ratify these vs paper pp.14-16 + p.42.
+
 ## Lap 21 (2026-07-10, fourth box session): Lemma 7.7 D6 layer — `fpDist` + (7.45) inequality
 
 `Sec7/Unroll.lean` extended (all proved, axiom-clean, except the one named sorry):
