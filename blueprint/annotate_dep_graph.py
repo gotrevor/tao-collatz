@@ -84,7 +84,9 @@ def patch_node(m: re.Match, est: dict) -> str:
 LEGEND_ANCHOR = "<dt>Dark green border</dt><dd>this is in Mathlib</dd>"
 LEGEND_EXTRA = (
     "\n      \n      <dt>Pale red background</dt><dd>campaign risk: <em>high</em> "
-    "(unstarted node; label's second line = estimated treadmill laps)</dd>"
+    "(the node's PROOF is still open — the tint tracks remaining proof risk and drops "
+    "only on completion; the border independently tracks statement status; label's "
+    "second line = estimated treadmill laps)</dd>"
     "\n      \n      <dt>Pale amber background</dt><dd>campaign risk: <em>medium</em></dd>"
     "\n      \n      <dt>Pale green background</dt><dd>campaign risk: <em>low</em></dd>"
 )
