@@ -42,7 +42,17 @@ noncomputable def Qm (half : ℕ) (n ξ : ℕ) (ε A : ℝ) (m : ℕ) : ℝ :=
 /-- Paper (7.39), the induction base: `Q_m ≤ m^A` (from `Q ≤ 1` and the weight bound). -/
 theorem Qm_le_rpow (half n ξ : ℕ) (A : ℝ) (hA : 0 ≤ A) (m : ℕ) (hm : 1 ≤ m) :
     Qm half n ξ (epsBW : ℝ) A m ≤ (m : ℝ) ^ A := by
-  sorry
+  have hε : (0 : ℝ) ≤ (epsBW : ℝ) := by unfold epsBW; positivity
+  refine Real.iSup_le (fun p => ?_) (Real.rpow_nonneg (Nat.cast_nonneg m) A)
+  have hw : ((max (half - p.1.1) 1 : ℕ) : ℝ) ^ A ≤ (m : ℝ) ^ A := by
+    apply Real.rpow_le_rpow (by positivity) _ hA
+    have hle : half - p.1.1 ≤ m := by have := p.2; omega
+    exact_mod_cast max_le hle hm
+  calc ((max (half - p.1.1) 1 : ℕ) : ℝ) ^ A * Q half (whiteSet n ξ) (epsBW : ℝ) p.1.1 p.1.2
+      ≤ (m : ℝ) ^ A * 1 := by
+        apply mul_le_mul hw (Q_le_one _ _ _ hε _ _) (Q_nonneg _ _ _ _ _)
+        exact Real.rpow_nonneg (Nat.cast_nonneg m) A
+    _ = (m : ℝ) ^ A := mul_one _
 
 /-- **Proposition 7.8 (Monotonicity)**, paper p.45: `Q_m ≤ Q_{m-1}` whenever
 `C_{A,ε} ≤ m ≤ ⌊n/2⌋`, for a sufficiently large threshold `C_{A,ε}` depending only on
@@ -66,6 +76,29 @@ the recursion (7.35) already contracts by `exp(-ε³)`:
 theorem Q_white_contract (half : ℕ) (n ξ : ℕ) (ε : ℝ) (hε : 0 ≤ ε) (j : ℕ) (l : ℤ)
     (hj : j ≤ half) (hw : white n ξ j l) :
     Q half (whiteSet n ξ) ε j l ≤ Real.exp (-(ε ^ 3)) := by
-  sorry
+  rw [Q_rec _ _ _ _ _ hj]
+  have hind : Set.indicator (whiteSet n ξ) (1 : ℕ × ℤ → ℝ) (j, l) = 1 :=
+    Set.indicator_of_mem hw 1
+  have hterm : ∀ d : ℕ × ℤ,
+      (hold d).toReal * Q half (whiteSet n ξ) ε (j + d.1) (l + d.2) ≤ (hold d).toReal :=
+    fun d => by
+      calc (hold d).toReal * Q half (whiteSet n ξ) ε (j + d.1) (l + d.2)
+          ≤ (hold d).toReal * 1 :=
+            mul_le_mul_of_nonneg_left (Q_le_one _ _ _ hε _ _) ENNReal.toReal_nonneg
+        _ = (hold d).toReal := mul_one _
+  have hnn : ∀ d : ℕ × ℤ,
+      0 ≤ (hold d).toReal * Q half (whiteSet n ξ) ε (j + d.1) (l + d.2) :=
+    fun d => mul_nonneg ENNReal.toReal_nonneg (Q_nonneg _ _ _ _ _)
+  have hsum : Summable fun d : ℕ × ℤ =>
+      (hold d).toReal * Q half (whiteSet n ξ) ε (j + d.1) (l + d.2) :=
+    Summable.of_nonneg_of_le hnn hterm hold_summable_toReal
+  have htsum : ∑' d : ℕ × ℤ, (hold d).toReal * Q half (whiteSet n ξ) ε (j + d.1) (l + d.2)
+      ≤ 1 :=
+    le_trans (hsum.tsum_le_tsum hterm hold_summable_toReal) hold_tsum_toReal.le
+  calc Real.exp (-(ε ^ 3) * Set.indicator (whiteSet n ξ) 1 (j, l)) *
+        ∑' d : ℕ × ℤ, (hold d).toReal * Q half (whiteSet n ξ) ε (j + d.1) (l + d.2)
+      ≤ Real.exp (-(ε ^ 3) * Set.indicator (whiteSet n ξ) 1 (j, l)) * 1 :=
+        mul_le_mul_of_nonneg_left htsum (Real.exp_pos _).le
+    _ = Real.exp (-(ε ^ 3)) := by rw [hind, mul_one, mul_one]
 
 end TaoCollatz
