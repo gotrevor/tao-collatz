@@ -1,5 +1,21 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## After lap 3 (2026-07-10)
+
+**Done**: (7.16) formalized — `θq_lower_bound` (`3^{-(n-2j)} ≤ |θ(j,l)|` for ξ coprime
+to 3, `2j+1 ≤ n`, via the ±1/3-mod-ℤ 3-adic argument: `sfrac_phase_absorb` +
+`abs_sfrac_le` + argRel scaling) and `black_nine_le` (black ⇒ `n - 2j ≥ 9`). All
+axiom-clean. This is the strip-confinement input to Lemma 7.4's conjunct 4.
+
+**Next attack on X3 (`black_structure`)**: with (7.16) + claims (i)–(iii) in hand, the
+remaining Lemma 7.4 ingredients are (a) l*-existence: an upward black run from a black
+point terminates (uses `black_nine_le` at growing powers via `θq_pred_l_exact` doubling:
+|θ(j,l')| = 2^{l-l'}|θ(j,l)| forces whiteness once above ε... paper argument p.38 uses
+3^{n+1-2j}2^{l-l'}ε ≥ 1/3 — formalize as: black run upward of length > log₂(3^{n-2j}ε)
+impossible); (b) j*-existence (leftward run hits j=1); (c) the Δ* fibre equivalence
+(7.17)/(7.18) — the equality case identity |θ(j',l')| = 9^{Δj}2^{Δl}|θ*| when RHS < 1/2,
+provable by induction from the two exact lemmas.
+
 ## After lap 2 (2026-07-10)
 
 **Done this lap** (all `#print axioms`-clean, build green):

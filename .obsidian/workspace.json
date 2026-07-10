@@ -1,0 +1,194 @@
+{
+  "main": {
+    "id": "7fe9335370f05520",
+    "type": "split",
+    "children": [
+      {
+        "id": "0de75365889c7429",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c4b72140923c6227",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "papers/tao-2019-almost-all-orbits.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "tao-2019-almost-all-orbits"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "09de848e5042ef8a",
+    "type": "split",
+    "children": [
+      {
+        "id": "4d0f2d3d02e48a7e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "2c0f665a583df69c",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "40ed08e06fab4d4f",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "3ff8754c243eaff0",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "b0cc429ecbc27cd2",
+    "type": "split",
+    "children": [
+      {
+        "id": "77ab94b00f1962f0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "90cfd127cc460879",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "papers/tao-2019-almost-all-orbits.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for tao-2019-almost-all-orbits"
+            }
+          },
+          {
+            "id": "12696a3df7311f33",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "papers/tao-2019-almost-all-orbits.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from tao-2019-almost-all-orbits"
+            }
+          },
+          {
+            "id": "8b72dd86a594a4f6",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "76a7a7d40c2ab85c",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "9228f69f1aea5b95",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "papers/tao-2019-almost-all-orbits.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of tao-2019-almost-all-orbits"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "c4b72140923c6227",
+  "lastOpenFiles": [
+    "blueprint/build.sh",
+    "blueprint/annotate_dep_graph.py",
+    "PENDING_WORK.md",
+    "tao-2019-almost-all-orbits-SUMMARY.pdf",
+    "tao-2019-almost-all-orbits.pdf"
+  ]
+}
