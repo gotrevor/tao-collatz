@@ -1037,6 +1037,62 @@ theorem corner_triangle_strip {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ �
   have h2 : 2 * (p.1 : ℝ) + 2 ≤ (n : ℝ) := by linarith
   exact_mod_cast (by push_cast; linarith : (2 * p.1 + 1 : ℝ) ≤ (n : ℝ))
 
+/-- **Corner invariance** (paper p.41, via Claim (*)): every point of the corner
+triangle has the same corner `(j*, l*)` as the point that generated it. This is the
+fibre equality `Δ* = {p ∈ B : corner(p) = (j*, l*)}` in the ⊆ direction; with
+`black_mem_corner_triangle` it makes the triangles a partition of the black strip. -/
+theorem corner_eq {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ ξ)
+    (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) {p : ℕ × ℤ}
+    (hp : p ∈ triangle (jstar n ξ j l) (lstar n ξ j l)
+      (Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|))) :
+    lstar n ξ p.1 p.2 = lstar n ξ j l ∧ jstar n ξ p.1 p.2 = jstar n ξ j l := by
+  obtain ⟨hj1, hl1, hsize⟩ := hp
+  have hlog9 : (0:ℝ) ≤ Real.log 9 := Real.log_nonneg (by norm_num)
+  have hlog2 : (0:ℝ) ≤ Real.log 2 := Real.log_nonneg (by norm_num)
+  have hJj : jstar n ξ j l ≤ j := by unfold jstar; omega
+  -- the column of p up to l* stays in Δ*, hence is black
+  have hcol : ∀ l'' : ℤ, p.2 ≤ l'' → l'' ≤ lstar n ξ j l → black n ξ p.1 l'' := by
+    intro l'' h1 h2
+    refine black_of_mem_corner_triangle hξ h2j hb (p := (p.1, l'')) ⟨hj1, h2, ?_⟩
+    show ((p.1 : ℝ) - (jstar n ξ j l : ℝ)) * Real.log 9
+        + ((lstar n ξ j l : ℝ) - (l'' : ℝ)) * Real.log 2
+        ≤ Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|)
+    have hmul : (0:ℝ) ≤ ((l'' : ℝ) - (p.2 : ℝ)) * Real.log 2 :=
+      mul_nonneg (sub_nonneg.mpr (by exact_mod_cast h1)) hlog2
+    linarith [hsize]
+  -- the row at l* from j* out to max j p.1 is black (Δ* row ∪ original run)
+  have hrow : ∀ j'' : ℕ, jstar n ξ j l ≤ j'' → j'' ≤ max j p.1 →
+      black n ξ j'' (lstar n ξ j l) := by
+    intro j'' h1 h2
+    rcases le_or_gt j'' j with hle | hgt
+    · exact black_of_jstar_le hξ h2j hb h1 hle
+    · have hle' : j'' ≤ p.1 := by omega
+      refine black_of_mem_corner_triangle hξ h2j hb (p := (j'', lstar n ξ j l))
+        ⟨h1, le_rfl, ?_⟩
+      show ((j'' : ℝ) - (jstar n ξ j l : ℝ)) * Real.log 9
+          + ((lstar n ξ j l : ℝ) - (lstar n ξ j l : ℝ)) * Real.log 2
+          ≤ Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|)
+      have hmul9 : (0:ℝ) ≤ ((p.1 : ℝ) - (j'' : ℝ)) * Real.log 9 :=
+        mul_nonneg (sub_nonneg.mpr (by exact_mod_cast hle')) hlog9
+      have hmul2 : (0:ℝ) ≤ ((lstar n ξ j l : ℝ) - (p.2 : ℝ)) * Real.log 2 :=
+        mul_nonneg (sub_nonneg.mpr (by exact_mod_cast hl1)) hlog2
+      linarith [hsize]
+  -- the whole row above is white (Claim (*) Cases 2–3 via white_row_above)
+  have hwabove : ∀ j' : ℕ, jstar n ξ j l ≤ j' → j' ≤ max j p.1 →
+      ¬ black n ξ j' (lstar n ξ j l + 1) :=
+    white_row_above hrow hJj (le_max_left _ _) (white_above_lstar hξ h2j)
+  -- pin l* at p
+  have hls : lstar n ξ p.1 p.2 = lstar n ξ j l :=
+    lstar_eq_of hl1 hcol (hwabove p.1 hj1 (le_max_right _ _))
+  refine ⟨hls, ?_⟩
+  -- pin j* at p
+  apply jstar_eq_of hj1
+  · intro j'' h1 h2
+    rw [hls]
+    exact hrow j'' h1 (le_trans h2 (le_max_right _ _))
+  · rw [hls]
+    exact jstar_maximal hξ h2j hb
+
 -- RATIFY-5 (resolved 2026-07-10 against paper pp.36–41 + harness check 8): the paper's
 -- separation is between the triangle POINT SETS ("using the Euclidean metric on
 -- [n/2] × ℤ ⊂ ℝ²"), not merely between top-left corners — Case 2's white-exit ring
