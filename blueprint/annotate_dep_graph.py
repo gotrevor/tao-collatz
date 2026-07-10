@@ -23,11 +23,22 @@ HERE = Path(__file__).resolve().parent
 TEX = HERE / "src/content.tex"
 HTML = HERE / "web/dep_graph_document.html"
 
-TINT = {"high": "#FFE2E0", "medium": "#FFF6DA", "low": "#E9F6EC"}
+TINT = {"high": "#F5B8B0", "medium": "#F2DD9E", "low": "#BFE3C4"}
 
 ENV_RE = re.compile(r"\\label\{([A-Z]\d+)\}(.*?)\\end\{", re.DOTALL)
 LAPSRISK_RE = re.compile(r"\\lapsrisk\{([^}]*)\}\{([^}]*)\}\{([^}]*)\}")
 NODE_RE = re.compile(r"(?P<pre>[;{]\s*)(?P<id>[A-Z]\d+)\s*\[(?P<attrs>[^\]]*)\]")
+
+# The DOT lives inside a JS TEMPLATE LITERAL: a backslash there is a JS escape
+# (`\v` in "$\varepsilon$" became a vertical-tab control char that killed the wasm
+# renderer mid-parse — the 2026-07-10 five-node regression), a backtick would end
+# the literal, `${` would interpolate. Whitelist hard: anything fancy (the ledger
+# notes' LaTeX) belongs in the node modal, which renders content.tex properly.
+SAFE_RE = re.compile(r"[^A-Za-z0-9 %·–.-]")
+
+
+def sanitize(s: str) -> str:
+    return SAFE_RE.sub("", s).strip()
 
 
 def read_estimates() -> dict[str, tuple[str, str, str]]:
@@ -38,10 +49,12 @@ def read_estimates() -> dict[str, tuple[str, str, str]]:
         lr = LAPSRISK_RE.search(body)
         if not lr:
             continue
-        laps = lr.group(1).replace("--", "–")
-        risk_full = lr.group(2)
-        risk_word = risk_full.split()[0]  # "high --- risk kernel 1" -> "high"
-        conf = lr.group(3).replace("\\%", "%")
+        laps = sanitize(lr.group(1).replace("--", "–"))
+        risk_word = sanitize(lr.group(2).split()[0])  # "high --- risk kernel 1" -> "high"
+        # Clip the confidence to its leading "NN%" — the ledger's dated notes are
+        # for the modal, not a hover tooltip (and their LaTeX is what broke the JS).
+        conf_m = re.match(r"\s*(\d+\s*\\?%)", lr.group(3))
+        conf = conf_m.group(1).replace("\\", "") if conf_m else sanitize(lr.group(3))[:24]
         out[label] = (laps, risk_word, conf)
     return out
 
@@ -56,7 +69,10 @@ def patch_node(m: re.Match, est: dict) -> str:
     attrs = re.sub(rf"label={node_id}\b", f'label="{node_id}\\\\n{laps}"', attrs)
     attrs += f',\t\ttooltip="{laps} laps · risk {risk} · {conf} confidence"'
     if "fillcolor" not in attrs:  # never override a leanblueprint status fill
-        attrs += f',\t\tstyle=filled,\t\tfillcolor="{TINT[risk]}"'
+        # class= flows through graphviz into the SVG node, letting the injected
+        # CSS force dark label text on the tint in BOTH light and dark themes.
+        attrs += (f',\t\tstyle=filled,\t\tfillcolor="{TINT[risk]}"'
+                  ',\t\tclass="lapsrisk-tinted"')
     return f"{m.group('pre')}{node_id}\t[{attrs}]"
 
 
@@ -68,6 +84,17 @@ LEGEND_EXTRA = (
     "\n      \n      <dt>Pale green background</dt><dd>campaign risk: <em>low</em></dd>"
 )
 
+# Tinted nodes always carry a light pastel fill, so force near-black label text on
+# them regardless of the page theme (the dark theme's light link-text was unreadable
+# on the tints). Scoped to the class the DOT sets, so status-filled/unfilled nodes
+# keep their theme styling.
+CSS_MARKER = "/* lapsrisk-tinted */"
+CSS_EXTRA = (
+    f"\n<style>{CSS_MARKER} #graph .lapsrisk-tinted text, "
+    "#graph .lapsrisk-tinted a, #graph .lapsrisk-tinted a text "
+    "{ fill: #1b1b1b !important; color: #1b1b1b !important; }</style>\n"
+)
+
 
 def main() -> int:
     est = read_estimates()
@@ -77,6 +104,8 @@ def main() -> int:
     patched, n = NODE_RE.subn(lambda m: patch_node(m, est), html)
     if LEGEND_ANCHOR in patched and "campaign risk" not in patched:
         patched = patched.replace(LEGEND_ANCHOR, LEGEND_ANCHOR + LEGEND_EXTRA, 1)
+    if CSS_MARKER not in patched and "</head>" in patched:
+        patched = patched.replace("</head>", CSS_EXTRA + "</head>", 1)
     HTML.write_text(patched)
     annotated = sum(1 for i in est if f'tooltip="{est[i][0]}' in patched)
     print(f"dep graph: {len(est)} estimates in tex, {n} node attrs scanned, "
