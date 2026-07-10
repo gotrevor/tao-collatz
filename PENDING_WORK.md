@@ -1,5 +1,32 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 25 (2026-07-10, fifth box session): (C2)+(C3) PROVED — finite Fourier inversion + charFn powers
+
+`Prob/CharFn.lean` NEW, fully proved, axiom-clean: `sum_stdAddChar_mul` (1-D
+orthogonality via `AddChar.mulShift` primitivity), `pairChar` product character +
+norm/add lemmas, `sum_pairChar` (2-D orthogonality = product of 1-D), `charFn` (the
+characteristic function, finite sum), **`charFn_inversion`** (exact Fourier inversion
+for PMFs on `ZMod N × ZMod N`), `apply_toReal_le_sum_norm_charFn` (triangle form),
+`toReal_bind_apply`/`sum_map_mul_complex` (finite-type PMF calculus),
+`charFn_bind`/`charFn_map_add`/**`charFn_iidSum`** (r-hat of iid sum = r-hat^n),
+**`iidSum_apply_toReal_le`** (`P(S_n = x) ≤ N⁻² ∑_ξ ‖r̂ ξ‖ⁿ`). In Unroll:
+**`holdSum_toReal_le_charFn`** — the composite bound for the Hold walk, every N.
+
+**Remaining for `hold_local_bound`** (all analysis, no more structure):
+(D) character decay: `‖charFn (hold.map (modPair N)) ξ‖ ≤ exp(-c·‖ξ/N‖_dist²)` for
+ξ ≠ 0 — from two/three explicit hold atoms (e.g. hold(1,3)=1/4, hold(2,4)=(4/3)(3/16)·(1/4)?
+compute exact small atoms) via the two-atom identity `‖p·z₁+q·z₂+…‖ ≤ 1 - pq(1-cos θ)`
+where θ = angle between atom characters; nondegeneracy: atoms (1,3),(2,5),(2,6) span ℤ²
+affinely → the char cannot be unimodular-aligned unless ξ = 0. NOTE `hold` support lives
+in ℕ×ℤ with unbounded coords; charFn is of the PROJECTED PMF, sum finite — decay constant
+must be uniform in N: expect `1 - ‖φ‖ ≥ c·dist(ξ/N, 0)²` with dist = distance of
+(ξ₁.val/N, ξ₂.val/N) to ℤ².
+(E) Gaussian summation `N⁻² ∑_ξ (1 - c·dist²)^... ≤ C/n` at `N = ⌈√n⌉+1` — sum of
+`exp(-cn·dist(ξ/N,ℤ²)²)` over the N² frequencies.
+(F) exponential tilting wrapper (off-center regime) + Hold MGF strip finiteness
+(= Lemma 7.6 engine, (7.30)). Center regime (i.e. |v - n(4,16)| ≤ √n) needs no tilt:
+(D)+(E) alone give `≤ C/n ≤ C·Gweight/(1+n)` there. Do the untilted center case FIRST.
+
 ## Lap 24 (2026-07-10, fifth box session): circle-method probe — iidSum generic + mod-N entry PROVED
 
 `iidSum` GENERALIZED to any `AddCommMonoid` (same proofs, omega→add_assoc);

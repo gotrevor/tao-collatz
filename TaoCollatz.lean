@@ -4,6 +4,7 @@ import TaoCollatz.Basic.Valuation
 import TaoCollatz.Prob.Basic
 import TaoCollatz.Prob.Geometric
 import TaoCollatz.Prob.LocalBound
+import TaoCollatz.Prob.CharFn
 import TaoCollatz.Syracuse.SyracRV
 import TaoCollatz.Syracuse.ValuationDist
 import TaoCollatz.Fourier.ZMod3

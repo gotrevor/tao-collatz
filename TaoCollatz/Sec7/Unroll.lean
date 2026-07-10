@@ -1,5 +1,6 @@
 import TaoCollatz.Sec7.Holding
 import TaoCollatz.Prob.LocalBound
+import TaoCollatz.Prob.CharFn
 
 /-!
 # §7.4: the first-passage unrolling of the `Q` recursion (paper (7.45), node X8/X9 entry)
@@ -282,6 +283,20 @@ theorem holdSum_le_modPair (n N : ℕ) (v : ℕ × ℤ) :
     _ = (iidSum (hold.map (modPair N)) n) (modPair N v) := by
         rw [iidSum_map hold (modPair N) (by simp [modPair])
           (fun a b => by simp [modPair, Prod.ext_iff])]
+
+/-- **The circle-method bound for the `Hold` walk**, all algebraic steps composed:
+for every modulus `N`, the lattice point mass of `Hold_{[1,n]}` is at most
+`N⁻² ∑_ξ ‖r̂(ξ)‖ⁿ` where `r̂` is the characteristic function of `hold mod N`.
+What remains for `hold_local_bound` is analysis only: character decay of `hold`
+(nondegeneracy) and Gaussian summation over `ξ` at `N ≈ √n`, plus the tilting
+wrapper for the off-center regime. -/
+theorem holdSum_toReal_le_charFn (n N : ℕ) [NeZero N] (v : ℕ × ℤ) :
+    ((holdSum n) v).toReal
+      ≤ ((N : ℝ) ^ 2)⁻¹ * ∑ ξ : ZMod N × ZMod N, ‖charFn (hold.map (modPair N)) ξ‖ ^ n := by
+  refine le_trans (ENNReal.toReal_mono
+    ((iidSum (hold.map (modPair N)) n).apply_ne_top _)
+    (holdSum_le_modPair n N v)) ?_
+  exact iidSum_apply_toReal_le (hold.map (modPair N)) n (modPair N v)
 
 /-- **Lemma 7.7 (Distribution of first passage location), D6 statement** (paper p.43,
 (7.30)–(7.33)): the first-passage endpoint mass at `(j, l)` is Gaussian-concentrated —
