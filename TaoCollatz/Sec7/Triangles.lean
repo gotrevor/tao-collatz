@@ -135,6 +135,77 @@ theorem weaklyBlack_of_pred_j_pred_l {n ξ : ℕ} {j : ℕ} {l : ℤ}
   rw [he2, abs_mul, abs_of_nonneg (by norm_num : (0:ℚ) ≤ 2)] at h2
   linarith
 
+/-! ### (7.18): the exact scaling identity down-right of a point
+
+Iterating the exact recursions: as long as the final scaled value stays below `1/2`,
+no intermediate step wraps around, so `θ(j+a, l-b) = 9^a·2^b·θ(j,l)` exactly — the
+equality case of (7.18), the triangle-fibre engine of Lemma 7.4 (numerically validated,
+harness check 8 claim (2)). -/
+
+/-- Iterated (7.13): if `9^a·|θ(j,l)| < 1/2` then `θ(j+a,l) = 9^a·θ(j,l)` exactly. -/
+theorem θq_iterate_j (n ξ : ℕ) (j : ℕ) (l : ℤ) (a : ℕ)
+    (h : (9 : ℚ) ^ a * |θq n ξ j l| < 1 / 2) :
+    θq n ξ (j + a) l = 9 ^ a * θq n ξ j l := by
+  induction a with
+  | zero => simp
+  | succ a IH =>
+    have hmono : (9:ℚ) ^ a * |θq n ξ j l| ≤ 9 ^ (a + 1) * |θq n ξ j l| := by
+      apply mul_le_mul_of_nonneg_right _ (abs_nonneg _)
+      apply pow_le_pow_right₀ <;> norm_num
+    have hIH := IH (lt_of_le_of_lt hmono h)
+    have habs : |θq n ξ (j + a) l| = 9 ^ a * |θq n ξ j l| := by
+      rw [hIH, abs_mul, abs_of_nonneg (by positivity : (0:ℚ) ≤ 9 ^ a)]
+    have hsmall : |θq n ξ (j + a) l| < 1 / 18 := by
+      rw [habs]
+      nlinarith [pow_pos (show (0:ℚ) < 9 by norm_num) a, abs_nonneg (θq n ξ j l),
+        h, pow_succ (9:ℚ) a]
+    have hstep := θq_succ_j_exact n ξ (j + a) l hsmall
+    have : j + (a + 1) = (j + a) + 1 := by omega
+    rw [this, hstep, hIH]
+    ring
+
+/-- Iterated (7.14): if `2^b·|θ(j,l)| < 1/2` then `θ(j,l-b) = 2^b·θ(j,l)` exactly. -/
+theorem θq_iterate_l (n ξ : ℕ) (j : ℕ) (l : ℤ) (b : ℕ)
+    (h : (2 : ℚ) ^ b * |θq n ξ j l| < 1 / 2) :
+    θq n ξ j (l - b) = 2 ^ b * θq n ξ j l := by
+  induction b with
+  | zero => simp
+  | succ b IH =>
+    have hmono : (2:ℚ) ^ b * |θq n ξ j l| ≤ 2 ^ (b + 1) * |θq n ξ j l| := by
+      apply mul_le_mul_of_nonneg_right _ (abs_nonneg _)
+      apply pow_le_pow_right₀ <;> norm_num
+    have hIH := IH (lt_of_le_of_lt hmono h)
+    have habs : |θq n ξ j (l - b)| = 2 ^ b * |θq n ξ j l| := by
+      rw [hIH, abs_mul, abs_of_nonneg (by positivity : (0:ℚ) ≤ 2 ^ b)]
+    have hsmall : |θq n ξ j (l - b)| < 1 / 4 := by
+      rw [habs]
+      nlinarith [pow_pos (show (0:ℚ) < 2 by norm_num) b, abs_nonneg (θq n ξ j l),
+        h, pow_succ (2:ℚ) b]
+    have hstep := θq_pred_l_exact n ξ j (l - b) hsmall
+    have hcast : l - ((b : ℤ) + 1) = (l - b) - 1 := by ring
+    rw [show ((b + 1 : ℕ) : ℤ) = (b : ℤ) + 1 from by push_cast; ring, hcast, hstep, hIH]
+    ring
+
+/-- **(7.18), equality form.** If `9^a·2^b·|θ(j,l)| < 1/2` then
+`θ(j+a, l-b) = 9^a·2^b·θ(j,l)` exactly. -/
+theorem θq_iterate_exact (n ξ : ℕ) (j : ℕ) (l : ℤ) (a b : ℕ)
+    (h : (9 : ℚ) ^ a * 2 ^ b * |θq n ξ j l| < 1 / 2) :
+    θq n ξ (j + a) (l - b) = 9 ^ a * 2 ^ b * θq n ξ j l := by
+  have h2b : (1:ℚ) ≤ 2 ^ b := one_le_pow₀ (by norm_num)
+  have h9a : (0:ℚ) < 9 ^ a := by positivity
+  have hja : (9:ℚ) ^ a * |θq n ξ j l| < 1 / 2 := by
+    nlinarith [abs_nonneg (θq n ξ j l)]
+  have h1 := θq_iterate_j n ξ j l a hja
+  have habs : |θq n ξ (j + a) l| = 9 ^ a * |θq n ξ j l| := by
+    rw [h1, abs_mul, abs_of_nonneg (by positivity : (0:ℚ) ≤ 9 ^ a)]
+  have h2 : (2:ℚ) ^ b * |θq n ξ (j + a) l| < 1 / 2 := by
+    rw [habs]
+    calc (2:ℚ) ^ b * (9 ^ a * |θq n ξ j l|) = 9 ^ a * 2 ^ b * |θq n ξ j l| := by ring
+      _ < 1 / 2 := h
+  have h3 := θq_iterate_l n ξ (j + a) l b h2
+  rw [h3, h1]
+  ring
+
 /-! ### (7.16): the phase lower bound and strip confinement
 
 For `ξ` coprime to 3 and a point with `2j+1 ≤ n` (true of every strip point), multiplying
@@ -325,6 +396,54 @@ theorem black_nine_le (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) {j : ℕ} {l : ℤ} (h2j 
   unfold epsBW at hle
   have : (1 : ℚ) / 3 ^ 8 ≤ 1 / 10 ^ 4 := le_trans h1 (le_trans hlb hle)
   norm_num at this
+
+/-! ### Upward-run termination: `l*` exists
+
+Along an upward black run, each black point above lets us halve exactly
+(`θ(j,l) = 2^t·θ(j,l+t)`), and the (7.16) lower bound caps `2^t ≤ ε·3^{n-2j}` — so
+black runs terminate and the paper's `l*(j,l)` is well defined (p.38). -/
+
+/-- Along an upward black run the phase doubles downward exactly:
+if `(j, l+i)` is black for `1 ≤ i ≤ t` then `θ(j,l) = 2^t·θ(j,l+t)`. -/
+theorem θq_up_run (n ξ : ℕ) (j : ℕ) (l : ℤ) (t : ℕ)
+    (hb : ∀ i : ℕ, 1 ≤ i → i ≤ t → black n ξ j (l + i)) :
+    θq n ξ j l = 2 ^ t * θq n ξ j (l + t) := by
+  induction t with
+  | zero => simp
+  | succ t IH =>
+    have hbt : black n ξ j (l + (t + 1 : ℕ)) := hb (t + 1) (by omega) le_rfl
+    have hsmall : |θq n ξ j (l + (t + 1 : ℕ))| < 1 / 4 := by
+      have : |θq n ξ j (l + (t + 1 : ℕ))| ≤ epsBW := hbt
+      unfold epsBW at this; linarith
+    have hstep := θq_pred_l_exact n ξ j (l + (t + 1 : ℕ)) hsmall
+    have hcast : l + ((t + 1 : ℕ) : ℤ) - 1 = l + t := by push_cast; ring
+    rw [hcast] at hstep
+    rw [IH (fun i h1 h2 => hb i h1 (by omega)), hstep]
+    ring
+
+/-- **Upward black runs are short**: if `(j, l+i)` is black for all `0 ≤ i ≤ t`
+(with `3 ∤ ξ`, `2j+1 ≤ n`), then `2^t ≤ ε·3^{n-2j}`. Hence `l*` exists. -/
+theorem black_run_le (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) {j : ℕ} {l : ℤ} {t : ℕ}
+    (h2j : 2 * j + 1 ≤ n) (hb : ∀ i : ℕ, i ≤ t → black n ξ j (l + i)) :
+    (2 : ℚ) ^ t ≤ epsBW * 3 ^ (n - 2 * j) := by
+  have hrun := θq_up_run n ξ j l t (fun i h1 h2 => hb i h2)
+  have hlow := θq_lower_bound n ξ hξ j (l + t) h2j
+  have hb0' : black n ξ j l := by simpa using hb 0 (by omega)
+  have hb0 : |θq n ξ j l| ≤ epsBW := hb0'
+  have habs : |θq n ξ j l| = 2 ^ t * |θq n ξ j (l + t)| := by
+    rw [hrun, abs_mul, abs_of_nonneg (by positivity : (0:ℚ) ≤ 2 ^ t)]
+  have hchain : (2:ℚ) ^ t * (1 / 3 ^ (n - 2 * j)) ≤ epsBW := by
+    calc (2:ℚ) ^ t * (1 / 3 ^ (n - 2 * j))
+        ≤ 2 ^ t * |θq n ξ j (l + t)| := by
+          apply mul_le_mul_of_nonneg_left hlow (by positivity)
+      _ = |θq n ξ j l| := habs.symm
+      _ ≤ epsBW := hb0
+  have h3pos : (0:ℚ) < 3 ^ (n - 2 * j) := by positivity
+  calc (2:ℚ) ^ t = (2 ^ t * (1 / 3 ^ (n - 2 * j))) * 3 ^ (n - 2 * j) := by
+        field_simp
+    _ ≤ epsBW * 3 ^ (n - 2 * j) := by
+        apply mul_le_mul_of_nonneg_right hchain h3pos.le
+
 
 /-- The corner triangle with apex `(j₀, l₀)` and size `s` (paper (7.11)): points to the
 lower-right of the apex within `(log 9)·Δj + (log 2)·Δl ≤ s`. -/

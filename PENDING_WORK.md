@@ -1,5 +1,19 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## After lap 4 (2026-07-10)
+
+**Done** (axiom-clean): `θq_iterate_j`, `θq_iterate_l`, `θq_iterate_exact` — the (7.18)
+equality-case scaling `θ(j+a, l-b) = 9^a·2^b·θ(j,l)` when the final scale is < 1/2 (the
+triangle-fibre engine); `θq_up_run` (upward black run ⇒ exact doubling downward) and
+`black_run_le` (`2^t ≤ ε·3^{n-2j}` caps upward black runs ⇒ paper's l* exists).
+
+**X3 remaining for `black_structure`**: (a) leftward run at l* (j*-existence — runs
+hit j=0 or a white point; finite by construction, no analytic input needed);
+(b) DEFINE the corner map + triangle size (`s* := log(ε/|θ*|)` — lives in ℝ, ties ℚ-θ
+to the ℝ-triangle (7.11)); (c) fibre equivalence via `θq_iterate_exact` both directions
+(Claim (*) Cases 1–3 using claims (i)–(iii)); (d) assemble. This is now bounded work but
+a lot of it — decompose into named sorries inside Triangles.lean when starting assembly.
+
 ## After lap 3 (2026-07-10)
 
 **Done**: (7.16) formalized — `θq_lower_bound` (`3^{-(n-2j)} ≤ |θ(j,l)|` for ξ coprime
