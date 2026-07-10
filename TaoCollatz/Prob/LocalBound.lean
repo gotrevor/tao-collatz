@@ -59,6 +59,73 @@ theorem Gweight_le_two (t x : ℝ) (ht : 0 ≤ t) : Gweight t x ≤ 2 := by
 noncomputable def iidSum (p : PMF ℕ) (n : ℕ) : PMF ℕ :=
   (p.iid n).map fun v => ∑ i, v i
 
+theorem iidSum_zero (p : PMF ℕ) : iidSum p 0 = PMF.pure 0 := by
+  rw [iidSum, show p.iid 0 = PMF.pure (fun i : Fin 0 => i.elim0) from rfl,
+    PMF.pure_map]
+  simp
+
+/-- Peel the head draw off an iid sum: `S_{n+1} = a + S_n` in law. -/
+theorem iidSum_succ (p : PMF ℕ) (n : ℕ) :
+    iidSum p (n + 1) = p.bind fun a => (iidSum p n).map (a + ·) := by
+  rw [iidSum, show p.iid (n + 1) = p.bind fun a => (p.iid n).map (Fin.cons a) from rfl,
+    PMF.map_bind]
+  refine congrArg _ (funext fun a => ?_)
+  rw [PMF.map_comp, iidSum, PMF.map_comp]
+  have hf : ((fun v : Fin (n + 1) → ℕ => ∑ i, v i) ∘ Fin.cons a)
+      = ((a + ·) ∘ fun w : Fin n → ℕ => ∑ i, w i) := by
+    funext w
+    simp only [Function.comp_apply]
+    rw [Fin.sum_cons]
+  rw [hf]
+
+/-- Renewal additivity of iid sums: `S_{k+n} = S_k + S'_n` with the two blocks
+independent. -/
+theorem iidSum_add (p : PMF ℕ) (k n : ℕ) :
+    iidSum p (k + n) = (iidSum p k).bind fun s => (iidSum p n).map (s + ·) := by
+  induction k with
+  | zero =>
+    rw [Nat.zero_add, iidSum_zero, PMF.pure_bind]
+    have h : (fun x : ℕ => (0 : ℕ) + x) = id := funext fun x => Nat.zero_add x
+    rw [h, PMF.map_id]
+  | succ k IH =>
+    rw [show k + 1 + n = (k + n) + 1 from by omega, iidSum_succ, iidSum_succ,
+      PMF.bind_bind]
+    refine congrArg _ (funext fun a => ?_)
+    rw [IH, PMF.map_bind, PMF.bind_map]
+    refine congrArg _ (funext fun s => ?_)
+    simp only [Function.comp_apply]
+    rw [PMF.map_comp]
+    have hf : ((a + ·) ∘ (s + ·)) = ((a + s) + ·) := by
+      funext x
+      simp only [Function.comp_apply]
+      omega
+    rw [hf]
+
+/-- Iterated iid sums flatten: `n` iid copies of `S_k` sum to `S_{nk}`. -/
+theorem iidSum_iidSum (p : PMF ℕ) (k n : ℕ) :
+    iidSum (iidSum p k) n = iidSum p (n * k) := by
+  induction n with
+  | zero => rw [Nat.zero_mul, iidSum_zero, iidSum_zero]
+  | succ n IH =>
+    rw [iidSum_succ, show (n + 1) * k = k + n * k from by ring, iidSum_add]
+    refine congrArg _ (funext fun s => ?_)
+    rw [IH]
+
+/-- `pascal` is the two-fold iid `Geom(2)` sum. -/
+theorem pascal_eq_iidSum : pascal = iidSum geomHalf 2 := by
+  rw [pascal_eq_map_iid, iidSum]
+  have hf : (fun v : Fin 2 → ℕ => v 0 + v 1) = fun v : Fin 2 → ℕ => ∑ i, v i := by
+    funext v
+    rw [Fin.sum_univ_two]
+  rw [hf]
+
+/-- Exact point mass for iid `pascal` sums: the law of `|Geom(2)_{2n}|`
+(paper §2 via `negBinomial_apply`; the leaf `pascal_local_bound` runs on this). -/
+theorem iidSum_pascal_apply (n L : ℕ) (hn : 1 ≤ n) (hL : 1 ≤ L) :
+    (iidSum pascal n) L = (L - 1).choose (2 * n - 1) * 2⁻¹ ^ L := by
+  rw [pascal_eq_iidSum, iidSum_iidSum, show n * 2 = 2 * n from by ring]
+  exact negBinomial_apply (2 * n) L (by omega) hL
+
 /-- **Lemma 2.2(i) for `Geom(2)`** (paper p.15, displayed instance):
 `P(|Geom(2)_n| = L) ≪ (n+1)^{-1/2} · G_n(c(L − 2n))`. -/
 theorem geomHalf_local_bound :
