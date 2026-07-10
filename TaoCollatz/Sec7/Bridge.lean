@@ -57,18 +57,126 @@ theorem bridge_vector (n ξ : ℕ) :
       = Rcol (n / 2) (whiteSet n ξ) (epsBW : ℝ) 0 0 := by
   sorry
 
+/-- Generic expansion of a `hold`-expectation through the `bind`/`map` structure. -/
+theorem hold_tsum_expand (G : ℕ × ℤ → ℝ≥0∞) :
+    ∑' d : ℕ × ℤ, hold d * G d
+      = ∑' k : ℕ, geomQuarter k * ∑' v : Fin (k - 1) → ℕ,
+          (pascalNe3.iid (k - 1)) v * G (k, (3 : ℤ) + ∑ i, (v i : ℤ)) := by
+  rw [hold, PMF.tsum_bind_mul]
+  exact tsum_congr fun k => by rw [PMF.tsum_map_mul]
+
 /-- One-column self-similarity of `Hold` (paper (7.29), tsum form over `ℝ≥0∞`):
 a `Hold` draw is `(1,3)` with probability `1/4` (the first column is already a
 renewal), else the first column contributes `(1, b)` with `b ~ Pascal` conditioned
 `≠ 3` and the draw restarts. The `b ≠ 3` Pascal mass is `(3/4)·pascalNe3` exactly.
-OPEN (X5): from `hold`'s definition by splitting the `geomQuarter` draw at `k = 1`
-and peeling the first `pascalNe3` increment off `PMF.iid`. -/
+PROVED: split the `geomQuarter` draw at `k = 1` (memorylessness
+`geomQuarter (k+2) = (3/4)·geomQuarter (k+1)`) and peel the first `pascalNe3`
+increment off `PMF.iid` (`PMF.tsum_iid_succ_mul`). -/
 theorem hold_tsum_step (g : ℕ × ℤ → ℝ≥0∞) :
     ∑' d : ℕ × ℤ, hold d * g d
       = 4⁻¹ * g (1, 3)
         + ∑' b : ℕ, (if b = 3 then 0 else pascal b)
             * ∑' d : ℕ × ℤ, hold d * g (d.1 + 1, d.2 + b) := by
-  sorry
+  classical
+  have hgq1 : geomQuarter 1 = 4⁻¹ := by
+    show (if (1 : ℕ) = 0 then (0 : ℝ≥0∞) else 4⁻¹ * (3 * 4⁻¹) ^ (1 - 1)) = 4⁻¹
+    norm_num
+  have hgqs : ∀ k : ℕ, geomQuarter (k + 2) = 3 * 4⁻¹ * geomQuarter (k + 1) := by
+    intro k
+    show (if k + 2 = 0 then (0 : ℝ≥0∞) else 4⁻¹ * (3 * 4⁻¹) ^ (k + 2 - 1))
+      = 3 * 4⁻¹ * (if k + 1 = 0 then (0 : ℝ≥0∞) else 4⁻¹ * (3 * 4⁻¹) ^ (k + 1 - 1))
+    rw [if_neg (by omega), if_neg (by omega),
+      show k + 2 - 1 = (k + 1 - 1) + 1 from by omega, pow_succ]
+    ring
+  have hpas : ∀ b : ℕ, (if b = 3 then (0 : ℝ≥0∞) else pascal b)
+      = 3 * 4⁻¹ * pascalNe3 b := by
+    intro b
+    have h1 : pascal b = if b < 2 then 0 else ((b - 1 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ b := rfl
+    have h2 : pascalNe3 b = if b < 2 ∨ b = 3 then 0
+        else 4 / 3 * (((b - 1 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ b) := rfl
+    rw [h1, h2]
+    by_cases hb3 : b = 3
+    · simp [hb3]
+    · by_cases hb2 : b < 2
+      · simp [hb2, hb3]
+      · rw [if_neg hb3, if_neg hb2, if_neg (by tauto)]
+        have hone : (3 : ℝ≥0∞) * 4⁻¹ * (4 / 3) = 1 := by
+          rw [div_eq_mul_inv,
+            show (3 : ℝ≥0∞) * 4⁻¹ * (4 * 3⁻¹) = 3 * 3⁻¹ * (4⁻¹ * 4) from by ring,
+            ENNReal.mul_inv_cancel (by norm_num) (by finiteness),
+            ENNReal.inv_mul_cancel (by norm_num) (by finiteness), one_mul]
+        calc ((b - 1 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ b
+            = 3 * 4⁻¹ * (4 / 3) * (((b - 1 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ b) := by
+              rw [hone, one_mul]
+          _ = 3 * 4⁻¹ * (4 / 3 * (((b - 1 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ b)) := by ring
+  -- LHS: expand hold, peel k = 1 and k ≥ 2
+  have hL1 : ∑' d : ℕ × ℤ, hold d * g d
+      = 4⁻¹ * g (1, 3)
+        + ∑' k : ℕ, geomQuarter (k + 2) * ∑' v : Fin (k + 1) → ℕ,
+            (pascalNe3.iid (k + 1)) v * g (k + 2, (3 : ℤ) + ∑ i, (v i : ℤ)) := by
+    rw [hold_tsum_expand g, tsum_eq_zero_add' ENNReal.summable,
+      show geomQuarter 0 = 0 from rfl, zero_mul, zero_add,
+      tsum_eq_zero_add' ENNReal.summable]
+    congr 1
+    · rw [hgq1]
+      congr 1
+      exact (PMF.tsum_iid_zero_mul pascalNe3
+        (fun v => g (1, (3 : ℤ) + ∑ i, (v i : ℤ)))).trans (by simp)
+  -- RHS inner sums, in the same normal form
+  have hR : ∀ b : ℕ, ∑' d : ℕ × ℤ, hold d * g (d.1 + 1, d.2 + (b : ℤ))
+      = ∑' k : ℕ, geomQuarter (k + 1) * ∑' w : Fin k → ℕ,
+          (pascalNe3.iid k) w * g (k + 1 + 1, (3 : ℤ) + (∑ i, (w i : ℤ)) + (b : ℤ)) := by
+    intro b
+    rw [hold_tsum_expand fun d => g (d.1 + 1, d.2 + (b : ℤ)),
+      tsum_eq_zero_add' ENNReal.summable,
+      show geomQuarter 0 = 0 from rfl, zero_mul, zero_add]
+    rfl
+  -- the tail of hL1 equals the b-sum of hR through one iid-peel + Fubini
+  have hL2 : ∑' k : ℕ, geomQuarter (k + 2) * ∑' v : Fin (k + 1) → ℕ,
+        (pascalNe3.iid (k + 1)) v * g (k + 2, (3 : ℤ) + ∑ i, (v i : ℤ))
+      = ∑' b : ℕ, 3 * 4⁻¹ * pascalNe3 b
+          * ∑' k : ℕ, geomQuarter (k + 1) * ∑' w : Fin k → ℕ,
+              (pascalNe3.iid k) w
+                * g (k + 1 + 1, (3 : ℤ) + (∑ i, (w i : ℤ)) + (b : ℤ)) := by
+    have hpeel : ∀ k : ℕ, ∑' v : Fin (k + 1) → ℕ,
+          (pascalNe3.iid (k + 1)) v * g (k + 2, (3 : ℤ) + ∑ i, (v i : ℤ))
+        = ∑' a : ℕ, pascalNe3 a * ∑' w : Fin k → ℕ,
+            (pascalNe3.iid k) w
+              * g (k + 1 + 1, (3 : ℤ) + (∑ i, (w i : ℤ)) + (a : ℤ)) := by
+      intro k
+      rw [PMF.tsum_iid_succ_mul pascalNe3 k
+        (fun v => g (k + 2, (3 : ℤ) + ∑ i, (v i : ℤ)))]
+      refine tsum_congr fun a => ?_
+      congr 1
+      refine tsum_congr fun w => ?_
+      congr 1
+      rw [show ((3 : ℤ) + ∑ i : Fin (k + 1), ((Fin.cons a w : Fin (k + 1) → ℕ) i : ℤ))
+          = (3 : ℤ) + (∑ i, (w i : ℤ)) + (a : ℤ) from by
+        rw [Fin.sum_univ_succ]
+        simp only [Fin.cons_zero, Fin.cons_succ]
+        ring]
+    calc ∑' k : ℕ, geomQuarter (k + 2) * ∑' v : Fin (k + 1) → ℕ,
+          (pascalNe3.iid (k + 1)) v * g (k + 2, (3 : ℤ) + ∑ i, (v i : ℤ))
+        = ∑' k : ℕ, ∑' a : ℕ, 3 * 4⁻¹ * pascalNe3 a
+            * (geomQuarter (k + 1) * ∑' w : Fin k → ℕ,
+                (pascalNe3.iid k) w
+                  * g (k + 1 + 1, (3 : ℤ) + (∑ i, (w i : ℤ)) + (a : ℤ))) := by
+          refine tsum_congr fun k => ?_
+          rw [hpeel k, hgqs k, ← ENNReal.tsum_mul_left]
+          exact tsum_congr fun a => by ring
+      _ = ∑' a : ℕ, ∑' k : ℕ, 3 * 4⁻¹ * pascalNe3 a
+            * (geomQuarter (k + 1) * ∑' w : Fin k → ℕ,
+                (pascalNe3.iid k) w
+                  * g (k + 1 + 1, (3 : ℤ) + (∑ i, (w i : ℤ)) + (a : ℤ))) :=
+          ENNReal.tsum_comm
+      _ = ∑' a : ℕ, 3 * 4⁻¹ * pascalNe3 a
+            * ∑' k : ℕ, geomQuarter (k + 1) * ∑' w : Fin k → ℕ,
+                (pascalNe3.iid k) w
+                  * g (k + 1 + 1, (3 : ℤ) + (∑ i, (w i : ℤ)) + (a : ℤ)) :=
+          tsum_congr fun a => ENNReal.tsum_mul_left
+  rw [hL1, hL2]
+  congr 1
+  exact tsum_congr fun b => by rw [hpas b, hR b]
 
 /-- **Bridge, renewal side** ((7.27) ≡ (7.28), D6 form): the column recursion equals
 the holding-jump average of `Q` — the walk from `(j,l)` to its first renewal point is
