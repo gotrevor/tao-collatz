@@ -1,5 +1,36 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Laps 18–20 (2026-07-10, fourth box session): X5 FULLY CLOSED — all three bridge sorries PROVED
+
+**Done (axiom-clean)**: `hold_tsum_step` (7.29), `bridge_renewal` (7.27)≡(7.28),
+`bridge_vector` (7.26)/(7.28). `Sec7/Bridge.lean` is now sorry-free;
+**Proposition 7.3 (`renewal_white_encounters`) is fully proved modulo the single
+Q-side sorry `Q_black_edge`** (its `#print axioms` sorryAx traces only through
+`Q_polynomial_decay` → `prop_7_8` → `Q_black_edge`).
+
+Infrastructure added (reusable): `PMF.tsum_bind_mul`/`tsum_map_mul`/
+`tsum_iid_succ_mul`/`tsum_iid_zero_mul` (ℝ≥0∞ change-of-variables calculus),
+`PMF.toReal_tsum_mul_ofReal`/`tsum_mul_ofReal_le_one`/`expect_iid_zero`/
+`expect_iid_succ` (real expectation peeling for [0,1] observables) in
+`Prob/Basic.lean`; `hold_tsum_expand`, `hold_tsum_step_real`, `pre_cons`,
+`bridge_vector_gen` in `Sec7/Bridge.lean`. `bridge_renewal` gained a `0 ≤ ε`
+hypothesis (Q_le_one summability).
+
+Gotchas: `(3 + ∑ i, v i : ℤ)` elaborates cast-of-sum OR sum-of-casts depending on
+context — spell `(3 : ℤ) + ∑ i, (v i : ℤ)` explicitly to match `hold`'s def;
+`Fin.cons_succ` needs `(α := fun _ => ℕ)`; `congr 1` after `Fin.sum_univ_succ`
+closes the i=0 head definitionally (don't bullet it); `if_congr` with `refine ?_`
+holes gets stuck on Decidable instances — build the `Iff` in a `have` first;
+`unfold PMF.expect; dsimp only` to beta-reduce before `rw [← tsum_mul_left]`.
+
+**NEXT (the wall): `Q_black_edge` (Monotone.lean) — Lemma 7.7 D6 statement design.**
+Handoff item 4: state the Chernoff/Gaussian first-passage endpoint bound over the
+`Qstop` recursion (no infinite sequences; mirror the `Qstop` branch structure).
+Paper Lemma 7.7 p.42–44, (7.30)–(7.33), Gaussian-type upper bound `G_k`. Then the
+(7.50)/(7.51) white-exit constant (consumes proved `black_structure`) and Lemma
+7.9's induction (X9) for the deep case. Parallel threads if blocked:
+`key_fourier_decay` X1/X2 chain; S3 negative-binomial in Geometric.lean.
+
 ## After lap 11 (2026-07-10, third box session): `hold_weight_expect` PROVED
 
 **Done** (axiom-clean): the (7.43) Case-1 geometric-expectation leaf

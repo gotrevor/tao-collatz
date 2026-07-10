@@ -72,6 +72,48 @@ theorem tsum_iid_zero_mul (p : PMF α) (h : (Fin 0 → α) → ℝ≥0∞) :
   rw [show p.iid 0 = PMF.pure (fun i => i.elim0) from rfl]
   simp [PMF.pure_apply]
 
+/-- `toReal` bridge for a PMF-weighted `ofReal` tsum (no side conditions beyond
+pointwise nonnegativity: every term is finite). -/
+theorem toReal_tsum_mul_ofReal (p : PMF α) (f : α → ℝ) (hf : ∀ x, 0 ≤ f x) :
+    (∑' x, p x * ENNReal.ofReal (f x)).toReal = ∑' x, (p x).toReal * f x := by
+  rw [ENNReal.tsum_toReal_eq
+    (fun x => ENNReal.mul_ne_top (p.apply_ne_top x) ENNReal.ofReal_ne_top)]
+  exact tsum_congr fun x => by
+    rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hf x)]
+
+/-- PMF-weighted `ofReal` sums of `≤ 1` observables are `≤ 1`. -/
+theorem tsum_mul_ofReal_le_one (p : PMF α) (f : α → ℝ) (hf : ∀ x, f x ≤ 1) :
+    ∑' x, p x * ENNReal.ofReal (f x) ≤ 1 := by
+  calc ∑' x, p x * ENNReal.ofReal (f x)
+      ≤ ∑' x, p x * 1 :=
+        ENNReal.tsum_le_tsum fun x =>
+          mul_le_mul_left' (ENNReal.ofReal_le_one.mpr (hf x)) _
+    _ = 1 := by rw [tsum_congr fun x => mul_one (p x), p.tsum_coe]
+
+/-- The empty iid vector carries full mass: expectations collapse. -/
+theorem expect_iid_zero (p : PMF α) (h : (Fin 0 → α) → ℝ) :
+    (p.iid 0).expect h = h (fun i => i.elim0) := by
+  show ∑' v : Fin 0 → α, ((p.iid 0) v).toReal * h v = _
+  rw [tsum_eq_single (fun i : Fin 0 => i.elim0)
+    (fun v hv => absurd (funext fun i => i.elim0) hv)]
+  rw [show p.iid 0 = PMF.pure (fun i => i.elim0) from rfl]
+  simp [PMF.pure_apply]
+
+/-- Peel one coordinate off an iid expectation of a `[0,1]`-valued observable. -/
+theorem expect_iid_succ (p : PMF α) (n : ℕ) (h : (Fin (n + 1) → α) → ℝ)
+    (h0 : ∀ v, 0 ≤ h v) (h1 : ∀ v, h v ≤ 1) :
+    (p.iid (n + 1)).expect h
+      = ∑' a : α, (p a).toReal * (p.iid n).expect fun w => h (Fin.cons a w) := by
+  show ∑' v : Fin (n + 1) → α, ((p.iid (n + 1)) v).toReal * h v = _
+  rw [← toReal_tsum_mul_ofReal (p.iid (n + 1)) h h0,
+    tsum_iid_succ_mul p n (fun v => ENNReal.ofReal (h v)),
+    ENNReal.tsum_toReal_eq (fun a => ENNReal.mul_ne_top (p.apply_ne_top a)
+      (ne_top_of_le_ne_top (by simp)
+        (tsum_mul_ofReal_le_one (p.iid n) _ (fun w => h1 _))))]
+  refine tsum_congr fun a => ?_
+  rw [ENNReal.toReal_mul, toReal_tsum_mul_ofReal (p.iid n) _ (fun w => h0 _)]
+  rfl
+
 /-- Total variation is symmetric. -/
 theorem dTV_comm (p q : PMF α) : dTV p q = dTV q p := by
   unfold dTV

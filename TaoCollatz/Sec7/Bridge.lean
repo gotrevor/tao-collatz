@@ -44,18 +44,150 @@ noncomputable def Rcol (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) : ℕ → 
   termination_by j _ => half - j
   decreasing_by omega
 
+/-- Prefix sums peel through `Fin.cons`: the head contributes once to every
+nonempty prefix. -/
+theorem pre_cons {n : ℕ} (a : ℕ) (w : Fin n → ℕ) (m : ℕ) :
+    pre (Fin.cons a w) (m + 1) = a + pre w m := by
+  unfold pre
+  rw [Finset.sum_range_succ']
+  have h0 : (if h : 0 < n + 1 then (Fin.cons a w : Fin (n + 1) → ℕ) ⟨0, h⟩ else 0)
+      = a := by
+    rw [dif_pos (Nat.succ_pos n)]
+    rfl
+  have hi : ∀ i, (if h : i + 1 < n + 1 then (Fin.cons a w : Fin (n + 1) → ℕ) ⟨i + 1, h⟩
+        else 0)
+      = if h : i < n then w ⟨i, h⟩ else 0 := by
+    intro i
+    by_cases h : i < n
+    · rw [dif_pos (by omega : i + 1 < n + 1), dif_pos h]
+      rfl
+    · rw [dif_neg (by omega), dif_neg h]
+  rw [h0, Finset.sum_congr rfl fun i _ => hi i]
+  exact Nat.add_comm _ _
+
+open Classical in
+/-- **Bridge, vector side, generalized** for the induction: from column `j` with
+prefix sum `l` and `half - j` remaining columns, the iid Pascal expectation of the
+damped `W`-encounter count equals `Rcol`. Induction on the number of remaining
+columns, peeling `Fin.cons` through `PMF.expect_iid_succ`. -/
+theorem bridge_vector_gen (W : Set (ℕ × ℤ)) (ε : ℝ) (hε : 0 ≤ ε) :
+    ∀ (m half j : ℕ) (l : ℤ), half - j = m →
+      (PMF.iid pascal m).expect (fun v =>
+          Real.exp (-(ε ^ 3) *
+            ((Finset.univ.filter fun i : Fin m =>
+              v i = 3 ∧ ((j + (i : ℕ) + 1 : ℕ), l + (pre v ((i : ℕ) + 1) : ℤ)) ∈ W).card
+              : ℝ)))
+        = Rcol half W ε j l := by
+  intro m
+  induction m with
+  | zero =>
+    intro half j l hm
+    rw [PMF.expect_iid_zero, Rcol, if_pos (by omega : half ≤ j)]
+    simp
+  | succ m IH =>
+    intro half j l hm
+    rw [PMF.expect_iid_succ pascal m _ (fun v => (Real.exp_pos _).le)
+      (fun v => by
+        rw [Real.exp_le_one_iff, neg_mul, neg_nonpos]
+        exact mul_nonneg (pow_nonneg hε 3) (Nat.cast_nonneg _))]
+    -- transform the inner expectation at each head draw a
+    have hinner : ∀ a : ℕ,
+        ((PMF.iid pascal m).expect fun w =>
+          Real.exp (-(ε ^ 3) *
+            ((Finset.univ.filter fun i : Fin (m + 1) =>
+              (Fin.cons a w : Fin (m + 1) → ℕ) i = 3
+                ∧ ((j + (i : ℕ) + 1 : ℕ),
+                    l + (pre (Fin.cons a w) ((i : ℕ) + 1) : ℤ)) ∈ W).card : ℝ)))
+        = (if a = 3 ∧ ((j + 1 : ℕ), l + (a : ℤ)) ∈ W
+            then Real.exp (-(ε ^ 3)) else 1)
+          * Rcol half W ε (j + 1) (l + (a : ℤ)) := by
+      intro a
+      rw [← IH half (j + 1) (l + (a : ℤ)) (by omega)]
+      -- the count splits: head encounter + shifted tail count
+      have hcount : ∀ w : Fin m → ℕ,
+          ((Finset.univ.filter fun i : Fin (m + 1) =>
+            (Fin.cons a w : Fin (m + 1) → ℕ) i = 3
+              ∧ ((j + (i : ℕ) + 1 : ℕ),
+                  l + (pre (Fin.cons a w) ((i : ℕ) + 1) : ℤ)) ∈ W).card
+          = (if a = 3 ∧ ((j + 1 : ℕ), l + (a : ℤ)) ∈ W then 1 else 0)
+            + (Finset.univ.filter fun i : Fin m =>
+                w i = 3 ∧ ((j + 1 + (i : ℕ) + 1 : ℕ),
+                  (l + (a : ℤ)) + (pre w ((i : ℕ) + 1) : ℤ)) ∈ W).card) := by
+        intro w
+        rw [Finset.card_filter, Finset.card_filter, Fin.sum_univ_succ]
+        congr 1
+        -- (the head term at i = 0 closes definitionally under congr)
+        refine Finset.sum_congr rfl fun i _ => ?_
+        have h2 : (j + ((i.succ : Fin (m + 1)) : ℕ) + 1 : ℕ)
+            = j + 1 + (i : ℕ) + 1 := by
+          rw [Fin.val_succ]; omega
+        have h3 : l + (pre (Fin.cons a w) (((i.succ : Fin (m + 1)) : ℕ) + 1) : ℤ)
+            = (l + (a : ℤ)) + (pre w ((i : ℕ) + 1) : ℤ) := by
+          rw [Fin.val_succ, pre_cons]
+          push_cast
+          ring
+        have hiff : ((Fin.cons a w : Fin (m + 1) → ℕ) i.succ = 3
+            ∧ ((j + ((i.succ : Fin (m + 1)) : ℕ) + 1 : ℕ),
+                l + (pre (Fin.cons a w) (((i.succ : Fin (m + 1)) : ℕ) + 1) : ℤ)) ∈ W)
+            ↔ (w i = 3 ∧ ((j + 1 + (i : ℕ) + 1 : ℕ),
+                (l + (a : ℤ)) + (pre w ((i : ℕ) + 1) : ℤ)) ∈ W) := by
+          rw [show ((Fin.cons a w : Fin (m + 1) → ℕ) i.succ) = w i
+            from Fin.cons_succ (α := fun _ => ℕ) a w i, h2, h3]
+        exact if_congr hiff rfl rfl
+      -- exp of the split count = damping · shifted observable; pull the constant out
+      unfold PMF.expect
+      dsimp only
+      rw [← tsum_mul_left]
+      refine tsum_congr fun w => ?_
+      rw [hcount w]
+      push_cast
+      rw [mul_add, Real.exp_add]
+      have hhead : Real.exp (-(ε ^ 3) *
+            ((if a = 3 ∧ ((j + 1 : ℕ), l + (a : ℤ)) ∈ W then (1 : ℝ) else 0)))
+          = (if a = 3 ∧ ((j + 1 : ℕ), l + (a : ℤ)) ∈ W
+              then Real.exp (-(ε ^ 3)) else 1) := by
+        split_ifs
+        · rw [mul_one]
+        · rw [mul_zero, Real.exp_zero]
+      rw [hhead]
+      ring
+    rw [tsum_congr fun a => by rw [hinner a]]
+    rw [Rcol, if_neg (by omega : ¬ half ≤ j)]
+    exact tsum_congr fun a => (mul_assoc _ _ _).symm
+
 open Classical in
 /-- **Bridge, vector side** (the (7.26)/(7.28) rewriting, D6 form): the iid Pascal
 vector expectation of the damped white-encounter count equals the column recursion.
-OPEN (X5): induction on `m` peeling `Fin.cons` through `PMF.iid`/`expect`, with
-`pre (Fin.cons a v) (i+1) = a + pre v i` and the `Fin.succ` filter reindex. -/
+PROVED (X5): instance of `bridge_vector_gen` at `(m, j, l) = (n/2, 0, 0)`, with the
+`whiteSet` membership unfolding to the 0-based `white` test. -/
 theorem bridge_vector (n ξ : ℕ) :
     (PMF.iid pascal (n / 2)).expect (fun b =>
         Real.exp (-((epsBW : ℝ) ^ 3) *
           ((Finset.univ.filter fun j : Fin (n / 2) =>
             b j = 3 ∧ white n ξ (j : ℕ) ((pre b ((j : ℕ) + 1) : ℤ))).card : ℝ)))
       = Rcol (n / 2) (whiteSet n ξ) (epsBW : ℝ) 0 0 := by
-  sorry
+  classical
+  have hε : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  rw [← bridge_vector_gen (whiteSet n ξ) (epsBW : ℝ) hε (n / 2) (n / 2) 0 0
+    (by omega)]
+  refine congrArg _ (funext fun v => ?_)
+  have hcard : (Finset.univ.filter fun i : Fin (n / 2) =>
+        v i = 3 ∧ white n ξ (i : ℕ) ((pre v ((i : ℕ) + 1) : ℤ))).card
+      = (Finset.univ.filter fun i : Fin (n / 2) =>
+        v i = 3 ∧ ((0 + (i : ℕ) + 1 : ℕ),
+          (0 : ℤ) + (pre v ((i : ℕ) + 1) : ℤ)) ∈ whiteSet n ξ).card := by
+    refine congrArg Finset.card (Finset.filter_congr fun i _ => ?_)
+    refine and_congr_right fun _ => ?_
+    rw [show (0 : ℤ) + (pre v ((i : ℕ) + 1) : ℤ) = (pre v ((i : ℕ) + 1) : ℤ)
+      from zero_add _]
+    unfold whiteSet
+    rw [Set.mem_setOf_eq, show (0 + (i : ℕ) + 1) - 1 = (i : ℕ) from by omega]
+    constructor
+    · exact fun h => ⟨by omega, h⟩
+    · exact fun h => h.2
+  rw [hcard]
 
 /-- Generic expansion of a `hold`-expectation through the `bind`/`map` structure. -/
 theorem hold_tsum_expand (G : ℕ × ℤ → ℝ≥0∞) :
