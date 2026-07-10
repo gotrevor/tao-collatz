@@ -72,6 +72,18 @@ Lemma 7.9 induction (X9) for Case 3. Next: state Lemma 7.7 (D6 form) and the
 Case 2/3 split of `Q_black_edge`; then `Q_polynomial_decay` from `prop_7_8` +
 `Qm_le_rpow` by forward induction on m (tractable now).
 
+## Lap 16 (2026-07-10): `Q_polynomial_decay` PROVED (from prop_7_8)
+
+(7.37) closed: forward induction on `m` — below the threshold `Cb := max C0 1`
+use `Qm_le_rpow` ((7.39)); above, `prop_7_8` steps down; gives the uniform bound
+`Q_m ≤ Cb^A`, then `Q_le_Qm` at depth `n/2 - j` (strip interior) or `Q_le_one`
+(past the edge, weight 1). Constant `C := Cb^A`. Depends on `Q_black_edge` via
+`prop_7_8` — the whole §7.4 chain is now a cone over that single sorry.
+Gotcha: standalone `have h := Q_le_Qm ...` needs `(l := l)` (implicit `l`
+unconstrained). Next: the (7.36) seam in Decay.lean (E Q(Hold) ≪ n^{-A} from
+`Q_polynomial_decay` + `hold_tsum_fst`-style Geom(4) tail), or start Lemma 7.7's
+D6 statement for `Q_black_edge`.
+
 ## After laps 6–10 (2026-07-10, second box session): **X3 HEAD CLOSED — Lemma 7.4 PROVED**
 
 `black_structure` is now a theorem, `#print axioms` = `[propext, Classical.choice,

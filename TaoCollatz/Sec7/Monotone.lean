@@ -13,9 +13,11 @@ Paper anchors: Tao 2019 §7.4, (7.38), Proposition 7.8, Case 1 (7.42)–(7.43).
   (ratified against the paper 2026-07-09, replacing an earlier inverted guess).
 * `Qm_le_rpow` — the trivial base bound (7.39): `Q_m ≤ m^A`.
 * `prop_7_8` — **Proposition 7.8 (Monotonicity)**: `Q_m ≤ Q_{m-1}` for
-  `C_{A,ε} ≤ m ≤ ⌊n/2⌋`. Statement only (`sorry`).
-* `Q_polynomial_decay` — the consequence (7.37) of (7.39) + Prop 7.8 by induction on `m`:
-  `Q(j,l) ≪_A max(⌊n/2⌋-j, 1)^{-A}`, which feeds (7.36) `E Q(Hold) ≪_A n^{-A}` in Decay.lean.
+  `C_{A,ε} ≤ m ≤ ⌊n/2⌋`. PROVED modulo `Q_black_edge` (the (7.41) edge bound for
+  black starts = Cases 2–3, the open X8/X10 kernel; Case 1 = `Q_white_case1`, proved).
+* `Q_polynomial_decay` — the consequence (7.37) of (7.39) + Prop 7.8 by forward
+  induction on `m`: `Q(j,l) ≤ C_A·max(⌊n/2⌋-j, 1)^{-A}`, PROVED from `prop_7_8`;
+  feeds (7.36) `E Q(Hold) ≪_A n^{-A}` in Decay.lean.
 
 The white set fed to `Q` is the §7.1 white set of `(n, ξ)` (paper (7.9)); `Q`'s `W`
 parameter is the set where the `exp(-ε³)` damping applies — i.e. the WHITE points.
@@ -66,14 +68,6 @@ theorem Qm_le_rpow (half n ξ : ℕ) (A : ℝ) (hA : 0 ≤ A) (m : ℕ) (hm : 1 
         apply mul_le_mul hw (Q_le_one _ _ _ hε _ _) (Q_nonneg _ _ _ _ _)
         exact Real.rpow_nonneg (Nat.cast_nonneg m) A
     _ = (m : ℝ) ^ A := mul_one _
-
-/-- Paper (7.37), the consequence of (7.39) + Proposition 7.8 by forward induction on `m`:
-`Q(j,l) ≪_A max(⌊n/2⌋ - j, 1)^{-A}`, uniformly in `n, ξ, j, l`. This is what feeds
-(7.36) `E Q(Hold) ≪_A n^{-A}` and hence Proposition 7.3 in `Decay.lean`. -/
-theorem Q_polynomial_decay (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
-      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l ≤ C * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
-  sorry
 
 /-- Each admissible point's weighted value is below the `Qm` sup (the `le_ciSup`
 direction; the range is bounded via `Q ≤ 1` and the weight cap `max(half,1)^A`). -/
@@ -562,5 +556,54 @@ theorem prop_7_8 (A : ℝ) (hA : 0 < A) :
       _ = Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by rw [hcancel, one_mul]
   · -- interior point: admissible at depth m-1 with the same weight
     exact le_Qm (n / 2) n ξ (epsBW : ℝ) A hA.le hε0 (m - 1) hp1 (by omega)
+
+/-- Paper (7.37), the consequence of (7.39) + Proposition 7.8 by forward induction on `m`:
+`Q(j,l) ≪_A max(⌊n/2⌋ - j, 1)^{-A}`, uniformly in `n, ξ, j, l`. This is what feeds
+(7.36) `E Q(Hold) ≪_A n^{-A}` and hence Proposition 7.3 in `Decay.lean`. -/
+theorem Q_polynomial_decay (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l ≤ C * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
+  obtain ⟨C0, hC0⟩ := prop_7_8 A hA
+  set Cb := max C0 1 with hCbdef
+  have hCb1 : 1 ≤ Cb := le_max_right _ _
+  have hCbR : (1 : ℝ) ≤ ((Cb : ℕ) : ℝ) := by exact_mod_cast hCb1
+  have hCbA1 : (1 : ℝ) ≤ ((Cb : ℕ) : ℝ) ^ A := by
+    calc (1 : ℝ) = (1 : ℝ) ^ A := (Real.one_rpow A).symm
+      _ ≤ ((Cb : ℕ) : ℝ) ^ A := Real.rpow_le_rpow zero_le_one hCbR hA.le
+  refine ⟨((Cb : ℕ) : ℝ) ^ A, Real.rpow_pos_of_pos (by linarith) A, ?_⟩
+  intro n ξ hξ j l hj
+  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  -- the uniform bound Q_m ≤ Cb^A for 1 ≤ m ≤ n/2, by forward induction from (7.39)
+  have hQmb : ∀ m : ℕ, 1 ≤ m → m ≤ n / 2 →
+      Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ ((Cb : ℕ) : ℝ) ^ A := by
+    intro m
+    induction m using Nat.strong_induction_on with
+    | _ m IH =>
+      intro hm1 hmn
+      rcases le_or_gt m Cb with hle | hgt
+      · calc Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ (m : ℝ) ^ A := Qm_le_rpow _ _ _ _ hA.le _ hm1
+          _ ≤ ((Cb : ℕ) : ℝ) ^ A :=
+              Real.rpow_le_rpow (Nat.cast_nonneg _) (by exact_mod_cast hle) hA.le
+      · have h78 := hC0 n ξ hξ m (by omega) hmn
+        exact le_trans h78 (IH (m - 1) (by omega) (by omega) (by omega))
+  rcases Nat.lt_or_ge j (n / 2) with hjlt | hjge
+  · -- inside the strip: use le_Qm at depth m = n/2 - j, then the uniform bound
+    have hle := Q_le_Qm (n / 2) n ξ (epsBW : ℝ) A hA.le hε0 (n / 2 - j) (l := l) hj
+      (by omega)
+    calc Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l
+        ≤ ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A)
+            * Qm (n / 2) n ξ (epsBW : ℝ) A (n / 2 - j) := hle
+      _ ≤ ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) * (((Cb : ℕ) : ℝ) ^ A) :=
+          mul_le_mul_of_nonneg_left (hQmb (n / 2 - j) (by omega) (by omega))
+            (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+      _ = ((Cb : ℕ) : ℝ) ^ A * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := mul_comm _ _
+  · -- past the strip edge: Q ≤ 1 and the weight is 1
+    have hw : (max (n / 2 - j) 1 : ℕ) = 1 := by omega
+    calc Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l ≤ 1 := Q_le_one _ _ _ hε0 _ _
+      _ ≤ ((Cb : ℕ) : ℝ) ^ A := hCbA1
+      _ = ((Cb : ℕ) : ℝ) ^ A * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
+          rw [hw, Nat.cast_one, Real.one_rpow, mul_one]
 
 end TaoCollatz
