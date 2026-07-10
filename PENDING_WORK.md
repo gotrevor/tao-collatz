@@ -30,8 +30,12 @@ pulls `exp(-ε³)`; each hold-atom `d` lands at `j = n/2 - m + d₁` with
 matching `hold_weight_expect`'s weight; needs `Qm_nonneg` to pull the constant
 `Q_{m-1}` out of the tsum. Combine: `exp(-ε³)·exp(ε³/2) = exp(-ε³/2)`.
 Then Case 2 (paper (7.44), black start) and the Prop 7.8 induction (X9).
-Judge follow-up (b), the (7.36)-bridge harness check in `tools/check_blueprint.py`,
-still open.
+Judge follow-up (b) DONE (lap 13): `check12` in `tools/check_blueprint.py` — the
+(7.36)-bridge. Pascal-column DP (mirrors `renewal_white_encounters` LHS) vs
+hold-jump DP (mirrors `E Q(Hold)` with the D6 recursion + `whiteSet` adapter);
+agreement 1e-11 at n=14/16, incl. amplified damping (1/e, 0.5) where any
+coordinate off-by-one would show at O(1). Renewal identity (7.26)≡(7.27) and the
+paper-vs-0-based seam are pinned end-to-end. All judge follow-ups now closed.
 
 ## After laps 6–10 (2026-07-10, second box session): **X3 HEAD CLOSED — Lemma 7.4 PROVED**
 

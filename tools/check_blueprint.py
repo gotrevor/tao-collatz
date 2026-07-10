@@ -501,10 +501,93 @@ def check11():
     print("11. eps = 1/10^4 survives every §7 usage site (7.2, Claim (*) Cases 1-3, "
           "weakly-black constants, (7.16) strip, (7.47), slope)  OK")
 
+def check12(n=14, xi=1, eps=Fraction(2, 100), damp=None, B=44, tol=1e-9):
+    """(7.36)-bridge check (judge item 9, 2026-07-09 directive).
+
+    Two INDEPENDENT computations of the same expectation:
+      side A (pascal columns, mirrors `renewal_white_encounters` LHS):
+        E_{b iid Pascal} damp^{#{j in [1,half] : b_j = 3, (j, b_[1,j]) in W}}
+        via a per-column DP  A(j,l) = sum_b P(b) * fac * A(j+1, l+b);
+      side B (hold jumps, mirrors Decay.lean's seam E Q(Hold) with the D6
+        recursion (7.34)/(7.35) and the `whiteSet` adapter):
+        sum_d P(Hold=d) Q(d)  with  Q(j,l) = fac(j,l) * E Q((j,l)+Hold),
+        Q = 1 past the strip; hold atoms with d1 > half - j hit the boundary
+        regardless of l, so the k-tail (3/4)^{half-j} is EXACT.
+    Agreement pins the renewal identity (7.26)==(7.27) + the paper-vs-0-based
+    coordinate seam end-to-end (this is the check that would have caught the
+    whiteSet off-by-one mechanically).  W(jp,l) := |theta(jp,l)| > eps for
+    paper columns 1..half (Lean: white n xi (jp-1) l).
+    damp: per-encounter factor; default exp(-eps^3) (the statement's value) —
+    ALSO run with an amplified damp (e.g. 1/e) so a coordinate bug shows at O(1).
+    B: pascal/pascalNe3 truncation (tails tracked into the tolerance budget)."""
+    half = n // 2
+    lam = damp if damp is not None else 2.718281828459045 ** (-float(eps) ** 3)
+
+    from functools import lru_cache
+
+    @lru_cache(maxsize=None)
+    def is_white(jp: int, l: int) -> bool:
+        return jp >= 1 and abs(theta_exact(n, xi, jp, l)) > eps
+
+    # --- side A: pascal-column DP ------------------------------------------
+    pascal_p = {b: (b - 1) / 2.0 ** b for b in range(2, B + 1)}
+    pascal_tail = 1.0 - sum(pascal_p.values())
+
+    @lru_cache(maxsize=None)
+    def A(j: int, l: int) -> float:
+        if j >= half:
+            return 1.0
+        tot = pascal_tail  # tail columns: b > B >= 4 so b != 3 => factor 1, A ~ 1
+        for b, pb in pascal_p.items():
+            fac = lam if (b == 3 and is_white(j + 1, l + b)) else 1.0
+            tot += pb * fac * A(j + 1, l + b)
+        return tot
+
+    VA = A(0, 0)
+
+    # --- side B: hold-jump DP ----------------------------------------------
+    # pascalNe3 (7.29): P(b) = (4/3)(b-1)/2^b, b >= 2, b != 3
+    ne3 = {b: (4.0 / 3.0) * (b - 1) / 2.0 ** b for b in range(2, B + 1) if b != 3}
+    ne3_tail = 1.0 - sum(ne3.values())
+    # second-coordinate distribution of Hold given d1 = k: 3 + (k-1)-fold conv
+    dist = [{}, {3: 1.0}]                                # dist[k][dl] for k >= 1
+    for k in range(2, half + 1):
+        prev, cur = dist[k - 1], {}
+        for s, ps in prev.items():
+            for b, pb in ne3.items():
+                cur[s + b] = cur.get(s + b, 0.0) + ps * pb
+        dist.append(cur)
+    pk = {k: 0.25 * 0.75 ** (k - 1) for k in range(1, half + 1)}
+
+    @lru_cache(maxsize=None)
+    def Q(j: int, l: int) -> float:
+        if j > half:
+            return 1.0
+        fac = lam if is_white(j, l) else 1.0             # whiteSet adapter (1<=j guard)
+        tot = 0.75 ** (half - j)                          # exact k-tail (Q = 1 there)
+        for k in range(1, half - j + 1):
+            for dl, pdl in dist[k].items():
+                tot += pk[k] * pdl * Q(j + k, l + dl)
+        return fac * tot
+
+    VB = 0.75 ** half                                     # Hold atoms with d1 > half
+    for k in range(1, half + 1):
+        for dl, pdl in dist[k].items():
+            VB += pk[k] * pdl * Q(k, dl)
+
+    err = abs(VA - VB)
+    budget = 4 * half * (pascal_tail + half * ne3_tail)   # crude truncation budget
+    assert err <= max(tol, 10 * abs(budget)), (VA, VB, err)
+    print(f"12. (7.36)-bridge n={n} xi={xi} eps={eps} damp={lam:.6g}: "
+          f"E_pascal = {VA:.12f}  vs  E Q(Hold) = {VB:.12f}  (|diff| = {err:.2e})  OK")
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
     check8(); check8(n=26, xi=101, eps=Fraction(1, 101))
     check8(n=30, xi=1, eps=Fraction(1, 10 ** 4))  # the D4 value itself
     check9(); check10(); check11()
+    check12()                                     # statement-faithful damping
+    check12(damp=1.0 / 2.718281828459045)         # amplified: O(1)-sensitive seam
+    check12(n=16, xi=7, damp=0.5)                 # second geometry
     print("ALL CHECKS PASS ✅")
