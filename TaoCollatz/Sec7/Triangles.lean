@@ -227,6 +227,77 @@ theorem abs_sfrac_le (x : ℚ) : |sfrac x| ≤ |x| := by
       refine Int.floor_eq_zero_iff.mpr ⟨by linarith [h'.1], by linarith [h'.2]⟩
     unfold sfrac; rw [hr]; simp
 
+/-- `sfrac` lands in `[-1/2, 1/2)`. (With `round q = ⌊q + 1/2⌋` the endpoint convention
+is the mirror of the paper's `(-1/2, 1/2]`; only `|sfrac|` is ever used, and our phase
+denominators `3^n` are odd so `±1/2` never occurs.) -/
+theorem sfrac_mem (x : ℚ) : -(1 / 2) ≤ sfrac x ∧ sfrac x < 1 / 2 := by
+  unfold sfrac
+  rw [round_eq]
+  constructor
+  · linarith [Int.floor_le (x + 1 / 2)]
+  · linarith [Int.lt_floor_add_one (x + 1 / 2)]
+
+/-- `sfrac` fixes its own range: `sfrac x = x` for `x ∈ [-1/2, 1/2)`. -/
+theorem sfrac_eq_self {x : ℚ} (h1 : -(1 / 2) ≤ x) (h2 : x < 1 / 2) : sfrac x = x := by
+  unfold sfrac
+  rw [round_eq]
+  have : ⌊x + 1 / 2⌋ = 0 := Int.floor_eq_zero_iff.mpr ⟨by linarith, by linarith⟩
+  rw [this]; simp
+
+/-- `sfrac` is idempotent. -/
+theorem sfrac_idem (x : ℚ) : sfrac (sfrac x) = sfrac x :=
+  sfrac_eq_self (sfrac_mem x).1 (sfrac_mem x).2
+
+/-- **(7.18), inequality form, single j-step**: `|θ(j+1,l)| ≤ 9·|θ(j,l)|`
+(unconditional). -/
+theorem θq_succ_j_abs_le (n ξ : ℕ) (j : ℕ) (l : ℤ) :
+    |θq n ξ (j + 1) l| ≤ 9 * |θq n ξ j l| := by
+  obtain ⟨k, hk⟩ := θq_succ_j n ξ j l
+  have hidem : θq n ξ (j + 1) l = sfrac (θq n ξ (j + 1) l) := by
+    unfold θq; rw [sfrac_idem]
+  calc |θq n ξ (j + 1) l| = |sfrac (θq n ξ (j + 1) l)| := by rw [← hidem]
+    _ = |sfrac (9 * θq n ξ j l)| := by rw [hk, sfrac_add_int]
+    _ ≤ |9 * θq n ξ j l| := abs_sfrac_le _
+    _ = 9 * |θq n ξ j l| := by
+        rw [abs_mul, abs_of_nonneg (by norm_num : (0:ℚ) ≤ 9)]
+
+/-- **(7.18), inequality form, single l-step**: `|θ(j,l-1)| ≤ 2·|θ(j,l)|`
+(unconditional). -/
+theorem θq_pred_l_abs_le (n ξ : ℕ) (j : ℕ) (l : ℤ) :
+    |θq n ξ j (l - 1)| ≤ 2 * |θq n ξ j l| := by
+  obtain ⟨k, hk⟩ := θq_pred_l n ξ j l
+  have hidem : θq n ξ j (l - 1) = sfrac (θq n ξ j (l - 1)) := by
+    unfold θq; rw [sfrac_idem]
+  calc |θq n ξ j (l - 1)| = |sfrac (θq n ξ j (l - 1))| := by rw [← hidem]
+    _ = |sfrac (2 * θq n ξ j l)| := by rw [hk, sfrac_add_int]
+    _ ≤ |2 * θq n ξ j l| := abs_sfrac_le _
+    _ = 2 * |θq n ξ j l| := by
+        rw [abs_mul, abs_of_nonneg (by norm_num : (0:ℚ) ≤ 2)]
+
+/-- **(7.18), inequality form, iterated**: `|θ(j+a, l-b)| ≤ 9^a·2^b·|θ(j,l)|`
+(unconditional; the equality case below `1/2` is `θq_iterate_exact`). -/
+theorem θq_iterate_abs_le (n ξ : ℕ) (j : ℕ) (l : ℤ) (a b : ℕ) :
+    |θq n ξ (j + a) (l - b)| ≤ 9 ^ a * 2 ^ b * |θq n ξ j l| := by
+  have hstep_j : ∀ a' : ℕ, |θq n ξ (j + a') l| ≤ 9 ^ a' * |θq n ξ j l| := by
+    intro a'
+    induction a' with
+    | zero => simp
+    | succ a' IH =>
+      calc |θq n ξ (j + (a' + 1)) l| = |θq n ξ ((j + a') + 1) l| := by
+            rw [show j + (a' + 1) = (j + a') + 1 from by omega]
+        _ ≤ 9 * |θq n ξ (j + a') l| := θq_succ_j_abs_le n ξ (j + a') l
+        _ ≤ 9 * (9 ^ a' * |θq n ξ j l|) := by linarith [IH]
+        _ = 9 ^ (a' + 1) * |θq n ξ j l| := by ring
+  induction b with
+  | zero => simpa using hstep_j a
+  | succ b IH =>
+    calc |θq n ξ (j + a) (l - (b + 1 : ℕ))|
+        = |θq n ξ (j + a) ((l - b) - 1)| := by
+          rw [show l - ((b + 1 : ℕ) : ℤ) = (l - b) - 1 from by push_cast; ring]
+      _ ≤ 2 * |θq n ξ (j + a) (l - b)| := θq_pred_l_abs_le n ξ (j + a) (l - b)
+      _ ≤ 2 * (9 ^ a * 2 ^ b * |θq n ξ j l|) := by linarith [IH]
+      _ = 9 ^ a * 2 ^ (b + 1) * |θq n ξ j l| := by ring
+
 /-- Absorbing a `ZMod`-external integer factor `ξ` into the `ZMod` element does not
 change the phase. -/
 theorem sfrac_phase_absorb (n ξ : ℕ) (X : ZMod (3 ^ n)) :
@@ -444,6 +515,134 @@ theorem black_run_le (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) {j : ℕ} {l : ℤ} {t : �
     _ ≤ epsBW * 3 ^ (n - 2 * j) := by
         apply mul_le_mul_of_nonneg_right hchain h3pos.le
 
+/-- Some point at or above `l` in column `j` is white (black runs terminate). -/
+theorem exists_white_above (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (j : ℕ) (l : ℤ) (h2j : 2 * j + 1 ≤ n) :
+    ∃ t : ℕ, ¬ black n ξ j (l + t) := by
+  by_contra hall
+  push_neg at hall
+  obtain ⟨t, ht⟩ := pow_unbounded_of_one_lt (epsBW * 3 ^ (n - 2 * j))
+    (by norm_num : (1 : ℚ) < 2)
+  exact absurd (black_run_le n ξ hξ h2j (fun i _ => hall i)) (not_le.mpr ht)
+
+/-! ### The corner map `(j,l) ↦ (j*, l*)` (paper pp.38–39)
+
+`l*` is the top of the contiguous black run above `(j,l)`; `j*` is then the far left of
+the contiguous black run at height `l*`. Both defined via `Nat.find` (black is a
+decidable ℚ-comparison; runs terminate by `exists_white_above` upward and by hitting
+`j = 0` leftward). Junk-guarded on the upward existence so the defs are total. -/
+
+open Classical in
+/-- Offset of the first white point at or above `l` in column `j` (junk `0` if the
+column were all-black, which `exists_white_above` rules out in context). -/
+noncomputable def upRun (n ξ : ℕ) (j : ℕ) (l : ℤ) : ℕ :=
+  if h : ∃ t : ℕ, ¬ black n ξ j (l + t) then Nat.find h else 0
+
+/-- `l*(j,l)` (paper p.39): the top of the contiguous black run above `(j,l)`. -/
+noncomputable def lstar (n ξ : ℕ) (j : ℕ) (l : ℤ) : ℤ := l + upRun n ξ j l - 1
+
+open Classical in
+/-- Leftward run length at height `lstar`: the first offset `a` (`≤ j+1`) at which
+`(j - a, l*)` is white or `a` exceeds `j` (so `j* = j - (leftRun - 1)`). -/
+noncomputable def leftRun (n ξ : ℕ) (j : ℕ) (l : ℤ) : ℕ :=
+  Nat.find (⟨j + 1, by omega⟩ : ∃ a : ℕ, j < a ∨ ¬ black n ξ (j - a) (lstar n ξ j l))
+
+/-- `j*(j,l)` (paper p.39): the far-left column of the black run at height `l*`. -/
+noncomputable def jstar (n ξ : ℕ) (j : ℕ) (l : ℤ) : ℕ := j - (leftRun n ξ j l - 1)
+
+section CornerSpec
+
+variable {n ξ : ℕ} {j : ℕ} {l : ℤ}
+
+/-- Everything from `l` up to `l*` is black, provided `(j,l)` is black. -/
+theorem black_of_le_lstar (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l)
+    {l' : ℤ} (h1 : l ≤ l') (h2 : l' ≤ lstar n ξ j l) : black n ξ j l' := by
+  classical
+  have hex := exists_white_above n ξ hξ j l h2j
+  unfold lstar at h2
+  rw [upRun, dif_pos hex] at h2
+  have hi : (l' - l).toNat < Nat.find hex := by omega
+  have hmin := Nat.find_min hex hi
+  rw [not_not] at hmin
+  have hcast : l + ((l' - l).toNat : ℤ) = l' := by omega
+  rw [hcast] at hmin
+  exact hmin
+
+/-- `(j,l)` black implies `l ≤ l*`. -/
+theorem le_lstar (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) :
+    l ≤ lstar n ξ j l := by
+  classical
+  have hex := exists_white_above n ξ hξ j l h2j
+  unfold lstar
+  rw [upRun, dif_pos hex]
+  have h0 : 0 < Nat.find hex := by
+    rcases Nat.eq_zero_or_pos (Nat.find hex) with h | h
+    · exfalso
+      have hs := Nat.find_spec hex
+      rw [h] at hs
+      simp only [Nat.cast_zero, add_zero] at hs
+      exact hs hb
+    · exact h
+  omega
+
+/-- The point just above `l*` is white. -/
+theorem white_above_lstar (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) :
+    ¬ black n ξ j (lstar n ξ j l + 1) := by
+  classical
+  have hex := exists_white_above n ξ hξ j l h2j
+  unfold lstar
+  rw [upRun, dif_pos hex]
+  have hs := Nat.find_spec hex
+  have hcast : l + (Nat.find hex : ℤ) - 1 + 1 = l + Nat.find hex := by ring
+  rw [hcast]
+  exact hs
+
+/-- `0 < leftRun` whenever `(j,l)` is black (the corner search starts on a black point). -/
+theorem leftRun_pos (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) :
+    0 < leftRun n ξ j l := by
+  classical
+  have hbl : black n ξ j (lstar n ξ j l) :=
+    black_of_le_lstar hξ h2j hb (le_lstar hξ h2j hb) le_rfl
+  rw [leftRun, Nat.find_pos]
+  intro h
+  rcases h with h | h
+  · omega
+  · simp only [Nat.sub_zero] at h
+    exact h hbl
+
+/-- The whole row from `j*` to `j` at height `l*` is black, provided `(j,l)` is black. -/
+theorem black_of_jstar_le (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l)
+    {j' : ℕ} (h1 : jstar n ξ j l ≤ j') (h2 : j' ≤ j) : black n ξ j' (lstar n ξ j l) := by
+  classical
+  have hpos := leftRun_pos hξ h2j hb
+  unfold jstar at h1
+  have ha : j - j' < leftRun n ξ j l := by omega
+  rw [leftRun] at ha
+  have hmin := Nat.find_min
+    (⟨j + 1, by omega⟩ : ∃ a : ℕ, j < a ∨ ¬ black n ξ (j - a) (lstar n ξ j l)) ha
+  push_neg at hmin
+  have hj' : j - (j - j') = j' := by omega
+  rw [hj'] at hmin
+  exact hmin.2
+
+/-- Left of `j*` on the `l*` row: either `j* = 0` or the next point left is white. -/
+theorem jstar_maximal (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) :
+    jstar n ξ j l = 0 ∨ ¬ black n ξ (jstar n ξ j l - 1) (lstar n ξ j l) := by
+  classical
+  have hpos := leftRun_pos hξ h2j hb
+  have hspec : j < leftRun n ξ j l ∨
+      ¬ black n ξ (j - leftRun n ξ j l) (lstar n ξ j l) := by
+    rw [leftRun]
+    exact Nat.find_spec
+      (⟨j + 1, by omega⟩ : ∃ a : ℕ, j < a ∨ ¬ black n ξ (j - a) (lstar n ξ j l))
+  rcases hspec with h | h
+  · left; unfold jstar; omega
+  · rcases Nat.lt_or_ge j (leftRun n ξ j l) with haj | haj
+    · left; unfold jstar; omega
+    · right
+      rw [show jstar n ξ j l - 1 = j - leftRun n ξ j l from by unfold jstar; omega]
+      exact h
+
+end CornerSpec
 
 /-- The corner triangle with apex `(j₀, l₀)` and size `s` (paper (7.11)): points to the
 lower-right of the apex within `(log 9)·Δj + (log 2)·Δl ≤ s`. -/

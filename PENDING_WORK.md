@@ -1,5 +1,39 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## After lap 5 (2026-07-10)
+
+**Done** (axiom-clean): (a) (7.18) inequality forms — `sfrac_mem`/`sfrac_eq_self`/
+`sfrac_idem`, `θq_succ_j_abs_le`, `θq_pred_l_abs_le`, `θq_iterate_abs_le`
+(`|θ(j+a,l-b)| ≤ 9^a 2^b |θ(j,l)|` unconditional); (b) the corner map:
+`exists_white_above` (via `black_run_le` + archimedean), defs `upRun`/`lstar`/
+`leftRun`/`jstar` (Nat.find, classical), spec lemmas `black_of_le_lstar`, `le_lstar`,
+`white_above_lstar`, `leftRun_pos`, `black_of_jstar_le`, `jstar_maximal`.
+NOTE: our `sfrac` range is `[-1/2, 1/2)` (mirror of the paper's `(-1/2, 1/2]`);
+only `|sfrac|` is used and denominators are odd, so no discrepancy — documented at
+`sfrac_mem`.
+
+**X3 next**: the corner triangle fibre. Key lemma to state and prove next
+(paper (7.17)–(7.18) + Claim (*) — the heart of Lemma 7.4):
+  `theorem mem_corner_triangle`: for black (j,l) in the strip, with (j*,l*) its corner
+  and s* := log(ε/|θ(j*,l*)|) ≥ 0: `9^(j-j*)·2^(l*-l)·|θ*| ≤ ε` (i.e. (j,l) ∈ Δ* as a
+  ℚ-inequality — the ℝ-log triangle membership is monotone algebra on top).
+  Route: |θ(j,l)| ≤ ε (black) and θ(j,l) = 9^(j-j*)2^(l*-l)θ* by θq_iterate_exact
+  — but the iterate goes from the corner DOWN to (j,l): need the scale < 1/2 premise,
+  which needs Claim (*) Case-1-style reasoning (if the scaled value exceeded ε it
+  wraps...). Careful: the correct paper route is (7.18) with equality "whenever the
+  RHS is strictly less than 1/2". Plan: prove by strong induction down the run using
+  the run lemmas (each step black keeps values ≤ ε ≤ 1/4, so exact steps apply and the
+  product never wraps). Concretely: (j,l) black, everything between (j,l*)..(j,l) black
+  (black_of_le_lstar column) and (j*,l*)..(j,l*) black (row) — then iterate exact steps
+  along row then column, all values staying ≤ ε.
+  CAUTION: intermediate points of Δ* are NOT all on the row/column path; but the paper's
+  Δ* membership only needs the (j,l)↔corner relation, and the run lemmas give exactly
+  the path needed. |θ(j,l)| = 2^(l*-l)|θ(j,l*)| (θq_up_run) and
+  |θ(j,l*)| = 9^(j-j*)|θ(j*,l*)| (row version of up_run — NEEDS a leftward run-exact
+  lemma `θq_left_run`, same proof shape as θq_up_run using θq_succ_j_exact on black row
+  points: TO WRITE).
+  Then fibre equality Δ* = {p : black, corner p = (j*,l*)} and Claim (*) cases.
+
 ## After lap 4 (2026-07-10)
 
 **Done** (axiom-clean): `θq_iterate_j`, `θq_iterate_l`, `θq_iterate_exact` — the (7.18)
