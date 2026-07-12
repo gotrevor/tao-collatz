@@ -1,5 +1,45 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 47 (2026-07-12, seventh box session): X6 CRACKED OPEN — FIRST-PASSAGE RENEWAL DECOMPOSITION PROVED
+
+NEW `Sec7/FpLocation.lean` (imports HoldLocal; `fpDist_location_bound` moved
+here from Unroll). KEY STRUCTURAL INSIGHT formalized: hold steps strictly
+increase height (`hold_support_snd_ge`), so a path reaching `p` with
+`p.2 <= s` automatically kept ALL partial sums <= s — the first-passage
+decomposition needs NO barrier condition, just the PLAIN renewal measure.
+
+PROVED (axiom-clean):
+- `renewalMass p := Sum_k iidSum hold k p`, `stepMass`, `renewalMass_eq`
+  (delta_0 + stepMass peel via tsum_eq_zero_add' ENNReal.summable),
+  `iidSum_succ_apply`, `stepMass_eq_conv` (renewal recursion U = d0 + hold*U).
+- `tsum_delta_chain`, `tsum_conv_reindex` — reusable ENNReal delta-convolution
+  Fubini helpers (collapse intermediate landing points / reindex p = d + q).
+- **`fpDist_le_renewal_conv`**: fpDist s e <= Sum_{p.2<=s} renewalMass p *
+  hold(e-p) (delta form). Budget strong induction; INEQUALITY suffices for all
+  consumers (upper bounds; (7.50) lower bound = complement since fpDist is a
+  PMF). This is X6 step 1 of 3.
+
+OPEN (X6 steps 2-3, both statements pinned with route docstrings):
+- `renewalMass_bound`: U(j,l) <= C/sqrt(1+l) * Gweight(1+l)(c(j-l/4)).
+  ATTACK: insert hold_local_bound per k, sum in k over three regions
+  16(k-1) in [l/2,2l] / < l/2 / > 2l (paper p.44 "routine calculation").
+  VALIDATE the envelope numerically in python FIRST (c=1/400 upstream;
+  region-2/3 terms need Gweight quadratic-vs-linear case split).
+- `fpDist_location_bound` (Lemma 7.7): assembly = fpDist_le_renewal_conv +
+  renewalMass_bound at (j1,l1) + hold_local/tail at n=1 for overshoot step,
+  split l1 <= s/2 vs > s/2.
+
+Gotchas this lap:
+- PMF.map_apply/pure_apply produce `Classical.propDecidable` ites that do NOT
+  match hand-written ites (instDecidableEqProd): "synthesized instance not
+  defeq". Bridge: `map_apply_ite` proved via `tsum_congr fun a => by congr`
+  (congr closes Decidable mismatches via Subsingleton). if_pos/if_neg/by_cases
+  are instance-agnostic; only calc-LHS/rw pattern matching breaks.
+- `rw [zero_mul]` etc rewrite ALL occurrences of the matched instantiation at
+  once — chained duplicate rewrites then fail "pattern not found".
+- `exact zero_le _` fails where `zero_le` resolves with implicit arg; plain
+  `exact zero_le` works (ℝ≥0∞).
+
 ## Lap 46 (2026-07-12, seventh box session): X8/X10 STATEMENT DESIGN — Q_black_edge DECOMPOSED
 
 NEW `Sec7/BlackEdge.lean` (imports Monotone + Unroll; Bridge now imports it;

@@ -613,19 +613,8 @@ theorem holdSum_apply_le_center (n : ℕ) (v : ℕ × ℤ) :
   refine le_trans h (le_of_eq ?_)
   norm_num
 
-/-- **Lemma 7.7 (Distribution of first passage location), D6 statement** (paper p.43,
-(7.30)–(7.33)): the first-passage endpoint mass at `(j, l)` is Gaussian-concentrated —
-`j` near `s/4` at scale `(1+s)^{1/2}`, `l` within `O(1)` of `s`. For `l ≤ s` the left
-side vanishes (`fpDist_support_snd_gt`), so the statement is unconditional.
-OPEN (X6, the hard probabilistic kernel): the paper route is the union bound over the
-last step + Lemma 7.6 (exponential tail of `Hold`) + Lemma 2.2 (2-D local Gaussian
-bound for iid `Hold` sums — node S3, D5: exponential tilting + circle method, no
-contour integration). -/
-theorem fpDist_location_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (s : ℕ) (j : ℕ) (l : ℤ),
-      (fpDist s (j, l)).toReal
-        ≤ C * (Real.exp (-c * ((l : ℝ) - s)) / Real.sqrt (1 + s))
-            * Gweight (1 + s) (c * ((j : ℝ) - s / 4)) := by
-  sorry
+-- NOTE: `fpDist_location_bound` (Lemma 7.7, node X6) moved to
+-- `Sec7/FpLocation.lean`, together with the renewal-measure machinery
+-- (`renewalMass`, `fpDist_le_renewal_conv`) that its proof route consumes.
 
 end TaoCollatz
