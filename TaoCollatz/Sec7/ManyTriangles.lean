@@ -28,13 +28,50 @@ Gaussian envelope `s^{-1/2}G_{1+s}(c(j'−j−s/4))` over that separated set (vi
 
 ## Lemma 7.9 (X9) — many triangles usually implies many white points
 
-Paper (7.57): `E exp(−Σ_{p=1}^{t_{min(r,R)}} 1_W((j',l')+v_{[1,p]}) + ε·min(r,R)) ≤
-exp(ε)`. This is a functional of the WHOLE walk (the stopping times `t_i` couple all
-`v_i`), so — unlike 7.10 — it needs a recursion object, not a marginal. Design in
-`PENDING_WORK.md` (lap 51): a budget recursion on `R` over a moving-barrier
-first-passage kernel, closed by `fpDist_white_exit` (7.51). Deferred to next lap; the
-prerequisite (pairwise triangle disjointness on lattice points, from `F.separated`) is
-stated there. NOT pinned here to avoid an unfaithful statement (copy-not-compose).
+Paper (7.57), p.50: with `v₁, v₂, …` iid `Hold`, stopping times `t₁ < t₂ < …` (`t₁` =
+first `p ≥ 1` with `(j',l')+v_{[1,p]}` in a triangle of `𝒯`; `t_i` = first `p` with
+BOTH `l' + l_{[1,p]} > l_{Δ_{i−1}}` AND the point in a triangle `Δ_i`), and `r` = the
+number of such times:
+
+  `E exp(−Σ_{p=1}^{t_{min(r,R)}} 1_W((j',l')+v_{[1,p]}) + ε·min(r,R)) ≤ exp(ε)`.
+
+**D6 encoding** (design ratified lap 52; route-trigger T1 does NOT fire — no infinite
+product measure is needed): the stopping-time data `(t_i, Δ_i, r)` is a LEFT FOLD over
+the finite step list. The state `EncState` carries the current position, the current
+clearing barrier (top of the last-encountered triangle; initialized to `l'`, vacuous
+since every walk height exceeds `l'`), the encounter count `r`, the running white
+count `Σ 1_W`, and the `banked` white count frozen at the `min(r,R)`-th encounter —
+so `banked = Σ_{p=1}^{t_{min(r,R)}} 1_W` and the paper's LHS is
+`encVal ε R (final state)` exactly.
+
+**Finite horizon `T`, uniformly**: the statement is pinned for the `T`-step walk
+`hold.iid T` for EVERY `T` (the paper's infinite-walk statement is the `T`-envelope of
+these). This is faithful-to-consumer: the (7.66)–(7.67) consumption (p.55) applies
+Lemma 7.9 through Markov's inequality on the finite window `p ≤ P` after the first
+passage, with all stopping times shown to fall inside the window by the deterministic
+argument — only finite horizons are ever used. It is also faithful-to-proof: the p.51
+induction on `R` conditions on the first block `v₁ … v_{k₁}` (first passage over
+`Δ₁`'s top), which the head-peel recursion `encExpect_succ` below finitizes; the
+extra finite-horizon branch "`t₁ ≤ T < k₁`" contributes `≤ e^ε·P(branch)` directly
+(its `min(r_T,R) = 1` and the empty continuation is `1`), so the closure
+`E 1_{r≠0} e^{−1_W(endpoint)} ≤ e^{−ε} P(r≠0)` via `fpDist_white_exit` (7.51) is
+unchanged.
+
+**ε existentially small** rather than the paper's fixed section constant: (7.57) needs
+`e^{2ε}(1 − (1−1/e)·p₀) ≤ e^ε` against the absolute white-exit mass `p₀` of
+`fpDist_white_exit`, which is pinned as `∃ p₀ > 0`. The consumer is insensitive: on
+p.55 `R` is chosen AFTER ε (`R := ⌈(10A/ε_Q³ + O(A) + 1)/ε⌉` makes the Markov bound
+`e^{ε + threshold − εR} ≤ 10^{−A−2}` for any fixed ε > 0), so an
+`∃ ε₀ ∈ (0, 1/100], ∀ ε ≤ ε₀` pin is exactly what X11 consumes.
+
+**Index shift**: walk points live at renewal coordinates `q`; triangle membership and
+color are read at the phase point `(q.1 − 1, q.2)` (matching `fpDist_white_exit` and
+the `Q_black_edge` glue), and `whiteStrip` already carries this shift.
+
+NEXT (proof, later laps): induction on `(R, T)` over `encExpect_succ`, closed by the
+path→`fpDist` bridge (the first-passage endpoint functional of `hold.iid T` has law
+`fpDist s` once `T ≥ s/3 + 1`, since every step spends height ≥ 3) plus
+`fpDist_white_exit`.
 -/
 
 namespace TaoCollatz
@@ -241,6 +278,188 @@ theorem triangle_encounter_le :
           * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
         ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
           + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) := by
+  sorry
+
+/-! ### Lemma 7.9 (X9): the encounter fold and the (7.57) pin -/
+
+/-- **The stopping-time fold state** (paper p.50, D6 form): everything the paper's
+stopping times `t_i`, triangles `Δ_i`, and count `r` extract from a walk prefix.
+`pos` = current renewal point `(j',l') + v_{[1,p]}`; `barrier` = the top `l_{Δ_{i−1}}`
+of the last triangle encountered (init `l'`: vacuous, every walk height is `> l'`);
+`count` = the number `r` of encounters so far; `cumWhite` = `Σ_{p'≤p} 1_W`;
+`banked` = `cumWhite` frozen at the `min(r,R)`-th encounter, i.e.
+`Σ_{p=1}^{t_{min(r,R)}} 1_W` — the exponent of (7.57). -/
+structure EncState : Type where
+  /-- current renewal position -/
+  pos : ℕ × ℤ
+  /-- clearing barrier: top of the last-encountered triangle -/
+  barrier : ℤ
+  /-- number of triangle encounters (the paper's `r`) -/
+  count : ℕ
+  /-- running white count `Σ 1_W` along the walk -/
+  cumWhite : ℕ
+  /-- white count frozen at encounter `min(count, R)` -/
+  banked : ℕ
+
+open scoped Classical in
+/-- **One step of the encounter fold** (paper p.50's stopping-time recursion, one
+`Hold` increment `d`): move to `q = pos + d`; count its whiteness (`whiteStrip`, phase
+shift built in); an ENCOUNTER happens iff the phase point `(q₁−1, q₂)` is black-strip
+(equivalently, `q` lies in a family triangle, via `cover`) AND the height has cleared
+the previous triangle's top (`barrier < q₂`) — then the barrier becomes the top of the
+covering triangle `Δ(q)` and, while `count < R`, the white count is banked
+(`t_{min(r,R)}` semantics of (7.57)). -/
+noncomputable def encStep {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ)
+    (σ : EncState) (d : ℕ × ℤ) : EncState :=
+  let q : ℕ × ℤ := σ.pos + d
+  let cw : ℕ := σ.cumWhite + (if q ∈ whiteStrip n ξ then 1 else 0)
+  if hq : 1 ≤ q.1 ∧ q.1 ≤ n / 2 ∧ black n ξ (q.1 - 1) q.2 ∧ σ.barrier < q.2 then
+    { pos := q
+      barrier := (F.coveringTriangle (q.1 - 1, q.2)
+        ⟨show q.1 - 1 + 1 ≤ n / 2 by omega, hq.2.2.1⟩).2.1
+      count := σ.count + 1
+      cumWhite := cw
+      banked := if σ.count < R then cw else σ.banked }
+  else
+    { pos := q, barrier := σ.barrier, count := σ.count, cumWhite := cw,
+      banked := σ.banked }
+
+/-- The fold's start state at `(j', l')`: no encounters, vacuous barrier `l'`. -/
+def encInit (j' : ℕ) (l' : ℤ) : EncState := ⟨(j', l'), l', 0, 0, 0⟩
+
+/-- **The (7.57) integrand**: `exp(−Σ_{p=1}^{t_{min(r,R)}} 1_W + ε·min(r,R))`,
+read off the fold state. -/
+noncomputable def encVal (ε : ℝ) (R : ℕ) (σ : EncState) : ℝ :=
+  Real.exp (-(σ.banked : ℝ) + ε * min σ.count R)
+
+/-- **The (7.57) left-hand side at horizon `T`, started from state `σ`**: the
+expectation of `encVal` over the `T`-step walk `hold.iid T` folded from `σ`. The
+generalized start state is what makes the head-peel recursion (`encExpect_succ`)
+an induction invariant. -/
+noncomputable def encExpect {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+    (T : ℕ) (σ : EncState) : ℝ :=
+  (hold.iid T).expect fun v => encVal ε R ((List.ofFn v).foldl (encStep F R) σ)
+
+/-- `encVal` is positive. -/
+theorem encVal_pos (ε : ℝ) (R : ℕ) (σ : EncState) : 0 < encVal ε R σ :=
+  Real.exp_pos _
+
+/-- **`encVal ≤ exp(ε·R)`** (for `ε ≥ 0`): the banked white count only helps and
+`min(r,R) ≤ R`. The trivial envelope of (7.57), and the normalizer that puts the
+integrand into `[0,1]` for the iid head-peel. -/
+theorem encVal_le (ε : ℝ) (hε : 0 ≤ ε) (R : ℕ) (σ : EncState) :
+    encVal ε R σ ≤ Real.exp (ε * R) := by
+  apply Real.exp_le_exp.mpr
+  have h1 : (0 : ℝ) ≤ (σ.banked : ℝ) := Nat.cast_nonneg _
+  have h2 : ((min σ.count R : ℕ) : ℝ) ≤ (R : ℝ) := Nat.cast_le.mpr (min_le_right _ _)
+  linarith [mul_le_mul_of_nonneg_left h2 hε, h1]
+
+/-- Horizon `0`: no steps, the expectation collapses to the integrand at `σ`. -/
+theorem encExpect_zero {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+    (σ : EncState) : encExpect F R ε 0 σ = encVal ε R σ := by
+  rw [encExpect, PMF.expect_iid_zero]
+  simp
+
+/-- **The head-peel recursion** (the D6 skeleton of the paper's p.51 conditioning):
+one fresh `Hold` step `d` updates the fold state, and the horizon drops by one:
+
+  `encExpect (T+1) σ = Σ'_d hold(d) · encExpect T (encStep σ d)`.
+
+The Lemma 7.9 induction runs on this: at an encounter the barrier resets and the
+count increments (spending one of the `R` blocks), and iterating the peel until the
+barrier is cleared reconstructs the first-passage law `fpDist` (the path→`fpDist`
+bridge, next lap), whose white-exit mass (7.51) closes the induction. -/
+theorem encExpect_succ {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) (σ : EncState) :
+    encExpect F R ε (T + 1) σ
+      = ∑' d : ℕ × ℤ, (hold d).toReal * encExpect F R ε T (encStep F R σ d) := by
+  -- normalize the integrand into [0,1] to use the iid head-peel
+  set c : ℝ := Real.exp (ε * R) with hc
+  have hc0 : 0 < c := Real.exp_pos _
+  have hkey : ∀ (m : ℕ) (τ : EncState),
+      encExpect F R ε m τ * c⁻¹
+        = (hold.iid m).expect fun v =>
+            encVal ε R ((List.ofFn v).foldl (encStep F R) τ) * c⁻¹ := by
+    intro m τ
+    rw [encExpect, PMF.expect, PMF.expect, ← tsum_mul_right]
+    exact tsum_congr fun v => by ring
+  have h0 : ∀ (m : ℕ) (τ : EncState) (v : Fin m → ℕ × ℤ),
+      0 ≤ encVal ε R ((List.ofFn v).foldl (encStep F R) τ) * c⁻¹ :=
+    fun m τ v => mul_nonneg (encVal_pos ε R _).le (by positivity)
+  have h1 : ∀ (m : ℕ) (τ : EncState) (v : Fin m → ℕ × ℤ),
+      encVal ε R ((List.ofFn v).foldl (encStep F R) τ) * c⁻¹ ≤ 1 := by
+    intro m τ v
+    rw [← mul_inv_cancel₀ hc0.ne']
+    exact mul_le_mul_of_nonneg_right (encVal_le ε hε R _) (by positivity)
+  -- the scaled identity
+  have hmain : encExpect F R ε (T + 1) σ * c⁻¹
+      = ∑' d : ℕ × ℤ, (hold d).toReal
+          * (encExpect F R ε T (encStep F R σ d) * c⁻¹) := by
+    rw [hkey (T + 1) σ,
+      PMF.expect_iid_succ hold T _ (h0 (T + 1) σ) (h1 (T + 1) σ)]
+    refine tsum_congr fun d => ?_
+    rw [hkey T (encStep F R σ d)]
+    congr 1
+    refine congrArg _ (funext fun w => ?_)
+    have hlist : List.ofFn (Fin.cons d w : Fin (T + 1) → ℕ × ℤ)
+        = d :: List.ofFn w := by
+      rw [List.ofFn_succ]
+      congr 1
+    rw [hlist, List.foldl_cons]
+  -- cancel the normalizer
+  have hfin := congrArg (· * c) hmain
+  simp only [mul_assoc, inv_mul_cancel₀ hc0.ne', mul_one] at hfin
+  rw [hfin, ← tsum_mul_right]
+  exact tsum_congr fun d => by
+    rw [mul_assoc, mul_assoc, inv_mul_cancel₀ hc0.ne', mul_one]
+
+/-- **The (7.57) trivial envelope**: `encExpect ≤ exp(ε·R)` (event bookkeeping via
+the PMF total mass, mirroring `fpDistPlus_indicator_sum_le_one`). -/
+theorem encExpect_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) (σ : EncState) :
+    encExpect F R ε T σ ≤ Real.exp (ε * R) := by
+  have hsum : Summable (fun v : Fin T → ℕ × ℤ => ((hold.iid T) v).toReal) :=
+    ENNReal.summable_toReal (by rw [(hold.iid T).tsum_coe]; exact ENNReal.one_ne_top)
+  have hle : ∀ v : Fin T → ℕ × ℤ,
+      ((hold.iid T) v).toReal * encVal ε R ((List.ofFn v).foldl (encStep F R) σ)
+        ≤ ((hold.iid T) v).toReal * Real.exp (ε * R) :=
+    fun v => mul_le_mul_of_nonneg_left (encVal_le ε hε R _) ENNReal.toReal_nonneg
+  have hsumR : Summable (fun v : Fin T → ℕ × ℤ =>
+      ((hold.iid T) v).toReal * Real.exp (ε * R)) := hsum.mul_right _
+  have hsumL : Summable (fun v : Fin T → ℕ × ℤ =>
+      ((hold.iid T) v).toReal * encVal ε R ((List.ofFn v).foldl (encStep F R) σ)) :=
+    Summable.of_nonneg_of_le
+      (fun v => mul_nonneg ENNReal.toReal_nonneg (encVal_pos ε R _).le) hle hsumR
+  calc encExpect F R ε T σ
+      ≤ ∑' v : Fin T → ℕ × ℤ, ((hold.iid T) v).toReal * Real.exp (ε * R) :=
+        Summable.tsum_le_tsum hle hsumL hsumR
+    _ = Real.exp (ε * R) := by
+        rw [tsum_mul_right, ← ENNReal.tsum_toReal_eq (fun v => PMF.apply_ne_top _ _),
+          (hold.iid T).tsum_coe, ENNReal.toReal_one, one_mul]
+
+/-- **Lemma 7.9 — many triangles usually implies many white points** (paper (7.57),
+pp.50–51). For the `T`-step renewal walk started at any `(j', l')`, any number of
+blocks `R ≥ 1`, and any sufficiently small `ε`:
+
+  `E exp(−Σ_{p=1}^{t_{min(r,R)}} 1_W((j',l')+v_{[1,p]}) + ε·min(r,R)) ≤ exp(ε)`,
+
+uniformly in the horizon `T`, the start `(j',l')`, `R`, and `n, ξ`. The exponent is
+read off the encounter fold: `banked = Σ_{p=1}^{t_{min(r,R)}} 1_W`, `count = r`
+(see `EncState`/`encStep`; faithfulness deltas — finite horizon, existential ε,
+phase-shift — argued in the module docstring).
+
+OPEN (node X9): proof = induction on `R` (paper p.51) over the head-peel
+`encExpect_succ`: iterate the peel through the first block (until the barrier
+clears); the block's endpoint law is `fpDist` (path→`fpDist` bridge, to be stated
+next lap), whose white-exit mass `p₀` (`fpDist_white_exit`, (7.51), X8 kernel) gives
+`E 1_{r≠0} exp(−1_W(endpoint)) ≤ (1 − (1−1/e)p₀)·P(r≠0) ≤ e^{−ε}·P(r≠0)` once
+`e^ε ≤ (1 − (1−1/e)p₀)⁻¹`, closing `Z(R) ≤ P(r=0) + e^{2ε}·e^{−ε}·P(r≠0) ≤ e^ε`. -/
+theorem many_triangles_white :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧
+    ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+    ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (j' : ℕ) (l' : ℤ),
+    encExpect F R ε T (encInit j' l') ≤ Real.exp ε := by
   sorry
 
 end TaoCollatz
