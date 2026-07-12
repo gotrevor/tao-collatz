@@ -26,17 +26,19 @@ event `(j,l)+v_{[1,k+p]}` lies in a triangle `Δ' ∈ 𝒯` of size `s_{Δ'} ≥
 - **Proof step 0 DONE (lap 51)**: `fpDistPlus_indicator_sum_le_one` (event prob ≤ 1
   via PMF total mass) + `fpDistPlus_tsum_toReal` — discharges the (7.60) "trivial
   otherwise" regime (`s' < C·A²(1+p)` ⟹ RHS > 1 ≥ LHS), and is general bookkeeping.
-- **Apex-gap DONE (lap 51)**: `apex_gap` — the geometric HEART of (7.65): distinct
-  family triangles t', t'' with `j' ≤ j''`, `l* ≤ l_{t'}`, and `(j'', l*) ∈ t''`
-  satisfy `s_{t'} < (j''−j')log9 + (l_{t'}−l*)log2` (from `not_mem_two`: the apex
-  column point of t'' at height l* cannot lie in t'). This is the "two intervals
-  share no integer" step, cleanly extracted + axiom-clean.
-- **Route** (7.60)–(7.65), remaining Σ-count assembly: feed `apex_gap` the (7.65)
-  height condition `l_{t'} − s_{t'}/log2 ≈ l_Δ` (from being outside E′) + `l* =
-  l_Δ + ⌊s'/2⌋` ⟹ `j''−j' ≫ s'` ⟹ size-≥s' apexes are ≫s'-separated ⟹
-  `Σ_{j'∈ℤ} s^{-1/2}G_{1+s}(c(j'−j−s/4)) ≪ 1` via `sum_range_exp_neg_sq_le` (X6).
-  The E′ escape event (7.61) is killed by X6 (`fpDist_location_bound`) + Lemma 2.2.
-  **All inputs (X6, S3, separation) are theorems.**
+- **Apex geometry DONE (lap 51, axiom-clean)**: `apex_gap` — the "two intervals
+  share no integer" step (`not_mem_two`: apex-column point of t'' at height l*
+  cannot lie in t') ⟹ `s_{t'} < (j''−j')log9 + (l_{t'}−l*)log2`; and `apex_separation`
+  — feeding it the (7.65) condition `l_{t'} − s_{t'}/log2 ≤ l_Δ + δ` + `l* =
+  l_Δ + ⌊s'/2⌋`, the `s_{t'}` term CANCELS, giving `(⌊s'/2⌋−δ)log2 < (j''−j')log9`,
+  i.e. the ≫s'-separation `j''−j' ≫ s'`. The geometric core of (7.63)–(7.65) is closed.
+- **Route** remaining Σ-count assembly (all analytic, inputs are theorems):
+  (i) derive the (7.65) height condition `l_{t'} − s_{t'}/log2 = l_Δ + O(A²(1+p))`
+  for triangles the endpoint could hit outside E′ (from `fpDist_location_bound` X6 +
+  (7.11)); (ii) turn `apex_separation` into "size-≥s' apexes obeying (7.65) form a
+  ≫s'-separated ℤ-set Σ"; (iii) sum the X6 Gaussian envelope
+  `s^{-1/2}G_{1+s}(c(j'−j−s/4))` over Σ ⟹ `≪ A²(1+p)/s'` via `sum_range_exp_neg_sq_le`;
+  (iv) the E′ escape event (7.61) killed by X6 + Lemma 2.2 ⟹ `exp(−cA²(1+p))`.
 
 ### X9 = Lemma 7.9 (7.57) — DESIGN recorded, pin next lap (needs recursion object)
 Paper: iid Hold `v₁,v₂,…`; stopping times `t₁,…,t_r` (`t₁` = first entry into a

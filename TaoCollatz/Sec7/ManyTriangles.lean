@@ -179,6 +179,40 @@ theorem apex_gap {n ξ : ℕ} (F : TriangleFamily n ξ) {t' t'' : ℕ × ℤ × 
   push_neg at hnot
   exact hnot hj hl'
 
+/-- **The apex separation** (paper p.54): feeding `apex_gap` the (7.65) height
+condition `l_{t'} − s_{t'}/log 2 ≤ l_Δ + δ` (the lower tip of `t'` is `≤ δ` above the
+reference `l_Δ`) and the choice `l* = l_Δ + ⌊s'/2⌋`, the `s_{t'}` term cancels and the
+apex `j`-gap is bounded below:
+
+  `(⌊s'/2⌋ − δ)·log 2 < (j_{t''} − j_{t'})·log 9`.
+
+With `s' ≥ C·A²(1+p) ≥ C·δ`, this is `j_{t''} − j_{t'} ≫ s'`: size-`≥ s'` triangle
+apexes obeying (7.65) form a ≫s′-separated set, so the Gaussian envelope sum over them
+converges to `≪ A²(1+p)/s'`. This closes the geometric core of Lemma 7.10 (X10). -/
+theorem apex_separation {n ξ : ℕ} (F : TriangleFamily n ξ) {t' t'' : ℕ × ℤ × ℝ}
+    (ht' : t' ∈ F.T) (ht'' : t'' ∈ F.T) (hne : t' ≠ t'') (hj : t'.1 ≤ t''.1)
+    {lZ : ℤ} {δ : ℝ} {s' : ℕ}
+    (h765 : (t'.2.1 : ℝ) - lZ ≤ t'.2.2 / Real.log 2 + δ)
+    (hl' : lZ + ((s' / 2 : ℕ) : ℤ) ≤ t'.2.1)
+    (hmem'' : ((t''.1, lZ + ((s' / 2 : ℕ) : ℤ)) : ℕ × ℤ)
+      ∈ triangle t''.1 t''.2.1 t''.2.2) :
+    (((s' / 2 : ℕ) : ℝ) - δ) * Real.log 2 < ((t''.1 : ℝ) - t'.1) * Real.log 9 := by
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hgap := apex_gap F ht' ht'' hne hj hl' hmem''
+  have hcast : ((lZ + ((s' / 2 : ℕ) : ℤ) : ℤ) : ℝ) = (lZ : ℝ) + ((s' / 2 : ℕ) : ℝ) := by
+    rw [Int.cast_add, Int.cast_natCast]
+  rw [hcast] at hgap
+  have hexp : ((t'.2.1 : ℝ) - ((lZ : ℝ) + ((s' / 2 : ℕ) : ℝ))) * Real.log 2
+      = ((t'.2.1 : ℝ) - lZ) * Real.log 2 - ((s' / 2 : ℕ) : ℝ) * Real.log 2 := by ring
+  rw [hexp] at hgap
+  have h765' : ((t'.2.1 : ℝ) - lZ) * Real.log 2 ≤ t'.2.2 + δ * Real.log 2 := by
+    have h := mul_le_mul_of_nonneg_right h765 hlog2.le
+    rwa [add_mul, div_mul_cancel₀ _ hlog2.ne'] at h
+  have hgoal : (((s' / 2 : ℕ) : ℝ) - δ) * Real.log 2
+      = ((s' / 2 : ℕ) : ℝ) * Real.log 2 - δ * Real.log 2 := by ring
+  rw [hgoal]
+  linarith [hgap, h765']
+
 /-- **Lemma 7.10 — large triangles are rarely encountered shortly after a lengthy
 crossing** (paper (7.60), pp.51–54). Starting the renewal walk at a point `(j,l)` of
 a black triangle `Δ = t₀` with budget `s = l_Δ − l` obeying `s > m/log²m`
