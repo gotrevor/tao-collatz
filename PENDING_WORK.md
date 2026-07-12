@@ -1,6 +1,27 @@
 # PENDING WORK (kept current per lap; newest on top)
 
-## Lap 53 (2026-07-12): **X1 = §7.1 reduction chain RED→YELLOW** — Prop 1.17 now a theorem over the §7 sorries
+## Lap 53 (2026-07-12): **X1 CLOSED (RED→GREEN in one lap)** — (7.4)/(7.5) pairing PROVED; Prop 1.17 a theorem over {X2, Prop 7.8 chain}
+
+**Final state**: `Sec7/Reduction.lean` is SORRY-FREE. `cexpect_pairing` (the (7.5)
+crux) proved axiom-clean via: cexpect calculus (`cexpect_bind`/`cexpect_map`/
+`cexpect_iid_succ`/`cexpect_norm_le`/`cexpect_const_mul`), `tsum_geom_pair`
+(head-pair reindex through the injective zero-extension `(a₀,a₁)↦(a₀+a₁,a₁)` +
+`Summable.tsum_prod'`), and `cexpect_pairing_gen` (strong induction, two-coordinate
+peel; the ZMod (1.26)-sum split closed by `linear_combination` over the 2-unit
+cancellation `inv2_cancel`). Prop 7.1 + Prop 1.17 now rest ONLY on
+`white_cos_bound` (X2, elementary: white ⟹ |θ|>ε ⟹ |cos πθ| ≤ e^{-ε³}) and the
+Prop 7.8 chain. **X2 is now the cheapest way to shrink Prop 1.17's sorry
+surface** — a good small-lap target alongside the X9/X10 assemblies.
+
+Gotchas this lap (for the corpus): `Function.Injective.tsum_eq` wants
+`support ⊆ range` but `Function.Injective.summable_iff` wants the ∀-form;
+`rw` of numeral-shape `1 = 0+1` under `Fin.cons` breaks motives (state `pre`
+equations at syntactic `0+1`/`0+1+1` instead); `set`-bound local defs make
+`rw [hsplit]` close goals by set-defeq (a following `simp only [hdef]` then
+errors "no goals").
+
+### (superseded lap-53 entry below)
+## Lap 53 (2026-07-12): X1 = §7.1 reduction chain RED→YELLOW — Prop 1.17 now a theorem over the §7 sorries
 
 New `Sec7/Reduction.lean` (statements ratifiable vs paper pp.33–35, (7.1)–(7.6)):
 - PROVED axiom-clean: `eC_norm/eC_add/eC_intCast/eC_char_add` (additive character
