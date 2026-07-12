@@ -1,5 +1,33 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 39 (2026-07-12, sixth box session): (G2b-2) SECOND-COORD MGF BOUND PROVED
+
+`Prob/Mgf.lean`: **`tiltZ_hold_snd`** (closed form Z(0,μ) = (e^{3μ}/4)·
+(1-(3/4)Z_ne3(μ))⁻¹ on the 1/50 strip), **`tiltZ_pascalNe3_le_poly`**
+(Z_ne3 ≤ 1+(13/3)μ+30μ² — atom-cancel pattern symbolic in μ; the cleared
+inequality is TIGHT at μ=0, diff = μ²(26/3 - 76μ - …); nlinarith needs box-product
+hints mul_nonneg (h1·h2)·μ² etc.), **`tiltZ_hold_snd_le`** (Z(0,μ) ≤ 1+16μ+400μ²
+on |μ| ≤ 1/100 — mean 16 first order exact). AXIOM-CLEAN. Gotchas:
+`pow_le_pow_left` is now `pow_le_pow_left₀`; positivity can't see through
+`set E := …` atoms (use nlinarith [sq_nonneg μ] with the box); exp(3μ) = (exp μ)³
+via `← Real.exp_nat_mul; norm_num`.
+
+**BOTH 1-D LEGS DONE. (G2c) next — combine into the 2-D bound**:
+`tiltZ_hold_le_quad {l1 l2} (box |λᵢ| ≤ 1/200)`:
+Z(λ₁,λ₂) ≤ ofReal(√((1+8λ₁+128λ₁²)(1+32λ₂+1600λ₂²)))… avoid the square root:
+statement Z² ≤ ofReal((1+4·(2λ₁)+32(2λ₁)²)·(1+16(2λ₂)+400(2λ₂)²)) directly from
+tiltZ_expW2_sq_le + fst_le/snd_le (ofReal_mul merges) — then keep the SQUARED form
+through the Chernoff assembly: P(S=v) ≤ P_tilt·Zⁿ·w(v)⁻¹ gives P² ≤ P_tilt²·Z^{2n}
+·w(v)⁻² — no: better square-root helper after all: `le_ofReal_of_sq_le`:
+x² ≤ ofReal(a·b) (a,b ≥ 0) → x ≤ ofReal(√a·√b)?? Cleanest: x ≤ ofReal r where
+r² ≥ ab: choose r = 1+4λ₁+16λ₂+K|λ|² and prove RATIONAL inequality
+(1+8λ₁+128λ₁²)(1+32λ₂+1600λ₂²) ≤ (1+4λ₁+16λ₂+K(λ₁²+λ₂²))² by nlinarith (first
+order: 8λ₁+32λ₂ = 2(4λ₁+16λ₂) ✓ matches); K to be found numerically (cross term
+8·32λ₁λ₂ vs 2·4·16λ₁λ₂ = 128λ₁λ₂ SAME ✓; so K ≈ 128+16²/…: validate numerically,
+K ~ 700?). Helper x ≤ y from x² ≤ y², y = ofReal ≠ 0,∞: contrapositive +
+ENNReal.pow_lt_pow_left (see lap 37 entry).
+Then (F5) assembly per lap 36 entry.
+
 ## Lap 38 (2026-07-12, sixth box session): (G2b-1) FIRST-COORD MGF BOUND PROVED
 
 `Prob/Mgf.lean`: `exp_le_one_add_add_two_sq` (e^u ≤ 1+u+2u², u ≤ 1/2, via
