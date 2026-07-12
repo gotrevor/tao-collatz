@@ -49,6 +49,8 @@ sfrac
 θq_succ_j
 θq_pred_l
 black
+fCond_three_norm
+white_cos_bound
 triangle
 black_structure
 hold

@@ -99,12 +99,14 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 8](judge/pass-08.md) — 2026-07-12, pp.50–54: **X10 + X9 pinned + ratified** (zero un-pinned crux nodes); apex core proved; graph-semantics audit; density spot-check.
 - [Pass 9](judge/pass-09.md) — 2026-07-12: **PAPER GAP in Lemma 7.9 CONFIRMED** 🕳️ (p.51 display banks damping through k₁; true sum stops at t₁); X9 re-ratified at exp(2ε); 10 axiom checks (encounter fold + block bridge) clean; KB literature-holes entry #5.
 - [Pass 10](judge/pass-10.md) — 2026-07-12, pp.33–35: **X1 pinned + ratified** (`cexpect_pairing` = (7.5) verbatim; Lemma 7.2 exact value proved; `key_fourier_decay` + `charFn_decay` drift-free moves/derivations); un-pinned down to C8 + X5; ladder-vs-graph color vocabulary clarified.
+- [Pass 11](judge/pass-11.md) — 2026-07-12: **NODE X1 COMPLETE** ✅ (fourth verified node; `cexpect_pairing` clean, drift-free); box's "axiom-clean" mislabel on `prod_fCond_le_damping` caught (sorryAx via X2); Prop 1.17 trail machine-mapped; definition-badge tint rule shipped.
 
 ## Live judge state 📍 (update each pass)
 
-**Verified complete** (proof-`\leanok` on a dated judge-run `#print axioms`, all exactly
+**Verified complete** (dated judge-run `#print axioms`, all exactly
 `[propext, Classical.choice, Quot.sound]`): **X3** (2026-07-10), **S3** (pass 5),
-**X6** (pass 7).
+**X6** (pass 7), **X1** (pass 11 — definition node: defs + the (7.5) crux
+`cexpect_pairing` clean, badge dropped).
 
 **Statements pinned + ratified**: every ledger node except **C8, X5** (no pinned
 Lean statement yet). Latest: X10 (pass 8), X9 (pass 8; **re-ratified at exp(2ε)**
@@ -122,9 +124,9 @@ pass 9 after the paper-gap route finding), X1 (pass 10).
 - **Watch: (7.59)-shaped white-exit variant** — the corrected X9 route needs a white-
   exit statement WITHOUT the Case-2 budget hypothesis; a new pin to ratify when it
   lands (re-read (7.59) context pp.50–51 then).
-- **Axiom-check queue** (next session boundary): lap-53 proved decls — `eC_norm`,
-  `eC_add`, `eC_intCast`, `eC_char_add`, `fCond_norm_le_one`, `norm_one_add_eC_neg`,
-  `fCond_three_norm`, `prod_fCond_le_damping`, `expect_mono_le`, `cexpect_map`.
+- **Axiom-check queue**: cleared (pass 11). NB `prod_fCond_le_damping` is sorryAx
+  BY DESIGN (consumes X2's `white_cos_bound`) — the box's "axiom-clean" label on it
+  was wrong; Prop 1.17's whole trail = {white_cos_bound} ∪ {Prop 7.8 chain}.
 - **Unread paper fronts**: §5 first-passage (C8), Lemma 7.6 joint-tail/aperiodicity
   (X5, when statements land), §7.5 assembly pp.55–56 (X11). pp.33–35 read + ratified
   pass 10.

@@ -186,7 +186,7 @@ axis: "un-pinned" vs "high-risk", not bare "red".
 
 | id | node | paper | diff | laps | conf | depends |
 |----|------|-------|------|------|------|---------|
-| X1 | Setup: character χ (7.1), reversal to (1.26), pairing `b_j = a_{2j-1}+a_{2j} ≡ Pascal`, conditional factorization (7.4)(7.5) — pinned + ratified (judge pass 10, 2026-07-12): `cexpect_pairing` = (7.5) verbatim, `fCond` = (7.4) uniform-pair form; character algebra + (7.6) + Lemma 7.2 exact value PROVED; `key_fourier_decay` now a theorem (drift-free move), `charFn_decay` derived across the (1.26) seam; open: the `cexpect_pairing` induction | §7.1 pp.33–35 | 3 | 4–8 | 80% | C4, S2 |
+| X1 | ✅ **COMPLETE (lap 53; judge pass 11, 2026-07-12)** — §7.1 setup + (7.4)/(7.5) factorization; `cexpect_pairing` PROVED (via `cexpect_pairing_gen` pair-peel, statement drift-free) and judge-verified `[propext, Classical.choice, Quot.sound]`; Prop 1.17 trail now only white_cos_bound (X2) + Prop 7.8 chain | §7.1 pp.33–35 | 3 | done | — | C4, S2 |
 | X2 | θ(j,l) (7.7)(7.8) signed fractional part; **Lemma 7.2** white-point cancellation `|f| ≤ cos(πθ) ≤ exp(-ε³)` | pp.34–35 | 2 | 4–8 | 90% | X1 |
 | X3 | ✅ **COMPLETE (judge-verified 2026-07-12)** — Lemma 7.4 black set = disjoint separated triangles: θ identities (7.12)–(7.15), weakly-black claims (i)–(iii), l*/j* construction, Claim (*) Cases 1–3 | §7.2 pp.36–41 | 4 | done | — | X2 |
 | X4 | §7.3 + D6: `Hold` def, `Q` recursion, bridge (7.28)/(7.34)–(7.36): `EQ(Hold) ≪_A n^{-A}` ⟺ Prop 7.3 | §7.3–7.4 pp.41–44 | 3 | 8–15 | 80% | S2, X2 |

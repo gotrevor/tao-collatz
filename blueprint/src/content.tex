@@ -419,13 +419,16 @@ expectation of \(\prod_j \|f(x_j,b_j)\|\), the \(|g|\le 1\) leftover drop built 
 Lemma~7.2's exact value \(\|f(x,3)\| = |\cos\pi\theta|\) are \emph{proved};
 \texttt{key\_fourier\_decay} (Prop~7.1) moved drift-free from \texttt{Holding.lean} and is
 now a \emph{theorem} from the pairing + damping + Prop~7.3, and \texttt{charFn\_decay}
-(Prop~1.17) is derived across the (1.26) seam.  Open: the \texttt{cexpect\_pairing}
-induction itself (the lone X1 sorry).
-\lapsrisk{4--8}{medium --- statement pinned, factorization algebra proved}{80\% (2026-07-12 judge pass 10: (7.5) ratified vs pp.33--35)}
+(Prop~1.17) is derived across the (1.26) seam.
+\textbf{COMPLETE (lap 53; judge pass 11, 2026-07-12)}: \texttt{cexpect\_pairing} PROVED via
+the generalized pair-peel \texttt{cexpect\_pairing\_gen} (statement drift-free) and
+judge-verified \([\mathrm{propext}, \mathrm{Classical.choice}, \mathrm{Quot.sound}]\);
+Prop~1.17's remaining trust runs only through \texttt{white\_cos\_bound} (node~\ref{X2})
+and the Prop~7.8 chain.
 \end{definition}
 
 \begin{lemma}[Phase identities and white-point cancellation; Lemma 7.2]\label{X2}
-  \lean{sfrac, θq, θq_succ_j, θq_pred_l, black}
+  \lean{sfrac, θq, θq_succ_j, θq_pred_l, black, fCond_three_norm, white_cos_bound}
   \uses{X1}
   \leanok
 The phase \(\theta(j,l)\) (paper (7.7)/(7.8)), a signed fractional part of
