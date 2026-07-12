@@ -1523,14 +1523,34 @@ theorem fpDist_col_le :
     _ = C * (Real.exp (-c) / (1 - Real.exp (-c))) * (G / Real.sqrt (1 + (s : ℝ))) := by
         rw [hA]; ring
 
-/-- **Out-of-strip tail** (⅛ of the (7.50) budget): the first-passage endpoint
-overshoots the far edge `⌊n/2⌋` with probability `≤ 1/8`. Route: `fpDist s`'s
-`j`-marginal is Gaussian-concentrated at `s/4` (`fpDist_location_bound`, X6);
-the (7.52) budget `s·log 2 ≤ (m+2)·log 9` gives `s/4 ≤ 0.8m < m`, so
-`⌊n/2⌋-m+e.1 > ⌊n/2⌋` needs `e.1 > m`, a `≳ 3s/4` right-tail; sum the Gaussian.
+/-- **Gaussian column-tail bound** (the pure-analysis core of `fpDist_out_of_strip_le`):
+for any fixed decay `c > 0` and coefficient `C' ≥ 0`, the column bound
+`C'·Gweight(1+s, c(j-s/4))/√(1+s)` summed over the columns `j > m` is `≤ 1/8`
+once `m ≥ Cthr`, uniformly under the (7.52) budget `s·log 2 ≤ (m+2)·log 9` (which
+forces `s/4 < m`, so the tail starts a definite gap past the Gaussian centre
+`s/4`). Both `Gweight` pieces decay in `j`: `e^{-c(j-s/4)}` is geometric; the
+`e^{-(c(j-s/4))²/(1+s)}` factor is dominated by a geometric via `x² ≥ x₀·x`
+(convexity) on the tail. Summability holds since each piece is geometric.
 
-OPEN (node X8, shared with X9): consumes `fpDist_location_bound` (X6) + the
-budget cast from `budget_le_of_mem_triangle`. -/
+OPEN (node X8, shared with X9): elementary Gaussian/geometric tail arithmetic;
+the finite-range building blocks are `sum_exp_geom_le` / `sum_range_exp_neg_sq_le`
+in `FpLocation`, and `hasSum_int_shift_exp` above collapses the geometric half. -/
+theorem gaussian_col_tail {c C' : ℝ} (hc : 0 < c) (hC' : 0 ≤ C') :
+    ∃ Cthr : ℕ, ∀ s m : ℕ, Cthr ≤ m →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      Summable (fun j : ℕ => if m < j then
+          C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
+                  / Real.sqrt (1 + (s : ℝ))) else 0) ∧
+      ∑' j : ℕ, (if m < j then
+          C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
+                  / Real.sqrt (1 + (s : ℝ))) else 0) ≤ 1 / 8 := by
+  sorry
+
+/-- **Out-of-strip tail** (⅛ of the (7.50) budget): the first-passage endpoint
+overshoots the far edge `⌊n/2⌋` with probability `≤ 1/8`. The 2-D endpoint sum
+Fubini-factors into the column marginals (`fpDist_col_le` = X6's `l`-collapse),
+which sum over the overshooting columns `j > m` to `≤ 1/8` by `gaussian_col_tail`
+(the (7.52) budget makes `s/4 < m`, so the overshoot is a Gaussian right-tail). -/
 theorem fpDist_out_of_strip_le :
     ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
       ∀ F : TriangleFamily n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
@@ -1539,7 +1559,57 @@ theorem fpDist_out_of_strip_le :
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       ∑' e : ℕ × ℤ, (fpDist s e).toReal
         * Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2) ≤ 1 / 8 := by
-  sorry
+  obtain ⟨c, hc, C', hC'pos, hcol⟩ := fpDist_col_le
+  obtain ⟨Cthr, htail⟩ := gaussian_col_tail hc hC'pos.le
+  refine ⟨Cthr, ?_⟩
+  intro n ξ hξ F m hm hmn l hl t ht htmem s hs
+  -- the (7.52) budget, cast to `s`
+  have hbudget : (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 := by
+    have hb := budget_le_of_mem_triangle F ht htmem (m := m) (by omega)
+    have hcast : ((t.2.1 - l).toNat : ℝ) = (s : ℝ) := by
+      have h : (t.2.1 - l).toNat = s := by omega
+      exact_mod_cast h
+    rwa [hcast] at hb
+  obtain ⟨hsummB, htailB⟩ := htail s m hm hbudget
+  -- the out-strip indicator depends only on the column `e.1`
+  have hind : ∀ e : ℕ × ℤ,
+      Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2) = (if m < e.1 then (1 : ℝ) else 0) := by
+    intro e
+    have hiff : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ outStripSet n ↔ m < e.1 := by
+      simp only [outStripSet, Set.mem_setOf_eq]; omega
+    by_cases h : m < e.1
+    · rw [Set.indicator_of_mem (hiff.mpr h), Pi.one_apply, if_pos h]
+    · rw [Set.indicator_of_notMem (fun hm' => h (hiff.mp hm')), if_neg h]
+  simp_rw [hind]
+  -- summability of the 2-D summand (dominated by the fpDist mass)
+  have hmass : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal) :=
+    ENNReal.summable_toReal (by rw [(fpDist s).tsum_coe]; exact ENNReal.one_ne_top)
+  have hite01 : ∀ a : ℕ, (0 : ℝ) ≤ (if m < a then (1 : ℝ) else 0) := by
+    intro a; by_cases h : m < a <;> simp [h]
+  have hgsum : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal * (if m < e.1 then (1 : ℝ) else 0)) := by
+    refine Summable.of_nonneg_of_le
+      (fun e => mul_nonneg ENNReal.toReal_nonneg (hite01 e.1)) (fun e => ?_) hmass
+    refine mul_le_of_le_one_right ENNReal.toReal_nonneg ?_
+    by_cases h : m < e.1 <;> simp [h]
+  -- Fubini: 2-D sum factors into the column marginals; each is bounded by `fpDist_col_le`
+  rw [Summable.tsum_prod' hgsum (fun b => hgsum.comp_injective (fun c1 c2 h => by simpa using h))]
+  show (∑' (a : ℕ) (b : ℤ), (fpDist s (a, b)).toReal * (if m < a then (1 : ℝ) else 0)) ≤ 1 / 8
+  have hcolbnd : ∀ a : ℕ,
+      (∑' b : ℤ, (fpDist s (a, b)).toReal * (if m < a then (1 : ℝ) else 0))
+        ≤ if m < a then C' * (Gweight (1 + (s : ℝ)) (c * ((a : ℝ) - (s : ℝ) / 4))
+                              / Real.sqrt (1 + (s : ℝ))) else 0 := by
+    intro a
+    rw [tsum_mul_right]
+    by_cases h : m < a
+    · rw [if_pos h, if_pos h, mul_one]; exact hcol s a
+    · rw [if_neg h, if_neg h, mul_zero]
+  have hinnernn : ∀ a : ℕ,
+      0 ≤ ∑' b : ℤ, (fpDist s (a, b)).toReal * (if m < a then (1 : ℝ) else 0) :=
+    fun a => tsum_nonneg (fun b => mul_nonneg ENNReal.toReal_nonneg (hite01 a))
+  have hinnersum : Summable (fun a : ℕ =>
+      ∑' b : ℤ, (fpDist s (a, b)).toReal * (if m < a then (1 : ℝ) else 0)) :=
+    Summable.of_nonneg_of_le hinnernn hcolbnd hsummB
+  exact le_trans (Summable.tsum_le_tsum hcolbnd hinnersum hsummB) htailB
 
 /-- **Foreign-triangle mass** (⅛ of the (7.50) budget): the first-passage endpoint's
 phase point lands in some family triangle with probability `≤ 1/8`. The start

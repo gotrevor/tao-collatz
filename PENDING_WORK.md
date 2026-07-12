@@ -39,14 +39,28 @@ axiom-clean, `lake build` green):
   prerequisite both tails need: `fpDist_out_of_strip_le` sums it over `j>m`;
   `fpDist_any_triangle_le` reads column-wise Gaussian decay off it.
 
-**Next step for `fpDist_out_of_strip_le`** (now one Gaussian j-tail away): reduce
-the 2-D `∑'_e` to `∑'_{j>m} (col marginal j)` (Fubini/`comp_injective` on the
-first coordinate), then bound `∑_{j>m} Gweight(1+s, c(j-s/4))/√(1+s) ≤ 1/8` using
-the budget `s/4 < m` (so `j-s/4 > 0.2m`) + the Gaussian-AP sum lemmas already in
-`FpLocation` (`sum_range_exp_neg_sq_le`, `sum_exp_geom_le`) lifted to a `tsum`
-tail. The `Gweight = exp(-x²/t)+exp(-|x|)` split: the `exp(-|x|)` part is
-geometric in `j` (reuse `hasSum_int_shift_exp`-style); the `exp(-x²/t)` part needs
-the half-line Gaussian tail `≤ exp(-γ·x)` for `x ≥ x₀` (convexity), then geometric.
+**Lap 56 cont-2 — `fpDist_out_of_strip_le` PROVED** (`Sec7/ManyTriangles.lean`,
+build green): the whole probabilistic structure is now machine-checked, reducing
+the tail to ONE isolated pure-analysis sorry:
+- Fubini (`Summable.tsum_prod'` + fiber summability via `comp_injective`) factors
+  the 2-D endpoint sum into column marginals; each column `≤ fpDist_col_le`;
+  the indicator collapses to `if m < e.1`; the (7.52) budget is cast from
+  `budget_le_of_mem_triangle`. `fpDist_out_of_strip_le` now depends only on
+  **`gaussian_col_tail`** (`#print axioms` = trust base + `sorryAx` via it alone).
+- **`gaussian_col_tail`** (the remaining sorry): pure real-analysis — for fixed
+  `c>0, C'≥0`, `∑_{j>m} C'·Gweight(1+s, c(j-s/4))/√(1+s) ≤ 1/8` once `m ≥ Cthr`,
+  under budget `s·log2 ≤ (m+2)·log9`. Split `Gweight = exp(-x²/t)+exp(-|x|)`:
+  the `exp(-|x|)` part is geometric in `j` (reuse `hasSum_int_shift_exp`-style,
+  now over ℕ); the `exp(-x²/t)` part needs the half-line Gaussian tail
+  `exp(-x²/t) ≤ exp(-x₀·x/t)` (from `x² ≥ x₀·x` on the tail `x ≥ x₀ = m+1-s/4 > 0`),
+  then geometric. Both `≤ 1/16` for `Cthr` large (the gap `x₀ ≥ ~0.2m → ∞`).
+  `FpLocation` finite-range analogues: `sum_range_exp_neg_sq_le`, `sum_exp_geom_le`.
+
+Gotcha (lap 56): `Summable.tsum_prod'` takes TWO args — `Summable f` AND
+`∀ b, Summable (fun c => f (b,c))` (fiber summability); pass the latter via
+`hgsum.comp_injective (fun c1 c2 h => by simpa using h)`. After the `rw`, the
+goal carries `(b,c).1`; normalise with `show … (if m < a …)` (defeq) before the
+final `exact`, else the `tsum` function comparison won't reduce the projection.
 
 **Next attack — the two residual analytic sub-sorries** (both consume X6
 `fpDist_location_bound` via `fpDist_col_le`; both are the SAME geometry shared with
