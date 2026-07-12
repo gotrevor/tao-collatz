@@ -308,10 +308,22 @@ shift built in); an ENCOUNTER happens iff the phase point `(q₁−1, q₂)` is 
 (equivalently, `q` lies in a family triangle, via `cover`) AND the height has cleared
 the previous triangle's top (`barrier < q₂`) — then the barrier becomes the top of the
 covering triangle `Δ(q)` and, while `count < R`, the white count is banked
-(`t_{min(r,R)}` semantics of (7.57)). -/
-noncomputable def encStep {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ)
+(`t_{min(r,R)}` semantics of (7.57)).
+
+**DEPTH GATE `g` (lap-55 reflection)**: an encounter additionally requires the entered
+point to sit at depth ≥ `g` from the strip's right edge (`q₁ + g ≤ n/2`). `g = 0`
+recovers the paper's ungated stopping times verbatim. The gate exists because the
+paper's (7.59) step ("repeating the proof of (7.51)", p.51) needs the encountered
+triangle DEEP — near the edge the white-exit mass genuinely fails (the first-passage
+endpoint exits the strip with non-vanishing probability), and the p.50 remark that
+"`r` is finite since the process eventually exits the strip" provides no ledger for
+the uncompensated `e^ε` payments there. The X11 consumer is unaffected: on the
+surviving branch of the (7.54) split (`j_{[1,k+P]} < 0.9m`, Case 3 has `m ≥ C_{A,ε}`)
+every encounter produced by the deterministic claim (7.67) is at depth `≥ 0.1m ≥ g`,
+so the gated count still reaches `R` (see `many_triangles_white`'s deviation note). -/
+noncomputable def encStep {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
     (σ : EncState) (d : ℕ × ℤ) : EncState :=
-  if hq : 1 ≤ (σ.pos + d).1 ∧ (σ.pos + d).1 ≤ n / 2
+  if hq : 1 ≤ (σ.pos + d).1 ∧ (σ.pos + d).1 + g ≤ n / 2
       ∧ black n ξ ((σ.pos + d).1 - 1) (σ.pos + d).2 ∧ σ.barrier < (σ.pos + d).2 then
     { pos := σ.pos + d
       barrier := (F.coveringTriangle ((σ.pos + d).1 - 1, (σ.pos + d).2)
@@ -338,9 +350,9 @@ noncomputable def encVal (ε : ℝ) (R : ℕ) (σ : EncState) : ℝ :=
 expectation of `encVal` over the `T`-step walk `hold.iid T` folded from `σ`. The
 generalized start state is what makes the head-peel recursion (`encExpect_succ`)
 an induction invariant. -/
-noncomputable def encExpect {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+noncomputable def encExpect {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε : ℝ)
     (T : ℕ) (σ : EncState) : ℝ :=
-  (hold.iid T).expect fun v => encVal ε R ((List.ofFn v).foldl (encStep F R) σ)
+  (hold.iid T).expect fun v => encVal ε R ((List.ofFn v).foldl (encStep F R g) σ)
 
 /-- `encVal` is positive. -/
 theorem encVal_pos (ε : ℝ) (R : ℕ) (σ : EncState) : 0 < encVal ε R σ :=
@@ -357,8 +369,8 @@ theorem encVal_le (ε : ℝ) (hε : 0 ≤ ε) (R : ℕ) (σ : EncState) :
   linarith [mul_le_mul_of_nonneg_left h2 hε, h1]
 
 /-- Horizon `0`: no steps, the expectation collapses to the integrand at `σ`. -/
-theorem encExpect_zero {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
-    (σ : EncState) : encExpect F R ε 0 σ = encVal ε R σ := by
+theorem encExpect_zero {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε : ℝ)
+    (σ : EncState) : encExpect F R g ε 0 σ = encVal ε R σ := by
   rw [encExpect, PMF.expect_iid_zero]
   simp
 
@@ -371,36 +383,36 @@ The Lemma 7.9 induction runs on this: at an encounter the barrier resets and the
 count increments (spending one of the `R` blocks), and iterating the peel until the
 barrier is cleared reconstructs the first-passage law `fpDist` (the path→`fpDist`
 bridge, next lap), whose white-exit mass (7.51) closes the induction. -/
-theorem encExpect_succ {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+theorem encExpect_succ {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε : ℝ)
     (hε : 0 ≤ ε) (T : ℕ) (σ : EncState) :
-    encExpect F R ε (T + 1) σ
-      = ∑' d : ℕ × ℤ, (hold d).toReal * encExpect F R ε T (encStep F R σ d) := by
+    encExpect F R g ε (T + 1) σ
+      = ∑' d : ℕ × ℤ, (hold d).toReal * encExpect F R g ε T (encStep F R g σ d) := by
   -- normalize the integrand into [0,1] to use the iid head-peel
   set c : ℝ := Real.exp (ε * R) with hc
   have hc0 : 0 < c := Real.exp_pos _
   have hkey : ∀ (m : ℕ) (τ : EncState),
-      encExpect F R ε m τ * c⁻¹
+      encExpect F R g ε m τ * c⁻¹
         = (hold.iid m).expect fun v =>
-            encVal ε R ((List.ofFn v).foldl (encStep F R) τ) * c⁻¹ := by
+            encVal ε R ((List.ofFn v).foldl (encStep F R g) τ) * c⁻¹ := by
     intro m τ
     rw [encExpect, PMF.expect, PMF.expect, ← tsum_mul_right]
     exact tsum_congr fun v => by ring
   have h0 : ∀ (m : ℕ) (τ : EncState) (v : Fin m → ℕ × ℤ),
-      0 ≤ encVal ε R ((List.ofFn v).foldl (encStep F R) τ) * c⁻¹ :=
+      0 ≤ encVal ε R ((List.ofFn v).foldl (encStep F R g) τ) * c⁻¹ :=
     fun m τ v => mul_nonneg (encVal_pos ε R _).le (by positivity)
   have h1 : ∀ (m : ℕ) (τ : EncState) (v : Fin m → ℕ × ℤ),
-      encVal ε R ((List.ofFn v).foldl (encStep F R) τ) * c⁻¹ ≤ 1 := by
+      encVal ε R ((List.ofFn v).foldl (encStep F R g) τ) * c⁻¹ ≤ 1 := by
     intro m τ v
     rw [← mul_inv_cancel₀ hc0.ne']
     exact mul_le_mul_of_nonneg_right (encVal_le ε hε R _) (by positivity)
   -- the scaled identity
-  have hmain : encExpect F R ε (T + 1) σ * c⁻¹
+  have hmain : encExpect F R g ε (T + 1) σ * c⁻¹
       = ∑' d : ℕ × ℤ, (hold d).toReal
-          * (encExpect F R ε T (encStep F R σ d) * c⁻¹) := by
+          * (encExpect F R g ε T (encStep F R g σ d) * c⁻¹) := by
     rw [hkey (T + 1) σ,
       PMF.expect_iid_succ hold T _ (h0 (T + 1) σ) (h1 (T + 1) σ)]
     refine tsum_congr fun d => ?_
-    rw [hkey T (encStep F R σ d)]
+    rw [hkey T (encStep F R g σ d)]
     congr 1
     refine congrArg _ (funext fun w => ?_)
     have hlist : List.ofFn (Fin.cons d w : Fin (T + 1) → ℕ × ℤ)
@@ -417,22 +429,22 @@ theorem encExpect_succ {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : �
 
 /-- **The (7.57) trivial envelope**: `encExpect ≤ exp(ε·R)` (event bookkeeping via
 the PMF total mass, mirroring `fpDistPlus_indicator_sum_le_one`). -/
-theorem encExpect_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+theorem encExpect_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε : ℝ)
     (hε : 0 ≤ ε) (T : ℕ) (σ : EncState) :
-    encExpect F R ε T σ ≤ Real.exp (ε * R) := by
+    encExpect F R g ε T σ ≤ Real.exp (ε * R) := by
   have hsum : Summable (fun v : Fin T → ℕ × ℤ => ((hold.iid T) v).toReal) :=
     ENNReal.summable_toReal (by rw [(hold.iid T).tsum_coe]; exact ENNReal.one_ne_top)
   have hle : ∀ v : Fin T → ℕ × ℤ,
-      ((hold.iid T) v).toReal * encVal ε R ((List.ofFn v).foldl (encStep F R) σ)
+      ((hold.iid T) v).toReal * encVal ε R ((List.ofFn v).foldl (encStep F R g) σ)
         ≤ ((hold.iid T) v).toReal * Real.exp (ε * R) :=
     fun v => mul_le_mul_of_nonneg_left (encVal_le ε hε R _) ENNReal.toReal_nonneg
   have hsumR : Summable (fun v : Fin T → ℕ × ℤ =>
       ((hold.iid T) v).toReal * Real.exp (ε * R)) := hsum.mul_right _
   have hsumL : Summable (fun v : Fin T → ℕ × ℤ =>
-      ((hold.iid T) v).toReal * encVal ε R ((List.ofFn v).foldl (encStep F R) σ)) :=
+      ((hold.iid T) v).toReal * encVal ε R ((List.ofFn v).foldl (encStep F R g) σ)) :=
     Summable.of_nonneg_of_le
       (fun v => mul_nonneg ENNReal.toReal_nonneg (encVal_pos ε R _).le) hle hsumR
-  calc encExpect F R ε T σ
+  calc encExpect F R g ε T σ
       ≤ ∑' v : Fin T → ℕ × ℤ, ((hold.iid T) v).toReal * Real.exp (ε * R) :=
         Summable.tsum_le_tsum hle hsumL hsumR
     _ = Real.exp (ε * R) := by
@@ -440,13 +452,13 @@ theorem encExpect_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
           (hold.iid T).tsum_coe, ENNReal.toReal_one, one_mul]
 
 /-- `encExpect` is nonnegative (expectation of a positive integrand). -/
-theorem encExpect_nonneg {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
-    (T : ℕ) (σ : EncState) : 0 ≤ encExpect F R ε T σ :=
+theorem encExpect_nonneg {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε : ℝ)
+    (T : ℕ) (σ : EncState) : 0 ≤ encExpect F R g ε T σ :=
   tsum_nonneg fun v => mul_nonneg ENNReal.toReal_nonneg (encVal_pos ε R _).le
 
 /-- A fold step never decreases the encounter count. -/
-theorem encStep_count_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ)
-    (σ : EncState) (d : ℕ × ℤ) : σ.count ≤ (encStep F R σ d).count := by
+theorem encStep_count_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
+    (σ : EncState) (d : ℕ × ℤ) : σ.count ≤ (encStep F R g σ d).count := by
   unfold encStep
   split <;> dsimp only <;> omega
 
@@ -454,20 +466,20 @@ theorem encStep_count_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ)
 `count ≥ R`, further steps change neither `banked` nor `min(count,R)`, so the
 expectation collapses to the integrand — `encExpect T σ = encVal σ` for every
 horizon. This is the `ρ = 0` base of the block induction. -/
-theorem encExpect_of_count_ge {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+theorem encExpect_of_count_ge {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε : ℝ)
     (hε : 0 ≤ ε) (T : ℕ) (σ : EncState) (hc : R ≤ σ.count) :
-    encExpect F R ε T σ = encVal ε R σ := by
+    encExpect F R g ε T σ = encVal ε R σ := by
   induction T generalizing σ with
-  | zero => exact encExpect_zero F R ε σ
+  | zero => exact encExpect_zero F R g ε σ
   | succ T IH =>
-    rw [encExpect_succ F R ε hε T σ]
-    have hval : ∀ d : ℕ × ℤ, encExpect F R ε T (encStep F R σ d) = encVal ε R σ := by
+    rw [encExpect_succ F R g ε hε T σ]
+    have hval : ∀ d : ℕ × ℤ, encExpect F R g ε T (encStep F R g σ d) = encVal ε R σ := by
       intro d
-      rw [IH (encStep F R σ d) (le_trans hc (encStep_count_le F R σ d))]
-      have hmin : min (encStep F R σ d).count R = min σ.count R := by
-        have h1 := encStep_count_le F R σ d
+      rw [IH (encStep F R g σ d) (le_trans hc (encStep_count_le F R g σ d))]
+      have hmin : min (encStep F R g σ d).count R = min σ.count R := by
+        have h1 := encStep_count_le F R g σ d
         omega
-      have hbank : (encStep F R σ d).banked = σ.banked := by
+      have hbank : (encStep F R g σ d).banked = σ.banked := by
         unfold encStep
         split
         · dsimp only
@@ -486,11 +498,11 @@ This is what lets the path→`fpDist` block bridge DROP the mid-block white
 increments: the true continuation (larger `cumWhite`) is dominated by the dropped
 one, so only the first-passage ENDPOINT's whiteness needs to be carried — exactly
 the `Σ_{p=1}^{k₁} 1_W ≥ 1_W(v_{[1,k₁]})` reduction of the paper's p.51 closure. -/
-theorem encExpect_anti {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+theorem encExpect_anti {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε : ℝ)
     (hε : 0 ≤ ε) (T : ℕ) :
     ∀ σ₁ σ₂ : EncState, σ₁.pos = σ₂.pos → σ₁.barrier = σ₂.barrier →
     σ₁.count = σ₂.count → σ₁.cumWhite ≤ σ₂.cumWhite → σ₁.banked ≤ σ₂.banked →
-    encExpect F R ε T σ₂ ≤ encExpect F R ε T σ₁ := by
+    encExpect F R g ε T σ₂ ≤ encExpect F R g ε T σ₁ := by
   induction T with
   | zero =>
     intro σ₁ σ₂ hpos hbar hcnt hcw hbk
@@ -500,17 +512,17 @@ theorem encExpect_anti {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : �
     linarith
   | succ T IH =>
     intro σ₁ σ₂ hpos hbar hcnt hcw hbk
-    rw [encExpect_succ F R ε hε T σ₁, encExpect_succ F R ε hε T σ₂]
+    rw [encExpect_succ F R g ε hε T σ₁, encExpect_succ F R g ε hε T σ₂]
     -- termwise: one step preserves the coupling
     have hstep : ∀ d : ℕ × ℤ,
-        encExpect F R ε T (encStep F R σ₂ d) ≤ encExpect F R ε T (encStep F R σ₁ d) := by
+        encExpect F R g ε T (encStep F R g σ₂ d) ≤ encExpect F R g ε T (encStep F R g σ₁ d) := by
       intro d
       obtain ⟨p₁, b₁, c₁, w₁, k₁⟩ := σ₁
       obtain ⟨p₂, b₂, c₂, w₂, k₂⟩ := σ₂
       simp only at hpos hbar hcnt hcw hbk
       subst hpos hbar hcnt
       simp only [encStep]
-      by_cases hq : 1 ≤ (p₁ + d).1 ∧ (p₁ + d).1 ≤ n / 2
+      by_cases hq : 1 ≤ (p₁ + d).1 ∧ (p₁ + d).1 + g ≤ n / 2
           ∧ black n ξ ((p₁ + d).1 - 1) (p₁ + d).2 ∧ b₁ < (p₁ + d).2
       · -- encounter branch for both (same condition)
         simp only [dif_pos hq]
@@ -525,20 +537,20 @@ theorem encExpect_anti {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : �
         · simpa using hbk
     -- sum the termwise bound
     have hnn : ∀ (σ : EncState) (d : ℕ × ℤ),
-        0 ≤ (hold d).toReal * encExpect F R ε T (encStep F R σ d) :=
-      fun σ d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg F R ε T _)
+        0 ≤ (hold d).toReal * encExpect F R g ε T (encStep F R g σ d) :=
+      fun σ d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg F R g ε T _)
     have hbound : ∀ (σ : EncState) (d : ℕ × ℤ),
-        (hold d).toReal * encExpect F R ε T (encStep F R σ d)
+        (hold d).toReal * encExpect F R g ε T (encStep F R g σ d)
           ≤ (hold d).toReal * Real.exp (ε * R) :=
-      fun σ d => mul_le_mul_of_nonneg_left (encExpect_le F R ε hε T _)
+      fun σ d => mul_le_mul_of_nonneg_left (encExpect_le F R g ε hε T _)
         ENNReal.toReal_nonneg
     have hsumE : Summable (fun d : ℕ × ℤ => (hold d).toReal * Real.exp (ε * R)) :=
       (ENNReal.summable_toReal (by rw [hold.tsum_coe]; exact ENNReal.one_ne_top)).mul_right _
     have hsum1 : Summable (fun d : ℕ × ℤ =>
-        (hold d).toReal * encExpect F R ε T (encStep F R σ₁ d)) :=
+        (hold d).toReal * encExpect F R g ε T (encStep F R g σ₁ d)) :=
       Summable.of_nonneg_of_le (hnn σ₁) (hbound σ₁) hsumE
     have hsum2 : Summable (fun d : ℕ × ℤ =>
-        (hold d).toReal * encExpect F R ε T (encStep F R σ₂ d)) :=
+        (hold d).toReal * encExpect F R g ε T (encStep F R g σ₂ d)) :=
       Summable.of_nonneg_of_le (hnn σ₂) (hbound σ₂) hsumE
     exact Summable.tsum_le_tsum
       (fun d => mul_le_mul_of_nonneg_left (hstep d) ENNReal.toReal_nonneg) hsum2 hsum1
@@ -557,14 +569,14 @@ event fires simultaneously (`σ.count < R ⟺ τ.count < R'`), converting the le
 disjunct into the right one. `encVal` then factors pathwise. Used with
 `τ = ⟨σ.pos, σ.barrier, 0, 0, 0⟩` this is the Y/Z induction's state normalization
 (`encExpect_normalize_init`). -/
-theorem encExpect_normalize {n ξ : ℕ} (F : TriangleFamily n ξ) (R' : ℕ) (ε : ℝ)
+theorem encExpect_normalize {n ξ : ℕ} (F : TriangleFamily n ξ) (R' g : ℕ) (ε : ℝ)
     (hε : 0 ≤ ε) (c w k : ℕ) (T : ℕ) :
     ∀ σ τ : EncState, σ.pos = τ.pos → σ.barrier = τ.barrier →
     σ.count = τ.count + c → σ.cumWhite = τ.cumWhite + w →
     ((σ.banked = k ∧ τ.banked = 0) ∨ σ.banked = τ.banked + w) →
-    encExpect F (R' + c) ε T σ
+    encExpect F (R' + c) g ε T σ
       ≤ Real.exp (ε * c) * max (Real.exp (-(k : ℝ))) (Real.exp (-(w : ℝ)))
-        * encExpect F R' ε T τ := by
+        * encExpect F R' g ε T τ := by
   set M : ℝ := max (Real.exp (-(k : ℝ))) (Real.exp (-(w : ℝ))) with hM
   have hM0 : 0 < M := lt_max_of_lt_left (Real.exp_pos _)
   induction T with
@@ -599,18 +611,18 @@ theorem encExpect_normalize {n ξ : ℕ} (F : TriangleFamily n ξ) (R' : ℕ) (�
           ring
   | succ T IH =>
     intro σ τ hpos hbar hcnt hcw hbk
-    rw [encExpect_succ F (R' + c) ε hε T σ, encExpect_succ F R' ε hε T τ]
+    rw [encExpect_succ F (R' + c) g ε hε T σ, encExpect_succ F R' g ε hε T τ]
     -- one step preserves the invariant
     have hstep : ∀ d : ℕ × ℤ,
-        encExpect F (R' + c) ε T (encStep F (R' + c) σ d)
-          ≤ Real.exp (ε * c) * M * encExpect F R' ε T (encStep F R' τ d) := by
+        encExpect F (R' + c) g ε T (encStep F (R' + c) g σ d)
+          ≤ Real.exp (ε * c) * M * encExpect F R' g ε T (encStep F R' g τ d) := by
       intro d
       obtain ⟨p₁, b₁, c₁, w₁, k₁⟩ := σ
       obtain ⟨p₂, b₂, c₂, w₂, k₂⟩ := τ
       simp only at hpos hbar hcnt hcw
       subst hpos hbar hcnt hcw
       simp only [encStep]
-      by_cases hq : 1 ≤ (p₁ + d).1 ∧ (p₁ + d).1 ≤ n / 2
+      by_cases hq : 1 ≤ (p₁ + d).1 ∧ (p₁ + d).1 + g ≤ n / 2
           ∧ black n ξ ((p₁ + d).1 - 1) (p₁ + d).2 ∧ b₁ < (p₁ + d).2
       · -- encounter for both (shared condition)
         simp only [dif_pos hq]
@@ -631,45 +643,45 @@ theorem encExpect_normalize {n ξ : ℕ} (F : TriangleFamily n ξ) (R' : ℕ) (�
         simpa using hbk
     -- summability boilerplate, then sum the termwise bound
     have hnnσ : ∀ d : ℕ × ℤ,
-        0 ≤ (hold d).toReal * encExpect F (R' + c) ε T (encStep F (R' + c) σ d) :=
-      fun d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg _ _ ε T _)
+        0 ≤ (hold d).toReal * encExpect F (R' + c) g ε T (encStep F (R' + c) g σ d) :=
+      fun d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg _ _ _ ε T _)
     have hboundσ : ∀ d : ℕ × ℤ,
-        (hold d).toReal * encExpect F (R' + c) ε T (encStep F (R' + c) σ d)
+        (hold d).toReal * encExpect F (R' + c) g ε T (encStep F (R' + c) g σ d)
           ≤ (hold d).toReal * Real.exp (ε * ((R' + c : ℕ) : ℝ)) :=
-      fun d => mul_le_mul_of_nonneg_left (encExpect_le F (R' + c) ε hε T _)
+      fun d => mul_le_mul_of_nonneg_left (encExpect_le F (R' + c) g ε hε T _)
         ENNReal.toReal_nonneg
     have hsumH : Summable (fun d : ℕ × ℤ => (hold d).toReal) :=
       ENNReal.summable_toReal (by rw [hold.tsum_coe]; exact ENNReal.one_ne_top)
     have hsumσ : Summable (fun d : ℕ × ℤ =>
-        (hold d).toReal * encExpect F (R' + c) ε T (encStep F (R' + c) σ d)) :=
+        (hold d).toReal * encExpect F (R' + c) g ε T (encStep F (R' + c) g σ d)) :=
       Summable.of_nonneg_of_le hnnσ hboundσ (hsumH.mul_right _)
     have hboundτ : ∀ d : ℕ × ℤ,
-        (hold d).toReal * encExpect F R' ε T (encStep F R' τ d)
+        (hold d).toReal * encExpect F R' g ε T (encStep F R' g τ d)
           ≤ (hold d).toReal * Real.exp (ε * (R' : ℝ)) :=
-      fun d => mul_le_mul_of_nonneg_left (encExpect_le F R' ε hε T _)
+      fun d => mul_le_mul_of_nonneg_left (encExpect_le F R' g ε hε T _)
         ENNReal.toReal_nonneg
     have hsumτ : Summable (fun d : ℕ × ℤ =>
-        (hold d).toReal * encExpect F R' ε T (encStep F R' τ d)) :=
+        (hold d).toReal * encExpect F R' g ε T (encStep F R' g τ d)) :=
       Summable.of_nonneg_of_le
-        (fun d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg _ _ ε T _))
+        (fun d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg _ _ _ ε T _))
         hboundτ (hsumH.mul_right _)
     calc ∑' d : ℕ × ℤ,
-          (hold d).toReal * encExpect F (R' + c) ε T (encStep F (R' + c) σ d)
+          (hold d).toReal * encExpect F (R' + c) g ε T (encStep F (R' + c) g σ d)
         ≤ ∑' d : ℕ × ℤ, (hold d).toReal
-            * (Real.exp (ε * c) * M * encExpect F R' ε T (encStep F R' τ d)) := by
+            * (Real.exp (ε * c) * M * encExpect F R' g ε T (encStep F R' g τ d)) := by
           refine Summable.tsum_le_tsum
             (fun d => mul_le_mul_of_nonneg_left (hstep d) ENNReal.toReal_nonneg)
             hsumσ ?_
           have heq : (fun d : ℕ × ℤ => (hold d).toReal
-              * (Real.exp (ε * c) * M * encExpect F R' ε T (encStep F R' τ d)))
+              * (Real.exp (ε * c) * M * encExpect F R' g ε T (encStep F R' g τ d)))
               = fun d : ℕ × ℤ => Real.exp (ε * c) * M
-                * ((hold d).toReal * encExpect F R' ε T (encStep F R' τ d)) := by
+                * ((hold d).toReal * encExpect F R' g ε T (encStep F R' g τ d)) := by
             funext d
             ring
           rw [heq]
           exact hsumτ.mul_left _
       _ = Real.exp (ε * c) * M
-            * ∑' d : ℕ × ℤ, (hold d).toReal * encExpect F R' ε T (encStep F R' τ d) := by
+            * ∑' d : ℕ × ℤ, (hold d).toReal * encExpect F R' g ε T (encStep F R' g τ d) := by
           rw [← tsum_mul_left]
           exact tsum_congr fun d => by ring
 
@@ -679,44 +691,45 @@ the zeroed state at its own position with the remaining budget:
 
   `E_R(T, σ) ≤ e^{ε·σ.count} · max(e^{−σ.banked}, e^{−σ.cumWhite})
       · E_{R−σ.count}(T, ⟨σ.pos, σ.barrier, 0, 0, 0⟩)`. -/
-theorem encExpect_normalize_init {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+theorem encExpect_normalize_init {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε : ℝ)
     (hε : 0 ≤ ε) (T : ℕ) (σ : EncState) (hc : σ.count ≤ R) :
-    encExpect F R ε T σ
+    encExpect F R g ε T σ
       ≤ Real.exp (ε * σ.count)
         * max (Real.exp (-(σ.banked : ℝ))) (Real.exp (-(σ.cumWhite : ℝ)))
-        * encExpect F (R - σ.count) ε T ⟨σ.pos, σ.barrier, 0, 0, 0⟩ := by
-  have h := encExpect_normalize F (R - σ.count) ε hε σ.count σ.cumWhite σ.banked T
+        * encExpect F (R - σ.count) g ε T ⟨σ.pos, σ.barrier, 0, 0, 0⟩ := by
+  have h := encExpect_normalize F (R - σ.count) g ε hε σ.count σ.cumWhite σ.banked T
     σ ⟨σ.pos, σ.barrier, 0, 0, 0⟩ rfl rfl (by dsimp only <;> omega) (by dsimp only <;> omega)
     (Or.inl ⟨rfl, rfl⟩)
   rwa [show R - σ.count + σ.count = R by omega] at h
 
-/-- **Beyond the right edge the fold is frozen** (the out-of-strip exit case of
-the Z-induction): once `pos₁ > n/2` no future point can satisfy the encounter
-condition (`pos₁` is non-decreasing along the fold), so `banked` and `count`
-never change and the expectation collapses to the integrand. -/
-theorem encExpect_of_edge {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+/-- **Beyond the gate line the fold is frozen** (the shallow/out-of-strip case of
+the Z-induction): once `pos₁ > n/2 − g` no future point can satisfy the gated
+encounter condition (`pos₁` is non-decreasing along the fold), so `banked` and
+`count` never change and the expectation collapses to the integrand. With `g = 0`
+this is the plain out-of-strip freeze. -/
+theorem encExpect_of_edge {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε : ℝ)
     (hε : 0 ≤ ε) (T : ℕ) :
-    ∀ σ : EncState, n / 2 < σ.pos.1 → encExpect F R ε T σ = encVal ε R σ := by
+    ∀ σ : EncState, n / 2 < σ.pos.1 + g → encExpect F R g ε T σ = encVal ε R σ := by
   classical
   induction T with
-  | zero => intro σ _; exact encExpect_zero F R ε σ
+  | zero => intro σ _; exact encExpect_zero F R g ε σ
   | succ T IH =>
     intro σ hedge
-    rw [encExpect_succ F R ε hε T σ]
+    rw [encExpect_succ F R g ε hε T σ]
     have hstep : ∀ d : ℕ × ℤ,
-        encExpect F R ε T (encStep F R σ d) = encVal ε R σ := by
+        encExpect F R g ε T (encStep F R g σ d) = encVal ε R σ := by
       intro d
-      have hq : ¬(1 ≤ (σ.pos + d).1 ∧ (σ.pos + d).1 ≤ n / 2
+      have hq : ¬(1 ≤ (σ.pos + d).1 ∧ (σ.pos + d).1 + g ≤ n / 2
           ∧ black n ξ ((σ.pos + d).1 - 1) (σ.pos + d).2
           ∧ σ.barrier < (σ.pos + d).2) := by
         rintro ⟨-, hle, -, -⟩
         have : (σ.pos + d).1 = σ.pos.1 + d.1 := rfl
         omega
-      have hs : encStep F R σ d
+      have hs : encStep F R g σ d
           = ⟨σ.pos + d, σ.barrier, σ.count,
               σ.cumWhite + (if σ.pos + d ∈ whiteStrip n ξ then 1 else 0), σ.banked⟩ := by
         rw [encStep, dif_neg hq]
-      rw [hs, IH _ (by dsimp only; show n / 2 < σ.pos.1 + d.1; omega)]
+      rw [hs, IH _ (by dsimp only; show n / 2 < σ.pos.1 + d.1 + g; omega)]
       rfl
     rw [tsum_congr fun d => by rw [hstep d], tsum_mul_right, hold_tsum_toReal, one_mul]
 
@@ -730,13 +743,13 @@ fresh states at budget `R'`, every wander state at budget `R' + 1` satisfies
 a later encounter banks `cumWhite ≥ w₀` and normalizes onto a fresh state at
 budget `R'` (paying `e^ε` for the count increment, collecting `e^{−w₀}`); a path
 that never encounters ends at `encVal = 1`. Induction on the horizon. -/
-theorem encExpect_wander_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R' : ℕ) (ε : ℝ)
+theorem encExpect_wander_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R' g : ℕ) (ε : ℝ)
     (hε : 0 ≤ ε) (Z : ℝ) (hZ : 0 ≤ Z)
     (hfresh : ∀ (T' : ℕ) (q : ℕ × ℤ) (b : ℤ),
-      encExpect F R' ε T' ⟨q, b, 0, 0, 0⟩ ≤ Z)
+      encExpect F R' g ε T' ⟨q, b, 0, 0, 0⟩ ≤ Z)
     (w₀ : ℕ) (T : ℕ) :
     ∀ (p : ℕ × ℤ) (b : ℤ) (w : ℕ), w₀ ≤ w →
-    encExpect F (R' + 1) ε T ⟨p, b, 0, w, 0⟩
+    encExpect F (R' + 1) g ε T ⟨p, b, 0, w, 0⟩
       ≤ max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) := by
   classical
   induction T with
@@ -749,17 +762,17 @@ theorem encExpect_wander_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R' : ℕ) (�
     simp [Real.exp_le_one_iff]
   | succ T IH =>
     intro p b w hw
-    rw [encExpect_succ F (R' + 1) ε hε T _]
+    rw [encExpect_succ F (R' + 1) g ε hε T _]
     have hstep : ∀ d : ℕ × ℤ,
-        encExpect F (R' + 1) ε T (encStep F (R' + 1) ⟨p, b, 0, w, 0⟩ d)
+        encExpect F (R' + 1) g ε T (encStep F (R' + 1) g ⟨p, b, 0, w, 0⟩ d)
           ≤ max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) := by
       intro d
-      by_cases hq : 1 ≤ (p + d).1 ∧ (p + d).1 ≤ n / 2
+      by_cases hq : 1 ≤ (p + d).1 ∧ (p + d).1 + g ≤ n / 2
           ∧ black n ξ ((p + d).1 - 1) (p + d).2 ∧ b < (p + d).2
       · -- encounter: bank the credit, normalize onto the fresh state at budget R'
-        have hq' : 1 ≤ (p + d).1 ∧ (p + d).1 ≤ n / 2
+        have hq' : 1 ≤ (p + d).1 ∧ (p + d).1 + g ≤ n / 2
             ∧ black n ξ ((p + d).1 - 1) (p + d).2 ∧ b < (p + d).2 := hq
-        set σ' := encStep F (R' + 1) ⟨p, b, 0, w, 0⟩ d with hσ'
+        set σ' := encStep F (R' + 1) g ⟨p, b, 0, w, 0⟩ d with hσ'
         have hcnt : σ'.count = 1 := by
           rw [hσ', encStep, dif_pos hq']
         have hcw : w₀ ≤ σ'.cumWhite := by
@@ -770,7 +783,7 @@ theorem encExpect_wander_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R' : ℕ) (�
           rw [hσ', encStep, dif_pos hq']
           dsimp only
           rw [if_pos (show (0 : ℕ) < R' + 1 by omega)]
-        have hnorm := encExpect_normalize_init F (R' + 1) ε hε T σ'
+        have hnorm := encExpect_normalize_init F (R' + 1) g ε hε T σ'
           (by rw [hcnt]; omega)
         refine le_max_of_le_right (le_trans hnorm ?_)
         rw [hbk, max_self, hcnt]
@@ -778,19 +791,19 @@ theorem encExpect_wander_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R' : ℕ) (�
           apply Real.exp_le_exp.mpr
           have hle : (w₀ : ℝ) ≤ (σ'.cumWhite : ℝ) := Nat.cast_le.mpr hcw
           linarith
-        have h3 : encExpect F (R' + 1 - 1) ε T ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩ ≤ Z := by
+        have h3 : encExpect F (R' + 1 - 1) g ε T ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩ ≤ Z := by
           simpa using hfresh T σ'.pos σ'.barrier
-        have hE0 : 0 ≤ encExpect F (R' + 1 - 1) ε T ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩ :=
-          encExpect_nonneg _ _ ε T _
+        have hE0 : 0 ≤ encExpect F (R' + 1 - 1) g ε T ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩ :=
+          encExpect_nonneg _ _ _ ε T _
         have hexp1 : Real.exp (ε * ((1 : ℕ) : ℝ)) = Real.exp ε := by norm_num
         calc Real.exp (ε * ((1 : ℕ) : ℝ)) * Real.exp (-(σ'.cumWhite : ℝ))
-              * encExpect F (R' + 1 - 1) ε T ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩
+              * encExpect F (R' + 1 - 1) g ε T ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩
             ≤ Real.exp (ε * ((1 : ℕ) : ℝ)) * Real.exp (-(w₀ : ℝ)) * Z :=
               mul_le_mul (mul_le_mul_of_nonneg_left h2 (Real.exp_pos _).le) h3 hE0
                 (mul_nonneg (Real.exp_pos _).le (Real.exp_pos _).le)
           _ = Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z := by rw [hexp1]
       · -- no encounter: still wandering with a larger cumWhite
-        have hs : encStep F (R' + 1) ⟨p, b, 0, w, 0⟩ d
+        have hs : encStep F (R' + 1) g ⟨p, b, 0, w, 0⟩ d
             = ⟨p + d, b, 0, w + (if p + d ∈ whiteStrip n ξ then 1 else 0), 0⟩ := by
           rw [encStep, dif_neg (by exact hq)]
         rw [hs]
@@ -801,14 +814,14 @@ theorem encExpect_wander_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R' : ℕ) (�
     have hsumH : Summable (fun d : ℕ × ℤ => (hold d).toReal) :=
       ENNReal.summable_toReal (by rw [hold.tsum_coe]; exact ENNReal.one_ne_top)
     have hsumL : Summable (fun d : ℕ × ℤ => (hold d).toReal
-        * encExpect F (R' + 1) ε T (encStep F (R' + 1) ⟨p, b, 0, w, 0⟩ d)) :=
+        * encExpect F (R' + 1) g ε T (encStep F (R' + 1) g ⟨p, b, 0, w, 0⟩ d)) :=
       Summable.of_nonneg_of_le
-        (fun d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg _ _ ε T _))
-        (fun d => mul_le_mul_of_nonneg_left (encExpect_le _ _ ε hε T _)
+        (fun d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg _ _ _ ε T _))
+        (fun d => mul_le_mul_of_nonneg_left (encExpect_le _ _ _ ε hε T _)
           ENNReal.toReal_nonneg)
         (hsumH.mul_right _)
     calc ∑' d : ℕ × ℤ, (hold d).toReal
-          * encExpect F (R' + 1) ε T (encStep F (R' + 1) ⟨p, b, 0, w, 0⟩ d)
+          * encExpect F (R' + 1) g ε T (encStep F (R' + 1) g ⟨p, b, 0, w, 0⟩ d)
         ≤ ∑' d : ℕ × ℤ, (hold d).toReal
             * max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) :=
           Summable.tsum_le_tsum
@@ -865,16 +878,16 @@ theorem tsum_map_toReal {α β : Type*} (p : PMF α) (φ : α → β) (g : β �
 /-- Shifting the start position through the fold: stepping from a translated state
 is stepping from the original state by the composite displacement (the fold state
 sees only the arrival point; `barrier/count/cumWhite/banked` are untouched). -/
-theorem encStep_shift {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ)
+theorem encStep_shift {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
     (σ : EncState) (d e : ℕ × ℤ) :
-    encStep F R ⟨σ.pos + d, σ.barrier, σ.count, σ.cumWhite, σ.banked⟩ e
-      = encStep F R σ (d + e) := by
+    encStep F R g ⟨σ.pos + d, σ.barrier, σ.count, σ.cumWhite, σ.banked⟩ e
+      = encStep F R g σ (d + e) := by
   have hpe : σ.pos + d + e = σ.pos + (d + e) := add_assoc _ _ _
   unfold encStep
-  by_cases hq : 1 ≤ (σ.pos + (d + e)).1 ∧ (σ.pos + (d + e)).1 ≤ n / 2
+  by_cases hq : 1 ≤ (σ.pos + (d + e)).1 ∧ (σ.pos + (d + e)).1 + g ≤ n / 2
       ∧ black n ξ ((σ.pos + (d + e)).1 - 1) (σ.pos + (d + e)).2
       ∧ σ.barrier < (σ.pos + (d + e)).2
-  · rw [dif_pos hq, dif_pos (show 1 ≤ (σ.pos + d + e).1 ∧ (σ.pos + d + e).1 ≤ n / 2
+  · rw [dif_pos hq, dif_pos (show 1 ≤ (σ.pos + d + e).1 ∧ (σ.pos + d + e).1 + g ≤ n / 2
         ∧ black n ξ ((σ.pos + d + e).1 - 1) (σ.pos + d + e).2
         ∧ σ.barrier < (σ.pos + d + e).2 by rw [hpe]; exact hq)]
     by_cases hw : σ.pos + (d + e) ∈ whiteStrip n ξ
@@ -882,7 +895,7 @@ theorem encStep_shift {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ)
       simp only [hpe]
     · rw [if_neg hw, if_neg (show σ.pos + d + e ∉ whiteStrip n ξ by rw [hpe]; exact hw)]
       simp only [hpe]
-  · rw [dif_neg hq, dif_neg (show ¬(1 ≤ (σ.pos + d + e).1 ∧ (σ.pos + d + e).1 ≤ n / 2
+  · rw [dif_neg hq, dif_neg (show ¬(1 ≤ (σ.pos + d + e).1 ∧ (σ.pos + d + e).1 + g ≤ n / 2
         ∧ black n ξ ((σ.pos + d + e).1 - 1) (σ.pos + d + e).2
         ∧ σ.barrier < (σ.pos + d + e).2) by rw [hpe]; exact hq)]
     by_cases hw : σ.pos + (d + e) ∈ whiteStrip n ξ
@@ -898,77 +911,77 @@ to the fold (no encounter can trigger below the barrier, and mid-block white
 increments are DROPPED via the coupling `encExpect_anti` — the paper's
 `Σ 1_W ≥ 1_W(endpoint)` reduction), so the expectation is dominated by the
 first-passage endpoint law: for any horizon `T ≥ s/3 + 1` (enough steps to clear —
-each `Hold` step spends height `≥ 3`) and any `[0,B]`-valued `g` dominating all
+each `Hold` step spends height `≥ 3`) and any `[0,B]`-valued `f` dominating all
 shorter-horizon continuations from the clearing step,
 
-  `encExpect T σ ≤ Σ'_e fpDist s (e) · g e`.
+  `encExpect T σ ≤ Σ'_e fpDist s (e) · f e`.
 
 The fold's clearing condition `barrier < pos₂ + d₂` is EXACTLY `fpDist`'s overshoot
 condition `s < d₂` — the two recursions match step for step (strong induction on
 `s` mirroring `fpDist`'s budget recursion). -/
-theorem encExpect_block_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+theorem encExpect_block_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε : ℝ)
     (hε : 0 ≤ ε) :
     ∀ s : ℕ, ∀ σ : EncState, (s : ℤ) = σ.barrier - σ.pos.2 →
     ∀ T : ℕ, s / 3 + 1 ≤ T →
-    ∀ g : ℕ × ℤ → ℝ, (∀ e, 0 ≤ g e) → ∀ B : ℝ, (∀ e, g e ≤ B) →
+    ∀ f : ℕ × ℤ → ℝ, (∀ e, 0 ≤ f e) → ∀ B : ℝ, (∀ e, f e ≤ B) →
     (∀ e : ℕ × ℤ, (s : ℤ) < e.2 → ∀ T' : ℕ, T' < T →
-      encExpect F R ε T' (encStep F R σ e) ≤ g e) →
-    encExpect F R ε T σ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal * g e := by
+      encExpect F R g ε T' (encStep F R g σ e) ≤ f e) →
+    encExpect F R g ε T σ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal * f e := by
   intro s
   induction s using Nat.strong_induction_on with
   | _ s IH =>
-    intro σ hs T hT g hg0 B hgB hg
+    intro σ hs T hT f hg0 B hgB hg
     classical
     have hB : 0 ≤ B := le_trans (hg0 (0, 0)) (hgB (0, 0))
     -- peel one step
     obtain ⟨T', rfl⟩ : ∃ T', T = T' + 1 := ⟨T - 1, by omega⟩
-    rw [encExpect_succ F R ε hε T' σ]
+    rw [encExpect_succ F R g ε hε T' σ]
     -- unfold one step of fpDist on the right
     conv_rhs => rw [fpDist]
-    rw [tsum_bind_toReal hold _ g hg0 hgB]
+    rw [tsum_bind_toReal hold _ f hg0 hgB]
     -- termwise comparison over the step d
     have hterm : ∀ d : ℕ × ℤ,
-        (hold d).toReal * encExpect F R ε T' (encStep F R σ d)
+        (hold d).toReal * encExpect F R g ε T' (encStep F R g σ d)
           ≤ (hold d).toReal * ∑' e, (((if d.2 ≤ 0 ∨ (s : ℤ) < d.2 then PMF.pure d
               else (fpDist (s - d.2.toNat)).map fun e => (d.1 + e.1, d.2 + e.2)) : PMF (ℕ × ℤ)) e).toReal
-                * g e := by
+                * f e := by
       intro d
       rcases eq_or_ne (hold d) 0 with h0 | h0
       · rw [h0]; simp
       have hd3 : 3 ≤ d.2 := hold_support_snd_ge d (by rwa [PMF.mem_support_iff])
       apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
       rcases lt_or_ge (s : ℤ) d.2 with hover | hunder
-      · -- the clearing step: pure branch, dominated by g d
+      · -- the clearing step: pure branch, dominated by f d
         rw [if_pos (Or.inr hover)]
-        calc encExpect F R ε T' (encStep F R σ d) ≤ g d := hg d hover T' (by omega)
-          _ = ∑' e, ((PMF.pure d : PMF (ℕ × ℤ)) e).toReal * g e := by
+        calc encExpect F R g ε T' (encStep F R g σ d) ≤ f d := hg d hover T' (by omega)
+          _ = ∑' e, ((PMF.pure d : PMF (ℕ × ℤ)) e).toReal * f e := by
               rw [tsum_eq_single d (fun e he => by
                 rw [PMF.pure_apply, if_neg he]; simp)]
               rw [PMF.pure_apply, if_pos rfl]; simp
       · -- mid-block step: no encounter possible, recurse at the reduced budget
         rw [if_neg (by push_neg; exact ⟨by omega, hunder⟩)]
         -- the fold takes the non-encounter branch (barrier not cleared)
-        have hnc : ¬(1 ≤ (σ.pos + d).1 ∧ (σ.pos + d).1 ≤ n / 2
+        have hnc : ¬(1 ≤ (σ.pos + d).1 ∧ (σ.pos + d).1 + g ≤ n / 2
             ∧ black n ξ ((σ.pos + d).1 - 1) (σ.pos + d).2 ∧ σ.barrier < (σ.pos + d).2) := by
           rintro ⟨-, -, -, hbar⟩
           have : (σ.pos + d).2 = σ.pos.2 + d.2 := rfl
           omega
-        have hstep : encStep F R σ d
+        have hstep : encStep F R g σ d
             = ⟨σ.pos + d, σ.barrier, σ.count,
                 σ.cumWhite + (if σ.pos + d ∈ whiteStrip n ξ then 1 else 0), σ.banked⟩ := by
           rw [encStep, dif_neg hnc]
         -- drop the mid-block white increment (coupling)
-        have hdrop : encExpect F R ε T' (encStep F R σ d)
-            ≤ encExpect F R ε T'
+        have hdrop : encExpect F R g ε T' (encStep F R g σ d)
+            ≤ encExpect F R g ε T'
                 ⟨σ.pos + d, σ.barrier, σ.count, σ.cumWhite, σ.banked⟩ := by
           rw [hstep]
-          exact encExpect_anti F R ε hε T' _ _ rfl rfl rfl (Nat.le_add_right _ _)
+          exact encExpect_anti F R g ε hε T' _ _ rfl rfl rfl (Nat.le_add_right _ _)
             (le_refl _)
         -- recurse via the strong IH at the reduced budget
         set s'' : ℕ := s - d.2.toNat with hs''
-        have hrec : encExpect F R ε T'
+        have hrec : encExpect F R g ε T'
               ⟨σ.pos + d, σ.barrier, σ.count, σ.cumWhite, σ.banked⟩
-            ≤ ∑' e', (fpDist s'' e').toReal * g (d + e') := by
+            ≤ ∑' e', (fpDist s'' e').toReal * f (d + e') := by
           refine IH s'' (by omega) _ ?_ T' (by omega) _ (fun e' => hg0 _) B
             (fun e' => hgB _) ?_
           · show (s'' : ℤ) = σ.barrier - (σ.pos + d).2
@@ -980,38 +993,38 @@ theorem encExpect_block_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε 
             have h2 : (d + e').2 = d.2 + e'.2 := rfl
             omega
         -- reindex the map branch
-        rw [tsum_map_toReal _ _ g hg0]
+        rw [tsum_map_toReal _ _ f hg0]
         exact le_trans (le_trans hdrop hrec) (le_of_eq (tsum_congr fun e' => by rfl))
     -- summability on both sides, then sum the termwise bound
     have hsum : Summable (fun d : ℕ × ℤ => (hold d).toReal) :=
       ENNReal.summable_toReal (by rw [hold.tsum_coe]; exact ENNReal.one_ne_top)
     have hnnL : ∀ d : ℕ × ℤ,
-        0 ≤ (hold d).toReal * encExpect F R ε T' (encStep F R σ d) :=
-      fun d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg F R ε T' _)
+        0 ≤ (hold d).toReal * encExpect F R g ε T' (encStep F R g σ d) :=
+      fun d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg F R g ε T' _)
     have hboundL : ∀ d : ℕ × ℤ,
-        (hold d).toReal * encExpect F R ε T' (encStep F R σ d)
+        (hold d).toReal * encExpect F R g ε T' (encStep F R g σ d)
           ≤ (hold d).toReal * Real.exp (ε * R) :=
-      fun d => mul_le_mul_of_nonneg_left (encExpect_le F R ε hε T' _)
+      fun d => mul_le_mul_of_nonneg_left (encExpect_le F R g ε hε T' _)
         ENNReal.toReal_nonneg
     have hsumL : Summable (fun d : ℕ × ℤ =>
-        (hold d).toReal * encExpect F R ε T' (encStep F R σ d)) :=
+        (hold d).toReal * encExpect F R g ε T' (encStep F R g σ d)) :=
       Summable.of_nonneg_of_le hnnL hboundL (hsum.mul_right _)
     have hnnR : ∀ d : ℕ × ℤ, 0 ≤ (hold d).toReal
         * ∑' e, (((if d.2 ≤ 0 ∨ (s : ℤ) < d.2 then PMF.pure d
             else (fpDist (s - d.2.toNat)).map fun e => (d.1 + e.1, d.2 + e.2)) : PMF (ℕ × ℤ)) e).toReal
-              * g e :=
+              * f e :=
       fun d => mul_nonneg ENNReal.toReal_nonneg (tsum_nonneg fun e =>
         mul_nonneg ENNReal.toReal_nonneg (hg0 e))
     have hboundR : ∀ d : ℕ × ℤ, (hold d).toReal
         * ∑' e, (((if d.2 ≤ 0 ∨ (s : ℤ) < d.2 then PMF.pure d
             else (fpDist (s - d.2.toNat)).map fun e => (d.1 + e.1, d.2 + e.2)) : PMF (ℕ × ℤ)) e).toReal
-              * g e ≤ (hold d).toReal * B :=
+              * f e ≤ (hold d).toReal * B :=
       fun d => mul_le_mul_of_nonneg_left
-        (tsum_toReal_mul_le _ g hg0 hgB hB) ENNReal.toReal_nonneg
+        (tsum_toReal_mul_le _ f hg0 hgB hB) ENNReal.toReal_nonneg
     have hsumR : Summable (fun d : ℕ × ℤ => (hold d).toReal
         * ∑' e, (((if d.2 ≤ 0 ∨ (s : ℤ) < d.2 then PMF.pure d
             else (fpDist (s - d.2.toNat)).map fun e => (d.1 + e.1, d.2 + e.2)) : PMF (ℕ × ℤ)) e).toReal
-              * g e) :=
+              * f e) :=
       Summable.of_nonneg_of_le hnnR hboundR (hsum.mul_right _)
     exact Summable.tsum_le_tsum hterm hsumL hsumR
 
@@ -1188,21 +1201,39 @@ small `ε`, giving `exp(2ε)`. The p.55 consumer is Markov + a free choice of `R
 AFTER ε, so any absolute constant in the exponent is absorbed — `exp(2ε)` is fully
 consumable by X11.
 
-OPEN (node X9): corrected proof route (recorded in `PENDING_WORK.md` lap 52):
-two-level claim over fresh states — `Y(q, b, ρ) ≤ e^ε·X` for JUST-ENTERED states
-(`X := p₀/(1−(1−p₀)e^ε)`) and `Z ≤ max(1, Y-bound)` for generic states — by
-induction on `ρ` (remaining blocks) with an inner strong induction on `T`.
-Per block: `encExpect_block_le` (proved) reduces to the `fpDist` exit law; the
-four-mass vertex analysis over (white/nonwhite × re-encounter/not) closes with
-`E ≤ P(NE) + e^εX·(e^{−1}·P(E∧w) + P(E∧nw))` and the white-exit mass
-`P(w) ≥ p₀` from `fpDist_white_exit` ((7.51)/(7.59) variant, X8 kernel — the only
-open input). The affine state-normalization is `encExpect_anti`-style coupling. -/
+**SECOND DEVIATION (lap 55 reflection): the encounter count is DEPTH-GATED.** The
+statement bounds the fold with gate `g` (an absolute constant, `∃`-bound below —
+in the proof it is the `Cthr` of `fpDist_white_exit_deep`): encounters count only
+at depth ≥ `g` from the strip edge. Justification: the paper's induction step
+cashes exit-whiteness via (7.59) "by repeating the proof of (7.51)" (p.51), but
+that geometry FAILS for triangles near the edge `j = ⌊n/2⌋` — the first-passage
+endpoint leaves the strip with non-vanishing mass, so no `p₀`-compensation exists
+there, and adversarial edge-strip families would otherwise accumulate uncompensated
+`e^ε` payments, likely FALSIFYING (7.57) as printed (uniform over all starts). The
+paper's only remark on the edge (p.50: "`r` is finite since the process eventually
+exits the strip") is finiteness, not a ledger. Consumer-verification (lap 55, vs
+pp.49+55): Case 3 applies this lemma after the (7.54) split, whose surviving branch
+has `j_{[1,k+P]} < 0.9m` with `m ≥ C_{A,ε}`, so every encounter the deterministic
+claim (7.67) produces sits at depth `≥ 0.1m ≥ g` once `C_{A,ε} ≥ 10·g` — the gated
+count still reaches `R`, and the p.55 Markov consumption is unchanged. `g = 0`
+recovers the ungated encoding verbatim.
+
+OPEN (node X9): corrected proof route (recorded in `PENDING_WORK.md` lap 52 +
+lap-55 Reflection): two-level claim over fresh states — `Y(q, b, ρ) ≤ e^ε·X` for
+JUST-ENTERED states (`X := p₀/(1−(1−p₀)e^ε)`) and `Z ≤ max(1, Y-bound)` for
+generic states — by induction on `ρ` (remaining blocks) with an inner strong
+induction on `T`. Per block: `encExpect_block_le` (proved) reduces to the `fpDist`
+exit law; the two-mass vertex analysis (white-credit branches ≤ 1 pathwise) closes
+with `encounter_two_mass_bound` and the white-exit mass `P(w) ≥ p₀` from
+`fpDist_white_exit_deep` (the only open input) — available at every GATED
+encounter since its depth is ≥ `g = Cthr`; below the gate the fold is frozen
+(`encExpect_of_edge`). The affine state-normalization is `encExpect_normalize`. -/
 theorem many_triangles_white :
-    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
     ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
     ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
     ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (j' : ℕ) (l' : ℤ),
-    encExpect F R ε T (encInit j' l') ≤ Real.exp (2 * ε) := by
+    encExpect F R g ε T (encInit j' l') ≤ Real.exp (2 * ε) := by
   sorry
 
 end TaoCollatz

@@ -1,5 +1,32 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 55 (cont): DEPTH-GATED FOLD LANDED — directive step 1 done, X9 gluing unblocked
+
+`encStep`/`encExpect` now carry a gate `g : ℕ`: the encounter condition's strip
+conjunct is `q₁ + g ≤ n/2` (so `g = 0` IS the previously-ratified encoding,
+definitionally). All ten fold lemmas threaded and re-verified
+`[propext, Classical.choice, Quot.sound]` (real runs): succ/le/of_count_ge/anti/
+normalize(_init)/of_edge/wander_le/shift/block_le. `encExpect_of_edge` is now the
+SHALLOW freeze (`n/2 < pos₁ + g ⟹ encExpect = encVal`) — exactly the near-edge
+case of the Z-induction. `many_triangles_white` re-pinned with `∃ g : ℕ` and a
+SECOND DEVIATION docstring (near-edge gate; paper anchors (7.59)/p.50/p.51 +
+consumer verification vs (7.54)/p.55). **Judge: re-ratification requested** — the
+encounter-fold encoding and the (7.57) pin both changed (pass-12 tripwire
+anticipated this).
+
+Gotcha: the block bridge's observable was named `g` (`∀ g : ℕ × ℤ → ℝ`) and
+shadowed the gate — renamed to `f` inside `encExpect_block_le` only.
+
+**Next (directive step 2)**: the Z-induction gluing of `many_triangles_white`,
+per the lap-54 cont-4 plan, now with the near-edge branch discharged by
+`encExpect_of_edge` (frozen, value = encVal ≤ e^{ε·count−banked}; entering states
+have banked ≥ ... handle via the normalized fresh-state shape) and every gated
+encounter deep enough for `fpDist_white_exit_deep`. Fresh states: `Z(ρ) := sup`
+over `⟨q, b, 0, 0, 0⟩` of `E_ρ`; induction on ρ; per block `encExpect_block_le`
+with the two-mass split (`encounter_two_mass_bound`, monotone in Z above the
+fixed point); white mass from `fpDist_white_exit_deep` (still the open external
+input — directive step 3).
+
 ## Reflection — 2026-07-12 (lap 55, deep reflection; strong-model altitude pass)
 
 ### Route verdict: **CONTINUE** — no registered trigger has fired
