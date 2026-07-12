@@ -102,6 +102,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 11](judge/pass-11.md) — 2026-07-12: **NODE X1 COMPLETE** ✅ (fourth verified node; `cexpect_pairing` clean, drift-free); box's "axiom-clean" mislabel on `prod_fCond_le_damping` caught (sorryAx via X2); Prop 1.17 trail machine-mapped; definition-badge tint rule shipped.
 - [Pass 12](judge/pass-12.md) — 2026-07-12, lap 54 (5 commits + handoff): **X5 + X2 COMPLETE** ✅✅ (Lemma 7.6 ratified vs p.42, 15 decls clean; `white_cos_bound` clean → `prod_fCond_le_damping` closed, trail map confirmed); X9 ledger core verified (chain cap + LP vertex + normalize/wander/edge gluing, 10 decls); **`fpDist_white_exit_deep` pinned + ratified vs (7.59)** — the watched-for variant, p₀ > 1/2 burden embodied. ⚠️ near-edge tripwire: widening the deep pin's statement revokes its ratification.
 - [Pass 13](judge/pass-13.md) — 2026-07-12, lap-55 reflection (docs-only): **X9 RATIFICATION SUSPENDED** ⚠️ — box's near-edge truth challenge to the pinned exp(2ε) judge-concurred (~85%; adversarial edge-strip families extract e^{ε·Cthr} uncompensated); **literature hole #6** (paper's all-starts Lemma 7.9 inherits it via "(7.59) by repeating (7.51)"); both proposed fixes pre-assessed with re-ratification checklists; deep-pin ratification stands (statement untouched).
+- [Pass 14](judge/pass-14.md) — 2026-07-12, lap 55 cont: **X9 RE-RATIFIED** ✅ — depth-gated fold passes the pass-13 checklist (gate conjunct exact, `∃g` quantifier order right, `g=0` degenerates to prior encoding); 13 gated fold/chain lemmas re-verified axiom-clean; deep pin untouched. Suspension lasted one commit.
 
 ## Live judge state 📍 (update each pass)
 
@@ -111,10 +112,9 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 **X2** (pass 12 — both halves; damping consumer closed with it).
 
 **Statements pinned + ratified**: every ledger node except **C8** (no pinned Lean
-statement yet — the last un-pinned node) and **X9** (pinned but ratification
-SUSPENDED, pass 13 — truth challenge concurred; re-pin pending, checklists in
-pass-13.md). Latest: X1 (pass 10), X5 (pass 12), `fpDist_white_exit_deep`
-(pass 12, bound at X9 — ratification stands, two edit-shape tripwires armed).
+statement yet — the last un-pinned node). Latest: X9 depth-gated re-pin (pass 14;
+two documented deviations: exp(2ε) + gated count), `fpDist_white_exit_deep`
+(pass 12, unchanged through the re-pin).
 
 **Open riders / queued fronts**:
 - **X11 ε-rider** (pass 8): when ratifying X11 against pp.55–56 (UNREAD), verify the
@@ -131,14 +131,11 @@ pass-13.md). Latest: X1 (pass 10), X5 (pass 12), `fpDist_white_exit_deep`
   (`triangle_encounter_le` X10, `fpDist_white_exit_deep`, `many_triangles_white` X9).
 - **Box docstring nits** (pass 12, box's to fix): `White.lean:11` + `Reduction.lean:12`
   still describe their (now proved) cruxes as carrying `sorry`.
-- **X9 re-pin watch** (pass 13, supersedes the pass-12 near-edge tripwire): the
-  box's declared next target is the X9 re-statement (depth-gated fold preferred,
-  ∃C fallback; possibly also softening the deep pin's `p₀ > 1/2` to an explicit
-  numeral). Any of these edits requires re-ratification — checklists with the
-  exact acceptance conditions are in [pass-13.md](judge/pass-13.md). The fix-1
-  consumer-safety claim ((7.54) keeps the (7.67) window deep) is a BOX CLAIM
-  grounded in pp.48–49/54–55, which the judge has not yet read — it rides the
-  X11 ratification, same as the ε-rider.
+- **X9 re-pin: RESOLVED pass 14** (depth-gated fold, re-ratified). Two claims
+  still ride the X11 ratification (judge must read pp.48–49/54–56): (a) the
+  ε-rider (R chosen after ε); (b) the gate consumer-safety claim ((7.54) keeps
+  every (7.67) encounter at depth ≥ 0.1m ≥ g). The deep pin's `p₀ > 1/2` was
+  NOT softened — the p₀-softening tripwire stays armed in case it appears later.
 - **Paper-gap ledger, entry 2**: literature hole #6 (near-edge overreach in the
   all-starts Lemma 7.9, judge-concurred pass 13) — same document-don't-announce
   handling as #5; KB entry updated.
