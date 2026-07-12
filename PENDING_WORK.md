@@ -1,5 +1,57 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 49 (2026-07-12, seventh box session): **renewalMass_bound PROVED** (X6 step 2 COMPLETE)
+
+The renewal Gaussian bound (paper p.44 first display) is a theorem,
+axiom-clean: `renewalMass (j,l) ≤ C/√(1+l) · Gweight(1+l)(c(j-l/4))` with
+`c = c₀/4`, `C = C₀·C₅` off `hold_local_bound`'s `(c₀, C₀)`. All four pinned
+route steps landed in FpLocation.lean exactly as validated numerically:
+- `sum_abs_AP_le` — two-branch reindex at `q = w/16` (Finset.sum_image with
+  the have-key trick from the corpus; k ↦ q-k / k-q-1).
+- `iidSum_hold_snd_zero` + `renewalMass_toReal_eq` — support truncation at
+  `k ≤ ⌊l/3⌋` (induction on iidSum_succ_apply + hold_zero_of_snd_lt), tsum →
+  Finset sum → toReal-distributed.
+- `Gweight_factor` — the AB+CD ≤ (A+C)(B+D) peel: `Gw(1+k)(c₁y) ≤
+  Gw(1+l)(c₁/2·x)·(e^{-(c₁²/2)z²/(1+k)} + e^{-(c₁/2)z})` from
+  `|x| + (3/4)z ≤ y` (via y² ≥ x² + z²/2), `1+k ≤ 1+l`.
+- `renewal_weight_sum_le` — the k-sum envelope `Σ (1+k)⁻¹W_k ≤ C₅/√(1+l)`,
+  `C₅ = 32/ε² + 256 + 4/b + 8/√a`, `ε = min(a/8,b/2)`: edge region `k < ⌊l/32⌋`
+  killed by `exp_neg_le_four_div_sq` (one application suffices:
+  `2(1+l)²e^{-εl} ≤ 32/ε²`), central region by `1/(1+k) ≤ 32/(1+l)` +
+  `sum_abs_AP_le` + `sum_range_exp_neg_sq_le` (with `√β·√(1+l) = 16√a`) +
+  geometric.
+
+Gotchas this lap:
+- `div_le_div_iff` → `div_le_div_iff₀` (mathlib rename); `div_add_div_same`
+  gone — use `(add_div _ _ _).symm`.
+- `rw [neg_mul, neg_div, neg_mul, neg_div]`: when both sides share the SAME
+  numerator, the first `neg_mul` rewrites both sides at once and the second
+  fails; chain is `[neg_mul, neg_div, neg_div]`.
+- linarith atom traps: `2*(2/√β)` vs `4/√β` and `2*(1/(16b))` vs `1/(8b)` are
+  UNRELATED atoms — supply `by ring` bridge equations as hypotheses.
+- A single `rw [div_le_div_iff₀ h1 h2] at hA ⊢` cannot hit two locations with
+  different denominators (rule elaborated once); rewrite separately or bridge
+  with ring equations.
+- `Nat.cast_le.mpr (α := ℝ)` fails (named arg goes to Iff.mpr); ascribe the
+  `have` type instead.
+- omega handles `l.toNat`, `t/3`, `t/32` mixed ℕ/ℤ goals natively — all the
+  truncation index arithmetic here was pure `omega`.
+
+NEXT (X6 step 3, the last FpLocation sorry): `fpDist_location_bound` =
+`fpDist_le_renewal_conv` + `renewalMass_bound` at the pre-passage point
+`(j₁,l₁)`, `l₁ ≤ s` + one `hold` step for the overshoot `(j-j₁, l-l₁)` with
+`hold_local_bound`/`hold_tail_bound` at n = 1, split `l₁ ≤ s/2` vs `> s/2`
+(paper p.44 closing paragraph). Sub-steps: (a) toReal the ≤-inequality of
+fpDist_le_renewal_conv (tsum on the right is finite: renewalMass ≤ 1+stepMass
+bounded? — no: bound it by the CONVOLUTION's value directly: each term
+renewalMass(p)·hold(e-p) ≤ hold(e-p) is false; instead truncate p-support:
+p₂ ≤ s and hold(e-p) ≠ 0 forces e₂-p₂ ≥ 3 and p = e - d with d in hold's
+support, so the p-sum is a finite sum over d.1 ≤ j, use toReal_mono +
+tsum ≤ over finite index); (b) exp(-c(l-s)) factor comes from hold_tail_bound
+n=1 on the overshoot when l - l₁ is large, else from the trivial bound 1
+absorbed by adjusting c (for l ≤ s the LHS is 0 via fpDist_support_snd_gt —
+handle first). Then X8 Case-2 kernels consume this.
+
 ## Lap 48 (2026-07-12, seventh box session): renewalMass_bound TOOLKIT LANDED (X6 step 2 in progress)
 
 Numeric validation done FIRST (python): factorization chain
