@@ -741,6 +741,115 @@ theorem encExpect_block_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε 
       Summable.of_nonneg_of_le hnnR hboundR (hsum.mul_right _)
     exact Summable.tsum_le_tsum hterm hsumL hsumR
 
+/-! ### The X9 chain arithmetic: the corrected per-block ledger (lap 52 route)
+
+The corrected Lemma 7.9 induction bounds the expectation from a JUST-ENTERED state
+by `e^ε·X` where `X := p₀/(1 − (1−p₀)e^ε)` is the sharp value of the instant
+re-encounter chain (`p₀` = white-exit mass of `fpDist_white_exit_deep`). The two
+lemmas below are the closed-form real-arithmetic core of that induction; both are
+PROVED. The vertex analysis shows the per-block recursion map preserves the bound
+`e^ε·X`; `encChainX_le_exp` caps `X ≤ e^ε`, whence `Y ≤ e^{2ε}` — the (7.57)
+constant as pinned in `many_triangles_white`. -/
+
+/-- The sharp chain value `X = p₀/(1 − (1−p₀)e^ε)` of the instant re-encounter
+ledger (lap-52 route finding; the toy-world value `≈ exp(ε/p₀)` forcing the
+corrected `exp(2ε)` constant in (7.57)). -/
+noncomputable def encChainX (ε p₀ : ℝ) : ℝ := p₀ / (1 - (1 - p₀) * Real.exp ε)
+
+/-- Positivity of the chain denominator under the smallness hypothesis. -/
+theorem encChainX_den_pos {ε p₀ : ℝ} (hp : 1 / 2 < p₀) (hp1 : p₀ ≤ 1)
+    (hsmall : (1 - p₀) * (Real.exp ε + 1) ≤ 1) :
+    0 < 1 - (1 - p₀) * Real.exp ε := by
+  nlinarith [Real.exp_pos ε]
+
+/-- `1 ≤ X`: the chain value dominates the trivial ledger. -/
+theorem one_le_encChainX {ε p₀ : ℝ} (hε : 0 ≤ ε) (hp : 1 / 2 < p₀) (hp1 : p₀ ≤ 1)
+    (hsmall : (1 - p₀) * (Real.exp ε + 1) ≤ 1) :
+    1 ≤ encChainX ε p₀ := by
+  have hden := encChainX_den_pos hp hp1 hsmall
+  rw [encChainX, le_div_iff₀ hden]
+  nlinarith [Real.one_le_exp hε]
+
+/-- **`X ≤ e^ε`** (the cap making `exp(2ε)` consumable): from
+`(u−1)·(1 − (1−p₀)(u+1)) ≥ 0` at `u = e^ε ≥ 1`. -/
+theorem encChainX_le_exp {ε p₀ : ℝ} (hε : 0 ≤ ε) (hp : 1 / 2 < p₀) (hp1 : p₀ ≤ 1)
+    (hsmall : (1 - p₀) * (Real.exp ε + 1) ≤ 1) :
+    encChainX ε p₀ ≤ Real.exp ε := by
+  have hden := encChainX_den_pos hp hp1 hsmall
+  rw [encChainX, div_le_iff₀ hden]
+  nlinarith [Real.one_le_exp hε, Real.exp_pos ε]
+
+/-- **The four-mass vertex analysis** (the corrected per-block ledger, lap-52
+route; paper p.51 display corrected). One block from a just-entered state: the
+exit endpoint is white-and-stopping, white-and-re-encountering (damping `e^{-1}`
+banked, chain factor `e^ε·X` re-paid), or non-white (mass `d ≤ 1 − p₀` by the
+white-exit bound `fpDist_white_exit_deep`, chain re-paid undamped). The linear
+program over the feasible masses is maximised at the `(a, d) = (0, 1−p₀)` vertex,
+where the value is EXACTLY `X` — the fixed-point property defining `encChainX`.
+Hypothesis `hXe` (`e^{ε−1}·X ≤ 1`) holds for all small `ε` via
+`encChainX_le_exp` + `e^{2ε−1} ≤ 1`. -/
+theorem encounter_vertex_bound {ε p₀ a d : ℝ} (hε : 0 ≤ ε)
+    (hp : 1 / 2 < p₀) (hp1 : p₀ ≤ 1)
+    (hsmall : (1 - p₀) * (Real.exp ε + 1) ≤ 1)
+    (ha : 0 ≤ a) (hd : 0 ≤ d) (had : a + d ≤ 1) (hdp : d ≤ 1 - p₀)
+    (hXe : Real.exp (ε - 1) * encChainX ε p₀ ≤ 1) :
+    (1 - a - d) + Real.exp ε * encChainX ε p₀ * (Real.exp (-1) * a + d)
+      ≤ Real.exp ε * encChainX ε p₀ := by
+  have hden := encChainX_den_pos hp hp1 hsmall
+  have hX1 := one_le_encChainX hε hp hp1 hsmall
+  have hu := Real.one_le_exp hε
+  -- e^ε·e^{−1}·X = e^{ε−1}·X ≤ 1: the white-re-encounter coefficient is ≤ 0
+  have hcoef : Real.exp ε * encChainX ε p₀ * Real.exp (-1)
+      = Real.exp (ε - 1) * encChainX ε p₀ := by
+    rw [show ε - 1 = ε + -1 from by ring, Real.exp_add]
+    ring
+  -- the defining identity p₀ + (1−p₀)·e^ε·X = X
+  have hfix : p₀ + (1 - p₀) * Real.exp ε * encChainX ε p₀ = encChainX ε p₀ := by
+    rw [encChainX]
+    field_simp
+    ring
+  -- drop `a` (nonpositive coefficient), push `d` to `1−p₀`, land on the fixed point
+  have hXnn : 0 ≤ encChainX ε p₀ := le_trans zero_le_one hX1
+  calc (1 - a - d) + Real.exp ε * encChainX ε p₀ * (Real.exp (-1) * a + d)
+      = 1 - a * (1 - Real.exp (ε - 1) * encChainX ε p₀)
+          - d * (1 - Real.exp ε * encChainX ε p₀) := by
+        rw [← hcoef]
+        ring
+    _ ≤ 1 + d * (Real.exp ε * encChainX ε p₀ - 1) := by
+        nlinarith [mul_nonneg ha (sub_nonneg.mpr hXe)]
+    _ ≤ 1 + (1 - p₀) * (Real.exp ε * encChainX ε p₀ - 1) := by
+        have h1 : 1 ≤ Real.exp ε * encChainX ε p₀ := by nlinarith
+        nlinarith
+    _ = p₀ + (1 - p₀) * Real.exp ε * encChainX ε p₀ := by ring
+    _ = encChainX ε p₀ := hfix
+    _ ≤ Real.exp ε * encChainX ε p₀ := by nlinarith
+
+/-- **The (7.59)-shaped deep white-exit bound** (the ONLY open external input of
+the X9 induction; sibling of the Case-2 kernel `fpDist_white_exit` in
+`BlackEdge.lean`). Identical statement with the Case-2 budget hypothesis
+`s ≤ m/log²m` REMOVED (any triangle point qualifies — the (7.52) bound
+`budget_le_of_mem_triangle` caps `s = O(m)` for free) and the mass sharpened to
+`p₀ > 1/2` (the chain cap `encChainX_le_exp` needs it; numerically the white-exit
+mass is ≈ 0.99, harness check 9, 2026-07-10).
+
+Route: as for `fpDist_white_exit` — Lemma 7.7 (`fpDist_location_bound`, X6)
+concentrates the endpoint at `(j + s/4 + O(√(1+s)), l_Δ + O(1))`; every endpoint
+clears the triangle top (`fpDist_support_snd_gt`); the (7.11) slope bound + the
+`(1/10)·log(1/ε)` family separation (X3) exclude every other triangle, so the
+endpoint is white; in-strip since `s/4 + O(√s) ≤ 0.8·m + O(√m) < m`. The
+`s ≤ m/log²m` hypothesis of the Case-2 twin is used there ONLY for the
+`edgeWeight` degradation, not for whiteness — this deep variant is the same
+geometry with a larger (still `O(m)`) budget. -/
+theorem fpDist_white_exit_deep :
+    ∃ p₀ : ℝ, 1 / 2 < p₀ ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
+      ∀ F : TriangleFamily n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      p₀ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
+        * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) := by
+  sorry
+
 /-- **Lemma 7.9 — many triangles usually implies many white points** (paper (7.57),
 pp.50–51, WITH A CORRECTED CONSTANT — see the deviation note below). For the `T`-step
 renewal walk started at any `(j', l')`, any number of blocks `R ≥ 1`, and any

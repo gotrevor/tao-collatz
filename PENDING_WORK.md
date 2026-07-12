@@ -1,5 +1,26 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 54 (cont-2): X9 assembly opened — chain arithmetic PROVED, white-exit input named
+
+`ManyTriangles.lean` gains the lap-52 route's real-arithmetic core, all PROVED
+axiom-clean: `encChainX` (the sharp instant-re-encounter chain value
+`X = p₀/(1−(1−p₀)e^ε)`), `encChainX_den_pos`, `one_le_encChainX`,
+`encChainX_le_exp` (the cap making exp(2ε) consumable), and
+**`encounter_vertex_bound`** — the four-mass vertex analysis: the per-block
+linear program is maximised at `(a,d) = (0, 1−p₀)` where the value is EXACTLY
+`X` (the fixed-point identity `p₀ + (1−p₀)e^εX = X`). Plus ONE new named sorry:
+**`fpDist_white_exit_deep`** ((7.59)-shaped, sibling of the Case-2 kernel with
+the `s ≤ m/log²m` hypothesis removed and mass sharpened to `p₀ > 1/2`; route in
+docstring — same geometry, budget O(m) via (7.52)). src sorry count 24→25 by
+decomposition (progress, not regression).
+
+**Remaining X9 gap** (`many_triangles_white` sorry): the Y/Z two-level induction
+gluing `encExpect_block_le` (proved) + `encounter_vertex_bound` (proved) +
+`fpDist_white_exit_deep` (open) + the CLAIM-G state-normalization coupling
+(encExpect_anti-style fold induction, statement in lap-52 entry). That coupling
+is the next X9 sub-step to formalize.
+
+
 ## Lap 54 (cont): **X2 CLOSED** — `white_cos_bound` (Lemma 7.2 sharp half) PROVED; Sec7/White.lean sorry-free
 
 Chain (all mathlib-elementary): white ⟹ `ε < |θ| ≤ 1/2` (sfrac = `abs_sub_round`)
