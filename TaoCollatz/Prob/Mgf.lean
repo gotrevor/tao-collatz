@@ -826,4 +826,55 @@ theorem tiltZ_hold_snd_le {μ : ℝ} (hlo : -(1 / 100) ≤ μ) (hhi : μ ≤ 1 /
   nlinarith [sq_nonneg μ, sq_nonneg (μ - 1 / 100), sq_nonneg (μ + 1 / 100),
     sq_nonneg (μ * μ), sq_nonneg (μ * μ * μ)]
 
+/-- Square-root-free comparison in `ℝ≥0∞`: `x² ≤ y² → x ≤ y`. -/
+theorem ennreal_le_of_sq_le_sq {x y : ℝ≥0∞} (h : x ^ 2 ≤ y ^ 2) : x ≤ y := by
+  by_contra hc
+  push_neg at hc
+  have hlt : y ^ 2 < x ^ 2 := by
+    rw [sq, sq]
+    exact ENNReal.mul_lt_mul hc hc
+  exact absurd h (not_le.mpr hlt)
+
+/-- **The 2-D second-order `Hold` MGF bound** ((G2) of node S3; paper p.15, the
+Chernoff MGF estimate with the exact mean `(4,16)`): on the box `|λᵢ| ≤ 1/200`,
+`Z(λ₁,λ₂) ≤ 1 + 4λ₁ + 16λ₂ + 1000(λ₁² + λ₂²)`. Combination of the two 1-D bounds
+through the Cauchy–Schwarz split `tiltZ_expW2_sq_le`; the cross term
+`(256-128)λ₁λ₂` from the doubled tilts is absorbed into the `1000|λ|²` slack.
+Numerically validated with margin. -/
+theorem tiltZ_hold_le_quad {l1 l2 : ℝ}
+    (h1lo : -(1 / 200) ≤ l1) (h1hi : l1 ≤ 1 / 200)
+    (h2lo : -(1 / 200) ≤ l2) (h2hi : l2 ≤ 1 / 200) :
+    tiltZ hold (expW2 l1 l2)
+      ≤ ENNReal.ofReal (1 + 4 * l1 + 16 * l2 + 1000 * (l1 ^ 2 + l2 ^ 2)) := by
+  set Q : ℝ := 1 + 4 * l1 + 16 * l2 + 1000 * (l1 ^ 2 + l2 ^ 2) with hQ
+  have hQ0 : 0 ≤ Q := by
+    rw [hQ]
+    nlinarith [sq_nonneg l1, sq_nonneg l2]
+  refine ennreal_le_of_sq_le_sq ?_
+  have h1 := tiltZ_hold_fst_le (μ := 2 * l1) (by linarith) (by linarith)
+  have h2 := tiltZ_hold_snd_le (μ := 2 * l2) (by linarith) (by linarith)
+  have hP1 : (0 : ℝ) ≤ 1 + 4 * (2 * l1) + 32 * (2 * l1) ^ 2 := by nlinarith
+  calc tiltZ hold (expW2 l1 l2) ^ 2
+      ≤ tiltZ hold (expW2 (2 * l1) 0) * tiltZ hold (expW2 0 (2 * l2)) :=
+        tiltZ_expW2_sq_le hold l1 l2
+    _ ≤ ENNReal.ofReal (1 + 4 * (2 * l1) + 32 * (2 * l1) ^ 2)
+        * ENNReal.ofReal (1 + 16 * (2 * l2) + 400 * (2 * l2) ^ 2) := by
+        gcongr
+    _ = ENNReal.ofReal ((1 + 4 * (2 * l1) + 32 * (2 * l1) ^ 2)
+        * (1 + 16 * (2 * l2) + 400 * (2 * l2) ^ 2)) :=
+        (ENNReal.ofReal_mul hP1).symm
+    _ ≤ ENNReal.ofReal (Q ^ 2) := by
+        apply ENNReal.ofReal_le_ofReal
+        rw [hQ]
+        have hb1 : (0 : ℝ) ≤ 1 / 200 - l1 := by linarith
+        have hb2 : (0 : ℝ) ≤ 1 / 200 + l1 := by linarith
+        have hb3 : (0 : ℝ) ≤ 1 / 200 - l2 := by linarith
+        have hb4 : (0 : ℝ) ≤ 1 / 200 + l2 := by linarith
+        nlinarith [sq_nonneg l1, sq_nonneg l2, sq_nonneg (l1 - l2),
+          sq_nonneg (l1 + l2), mul_nonneg hb1 hb2, mul_nonneg hb3 hb4,
+          mul_nonneg (mul_nonneg hb1 hb2) (mul_nonneg hb3 hb4),
+          sq_nonneg (l1 * l2), mul_nonneg (mul_nonneg hb1 hb2) (sq_nonneg l2),
+          mul_nonneg (mul_nonneg hb3 hb4) (sq_nonneg l1)]
+    _ = ENNReal.ofReal Q ^ 2 := ENNReal.ofReal_pow hQ0 2
+
 end TaoCollatz
