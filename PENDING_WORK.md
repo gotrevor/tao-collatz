@@ -48,10 +48,11 @@ triangle); `r` = #triangles encountered. Then `E exp(−Σ_{p=1}^{t_{min(r,R)}}
   from X6 ⟹ no barrier condition). Reuse `fpDist`-style budget recursion with a
   position-dependent budget `s(q) = l_{Δ(q)} − l`, `Δ(q)` = the (unique) triangle
   covering `q` via `cover`.
-- **Prerequisite to state next lap**: `Δ(q)` well-defined needs triangles pairwise
-  DISJOINT on lattice points — provable from `F.separated` (constant
-  `(1/10)log(1/ε) ≈ 0.92 > 0` ⟹ distinct triangles share no integer point). Pin
-  this disjointness lemma first, then `Δ(q)`, then `Z`, then (7.57).
+- **Prerequisite `TriangleFamily.not_mem_two` — DONE (lap 51, axiom-clean)**:
+  distinct family triangles share no lattice point (from `F.separated`, constant
+  `(1/10)log(1/ε) ≈ 0.92 > 0`). Also serves 7.10's (7.65) ≫s′-separation step.
+  NEXT for X9: `Δ(q)` (the covering triangle, via `cover` existence + `not_mem_two`
+  uniqueness ⟹ `∃!`), then the `Z` budget recursion on R, then (7.57).
 - Induction close (once pinned): `Σ_{p=1}^{k₁}1_W ≥ 1_W(endpoint)` +
   `fpDist_white_exit` (7.51, X8 open kernel) ⟹ `Z(·,R) ≤ exp(ε)`. So 7.9 CONSUMES
   the open `fpDist_white_exit`; 7.10 does not — pin 7.10 first.

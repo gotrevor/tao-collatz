@@ -63,6 +63,25 @@ renewal endpoint lands in this set. -/
 def bigTriangleSet {n ξ : ℕ} (F : TriangleFamily n ξ) (s' : ℕ) : Set (ℕ × ℤ) :=
   {q | ∃ t ∈ F.T, (s' : ℝ) ≤ t.2.2 ∧ q ∈ triangle t.1 t.2.1 t.2.2}
 
+/-- **Distinct family triangles share no lattice point** (from `F.separated`, since
+the separation constant `(1/10)·log(1/ε) ≈ 0.92 > 0`). Shared prerequisite for BOTH
+crux nodes: it makes the covering triangle `Δ(q)` of a strip point well-defined
+(Lemma 7.9 kernel, X9), and it is exactly the "two apex-intervals cannot share an
+integer point" step of Lemma 7.10's ≫s′-separation ((7.65), p.54, X10). -/
+theorem TriangleFamily.not_mem_two {n ξ : ℕ} (F : TriangleFamily n ξ)
+    {t t' : ℕ × ℤ × ℝ} (ht : t ∈ F.T) (ht' : t' ∈ F.T) (hne : t ≠ t')
+    {q : ℕ × ℤ} (hq : q ∈ triangle t.1 t.2.1 t.2.2)
+    (hq' : q ∈ triangle t'.1 t'.2.1 t'.2.2) : False := by
+  have hsep := F.separated t ht t' ht' hne q hq q hq'
+  have heps : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 4 := by
+    rw [show epsBW = 1 / 10 ^ 4 from rfl]; push_cast; norm_num
+  have hlogpos : (0 : ℝ) < Real.log (1 / (epsBW : ℝ)) := by
+    rw [heps]; exact Real.log_pos (by norm_num)
+  have hpos : (0 : ℝ) < ((1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) ^ 2 :=
+    pow_pos (mul_pos (by norm_num) hlogpos) 2
+  have hzero : ((q.1 : ℝ) - (q.1 : ℝ)) ^ 2 + ((q.2 : ℝ) - (q.2 : ℝ)) ^ 2 = 0 := by ring
+  linarith [hsep, hzero, hpos]
+
 /-- **Lemma 7.10 — large triangles are rarely encountered shortly after a lengthy
 crossing** (paper (7.60), pp.51–54). Starting the renewal walk at a point `(j,l)` of
 a black triangle `Δ = t₀` with budget `s = l_Δ − l` obeying `s > m/log²m`
