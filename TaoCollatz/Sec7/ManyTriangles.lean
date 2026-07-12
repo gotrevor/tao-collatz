@@ -311,17 +311,19 @@ covering triangle `Δ(q)` and, while `count < R`, the white count is banked
 (`t_{min(r,R)}` semantics of (7.57)). -/
 noncomputable def encStep {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ)
     (σ : EncState) (d : ℕ × ℤ) : EncState :=
-  let q : ℕ × ℤ := σ.pos + d
-  let cw : ℕ := σ.cumWhite + (if q ∈ whiteStrip n ξ then 1 else 0)
-  if hq : 1 ≤ q.1 ∧ q.1 ≤ n / 2 ∧ black n ξ (q.1 - 1) q.2 ∧ σ.barrier < q.2 then
-    { pos := q
-      barrier := (F.coveringTriangle (q.1 - 1, q.2)
-        ⟨show q.1 - 1 + 1 ≤ n / 2 by omega, hq.2.2.1⟩).2.1
+  if hq : 1 ≤ (σ.pos + d).1 ∧ (σ.pos + d).1 ≤ n / 2
+      ∧ black n ξ ((σ.pos + d).1 - 1) (σ.pos + d).2 ∧ σ.barrier < (σ.pos + d).2 then
+    { pos := σ.pos + d
+      barrier := (F.coveringTriangle ((σ.pos + d).1 - 1, (σ.pos + d).2)
+        ⟨show (σ.pos + d).1 - 1 + 1 ≤ n / 2 by omega, hq.2.2.1⟩).2.1
       count := σ.count + 1
-      cumWhite := cw
-      banked := if σ.count < R then cw else σ.banked }
+      cumWhite := σ.cumWhite + (if σ.pos + d ∈ whiteStrip n ξ then 1 else 0)
+      banked := if σ.count < R then
+          σ.cumWhite + (if σ.pos + d ∈ whiteStrip n ξ then 1 else 0)
+        else σ.banked }
   else
-    { pos := q, barrier := σ.barrier, count := σ.count, cumWhite := cw,
+    { pos := σ.pos + d, barrier := σ.barrier, count := σ.count,
+      cumWhite := σ.cumWhite + (if σ.pos + d ∈ whiteStrip n ξ then 1 else 0),
       banked := σ.banked }
 
 /-- The fold's start state at `(j', l')`: no encounters, vacuous barrier `l'`. -/
@@ -436,6 +438,110 @@ theorem encExpect_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
     _ = Real.exp (ε * R) := by
         rw [tsum_mul_right, ← ENNReal.tsum_toReal_eq (fun v => PMF.apply_ne_top _ _),
           (hold.iid T).tsum_coe, ENNReal.toReal_one, one_mul]
+
+/-- `encExpect` is nonnegative (expectation of a positive integrand). -/
+theorem encExpect_nonneg {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+    (T : ℕ) (σ : EncState) : 0 ≤ encExpect F R ε T σ :=
+  tsum_nonneg fun v => mul_nonneg ENNReal.toReal_nonneg (encVal_pos ε R _).le
+
+/-- A fold step never decreases the encounter count. -/
+theorem encStep_count_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ)
+    (σ : EncState) (d : ℕ × ℤ) : σ.count ≤ (encStep F R σ d).count := by
+  unfold encStep
+  split <;> dsimp only <;> omega
+
+/-- **Saturated states are frozen** (the `min(r,R)` semantics of (7.57)): once
+`count ≥ R`, further steps change neither `banked` nor `min(count,R)`, so the
+expectation collapses to the integrand — `encExpect T σ = encVal σ` for every
+horizon. This is the `ρ = 0` base of the block induction. -/
+theorem encExpect_of_count_ge {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) (σ : EncState) (hc : R ≤ σ.count) :
+    encExpect F R ε T σ = encVal ε R σ := by
+  induction T generalizing σ with
+  | zero => exact encExpect_zero F R ε σ
+  | succ T IH =>
+    rw [encExpect_succ F R ε hε T σ]
+    have hval : ∀ d : ℕ × ℤ, encExpect F R ε T (encStep F R σ d) = encVal ε R σ := by
+      intro d
+      rw [IH (encStep F R σ d) (le_trans hc (encStep_count_le F R σ d))]
+      have hmin : min (encStep F R σ d).count R = min σ.count R := by
+        have h1 := encStep_count_le F R σ d
+        omega
+      have hbank : (encStep F R σ d).banked = σ.banked := by
+        unfold encStep
+        split
+        · dsimp only
+          rw [if_neg (by omega)]
+        · rfl
+      rw [encVal, encVal, hbank, hmin]
+    rw [tsum_congr fun d => by rw [hval d], tsum_mul_right, hold_tsum_toReal, one_mul]
+
+/-- **The white-count coupling** (antitone dependence on `cumWhite`/`banked`): two
+states agreeing in position, barrier, and count, with the first having smaller
+white counters, satisfy `encExpect σ₂ ≤ encExpect σ₁` — larger banked white counts
+only increase the damping. One fold step preserves the relation (the branch taken
+depends only on the shared fields), and `encVal` is antitone in `banked`.
+
+This is what lets the path→`fpDist` block bridge DROP the mid-block white
+increments: the true continuation (larger `cumWhite`) is dominated by the dropped
+one, so only the first-passage ENDPOINT's whiteness needs to be carried — exactly
+the `Σ_{p=1}^{k₁} 1_W ≥ 1_W(v_{[1,k₁]})` reduction of the paper's p.51 closure. -/
+theorem encExpect_anti {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) :
+    ∀ σ₁ σ₂ : EncState, σ₁.pos = σ₂.pos → σ₁.barrier = σ₂.barrier →
+    σ₁.count = σ₂.count → σ₁.cumWhite ≤ σ₂.cumWhite → σ₁.banked ≤ σ₂.banked →
+    encExpect F R ε T σ₂ ≤ encExpect F R ε T σ₁ := by
+  induction T with
+  | zero =>
+    intro σ₁ σ₂ hpos hbar hcnt hcw hbk
+    rw [encExpect_zero, encExpect_zero, encVal, encVal, hcnt]
+    apply Real.exp_le_exp.mpr
+    have : (σ₁.banked : ℝ) ≤ (σ₂.banked : ℝ) := Nat.cast_le.mpr hbk
+    linarith
+  | succ T IH =>
+    intro σ₁ σ₂ hpos hbar hcnt hcw hbk
+    rw [encExpect_succ F R ε hε T σ₁, encExpect_succ F R ε hε T σ₂]
+    -- termwise: one step preserves the coupling
+    have hstep : ∀ d : ℕ × ℤ,
+        encExpect F R ε T (encStep F R σ₂ d) ≤ encExpect F R ε T (encStep F R σ₁ d) := by
+      intro d
+      obtain ⟨p₁, b₁, c₁, w₁, k₁⟩ := σ₁
+      obtain ⟨p₂, b₂, c₂, w₂, k₂⟩ := σ₂
+      simp only at hpos hbar hcnt hcw hbk
+      subst hpos hbar hcnt
+      simp only [encStep]
+      by_cases hq : 1 ≤ (p₁ + d).1 ∧ (p₁ + d).1 ≤ n / 2
+          ∧ black n ξ ((p₁ + d).1 - 1) (p₁ + d).2 ∧ b₁ < (p₁ + d).2
+      · -- encounter branch for both (same condition)
+        simp only [dif_pos hq]
+        refine IH _ _ rfl rfl rfl ?_ ?_
+        · simpa using hcw
+        · by_cases hcR : c₁ < R
+          · simpa [hcR] using hcw
+          · simpa [hcR] using hbk
+      · simp only [dif_neg hq]
+        refine IH _ _ rfl rfl rfl ?_ ?_
+        · simpa using hcw
+        · simpa using hbk
+    -- sum the termwise bound
+    have hnn : ∀ (σ : EncState) (d : ℕ × ℤ),
+        0 ≤ (hold d).toReal * encExpect F R ε T (encStep F R σ d) :=
+      fun σ d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg F R ε T _)
+    have hbound : ∀ (σ : EncState) (d : ℕ × ℤ),
+        (hold d).toReal * encExpect F R ε T (encStep F R σ d)
+          ≤ (hold d).toReal * Real.exp (ε * R) :=
+      fun σ d => mul_le_mul_of_nonneg_left (encExpect_le F R ε hε T _)
+        ENNReal.toReal_nonneg
+    have hsumE : Summable (fun d : ℕ × ℤ => (hold d).toReal * Real.exp (ε * R)) :=
+      (ENNReal.summable_toReal (by rw [hold.tsum_coe]; exact ENNReal.one_ne_top)).mul_right _
+    have hsum1 : Summable (fun d : ℕ × ℤ =>
+        (hold d).toReal * encExpect F R ε T (encStep F R σ₁ d)) :=
+      Summable.of_nonneg_of_le (hnn σ₁) (hbound σ₁) hsumE
+    have hsum2 : Summable (fun d : ℕ × ℤ =>
+        (hold d).toReal * encExpect F R ε T (encStep F R σ₂ d)) :=
+      Summable.of_nonneg_of_le (hnn σ₂) (hbound σ₂) hsumE
+    exact Summable.tsum_le_tsum
+      (fun d => mul_le_mul_of_nonneg_left (hstep d) ENNReal.toReal_nonneg) hsum2 hsum1
 
 /-- **Lemma 7.9 — many triangles usually implies many white points** (paper (7.57),
 pp.50–51). For the `T`-step renewal walk started at any `(j', l')`, any number of
