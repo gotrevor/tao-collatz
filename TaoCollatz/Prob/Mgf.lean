@@ -520,4 +520,134 @@ theorem tilt_hold_apply_ge {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 �
           hinv (by norm_num)
           (mul_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg)
 
+/-! ### 1-D second-order MGF bounds (step (G2b))
+
+Via the Cauchy–Schwarz split `tiltZ_expW2_sq_le`, the 2-D bound
+`Z(λ) ≤ e^{4λ₁+16λ₂+K|λ|²}` (paper p.15, the second-order MGF estimate in the
+Lemma 2.2 tilting step) reduces to bounds on `Z(μ,0)` and `Z(0,μ)` separately.
+Both have exact closed forms whose first-order terms are the means 4 and 16. -/
+
+/-- Quadratic upper envelope of the exponential: `e^u ≤ 1 + u + 2u²` for
+`u ≤ 1/2` (via `e^u ≤ (1-u)⁻¹`). -/
+theorem exp_le_one_add_add_two_sq {u : ℝ} (hu : u ≤ 1 / 2) :
+    Real.exp u ≤ 1 + u + 2 * u ^ 2 := by
+  have h1u : 0 < 1 - u := by linarith
+  have hexp : Real.exp u ≤ (1 - u)⁻¹ := by
+    have h : 1 - u ≤ Real.exp (-u) := by
+      have := Real.add_one_le_exp (-u)
+      linarith
+    have h2 := inv_anti₀ h1u h
+    rwa [Real.exp_neg, inv_inv] at h2
+  refine le_trans hexp ?_
+  rw [inv_eq_one_div, div_le_iff₀ h1u]
+  nlinarith [sq_nonneg u]
+
+/-- Monotone evaluation of `a·(1-r)⁻¹` at rational majorants (generalizes
+`geom_closed_le` to a free numerator). -/
+theorem frac_closed_le {a a' r r' : ℝ} (ha : 0 ≤ a) (haa : a ≤ a') (hr : 0 ≤ r)
+    (hrr : r ≤ r') (h1 : r' < 1) :
+    ENNReal.ofReal a * (1 - ENNReal.ofReal r)⁻¹
+      ≤ ENNReal.ofReal (a' / (1 - r')) := by
+  have h1r : 0 < 1 - r' := by linarith
+  have hstep : ENNReal.ofReal a * (1 - ENNReal.ofReal r)⁻¹
+      ≤ ENNReal.ofReal a' * (1 - ENNReal.ofReal r')⁻¹ := by
+    have h1 := ENNReal.ofReal_le_ofReal haa
+    have h2 := ENNReal.ofReal_le_ofReal hrr
+    gcongr
+  refine le_trans hstep (le_of_eq ?_)
+  rw [show (1 : ℝ≥0∞) = ENNReal.ofReal 1 from ENNReal.ofReal_one.symm,
+    ← ENNReal.ofReal_sub 1 (le_trans hr hrr), ← ENNReal.ofReal_inv_of_pos h1r,
+    ← ENNReal.ofReal_mul (le_trans ha haa), div_eq_mul_inv]
+
+/-- **Closed form for the first-coordinate `Hold` MGF** (mean-4 geometric):
+`Z(μ,0) = (e^μ/4)·(1 - (3/4)e^μ)⁻¹`, valid for every `μ` (both sides `∞` off the
+strip `3e^μ > 4`). -/
+theorem tiltZ_hold_fst (μ : ℝ) :
+    tiltZ hold (expW2 μ 0)
+      = ENNReal.ofReal (Real.exp μ / 4)
+          * (1 - ENNReal.ofReal (3 * Real.exp μ / 4))⁻¹ := by
+  have hone : tiltZ pascalNe3 (expW 0) = 1 := by
+    rw [tiltZ, tsum_congr (fun a => by
+      rw [show expW 0 a = 1 from by simp [expW], mul_one])]
+    exact pascalNe3.tsum_coe
+  rw [tiltZ_hold_factor μ 0 (by rw [hone]; norm_num)
+    (by rw [hone]; exact ENNReal.one_ne_top)]
+  have hterm : ∀ k : ℕ, geomQuarter k
+        * (ENNReal.ofReal (Real.exp (μ * k + 3 * 0))
+          * (tiltZ pascalNe3 (expW 0)) ^ (k - 1))
+      = if k = 0 then 0
+        else ENNReal.ofReal (Real.exp μ / 4)
+          * (ENNReal.ofReal (3 * Real.exp μ / 4)) ^ (k - 1) := by
+    intro k
+    rw [hone, one_pow, mul_one]
+    match k with
+    | 0 =>
+      rw [show geomQuarter 0 = 0 from rfl, zero_mul]
+      simp
+    | (j + 1) =>
+      rw [if_neg (Nat.succ_ne_zero j), Nat.add_sub_cancel,
+        show geomQuarter (j + 1) = 4⁻¹ * (3 * 4⁻¹) ^ j from by
+          rw [show geomQuarter (j + 1)
+              = if (j + 1) = 0 then 0 else 4⁻¹ * (3 * 4⁻¹) ^ ((j + 1) - 1) from rfl,
+            if_neg (by omega), Nat.add_sub_cancel]]
+      have hsplit : ENNReal.ofReal (Real.exp (μ * (j + 1 : ℕ) + 3 * 0))
+          = ENNReal.ofReal (Real.exp μ) * ENNReal.ofReal (Real.exp μ) ^ j := by
+        rw [← ENNReal.ofReal_pow (Real.exp_pos _).le, ← ENNReal.ofReal_mul
+          (Real.exp_pos _).le, ← Real.exp_nat_mul, ← Real.exp_add]
+        congr 2
+        push_cast
+        ring
+      rw [hsplit]
+      calc (4⁻¹ : ℝ≥0∞) * (3 * 4⁻¹) ^ j
+            * (ENNReal.ofReal (Real.exp μ) * ENNReal.ofReal (Real.exp μ) ^ j)
+          = (4⁻¹ * ENNReal.ofReal (Real.exp μ))
+            * ((3 * 4⁻¹) * ENNReal.ofReal (Real.exp μ)) ^ j := by
+            rw [mul_pow]
+            ring
+        _ = ENNReal.ofReal (Real.exp μ / 4)
+            * ENNReal.ofReal (3 * Real.exp μ / 4) ^ j := by
+            congr 2
+            · rw [show (4⁻¹ : ℝ≥0∞) = ENNReal.ofReal (1 / 4) from by
+                  rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_one,
+                    ENNReal.ofReal_ofNat, one_div],
+                ← ENNReal.ofReal_mul (by norm_num)]
+              congr 1
+              ring
+            · rw [show ((3 : ℝ≥0∞) * 4⁻¹) = ENNReal.ofReal (3 / 4) from by
+                  rw [show (4⁻¹ : ℝ≥0∞) = ENNReal.ofReal (1 / 4) from by
+                      rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_one,
+                        ENNReal.ofReal_ofNat, one_div],
+                    show ((3 : ℝ≥0∞)) = ENNReal.ofReal 3 from
+                      (ENNReal.ofReal_ofNat 3).symm,
+                    ← ENNReal.ofReal_mul (by norm_num)]
+                  norm_num,
+                ← ENNReal.ofReal_mul (by norm_num)]
+              congr 1
+              ring
+  rw [tsum_congr hterm, tsum_ite_zero_eq_succ
+    (fun k => ENNReal.ofReal (Real.exp μ / 4)
+      * ENNReal.ofReal (3 * Real.exp μ / 4) ^ (k - 1))]
+  simp only [Nat.add_sub_cancel]
+  rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric]
+
+/-- **First-coordinate second-order MGF bound** (mean 4): on `|μ| ≤ 1/100`,
+`Z(μ,0) ≤ 1 + 4μ + 32μ²`. Envelope `e^μ ≤ 1 + μ + 2μ²` into the closed form;
+numerically verified with margin before formalization. -/
+theorem tiltZ_hold_fst_le {μ : ℝ} (hlo : -(1 / 100) ≤ μ) (hhi : μ ≤ 1 / 100) :
+    tiltZ hold (expW2 μ 0) ≤ ENNReal.ofReal (1 + 4 * μ + 32 * μ ^ 2) := by
+  rw [tiltZ_hold_fst]
+  set E : ℝ := 1 + μ + 2 * μ ^ 2 with hE
+  have hexpE : Real.exp μ ≤ E := exp_le_one_add_add_two_sq (by linarith)
+  have hEub : E ≤ 10102 / 10000 := by
+    rw [hE]
+    nlinarith
+  have h := frac_closed_le (a := Real.exp μ / 4) (a' := E / 4)
+    (r := 3 * Real.exp μ / 4) (r' := 3 * E / 4)
+    (by positivity) (by linarith) (by positivity) (by linarith)
+    (by nlinarith)
+  refine le_trans h (ENNReal.ofReal_le_ofReal ?_)
+  rw [div_le_iff₀ (by nlinarith)]
+  rw [hE]
+  nlinarith [sq_nonneg μ, sq_nonneg (μ - 1 / 100), sq_nonneg (μ + 1 / 100)]
+
 end TaoCollatz
