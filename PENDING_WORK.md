@@ -1,5 +1,33 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 35 (2026-07-12, sixth box session): (F4a) PARAMETRIC CENTER BOUND PROVED
+
+`Sec7/Unroll.lean`: **`iidSum_apply_le_center_of_decay`** — the (E) Gaussian
+summation generalized over the decay constant: any `p : PMF (ℕ × ℤ)` with
+`‖charFn (p.map (modPair N)) ξ‖² ≤ 1 - (nd-sum)/c` uniformly in `N ≥ 4` has
+`P(S_n = v) ≤ (32c)²/(1+n)` (a = n/(4cN²) ∈ [1/(8c), 1], sum ≤ 4/a ≤ 32c).
+`holdSum_apply_le_center` is now the c = 768 instance ((32·768)² = 603979776,
+unchanged). AXIOM-CLEAN.
+
+**(F4b/F5) next — assemble hold_local_bound**:
+1. (F4b) tilted center bound: apply `iidSum_apply_le_center_of_decay` to
+   `tilt hold (expW2 l1 l2)` with c = 80000 (decay from `charFn_decay_of_atoms` at
+   μ = 1/400 via `tilt_hold_apply_ge` transferred through modPair by
+   `PMF.apply_le_map_apply`; 2μ² = 1/80000). Yields P_tilt(S̃_n = v) ≤ C₀/(1+n),
+   C₀ = (32·80000)² = 2560000² = 6.5536e12.
+2. (F5) tilting identity consumption: `iidSum_apply_eq_tilt` at p = hold, w = expW2:
+   P(S_n = v) = P_λ(S̃_n = v)·Zⁿ·(w v)⁻¹, so
+   (iidSum hold n v).toReal ≤ (C₀/(1+n))·(Z.toReal)ⁿ·e^{-λ·v}. Need in toReal:
+   toReal of product (all finite), (expW2 l1 l2 v)⁻¹.toReal = e^{-(l1 v1 + l2 v2)}.
+3. λ-optimization → Lemma 2.2(i) Gweight form: need log Z(λ) ≤ λ·(4,16) + K|λ|²
+   on the box. Mean: E hold = (4, 16)? verify from paper p.42 (mean of Geom(4) is 4;
+   E[second coord] = 3 + E[Σ_{i<k-1} pascalNe3] = 3 + 3·(16/3 - 1)? — compute; the
+   claimed Gweight center is (n·4, n·16)). This needs the MGF second-order bound —
+   candidate route: Z(λ)·e^{-λ·mean} ≤ exp(K|λ|²) via explicit rational arithmetic
+   on the factor formula (hard); OR restate hold_local_bound with the Gweight
+   centered at the true mean and ANY exponential decay rate c (statement already
+   has ∃ c C — check LocalBound.lean statement shape first!).
+
 ## Lap 34 (2026-07-12, sixth box session): (F3b) TILTED ATOM MASSES PROVED
 
 `Prob/Mgf.lean`: **`tiltZ_hold_le`** (Z_hold ≤ 221/25 on the box |λᵢ| ≤ 1/50 —
