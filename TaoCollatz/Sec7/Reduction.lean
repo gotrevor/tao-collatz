@@ -26,7 +26,7 @@ PROVED in `Bridge.lean`) in three steps:
 2026-07-12) is then PROVED from these pieces.
 -/
 
-open scoped Real
+open scoped Real ENNReal
 
 namespace TaoCollatz
 
@@ -387,6 +387,486 @@ theorem cexpect_iid_succ {α : Type*} (p : PMF α) (m : ℕ) (h : (Fin (m + 1) �
     cexpect_bind _ _ _ hh]
   exact tsum_congr fun a => by rw [cexpect_map _ _ _ hh]
 
+/-! #### Mass functions in ℝ, and the head-pair reindex -/
+
+/-- `geomHalf` mass in ℝ. -/
+theorem geomHalf_toReal (a : ℕ) :
+    (geomHalf a).toReal = if a = 0 then 0 else (2⁻¹ : ℝ) ^ a := by
+  rw [geomHalf_apply]
+  split
+  · exact ENNReal.toReal_zero
+  · rw [ENNReal.toReal_pow, ENNReal.toReal_inv, ENNReal.toReal_ofNat]
+
+/-- `pascal` mass in ℝ. -/
+theorem pascal_toReal (b : ℕ) :
+    (pascal b).toReal = if b < 2 then 0 else ((b - 1 : ℕ) : ℝ) * 2⁻¹ ^ b := by
+  have happ : pascal b
+      = if b < 2 then (0 : ℝ≥0∞) else ((b - 1 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ b := rfl
+  rw [happ]
+  split
+  · exact ENNReal.toReal_zero
+  · rw [ENNReal.toReal_mul, ENNReal.toReal_natCast, ENNReal.toReal_pow,
+      ENNReal.toReal_inv, ENNReal.toReal_ofNat]
+
+/-- Prefix sums start at zero. -/
+theorem pre_zero {ℓ : ℕ} (u : Fin ℓ → ℕ) : pre u 0 = 0 := by
+  unfold pre
+  exact Finset.sum_range_zero _
+
+/-- `2⁻¹`-power cancellation in `ZMod (3ⁿ)` (2 is a unit). -/
+theorem inv2_cancel (n i j : ℕ) :
+    (2 : ZMod (3 ^ n))⁻¹ ^ (i + j) * 2 ^ j = (2 : ZMod (3 ^ n))⁻¹ ^ i := by
+  have hu2 : ((u2 n : (ZMod (3 ^ n))ˣ) : ZMod (3 ^ n)) = 2 := by
+    rw [u2, ZMod.coe_unitOfCoprime]; norm_num
+  have hu : IsUnit (2 : ZMod (3 ^ n)) := hu2 ▸ (u2 n).isUnit
+  have h1 : (2 : ZMod (3 ^ n))⁻¹ * 2 = 1 := ZMod.inv_mul_of_unit 2 hu
+  rw [pow_add, mul_assoc, ← mul_pow, h1, one_pow, mul_one]
+
+set_option maxHeartbeats 1000000 in
+/-- **Head-pair reindex**: a double `Geom(2)` expectation, grouped by `b = a₀+a₁`,
+is a `pascal` expectation of the uniform pair average — the (7.4) conditioning
+made exact. The map `(a₀,a₁) ↦ (a₀+a₁,a₁)` is injective with range
+`{(b,a) : a ≤ b}`; endpoints `a ∈ {0,b}` carry zero `geomHalf` mass, leaving the
+uniform average over `a ∈ [1,b-1]` with weight `2⁻ᵇ = pascal(b)/(b-1)`. -/
+theorem tsum_geom_pair (G : ℕ → ℕ → ℂ) (hG : ∀ b a, ‖G b a‖ ≤ 1) :
+    ∑' a₀ : ℕ, ((geomHalf a₀).toReal : ℂ)
+        * ∑' a₁ : ℕ, ((geomHalf a₁).toReal : ℂ) * G (a₀ + a₁) a₁
+      = ∑' b : ℕ, ((pascal b).toReal : ℂ)
+          * (((b : ℂ) - 1)⁻¹ * ∑ a ∈ Finset.Icc 1 (b - 1), G b a) := by
+  have hgr0 : ∀ a, (0 : ℝ) ≤ (geomHalf a).toReal := fun a => ENNReal.toReal_nonneg
+  have hgrS : Summable fun a => (geomHalf a).toReal :=
+    ENNReal.summable_toReal geomHalf.tsum_coe_ne_top
+  -- the paired summand and its zero-extension
+  set f₁ : ℕ × ℕ → ℂ := fun q =>
+    (((geomHalf q.1).toReal : ℂ) * ((geomHalf q.2).toReal : ℂ)) * G (q.1 + q.2) q.2
+    with hf₁
+  set F : ℕ × ℕ → ℂ := fun q =>
+    if q.2 ≤ q.1 then
+      (((geomHalf (q.1 - q.2)).toReal : ℂ) * ((geomHalf q.2).toReal : ℂ)) * G q.1 q.2
+    else 0 with hF
+  have hprod : Summable fun q : ℕ × ℕ => (geomHalf q.1).toReal * (geomHalf q.2).toReal :=
+    hgrS.mul_of_nonneg hgrS hgr0 hgr0
+  have hf₁norm : ∀ q : ℕ × ℕ, ‖f₁ q‖ ≤ (geomHalf q.1).toReal * (geomHalf q.2).toReal := by
+    intro q
+    rw [hf₁]
+    dsimp only
+    rw [norm_mul, norm_mul, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs,
+      Real.norm_eq_abs, abs_of_nonneg (hgr0 _), abs_of_nonneg (hgr0 _)]
+    calc (geomHalf q.1).toReal * (geomHalf q.2).toReal * ‖G (q.1 + q.2) q.2‖
+        ≤ (geomHalf q.1).toReal * (geomHalf q.2).toReal * 1 :=
+          mul_le_mul_of_nonneg_left (hG _ _) (mul_nonneg (hgr0 _) (hgr0 _))
+      _ = _ := mul_one _
+  have hf₁S : Summable f₁ :=
+    Summable.of_norm (Summable.of_nonneg_of_le (fun q => norm_nonneg _) hf₁norm hprod)
+  -- the reindexing injection
+  have hi : Function.Injective (fun q : ℕ × ℕ => (q.1 + q.2, q.2)) := by
+    intro q q' h
+    rw [Prod.ext_iff] at h ⊢
+    obtain ⟨h1, h2⟩ := h
+    dsimp only at h1 h2
+    omega
+  have hcomp : ∀ q : ℕ × ℕ, F (q.1 + q.2, q.2) = f₁ q := by
+    intro q
+    rw [hF, hf₁]
+    dsimp only
+    rw [if_pos (Nat.le_add_left _ _), Nat.add_sub_cancel]
+  have hsupp : ∀ x : ℕ × ℕ, x ∉ Set.range (fun q : ℕ × ℕ => (q.1 + q.2, q.2)) → F x = 0 := by
+    intro x hx
+    rw [hF]
+    dsimp only
+    rw [if_neg]
+    intro hle
+    exact hx ⟨(x.1 - x.2, x.2), by
+      rw [Prod.ext_iff]
+      exact ⟨by dsimp only; omega, rfl⟩⟩
+  have hFS : Summable F := by
+    rw [← Function.Injective.summable_iff hi hsupp]
+    exact hf₁S.congr fun q => (hcomp q).symm
+  -- fibers of f₁ and F
+  have hf₁fib : ∀ a₀, Summable fun a₁ => f₁ (a₀, a₁) := by
+    intro a₀
+    have hb : Summable fun a₁ : ℕ =>
+        (geomHalf (a₀, a₁).1).toReal * (geomHalf (a₀, a₁).2).toReal := by
+      simpa using hgrS.mul_left ((geomHalf a₀).toReal)
+    exact Summable.of_norm (Summable.of_nonneg_of_le (fun a₁ => norm_nonneg _)
+      (fun a₁ => hf₁norm (a₀, a₁)) hb)
+  have hFfib : ∀ b, Summable fun a => F (b, a) := by
+    intro b
+    refine summable_of_ne_finset_zero (s := Finset.range (b + 1)) (fun a ha => ?_)
+    rw [hF]
+    dsimp only
+    rw [if_neg (by simp at ha; omega)]
+  -- assemble
+  calc ∑' a₀ : ℕ, ((geomHalf a₀).toReal : ℂ)
+        * ∑' a₁ : ℕ, ((geomHalf a₁).toReal : ℂ) * G (a₀ + a₁) a₁
+      = ∑' a₀, ∑' a₁, f₁ (a₀, a₁) := by
+        refine tsum_congr fun a₀ => ?_
+        rw [← tsum_mul_left]
+        exact tsum_congr fun a₁ => by rw [hf₁]; dsimp only; ring
+    _ = ∑' q : ℕ × ℕ, f₁ q := (hf₁S.tsum_prod' hf₁fib).symm
+    _ = ∑' q : ℕ × ℕ, F (q.1 + q.2, q.2) := (tsum_congr fun q => (hcomp q).symm)
+    _ = ∑' x : ℕ × ℕ, F x := Function.Injective.tsum_eq hi (Function.support_subset_iff'.2 hsupp)
+    _ = ∑' b, ∑' a, F (b, a) := hFS.tsum_prod' hFfib
+    _ = ∑' b : ℕ, ((pascal b).toReal : ℂ)
+          * (((b : ℂ) - 1)⁻¹ * ∑ a ∈ Finset.Icc 1 (b - 1), G b a) := by
+        refine tsum_congr fun b => ?_
+        -- the fiber is a finite sum over [1, b-1]
+        have hfin : ∑' a, F (b, a) = ∑ a ∈ Finset.Icc 1 (b - 1), F (b, a) := by
+          refine tsum_eq_sum (fun a ha => ?_)
+          rw [hF]
+          dsimp only
+          rcases Nat.lt_or_ge b a with hab | hab
+          · rw [if_neg (by omega)]
+          · rw [if_pos hab]
+            simp only [Finset.mem_Icc, not_and_or, not_le] at ha
+            rcases ha with h1 | h2
+            · have ha0 : a = 0 := by omega
+              rw [ha0]
+              simp [geomHalf_toReal]
+            · have hab' : a = b := by omega
+              rw [hab', Nat.sub_self]
+              simp [geomHalf_toReal]
+        rw [hfin]
+        rcases Nat.lt_or_ge b 2 with hb | hb
+        · -- b < 2: both sides vanish
+          have hIcc : Finset.Icc 1 (b - 1) = (∅ : Finset ℕ) := by
+            rw [Finset.Icc_eq_empty_iff]
+            omega
+          rw [hIcc, Finset.sum_empty, Finset.sum_empty, pascal_toReal, if_pos hb]
+          norm_num
+        · -- b ≥ 2: uniform weight 2⁻ᵇ per pair
+          have hterm : ∀ a ∈ Finset.Icc 1 (b - 1),
+              F (b, a) = (((2⁻¹ : ℝ) ^ b : ℝ) : ℂ) * G b a := by
+            intro a ha
+            simp only [Finset.mem_Icc] at ha
+            rw [hF]
+            dsimp only
+            rw [if_pos (by omega), geomHalf_toReal, geomHalf_toReal,
+              if_neg (by omega), if_neg (by omega)]
+            push_cast
+            have hpow : (2⁻¹ : ℂ) ^ (b - a) * (2⁻¹ : ℂ) ^ a = (2⁻¹ : ℂ) ^ b := by
+              rw [← pow_add]
+              congr 1
+              omega
+            rw [← hpow]
+          rw [Finset.sum_congr rfl hterm, ← Finset.mul_sum, pascal_toReal, if_neg (by omega)]
+          have hne : ((b - 1 : ℕ) : ℂ) ≠ 0 := by
+            rw [Nat.cast_ne_zero]
+            omega
+          have hcast : ((b : ℂ) - 1) = ((b - 1 : ℕ) : ℂ) := by
+            push_cast [Nat.cast_sub (by omega : 1 ≤ b)]
+            ring
+          rw [hcast]
+          push_cast
+          field_simp
+
+/-- Real-expectation constant pull-out. -/
+theorem expect_const_mul {α : Type*} (p : PMF α) (c : ℝ) (f : α → ℝ) :
+    (p.expect fun a => c * f a) = c * p.expect f := by
+  show ∑' a, (p a).toReal * (c * f a) = c * ∑' a, (p a).toReal * f a
+  rw [← tsum_mul_left]
+  exact tsum_congr fun a => by ring
+
+/-- Real-expectation monotonicity for `[0,1]`-dominated observables. -/
+theorem expect_mono_le {α : Type*} (p : PMF α) (f g : α → ℝ) (hf0 : ∀ a, 0 ≤ f a)
+    (hfg : ∀ a, f a ≤ g a) (hg1 : ∀ a, g a ≤ 1) : p.expect f ≤ p.expect g := by
+  have hsumP : Summable fun a => (p a).toReal :=
+    ENNReal.summable_toReal p.tsum_coe_ne_top
+  have hgle : ∀ a, (p a).toReal * g a ≤ (p a).toReal := fun a =>
+    (mul_le_mul_of_nonneg_left (hg1 a) ENNReal.toReal_nonneg).trans (mul_one _).le
+  have hfle : ∀ a, (p a).toReal * f a ≤ (p a).toReal := fun a =>
+    (mul_le_mul_of_nonneg_left ((hfg a).trans (hg1 a)) ENNReal.toReal_nonneg).trans
+      (mul_one _).le
+  have hsumg : Summable fun a => (p a).toReal * g a :=
+    Summable.of_nonneg_of_le
+      (fun a => mul_nonneg ENNReal.toReal_nonneg ((hf0 a).trans (hfg a))) hgle hsumP
+  have hsumf : Summable fun a => (p a).toReal * f a :=
+    Summable.of_nonneg_of_le
+      (fun a => mul_nonneg ENNReal.toReal_nonneg (hf0 a)) hfle hsumP
+  exact hsumf.tsum_le_tsum
+    (fun a => mul_le_mul_of_nonneg_left (hfg a) ENNReal.toReal_nonneg) hsumg
+
+/-- Expectations of `[0,1]` observables are at most one. -/
+theorem expect_le_one {α : Type*} (p : PMF α) (f : α → ℝ) (h0 : ∀ a, 0 ≤ f a)
+    (h1 : ∀ a, f a ≤ 1) : p.expect f ≤ 1 := by
+  calc p.expect f ≤ p.expect fun _ => 1 :=
+        expect_mono_le p f (fun _ => 1) h0 h1 (fun _ => le_refl 1)
+    _ = 1 := by
+        show ∑' a, (p a).toReal * 1 = 1
+        simp only [mul_one]
+        rw [← ENNReal.tsum_toReal_eq (fun a => p.apply_ne_top a), p.tsum_coe,
+          ENNReal.toReal_one]
+
+/-- Expectations of nonneg observables are nonneg. -/
+theorem expect_nonneg {α : Type*} (p : PMF α) (f : α → ℝ) (h0 : ∀ a, 0 ≤ f a) :
+    0 ≤ p.expect f :=
+  tsum_nonneg fun a => mul_nonneg ENNReal.toReal_nonneg (h0 a)
+
+open Classical in
+/-- **The generalized (7.5) pairing bound**, strong induction form: from pair-index
+offset `k` and accumulated prefix `L` (phase multiplier `xArg n k L`), the character
+expectation over `m` remaining `Geom(2)` coordinates is dominated by the `pascal`
+expectation of the `fCond` product over `⌊m/2⌋` pairs. Two-coordinate peel +
+`tsum_geom_pair`; odd leftover coordinate absorbed by `cexpect_norm_le`. -/
+theorem cexpect_pairing_gen (n ξ : ℕ) :
+    ∀ m k L : ℕ,
+      ‖(PMF.iid geomHalf m).cexpect fun a =>
+          eC (-(ξ * ((xArg n k L * ∑ j ∈ Finset.range m,
+            (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre a (j + 1)).val) : ℚ)
+            / 3 ^ n)‖
+        ≤ (PMF.iid pascal (m / 2)).expect fun b =>
+            ∏ j : Fin (m / 2),
+              ‖fCond n ξ (xArg n (k + (j : ℕ)) (L + pre b ((j : ℕ) + 1))) (b j)‖ := by
+  intro m
+  induction m using Nat.strong_induction_on with
+  | _ m IH =>
+    intro k L
+    rcases Nat.lt_or_ge m 2 with hm | hm
+    · -- m ∈ {0,1}: the RHS is the empty product 1; triangle inequality on the LHS
+      have hdiv : m / 2 = 0 := by omega
+      refine le_trans (cexpect_norm_le _ _ (fun a => (eC_norm _).le)) (le_of_eq ?_)
+      rw [hdiv, PMF.expect_iid_zero]
+      exact (Finset.prod_of_isEmpty _).symm
+    · -- m = m' + 2: peel one pair
+      obtain ⟨m, rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
+      rw [show (m + 2) / 2 = m / 2 + 1 from Nat.add_div_right m (by norm_num)]
+      -- ZMod identity: the (1.26) sum splits off the head pair
+      have hzmod : ∀ (a₀ a₁ : ℕ) (w : Fin m → ℕ),
+          xArg n k L * ∑ j ∈ Finset.range (m + 2), (3 : ZMod (3 ^ n)) ^ j
+              * (2 : ZMod (3 ^ n))⁻¹ ^ pre (Fin.cons a₀ (Fin.cons a₁ w)) (j + 1)
+            = xArg n k (L + (a₀ + a₁)) * (2 ^ a₁ + 3)
+              + xArg n (k + 1) (L + (a₀ + a₁)) * ∑ j ∈ Finset.range m,
+                  (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre w (j + 1) := by
+        intro a₀ a₁ w
+        have hp1 : pre (Fin.cons a₀ (Fin.cons a₁ w) : Fin (m + 2) → ℕ) (0 + 1) = a₀ := by
+          rw [pre_cons, pre_zero]
+          omega
+        have hp2 : pre (Fin.cons a₀ (Fin.cons a₁ w) : Fin (m + 2) → ℕ) (0 + 1 + 1)
+            = a₀ + a₁ := by
+          rw [pre_cons, pre_cons, pre_zero]
+          omega
+        have hterm : ∀ j, (3 : ZMod (3 ^ n)) ^ (j + 1 + 1)
+              * (2 : ZMod (3 ^ n))⁻¹
+                ^ pre (Fin.cons a₀ (Fin.cons a₁ w) : Fin (m + 2) → ℕ) (j + 1 + 1 + 1)
+            = (3 ^ 2 * (2 : ZMod (3 ^ n))⁻¹ ^ (a₀ + a₁))
+              * ((3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre w (j + 1)) := by
+          intro j
+          have hp : pre (Fin.cons a₀ (Fin.cons a₁ w) : Fin (m + 2) → ℕ) (j + 1 + 1 + 1)
+              = (a₀ + a₁) + pre w (j + 1) := by
+            rw [pre_cons, pre_cons]
+            ring
+          rw [hp, pow_add, pow_add]
+          ring
+        rw [Finset.sum_range_succ' _ (m + 1), Finset.sum_range_succ' _ m,
+          Finset.sum_congr rfl (fun j _ => hterm j), ← Finset.mul_sum, hp1, hp2]
+        have hcanc : (2 : ZMod (3 ^ n))⁻¹ ^ (L + (a₀ + a₁)) * 2 ^ a₁
+            = (2 : ZMod (3 ^ n))⁻¹ ^ (L + a₀) := by
+          rw [show L + (a₀ + a₁) = (L + a₀) + a₁ from by ring]
+          exact inv2_cancel n (L + a₀) a₁
+        unfold xArg
+        linear_combination (-(3 : ZMod (3 ^ n)) ^ (2 * k)) * hcanc
+      -- the split at the eC level
+      have hsplit : ∀ (a₀ a₁ : ℕ) (w : Fin m → ℕ),
+          eC (-(ξ * ((xArg n k L * ∑ j ∈ Finset.range (m + 2), (3 : ZMod (3 ^ n)) ^ j
+              * (2 : ZMod (3 ^ n))⁻¹ ^ pre (Fin.cons a₀ (Fin.cons a₁ w)) (j + 1)).val) : ℚ)
+              / 3 ^ n)
+            = eC (-(ξ * (((xArg n k (L + (a₀ + a₁)) * (2 ^ a₁ + 3)).val : ℕ) : ℚ)) / 3 ^ n)
+              * eC (-(ξ * ((xArg n (k + 1) (L + (a₀ + a₁)) * ∑ j ∈ Finset.range m,
+                  (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre w (j + 1)).val) : ℚ)
+                  / 3 ^ n) := by
+        intro a₀ a₁ w
+        rw [hzmod a₀ a₁ w]
+        exact eC_char_add n ξ _ _
+      -- the tail expectation and head factor
+      set T : ℕ → ℂ := fun b => (PMF.iid geomHalf m).cexpect fun w =>
+        eC (-(ξ * ((xArg n (k + 1) (L + b) * ∑ j ∈ Finset.range m,
+          (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre w (j + 1)).val) : ℚ)
+          / 3 ^ n) with hT
+      have hTle : ∀ b, ‖T b‖ ≤ 1 := fun b =>
+        cexpect_norm_le _ _ (fun w => (eC_norm _).le)
+      set H : ℕ → ℕ → ℂ := fun b a =>
+        eC (-(ξ * (((xArg n k (L + b) * (2 ^ a + 3)).val : ℕ) : ℚ)) / 3 ^ n) with hH
+      have hHG : ∀ b a, ‖H b a * T b‖ ≤ 1 := by
+        intro b a
+        rw [norm_mul, hH]
+        calc ‖eC _‖ * ‖T b‖ ≤ 1 * 1 :=
+              mul_le_mul (eC_norm _).le (hTle b) (norm_nonneg _) zero_le_one
+          _ = 1 := mul_one 1
+      -- peel two coordinates and regroup by b
+      have hpeel : ((PMF.iid geomHalf (m + 2)).cexpect fun a =>
+          eC (-(ξ * ((xArg n k L * ∑ j ∈ Finset.range (m + 2),
+            (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre a (j + 1)).val) : ℚ)
+            / 3 ^ n))
+          = ∑' b : ℕ, ((pascal b).toReal : ℂ)
+              * (((b : ℂ) - 1)⁻¹ * ∑ a ∈ Finset.Icc 1 (b - 1), H b a * T b) := by
+        rw [cexpect_iid_succ _ _ _ (fun v => (eC_norm _).le)]
+        have hinner : ∀ a₀ : ℕ, ((PMF.iid geomHalf (m + 1)).cexpect fun w =>
+            eC (-(ξ * ((xArg n k L * ∑ j ∈ Finset.range (m + 2),
+              (3 : ZMod (3 ^ n)) ^ j
+                * (2 : ZMod (3 ^ n))⁻¹ ^ pre (Fin.cons a₀ w) (j + 1)).val) : ℚ)
+              / 3 ^ n))
+            = ∑' a₁ : ℕ, ((geomHalf a₁).toReal : ℂ)
+                * (H (a₀ + a₁) a₁ * T (a₀ + a₁)) := by
+          intro a₀
+          rw [cexpect_iid_succ _ _ _ (fun v => (eC_norm _).le)]
+          refine tsum_congr fun a₁ => ?_
+          congr 1
+          calc ((PMF.iid geomHalf m).cexpect fun w =>
+                eC (-(ξ * ((xArg n k L * ∑ j ∈ Finset.range (m + 2),
+                  (3 : ZMod (3 ^ n)) ^ j
+                    * (2 : ZMod (3 ^ n))⁻¹
+                      ^ pre (Fin.cons a₀ (Fin.cons a₁ w)) (j + 1)).val) : ℚ)
+                  / 3 ^ n))
+              = (PMF.iid geomHalf m).cexpect fun w => H (a₀ + a₁) a₁
+                  * eC (-(ξ * ((xArg n (k + 1) (L + (a₀ + a₁)) * ∑ j ∈ Finset.range m,
+                      (3 : ZMod (3 ^ n)) ^ j
+                        * (2 : ZMod (3 ^ n))⁻¹ ^ pre w (j + 1)).val) : ℚ)
+                      / 3 ^ n) := by
+                congr 1
+                funext w
+                rw [hsplit a₀ a₁ w]
+            _ = H (a₀ + a₁) a₁ * T (a₀ + a₁) := by
+                rw [cexpect_const_mul, hT]
+        calc ∑' a₀ : ℕ, ((geomHalf a₀).toReal : ℂ)
+              * ((PMF.iid geomHalf (m + 1)).cexpect fun w =>
+                eC (-(ξ * ((xArg n k L * ∑ j ∈ Finset.range (m + 2),
+                  (3 : ZMod (3 ^ n)) ^ j
+                    * (2 : ZMod (3 ^ n))⁻¹ ^ pre (Fin.cons a₀ w) (j + 1)).val) : ℚ)
+                  / 3 ^ n))
+            = ∑' a₀ : ℕ, ((geomHalf a₀).toReal : ℂ)
+                * ∑' a₁ : ℕ, ((geomHalf a₁).toReal : ℂ)
+                  * (H (a₀ + a₁) a₁ * T (a₀ + a₁)) := by
+              exact tsum_congr fun a₀ => by rw [hinner a₀]
+          _ = ∑' b : ℕ, ((pascal b).toReal : ℂ)
+                * (((b : ℂ) - 1)⁻¹ * ∑ a ∈ Finset.Icc 1 (b - 1), H b a * T b) :=
+              tsum_geom_pair _ hHG
+      rw [hpeel]
+      -- the finite sum is fCond times the tail
+      have hsum_fCond : ∀ b : ℕ,
+          ((b : ℂ) - 1)⁻¹ * ∑ a ∈ Finset.Icc 1 (b - 1), H b a * T b
+            = fCond n ξ (xArg n k (L + b)) b * T b := by
+        intro b
+        rw [← Finset.sum_mul, fCond, hH]
+        ring
+      -- the induction hypothesis for the tail
+      have hIH : ∀ b, ‖T b‖ ≤ (PMF.iid pascal (m / 2)).expect fun c =>
+          ∏ j : Fin (m / 2),
+            ‖fCond n ξ (xArg n ((k + 1) + (j : ℕ)) ((L + b) + pre c ((j : ℕ) + 1))) (c j)‖ :=
+        fun b => IH m (by omega) (k + 1) (L + b)
+      have hE0 : ∀ b, (0:ℝ) ≤ (PMF.iid pascal (m / 2)).expect fun c =>
+          ∏ j : Fin (m / 2),
+            ‖fCond n ξ (xArg n ((k + 1) + (j : ℕ)) ((L + b) + pre c ((j : ℕ) + 1))) (c j)‖ :=
+        fun b => expect_nonneg _ _ fun c => Finset.prod_nonneg fun j _ => norm_nonneg _
+      have hE1 : ∀ b, ((PMF.iid pascal (m / 2)).expect fun c =>
+          ∏ j : Fin (m / 2),
+            ‖fCond n ξ (xArg n ((k + 1) + (j : ℕ)) ((L + b) + pre c ((j : ℕ) + 1))) (c j)‖)
+          ≤ 1 :=
+        fun b => expect_le_one _ _
+          (fun c => Finset.prod_nonneg fun j _ => norm_nonneg _)
+          (fun c => Finset.prod_le_one (fun j _ => norm_nonneg _)
+            (fun j _ => fCond_norm_le_one _ _ _ _))
+      -- summability bookkeeping
+      have hΦnorm : ∀ b : ℕ, ‖((pascal b).toReal : ℂ)
+            * (((b : ℂ) - 1)⁻¹ * ∑ a ∈ Finset.Icc 1 (b - 1), H b a * T b)‖
+          = (pascal b).toReal * (‖fCond n ξ (xArg n k (L + b)) b‖ * ‖T b‖) := by
+        intro b
+        rw [hsum_fCond b, norm_mul, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+          abs_of_nonneg ENNReal.toReal_nonneg]
+      have hmass : Summable fun b => (pascal b).toReal :=
+        ENNReal.summable_toReal pascal.tsum_coe_ne_top
+      have hΦbound : ∀ b : ℕ,
+          (pascal b).toReal * (‖fCond n ξ (xArg n k (L + b)) b‖ * ‖T b‖)
+            ≤ (pascal b).toReal := fun b => by
+        calc (pascal b).toReal * (‖fCond n ξ (xArg n k (L + b)) b‖ * ‖T b‖)
+            ≤ (pascal b).toReal * (1 * 1) := by
+              refine mul_le_mul_of_nonneg_left ?_ ENNReal.toReal_nonneg
+              exact mul_le_mul (fCond_norm_le_one _ _ _ _) (hTle b) (norm_nonneg _)
+                zero_le_one
+          _ = (pascal b).toReal := by ring
+      have hΦS : Summable fun b : ℕ => ‖((pascal b).toReal : ℂ)
+          * (((b : ℂ) - 1)⁻¹ * ∑ a ∈ Finset.Icc 1 (b - 1), H b a * T b)‖ :=
+        Summable.of_nonneg_of_le (fun b => norm_nonneg _)
+          (fun b => (hΦnorm b).le.trans (hΦbound b)) hmass
+      have hRHSb : ∀ b : ℕ, (0:ℝ) ≤ (pascal b).toReal
+          * (‖fCond n ξ (xArg n k (L + b)) b‖
+            * (PMF.iid pascal (m / 2)).expect fun c =>
+              ∏ j : Fin (m / 2),
+                ‖fCond n ξ (xArg n ((k + 1) + (j : ℕ)) ((L + b) + pre c ((j : ℕ) + 1)))
+                  (c j)‖) :=
+        fun b => mul_nonneg ENNReal.toReal_nonneg
+          (mul_nonneg (norm_nonneg _) (hE0 b))
+      have hRHSS : Summable fun b : ℕ => (pascal b).toReal
+          * (‖fCond n ξ (xArg n k (L + b)) b‖
+            * (PMF.iid pascal (m / 2)).expect fun c =>
+              ∏ j : Fin (m / 2),
+                ‖fCond n ξ (xArg n ((k + 1) + (j : ℕ)) ((L + b) + pre c ((j : ℕ) + 1)))
+                  (c j)‖) := by
+        refine Summable.of_nonneg_of_le hRHSb (fun b => ?_) hmass
+        calc (pascal b).toReal * (‖fCond n ξ (xArg n k (L + b)) b‖ * _)
+            ≤ (pascal b).toReal * (1 * 1) := by
+              refine mul_le_mul_of_nonneg_left ?_ ENNReal.toReal_nonneg
+              exact mul_le_mul (fCond_norm_le_one _ _ _ _) (hE1 b) (hE0 b) zero_le_one
+          _ = (pascal b).toReal := by ring
+      -- unfold the target expectation one pascal draw
+      have hprodcons : ∀ (b : ℕ) (c : Fin (m / 2) → ℕ),
+          (∏ j : Fin (m / 2 + 1),
+            ‖fCond n ξ (xArg n (k + (j : ℕ))
+                (L + pre (Fin.cons b c : Fin (m / 2 + 1) → ℕ) ((j : ℕ) + 1)))
+              ((Fin.cons b c : Fin (m / 2 + 1) → ℕ) j)‖)
+            = ‖fCond n ξ (xArg n k (L + b)) b‖
+              * ∏ j : Fin (m / 2),
+                ‖fCond n ξ (xArg n ((k + 1) + (j : ℕ)) ((L + b) + pre c ((j : ℕ) + 1)))
+                  (c j)‖ := by
+        intro b c
+        rw [Fin.prod_univ_succ]
+        simp only [Fin.val_zero, Fin.cons_zero, Fin.val_succ, Fin.cons_succ, pre_cons,
+          pre_zero, add_zero]
+        congr 1
+        refine Finset.prod_congr rfl fun j _ => ?_
+        rw [show k + ((j : ℕ) + 1) = (k + 1) + (j : ℕ) from by ring,
+          show L + (b + pre c ((j : ℕ) + 1)) = (L + b) + pre c ((j : ℕ) + 1) from by ring]
+      have htarget : ((PMF.iid pascal (m / 2 + 1)).expect fun b =>
+            ∏ j : Fin (m / 2 + 1),
+              ‖fCond n ξ (xArg n (k + (j : ℕ)) (L + pre b ((j : ℕ) + 1))) (b j)‖)
+          = ∑' b : ℕ, (pascal b).toReal
+              * (‖fCond n ξ (xArg n k (L + b)) b‖
+                * (PMF.iid pascal (m / 2)).expect fun c =>
+                  ∏ j : Fin (m / 2),
+                    ‖fCond n ξ (xArg n ((k + 1) + (j : ℕ)) ((L + b) + pre c ((j : ℕ) + 1)))
+                      (c j)‖) := by
+        rw [PMF.expect_iid_succ _ _ _
+          (fun v => Finset.prod_nonneg fun j _ => norm_nonneg _)
+          (fun v => Finset.prod_le_one (fun j _ => norm_nonneg _)
+            (fun j _ => fCond_norm_le_one _ _ _ _))]
+        refine tsum_congr fun b => ?_
+        congr 1
+        rw [show (fun c : Fin (m / 2) → ℕ =>
+            ∏ j : Fin (m / 2 + 1),
+              ‖fCond n ξ (xArg n (k + (j : ℕ))
+                  (L + pre (Fin.cons b c : Fin (m / 2 + 1) → ℕ) ((j : ℕ) + 1)))
+                ((Fin.cons b c : Fin (m / 2 + 1) → ℕ) j)‖)
+          = fun c : Fin (m / 2) → ℕ => ‖fCond n ξ (xArg n k (L + b)) b‖
+              * ∏ j : Fin (m / 2),
+                ‖fCond n ξ (xArg n ((k + 1) + (j : ℕ)) ((L + b) + pre c ((j : ℕ) + 1)))
+                  (c j)‖ from funext fun c => hprodcons b c, expect_const_mul]
+      -- close
+      calc ‖∑' b : ℕ, ((pascal b).toReal : ℂ)
+            * (((b : ℂ) - 1)⁻¹ * ∑ a ∈ Finset.Icc 1 (b - 1), H b a * T b)‖
+          ≤ ∑' b : ℕ, ‖((pascal b).toReal : ℂ)
+              * (((b : ℂ) - 1)⁻¹ * ∑ a ∈ Finset.Icc 1 (b - 1), H b a * T b)‖ :=
+            norm_tsum_le_tsum_norm hΦS
+        _ ≤ ∑' b : ℕ, (pascal b).toReal
+              * (‖fCond n ξ (xArg n k (L + b)) b‖
+                * (PMF.iid pascal (m / 2)).expect fun c =>
+                  ∏ j : Fin (m / 2),
+                    ‖fCond n ξ (xArg n ((k + 1) + (j : ℕ)) ((L + b) + pre c ((j : ℕ) + 1)))
+                      (c j)‖) := by
+            refine hΦS.tsum_le_tsum (fun b => ?_) hRHSS
+            rw [hΦnorm b]
+            refine mul_le_mul_of_nonneg_left ?_ ENNReal.toReal_nonneg
+            exact mul_le_mul_of_nonneg_left (hIH b) (norm_nonneg _)
+        _ = _ := htarget.symm
+
 open Classical in
 /-- **The (7.4)/(7.5) pairing bound** (paper pp.33–34) — THE X1 crux. Route:
 induction on the number of pairs, peeling two `geomHalf` coordinates per step
@@ -405,7 +885,12 @@ theorem cexpect_pairing (n ξ : ℕ) :
           / 3 ^ n)‖
       ≤ (PMF.iid pascal (n / 2)).expect fun b =>
           ∏ j : Fin (n / 2), ‖fCond n ξ (xArg n (j : ℕ) (pre b ((j : ℕ) + 1))) (b j)‖ := by
-  sorry
+  have h := cexpect_pairing_gen n ξ n 0 0
+  have hx : xArg n 0 0 = 1 := by
+    unfold xArg
+    norm_num
+  simp only [hx, one_mul, zero_add] at h
+  exact h
 
 /-! ### Damping: the product is dominated by the white-encounter count -/
 
@@ -435,25 +920,6 @@ theorem prod_fCond_le_damping (n ξ : ℕ) (b : Fin (n / 2) → ℕ) :
   ring
 
 /-! ### Assembly: Proposition 7.1 -/
-
-/-- Real-expectation monotonicity for `[0,1]`-dominated observables. -/
-theorem expect_mono_le {α : Type*} (p : PMF α) (f g : α → ℝ) (hf0 : ∀ a, 0 ≤ f a)
-    (hfg : ∀ a, f a ≤ g a) (hg1 : ∀ a, g a ≤ 1) : p.expect f ≤ p.expect g := by
-  have hsumP : Summable fun a => (p a).toReal :=
-    ENNReal.summable_toReal p.tsum_coe_ne_top
-  have hgle : ∀ a, (p a).toReal * g a ≤ (p a).toReal := fun a =>
-    (mul_le_mul_of_nonneg_left (hg1 a) ENNReal.toReal_nonneg).trans (mul_one _).le
-  have hfle : ∀ a, (p a).toReal * f a ≤ (p a).toReal := fun a =>
-    (mul_le_mul_of_nonneg_left ((hfg a).trans (hg1 a)) ENNReal.toReal_nonneg).trans
-      (mul_one _).le
-  have hsumg : Summable fun a => (p a).toReal * g a :=
-    Summable.of_nonneg_of_le
-      (fun a => mul_nonneg ENNReal.toReal_nonneg ((hf0 a).trans (hfg a))) hgle hsumP
-  have hsumf : Summable fun a => (p a).toReal * f a :=
-    Summable.of_nonneg_of_le
-      (fun a => mul_nonneg ENNReal.toReal_nonneg (hf0 a)) hfle hsumP
-  exact hsumf.tsum_le_tsum
-    (fun a => mul_le_mul_of_nonneg_left (hfg a) ENNReal.toReal_nonneg) hsumg
 
 open Classical in
 /-- **Proposition 7.1** (= Prop 1.17 restated through the (1.26) reversed form): the
