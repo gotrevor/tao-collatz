@@ -1,0 +1,509 @@
+import TaoCollatz.Sec7.Monotone
+import TaoCollatz.Sec7.Unroll
+
+/-!
+# §7.4 Cases 2–3 of Proposition 7.8: the black-edge bound (nodes X8/X10/X11)
+
+Decomposition of `Q_black_edge` — the (7.41) edge bound for BLACK starts —
+per paper pp.46–49, eqs (7.44)–(7.67). A black edge point `(⌊n/2⌋-m, l)` lies
+(after the renewal→phase index shift `j ↦ j-1`) in a Lemma 7.4 triangle `Δ`;
+with height budget `s := l_Δ - l` the first-passage decomposition
+`Q_le_fpDist_expect` ((7.45), `Unroll.lean`) reduces (7.41) to control of the
+first-passage endpoint `(j,l) + v_{[1,k]}`:
+
+* `TriangleFamily` — bundled Lemma 7.4 data (`black_structure`).
+* `edgeWeight` ((7.46) weight factor) + `Q_fp_endpoint_le` — one more (7.35)
+  step at the endpoint exposes the white damping `exp(-ε³·1_W)` and the depth
+  weight `max(m - j_{[1,k]} - Geom(4), 1)^{-A}`; PROVED.
+* `fpDist_edgeWeight_le` ((7.42)+(7.48)/(7.49)) — the weight degradation is
+  `≤ (1+δ)·m^{-A}` for `m ≥ C_{A,δ}` in Case 2; OPEN (consumes Lemma 7.7 = X6).
+* `fpDist_white_exit` ((7.50)/(7.51)) — the endpoint is white (and in-strip)
+  with probability `≥ p₀ > 0` absolute; OPEN (consumes X6 + separation).
+* `budget_le_of_mem_triangle` ((7.52)) — `s·log 2 ≤ (m+2)·log 9`; PROVED.
+* `Q_black_edge_case2` ((7.46)–(7.51) assembly, `s ≤ m/log²m`); OPEN.
+* `Q_black_edge_case3` ((7.53)–(7.67), `s > m/log²m`, via Lemmas 7.9/7.10);
+  OPEN — the X9/X10/X11 subtree.
+* `Q_black_edge` — the case split; PROVED from the above.
+
+`prop_7_8` and `Q_polynomial_decay` (paper (7.40), (7.37)) moved here from
+`Monotone.lean` (they consume `Q_black_edge`).
+-/
+
+namespace TaoCollatz
+
+open scoped ENNReal
+
+/-- **Lemma 7.4 data, bundled** (paper pp.38–41): the family of corner triangles
+covering the black strip, with pairwise set-separation and strip confinement.
+Produced by `black_structure` (`Triangles.lean`); consumed by Cases 2–3 of
+Proposition 7.8, whose sub-lemmas need the WHOLE family (whiteness of an exit
+point requires separation from every OTHER triangle). -/
+structure TriangleFamily (n ξ : ℕ) : Type where
+  /-- the triangle parameters (apex `(j₀, l₀)`, size `s_Δ`) -/
+  T : Set (ℕ × ℤ × ℝ)
+  size_nonneg : ∀ t ∈ T, 0 ≤ t.2.2
+  /-- the black strip is exactly the union of the triangles -/
+  cover : {p : ℕ × ℤ | p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2}
+    = ⋃ t ∈ T, triangle t.1 t.2.1 t.2.2
+  /-- pairwise Euclidean set-separation by `(1/10)·log(1/ε)` (squared form) -/
+  separated : ∀ t ∈ T, ∀ t' ∈ T, t ≠ t' →
+    ∀ p ∈ triangle t.1 t.2.1 t.2.2, ∀ p' ∈ triangle t'.1 t'.2.1 t'.2.2,
+    ((1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) ^ 2
+      ≤ ((p.1 : ℝ) - p'.1) ^ 2 + ((p.2 : ℝ) - p'.2) ^ 2
+  /-- confinement `j + 1 ≤ n/2 - (1/10)·log(1/ε)` for every triangle point -/
+  confined : ∀ t ∈ T, ∀ p ∈ triangle t.1 t.2.1 t.2.2,
+    (p.1 : ℝ) + 1 ≤ (n : ℝ) / 2 - (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))
+
+/-- `black_structure` repackaged: a `TriangleFamily` exists. -/
+theorem exists_triangleFamily (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
+    Nonempty (TriangleFamily n ξ) := by
+  obtain ⟨T, h0, h1, h2, h3⟩ := black_structure n ξ hξ hn
+  exact ⟨⟨T, h0, h1, h2, h3⟩⟩
+
+/-- The white points of the strip `j ≤ ⌊n/2⌋` (renewal coordinates). Case 2's
+white-exit gain ((7.47)) only counts endpoints that are white AND still inside
+the strip: beyond the strip edge `Q ≡ 1` and no damping is available. -/
+def whiteStrip (n ξ : ℕ) : Set (ℕ × ℤ) := {p | p.1 ≤ n / 2 ∧ p ∈ whiteSet n ξ}
+
+/-- The (7.46) depth-weight factor at a first-passage endpoint `e` (renewal
+start `(⌊n/2⌋-m, l)`): one further `Hold` step lands at depth `m - e₁ - d₁`
+from the far edge, contributing `max(m - e₁ - d₁, 1)^{-A}` against `Q_{m-1}`. -/
+noncomputable def edgeWeight (A : ℝ) (m : ℕ) (e : ℕ × ℤ) : ℝ :=
+  ∑' d : ℕ × ℤ, (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)
+
+theorem edgeWeight_nonneg (A : ℝ) (m : ℕ) (e : ℕ × ℤ) : 0 ≤ edgeWeight A m e :=
+  tsum_nonneg fun _ => mul_nonneg ENNReal.toReal_nonneg
+    (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+
+/-- Past the far edge (`e₁ > m`) every landing weight is `1`, so
+`edgeWeight = 1`. -/
+theorem edgeWeight_of_deep (A : ℝ) {m : ℕ} {e : ℕ × ℤ} (he : m < e.1) :
+    edgeWeight A m e = 1 := by
+  unfold edgeWeight
+  have h1 : ∀ d : ℕ × ℤ,
+      (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)
+        = (hold d).toReal := by
+    intro d
+    have h0 : m - e.1 - d.1 = 0 := by omega
+    rw [h0]
+    simp [Real.one_rpow]
+  rw [tsum_congr h1, hold_tsum_toReal]
+
+/-- `Qm ≥ 1`: the sup ranges over points past the strip edge, where the weight
+is `1` and `Q = 1` (boundary). Needed to absorb out-of-strip endpoints. -/
+theorem one_le_Qm (half n ξ : ℕ) (ε A : ℝ) (hA : 0 ≤ A) (hε : 0 ≤ ε) (m : ℕ) :
+    1 ≤ Qm half n ξ ε A m := by
+  have h := le_Qm half n ξ ε A hA hε m (p1 := half + 1) (l := 0)
+    (by omega) (by omega)
+  have hw : (max (half - (half + 1)) 1 : ℕ) = 1 := by omega
+  rw [hw, Q_boundary _ _ _ _ _ (by omega)] at h
+  simpa using h
+
+/-- **The (7.46) endpoint step** (one application of (7.35)+(7.38) at the
+first-passage endpoint, paper p.47): the renewal value at endpoint
+`(⌊n/2⌋-m+e₁, l+e₂)` is bounded by `edgeWeight · Q_{m-1}`, GAINING the factor
+`exp(-ε³)` when the endpoint is white-in-strip. Stated in the subtraction-free
+form `1 - (1 - e^{-ε³})·1_{whiteStrip}` consumed by the (7.47) split. -/
+theorem Q_fp_endpoint_le (n ξ : ℕ) (ε A : ℝ) (hA : 0 ≤ A) (hε : 0 ≤ ε)
+    (m : ℕ) (hm1 : 1 ≤ m) (hmn : m ≤ n / 2) (l : ℤ) (e : ℕ × ℤ) :
+    Q (n / 2) (whiteSet n ξ) ε (n / 2 - m + e.1) (l + e.2)
+      ≤ (1 - (1 - Real.exp (-ε ^ 3))
+            * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2))
+        * (edgeWeight A m e * Qm (n / 2) n ξ ε A (m - 1)) := by
+  set half := n / 2 with hhalf
+  set j' := half - m + e.1 with hj'
+  set QM := Qm half n ξ ε A (m - 1) with hQM
+  have hQM0 : 0 ≤ QM := Qm_nonneg _ _ _ _ _ _
+  have hQM1 : 1 ≤ QM := one_le_Qm _ _ _ _ _ hA hε _
+  rcases Nat.lt_or_ge half j' with hout | hin
+  · -- past the strip edge: LHS = 1, indicator = 0, edgeWeight = 1, QM ≥ 1
+    rw [Q_boundary _ _ _ _ _ hout,
+      Set.indicator_of_notMem (fun hmem => absurd hmem.1 (by omega)) 1,
+      mul_zero, sub_zero, one_mul, edgeWeight_of_deep A (by omega), one_mul]
+    exact hQM1
+  · -- in strip: one Q_rec step, per-atom Q_le_Qm at depth m-1
+    rw [Q_rec _ _ _ _ _ hin]
+    have hatom : ∀ d : ℕ × ℤ,
+        (hold d).toReal * Q half (whiteSet n ξ) ε (j' + d.1) (l + e.2 + d.2)
+          ≤ (hold d).toReal * (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) := by
+      intro d
+      rcases Nat.eq_zero_or_pos d.1 with h0 | hpos
+      · rw [hold_zero_of_fst_zero h0, ENNReal.toReal_zero, zero_mul, zero_mul]
+      · apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+        have h1 : 1 ≤ j' + d.1 := by omega
+        have h2 : half - (m - 1) ≤ j' + d.1 := by omega
+        have hkey := Q_le_Qm half n ξ ε A hA hε (m - 1)
+          (l := l + e.2 + d.2) h1 h2
+        have heq : half - (j' + d.1) = m - e.1 - d.1 := by omega
+        rwa [heq] at hkey
+    have hwle : ∀ d : ℕ × ℤ,
+        (hold d).toReal * (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM)
+          ≤ (hold d).toReal * QM := by
+      intro d
+      apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+      calc ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM
+          ≤ 1 * QM := mul_le_mul_of_nonneg_right
+            (Real.rpow_le_one_of_one_le_of_nonpos
+              (by exact_mod_cast Nat.le_max_right (m - e.1 - d.1) 1)
+              (by linarith)) hQM0
+        _ = QM := one_mul _
+    have hsumR : Summable fun d : ℕ × ℤ =>
+        (hold d).toReal * (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) :=
+      Summable.of_nonneg_of_le
+        (fun d => mul_nonneg ENNReal.toReal_nonneg
+          (mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _) hQM0))
+        hwle (hold_summable_toReal.mul_right QM)
+    have hsumL : Summable fun d : ℕ × ℤ =>
+        (hold d).toReal * Q half (whiteSet n ξ) ε (j' + d.1) (l + e.2 + d.2) :=
+      Summable.of_nonneg_of_le
+        (fun d => mul_nonneg ENNReal.toReal_nonneg (Q_nonneg _ _ _ _ _))
+        (fun d => (hatom d).trans (hwle d)) (hold_summable_toReal.mul_right QM)
+    have htsum : ∑' d : ℕ × ℤ,
+        (hold d).toReal * Q half (whiteSet n ξ) ε (j' + d.1) (l + e.2 + d.2)
+          ≤ edgeWeight A m e * QM := by
+      calc ∑' d : ℕ × ℤ,
+          (hold d).toReal * Q half (whiteSet n ξ) ε (j' + d.1) (l + e.2 + d.2)
+          ≤ ∑' d : ℕ × ℤ,
+            (hold d).toReal * (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) :=
+            hsumL.tsum_le_tsum hatom hsumR
+        _ = ∑' d : ℕ × ℤ,
+            ((hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)) * QM :=
+            tsum_congr fun d => (mul_assoc _ _ _).symm
+        _ = edgeWeight A m e * QM := tsum_mul_right
+    have hS0 : 0 ≤ ∑' d : ℕ × ℤ,
+        (hold d).toReal * Q half (whiteSet n ξ) ε (j' + d.1) (l + e.2 + d.2) :=
+      tsum_nonneg fun _ => mul_nonneg ENNReal.toReal_nonneg (Q_nonneg _ _ _ _ _)
+    -- the damping factor matches the subtraction form exactly (in-strip)
+    have hdamp : Real.exp (-ε ^ 3 * Set.indicator (whiteSet n ξ) 1 (j', l + e.2))
+        = 1 - (1 - Real.exp (-ε ^ 3))
+            * Set.indicator (whiteStrip n ξ) 1 (j', l + e.2) := by
+      by_cases hw : (j', l + e.2) ∈ whiteSet n ξ
+      · have e1 : Set.indicator (whiteSet n ξ) (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 1 :=
+          Set.indicator_of_mem hw 1
+        have hmem : (j', l + e.2) ∈ whiteStrip n ξ := ⟨hin, hw⟩
+        have e2 : Set.indicator (whiteStrip n ξ) (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 1 :=
+          Set.indicator_of_mem hmem 1
+        rw [e1, e2, mul_one, mul_one]
+        ring
+      · have e1 : Set.indicator (whiteSet n ξ) (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 0 :=
+          Set.indicator_of_notMem hw 1
+        have e2 : Set.indicator (whiteStrip n ξ) (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 0 :=
+          Set.indicator_of_notMem (fun hmem => hw hmem.2) 1
+        rw [e1, e2, mul_zero, mul_zero, sub_zero, Real.exp_zero]
+    calc Real.exp (-ε ^ 3 * Set.indicator (whiteSet n ξ) 1 (j', l + e.2)) *
+          ∑' d : ℕ × ℤ,
+            (hold d).toReal * Q half (whiteSet n ξ) ε (j' + d.1) (l + e.2 + d.2)
+        ≤ Real.exp (-ε ^ 3 * Set.indicator (whiteSet n ξ) 1 (j', l + e.2))
+            * (edgeWeight A m e * QM) :=
+          mul_le_mul_of_nonneg_left htsum (Real.exp_pos _).le
+      _ = (1 - (1 - Real.exp (-ε ^ 3))
+            * Set.indicator (whiteStrip n ξ) 1 (j', l + e.2))
+            * (edgeWeight A m e * QM) := by rw [hdamp]
+
+/-- **The (7.48)/(7.49) weight degradation, Case 2** (paper p.47). With budget
+`s ≤ m/log²m`, the first-passage endpoint's `j`-coordinate concentrates near
+`s/4 ≪ m/log²m` (Lemma 7.7 = `fpDist_location_bound`, node X6), so the average
+depth weight `E[edgeWeight]` exceeds `m^{-A}` only by `exp(O(A·log m/m ·
+m/log²m)) = 1 + O(A/log m) ≤ 1 + δ` once `m ≥ C_{A,δ}` ((7.42) concavity bound
++ Chernoff truncation of `j_{[1,k]} > m/log²m`).
+
+OPEN (node X8): consumes `fpDist_location_bound` (X6) for the Gaussian
+`j`-concentration and the `Geom(4)` tail for the extra hold step. -/
+theorem fpDist_edgeWeight_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      ∑' e : ℕ × ℤ, (fpDist s e).toReal * edgeWeight A m e
+        ≤ (1 + δ) * (m : ℝ) ^ (-A) := by
+  sorry
+
+/-- **The (7.50)/(7.51) white-exit bound** (paper p.48): starting the renewal
+walk at a black edge point `(⌊n/2⌋-m, l)` whose phase point `(⌊n/2⌋-m-1, l)`
+lies in triangle `t` of the family, with budget `s = l_Δ - l ≤ m/log²m`, the
+first-passage endpoint is WHITE and IN-STRIP with probability `≥ p₀` for an
+absolute `p₀ > 0` (uniform in `n, ξ, m, l, t`).
+
+Route ((7.50): Lemma 7.7 puts the endpoint at `(j + s/4 + O((1+s)^{1/2}),
+l_Δ + O(1))` with probability `≫ 1`; every endpoint exceeds height `l_Δ`
+(`fpDist_support_snd_gt`), i.e. lies strictly above the triangle top; the
+(7.11) slope bound `-O(1) ≤ (j'-j_Δ)log 9 ≤ s_Δ + O(1)` plus the family
+separation put it outside every OTHER triangle, hence white by `cover`;
+in-strip follows from `s/4 + O(√(1+s)) ≪ m`.
+
+OPEN (node X8, the hardest Case-2 kernel): consumes `fpDist_location_bound`
+(X6) and the geometric fight between the paper's `O(1)` exit-ring constants
+and the fixed `ε = 10⁻⁴` separation `(1/10)·log(1/ε) ≈ 0.92` — numerically
+validated ≈ 0.99 white-exit mass (harness check 9, 2026-07-10). -/
+theorem fpDist_white_exit :
+    ∃ p₀ > (0 : ℝ), ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
+      ∀ F : TriangleFamily n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      p₀ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
+        * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) := by
+  sorry
+
+/-- **The (7.52) budget bound** (paper p.48): a triangle point at depth `≤ m+1`
+from the far edge has height budget `s = l_Δ - l ≤ (log 9/log 2)·(m+2)` (the
+paper's `s ≤ (log 9/log 2)·m`, with lattice-floor slack — Case 3 only consumes
+`s = O(m)`). From membership `(j - j_Δ)·log 9 + s·log 2 ≤ s_Δ` and confinement
+of the lattice extent point `(j_Δ + ⌊s_Δ/log 9⌋, l_Δ)`, which forces
+`s_Δ < (n/2 - j_Δ)·log 9`. -/
+theorem budget_le_of_mem_triangle {n ξ : ℕ} (F : TriangleFamily n ξ)
+    {t : ℕ × ℤ × ℝ} (ht : t ∈ F.T) {j : ℕ} {l : ℤ}
+    (hmem : (j, l) ∈ triangle t.1 t.2.1 t.2.2) {m : ℕ} (hjm : n / 2 ≤ j + 1 + m) :
+    ((t.2.1 - l).toNat : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 := by
+  obtain ⟨hj0, hl0, hlin⟩ := hmem
+  have hsz0 : 0 ≤ t.2.2 := F.size_nonneg t ht
+  have hlog9 : (0 : ℝ) < Real.log 9 := Real.log_pos (by norm_num)
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  -- the lattice extent point (j_Δ + ⌊s_Δ/log 9⌋, l_Δ) is in the triangle
+  set K : ℕ := ⌊t.2.2 / Real.log 9⌋₊ with hK
+  have hKle : (K : ℝ) * Real.log 9 ≤ t.2.2 := by
+    have hfl : (K : ℝ) ≤ t.2.2 / Real.log 9 := Nat.floor_le (by positivity)
+    calc (K : ℝ) * Real.log 9 ≤ t.2.2 / Real.log 9 * Real.log 9 :=
+          mul_le_mul_of_nonneg_right hfl hlog9.le
+      _ = t.2.2 := div_mul_cancel₀ _ hlog9.ne'
+  have hqmem : ((t.1 + K, t.2.1) : ℕ × ℤ) ∈ triangle t.1 t.2.1 t.2.2 := by
+    refine ⟨Nat.le_add_right _ _, le_refl _, ?_⟩
+    push_cast
+    have h : ((t.1 : ℝ) + K - t.1) * Real.log 9 = (K : ℝ) * Real.log 9 := by ring
+    rw [h]
+    simpa using hKle
+  have hconf := F.confined t ht _ hqmem
+  -- separation constant is nonnegative
+  have hsep : (0 : ℝ) ≤ (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ)) := by
+    have heps : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 4 := by
+      rw [show epsBW = 1 / 10 ^ 4 from rfl]
+      push_cast
+      norm_num
+    rw [heps]
+    exact mul_nonneg (by norm_num) (Real.log_nonneg (by norm_num))
+  -- confinement in real form: t.1 + K + 1 ≤ n/2
+  have h3 : (t.1 : ℝ) + K + 1 ≤ (n : ℝ) / 2 := by
+    push_cast at hconf
+    linarith
+  -- real half vs floor half
+  have h4 : (n : ℝ) / 2 ≤ ((n / 2 : ℕ) : ℝ) + 1 / 2 := by
+    have hn : n ≤ 2 * (n / 2) + 1 := by omega
+    have : (n : ℝ) ≤ 2 * ((n / 2 : ℕ) : ℝ) + 1 := by exact_mod_cast hn
+    linarith
+  have h5 : ((n / 2 : ℕ) : ℝ) ≤ (j : ℝ) + 1 + m := by exact_mod_cast hjm
+  -- the extent bound: s_Δ < (K+1)·log 9
+  have hK1 : t.2.2 < ((K : ℝ) + 1) * Real.log 9 := by
+    have hlt : t.2.2 / Real.log 9 < (K : ℝ) + 1 := by
+      have := Nat.lt_floor_add_one (t.2.2 / Real.log 9)
+      exact_mod_cast this
+    calc t.2.2 = t.2.2 / Real.log 9 * Real.log 9 := (div_mul_cancel₀ _ hlog9.ne').symm
+      _ < ((K : ℝ) + 1) * Real.log 9 := mul_lt_mul_of_pos_right hlt hlog9
+  -- cast the budget and the apex-left inequality
+  have htn : (((t.2.1 - l).toNat : ℕ) : ℝ) = (t.2.1 : ℝ) - l := by
+    have h := Int.toNat_of_nonneg (by omega : (0 : ℤ) ≤ t.2.1 - l)
+    have : (((t.2.1 - l).toNat : ℕ) : ℤ) = t.2.1 - l := h
+    exact_mod_cast this
+  have hj0R : (t.1 : ℝ) ≤ (j : ℝ) := by exact_mod_cast hj0
+  -- assemble
+  have h6 : (K : ℝ) + 1 - j + t.1 ≤ (m : ℝ) + 2 := by linarith
+  calc ((t.2.1 - l).toNat : ℝ) * Real.log 2
+      = ((t.2.1 : ℝ) - l) * Real.log 2 := by rw [htn]
+    _ ≤ t.2.2 - ((j : ℝ) - t.1) * Real.log 9 := by linarith [hlin]
+    _ ≤ ((K : ℝ) + 1) * Real.log 9 - ((j : ℝ) - t.1) * Real.log 9 := by linarith
+    _ = ((K : ℝ) + 1 - j + t.1) * Real.log 9 := by ring
+    _ ≤ ((m : ℝ) + 2) * Real.log 9 := mul_le_mul_of_nonneg_right h6 hlog9.le
+
+/-- **Case 2 of Proposition 7.8** ((7.46)–(7.51) assembly, paper pp.46–48):
+black edge start whose triangle-top budget satisfies `s ≤ m/log²m`. Route:
+`Q_le_fpDist_expect` ((7.45) entry) + `Q_fp_endpoint_le` per endpoint, then
+the (7.47) split `E[(1-(1-e^{-ε³})·1_W)·w] ≤ E[w] - (1-e^{-ε³})·m^{-A}·P(W)`
+(using `w ≥ m^{-A}` pointwise), bounded via `fpDist_edgeWeight_le` (δ :=
+`(1-e^{-ε³})·p₀/2`) and `fpDist_white_exit`:
+`Q ≤ ((1+δ) - (1-e^{-ε³})·p₀)·m^{-A}·Q_{m-1} ≤ m^{-A}·Q_{m-1}`.
+
+OPEN (node X8 assembly): mechanical once the two kernels above land; the
+remaining work is `ℝ≥0∞`→`ℝ` bookkeeping across the fpDist tsum. -/
+theorem Q_black_edge_case2 (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  sorry
+
+/-- **Case 3 of Proposition 7.8** ((7.53)–(7.67), paper pp.48–49 + Lemmas
+7.9/7.10 pp.50–54): deep triangle start, `m/log²m < s ≤ O(m)`. The walk must
+cross the whole triangle; Lemma 7.9 (node X9, induction on the number `r` of
+triangles encountered over the (7.35) recursion) locates `≥ 10A/ε³` white
+points by time `k + P`, `P = O_{A,ε}(1)`, unless `r` is small, and Lemma 7.10
+(node X10, the separated-Σ counting (7.60)–(7.65)) makes small `r` after a
+lengthy crossing improbable: `P(Σ 1_W < 10A/ε³) ≤ 10^{-A-2}` ((7.56)). The
+depth weight is controlled by the crude `j_{[1,k+P]} < 0.9m` Chernoff split
+((7.54)–(7.55), `max(1-j/m, 1/m)^{-A} ≤ 10^A`).
+
+OPEN (nodes X9/X10/X11): the deepest remaining subtree of §7.4. -/
+theorem Q_black_edge_case3 (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  sorry
+
+/-- **The (7.41) edge bound for BLACK starts** (Cases 2–3 of Proposition 7.8,
+paper (7.44)–(7.67), pp.46–49): the case split. The black phase point
+`(⌊n/2⌋-m-1, l)` lies in a triangle of the family (`cover`); its budget
+`s := l_Δ - l` is `≤ (log 9/log 2)·(m+1)` by (7.52); Case 2 handles
+`s ≤ m/log²m`, Case 3 the rest. -/
+theorem Q_black_edge (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ,
+      1 ≤ n / 2 - m → (n / 2 - m, l) ∉ whiteSet n ξ →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  classical
+  obtain ⟨C2, hC2⟩ := Q_black_edge_case2 A hA
+  obtain ⟨C3, hC3⟩ := Q_black_edge_case3 A hA
+  refine ⟨max C2 C3, fun n ξ hξ m hm hmn l h1 hnw => ?_⟩
+  have hn1 : 1 ≤ n := by omega
+  obtain ⟨F⟩ := exists_triangleFamily n ξ hξ hn1
+  -- the phase point is black
+  have hb : black n ξ (n / 2 - m - 1) l := by
+    by_contra hw
+    exact hnw ⟨h1, hw⟩
+  -- hence lies in some triangle of the family
+  have hmem0 : (n / 2 - m - 1, l) ∈
+      {p : ℕ × ℤ | p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2} := ⟨by omega, hb⟩
+  rw [F.cover] at hmem0
+  simp only [Set.mem_iUnion, exists_prop] at hmem0
+  obtain ⟨t, ht, hmem⟩ := hmem0
+  -- the height budget
+  have hl : l ≤ t.2.1 := hmem.2.1
+  set s : ℕ := (t.2.1 - l).toNat with hs
+  have hsZ : (s : ℤ) = t.2.1 - l := by omega
+  -- (7.52): s·log 2 ≤ (m+1)·log 9
+  have hbudget : (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 :=
+    budget_le_of_mem_triangle F ht hmem (by omega)
+  rcases le_or_gt (s : ℝ) ((m : ℝ) / Real.log m ^ 2) with hcase | hcase
+  · exact hC2 n ξ hξ F m (le_trans (le_max_left _ _) hm) hmn l h1
+      t ht hmem s hsZ hcase
+  · exact hC3 n ξ hξ F m (le_trans (le_max_right _ _) hm) hmn l h1
+      t ht hmem s hsZ hcase hbudget
+
+/-- **Proposition 7.8 (Monotonicity)**, paper p.45: `Q_m ≤ Q_{m-1}` whenever
+`C_{A,ε} ≤ m ≤ ⌊n/2⌋`, for a sufficiently large threshold `C_{A,ε}` depending only on
+`A` (our `ε = epsBW` is a fixed numeral, D4). Uniform in `n, ξ`.
+
+Proof: the `Qm m` sup splits. Interior points (`p₁ > ⌊n/2⌋ - m`) are admissible at
+depth `m-1` with the same weight, so `le_Qm` bounds them by `Q_{m-1}` directly. Edge
+points (`p₁ = ⌊n/2⌋ - m`, weight `m^A`) satisfy (7.41) `Q ≤ m^{-A}·Q_{m-1}`: white
+starts by `Q_white_case1` (Case 1, proved), black starts by `Q_black_edge`
+(Cases 2–3, the open X8/X10 kernel). -/
+theorem prop_7_8 (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  obtain ⟨C1, hC1⟩ := Q_white_case1 A hA
+  obtain ⟨C2, hC2⟩ := Q_black_edge A hA
+  refine ⟨max (max C1 C2) 1, fun n ξ hξ m hm hmn => ?_⟩
+  have hmC1 : C1 ≤ m := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hm
+  have hmC2 : C2 ≤ m := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hm
+  have hm1 : 1 ≤ m := le_trans (le_max_right _ _) hm
+  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  have hm0 : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm1
+  have hQM0 : 0 ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := Qm_nonneg _ _ _ _ _ _
+  have hcancel : (m : ℝ) ^ A * (m : ℝ) ^ (-A) = 1 := by
+    rw [← Real.rpow_add hm0, add_neg_cancel, Real.rpow_zero]
+  refine Real.iSup_le (fun p => ?_) hQM0
+  obtain ⟨⟨p1, l⟩, hp1, hpm⟩ := p
+  have hp1' : 1 ≤ p1 := hp1
+  have hpm' : n / 2 - m ≤ p1 := hpm
+  show ((max (n / 2 - p1) 1 : ℕ) : ℝ) ^ A * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) p1 l
+    ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)
+  rcases eq_or_lt_of_le hpm' with heq | hlt
+  · -- edge point: p1 = n/2 - m, weight = m^A
+    have hp1eq : p1 = n / 2 - m := heq.symm
+    have hwt : (max (n / 2 - p1) 1 : ℕ) = m := by omega
+    have hedge : Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) p1 l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+      by_cases hw : (p1, l) ∈ whiteSet n ξ
+      · have h := hC1 n ξ hξ m hmC1 hmn l (hp1eq ▸ hw)
+        rw [hp1eq]
+        calc Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+            ≤ Real.exp (-(epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A)
+              * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := h
+          _ ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+              apply mul_le_mul_of_nonneg_right _ hQM0
+              have hexp : Real.exp (-(epsBW : ℝ) ^ 3 / 2) ≤ 1 := by
+                rw [Real.exp_le_one_iff]
+                have h3 : (0 : ℝ) ≤ (epsBW : ℝ) ^ 3 := by positivity
+                linarith
+              calc Real.exp (-(epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A)
+                  ≤ 1 * (m : ℝ) ^ (-A) :=
+                    mul_le_mul_of_nonneg_right hexp (Real.rpow_nonneg hm0.le _)
+                _ = (m : ℝ) ^ (-A) := one_mul _
+      · exact hp1eq ▸ hC2 n ξ hξ m hmC2 hmn l (by omega) (hp1eq ▸ hw)
+    calc ((max (n / 2 - p1) 1 : ℕ) : ℝ) ^ A * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) p1 l
+        ≤ ((max (n / 2 - p1) 1 : ℕ) : ℝ) ^ A
+            * ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :=
+          mul_le_mul_of_nonneg_left hedge (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+      _ = (m : ℝ) ^ A * (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+          rw [hwt]; ring
+      _ = Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by rw [hcancel, one_mul]
+  · -- interior point: admissible at depth m-1 with the same weight
+    exact le_Qm (n / 2) n ξ (epsBW : ℝ) A hA.le hε0 (m - 1) hp1 (by omega)
+
+/-- Paper (7.37), the consequence of (7.39) + Proposition 7.8 by forward induction on `m`:
+`Q(j,l) ≪_A max(⌊n/2⌋ - j, 1)^{-A}`, uniformly in `n, ξ, j, l`. This is what feeds
+(7.36) `E Q(Hold) ≪_A n^{-A}` and hence Proposition 7.3 in `Decay.lean`. -/
+theorem Q_polynomial_decay (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l ≤ C * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
+  obtain ⟨C0, hC0⟩ := prop_7_8 A hA
+  set Cb := max C0 1 with hCbdef
+  have hCb1 : 1 ≤ Cb := le_max_right _ _
+  have hCbR : (1 : ℝ) ≤ ((Cb : ℕ) : ℝ) := by exact_mod_cast hCb1
+  have hCbA1 : (1 : ℝ) ≤ ((Cb : ℕ) : ℝ) ^ A := by
+    calc (1 : ℝ) = (1 : ℝ) ^ A := (Real.one_rpow A).symm
+      _ ≤ ((Cb : ℕ) : ℝ) ^ A := Real.rpow_le_rpow zero_le_one hCbR hA.le
+  refine ⟨((Cb : ℕ) : ℝ) ^ A, Real.rpow_pos_of_pos (by linarith) A, ?_⟩
+  intro n ξ hξ j l hj
+  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  -- the uniform bound Q_m ≤ Cb^A for 1 ≤ m ≤ n/2, by forward induction from (7.39)
+  have hQmb : ∀ m : ℕ, 1 ≤ m → m ≤ n / 2 →
+      Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ ((Cb : ℕ) : ℝ) ^ A := by
+    intro m
+    induction m using Nat.strong_induction_on with
+    | _ m IH =>
+      intro hm1 hmn
+      rcases le_or_gt m Cb with hle | hgt
+      · calc Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ (m : ℝ) ^ A := Qm_le_rpow _ _ _ _ hA.le _ hm1
+          _ ≤ ((Cb : ℕ) : ℝ) ^ A :=
+              Real.rpow_le_rpow (Nat.cast_nonneg _) (by exact_mod_cast hle) hA.le
+      · have h78 := hC0 n ξ hξ m (by omega) hmn
+        exact le_trans h78 (IH (m - 1) (by omega) (by omega) (by omega))
+  rcases Nat.lt_or_ge j (n / 2) with hjlt | hjge
+  · -- inside the strip: use le_Qm at depth m = n/2 - j, then the uniform bound
+    have hle := Q_le_Qm (n / 2) n ξ (epsBW : ℝ) A hA.le hε0 (n / 2 - j) (l := l) hj
+      (by omega)
+    calc Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l
+        ≤ ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A)
+            * Qm (n / 2) n ξ (epsBW : ℝ) A (n / 2 - j) := hle
+      _ ≤ ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) * (((Cb : ℕ) : ℝ) ^ A) :=
+          mul_le_mul_of_nonneg_left (hQmb (n / 2 - j) (by omega) (by omega))
+            (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+      _ = ((Cb : ℕ) : ℝ) ^ A * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := mul_comm _ _
+  · -- past the strip edge: Q ≤ 1 and the weight is 1
+    have hw : (max (n / 2 - j) 1 : ℕ) = 1 := by omega
+    calc Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l ≤ 1 := Q_le_one _ _ _ hε0 _ _
+      _ ≤ ((Cb : ℕ) : ℝ) ^ A := hCbA1
+      _ = ((Cb : ℕ) : ℝ) ^ A * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
+          rw [hw, Nat.cast_one, Real.one_rpow, mul_one]
+
+end TaoCollatz

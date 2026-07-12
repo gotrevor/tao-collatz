@@ -1,5 +1,51 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 46 (2026-07-12, seventh box session): X8/X10 STATEMENT DESIGN — Q_black_edge DECOMPOSED
+
+NEW `Sec7/BlackEdge.lean` (imports Monotone + Unroll; Bridge now imports it;
+`Q_black_edge`/`prop_7_8`/`Q_polynomial_decay` moved here from Monotone).
+Cases 2-3 of Prop 7.8 (paper (7.44)-(7.67), pp.46-49) pinned as named decls:
+
+PROVED (axiom-clean):
+- `TriangleFamily` (bundled Lemma 7.4 data) + `exists_triangleFamily`.
+- `Q_fp_endpoint_le` — the (7.46) endpoint step: one Q_rec at the
+  first-passage endpoint exposes white damping in subtraction form
+  `1 - (1-e^{-eps^3})*1_{whiteStrip}` times `edgeWeight * Qm(m-1)`;
+  out-of-strip endpoints absorbed via `edgeWeight_of_deep` + `one_le_Qm`.
+- `budget_le_of_mem_triangle` — (7.52): s*log2 <= (m+2)*log9 via lattice
+  extent point `(j_D + floor(s_D/log9), l_D)` + confinement (floor slack
+  vs paper's m; Case 3 only needs s = O(m)).
+- `Q_black_edge` — the case split GLUE: black point -> cover -> triangle,
+  s := (l_D - l).toNat, split at m/log^2 m. No longer a monolithic sorry.
+
+OPEN (4 new named sorries replacing the old 1 — deliberate decomposition):
+1. `fpDist_edgeWeight_le` ((7.42)+(7.48)/(7.49)): E[edgeWeight] <= (1+delta)m^{-A}
+   for s <= m/log^2 m. Consumes fpDist_location_bound (X6) j-concentration
+   + Geom(4) tail. NEXT ATTACK: prove X6 first (its inputs hold_local_bound/
+   hold_tail_bound are theorems since lap 42) — union bound over last step,
+   mirror the paper Lemma 7.7 proof p.43-44 (sum in k of k^{-1}G_k(c(j'-(k-1)4,
+   s'-(k-1)16)) with the three-region split).
+2. `fpDist_white_exit` ((7.50)/(7.51)): white-in-strip exit mass >= p0 absolute.
+   Hardest Case-2 kernel: endpoint at (j+s/4+O(sqrt(1+s)), l_D+O(1)) via X6,
+   above-top by fpDist_support_snd_gt, outside other triangles via family
+   separation vs the fixed eps=1e-4 ring constants (MC-validated 0.99).
+3. `Q_black_edge_case2` assembly: mechanical (7.47) split once 1+2 land
+   (delta := (1-e^{-eps^3})p0/2; w >= m^{-A} pointwise for the subtraction).
+4. `Q_black_edge_case3` ((7.53)-(7.67)): the X9/X10/X11 subtree — Lemma 7.9
+   induction on r over the Q-recursion, Lemma 7.10 separated-Sigma counting,
+   P-step iterate of (7.35), 0.9m Chernoff split. NEXT: pin Lemma 7.9's
+   statement (stopping times t_i over fpDist iterates, r = #triangles met).
+
+Gotchas: anonymous-constructor membership under Set.indicator_of_mem needs a
+named `have hmem : _ ∈ whiteStrip ...` (expected-type inference fails inline);
+`linarith` missed `0 <= (1/10)*log(10^4)` from `0 <= log(10^4)` (atom mismatch)
+— use `mul_nonneg` directly.
+
+**Red-queue state after this lap** (BLUEPRINT §2 steering): S3 GREEN (lap 45),
+X8/X10 statements PINNED (this lap). Next reds: X6 (fpDist_location_bound —
+now the single blocker for BOTH Case-2 kernels), X9 (Lemma 7.9 skeleton),
+X1 (key_fourier_decay chain), X5 (Bridge x3), C8.
+
 ## Lap 45 (2026-07-12, seventh box session): ALL THREE d=1 LOCAL BOUNDS PROVED — **NODE S3 FULLY GREEN**
 
 **`geomHalf_local_bound`, `geomQuarter_local_bound`, `pascal_local_bound` are
