@@ -476,4 +476,132 @@ theorem one_sub_re_stdAddChar_ge' (j : ZMod N) :
   have h := one_sub_re_stdAddChar_ge j
   rwa [← nd_cast] at h
 
+/-! ### Gaussian summation over `ZMod N` (node S3, step (E)) -/
+
+/-- Powers of a sub-unit modulus with quadratic defect decay exponentially:
+`x² ≤ 1 - D` gives `xⁿ ≤ exp(-n·D/4)` for `n ≥ 2` (the lost factor `4` absorbs
+both the `n/2` halving and the odd-`n` floor). -/
+theorem pow_le_exp_of_sq_le_one_sub {x D : ℝ} (n : ℕ) (hn : 2 ≤ n)
+    (hx : 0 ≤ x) (hD : 0 ≤ D) (h : x ^ 2 ≤ 1 - D) :
+    x ^ n ≤ Real.exp (-(n : ℝ) * D / 4) := by
+  have h1D : 0 ≤ 1 - D := le_trans (sq_nonneg x) h
+  have hx1 : x ≤ 1 := by nlinarith
+  set m := n / 2 with hm
+  have h4m : (n : ℝ) ≤ 4 * m := by
+    have : n ≤ 4 * m := by omega
+    exact_mod_cast this
+  have hexp1 : 1 - D ≤ Real.exp (-D) := by
+    have := Real.add_one_le_exp (-D)
+    linarith
+  calc x ^ n ≤ x ^ (2 * m) := pow_le_pow_of_le_one hx hx1 (by omega)
+    _ = (x ^ 2) ^ m := by rw [← pow_mul]
+    _ ≤ (1 - D) ^ m := pow_le_pow_left₀ (sq_nonneg x) h m
+    _ ≤ Real.exp (-D) ^ m := pow_le_pow_left₀ h1D hexp1 m
+    _ = Real.exp ((m : ℝ) * -D) := (Real.exp_nat_mul _ m).symm
+    _ ≤ Real.exp (-(n : ℝ) * D / 4) := by
+        apply Real.exp_le_exp.mpr
+        nlinarith [mul_nonneg hD (by linarith : (0 : ℝ) ≤ 4 * (m : ℝ) - n)]
+
+/-- Finite geometric sums with ratio `exp(-a)` are bounded by `(1 - exp(-a))⁻¹`. -/
+theorem sum_exp_neg_mul_le {a : ℝ} (ha : 0 < a) (M : ℕ) :
+    ∑ m ∈ Finset.range M, Real.exp (-(a * m)) ≤ (1 - Real.exp (-a))⁻¹ := by
+  set q := Real.exp (-a) with hq
+  have hq1 : q < 1 := Real.exp_lt_one_iff.mpr (by linarith)
+  have hq0 : 0 < q := Real.exp_pos _
+  have h1q : 0 < 1 - q := by linarith
+  have hterm : ∀ m : ℕ, Real.exp (-(a * m)) = q ^ m := fun m => by
+    rw [hq, ← Real.exp_nat_mul]
+    congr 1
+    ring
+  calc ∑ m ∈ Finset.range M, Real.exp (-(a * m))
+      = ∑ m ∈ Finset.range M, q ^ m := Finset.sum_congr rfl fun m _ => hterm m
+    _ = (q ^ M - 1) / (q - 1) := geom_sum_eq hq1.ne M
+    _ = (1 - q ^ M) / (1 - q) := by
+        rw [show (1 : ℝ) - q ^ M = -(q ^ M - 1) from by ring,
+          show (1 : ℝ) - q = -(q - 1) from by ring, neg_div_neg_eq]
+    _ ≤ 1 / (1 - q) := by
+        have hpow : 0 ≤ q ^ M := pow_nonneg hq0.le M
+        gcongr
+        linarith
+    _ = (1 - q)⁻¹ := one_div _
+
+/-- Reindexing along `val`: sums over `ZMod N` are sums over `range N`. -/
+theorem sum_zmod_eq_sum_range (f : ℕ → ℝ) :
+    ∑ t : ZMod N, f t.val = ∑ m ∈ Finset.range N, f m :=
+  Finset.sum_nbij' (fun t => t.val) (fun m => (m : ZMod N))
+    (fun t _ => Finset.mem_range.mpr (ZMod.val_lt t))
+    (fun m _ => Finset.mem_univ _)
+    (fun t _ => ZMod.natCast_rightInverse t)
+    (fun m hm => ZMod.val_cast_of_lt (Finset.mem_range.mp hm))
+    (fun t _ => rfl)
+
+/-- **1-D Gaussian summation on `ZMod N`** ((E) of node S3): the exponential sum of
+quadratic cyclic-distance decay is at most twice the geometric constant, uniformly
+in `N`. Route: `nd² ≥ nd`, `exp(-a·min) ≤ exp(-a·val) + exp(-a·(N-val))`, reindex
+both halves along `val` (the second reflected), geometric domination. -/
+theorem sum_exp_neg_nd_sq_le {a : ℝ} (ha : 0 < a) :
+    ∑ t : ZMod N, Real.exp (-(a * ((nd t : ℝ)) ^ 2))
+      ≤ 2 * (1 - Real.exp (-a))⁻¹ := by
+  have hNpos : 0 < N := Nat.pos_of_ne_zero (NeZero.ne N)
+  -- quadratic decay dominates linear decay on ℕ
+  have hstep1 : ∀ t : ZMod N,
+      Real.exp (-(a * ((nd t : ℝ)) ^ 2)) ≤ Real.exp (-(a * (nd t : ℝ))) := by
+    intro t
+    apply Real.exp_le_exp.mpr
+    have hself : (nd t : ℝ) ≤ ((nd t : ℝ)) ^ 2 := by
+      have h := Nat.le_self_pow (two_ne_zero) (nd t)
+      exact_mod_cast h
+    nlinarith
+  -- linear cyclic decay splits into the two val-monotone halves
+  have hstep2 : ∀ t : ZMod N,
+      Real.exp (-(a * (nd t : ℝ)))
+        ≤ Real.exp (-(a * (t.val : ℝ))) + Real.exp (-(a * ((N - t.val : ℕ) : ℝ))) := by
+    intro t
+    rcases min_cases (t.val) (N - t.val) with ⟨hmin, _⟩ | ⟨hmin, _⟩
+    · rw [nd, hmin]
+      exact le_add_of_nonneg_right (Real.exp_pos _).le
+    · rw [nd, hmin]
+      exact le_add_of_nonneg_left (Real.exp_pos _).le
+  calc ∑ t : ZMod N, Real.exp (-(a * ((nd t : ℝ)) ^ 2))
+      ≤ ∑ t : ZMod N, (Real.exp (-(a * (t.val : ℝ)))
+          + Real.exp (-(a * ((N - t.val : ℕ) : ℝ)))) :=
+        Finset.sum_le_sum fun t _ => le_trans (hstep1 t) (hstep2 t)
+    _ = (∑ t : ZMod N, Real.exp (-(a * (t.val : ℝ))))
+          + ∑ t : ZMod N, Real.exp (-(a * ((N - t.val : ℕ) : ℝ))) :=
+        Finset.sum_add_distrib
+    _ ≤ (1 - Real.exp (-a))⁻¹ + (1 - Real.exp (-a))⁻¹ := by
+        refine add_le_add ?_ ?_
+        · rw [sum_zmod_eq_sum_range (fun m => Real.exp (-(a * (m : ℝ))))]
+          exact sum_exp_neg_mul_le ha N
+        · rw [sum_zmod_eq_sum_range (fun m => Real.exp (-(a * ((N - m : ℕ) : ℝ))))]
+          rw [← Finset.sum_range_reflect (fun m => Real.exp (-(a * ((N - m : ℕ) : ℝ)))) N]
+          refine le_trans (Finset.sum_le_sum fun j hj => ?_) (sum_exp_neg_mul_le ha N)
+          have hjN : j < N := Finset.mem_range.mp hj
+          have hidx : (N - (N - 1 - j) : ℕ) = j + 1 := by omega
+          rw [hidx]
+          apply Real.exp_le_exp.mpr
+          have : (j : ℝ) ≤ ((j + 1 : ℕ) : ℝ) := by
+            push_cast
+            linarith
+          nlinarith
+    _ = 2 * (1 - Real.exp (-a))⁻¹ := by ring
+
+/-- Elementary bound `(1 - exp(-a))⁻¹ ≤ 2/a` on `(0, 1]` (via `exp(-a) ≤ (1+a)⁻¹`). -/
+theorem one_sub_exp_neg_inv_le {a : ℝ} (h0 : 0 < a) (h1 : a ≤ 1) :
+    (1 - Real.exp (-a))⁻¹ ≤ 2 / a := by
+  have hea : Real.exp (-a) ≤ (1 + a)⁻¹ := by
+    rw [Real.exp_neg]
+    have hle : 1 + a ≤ Real.exp a := by
+      have := Real.add_one_le_exp a
+      linarith
+    gcongr
+  have hkey : a / 2 ≤ 1 - Real.exp (-a) := by
+    have hinv : (1 + a)⁻¹ ≤ 1 - a / 2 := by
+      rw [inv_le_iff_one_le_mul₀ (by linarith)]
+      nlinarith
+    linarith
+  calc (1 - Real.exp (-a))⁻¹ ≤ (a / 2)⁻¹ := by
+        gcongr
+    _ = 2 / a := by rw [inv_div]
+
 end TaoCollatz

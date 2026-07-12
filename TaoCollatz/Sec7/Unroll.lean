@@ -454,6 +454,110 @@ theorem charFn_hold_decay {N : ℕ} [NeZero N] (hN : 4 ≤ N) (ξ : ZMod N × ZM
     nlinarith [ht2R, hnd2nn, sq_nonneg (u3 - u2)]
   linarith [ha2, hb2', hu1X, hu2X, hu3X, sq_nonneg u1, sq_nonneg u2, sq_nonneg u3]
 
+/-- **Center-regime local bound for the `Hold` walk** ((E) of node S3, Gaussian
+summation at `N = ⌊√n⌋ + 1`): uniformly in the target `v`, the `n`-fold `Hold` walk
+has point masses `≤ C/(1+n)` with the explicit constant `C = 24576² = 603979776`.
+Route: `holdSum_toReal_le_charFn` + `charFn_hold_decay` per frequency,
+`pow_le_exp_of_sq_le_one_sub`, factorization of the 2-D frequency sum into the
+square of a 1-D sum, `sum_exp_neg_nd_sq_le` + `one_sub_exp_neg_inv_le` at
+`a = n/(3072·N²) ∈ [1/6144, 1]`, and `N² ∈ [n+1, 2n]`. The Gaussian factor of
+Lemma 2.2(i) off-center is the tilting step (F), which multiplies this bound. -/
+theorem holdSum_apply_le_center (n : ℕ) (v : ℕ × ℤ) :
+    ((holdSum n) v).toReal ≤ 603979776 / (1 + (n : ℝ)) := by
+  have h1n : (0 : ℝ) < 1 + n := by positivity
+  rcases le_or_gt n 8 with hn8 | hn9
+  · -- small n: the trivial mass bound suffices
+    have h1 : ((holdSum n) v).toReal ≤ 1 := by
+      have := (holdSum n).coe_le_one v
+      calc ((holdSum n) v).toReal ≤ (1 : ℝ≥0∞).toReal :=
+            ENNReal.toReal_mono ENNReal.one_ne_top this
+        _ = 1 := ENNReal.toReal_one
+    have hcast : (n : ℝ) ≤ 8 := by exact_mod_cast hn8
+    refine le_trans h1 ?_
+    rw [le_div_iff₀ h1n]
+    linarith
+  · -- large n: circle method at N = √n + 1
+    have hn9' : 9 ≤ n := hn9
+    set N := n.sqrt + 1 with hN
+    haveI : NeZero N := ⟨Nat.succ_ne_zero _⟩
+    have hs3 : 3 ≤ n.sqrt := (Nat.le_sqrt.mpr (by omega))
+    have hN4 : 4 ≤ N := by omega
+    have hNlow : n + 1 ≤ N ^ 2 := Nat.lt_succ_sqrt' n
+    have hNhigh : N ^ 2 ≤ 2 * n := by
+      have h1 := Nat.sqrt_le' n
+      have : N ^ 2 = n.sqrt ^ 2 + 2 * n.sqrt + 1 := by ring
+      nlinarith [hs3, h1]
+    have hNR : (0 : ℝ) < N := by
+      have : 0 < N := by omega
+      exact_mod_cast this
+    -- the decay rate
+    set a : ℝ := (n : ℝ) / (3072 * (N : ℝ) ^ 2) with ha
+    have hNlowR : (n : ℝ) + 1 ≤ (N : ℝ) ^ 2 := by exact_mod_cast hNlow
+    have hNhighR : (N : ℝ) ^ 2 ≤ 2 * n := by exact_mod_cast hNhigh
+    have ha0 : 0 < a := by
+      rw [ha]
+      have : (0 : ℝ) < n := by exact_mod_cast (by omega : 0 < n)
+      positivity
+    have ha1 : a ≤ 1 := by
+      rw [ha, div_le_one (by positivity)]
+      nlinarith
+    have ha_low : 1 / 6144 ≤ a := by
+      rw [ha, le_div_iff₀ (by positivity)]
+      nlinarith
+    -- per-frequency exponential bound
+    have hfreq : ∀ ξ : ZMod N × ZMod N,
+        ‖charFn (hold.map (modPair N)) ξ‖ ^ n
+          ≤ Real.exp (-(a * ((nd ξ.1 : ℝ)) ^ 2)) * Real.exp (-(a * ((nd ξ.2 : ℝ)) ^ 2)) := by
+      intro ξ
+      have hdecay := charFn_hold_decay hN4 ξ
+      set D : ℝ := (((nd ξ.1 : ℝ) / N) ^ 2 + ((nd ξ.2 : ℝ) / N) ^ 2) / 768 with hD
+      have hD0 : 0 ≤ D := by positivity
+      have hpow := pow_le_exp_of_sq_le_one_sub n (by omega) (norm_nonneg _) hD0
+        (by rw [hD]; linarith)
+      refine le_trans hpow (le_of_eq ?_)
+      rw [← Real.exp_add]
+      congr 1
+      rw [hD, ha]
+      field_simp
+      ring
+    -- assemble
+    have hmain := holdSum_toReal_le_charFn n N v
+    set g : ZMod N → ℝ := fun t => Real.exp (-(a * ((nd t : ℝ)) ^ 2)) with hg
+    have hsum2 : ∑ ξ : ZMod N × ZMod N, ‖charFn (hold.map (modPair N)) ξ‖ ^ n
+        ≤ (∑ t : ZMod N, g t) ^ 2 := by
+      calc ∑ ξ : ZMod N × ZMod N, ‖charFn (hold.map (modPair N)) ξ‖ ^ n
+          ≤ ∑ ξ : ZMod N × ZMod N, g ξ.1 * g ξ.2 :=
+            Finset.sum_le_sum fun ξ _ => hfreq ξ
+        _ = (∑ t : ZMod N, g t) * (∑ t : ZMod N, g t) := by
+            rw [Finset.sum_mul_sum, Fintype.sum_prod_type]
+        _ = (∑ t : ZMod N, g t) ^ 2 := (sq _).symm
+    have hg_bound : ∑ t : ZMod N, g t ≤ 24576 := by
+      calc ∑ t : ZMod N, g t ≤ 2 * (1 - Real.exp (-a))⁻¹ := sum_exp_neg_nd_sq_le ha0
+        _ ≤ 2 * (2 / a) := by
+            have := one_sub_exp_neg_inv_le ha0 ha1
+            linarith
+        _ = 4 / a := by ring
+        _ ≤ 24576 := by
+            rw [div_le_iff₀ ha0]
+            calc (4 : ℝ) = 24576 * (1 / 6144) := by norm_num
+              _ ≤ 24576 * a := by linarith
+    have hgnn : 0 ≤ ∑ t : ZMod N, g t :=
+      Finset.sum_nonneg fun t _ => (Real.exp_pos _).le
+    have hinvN : ((N : ℝ) ^ 2)⁻¹ ≤ (1 + (n : ℝ))⁻¹ := by
+      gcongr
+      linarith
+    calc ((holdSum n) v).toReal
+        ≤ ((N : ℝ) ^ 2)⁻¹ * ∑ ξ : ZMod N × ZMod N,
+            ‖charFn (hold.map (modPair N)) ξ‖ ^ n := hmain
+      _ ≤ ((N : ℝ) ^ 2)⁻¹ * (∑ t : ZMod N, g t) ^ 2 := by
+          gcongr
+      _ ≤ ((N : ℝ) ^ 2)⁻¹ * 24576 ^ 2 := by
+          gcongr
+      _ ≤ (1 + (n : ℝ))⁻¹ * 24576 ^ 2 := by gcongr
+      _ = 603979776 / (1 + (n : ℝ)) := by
+          rw [inv_mul_eq_div]
+          norm_num
+
 /-- **Lemma 7.7 (Distribution of first passage location), D6 statement** (paper p.43,
 (7.30)–(7.33)): the first-passage endpoint mass at `(j, l)` is Gaussian-concentrated —
 `j` near `s/4` at scale `(1+s)^{1/2}`, `l` within `O(1)` of `s`. For `l ≤ s` the left

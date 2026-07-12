@@ -1,5 +1,31 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 29 (2026-07-12, sixth box session): (E) GAUSSIAN SUMMATION PROVED — holdSum_apply_le_center
+
+`Prob/CharFn.lean`: **`pow_le_exp_of_sq_le_one_sub`** (x² ≤ 1-D ⇒ xⁿ ≤ exp(-nD/4),
+n ≥ 2; floor-of-n/2 absorbed into the 4), `sum_exp_neg_mul_le` (finite geometric
+≤ (1-e^{-a})⁻¹ via geom_sum_eq + sign-flip), `sum_zmod_eq_sum_range` (val reindex,
+sum_nbij'), **`sum_exp_neg_nd_sq_le`** (1-D Gaussian sum over ZMod N ≤ 2(1-e^{-a})⁻¹:
+nd² ≥ nd, exp(-a·min) ≤ sum of the two val-halves, second half reflected by
+sum_range_reflect), `one_sub_exp_neg_inv_le` ((1-e^{-a})⁻¹ ≤ 2/a on (0,1]).
+`Sec7/Unroll.lean`: **`holdSum_apply_le_center`** — P(holdSum n = v) ≤ 603979776/(1+n)
+for ALL n, v. At N = ⌊√n⌋+1 (N² ∈ [n+1, 2n], N ≥ 4 for n ≥ 9; n ≤ 8 by trivial mass
+bound), a = n/(3072N²) ∈ [1/6144, 1]; per-frequency ‖φ‖ⁿ ≤ exp(-a·nd₁²)·exp(-a·nd₂²),
+2-D sum factorizes into (1-D sum)² ≤ 24576², N⁻² ≤ (1+n)⁻¹. ALL AXIOM-CLEAN.
+This is the center-regime core of Lemma 2.2(i) for Hold (node S3).
+
+**(F) exponential tilting (next)**: off-center regime of `hold_local_bound`.
+Plan (HANDOFF-2026-07-10-e item 2): tilted PMF hold_λ ∝ e^{λ·d} hold(d) for λ in a
+fixed small box (needs MGF finiteness on a strip — the Lemma 7.6 engine, (7.30);
+hold second-coordinate tail is pascalNe3/geometric so the MGF is finite for
+λ₂ < log(4/3)-ish); identity P(S_n = v) = M(λ)ⁿ e^{-λ·v} P_λ(S̃_n = v); apply the
+center bound to the tilted walk (its four atom masses are continuous in λ — a fixed
+λ-box keeps them ≥ half the λ=0 values, so charFn_hold_decay generalizes with 768
+doubled); optimize λ ≈ direction of (v - n·mean)/n. Alternatively do d=1 instances
+(pascal_local_bound via iidSum_pascal_apply + Stirling; corpus
+2026-06-19-mathlib-stirling-factorial-bounds.md) first — they are the same tilting
+in one dimension and de-risk the design.
+
 ## Lap 28 (2026-07-10, fifth box session): (D) CHARACTER DECAY PROVED — charFn_hold_decay
 
 `Prob/CharFn.lean`: `nd` (cyclic distance min(val, N-val)), **`nd_le_natAbs`** (any ℤ
