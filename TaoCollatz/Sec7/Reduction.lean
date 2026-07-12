@@ -219,6 +219,175 @@ theorem fCond_three_norm (n ξ j l : ℕ) :
 /-! ### The (7.5) pairing bound — the X1 crux -/
 
 open Classical in
+/-- `cexpect` of a pushforward is `cexpect` of the composition (for bounded
+observables): the (1.26) seam between `syracZ` and the raw geometric vector. -/
+theorem cexpect_map {α β : Type*} (p : PMF α) (f : α → β) (g : β → ℂ)
+    (hg : ∀ b, ‖g b‖ ≤ 1) :
+    (p.map f).cexpect g = p.cexpect fun a => g (f a) := by
+  have hsumP : Summable fun a => (p a).toReal :=
+    ENNReal.summable_toReal p.tsum_coe_ne_top
+  have hite0 : ∀ (b : β) (a : α), (0 : ℝ) ≤ (if b = f a then (p a).toReal else 0) := by
+    intro b a; split <;> simp [ENNReal.toReal_nonneg]
+  have hiteP : ∀ (b : β) (a : α), (if b = f a then (p a).toReal else 0) ≤ (p a).toReal := by
+    intro b a; split <;> simp [ENNReal.toReal_nonneg]
+  have hsIte : ∀ b : β, Summable fun a => (if b = f a then (p a).toReal else 0 : ℝ) :=
+    fun b => Summable.of_nonneg_of_le (hite0 b) (hiteP b) hsumP
+  -- the pushforward mass at b, in ℝ
+  have hreal : ∀ b, ((p.map f) b).toReal
+      = ∑' a, (if b = f a then (p a).toReal else 0 : ℝ) := by
+    intro b
+    rw [PMF.map_apply, ENNReal.tsum_toReal_eq]
+    · exact tsum_congr fun a => by rw [apply_ite ENNReal.toReal, ENNReal.toReal_zero]
+    · intro a
+      split
+      · exact p.apply_ne_top a
+      · exact ENNReal.zero_ne_top
+  have hmap : ∀ b, (((p.map f) b).toReal : ℂ)
+      = ∑' a, ((if b = f a then (p a).toReal else 0 : ℝ) : ℂ) := by
+    intro b
+    rw [hreal b]
+    exact (Complex.ofRealCLM.hasSum (hsIte b).hasSum).tsum_eq.symm
+  -- summability on the product
+  have hG : Summable fun ab : β × α => (if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) := by
+    rw [summable_prod_of_nonneg (fun ab => hite0 ab.1 ab.2)]
+    exact ⟨fun b => hsIte b,
+      Summable.of_nonneg_of_le (fun b => tsum_nonneg (hite0 b))
+        (fun b => (hreal b).ge)
+        (ENNReal.summable_toReal (p.map f).tsum_coe_ne_top)⟩
+  have hF : Summable fun ab : β × α =>
+      ((if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) : ℂ) * g ab.1 := by
+    refine Summable.of_norm (Summable.of_nonneg_of_le (fun ab => norm_nonneg _)
+      (fun ab => ?_) hG)
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (hite0 ab.1 ab.2)]
+    calc (if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) * ‖g ab.1‖
+        ≤ (if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) * 1 :=
+          mul_le_mul_of_nonneg_left (hg ab.1) (hite0 ab.1 ab.2)
+      _ = _ := mul_one _
+  -- assemble
+  show ∑' b, (((p.map f) b).toReal : ℂ) * g b = ∑' a, ((p a).toReal : ℂ) * g (f a)
+  calc ∑' b, (((p.map f) b).toReal : ℂ) * g b
+      = ∑' b, ∑' a, ((if b = f a then (p a).toReal else 0 : ℝ) : ℂ) * g b := by
+        refine tsum_congr fun b => ?_
+        rw [hmap b, tsum_mul_right]
+    _ = ∑' a, ∑' b, ((if b = f a then (p a).toReal else 0 : ℝ) : ℂ) * g b := by
+        refine (Summable.tsum_comm' hF (fun b => ?_) (fun a => ?_)).symm
+        · exact (Complex.ofRealCLM.summable (hsIte b)).mul_right (g b)
+        · refine summable_of_ne_finset_zero (s := {f a}) (fun b hb => ?_)
+          rw [if_neg (by simpa using hb), Complex.ofReal_zero, zero_mul]
+    _ = ∑' a, ((p a).toReal : ℂ) * g (f a) := by
+        refine tsum_congr fun a => ?_
+        rw [tsum_eq_single (f a) (fun b hb => ?_)]
+        · rw [if_pos rfl]
+        · rw [if_neg hb, Complex.ofReal_zero, zero_mul]
+
+/-! #### `cexpect` calculus for the pair-peeling induction -/
+
+/-- Triangle bound: a `cexpect` of unit-bounded observables has norm `≤ 1`. -/
+theorem cexpect_norm_le {α : Type*} (p : PMF α) (f : α → ℂ) (hf : ∀ a, ‖f a‖ ≤ 1) :
+    ‖p.cexpect f‖ ≤ 1 := by
+  have hsumP : Summable fun a => (p a).toReal :=
+    ENNReal.summable_toReal p.tsum_coe_ne_top
+  have hb : ∀ a, ‖((p a).toReal : ℂ) * f a‖ ≤ (p a).toReal := fun a => by
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg ENNReal.toReal_nonneg]
+    calc (p a).toReal * ‖f a‖ ≤ (p a).toReal * 1 :=
+          mul_le_mul_of_nonneg_left (hf a) ENNReal.toReal_nonneg
+      _ = _ := mul_one _
+  have hsn : Summable fun a => ‖((p a).toReal : ℂ) * f a‖ :=
+    Summable.of_nonneg_of_le (fun a => norm_nonneg _) hb hsumP
+  calc ‖p.cexpect f‖ ≤ ∑' a, ‖((p a).toReal : ℂ) * f a‖ := norm_tsum_le_tsum_norm hsn
+    _ ≤ ∑' a, (p a).toReal := hsn.tsum_le_tsum hb hsumP
+    _ = 1 := by
+        rw [← ENNReal.tsum_toReal_eq (fun a => p.apply_ne_top a), p.tsum_coe,
+          ENNReal.toReal_one]
+
+/-- `cexpect` pulls out a constant factor. -/
+theorem cexpect_const_mul {α : Type*} (p : PMF α) (c : ℂ) (f : α → ℂ) :
+    (p.cexpect fun a => c * f a) = c * p.cexpect f := by
+  show ∑' a, ((p a).toReal : ℂ) * (c * f a) = c * ∑' a, ((p a).toReal : ℂ) * f a
+  rw [← tsum_mul_left]
+  exact tsum_congr fun a => by ring
+
+open Classical in
+/-- `cexpect` of a bind averages the fiber `cexpect`s (bounded observables). -/
+theorem cexpect_bind {α β : Type*} (p : PMF α) (q : α → PMF β) (g : β → ℂ)
+    (hg : ∀ b, ‖g b‖ ≤ 1) :
+    (p.bind q).cexpect g = ∑' a, ((p a).toReal : ℂ) * (q a).cexpect g := by
+  have hsumP : Summable fun a => (p a).toReal :=
+    ENNReal.summable_toReal p.tsum_coe_ne_top
+  have hq1 : ∀ (a : α) (b : β), (q a b).toReal ≤ 1 := fun a b => by
+    rw [← ENNReal.toReal_one]
+    exact ENNReal.toReal_mono ENNReal.one_ne_top ((q a).coe_le_one b)
+  have hw0 : ∀ (b : β) (a : α), (0 : ℝ) ≤ (p a).toReal * (q a b).toReal := fun b a =>
+    mul_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg
+  have hwle : ∀ (b : β) (a : α), (p a).toReal * (q a b).toReal ≤ (p a).toReal := fun b a =>
+    (mul_le_mul_of_nonneg_left (hq1 a b) ENNReal.toReal_nonneg).trans (mul_one _).le
+  have hsFib : ∀ b : β, Summable fun a => (p a).toReal * (q a b).toReal := fun b =>
+    Summable.of_nonneg_of_le (hw0 b) (hwle b) hsumP
+  have hreal : ∀ b, ((p.bind q) b).toReal = ∑' a, (p a).toReal * (q a b).toReal := by
+    intro b
+    rw [PMF.bind_apply, ENNReal.tsum_toReal_eq
+      (fun a => ENNReal.mul_ne_top (p.apply_ne_top a) ((q a).apply_ne_top b))]
+    exact tsum_congr fun a => ENNReal.toReal_mul
+  have hmap : ∀ b, (((p.bind q) b).toReal : ℂ)
+      = ∑' a, (((p a).toReal * (q a b).toReal : ℝ) : ℂ) := by
+    intro b
+    rw [hreal b]
+    exact (Complex.ofRealCLM.hasSum (hsFib b).hasSum).tsum_eq.symm
+  have hG : Summable fun ba : β × α => (p ba.2).toReal * (q ba.2 ba.1).toReal := by
+    rw [summable_prod_of_nonneg (fun ba => hw0 ba.1 ba.2)]
+    exact ⟨fun b => hsFib b,
+      Summable.of_nonneg_of_le (fun b => tsum_nonneg (hw0 b)) (fun b => (hreal b).ge)
+        (ENNReal.summable_toReal (p.bind q).tsum_coe_ne_top)⟩
+  have hF : Summable fun ba : β × α =>
+      (((p ba.2).toReal * (q ba.2 ba.1).toReal : ℝ) : ℂ) * g ba.1 := by
+    refine Summable.of_norm (Summable.of_nonneg_of_le (fun ba => norm_nonneg _)
+      (fun ba => ?_) hG)
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (hw0 ba.1 ba.2)]
+    calc ((p ba.2).toReal * (q ba.2 ba.1).toReal) * ‖g ba.1‖
+        ≤ ((p ba.2).toReal * (q ba.2 ba.1).toReal) * 1 :=
+          mul_le_mul_of_nonneg_left (hg ba.1) (hw0 ba.1 ba.2)
+      _ = _ := mul_one _
+  show ∑' b, (((p.bind q) b).toReal : ℂ) * g b = _
+  calc ∑' b, (((p.bind q) b).toReal : ℂ) * g b
+      = ∑' b, ∑' a, (((p a).toReal * (q a b).toReal : ℝ) : ℂ) * g b := by
+        refine tsum_congr fun b => ?_
+        rw [hmap b, tsum_mul_right]
+    _ = ∑' a, ∑' b, (((p a).toReal * (q a b).toReal : ℝ) : ℂ) * g b := by
+        refine (Summable.tsum_comm' hF (fun b => ?_) (fun a => ?_)).symm
+        · refine Summable.of_norm (Summable.of_nonneg_of_le (fun a => norm_nonneg _)
+            (fun a => ?_) hsumP)
+          rw [norm_mul, Complex.norm_real, Real.norm_eq_abs,
+            abs_of_nonneg (hw0 b a)]
+          calc ((p a).toReal * (q a b).toReal) * ‖g b‖
+              ≤ ((p a).toReal * (q a b).toReal) * 1 :=
+                mul_le_mul_of_nonneg_left (hg b) (hw0 b a)
+            _ ≤ (p a).toReal := (mul_one _).le.trans (hwle b a)
+        · refine Summable.of_norm (Summable.of_nonneg_of_le (fun b => norm_nonneg _)
+            (fun b => ?_) ((ENNReal.summable_toReal (q a).tsum_coe_ne_top).mul_left
+              ((p a).toReal)))
+          rw [norm_mul, Complex.norm_real, Real.norm_eq_abs,
+            abs_of_nonneg (hw0 b a)]
+          calc ((p a).toReal * (q a b).toReal) * ‖g b‖
+              ≤ ((p a).toReal * (q a b).toReal) * 1 :=
+                mul_le_mul_of_nonneg_left (hg b) (hw0 b a)
+            _ = (p a).toReal * (q a b).toReal := mul_one _
+    _ = ∑' a, ((p a).toReal : ℂ) * (q a).cexpect g := by
+        refine tsum_congr fun a => ?_
+        show ∑' b, (((p a).toReal * (q a b).toReal : ℝ) : ℂ) * g b
+          = ((p a).toReal : ℂ) * ∑' b, ((q a b).toReal : ℂ) * g b
+        rw [← tsum_mul_left]
+        exact tsum_congr fun b => by push_cast; ring
+
+/-- Peel one coordinate off a `cexpect` over an iid vector. -/
+theorem cexpect_iid_succ {α : Type*} (p : PMF α) (m : ℕ) (h : (Fin (m + 1) → α) → ℂ)
+    (hh : ∀ v, ‖h v‖ ≤ 1) :
+    (p.iid (m + 1)).cexpect h
+      = ∑' a, ((p a).toReal : ℂ) * (p.iid m).cexpect fun w => h (Fin.cons a w) := by
+  rw [show p.iid (m + 1) = p.bind fun a => (p.iid m).map (Fin.cons a) from rfl,
+    cexpect_bind _ _ _ hh]
+  exact tsum_congr fun a => by rw [cexpect_map _ _ _ hh]
+
+open Classical in
 /-- **The (7.4)/(7.5) pairing bound** (paper pp.33–34) — THE X1 crux. Route:
 induction on the number of pairs, peeling two `geomHalf` coordinates per step
 through `PMF.iid`. The (1.26) sum splits as
@@ -285,68 +454,6 @@ theorem expect_mono_le {α : Type*} (p : PMF α) (f g : α → ℝ) (hf0 : ∀ a
       (fun a => mul_nonneg ENNReal.toReal_nonneg (hf0 a)) hfle hsumP
   exact hsumf.tsum_le_tsum
     (fun a => mul_le_mul_of_nonneg_left (hfg a) ENNReal.toReal_nonneg) hsumg
-
-open Classical in
-/-- `cexpect` of a pushforward is `cexpect` of the composition (for bounded
-observables): the (1.26) seam between `syracZ` and the raw geometric vector. -/
-theorem cexpect_map {α β : Type*} (p : PMF α) (f : α → β) (g : β → ℂ)
-    (hg : ∀ b, ‖g b‖ ≤ 1) :
-    (p.map f).cexpect g = p.cexpect fun a => g (f a) := by
-  have hsumP : Summable fun a => (p a).toReal :=
-    ENNReal.summable_toReal p.tsum_coe_ne_top
-  have hite0 : ∀ (b : β) (a : α), (0 : ℝ) ≤ (if b = f a then (p a).toReal else 0) := by
-    intro b a; split <;> simp [ENNReal.toReal_nonneg]
-  have hiteP : ∀ (b : β) (a : α), (if b = f a then (p a).toReal else 0) ≤ (p a).toReal := by
-    intro b a; split <;> simp [ENNReal.toReal_nonneg]
-  have hsIte : ∀ b : β, Summable fun a => (if b = f a then (p a).toReal else 0 : ℝ) :=
-    fun b => Summable.of_nonneg_of_le (hite0 b) (hiteP b) hsumP
-  -- the pushforward mass at b, in ℝ
-  have hreal : ∀ b, ((p.map f) b).toReal
-      = ∑' a, (if b = f a then (p a).toReal else 0 : ℝ) := by
-    intro b
-    rw [PMF.map_apply, ENNReal.tsum_toReal_eq]
-    · exact tsum_congr fun a => by rw [apply_ite ENNReal.toReal, ENNReal.toReal_zero]
-    · intro a
-      split
-      · exact p.apply_ne_top a
-      · exact ENNReal.zero_ne_top
-  have hmap : ∀ b, (((p.map f) b).toReal : ℂ)
-      = ∑' a, ((if b = f a then (p a).toReal else 0 : ℝ) : ℂ) := by
-    intro b
-    rw [hreal b]
-    exact (Complex.ofRealCLM.hasSum (hsIte b).hasSum).tsum_eq.symm
-  -- summability on the product
-  have hG : Summable fun ab : β × α => (if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) := by
-    rw [summable_prod_of_nonneg (fun ab => hite0 ab.1 ab.2)]
-    exact ⟨fun b => hsIte b,
-      Summable.of_nonneg_of_le (fun b => tsum_nonneg (hite0 b))
-        (fun b => (hreal b).ge)
-        (ENNReal.summable_toReal (p.map f).tsum_coe_ne_top)⟩
-  have hF : Summable fun ab : β × α =>
-      ((if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) : ℂ) * g ab.1 := by
-    refine Summable.of_norm (Summable.of_nonneg_of_le (fun ab => norm_nonneg _)
-      (fun ab => ?_) hG)
-    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (hite0 ab.1 ab.2)]
-    calc (if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) * ‖g ab.1‖
-        ≤ (if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) * 1 :=
-          mul_le_mul_of_nonneg_left (hg ab.1) (hite0 ab.1 ab.2)
-      _ = _ := mul_one _
-  -- assemble
-  show ∑' b, (((p.map f) b).toReal : ℂ) * g b = ∑' a, ((p a).toReal : ℂ) * g (f a)
-  calc ∑' b, (((p.map f) b).toReal : ℂ) * g b
-      = ∑' b, ∑' a, ((if b = f a then (p a).toReal else 0 : ℝ) : ℂ) * g b := by
-        refine tsum_congr fun b => ?_
-        rw [hmap b, tsum_mul_right]
-    _ = ∑' a, ∑' b, ((if b = f a then (p a).toReal else 0 : ℝ) : ℂ) * g b := by
-        refine (Summable.tsum_comm' hF (fun b => ?_) (fun a => ?_)).symm
-        · exact (Complex.ofRealCLM.summable (hsIte b)).mul_right (g b)
-        · refine summable_of_ne_finset_zero (s := {f a}) (fun b hb => ?_)
-          rw [if_neg (by simpa using hb), Complex.ofReal_zero, zero_mul]
-    _ = ∑' a, ((p a).toReal : ℂ) * g (f a) := by
-        refine tsum_congr fun a => ?_
-        rw [tsum_eq_single (f a) (fun b hb => ?_)]
-        · rw [if_pos rfl]
-        · rw [if_neg hb, Complex.ofReal_zero, zero_mul]
 
 open Classical in
 /-- **Proposition 7.1** (= Prop 1.17 restated through the (1.26) reversed form): the
