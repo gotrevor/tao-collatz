@@ -82,416 +82,43 @@ unformalized anywhere, worth a lean-gallery entry).
 - Proved in-session (Phase-A agent): see §"Phase-A results" appended below after the run.
 - Full paper read + 26-node DAG extracted; no prior formalization found (greenfield first).
 
-## Phase-A results (2026-07-09, Opus skeleton run — commits `3d65587`/`33e7438` + Monotone ratification fix)
+## Campaign log — index 🗂️
 
-**18 files, ~1200 lines, `lake build` green. 23 sorry tokens = exactly the spec'd statement
-chain. Zero axioms / native_decide / heartbeat bumps. All proved items `#print axioms`-clean.**
+History lives in [`judge/`](judge/), one file per entry; this root stays lean (same
+fractal rule as the KB). Full text preserved verbatim — nothing was summarized away.
 
-Every mandatory "prove now" item PROVED — including both design-bet validators:
-- **D2 validated**: `syr_iterate_key` (paper (1.7)×2^|a|, the ℕ-only dynamical identity) proved.
-- **D6 validated**: the `Q` well-founded recursion compiles and `Q_boundary`, `Q_rec` (= paper
-  (7.35)), `Q_nonneg`, `Q_le_one` are proved — §7.4's stopping-time machinery is now
-  demonstrably expressible as recursion-unrolling, no infinite product measure.
-- Also proved: all four PMF normalizations (geomHalf/geomQuarter/pascal/pascalNe3),
-  `θq_succ_j`/`θq_pred_l` (paper (7.13)/(7.14) via a reusable ZMod→ℚ-phase bridge),
-  dTV basics, Collatz/oddPart basics.
+- [Phase-A results](judge/phase-a-results.md) — 2026-07-09, Opus skeleton run: 26-node skeleton landed + Monotone ratification fix.
+- [Kernel de-risk lap](judge/kernel-derisk-lap.md) — 2026-07-10, first box lap: risk-kernel probes.
+- [Pass 1](judge/pass-01.md) — 2026-07-09: RATIFY queue verdicts (Q-cluster (7.34)–(7.35), Prop 7.3 count, X4 bindings).
+- [Pass 2](judge/pass-02.md) — 2026-07-10, pp.42–46: Lemma 7.6 mean, Lemma 7.7/`fpDist` pin, Prop 7.8 cluster.
+- [Pass 3](judge/pass-03.md) — 2026-07-12, pp.14–15: Lemma 2.2 instances ratified (S3 statements).
+- [Pass 4](judge/pass-04.md) — 2026-07-12: treadmill lap-1 boundary — first boundary pass + axiom checks.
+- [Pass 5](judge/pass-05.md) — 2026-07-12: **NODE S3 COMPLETE** ✅ (risk kernel 1 closed, 10 axiom checks).
+- [Pass 6](judge/pass-06.md) — 2026-07-12, pp.46–49: X8 pinned + ratified; moved-statement audit.
+- [Pass 7](judge/pass-07.md) — 2026-07-12: **NODE X6 COMPLETE** ✅ (Lemma 7.7; Case-2 kernels unblocked).
+- [Pass 8](judge/pass-08.md) — 2026-07-12, pp.50–54: **X10 + X9 pinned + ratified** (zero un-pinned crux nodes); apex core proved; graph-semantics audit; density spot-check.
 
-**Judge-pass queue before treadmill fire** (all greppable as `RATIFY`; see also the skeleton
-agent's report in git history):
-1. ✅ RESOLVED in-session: `Qm`/`prop_7_8` — agent's guessed shape was inverted (depth from
-   strip start, no weight); rewritten to paper (7.38)/(7.39)/Prop 7.8/(7.37) forms.
-2. `unifOddMod` degenerate at `n' = 0` (normalization genuinely false there) — thread `1 ≤ n'`
-   through `valuation_dist` or junk-guard the def.
-3. `renewal_white_encounters` count coordinate `(j, pre b (j+1))` — footnote-6-style trap
-   candidate; add a D8 harness check before the §7 series.
-4. `stabilization` window endpoints (`x^α, x^{α²}, x^{α³}`) + real-vs-floor threshold semantics.
-5. `Q_white_contract` is a warm-up form of Case 1, not (7.43) itself — fine as a lemma, but
-   Case 1 proper needs the `m^{-A}·Q_{m-1}` form against the corrected `Qm`.
-6. Lemma 7.4 conjunct spelling (RATIFY-5, separation stated squared) and Lemma 2.1 shape
-   (RATIFY-2) — read against paper pp.36–41 / p.14.
+## Live judge state 📍 (update each pass)
 
-## Kernel de-risk lap (2026-07-10, first box lap)
+**Verified complete** (proof-`\leanok` on a dated judge-run `#print axioms`, all exactly
+`[propext, Classical.choice, Quot.sound]`): **X3** (2026-07-10), **S3** (pass 5),
+**X6** (pass 7).
 
-Harness extended with §7 kernel checks 7–11 (`tools/check_blueprint.py`), all passing:
+**Statements pinned + ratified**: every ledger node except **C8, X1, X5** (no pinned
+Lean statement yet). Latest: X8 (pass 6), X10 + X9 (pass 8).
 
-1. **Check 7 — Prop 7.3 coordinate convention RATIFIED** (queue item 3 retired). Validated
-   end-to-end: (a) the p.33 pairing identity (exact ℚ); (b) (7.7)
-   `χ(3^{2j-2}2^{-l+1}) = e^{-2πiθ(j,l)}`; (c) `|f(3^{2j-2}2^{-b_{[1,j]}}, 3)| = |cos(πθ(j, b_{[1,j]}))|`
-   — the white point tested at index `j` is exactly `(j, b_{[1,j]})` = Lean
-   `(j_lean, pre b (j_lean+1))`, so `renewal_white_encounters`' coordinates are correct as
-   stated; (d) `|S_χ(n)| ≤ E exp(-ε³·#white)` verified by direct summation (n=4, four ξ).
-   No footnote-6-style trap present.
-2. **Check 8 — Lemma 7.4 validated far beyond the old qualitative scan**: the paper's
-   l*/j* construction implemented in EXACT rational arithmetic; partition-into-triangles,
-   the (7.18) equality case `|θ(j,l)| = 9^{Δj}2^{Δl}|θ*|` (when < 1/2), pairwise
-   point-SET separation ≥ (1/10)log(1/ε), and strip confinement all hold at
-   (n,ξ,ε) = (30,7,9/1000) [291 triangles], (26,101,1/101) [286], (30,1,1e-4) [5, sizes
-   to 23.7]. Note the ξ=7/n=30 instance has a **giant triangle** (s* ≈ 26 ≈ n·log3·…)
-   from the tiny corner phase θ(1,1)=7/3³⁰ — sizes are NOT bounded by log(1/ε); any Lean
-   lemma bounding s_Δ by O(log(1/ε)) would be FALSE. (7.52) `s ≤ (log9/log2)·m` is the
-   correct shape.
-3. **STATEMENT BUG FOUND & FIXED (RATIFY-5 resolved)**: `black_structure` separated only
-   triangle *corners*; the paper separates the triangle *point sets* (and Case 2's
-   white-ring + Lemma 7.10's Σ-counting consume set-separation). Fixed in
-   `Sec7/Triangles.lean`; also parenthesized the union equality (the un-parenthesized
-   `= ⋃ t ∈ T, S t ∧ P` form risks the `∧` parsing into the `⋃` body).
-4. **Check 9 — Case 2 white-exit (7.50)/(7.51)**: Monte Carlo over the real triangle
-   inventory (shallow starts, iid Hold walk to first passage): P(exit ∈ W) ≈ 0.987.
-   The paper's "≫ 1" is comfortably an absolute constant; the Lemma 7.9 ε-site needs
-   only c₀ ≥ (1-e^{-ε})/(1-1/e) ≈ 1.6e-4.
-5. **Check 10 — Lemma 7.10 deterministic core**: row j-intervals of distinct triangles
-   are disjoint at every level (the "no common integer point" mechanism, p.54), and
-   aligned big-triangle pairs (the (7.65) configuration) obey the Σ j-separation
-   `gap ≥ (log2/(2log9))s' - O(alignment)` on the real inventory.
-6. **Check 11 — D4 ratified**: ε = 1/10⁴ survives every §7 usage site as concrete
-   numeric inequalities: Lemma 7.2 Taylor (`cos(πθ) ≤ exp(-ε³)` for |θ|>ε), Claim (*)
-   Cases 1–3 exponents (`ε^{1-log18/10} ∈ (ε, 1/2)`, `ε^{1-log2/10}, ε^{1-log9/10},
-   ε^{1-log18/10} ≤ 1/100`), weakly-black constants (i)–(iii), the (7.16) strip constant,
-   (7.47)'s `exp(-ε³/2) ≤ 1-ε³/4`, and the slope room `4 > log9/log2`.
-
-**Confidence moves**: X3 70→75%, X8 65→70%, X10 60→65% (ledger + content.tex updated).
-The residual X8/X10 risk is now purely proof-engineering (making Lemma 7.7/2.2-type
-Gaussian bounds and the stopping-time unrollings go through in Lean), not
-statement-fidelity or hidden-falsity risk.
-
-**Verdict update**: Phase-A outcome *raises* confidence at the margins (65% stands, with the
-D6 risk now retired): the two structural bets that could have invalidated the blueprint are
-kernel-checked, the statement chain compiles, and the remaining risk is exactly where §1
-predicted (S3 analysis kernel, X3/X8/X10 case analyses) plus statement-fidelity items now
-enumerated above rather than latent.
-
-## Judge pass (2026-07-09 evening, Ren/Fable + PDF) — RATIFY queue verdicts ⚖️
-
-Independent statement ratification against the paper (pp. 8–14, 33–37, 42–46 read this
-pass). One statement bug found and fixed; every queue item now ratified, fixed, or spec'd.
-
-1. **RATIFY-2 (`valVec_unique`, Lemma 2.1 p.14) — RATIFIED.** The divisibility-guarded iff
-   is exactly "unique tuple in `(ℕ+1)ⁿ` making `Aff_a(N)` an odd natural": the paper's
-   `Aff_a(N) ∈ 2ℕ+1` (a `ℤ[1/2]` membership) is precisely
-   `2^{a[1,n]} ∣ 3ⁿN + Fnat ∧ quotient odd`. `n = 0` edge agrees (both sides trivially true).
-2. **RATIFY-3 (`stabilization`, Prop 1.11 pp.8–9) — RATIFIED.** Windows `[x^α, x^{α²}]` /
-   `[x^{α²}, x^{α³}]` are the paper's `[y, y^α]` at `y = x^α, x^{α²}` verbatim; the `⌊x⌋₊`
-   threshold is equivalent to the paper's real-`x` threshold (orbit values are naturals);
-   (1.19)/(1.20) shapes and the single shared constant `c` match.
-3. **RATIFY-4 (`θq`) — RATIFIED**, one doc fix: mathlib `round` puts `sfrac` in
-   `[-1/2, 1/2)`, not the paper's `(-1/2, 1/2]`; they differ only at half-integers, which
-   phases with odd denominator `3ⁿ` never attain. Docstring corrected, no statement change.
-4. **Prop 7.3 count (`renewal_white_encounters`) — RATIFIED independently** (agrees with
-   harness check 7): `(j : Fin (n/2), pre b (j+1))` = paper `(j, b_{[1,j]})`; the `b j = 3`
-   conjunct per p.35; `pascal` (p.34), `pascalNe3` (7.29), `geomQuarter` (7.30 coefficient
-   `(1/4)(3/4)^{j-1}`), and `hold` (p.42 description) all match the paper exactly.
-5. **RATIFY-5 (`black_structure` set-separation fix) — CONFIRMED** vs Lemma 7.4 p.36: the
-   paper separates triangle POINT SETS in the Euclidean metric; disjointness follows from
-   positive separation; `triangle` = (7.11) verbatim; strip (`⌊n/2⌋`) and confinement
-   (real `n/2`) conjuncts both as in the paper.
-6. **RATIFY-6/7 (Q cluster) — STATEMENT BUG FOUND & FIXED (off-by-one).**
-   `Q`/`Qm`/`prop_7_8`/`Q_polynomial_decay` are paper-1-based (boundary `⌊n/2⌋ < j`, weight
-   `⌊n/2⌋ − j` — correct vs (7.34)/(7.38)/(7.40)/(7.37)), but `whiteSet` fed the 0-based
-   `white` (RATIFY-4) unshifted, so `Q`'s indicator read the phase one column RIGHT of
-   (7.34). Fixes (commit this pass): `whiteSet := {p | 1 ≤ p.1 ∧ white n ξ (p.1-1) p.2}`
-   (the coordinate adapter); `Q_white_contract` hypothesis is now `whiteSet` membership;
-   `Qm`'s sup restricted to `1 ≤ j` (paper `(ℕ+1)×ℤ` — the old sup admitted the
-   nonexistent column 0, which could break `prop_7_8` at `m = ⌊n/2⌋`); `Q_polynomial_decay`
-   takes `1 ≤ j` ((7.37) is only asserted on `(ℕ+1)×ℤ`). `Q_rec`/`Q_boundary`/`Q_nonneg`/
-   `Q_le_one`/`Qm_le_rpow` are generic in `W` — untouched, still proved.
-7. **Queue 2 (`unifOddMod` n'=0) — DECIDED: junk-guard.** The def carried a FALSE `sorry`
-   (normalization over an empty odd-residue set at `n' = 0`) — a latent campaign-killer.
-   Now `PMF.pure 0` at `n' = 0`; the `n' ≥ 1` normalization `sorry` is TRUE and grindable
-   (witness `(1 : ZMod (2^n')).val = 1` odd; sum = `card • card⁻¹`). Statements unchanged.
-8. **Queue 5 (Case 1 proper) — SPEC for the box.** (7.43), at `j = ⌊n/2⌋ − m` (paper
-   coords, p.45 (7.41)):
-   `∀ A > 0, ∃ Cthr, ∀ n ξ, ¬3∣ξ → ∀ m, Cthr ≤ m → m ≤ n/2 → ∀ l, ((n/2 - m : ℕ), l) ∈ whiteSet n ξ →`
-   `  Q (n/2) (whiteSet n ξ) epsBW (n/2 - m) l ≤ Real.exp (-(epsBW:ℝ)^3/2) * (m:ℝ)^(-A) * Qm (n/2) n ξ epsBW A (m-1)`
-   (`Q_white_contract` stays as the warm-up lemma).
-9. **Directive to next lap**: extend the harness with a (7.36)-bridge check against the
-   FIXED `whiteSet` — small-`n` comparison of `E Q(Hold)` vs
-   `E exp(-ε³ #{j : b_j = 3, (j, b_{[1,j]}) ∈ W})` (paper p.44 derivation; exact via
-   truncation + tail bound, or high-precision Monte Carlo). This pins the Q ↔ count seam
-   end-to-end and would have caught the off-by-one mechanically.
-
-**Series α is judge-cleared.** Preconditions §3 remaining: audit-machinery transplant + CI
-gate (item 2) and the PMF lemma bank ordering (item 4).
-
-## Judge pass 2 (2026-07-10 afternoon, Ren/Fable + PDF pp.42-46)
-
-Scope: the statement surface landed by box sessions 3-4 (laps 11-21).
-
-1. **Lemma 7.7 / X6 — RATIFIED.** `fpDist_location_bound` matches the p.43 display
-   verbatim: `fpDist s (j,l) ≤ C · e^{-c(l-s)}/√(1+s) · G_{1+s}(c(j - s/4))`, with
-   `Gweight t x = exp(-x²/t) + exp(-|x|)` exactly the paper's `G` (restated inline in
-   Lemma 7.7 itself). Lean is unconditional in `l` where the paper takes `l > s` —
-   sound, since `fpDist_support_snd_gt` (proved) kills the LHS for `l ≤ s`. The
-   `fpDist` budget recursion is exactly `v_{[1,k]}` at the first passage `l_{[1,k]} > s`
-   ((7.44)); support facts proved. Its `∃ c > 0` form is the faithful reading of the
-   paper's `≪` with absolute constants.
-2. **Prop 7.8 cluster / X7 — RATIFIED** vs pp.45-46: (7.37)→`Q_polynomial_decay`
-   (the `1 ≤ j` is the paper's own domain `(ℕ+1)×ℤ`), (7.38)→`Qm` (re-confirmed),
-   (7.39)→`Qm_le_rpow`, (7.40)→`prop_7_8` (∃-threshold = "sufficiently large C_{A,ε}",
-   ε fixed by D4), (7.41)-restricted-to-black→`Q_black_edge` (stated, the open X8/X10
-   kernel; `1 ≤ n/2 - m` is the paper's `j ∈ ℕ+1`), (7.43)→`Q_white_case1` verbatim
-   including the `e^{-ε³/2}` constant. The `prop_7_8` assembly (edge split white/black +
-   interior via `le_Qm`) mirrors the paper's proof frame on p.45.
-3. **Lemma 7.6 mean vector — arithmetic CONFIRMED** (p.42-43): `E Hold = (4,16)` via
-   `E Pascal = 4`; consistent with `fpDist_location_bound`'s `j ≈ s/4` centering and
-   the (7.29)/(7.30) checks already in the harness.
-4. **`Qstop`/`Q_le_fpDist_expect` (Unroll.lean) — design SOUND, machine-proved**, so
-   no statement-trap surface: `Qstop_eq` certifies the D6 unrolling is literally `Q`,
-   and `Q_le_fpDist_expect` (the (7.46)-entry inequality) drops the accumulated
-   damping factors (each ≤ 1) — valid for an upper bound; Case 2's gain must then come
-   from the endpoint's whiteness ((7.50)/(7.51)), matching the paper's route.
-5. **⚠️ Box label drift.** Box commits/handoffs use "X5" for the Prop 7.3 bridge seams
-   (`bridge_vector`/`bridge_renewal`/`hold_tsum_step`, now proved in `Bridge.lean`) —
-   those are **X4** content in the ledger/blueprint. Ledger X5 = **Lemma 7.6 basics**
-   (joint exponential tail, aperiodicity, mean (4,16) as Lean decls) and is genuinely
-   OPEN — nothing landed under that scope. Read box labels with suspicion; ratify by
-   declaration.
-6. **`renewal_white_encounters` — statement re-confirmed** after its move to
-   `Bridge.lean` (only a harmless `1 ≤ n` guard added). Now proved modulo
-   `Q_black_edge` only.
-
-Blueprint statuses flipped accordingly: X6, X7 statement-`\leanok` (18 green / 7 orange:
-S3 C8 X1 X5 X8 X9 X10). Proof-`\leanok` unchanged (X3 only) — everything downstream of
-`Q_black_edge` inherits its `sorryAx`.
-
-## Judge pass 3 (2026-07-12, Ren/Fable + PDF pp.14-15)
-
-Scope: the S3 statement surface from box session 5 (laps 22-28).
-
-1. **Lemma 2.2(i)(ii) instances — ALL RATIFIED** vs the pp.14-15 statement + p.15
-   displayed Geom(2) instance. Scalar instances (`Prob/LocalBound.lean`):
-   `geomHalf_*` (mean 2n), `geomQuarter_*` / `pascal_*` (mean 4n) — each pairs
-   (i) point mass `≤ C/√(1+n)·G(c(L-nμ))` with (ii) the tail bound as an
-   indicator-tsum (which IS `P(|S_n - nμ| ≥ λ)`). The d=2 Hold pair
-   (`Sec7/Unroll.lean`): correct `(n+1)^{-d/2} = C/(1+n)` prefactor, mean `n(4,16)`
-   (confirmed at Lemma 7.6, p.42-43), Euclidean norm fed to the scalar `G` — faithful
-   since the paper's `G_n(x)` for `x ∈ ℝ^d` depends only on `|x|`.
-2. **The `G_{1+n}`-for-`G_n` index is constants-equivalent** (`G_{1+n}/G_n ≤ e` on the
-   Gaussian regime, both `≍ e^{-|x|}` beyond) and dodges the paper's `exp(-∞) = 0`
-   convention at `n = 0`; the paper itself states Lemma 7.7 with `G_{1+s}`. Accepted.
-3. **Domain ℕ (resp. ℕ×ℤ) for the paper's ℤ (resp. ℤ²)** — sound: the summands are
-   supported there, missing lattice points carry zero mass on the LHS.
-4. **D5 route machinery (proved, no statement risk)**: `iidSum` calculus,
-   `negBinomial_apply` exact point mass, circle-method core (`Prob/CharFn.lean`
-   finite Fourier inversion on `ZMod N × ZMod N`), `hold` nondegeneracy atoms,
-   `charFn_hold_decay`. All machine-checked; they are proof plumbing for the six
-   `sorry`d instance statements above.
-
-Blueprint: S3 statement-`\leanok` (19 green / 6 orange: C8 X1 X5 X8 X9 X10). Risk
-tint/lapsrisk unchanged — S3's PROOF remains risk kernel 1.
-
-### Ops note (2026-07-12): battery + clamshell beats caffeinate
-Box session 6 (`2d245fb5dac5`) sat ~40h in suspended animation because the MacBook
-went to battery + lid-closed (caffeinate cannot assert through clamshell-on-battery;
-nothing userland can). Unlike the 07-10 mid-stream API kill, this stall was a clean
-PAUSE: the container and its 90k context survived, and the lap resumed by itself on
-wake. Distinct failure modes: sleep mid-API-stream = dead turn needing relaunch;
-sleep between requests = free pause. No tooling change warranted — the fix is
-operational (leave the lid open / on AC for overnight runs).
-
-## Judge pass 4 (2026-07-12 ~13:30 EDT, Ren/Fable — treadmill lap 1 boundary, handoff `1f38000`)
-
-Scope: campaign laps 33–40 (the treadmill's first c-yolo session; its handoff labels
-itself "sixth box session (laps 29–40)" because the aborted pre-treadmill box never wrote
-its own handoff for 29–32 — lineage note, no content drift).
-
-**All engine work, zero ledger-statement changes** → nothing new to ratify vs the PDF;
-the six Lemma 2.2 instance sorries + fpDist/hold instances are untouched, as planned.
-
-**Dated judge-run `#print axioms` (host `lake env lean`, all = [propext, Classical.choice,
-Quot.sound], nothing extra):**
-- `tilt_hold_map_mass`, `tiltHold_apply_le_center` (F4b — tilted center bound)
-- `tiltZ_hold_fst_le`, `tiltZ_hold_snd_le` (G2b — both 1-D MGF legs, means 4 and 16 exact)
-- `tiltZ_hold_le_quad` (G2c — 2-D second-order MGF bound, exact mean (4,16), box |λᵢ|≤1/200)
-
-Diff smell-grep across laps 33–40: no `axiom`, `native_decide`, `maxHeartbeats`, `sorry`
-additions. New modules `Prob/Tilt`, `Prob/Mgf`, `Sec7/HoldLocal` are sorry-free.
-
-**Verdict**: the "S3 analytic engine COMPLETE" handoff claim is CONFIRMED. S3 re-rated
-12–25/medium/78% → **4–10/low-medium/85%** (content.tex lapsrisk + BLUEPRINT.md ledger).
-Remaining on S3: F5 λ-clip assembly of `hold_local_bound` (arithmetic pre-worked in
-PENDING_WORK lap 40) + the five 1-D instance discharges.
-
-**Cadence note**: the box's internal laps run ~4–8 *minutes* each under fable/low, so the
-judge monitor now fires only on `handoff:` commits (session boundary, `.lake` free for
-host checks), statement-looking commit subjects, and treadmill-process death.
-
-## Judge pass 5 (2026-07-12 ~14:15 EDT, Ren/Fable — handoff `0d7f402`) — NODE S3 COMPLETE ✅
-
-Scope: campaign laps 41–45 (seventh box session — handoff numbering realigned).
-
-**Statement-move audit** (the box moved statements: scalars → `Prob/LocalInstances.lean`,
-Hold → `Sec7/HoldLocal.lean`): all eight Lemma 2.2 obligation statements extracted and
-compared against the pass-3 ratified forms — VERBATIM matches (`∃ c > 0, ∃ C > 0` shapes,
-means 2n/4n/4n/(4,16)n, `C/√(1+n)`·`Gweight` local RHS, `C·Gweight` tail RHS, `(1+n)⁻¹`
-Hold prefactor). One prose correction: the Hold norm is mathlib's product (sup) norm, not
-Euclidean as pass 3's note said — constants-equivalent, absorbed by ∃c; content.tex fixed.
-
-**Dated judge-run `#print axioms`** (host, all = [propext, Classical.choice, Quot.sound]):
-`geomHalf/geomQuarter/pascal_local_bound`, `geomHalf/geomQuarter/pascal_tail_bound`,
-`hold_local_bound`, `hold_tail_bound`, plus generic engines `iidSum_nat_local_of_quad`,
-`iidSum_nat_tail_of_quad`. Ten for ten.
-
-**Flips**: S3 proof-`\leanok` + lapsrisk dropped (second fully-green node after X3);
-`\lean{}` bindings extended with the three scalar tail bounds; BLUEPRINT.md ledger rows
-S3 and X3 marked COMPLETE. Risk kernel 1 is CLOSED; risk kernel 3 (X8/X10) is now the
-only red kernel; `fpDist_location_bound` (X6) is the lone sorry in Unroll.lean.
-
-**Queued for judge pass 6** (next boundary): session 8 already opened `Sec7/BlackEdge.lean`
-(X8/X10 design vs paper (7.44)–(7.67)) — ratify its TriangleFamily bundle + kernel
-statements against pp.46–48+ (UNREAD front, read before ratifying), and re-verify
-`prop_7_8`/`Q_polynomial_decay` statements verbatim (they were MOVED from Monotone.lean).
-
-## Judge pass 6 (2026-07-12 ~15:00 EDT, Ren/Fable + PDF pp.46–49 — handoff `897ad3b`) ⚖️
-
-Scope: campaign laps 46–48 (eighth box session). Two fronts: X8/X10 statement design
-(`Sec7/BlackEdge.lean`) and the X6 renewal reduction (`Sec7/FpLocation.lean`).
-
-**Paper front OPENED and read: pp.46–49** (Cases 1–3 of Prop 7.8, (7.42)–(7.56)).
-Ratifications vs the PDF:
-- `Q_black_edge_case2` ((7.44)–(7.51) Case 2, conclusion = the (7.41) shape
-  `Q ≤ m^{-A}·Q_{m-1}` under `s ≤ m/log²m`) — RATIFIED. Renewal→phase shift `j↦j-1`
-  consistent with the pass-2 Q-cluster ratification.
-- `Q_fp_endpoint_le` ((7.46) endpoint step) — RATIFIED + PROVED. Subtraction form
-  `1-(1-e^{-ε³})·1_W` ≡ the paper's `exp(-ε³·1_W)` on {0,1}; the extra Hold step
-  (edgeWeight) is the paper's own (7.35)+(7.38) mechanism, constants-equivalent to the
-  abbreviated display.
-- `fpDist_edgeWeight_le` ((7.42)+(7.48)/(7.49) composite, `≤(1+δ)m^{-A}`) — RATIFIED.
-- `fpDist_white_exit` ((7.50)/(7.51), absolute `p₀`, uniform) — RATIFIED, with a noted
-  STRENGTHENING: Lean requires white AND in-strip (the damping mechanism needs it; the
-  paper leaves in-strip implicit). Extra proof burden, not a faithfulness risk.
-- `budget_le_of_mem_triangle` ((7.52)) — RATIFIED + PROVED; lattice slack `(m+2)` for the
-  paper's `m`, documented; Case 3 hypothesis carries the matching slack.
-- `Q_black_edge_case3` ((7.53)–(7.67) interface) — RATIFIED as the Case-3 entry statement
-  (X9/X10/X11 subtree discharges it; Lemmas 7.9/7.10 pp.50–54 remain UNREAD/unstated).
-- `Q_black_edge` (case split over the family, black starts) — PROVED from the two cases;
-  conditional on their sorries by design.
-
-**Moved-statement audit**: `prop_7_8`, `Q_polynomial_decay` (Monotone→BlackEdge) and
-`fpDist_location_bound` (Unroll→FpLocation) — all character-for-character IDENTICAL to
-the ratified versions. Bindings unaffected (names unchanged).
-
-**Dated judge-run `#print axioms`** (all = [propext, Classical.choice, Quot.sound]):
-`exists_triangleFamily`, `Q_fp_endpoint_le`, `budget_le_of_mem_triangle`,
-`edgeWeight_of_deep`, `one_le_Qm`, `fpDist_le_renewal_conv`, `sum_range_exp_neg_sq_le`,
-`sum_abs_AP_le`, `renewal_weight_sum_le`, `Gweight_factor`. Ten for ten.
-
-**Flips**: X8 `\notready` → statement-`\leanok` + bindings (TriangleFamily,
-Q_black_edge_case2, Q_fp_endpoint_le, fpDist_edgeWeight_le, fpDist_white_exit,
-budget_le_of_mem_triangle); re-rated 12–25/high/70% → 8–16/medium/75%. X6 re-rated
-10–20/high/70% → 4–10/medium/80% (reduction to `renewalMass_bound` + last-step PROVED).
-X7 gains the `Q_black_edge` binding; X11 gains `Q_black_edge_case3`. X9/X10 stay
-`\notready` (Lemmas 7.9/7.10 not yet stated in Lean). Graph: 20 green borders / 5 orange.
-
-**Sorry census**: BlackEdge 4 kernels (weight degradation, white-exit, case2 assembly,
-case3) + FpLocation 2 (renewalMass_bound, fpDist_location_bound) = the entire §7.4
-frontier; everything else in Sec7 is sorry-free.
-
-## Judge pass 7 (2026-07-12 ~15:45 EDT, Ren/Fable — handoff `d2ac8cd`) — NODE X6 COMPLETE ✅
-
-Scope: campaign laps 49–50. `renewalMass_bound` + `fpDist_location_bound` (Lemma 7.7)
-PROVED; `FpLocation.lean` sorry-free. Statement verified character-identical to the
-pass-3 ratified form (no drift during proving). Dated judge-run `#print axioms`: all of
-`fpDist_location_bound`, `renewalMass_bound`, `hold_step_bound`, `conv_Gweight_exp` =
-[propext, Classical.choice, Quot.sound]. X6 proof-`\leanok` flipped (third fully-verified
-node: X3, S3, X6); ledger row marked complete.
-
-Consequence: BOTH open Case-2 kernels (`fpDist_edgeWeight_le`, `fpDist_white_exit`) are
-now unblocked — they were the only X8 items gated on X6. §7.4 frontier is down to the
-four BlackEdge sorries + Holding:296 + White:28 + Decay:21 placeholders downstream.
-
-## Judge pass 8 (2026-07-12 ~16:00 EDT, Ren/Fable + PDF pp.50–54 — laps 51–52 statement watch + handoff `5e5582b`) ⚖️
-
-Scope: lap 51 REVIEW course-correct through lap 52's X9 pin (`8c2b597`…`450f3ad`).
-Read paper pp.50–54 (previously UNREAD: Lemma 7.9 (7.57)–(7.59), Lemma 7.10
-(7.60)–(7.65)) and ratified all new `Sec7/ManyTriangles.lean` ledger work. Dated
-`#print axioms` run at the lap-51 boundary (`5e5582b`, .lake free) on all eight lap-51
-proved decls — not_mem_two, existsUnique_cover, coveringTriangle_mem/_covers,
-eq_coveringTriangle, fpDistPlus_zero, apex_gap, apex_separation — ALL exactly
-[propext, Classical.choice, Quot.sound]. Lap-52 proved decls (encExpect_succ,
-encExpect_zero/_le/_of_count_ge/_anti, encVal_le, fpDistPlus_tsum_toReal, …) queued
-for the next boundary (box mid-lap 52; gate-green per commit).
-
-**X10 pin RATIFIED** — `triangle_encounter_le` vs Lemma 7.10, p.51:
-- Hypotheses match: `(j,l)` in a family triangle `t₀`; `s = t₀.2.1 − l` (= l_Δ − l);
-  `m/log²m < s` with `m = n/2 − j` (ℕ-truncated, edge cases m ∈ {0,1} vacuous via
-  `1 ≤ s' ≤ m^0.4`); `p : ℕ` incl. 0 (paper's ℕ; `fpDistPlus_zero` covers p = 0);
-  `¬3∣ξ`. Log precedence checked: `Real.log m ^ 2` parses as `(log m)²`. ✓
-- Event matches: `bigTriangleSet F s'` = ⋃ of family triangles of size ≥ s′ (sizes ℝ,
-  `(s':ℝ) ≤ t.2.2`). Conclusion `≤ C·A²(1+p)/s' + C·exp(−c·A²(1+p))` = paper's ≪ with
-  merged constant. ✓
-- **Encoding note (D1, trust-relevant)**: the endpoint law `fpDistPlus s p :=
-  (fpDist s).bind (fun e => (iidSum hold p).map (e + ·))` encodes `v_{[1,k+p]}`. The
-  strong-Markov step (post-stopping increments iid ⟹ law = convolution) is absorbed
-  into the encoding, NOT proved in Lean — same trust status as `fpDist`'s own
-  identification with the stopped walk (ratified at the X6 pin). Documented in the
-  module docstring and the blueprint node.
-- **Strengthening note**: Lean quantifies `∀ A > 0` with C, c uniform in A (paper: A
-  fixed large, constants uniform in n, ξ). This is what the p.54 union bound
-  (`s' = 4^A(1+p)³`, sum over p ≤ m^0.1 → `P(E_*) ≪ A²4^{−A}`) actually needs; the
-  small-A/small-s′ regimes are trivial with C large (LHS ≤ 1). Provable as stated.
-
-**Prereqs ratified (proved, internal)**: `TriangleFamily.not_mem_two` (distinct family
-triangles share no lattice point — exactly the p.54 "two apex-intervals cannot have any
-integer point in common" step via Lemma 7.4/X3's separation, 0.92² ≤ 0 contradiction);
-`existsUnique_cover` (∃! covering triangle — cover + not_mem_two); `coveringTriangle`
-Δ(q) + 3 specs (choose-witness glue, correct by construction); `fpDistPlus_zero`.
-Axiom checks on these queued for the next session boundary.
-
-**X9 pin RATIFIED** (lap 52, `1c9b2c8`) — `many_triangles_white` vs Lemma 7.9 / (7.57),
-pp.50–51. The stopping-time data (t_i, Δ_i, r) is encoded as a left fold `EncState`
-(pos, clearing barrier init l' [vacuous: Hold's l-steps ≥ 2], count r, cumWhite,
-banked-at-min(r,R)); `encVal = exp(−banked + ε·min(count,R))` reproduces the (7.57)
-integrand exactly (banked includes the encounter step's own whiteness = paper's
-Σ_{p≤t_i}; encounter condition = phase point in a family triangle AND barrier < height
-= the t_i definition; barrier update = l_Δ of the covering triangle). Three deltas,
-all judged faithful:
-1. *Finite horizon ∀T* — no infinite product measure (D6; route-trigger T1 does NOT
-   fire). The ∀T family is the maximal D1-faithful rendering; `encExpect_le` (≤ e^{εR})
-   is the domination that recovers the paper's infinite-walk form in the limit.
-2. *∃ε₀ ∀ε≤ε₀* instead of the paper's fixed section constant — the pin's exponent-ε is
-   a separate knob from the section's damping constant (which lives inside whiteStrip
-   already). RIDER for X11 ratification: verify on pp.55–56 (UNREAD) that the (7.66)–
-   (7.67) consumption chooses R after ε, as the module docstring claims (quoted formula
-   R := ⌈(10A/ε_Q³ + O(A) + 1)/ε⌉). If p.55 instead needs ε = the fixed section
-   constant, the proof must additionally exhibit ε₀ ≥ 10⁻⁴ (expected comfortably:
-   ε₀ ≈ (1−1/e)·p₀ with p₀ the absolute white-exit mass).
-3. *Index shift* — triangle/black tested at the phase point (q₁−1, q₂), white at q:
-   consistent with the pass-6-ratified Case-2 forms (`fpDist_white_exit`'s
-   (n/2−m−1, l) triangle test, unshifted whiteStrip). The 1 ≤ q₁ guard makes the ℕ
-   subtraction honest (q₁ = 0 can never be an encounter).
-Also proved this lap (internal, judged sound): head-peel `encExpect_succ` (the p.51
-first-block conditioning skeleton — normalizer-into-[0,1] + `PMF.expect_iid_succ`),
-`encExpect_of_count_ge` (saturated states frozen = min(r,R) semantics),
-`encExpect_anti` (white-count coupling — licenses the paper's p.51 drop of mid-block
-white increments Σ1_W ≥ 1_W(endpoint)), trivial envelope + positivity. The (7.59)
-closure consumes X8's `fpDist_white_exit`, now load-bearing for BOTH X8 and X9.
-X9 flipped statement-`\leanok`; X10+X9 both now pinned → zero un-pinned nodes remain
-in §7 except X1/X5 setup and C8.
-
-**Graph-semantics audit** (Trevor's question, 2026-07-12): several dark-green nodes
-carry lap badges — CORRECT, not stale. leanblueprint colors a *definition* node green
-once its bound defs compile (dark green when the whole ancestor cone is green); the
-`\lapsrisk` badge tracks the node's remaining WORK, which for definition nodes lives in
-support lemmas invisible to leanblueprint (S1 → Prob/Basic.lean sorries ×2, C1 →
-Basic/Collatz.lean ×2, C6 → Statement.lean ×2, etc.). Badges are dropped only on
-proof-verified nodes (X3/S3/X6 — none carry badges). Doctrine note added to
-content.tex's preamble.
-
-**Top-level density spot-check** (prior-art sweep follow-up, [[tao-collatz]] KB leaf +
-`todos/open/tao-collatz-statement-faithfulness-audit.md`): `Statement.lean` imports
-only `Basic.Collatz` + `Basic.LogDensity`, and the almost-all quantifier is
-LOGARITHMIC density (`HasLogDensity` = Tendsto of `logProb` = Σ 1/N weights over
-`posInterval`, `AlmostAllPos` = log-density 1) — the natural-vs-log density trap that
-sank the Idris competitor is not present in our statement layer. Full diff vs Math
-Inc's FormalQualBench rendering (their `LogDensityZero` via `1/log N · logWeightSum`;
-their `f : ℕ → ℕ` vs Tao's `f : ℕ+ → ℝ`) = the open KB todo, a dedicated pass.
-
-Blueprint: X10 `\notready` → statement-`\leanok` + `\lean{triangle_encounter_le,
-fpDistPlus, bigTriangleSet, TriangleFamily.not_mem_two}`; `\uses` += S3 (paper p.52 uses
-Lemma 2.2 for the escape event); X9 prose updated (prereqs proved, pin pending), stays
-`\notready`. Ledger rows updated. Governance note: the box created DIRECTION.md (binding
-CURRENT DIRECTIVE, review-lap-writable) + STATUS.md this lap — DIRECTION.md is also
-Trevor's steering lever; edits there outrank HANDOFF.
+**Open riders / queued fronts**:
+- **X11 ε-rider** (pass 8): when ratifying X11 against pp.55–56 (UNREAD), verify the
+  (7.66)–(7.67) consumption chooses `R` after ε, as ManyTriangles' docstring claims;
+  otherwise X9's proof must additionally exhibit ε₀ ≥ 10⁻⁴.
+- **Axiom-check queue** (next session boundary): lap-52 proved decls —
+  `encExpect_succ`, `encExpect_zero`/`_le`/`_of_count_ge`/`_anti`, `encVal_le`,
+  `fpDistPlus_tsum_toReal`, `encExpect_block_le` (the path→`fpDist` block bridge).
+- **Unread paper fronts**: §5 first-passage (C8), §6 Fourier reduction (X1), Lemma 7.6
+  joint-tail/aperiodicity (X5, when statements land), §7.5 assembly pp.55–56 (X11).
+- **Trust-surface notes**: `fpDist` / `fpDistPlus` encode stopped-walk laws at the
+  design level (strong Markov absorbed — D1, ratified passes 2 & 8);
+  `fpDist_white_exit` (X8 kernel) is load-bearing for BOTH X8 and X9.
 
 ## Judge loop — standing ops while the treadmill runs (2026-07-12)
 
@@ -506,12 +133,9 @@ also fine to sweep ad hoc.
 1. `git-safe -C ~/src/tao-collatz log --oneline <last-judged>..HEAD` — read the lap's
    commits. Identify NEW or CHANGED *statements* (new `sorry`d theorems, new defs bound
    for blueprint nodes, any edit to an already-ratified statement — diff those verbatim).
-2. Ratify vs `papers/tao-2019-almost-all-orbits.pdf`. Already ratified (see judge passes
-   1-3 above): Q-cluster/(7.34)-(7.35), Prop 7.3 count, Lemma 2.2 instances (pp.14-15),
-   Lemma 7.6 mean (pp.42-43), Lemma 7.7/fpDist (p.43), Prop 7.8 cluster (7.37)-(7.45)
-   (pp.44-46). NOT yet read/ratified fronts: Case 2/3 details (7.46)-(7.53) pp.46-48,
-   Lemma 7.9 + §7.5 (X9/X10), §5 first-passage (C8), §6 Fourier reduction (X1),
-   Lemma 7.6 joint-tail/aperiodicity statements when X5 lands.
+2. Ratify vs `papers/tao-2019-almost-all-orbits.pdf`. Already-ratified ground is
+   indexed in the Campaign log above (per-pass files in `judge/`); the still-unread
+   fronts are in Live judge state.
 3. Blueprint flips in `blueprint/src/content.tex`: statement-`\leanok` ONLY when landed
    + compiled + judge-ratified (add `\lean{...}` bindings, RAW names — `\_` escapes
    break plasTeX). Proof-`\leanok` ONLY on a judge-run `#print axioms` (host
@@ -519,9 +143,10 @@ also fine to sweep ad hoc.
    Re-rate `\lapsrisk` when the evidence moves; mirror the BLUEPRINT.md §2 ledger row.
 4. Rebuild: `cd blueprint && ./build.sh` (never bare `leanblueprint web`). Verify via
    the extracted DOT if suspicious (tools: sandbox extract_depgraph_dot.py).
-5. Commit `--no-verify` scoped to `blueprint/ EXECUTABILITY.md BLUEPRINT.md` (never
-   sweep the box's in-flight Lean files); push (boxes cannot).
-6. Append verdicts as a numbered judge-pass section above this one.
+5. Commit `--no-verify` scoped to `blueprint/ judge/ EXECUTABILITY.md BLUEPRINT.md`
+   (never sweep the box's in-flight Lean files); push (boxes cannot).
+6. Record the pass as `judge/pass-NN.md`, add its index line to the Campaign log, and
+   refresh the Live judge state section.
 
 **Cautions**: boxes MISLABEL ledger ids (session 4 called Prop 7.3 work "X5") — ratify
 by declaration, never by label. A statement edit to an already-green node REVOKES its
