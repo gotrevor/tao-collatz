@@ -26,8 +26,31 @@ sorry → two named analytic sub-sorries + one proved helper + axiom-clean glue:
   `tsum_le_tsum` lifts the pointwise bound. `p₀ := 3/4 > 1/2` clears the chain cap
   comfortably (numeric white-exit mass ≈ 0.99, harness check 9).
 
+**Lap 56 cont — shared prerequisite LANDED** (`Sec7/ManyTriangles.lean`, both
+axiom-clean, `lake build` green):
+- **`hasSum_int_shift_exp`** (PROVED): a support-shifted exponential over `ℤ`
+  sums geometrically — `∑_{l>s} e^{-c(l-s)} = e^{-c}/(1-e^{-c})`. Route: ℤ→ℕ
+  split (`HasSum.of_nat_of_neg_add_one`, neg part = 0), then ℕ-shift by `s+1`
+  (`hasSum_nat_add_iff'`, front sum = 0), then `hasSum_geometric_of_lt_one`.
+- **`fpDist_col_le`** (PROVED): the first-passage COLUMN MARGINAL —
+  `∑'_l (fpDist s (j,l)).toReal ≤ C'·Gweight(1+s, c(j-s/4))/√(1+s)`. Collapses
+  X6's `fpDist_location_bound` over the height `l` (support `l>s` kills the
+  `e^{-c(l-s)}` factor geometrically via the helper above). This is the SHARED
+  prerequisite both tails need: `fpDist_out_of_strip_le` sums it over `j>m`;
+  `fpDist_any_triangle_le` reads column-wise Gaussian decay off it.
+
+**Next step for `fpDist_out_of_strip_le`** (now one Gaussian j-tail away): reduce
+the 2-D `∑'_e` to `∑'_{j>m} (col marginal j)` (Fubini/`comp_injective` on the
+first coordinate), then bound `∑_{j>m} Gweight(1+s, c(j-s/4))/√(1+s) ≤ 1/8` using
+the budget `s/4 < m` (so `j-s/4 > 0.2m`) + the Gaussian-AP sum lemmas already in
+`FpLocation` (`sum_range_exp_neg_sq_le`, `sum_exp_geom_le`) lifted to a `tsum`
+tail. The `Gweight = exp(-x²/t)+exp(-|x|)` split: the `exp(-|x|)` part is
+geometric in `j` (reuse `hasSum_int_shift_exp`-style); the `exp(-x²/t)` part needs
+the half-line Gaussian tail `≤ exp(-γ·x)` for `x ≥ x₀` (convexity), then geometric.
+
 **Next attack — the two residual analytic sub-sorries** (both consume X6
-`fpDist_location_bound`; both are the SAME geometry shared with X8's Case-2 twin):
+`fpDist_location_bound` via `fpDist_col_le`; both are the SAME geometry shared with
+X8's Case-2 twin):
 
 1. **`fpDist_out_of_strip_le`** (`≤ 1/8`): Gaussian `j`-tail. From X6,
    `(fpDist s (j,l)).toReal ≤ (D·K)·exp(-cF·(l-s))/√(1+s)·Gweight(1+s, cF·(j-s/4))`.
