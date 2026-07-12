@@ -1,5 +1,29 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 30 (2026-07-12, sixth box session): (F1) TILTING ENGINE PROVED — Prob/Tilt.lean NEW
+
+Generic exponential tilting, entirely in ℝ≥0∞ (no convergence side conditions beyond
+0 < Z < ∞): `tiltZ p w = Σ_d p d · w d` (partition function / MGF at the tilt),
+`tilt p w` (the tilted PMF, direct subtype construction + ENNReal.mul_inv_cancel),
+**`iidSum_tilt_apply`** (product-form tilting identity
+`P_λ(S̃_n = v)·Zⁿ = P(S_n = v)·w v`, induction via iidSum_succ; weights recombine on
+the diagonal v = a+e by w-multiplicativity), **`iidSum_apply_eq_tilt`**
+(consumption form `P(S_n = v) = P_λ(S̃_n = v)·Zⁿ·(w v)⁻¹`). AXIOM-CLEAN.
+Gotcha: hand-written `if v = a + e` needs `classical` (PMF.map_apply's ite is
+classical); pushing constants into tsums is `← ENNReal.tsum_mul_left/right`.
+
+**(F2) next — instantiate at hold**: w λ d := ENNReal.ofReal (exp (λ₁·d₁ + λ₂·d₂)).
+Multiplicativity: ofReal_mul + exp_add. Need `tiltZ hold (w λ) < ∞` for λ in a box:
+hold = geomQuarter ⊗ (3 + pascalNe3-sum) — second coordinate ≤ 3·(first coordinate
+sum structure)? NO: second coord is 3+Σ of pascalNe3 which has geometric tail 3/4;
+first coord geometric 1/4. MGF finite for λ₂ < log(4/3)/const, λ₁ < log 4 - λ₂-slack.
+Concretely: tiltZ = Σ_k geomQuarter k · e^{λ₁k} · Π-structure — use hold's bind/map
+form (Holding.lean) to factor the MGF as product of geometric MGFs (each a geometric
+series). Then (F3): tilted atom masses ≥ half untilted for small λ-box ⇒
+charFn decay for tilted hold (refactor charFn_hold_decay to take atom-mass lower
+bounds as hypotheses, constant parametric); (F4): center bound for tilted walk;
+(F5): optimize λ = clip((v - n·mean)/(Kn)) ⇒ Gweight factor ⇒ hold_local_bound.
+
 ## Lap 29 (2026-07-12, sixth box session): (E) GAUSSIAN SUMMATION PROVED — holdSum_apply_le_center
 
 `Prob/CharFn.lean`: **`pow_le_exp_of_sq_le_one_sub`** (x² ≤ 1-D ⇒ xⁿ ≤ exp(-nD/4),
