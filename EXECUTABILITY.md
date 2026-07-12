@@ -97,6 +97,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 6](judge/pass-06.md) — 2026-07-12, pp.46–49: X8 pinned + ratified; moved-statement audit.
 - [Pass 7](judge/pass-07.md) — 2026-07-12: **NODE X6 COMPLETE** ✅ (Lemma 7.7; Case-2 kernels unblocked).
 - [Pass 8](judge/pass-08.md) — 2026-07-12, pp.50–54: **X10 + X9 pinned + ratified** (zero un-pinned crux nodes); apex core proved; graph-semantics audit; density spot-check.
+- [Pass 9](judge/pass-09.md) — 2026-07-12: **PAPER GAP in Lemma 7.9 CONFIRMED** 🕳️ (p.51 display banks damping through k₁; true sum stops at t₁); X9 re-ratified at exp(2ε); 10 axiom checks (encounter fold + block bridge) clean; KB literature-holes entry #5.
 
 ## Live judge state 📍 (update each pass)
 
@@ -105,20 +106,29 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 **X6** (pass 7).
 
 **Statements pinned + ratified**: every ledger node except **C8, X1, X5** (no pinned
-Lean statement yet). Latest: X8 (pass 6), X10 + X9 (pass 8).
+Lean statement yet). Latest: X8 (pass 6), X10 (pass 8), X9 (pass 8; **re-ratified at
+exp(2ε)** pass 9 after the paper-gap route finding).
 
 **Open riders / queued fronts**:
 - **X11 ε-rider** (pass 8): when ratifying X11 against pp.55–56 (UNREAD), verify the
   (7.66)–(7.67) consumption chooses `R` after ε, as ManyTriangles' docstring claims;
-  otherwise X9's proof must additionally exhibit ε₀ ≥ 10⁻⁴.
-- **Axiom-check queue** (next session boundary): lap-52 proved decls —
-  `encExpect_succ`, `encExpect_zero`/`_le`/`_of_count_ge`/`_anti`, `encVal_le`,
-  `fpDistPlus_tsum_toReal`, `encExpect_block_le` (the path→`fpDist` block bridge).
+  otherwise X9's proof must additionally exhibit ε₀ ≥ 10⁻⁴. The exp(2ε) correction
+  (pass 9) rides the same check — any absolute exponent constant must wash out there.
+- **p₀ ≥ 1/2 certification burden** (pass 9): X9's exp(2ε) constant hard-codes
+  p₀ ≥ 1/2, but X8's `fpDist_white_exit` is pinned only `∃p₀ > 0`. Either the
+  white-exit proof certifies p₀ ≥ 1/2 (Monte Carlo ≈ 0.99) or X9 re-loosens to an
+  ∃C exponent form — both consumable; watch which way the box goes.
+- **Watch: (7.59)-shaped white-exit variant** — the corrected X9 route needs a white-
+  exit statement WITHOUT the Case-2 budget hypothesis; a new pin to ratify when it
+  lands (re-read (7.59) context pp.50–51 then).
 - **Unread paper fronts**: §5 first-passage (C8), §6 Fourier reduction (X1), Lemma 7.6
   joint-tail/aperiodicity (X5, when statements land), §7.5 assembly pp.55–56 (X11).
 - **Trust-surface notes**: `fpDist` / `fpDistPlus` encode stopped-walk laws at the
   design level (strong Markov absorbed — D1, ratified passes 2 & 8);
   `fpDist_white_exit` (X8 kernel) is load-bearing for BOTH X8 and X9.
+- **Paper-gap ledger**: Lemma 7.9 p.51 conditioning display (pass 9, confirmed ~90%) —
+  KB `formalization-literature-holes.md` entry #5. Candidate for a polite author note
+  at endgame (Trevor sends).
 
 ## Endgame — announcement plan (on full discharge) 📣
 
