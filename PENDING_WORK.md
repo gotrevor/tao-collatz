@@ -1,5 +1,37 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 36 (2026-07-12, sixth box session): (F4b) TILTED CENTER BOUND PROVED
+
+`Sec7/HoldLocal.lean` NEW (imports Unroll + Mgf; the S3 assembly module):
+**`tilt_hold_map_mass`** (four atoms ≥ 1/400 after tilt + mod-N projection) and
+**`tiltHold_apply_le_center`** — `P_λ(S̃_n = v) ≤ (32·80000)²/(1+n)` uniformly on
+the tilt box |λᵢ| ≤ 1/50 (charFn_decay_of_atoms at μ = 1/400 ⇒ c = 80000 ⇒
+iidSum_apply_le_center_of_decay). AXIOM-CLEAN, compiled first try — the parametric
+chain (F3a)+(F3b)+(F4a) composed with zero friction.
+
+**(F5) next — the Chernoff assembly for `hold_local_bound`** (in HoldLocal.lean):
+1. (G1) hold mean identities: `∑' d, hold d * d.1 = 4`, `∑' d, hold d * d.2.toNat
+   = 16` (second coord ≥ 3 on support so ℕ-valued; both as ENNReal tsums; via
+   hold's bind/map structure + geometric means: E gQ = 4, E pascalNe3 = 13/3,
+   E[3 + (k-1)-fold] = 3 + 3·(13/3) = 16).
+2. (G2) second-order MGF bound: `tiltZ hold (expW2 λ) ≤ ofReal (1 + 4λ₁ + 16λ₂
+   + K(λ₁²+λ₂²))` on a shrunk box |λᵢ| ≤ δ (δ = 1/100, K explicit): pointwise
+   `e^u ≤ 1 + u + u²e^{|u|}/2` (u = λ·d), then Σ hold(d)·u² e^{|u|} ≤
+   |λ|²·Σ hold(d)(d₁+|d₂|)² e^{δ(d₁+|d₂|)} ≤ |λ|²·(2/δ²)·Σ hold(d) e^{2δ(d₁+d₂)}
+   (x² ≤ (2/δ²)e^{δx}; d₂ ≥ 3 ≥ 0 on support so |d₂| = d₂) = |λ|²·(2/δ²)·
+   tiltZ hold (expW2 2δ 2δ) ≤ |λ|²·(2/δ²)·(221/25) with 2δ = 1/50. Mean term from
+   (G1). All in ENNReal/ofReal carefully, or via toReal with finiteness.
+3. (F5) assembly: `iidSum_apply_eq_tilt` (consumption form) + `tiltHold_apply_le_center`
+   ⇒ P(S_n = (j,l)) ≤ C₀/(1+n) · (Z e^{-λ·(4,16)})ⁿ · e^{-λ·dev}, dev = (j-4n, l-16n);
+   (G2) ⇒ (Ze^{-λ·mean})ⁿ ≤ exp(nK|λ|²) [need e^{-λ·(4,16)}-multiplied form: restate
+   (G2) as Z ≤ ofReal(exp(4λ₁+16λ₂+K|λ|²)) via 1+x ≤ eˣ]. Choose λ = clip:
+   center |devᵢ| ≤ 4Kδn: λᵢ = devᵢ/(4Kn) ⇒ exponent ≤ -|dev|²/(8Kn) ⇒ Gaussian
+   branch of Gweight (constant c ≤ 1/√(8K·2) etc); else λᵢ = ±δ·sign(devᵢ) ⇒
+   ≤ exp(-δ‖dev‖₁/2)-ish ⇒ exp branch. Case split per coordinate — 2-D clip is
+   componentwise, exponent separates: nK(λ₁²+λ₂²) - λ₁dev₁ - λ₂dev₂ optimizes
+   per-coordinate independently. Gweight consumes sup-norm ‖dev‖_∞; exponent
+   bound gives per-coord products ⇒ take the max coord for the bound.
+
 ## Lap 35 (2026-07-12, sixth box session): (F4a) PARAMETRIC CENTER BOUND PROVED
 
 `Sec7/Unroll.lean`: **`iidSum_apply_le_center_of_decay`** — the (E) Gaussian
