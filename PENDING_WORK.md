@@ -1,5 +1,24 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 33 (2026-07-12, sixth box session): (F3a) PARAMETRIC CHARACTER DECAY
+
+`Sec7/Unroll.lean`: **`charFn_decay_of_atoms`** — charFn_hold_decay abstracted over
+an atom-mass lower bound `μ ≥ 0` at the four projected points (1,3),(2,5),(2,7),(2,8)
+mod N: `‖charFn r ξ‖² ≤ 1 - 2μ²·((nd ξ₁/N)² + (nd ξ₂/N)²)`, any PMF r, N ≥ 4.
+`charFn_hold_decay` re-derived as the μ = 1/32 instance (2·(1/32)² = 1/512 ≥ 1/768).
+AXIOM-CLEAN. Gotcha: the old proof's final `nlinarith` blows the heartbeat budget
+once μ is symbolic — pre-multiply the triangle bounds by μ² via
+`mul_le_mul_of_nonneg_left … (sq_nonneg μ)` and finish with plain `linarith`.
+
+**(F3b) next — tilted atom masses**: need `tiltZ_hold_le` (numeric UPPER bound on
+the partition function on the box |λᵢ| ≤ 1/50, same geometric-sum route as
+tiltZ_hold_ne_top: e^{λ₁+3λ₂}·Σ_k ratio^{k-1} with ratio ≤ 171/196 ⇒ Z ≤
+(50/47)-ish·(1-171/196)⁻¹ explicit rational) and per-atom lower bounds
+`(tilt hold (expW2 λ)) y ≥ hold(y)·e^{-|λ|·‖y‖₁}/Z ≥ μ₀` at the four points
+(worst atom (2,8): (1/32)·e^{-10/50}/C). Then (F4) tilted center bound = (E) verbatim
++ charFn_decay_of_atoms at μ₀; (F5) λ-optimization (needs hold mean (4,16) or the
+crude boundary-sign route) ⇒ `hold_local_bound`.
+
 ## Lap 32 (2026-07-12, sixth box session): (F2b) HOLD MGF FINITENESS PROVED
 
 `Prob/Mgf.lean` (now imports Sec7/Holding): `exp_le_inv_one_sub` (e^x ≤ (1-x)⁻¹ on
