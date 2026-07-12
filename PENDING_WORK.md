@@ -1,5 +1,48 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 52 (cont): **ROUTE FINDING — paper's Lemma 7.9 proof has a gap; pin corrected to `exp(2ε)`**
+
+While assembling the R-induction the closure ledger was worked in full detail.
+**Finding (flag to host judge):**
+1. The paper's p.51 display "conditional expectation given `v₁…v_{k₁}` EQUALS
+   `exp(−Σ_{p≤k₁}1_W + ε)·Z(endpoint, R−1)`" is FALSE on the `min(r,R)=1` branch:
+   there the true sum stops at `t₁ < k₁`, so the display overcounts damping and
+   under-estimates the value — invalid as a step in an upper-bound proof.
+2. Correcting the ledger (each encounter's `e^ε` paid by the previous block's
+   exit-whiteness) meets an adversarial configuration not excluded by `p₀`-type
+   inputs: black-strip exits ARE instant re-encounters (`t_{i+1} = k_i`), while
+   white exits stop the chain and their damping is then never counted. Sharp toy
+   value: chains of instant re-encounters give
+   `E = e^ε·p₀/(1−(1−p₀)e^ε) ≈ exp(ε/p₀) > exp(ε)`.
+   So (7.57) with `exp(ε)` is likely UNPROVABLE (perhaps false as stated).
+3. **Fix**: pin `≤ exp(2ε)` (valid since `p₀ > 1/2`: `X := p₀/(1−(1−p₀)e^ε) ≤ e^ε`
+   for small ε). Consumer-safe: p.55 uses only Markov + a choice of `R` AFTER ε,
+   so absolute exponent constants wash out. `many_triangles_white` updated.
+
+**Corrected proof route (next laps), all inputs now identified:**
+- Two-level claim over fresh states, induction on remaining blocks ρ, inner strong
+  induction on T:
+  - `Y(entry-state, ρ) ≤ e^ε·X` for just-entered states (count incremented, barrier
+    = covering-triangle top): via `encExpect_block_le` (PROVED) reduce to the fpDist
+    exit law; four-mass vertex analysis over (white/nonwhite)×(re-enc/not):
+    `E ≤ P(NE) + e^εX(e^{−1}P(E∧w) + P(E∧nw))`, optimum at the
+    `d = P(E∧nw) ≤ 1−p₀` vertex forces exactly `X ≥ p₀/(1−(1−p₀)e^ε)`.
+  - `Z(generic, ρ) ≤ P₀ + (1−P₀)·supY ≤ e^{2ε}`.
+- State normalization σ ↦ fresh: the CLAIM-G coupling
+  `E_R(T,σ) ≤ e^{ε(σ.c−τ.c)}·max(e^{−(σ.bk−τ.bk)}, e^{−(σ.cw−τ.cw)})·E_{R'}(T,τ)`
+  (same pos/barrier, R−σ.c = R'−τ.c) — provable by the encExpect_anti-style fold
+  induction (branches depend only on shared fields; enc equalizes Δbk = Δcw).
+- White-exit input: needs a (7.59)-shaped variant of `fpDist_white_exit` WITHOUT
+  the Case-2 `s ≤ m/log²m` hypothesis (any family triangle, budget `s = O(m)` via
+  (7.52)); the pinned X8 kernel has the restrictive hypothesis — plan: generalize
+  the kernel statement when proving it (the route (7.50)+(7.11)+separation does not
+  use `s ≤ m/log²m` for whiteness, only for the weight bound), or add
+  `fpDist_white_exit_deep` as a sibling sorry.
+- Also needed: `encNE`-style no-encounter mass functional if the sharp
+  `P₀ + (1−P₀)supY` split is formalized (a simpler indicator fold), or concede the
+  cruder `Z ≤ supY ⊔ 1` bound (check it still yields `e^{2ε}` — it does:
+  `max(1, e^εX) = e^εX ≤ e^{2ε}`), avoiding the extra functional entirely.
+
 ## Lap 52 (2026-07-12): **X9 = Lemma 7.9 PINNED (RED→YELLOW)** — encounter-fold encoding, T1 does NOT fire
 
 `DIRECTION.md` mandate 2 executed. All in `Sec7/ManyTriangles.lean`, green,

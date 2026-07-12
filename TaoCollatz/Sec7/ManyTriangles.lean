@@ -49,13 +49,13 @@ so `banked = Σ_{p=1}^{t_{min(r,R)}} 1_W` and the paper's LHS is
 these). This is faithful-to-consumer: the (7.66)–(7.67) consumption (p.55) applies
 Lemma 7.9 through Markov's inequality on the finite window `p ≤ P` after the first
 passage, with all stopping times shown to fall inside the window by the deterministic
-argument — only finite horizons are ever used. It is also faithful-to-proof: the p.51
-induction on `R` conditions on the first block `v₁ … v_{k₁}` (first passage over
-`Δ₁`'s top), which the head-peel recursion `encExpect_succ` below finitizes; the
-extra finite-horizon branch "`t₁ ≤ T < k₁`" contributes `≤ e^ε·P(branch)` directly
-(its `min(r_T,R) = 1` and the empty continuation is `1`), so the closure
-`E 1_{r≠0} e^{−1_W(endpoint)} ≤ e^{−ε} P(r≠0)` via `fpDist_white_exit` (7.51) is
-unchanged.
+argument — only finite horizons are ever used. The induction structure mirrors the
+p.51 conditioning on the first block `v₁ … v_{k₁}` (first passage over `Δ₁`'s top),
+finitized by the head-peel `encExpect_succ` + block bridge `encExpect_block_le`; the
+extra finite-horizon branch "`t₁ ≤ T < k₁`" contributes within budget directly (its
+`min(r_T,R) = 1` and the empty continuation is `1`). NOTE (lap 52): the paper's own
+closure has a fixable gap and its `exp(ε)` constant is replaced by `exp(2ε)` — see
+the deviation note on `many_triangles_white`.
 
 **ε existentially small** rather than the paper's fixed section constant: (7.57) needs
 `e^{2ε}(1 − (1−1/e)·p₀) ≤ e^ε` against the absolute white-exit mass `p₀` of
@@ -742,28 +742,48 @@ theorem encExpect_block_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε 
     exact Summable.tsum_le_tsum hterm hsumL hsumR
 
 /-- **Lemma 7.9 — many triangles usually implies many white points** (paper (7.57),
-pp.50–51). For the `T`-step renewal walk started at any `(j', l')`, any number of
-blocks `R ≥ 1`, and any sufficiently small `ε`:
+pp.50–51, WITH A CORRECTED CONSTANT — see the deviation note below). For the `T`-step
+renewal walk started at any `(j', l')`, any number of blocks `R ≥ 1`, and any
+sufficiently small `ε`:
 
-  `E exp(−Σ_{p=1}^{t_{min(r,R)}} 1_W((j',l')+v_{[1,p]}) + ε·min(r,R)) ≤ exp(ε)`,
+  `E exp(−Σ_{p=1}^{t_{min(r,R)}} 1_W((j',l')+v_{[1,p]}) + ε·min(r,R)) ≤ exp(2·ε)`,
 
 uniformly in the horizon `T`, the start `(j',l')`, `R`, and `n, ξ`. The exponent is
 read off the encounter fold: `banked = Σ_{p=1}^{t_{min(r,R)}} 1_W`, `count = r`
 (see `EncState`/`encStep`; faithfulness deltas — finite horizon, existential ε,
 phase-shift — argued in the module docstring).
 
-OPEN (node X9): proof = induction on `R` (paper p.51) over the head-peel
-`encExpect_succ`: iterate the peel through the first block (until the barrier
-clears); the block's endpoint law is `fpDist` (path→`fpDist` bridge, to be stated
-next lap), whose white-exit mass `p₀` (`fpDist_white_exit`, (7.51), X8 kernel) gives
-`E 1_{r≠0} exp(−1_W(endpoint)) ≤ (1 − (1−1/e)p₀)·P(r≠0) ≤ e^{−ε}·P(r≠0)` once
-`e^ε ≤ (1 − (1−1/e)p₀)⁻¹`, closing `Z(R) ≤ P(r=0) + e^{2ε}·e^{−ε}·P(r≠0) ≤ e^ε`. -/
+**DEVIATION from the paper (lap 52 route finding): `exp(2ε)`, not `exp(ε)`.** The
+paper's p.51 proof asserts the conditional expectation given the first block
+`v₁ … v_{k₁}` EQUALS `exp(−Σ_{p≤k₁}1_W + ε)·Z(endpoint, R−1)`. On the
+`min(r,R) = 1` branch the true sum stops at `t₁ < k₁`, so that display OVERCOUNTS
+damping (the claimed expression under-estimates the true value), and the upper-bound
+derivation is unsound as written. Correcting the ledger (each encounter's `e^ε` is
+paid by the PREVIOUS block's exit-whiteness) meets an adversarial configuration the
+`p₀`-machinery alone cannot exclude — a black-strip exit point IS the next stopping
+time (instant re-encounter), while white exits stop the chain and their damping is
+then never counted (`t_min < k`). A chain computation gives the sharp toy-world value
+`e^ε·p₀/(1 − (1−p₀)e^ε) ≈ exp(ε/p₀) > exp(ε)`, so the paper's constant is likely
+unprovable. Since `p₀ > 1/2` (numerically ≈ 0.99), `p₀/(1−(1−p₀)e^ε) ≤ e^ε` for
+small `ε`, giving `exp(2ε)`. The p.55 consumer is Markov + a free choice of `R`
+AFTER ε, so any absolute constant in the exponent is absorbed — `exp(2ε)` is fully
+consumable by X11.
+
+OPEN (node X9): corrected proof route (recorded in `PENDING_WORK.md` lap 52):
+two-level claim over fresh states — `Y(q, b, ρ) ≤ e^ε·X` for JUST-ENTERED states
+(`X := p₀/(1−(1−p₀)e^ε)`) and `Z ≤ max(1, Y-bound)` for generic states — by
+induction on `ρ` (remaining blocks) with an inner strong induction on `T`.
+Per block: `encExpect_block_le` (proved) reduces to the `fpDist` exit law; the
+four-mass vertex analysis over (white/nonwhite × re-encounter/not) closes with
+`E ≤ P(NE) + e^εX·(e^{−1}·P(E∧w) + P(E∧nw))` and the white-exit mass
+`P(w) ≥ p₀` from `fpDist_white_exit` ((7.51)/(7.59) variant, X8 kernel — the only
+open input). The affine state-normalization is `encExpect_anti`-style coupling. -/
 theorem many_triangles_white :
     ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧
     ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
     ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
     ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (j' : ℕ) (l' : ℤ),
-    encExpect F R ε T (encInit j' l') ≤ Real.exp ε := by
+    encExpect F R ε T (encInit j' l') ≤ Real.exp (2 * ε) := by
   sorry
 
 end TaoCollatz
