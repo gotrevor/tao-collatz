@@ -467,6 +467,9 @@
 
     <a class="icon proof" href="chp-crux.html#X6">#</a>
     
+    <a class="icon proof" href="chp-crux.html#a0000000033"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
 </button>
@@ -515,8 +518,19 @@
         </div>
   </div>
   <div class="lemma_thmcontent">
-  <p>   <b class="bfseries">Lemma 7.7</b> (paper p.43): the first-passage endpoint mass satisfies \(\mathbb {P}(\mathbf{v}_{[1,\mathbf{k}]}=(j,l)) \ll e^{-c(l-s)}(1+s)^{-1/2} G_{1+s}(c(j-s/4))\). D6 form: <span class="ttfamily">fpDist</span> (budget-recursive endpoint PMF, support facts proved) and <span class="ttfamily">fpDist_location_bound</span>, judge-ratified vs the p.43 display 2026-07-10 (unconditional in \(l\) since the support fact kills \(l\le s\)). Uses the local 2-D bound (node&#160;<a href="chp-support.html#S3">2.3</a>) applied to the holding sums. Proof machinery landed (laps 46–48, judge pass 6): the renewal decomposition <span class="ttfamily">fpDist_le_renewal_conv</span> (budget induction; monotone height kills the barrier condition) and the Gaussian AP-sum toolkit are PROVED axiom-clean; the lemma is reduced to <span class="ttfamily">renewalMass_bound</span> (sum of Lemma 2.2(i) in \(k\), three regions) plus the last-step assembly, both pinned with route and constants recorded. </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 4–10 treadmill laps; risk <b class="bfseries">medium</b> (80% (2026-07-12 judge re-rate: reduction proved; kernel numerics validated at 200k trials) confidence the node completes as stated).</i> </p>
+  <p>   <b class="bfseries">Lemma 7.7</b> (paper p.43): the first-passage endpoint mass satisfies \(\mathbb {P}(\mathbf{v}_{[1,\mathbf{k}]}=(j,l)) \ll e^{-c(l-s)}(1+s)^{-1/2} G_{1+s}(c(j-s/4))\). D6 form: <span class="ttfamily">fpDist</span> (budget-recursive endpoint PMF, support facts proved) and <span class="ttfamily">fpDist_location_bound</span>, judge-ratified vs the p.43 display 2026-07-10 (unconditional in \(l\) since the support fact kills \(l\le s\)). Uses the local 2-D bound (node&#160;<a href="chp-support.html#S3">2.3</a>) applied to the holding sums. </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000033">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>COMPLETE (campaign laps 46–50; judge pass 7, 2026-07-12). Route: renewal decomposition <span class="ttfamily">fpDist_le_renewal_conv</span> (budget induction — monotone height kills the barrier condition) + <span class="ttfamily">renewalMass_bound</span> (sum of Lemma 2.2(i) in \(k\), three regions) + last-step assembly (<span class="ttfamily">hold_step_bound</span>, Gaussian\(\times \)exponential convolution <span class="ttfamily">conv_Gweight_exp</span>, recentring shift, AP/\(\ell ^1\) envelopes). Statement verified character-identical to the pass-3 ratified form. Judge-run <span class="ttfamily">#print axioms</span> (2026-07-12): [propext, Classical.choice, Quot.sound] on <span class="ttfamily">fpDist_location_bound</span>, <span class="ttfamily">renewalMass_bound</span>, <span class="ttfamily">hold_step_bound</span>, <span class="ttfamily">conv_Gweight_exp</span>. </p>
 
   </div>
 </div>
@@ -833,7 +847,7 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   <b class="bfseries">Case 3</b> assembly (paper (7.48)/(7.49), (7.52)–(7.67)): the events \(E_*,F_*\), the choice \(R=\lfloor A^2/\varepsilon ^4\rfloor \), and the deterministic claim (7.67), combining Lemma&#160;7.9 (node&#160;<a href="chp-crux.html#X9">7.9</a>) and Lemma&#160;7.10 (node&#160;<a href="chp-crux.html#X10">7.10</a>). This closes Prop&#160;7.8, hence Prop&#160;7.3 (node&#160;<a href="chp-crux.html#X4">7.4</a>) and Prop&#160;7.1, hence the <b class="bfseries">crux</b> <b class="bfseries">Proposition 1.17</b> (character-sum decay): for every \(A{\gt}0\) there is \(C{\gt}0\) with, for all \(n\ge 1\) and all \(\xi \) with \(3\nmid \xi \), </p>
-<div class="displaymath" id="a0000000033">
+<div class="displaymath" id="a0000000034">
   \[  \Bigl\| \, \mathbb {E}_{Y\sim \texttt{syracZ}\, n}\,  e\bigl(-\xi \,  Y/3^{n}\bigr)\Bigr\|  \; \le \;  C\, n^{-A}.  \]
 </div>
 <p> This is the single Fourier-analytic input the whole spine reduces to (feeds node&#160;<a href="chp-mixing.html#C10">6.1</a>). The Case-3 entry statement <span class="ttfamily">Q_black_edge_case3</span> ((7.53)–(7.67) interface, budget hypotheses matching (7.52) with the documented lattice slack) is judge-ratified 2026-07-12 vs pp.48–49 and consumed by the proved <span class="ttfamily">Q_black_edge</span> split. </p>

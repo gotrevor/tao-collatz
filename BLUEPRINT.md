@@ -182,7 +182,7 @@ buys nothing. A completed node is the *only* estimate that can't be wrong.
 | X3 | ✅ **COMPLETE (judge-verified 2026-07-12)** — Lemma 7.4 black set = disjoint separated triangles: θ identities (7.12)–(7.15), weakly-black claims (i)–(iii), l*/j* construction, Claim (*) Cases 1–3 | §7.2 pp.36–41 | 4 | done | — | X2 |
 | X4 | §7.3 + D6: `Hold` def, `Q` recursion, bridge (7.28)/(7.34)–(7.36): `EQ(Hold) ≪_A n^{-A}` ⟺ Prop 7.3 | §7.3–7.4 pp.41–44 | 3 | 8–15 | 80% | S2, X2 |
 | X5 | **Lemma 7.6** Hold basics: explicit distribution, exponential tail, aperiodicity, mean (4,16) | p.42 | 2 | 4–8 | 85% | X4 |
-| X6 | **Lemma 7.7** first-passage location distribution — renewal decomposition + AP-sum toolkit PROVED (judge pass 6); reduced to `renewalMass_bound` + last-step | p.43 | 4 | 4–10 | 80% | S3, X5 |
+| X6 | ✅ **COMPLETE (laps 46–50; judge pass 7, 2026-07-12)** — Lemma 7.7 first-passage location distribution; `fpDist_location_bound` + `renewalMass_bound` judge-verified `[propext, Classical.choice, Quot.sound]`; FpLocation.lean sorry-free | p.43 | 4 | done | — | S3, X5 |
 | X7 | `Q_m` (7.38); Prop 7.8 skeleton; **Case 1** (white point) (7.42)–(7.43) | §7.4 pp.45–46 | 2 | 4–8 | 85% | X4 |
 | X8 | **Case 2** (shallow in triangle): (7.44)–(7.51) — statements pinned + ratified (judge pass 6); endpoint step + budget PROVED; open: weight degradation + white-exit (both consume X6) | pp.46–48 | 5 | 8–16 | 75% | X3, X6, X7 |
 | X9 | **Lemma 7.9** many-triangles ⟹ many-white-points (induction on R over the Q-recursion) | pp.50–51 | 4 | 8–15 | 70% | X4, X8 |
