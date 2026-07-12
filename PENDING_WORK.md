@@ -1,5 +1,40 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 37 (2026-07-12, sixth box session): (G2a) CAUCHY–SCHWARZ MGF SPLIT PROVED
+
+`Prob/Tilt.lean`: **`tsum_mul_mul_sq_le`** — weighted Cauchy–Schwarz
+`(Σ p·u·v)² ≤ (Σ p·u²)(Σ p·v²)` entirely in ℝ≥0∞ (double-sum expansion + pointwise
+AM–GM `ennreal_mul_le_sq_add_sq_div_two`; no summability side conditions —
+mathlib's Hölder is ℝ≥0-only with summability hypotheses).
+`Prob/Mgf.lean`: `expW2_eq_mul`, `expW2_sq`, **`tiltZ_expW2_sq_le`** —
+`Z(λ₁,λ₂)² ≤ Z(2λ₁,0)·Z(0,2λ₂)`. KEY DESIGN WIN: CS preserves the first-order
+(mean) term exactly (AM–GM would not), so the 2-D second-order bound (G2) reduces
+to two 1-D closed-form bounds and the hold mean identities (G1) are NOT needed as
+separate tsum computations. AXIOM-CLEAN. Gotchas: `ℝ≥0` notation needs
+`open scoped NNReal` (use `NNReal` verbatim otherwise); `zero_le _` fails in
+ENNReal term mode — use `bot_le`; `ENNReal.div_eq_top` disjuncts are
+(num ≠ 0 ∧ den = 0) | (num = ∞ ∧ den ≠ ∞).
+
+**(G2b) next — the two 1-D second-order bounds** (in Mgf.lean), target box
+|μ| ≤ 1/25 (doubled tilt):
+1. Closed form `tiltZ hold (expW2 μ 0) = (1/4)e^μ(1-(3/4)e^μ)⁻¹` — from
+   tiltZ_hold_factor at l2 = 0 (tiltZ pascalNe3 (expW 0) = 1 by PMF mass; need
+   tiltZ_one lemma) + geometric series; mean 4 built in.
+2. Closed form `tiltZ hold (expW2 0 μ) = (1/4)e^{3μ}(1-(3/4)Z_ne3(μ))⁻¹` with
+   Z_ne3(μ) = (4/3)(x/(1-x))² - (1/3)e^{3μ}, x = e^μ/2 (tiltZ_pascalNe3_add,
+   ENNReal sub OK since finite); mean 16 built in.
+3. Numeric second-order bounds via envelope 1+u ≤ e^u ≤ 1+u+u² (|u| ≤ 1/8 say;
+   3μ ∈ [-3/25, 3/25] ok): `Z(μ,0) ≤ ofReal(exp(4μ + K₁μ²))` and
+   `Z(0,μ) ≤ ofReal(exp(16μ + K₂μ²))` — prove first `≤ ofReal(1 + 4μ + K₁μ²)` by
+   cross-multiplied nlinarith (denominators positive on box), then 1+x ≤ eˣ.
+   Numeric check (do BEFORE formalizing, corpus rule): K₁ ≥ ~32, K₂ ≥ ~600?
+   compute margins numerically first.
+4. Combine: Z(λ)² ≤ e^{8λ₁+4K₁λ₁²}·e^{32λ₂+4K₂λ₂²} ⇒ Z ≤ e^{4λ₁+16λ₂+2K̄|λ|²}
+   via ENNReal sqrt-free helper `x² ≤ ofReal(a²) → x ≤ ofReal(a)` (contrapositive
+   + ENNReal.pow_lt_pow_left).
+Then (F5): assembly with iidSum_apply_eq_tilt + tiltHold_apply_le_center +
+per-coordinate λ-clip ⇒ hold_local_bound.
+
 ## Lap 36 (2026-07-12, sixth box session): (F4b) TILTED CENTER BOUND PROVED
 
 `Sec7/HoldLocal.lean` NEW (imports Unroll + Mgf; the S3 assembly module):
