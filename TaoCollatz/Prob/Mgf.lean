@@ -274,6 +274,44 @@ theorem expW2_add (l1 l2 : ℝ) (a b : ℕ × ℤ) :
   push_cast
   ring
 
+/-- `expW2` splits into its two coordinate weights. -/
+theorem expW2_eq_mul (l1 l2 : ℝ) (d : ℕ × ℤ) :
+    expW2 l1 l2 d = expW2 l1 0 d * expW2 0 l2 d := by
+  simp only [expW2]
+  rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]
+  congr 2
+  ring
+
+/-- Squaring an `expW2` weight doubles the tilt. -/
+theorem expW2_sq (l1 l2 : ℝ) (d : ℕ × ℤ) :
+    expW2 l1 l2 d ^ 2 = expW2 (2 * l1) (2 * l2) d := by
+  simp only [expW2]
+  rw [sq, ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]
+  congr 2
+  ring
+
+/-- **Cauchy–Schwarz split of the 2-D MGF** ((G2) reduction of node S3):
+`Z(λ₁,λ₂)² ≤ Z(2λ₁,0)·Z(0,2λ₂)`. Cauchy–Schwarz preserves the first-order (mean)
+term exactly, so the 2-D second-order bound `Z ≤ e^{4λ₁+16λ₂+K|λ|²}` reduces to the
+two 1-D closed-form bounds. -/
+theorem tiltZ_expW2_sq_le (p : PMF (ℕ × ℤ)) (l1 l2 : ℝ) :
+    tiltZ p (expW2 l1 l2) ^ 2
+      ≤ tiltZ p (expW2 (2 * l1) 0) * tiltZ p (expW2 0 (2 * l2)) := by
+  rw [tiltZ]
+  calc (∑' d, p d * expW2 l1 l2 d) ^ 2
+      = (∑' d, p d * (expW2 l1 0 d * expW2 0 l2 d)) ^ 2 := by
+        congr 1
+        exact tsum_congr fun d => by rw [expW2_eq_mul]
+    _ ≤ (∑' d, p d * (expW2 l1 0 d) ^ 2) * (∑' d, p d * (expW2 0 l2 d) ^ 2) :=
+        tsum_mul_mul_sq_le (fun d : ℕ × ℤ => p d) (expW2 l1 0) (expW2 0 l2)
+    _ = tiltZ p (expW2 (2 * l1) 0) * tiltZ p (expW2 0 (2 * l2)) := by
+        rw [tiltZ, tiltZ]
+        congr 1
+        · exact tsum_congr fun d => by
+            rw [expW2_sq, show (2 : ℝ) * 0 = 0 from by norm_num]
+        · exact tsum_congr fun d => by
+            rw [expW2_sq, show (2 : ℝ) * 0 = 0 from by norm_num]
+
 /-- **The `Hold` MGF factorization** (paper (7.30)): conditioning on the `Geom(4)`
 draw `k`, the increment block contributes `e^{3λ₂}·Z_{ne3}(λ₂)^{k-1}`. -/
 theorem tiltZ_hold_factor (l1 l2 : ℝ)
