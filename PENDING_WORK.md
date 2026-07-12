@@ -1,5 +1,36 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 41 (2026-07-12, seventh box session): (F5) DONE — `hold_local_bound` PROVED
+
+**S3's Lemma 2.2(i) for `Hold` is a machine-checked theorem** (axiom-clean), in
+`Sec7/HoldLocal.lean` (statement MOVED there from Unroll.lean — the proof consumes
+`tiltHold_apply_le_center`, which imports Unroll; a NOTE at the old site points
+across). Three pieces, exactly per the lap-40 plan:
+- `holdSum_apply_le_chernoff` — the Chernoff bridge: tilting identity
+  `iidSum_apply_eq_tilt` + `tiltHold_apply_le_center` + `tiltZ_hold_le_quad`
+  + `1+u ≤ e^u`, all `toReal` bookkeeping (`ENNReal.toReal_mul` unconditional;
+  weight-inverse via `ENNReal.ofReal_inv_of_pos` + `Real.exp_neg`).
+- `chernoff_clip_le` — per-coordinate λ-clip: exponent ≤ −min(dev²/(4000n), |dev|/400)
+  (central λ = dev/2000n exact; tail λ = ±1/200, n/40 ≤ |dev|/400).
+- `hold_local_bound` — c = 1/400, C = C₀ = 6553600000000; n = 0 point-mass case
+  separate; sup-norm max coordinate dominates (other coord's exponent ≤ 0);
+  Gaussian branch (M/400)²/(1+n) ≤ M²/4000n, exp branch exact.
+Gotcha: `div_le_div_iff` is now `div_le_div_iff₀` (corpus had it).
+
+**NEXT — `hold_tail_bound` (2.2(ii), now the sorry in HoldLocal.lean)**: direct
+Chernoff tail, same ingredients, NO center bound: for the half-space
+{λ ≤ ‖dev‖∞}, split by which coordinate/sign achieves the sup (4 half-lines ×
+2 coords); for a fixed sign pattern use the 1-D Markov/Chernoff:
+Σ_{tail} P ≤ Z(λ)ⁿ e^{-λ·(threshold)} with the SAME clip choice at dev = ±lam
+(deviation threshold), summing the tilted PMF's tail mass ≤ 1. Concretely:
+tail mass ≤ Σ over 4 sign-patterns of e^{n·quad(λ) − λ·(mean shift ± lam)} with
+λ clipped as in chernoff_clip_le at dev = lam ⇒ each term ≤ e^{−min(lam²/4000n,
+lam/400)} ⇒ ≤ 4·Gweight branch; C = 4 (plus n = 0 edge). Statement's tsum-if:
+bound the indicator sum by tilted change-of-measure per point (pointwise
+`iidSum_apply_eq_tilt` + e^{-λ·v} ≤ e^{-λ·threshold} on the half-space, tilted
+masses sum ≤ 1 via `PMF.tsum_coe`). Then the 6 d=1 LocalBound instances
+(mechanical now — same pattern, 1-D closed forms already proved).
+
 ## Lap 40 (2026-07-12, sixth box session): (G2c) 2-D MGF BOUND PROVED — (G2) COMPLETE
 
 `Prob/Mgf.lean`: `ennreal_le_of_sq_le_sq` (x² ≤ y² → x ≤ y, via ENNReal.mul_lt_mul

@@ -230,28 +230,9 @@ for the §7.3 renewal walk; mean `(4, 16)` per p.42). -/
 noncomputable def holdSum (n : ℕ) : PMF (ℕ × ℤ) :=
   (hold.iid n).map fun v => (∑ i, (v i).1, ∑ i, (v i).2)
 
-/-- **Lemma 2.2(i) for `Hold`** (paper p.42: "the conclusion of Lemma 2.2 holds for
-`Hold`", mean `(4, 16)`, `d = 2`): the 2-D local Gaussian-type bound
-`P(Hold_{[1,n]} = (j,l)) ≪ (n+1)^{-1} · G_n(c((j,l) − n(4,16)))`. Node S3, the hard
-kernel behind Lemma 7.7 (X6). D5 route: exponential tilting + `ZMod` circle method.
--- RATIFY-DRIFT (norm): `‖·‖` on `ℝ × ℝ` is the sup norm; the paper's Euclidean
--- `|x|` satisfies `|x|/√2 ≤ ‖x‖_∞ ≤ |x|`, so the two forms of the statement are
--- interchangeable after adjusting the constants `c, C`, which are existential. -/
-theorem hold_local_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n : ℕ) (j : ℕ) (l : ℤ),
-      ((holdSum n) (j, l)).toReal
-        ≤ C / (1 + n) * Gweight (1 + n) (c * ‖(((j : ℝ) - 4 * n, (l : ℝ) - 16 * n) : ℝ × ℝ)‖) := by
-  sorry
-
-/-- **Lemma 2.2(ii) for `Hold`**: the 2-D tail bound
-`P(|Hold_{[1,n]} − n(4,16)| ≥ λ) ≪ G_n(cλ)` (same norm drift note as
-`hold_local_bound`). -/
-theorem hold_tail_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
-      (∑' d : ℕ × ℤ, if lam ≤ ‖(((d.1 : ℝ) - 4 * n, (d.2 : ℝ) - 16 * n) : ℝ × ℝ)‖
-          then ((holdSum n) d).toReal else 0)
-        ≤ C * Gweight (1 + n) (c * lam) := by
-  sorry
+-- NOTE: `hold_local_bound` (Lemma 2.2(i) for `Hold`) and `hold_tail_bound`
+-- (Lemma 2.2(ii)) live in `Sec7/HoldLocal.lean`: their proofs consume the tilted
+-- center bound `tiltHold_apply_le_center`, which imports this module.
 
 /-- `holdSum` is the generic iid sum of `hold` in the product monoid `ℕ × ℤ`. -/
 theorem holdSum_eq_iidSum (n : ℕ) : holdSum n = iidSum hold n := by
