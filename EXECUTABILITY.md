@@ -120,6 +120,19 @@ Lean statement yet). Latest: X8 (pass 6), X10 + X9 (pass 8).
   design level (strong Markov absorbed — D1, ratified passes 2 & 8);
   `fpDist_white_exit` (X8 kernel) is load-bearing for BOTH X8 and X9.
 
+## Endgame — announcement plan (on full discharge) 📣
+
+Recorded 2026-07-12 (Trevor). **Primary venue: Lean Zulip** — the
+[dreams-of-big-projects thread](https://leanprover.zulipchat.com/#narrow/channel/113488-general/topic/dreams.20of.20big.20projects/near/547102616)
+contains a standing request for exactly this proof; answer it in-thread.
+**Secondary (completeness): ccchallenge.org submission** (Tao2022; mirror the audited
+exemplar `tcosmo/BohmSontacchi1978_lean`). Post both. Ren drafts, **Trevor posts**.
+Pre-announce tripwires: `curl -s https://ccchallenge.org/api/papers/Tao2022` still
+`not_started`, and `git-safe -C ~/src/clone/tao_collatz_idris2_formalization fetch`
+for competitor movement. Also before going public: the statement-faithfulness audit
+(Math Inc bridge + Series β density wording) must be closed, and the repo needs the
+pre-public PDF-expunge sweep (committed paper PDFs → history rewrite).
+
 ## Judge loop — standing ops while the treadmill runs (2026-07-12)
 
 The treadmill (fable/low grind laps) produces; the HOST session judges. This section is
