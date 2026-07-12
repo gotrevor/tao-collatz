@@ -84,7 +84,7 @@
       </span>
       <span class="definition_thmlabel">3.1</span><span class="definition_thmtitle">Collatz and Syracuse maps; the reduction (1.2)</span></div>
     <div class="thm_thmcontent"><p>  The Collatz map \(\mathrm{col}(N)=3N+1\) if \(N\) is odd and \(N/2\) otherwise; its orbit minimum \(\mathrm{Colmin}(N)=\inf _k \mathrm{col}^{[k]}(N)\). The odd part \(\mathrm{oddPart}(N)=N/2^{v_2(N)}\), the <b class="bfseries">Syracuse map</b> \(\mathrm{syr}(N)=\mathrm{oddPart}(3N+1)\) (odd \(\to \) odd), and its orbit minimum \(\mathrm{Syrmin}\). The elementary reduction (paper (1.2)) that lets the entire problem be studied on the odd numbers: </p>
-<div class="displaymath" id="a0000000020">
+<div class="displaymath" id="a0000000021">
   \[  0{\lt}N \; \Longrightarrow \;  \mathrm{Colmin}(N) = \mathrm{Syrmin}(\mathrm{oddPart}\, N).  \]
 </div>
 <p> Also the cheap odd-preservation and positivity facts (\(\mathrm{syr}\) maps odds to odds, etc.). </p>
@@ -136,7 +136,7 @@
       </span>
       <span class="proposition_thmlabel">6.1</span><span class="proposition_thmtitle">Fine-scale mixing; Prop 1.14 \(\Leftarrow \) Prop 1.17</span></div>
     <div class="thm_thmcontent"><p>   <b class="bfseries">Proposition 1.14</b>: the Syracuse law is asymptotically equidistributed at fine scales, </p>
-<div class="displaymath" id="a0000000027">
+<div class="displaymath" id="a0000000028">
   \[  \forall A{\gt}0,\  \exists C{\gt}0,\  \forall \,  1\le m\le n:\quad \mathrm{Osc}_{m,n}\bigl(Y\mapsto (\texttt{syracZ}\, n)(Y)\bigr) \le C\, m^{-A}.  \]
 </div>
 <p> Deduced from the <b class="bfseries">character-sum decay</b> Prop&#160;1.17 (node&#160;<a href="chp-crux.html#X11">7.11</a>, the head of the §7 crux “X-chain”) by Plancherel on \(\mathbb {Z}/3^n\mathbb {Z}\). The §6 machinery around it: Lemma&#160;6.2 (\(F_n\) injective), Cor&#160;6.3 (\(3\)-adic separation of the offsets), the event \(E\) (6.2), the stopping time \(k\), and the Plancherel step. </p>
@@ -171,7 +171,7 @@
       </span>
       <span class="lemma_thmlabel">3.2</span><span class="lemma_thmtitle">Valuation vector, integer offset, and the iteration identity (1.7)</span></div>
     <div class="thm_thmcontent"><p>   The \(n\)-step <b class="bfseries">valuation vector</b> (paper (1.8)) \(\vec a^{(n)}(N)_i = v_2\bigl(3\, \mathrm{syr}^{[i]}(N)+1\bigr)\), the integerified offset (design D2) \(\texttt{fnat}\, n\, a = \sum _{m{\lt}n} 3^{\, n-1-m}\, 2^{\, a_{[1,m]}}\), and the load-bearing <b class="bfseries">iteration identity</b>, the paper’s (1.7) multiplied through by \(2^{|a|}\) so it holds in \(\mathbb {N}\): for odd \(N\), with \(a=\vec a^{(n)}(N)\), </p>
-<div class="displaymath" id="a0000000021">
+<div class="displaymath" id="a0000000022">
   \[  2^{\, a_{[1,n]}}\cdot \mathrm{syr}^{[n]}(N) = 3^n N + \texttt{fnat}\, n\, a .  \]
 </div>
 <p> (By induction on \(n\); the step is \(2^{a_{n+1}}\mathrm{syr}(\mathrm{syr}^{[n]}N) = 3\, \mathrm{syr}^{[n]}N + 1\).) Together with Lemma&#160;2.1: the valuation vector is the <em>unique</em> tuple with all entries \(\ge 1\) making the affine quotient odd. </p>
@@ -263,7 +263,7 @@
       </span>
       <span class="definition_thmlabel">4.1</span><span class="definition_thmtitle">The Syracuse random variable \(\mathrm{Syrac}(\mathbb {Z}/3^n\mathbb {Z})\)</span></div>
     <div class="thm_thmcontent"><p>   The law <span class="ttfamily">syracZ</span> \(n\) on \(\mathbb {Z}/3^n\mathbb {Z}\) (paper (1.21)/(1.26), in the <em>reversed</em> variable order deliberately, per footnote&#160;6): the pushforward of \(\mathrm{Geom}(2)^{\otimes n}\) under </p>
-<div class="displaymath" id="a0000000022">
+<div class="displaymath" id="a0000000023">
   \[  a \; \longmapsto \;  \sum _{j{\lt}n} 3^{\, j}\, (2^{-1})^{\, a_{[1,j+1]}} \in \mathbb {Z}/3^n\mathbb {Z},  \]
 </div>
 <p> where \(2^{-1}\) is the inverse of the unit \(2\) mod \(3^n\). With the projection compatibility (paper (1.22)): <span class="ttfamily">syracZ</span> \(n\) pushes forward to <span class="ttfamily">syracZ</span> \(k\) under \(\mathbb {Z}/3^n\mathbb {Z}\to \mathbb {Z}/3^k\mathbb {Z}\) for \(k\le n\); and the recursion Lemma&#160;1.12 (Euler’s theorem plus a geometric-series normalization \((1-2^{-2\cdot 3^n})^{-1}\)). </p>
@@ -307,7 +307,7 @@
       </span>
       <span class="proposition_thmlabel">4.2</span><span class="proposition_thmtitle">Valuation \(\approx \) geometric; Prop 1.9 and the §4 tail bound</span></div>
     <div class="thm_thmcontent"><p>   <b class="bfseries">Proposition 1.9.</b> There are \(c_1,C{\gt}0\) such that for all \(n,n'\) and every law \(X\) supported on odd numbers that is \(\ll 2^{-n'}\)-close in total variation to uniform modulo \(2^{n'}\), provided \((2+c_0)n\le n'\), </p>
-<div class="displaymath" id="a0000000023">
+<div class="displaymath" id="a0000000024">
   \[  d_{\mathrm{TV}}\! \bigl(X_*\vec a^{(n)},\  \mathrm{Geom}(2)^{\otimes n}\bigr) \le C\, 2^{-c_1 n}.  \]
 </div>
 <p> I.e. the Syracuse valuation vector of an equidistributed-mod-\(2^{n'}\) input is exponentially close to \(n\) independent geometric variables. Includes the §4 tail bound Lemma&#160;4.1 controlling \(\mathbb {P}(a_{[1,n]}\ge n')\). </p>
@@ -342,7 +342,7 @@
       </span>
       <span class="theorem_thmlabel">5.1</span><span class="theorem_thmtitle">Main theorem: Thm 1.3, Thm 1.6, quantitative Thm 3.1</span></div>
     <div class="thm_thmcontent"><p>   <b class="bfseries">Theorem 1.3</b> (the summit): for every \(f:\mathbb {N}\to \mathbb {R}\) with \(f(N)\to \infty \), \(\mathrm{Colmin}(N){\lt}f(N)\) for almost all \(N\) in logarithmic density. It follows from the intermediate <b class="bfseries">Theorem 1.6</b> (almost all orbits attain almost bounded values) which in turn follows from the <b class="bfseries">quantitative Theorem 3.1</b>: there exist \(c,C{\gt}0\) so that for all \(N_0,x\ge 2\), </p>
-<div class="displaymath" id="a0000000024">
+<div class="displaymath" id="a0000000025">
   \[  \mathrm{logProb}_{[1,x]}\bigl(\{ N : \mathrm{Colmin}(N)\le N_0\} \bigr) \; \ge \;  1 - C/(\log N_0)^{c}.  \]
 </div>
 <p> Thm&#160;3.1 is obtained from the stabilization estimate Prop&#160;1.11 (node&#160;<a href="chp-mainthm.html#C9">5.4</a>) by iterating over dyadic scales (§3). </p>
@@ -386,7 +386,7 @@
       </span>
       <span class="lemma_thmlabel">5.2</span><span class="lemma_thmtitle">First-passage non-escape; (1.19)</span></div>
     <div class="thm_thmcontent"><p>   The first-passage data: \(\mathrm{passes}(x,N)\) (\(=T_x(N){\lt}\infty \), the orbit reaches \(\le x\)), the passage time \(\mathrm{passTime}\), and the passage location \(\mathrm{Pass}_x = \mathrm{passLoc}\) (with the convention \(\mathrm{Syr}^\infty := 1\)). Estimate (paper (1.19)): the probability that a log-uniformly chosen odd \(N_y\) in a window around \(y\) <em>never</em> descends to \(\le x\) is small, </p>
-<div class="displaymath" id="a0000000025">
+<div class="displaymath" id="a0000000026">
   \[  \mathbb {P}\bigl(T_x(N_y)=\infty \bigr) \ll x^{-c}.  \]
 </div>
 <p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 5–10 treadmill laps; risk <b class="bfseries">low</b> (85% confidence the node completes as stated).</i> </p>
@@ -462,7 +462,7 @@
       </span>
       <span class="proposition_thmlabel">5.4</span><span class="proposition_thmtitle">Stabilization across scales; Prop 1.11</span></div>
     <div class="thm_thmcontent"><p>   <b class="bfseries">Proposition 1.11</b>, the spine’s key input. With \(\alpha =1.001\) (paper (1.18)): there are \(c,C,x_0{\gt}0\) so that for \(x\ge x_0\), the first-passage location laws seen from two successive scales \(x^{\alpha }\) and \(x^{\alpha ^2}\) agree up to </p>
-<div class="displaymath" id="a0000000026">
+<div class="displaymath" id="a0000000027">
   \[  d_{\mathrm{TV}}\Bigl( \bigl(\mathrm{logUnifOdd}_{[x^{\alpha },\, x^{\alpha ^2}]}\bigr)_*\mathrm{Pass}_{\lfloor x\rfloor }, \bigl(\mathrm{logUnifOdd}_{[x^{\alpha ^2},\, x^{\alpha ^3}]}\bigr)_*\mathrm{Pass}_{\lfloor x\rfloor } \Bigr) \le C(\log x)^{-c},  \]
 </div>
 <p> together with the non-escape control on each window. Proved via Lemma&#160;5.3 (\(c_n(X)\ll 1\)) and (5.18)–(5.21), applying the fine-scale mixing Prop&#160;1.14 (node&#160;<a href="chp-mixing.html#C10">6.1</a>) at a base scale \(m_0\). </p>
@@ -592,8 +592,7 @@
       Lemma
       </span>
       <span class="lemma_thmlabel">2.3</span><span class="lemma_thmtitle">Local 2-D Gaussian-type bound; Lemma 2.2</span></div>
-    <div class="thm_thmcontent"><p>   <b class="bfseries">Risk kernel 1.</b> Lemma&#160;2.2(i)(ii): local-limit / Gaussian-type <em>upper</em> bounds on the point masses of sums of \(k\) i.i.d. copies of the relevant lattice distributions (\(\mathrm{Geom}(2)\), \(\mathrm{Geom}(4)\), \(\mathrm{Pascal}\), and the holding law \(\mathrm{Hold}\) of §7), uniform in the shift, of the shape \(\mathbb {P}(S_k = v)\ll k^{-d/2}\) with \(d\) the lattice dimension; together with the weight function \(G_n\) (paper (2.2)). Proved not by the paper’s contour/Morera route but by explicit generating functions plus real-variable exponential tilting (design decision D5): for the \(d=2\) holding sums this is the circle-method form \(\mathbb {P}(S_k=v)=(2\pi )^{-2}M(\lambda )^k e^{-\lambda \cdot v}\int _{[-\pi ,\pi ]^2} |\varphi _\lambda (t)|^k\, dt\) with \(\varphi _\lambda ,M\) explicit rational functions. Statements judge-ratified 2026-07-12 vs pp.14–15: per-instance forms in <span class="ttfamily">Prob/LocalBound.lean</span> (scalar) and <span class="ttfamily">Sec7/Unroll.lean</span> (\(d=2\) Hold, with the correct \((n+1)^{-1}\) prefactor and Euclidean norm fed to the scalar \(G\)); the \(G_{1+n}\)-for-\(G_n\) index is constants-equivalent (in-paper precedent: Lemma 7.7). </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 4–10 treadmill laps; risk <b class="bfseries">medium — risk kernel 1, engine verified</b> (85% (2026-07-12 judge re-rate 2, after laps 33–40: the analytic engine is COMPLETE and judge-verified axiom-clean — the tilted center bound and the full 2-D second-order MGF bound with exact mean \((4,16)\) both check at [propext, Classical.choice, Quot.sound]; what remains is the F5 \(\lambda \)-clip assembly of the Hold instance plus the five 1-D instance discharges) confidence the node completes as stated).</i> </p>
+    <div class="thm_thmcontent"><p>   <b class="bfseries">Risk kernel 1.</b> Lemma&#160;2.2(i)(ii): local-limit / Gaussian-type <em>upper</em> bounds on the point masses of sums of \(k\) i.i.d. copies of the relevant lattice distributions (\(\mathrm{Geom}(2)\), \(\mathrm{Geom}(4)\), \(\mathrm{Pascal}\), and the holding law \(\mathrm{Hold}\) of §7), uniform in the shift, of the shape \(\mathbb {P}(S_k = v)\ll k^{-d/2}\) with \(d\) the lattice dimension; together with the weight function \(G_n\) (paper (2.2)). Proved not by the paper’s contour/Morera route but by explicit generating functions plus real-variable exponential tilting (design decision D5): for the \(d=2\) holding sums this is the circle-method form \(\mathbb {P}(S_k=v)=(2\pi )^{-2}M(\lambda )^k e^{-\lambda \cdot v}\int _{[-\pi ,\pi ]^2} |\varphi _\lambda (t)|^k\, dt\) with \(\varphi _\lambda ,M\) explicit rational functions. Statements judge-ratified 2026-07-12 vs pp.14–15: per-instance forms in <span class="ttfamily">Prob/LocalInstances.lean</span> (scalar) and <span class="ttfamily">Sec7/HoldLocal.lean</span> (\(d=2\) Hold, with the correct \((n+1)^{-1}\) prefactor and product norm fed to the scalar \(G\)); the \(G_{1+n}\)-for-\(G_n\) index is constants-equivalent (in-paper precedent: Lemma 7.7). </p>
 </div>
 
     <a class="latex_link" href="chp-support.html#S3">LaTeX</a>
@@ -610,6 +609,12 @@
            <li><a href="../docs/find/#doc/geomQuarter_local_bound" class="lean_decl">geomQuarter_local_bound</a></li>
         
            <li><a href="../docs/find/#doc/pascal_local_bound" class="lean_decl">pascal_local_bound</a></li>
+        
+           <li><a href="../docs/find/#doc/geomHalf_tail_bound" class="lean_decl">geomHalf_tail_bound</a></li>
+        
+           <li><a href="../docs/find/#doc/geomQuarter_tail_bound" class="lean_decl">geomQuarter_tail_bound</a></li>
+        
+           <li><a href="../docs/find/#doc/pascal_tail_bound" class="lean_decl">pascal_tail_bound</a></li>
         
            <li><a href="../docs/find/#doc/hold_local_bound" class="lean_decl">hold_local_bound</a></li>
         
@@ -641,7 +646,7 @@
       </span>
       <span class="definition_thmlabel">2.4</span><span class="definition_thmtitle">Additive characters and the oscillation functional</span></div>
     <div class="thm_thmcontent"><p>  The additive character \(e(\theta ):=\exp (2\pi i\theta )\) on \(\mathbb {Q}\), the discrete Fourier transform and Parseval identity on \(\mathbb {Z}/3^n\mathbb {Z}\), and the <b class="bfseries">oscillation functional</b> \(\mathrm{Osc}_{m,n}\) (paper (1.24)) measuring how far a weight \(c:\mathbb {Z}/3^n\mathbb {Z}\to \mathbb {R}\) is from being constant on the fibres of the projection to \(\mathbb {Z}/3^m\mathbb {Z}\): </p>
-<div class="displaymath" id="a0000000019">
+<div class="displaymath" id="a0000000020">
   \[  \mathrm{Osc}_{m,n}(c)=\sum _{Y}\Bigl|\, c(Y)-3^{\, m-n}\! \! \sum _{Y'\mapsto \bar Y} c(Y')\, \Bigr|, \qquad m\le n.  \]
 </div>
 <p> Includes the Remark&#160;1.18 triangle inequality that lets \(\mathrm{Osc}\) be controlled scale by scale. </p>
@@ -747,7 +752,7 @@
       </span>
       <span class="proposition_thmlabel">7.11</span><span class="proposition_thmtitle">Case 3 assembly; Prop 7.8 \(\to \) 7.3 \(\to \) 7.1 \(\to \) Prop 1.17</span></div>
     <div class="thm_thmcontent"><p>   <b class="bfseries">Case 3</b> assembly (paper (7.48)/(7.49), (7.52)–(7.67)): the events \(E_*,F_*\), the choice \(R=\lfloor A^2/\varepsilon ^4\rfloor \), and the deterministic claim (7.67), combining Lemma&#160;7.9 (node&#160;<a href="chp-crux.html#X9">7.9</a>) and Lemma&#160;7.10 (node&#160;<a href="chp-crux.html#X10">7.10</a>). This closes Prop&#160;7.8, hence Prop&#160;7.3 (node&#160;<a href="chp-crux.html#X4">7.4</a>) and Prop&#160;7.1, hence the <b class="bfseries">crux</b> <b class="bfseries">Proposition 1.17</b> (character-sum decay): for every \(A{\gt}0\) there is \(C{\gt}0\) with, for all \(n\ge 1\) and all \(\xi \) with \(3\nmid \xi \), </p>
-<div class="displaymath" id="a0000000032">
+<div class="displaymath" id="a0000000033">
   \[  \Bigl\| \, \mathbb {E}_{Y\sim \texttt{syracZ}\, n}\,  e\bigl(-\xi \,  Y/3^{n}\bigr)\Bigr\|  \; \le \;  C\, n^{-A}.  \]
 </div>
 <p> This is the single Fourier-analytic input the whole spine reduces to (feeds node&#160;<a href="chp-mixing.html#C10">6.1</a>). </p>
@@ -791,7 +796,7 @@
       </span>
       <span class="lemma_thmlabel">7.2</span><span class="lemma_thmtitle">Phase identities and white-point cancellation; Lemma 7.2</span></div>
     <div class="thm_thmcontent"><p>   The phase \(\theta (j,l)\) (paper (7.7)/(7.8)), a signed fractional part of \(\xi \cdot 3^{2j-2}\cdot 2^{\, 1-l}/3^n\), and its two scaling identities (7.13)/(7.14): there are integers \(k\) with </p>
-<div class="displaymath" id="a0000000028">
+<div class="displaymath" id="a0000000029">
   \[  \theta (j{+}1,l) = 9\, \theta (j,l) + k, \qquad \theta (j,l{-}1) = 2\, \theta (j,l) + k .  \]
 </div>
 <p> The black/white dichotomy (7.9) with \(\varepsilon = 10^{-4}\): a point is <em>black</em> when \(|\theta (j,l)|\le \varepsilon \), <em>white</em> otherwise. <b class="bfseries">Lemma 7.2</b> (white-point cancellation): at a white point the per-pair factor contracts, \(|f| \le |\cos (\pi \theta )| \le \exp (-\varepsilon ^3)\). </p>
@@ -841,7 +846,7 @@
       </span>
       <span class="lemma_thmlabel">7.3</span><span class="lemma_thmtitle">Black set = separated triangles; Lemma 7.4</span></div>
     <div class="thm_thmcontent"><p>   <b class="bfseries">Risk kernel 2.</b> With a triangle (paper (7.11)) the set \(\{ (j,l) : j_0\le j,\  l\le l_0,\  (j-j_0)\log 9 + (l_0-l)\log 2 \le s\} \), Lemma&#160;7.4 asserts the black set inside the strip is a disjoint union of triangles that are (i) confined to the strip \(j+1\le \lfloor n/2\rfloor - \tfrac {1}{10}\log (1/\varepsilon )\), and (ii) pairwise Euclidean-separated by at least \(\tfrac {1}{10}\log (1/\varepsilon )\): </p>
-<div class="displaymath" id="a0000000030">
+<div class="displaymath" id="a0000000031">
   \[  \{ (j,l) : j{+}1\le \lfloor n/2\rfloor ,\  \text{black}(j,l)\}  \; =\;  \bigsqcup _{t\in T} \mathrm{triangle}(t).  \]
 </div>
 <p> Proved through the phase identities (7.12)–(7.15), the weakly-black claims (i)–(iii), the \(l^*/j^*\) construction, and Claim&#160;(\(*\)) Cases&#160;1–3. </p>
@@ -884,7 +889,7 @@
       </span>
       <span class="proposition_thmlabel">7.4</span><span class="proposition_thmtitle">Holding law, the \(Q\) recursion, and Prop 7.3</span></div>
     <div class="thm_thmcontent"><p>   The <b class="bfseries">holding law</b> \(\mathrm{Hold}\) on \(\mathbb {N}\times \mathbb {Z}\) (§7.3), whose first coordinate is always \(\ge 1\), governing how the renewal walk steps between pairs. Design decision D6 replaces the paper’s infinite renewal product (7.34) by the <em>defined</em> downward recursion \(Q:\mathbb {N}\times \mathbb {Z}\to \mathbb {R}\) (paper (7.35)), </p>
-<div class="displaymath" id="a0000000031">
+<div class="displaymath" id="a0000000032">
   \[  Q(j,l) = 1 \  \  (j{\gt}\lfloor n/2\rfloor ); \qquad Q(j,l) = e^{-\varepsilon ^3\mathbf1_W(j,l)}\cdot \! \! \sum _{d}\! (\mathrm{Hold}\, d)\, Q\bigl((j,l)+d\bigr) \  \  (j\le \lfloor n/2\rfloor ),  \]
 </div>
 <p> well-founded on \(\lfloor n/2\rfloor - j\) (Hold’s first coordinate is \(\ge 1\)), with \(0\le Q\le 1\). The bridge (7.28)/(7.34)–(7.36) makes \(\mathbb {E}\, Q(\mathrm{Hold})\ll _A n^{-A}\) equivalent to <b class="bfseries">Proposition 7.3</b> (the renewal white-encounter count, in the finite-vector form over \(\mathrm{Pascal}^{\otimes \lfloor n/2\rfloor }\)). This node exists to validate the D6 finitization. </p>
@@ -1112,7 +1117,7 @@ graphContainer.graphviz({useWorker: true})
     .width(width)
     .height(height)
     .fit(true)
-    .renderDot(`strict digraph "" {	graph [bgcolor=transparent];	node [label="\N",		penwidth=1.8	];	edge [arrowhead=vee];	S4	[color=green,		fillcolor="#B0ECA3",		label="S4\n4–8",		shape=box,		style=filled,		tooltip="4–8 laps · risk low · 85% confidence",		class="lightfill"];	C10	[color=green,		label="C10\n15–30",		shape=ellipse,		tooltip="15–30 laps · risk medium · 75% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	S4 -> C10	[style=dashed];	C9	[color=green,		label="C9\n10–20",		shape=ellipse,		tooltip="10–20 laps · risk medium · 75% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	C10 -> C9	[style=dashed];	C6	[color=green,		label="C6\n8–15",		shape=ellipse,		tooltip="8–15 laps · risk low · 85% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	C9 -> C6	[style=dashed];	X3	[color=green,		fillcolor="#9CEC8B",		label=X3,		shape=ellipse,		style=filled,		class="lightfill"];	X8	[color="#FFAA33",		label="X8\n12–25",		shape=ellipse,		tooltip="12–25 laps · risk high · 70% confidence",		style=filled,		fillcolor="#F5B8B0",		class="lightfill"];	X3 -> X8	[style=dashed];	X10	[color="#FFAA33",		label="X10\n15–30",		shape=ellipse,		tooltip="15–30 laps · risk high · 65% confidence",		style=filled,		fillcolor="#F5B8B0",		class="lightfill"];	X3 -> X10	[style=dashed];	X9	[color="#FFAA33",		label="X9\n8–15",		shape=ellipse,		tooltip="8–15 laps · risk high · 70% confidence",		style=filled,		fillcolor="#F5B8B0",		class="lightfill"];	X8 -> X9	[style=dashed];	X11	[color=green,		label="X11\n10–20",		shape=ellipse,		tooltip="10–20 laps · risk high · 70% confidence",		style=filled,		fillcolor="#F5B8B0",		class="lightfill"];	X10 -> X11	[style=dashed];	X9 -> X11	[style=dashed];	X11 -> C10	[style=dashed];	X6	[color=green,		label="X6\n10–20",		shape=ellipse,		tooltip="10–20 laps · risk high · 70% confidence",		style=filled,		fillcolor="#F5B8B0",		class="lightfill"];	X6 -> X8	[style=dashed];	X6 -> X10	[style=dashed];	S3	[color=green,		label="S3\n4–10",		shape=ellipse,		tooltip="4–10 laps · risk medium · 85% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	S3 -> X6	[style=dashed];	X5	[color="#FFAA33",		label="X5\n4–8",		shape=ellipse,		tooltip="4–8 laps · risk low · 85% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	X5 -> X6	[style=dashed];	S2	[color=green,		fillcolor="#B0ECA3",		label="S2\n6–12",		shape=box,		style=filled,		tooltip="6–12 laps · risk low · 90% confidence",		class="lightfill"];	S2 -> S3	[style=dashed];	X1	[color="#FFAA33",		label="X1\n6–12",		shape=box,		tooltip="6–12 laps · risk medium · 80% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	S2 -> X1	[style=dashed];	C5	[color=green,		label="C5\n10–18",		shape=ellipse,		tooltip="10–18 laps · risk medium · 80% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	S2 -> C5	[style=dashed];	X2	[color=green,		label="X2\n4–8",		shape=ellipse,		tooltip="4–8 laps · risk low · 90% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	X1 -> X2	[style=dashed];	C7	[color=green,		label="C7\n5–10",		shape=ellipse,		tooltip="5–10 laps · risk low · 85% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	C5 -> C7	[style=dashed];	X2 -> X3	[style=dashed];	X4	[color=green,		label="X4\n8–15",		shape=ellipse,		tooltip="8–15 laps · risk medium · 80% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	X2 -> X4	[style=dashed];	C8	[color="#FFAA33",		label="C8\n15–30",		shape=ellipse,		tooltip="15–30 laps · risk medium · 75% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	C7 -> C8	[style=dashed];	C8 -> C9	[style=dashed];	X4 -> X5	[style=dashed];	X7	[color=green,		label="X7\n4–8",		shape=ellipse,		tooltip="4–8 laps · risk low · 85% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	X4 -> X7	[style=dashed];	X7 -> X8	[style=dashed];	S1	[color=green,		fillcolor="#B0ECA3",		label="S1\n8–15",		shape=box,		style=filled,		tooltip="8–15 laps · risk low · 90% confidence",		class="lightfill"];	S1 -> S2	[style=dashed];	C4	[color=green,		fillcolor="#B0ECA3",		label="C4\n5–10",		shape=box,		style=filled,		tooltip="5–10 laps · risk low · 85% confidence",		class="lightfill"];	S1 -> C4	[style=dashed];	C4 -> X1	[style=dashed];	C3	[color=green,		fillcolor="#B0ECA3",		label="C3\n6–12",		shape=box,		style=filled,		tooltip="6–12 laps · risk low · 85% confidence",		class="lightfill"];	C3 -> C6	[style=dashed];	C2	[color=green,		label="C2\n5–10",		shape=ellipse,		tooltip="5–10 laps · risk low · 90% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	C2 -> C5	[style=dashed];	C2 -> C4	[style=dashed];	C1	[color=green,		fillcolor="#B0ECA3",		label="C1\n3–6",		shape=box,		style=filled,		tooltip="3–6 laps · risk low · 95% confidence",		class="lightfill"];	C1 -> C3	[style=dashed];	C1 -> C2	[style=dashed];}`)
+    .renderDot(`strict digraph "" {	graph [bgcolor=transparent];	node [label="\N",		penwidth=1.8	];	edge [arrowhead=vee];	S4	[color=green,		fillcolor="#B0ECA3",		label="S4\n4–8",		shape=box,		style=filled,		tooltip="4–8 laps · risk low · 85% confidence",		class="lightfill"];	C10	[color=green,		label="C10\n15–30",		shape=ellipse,		tooltip="15–30 laps · risk medium · 75% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	S4 -> C10	[style=dashed];	C9	[color=green,		label="C9\n10–20",		shape=ellipse,		tooltip="10–20 laps · risk medium · 75% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	C10 -> C9	[style=dashed];	C6	[color=green,		label="C6\n8–15",		shape=ellipse,		tooltip="8–15 laps · risk low · 85% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	C9 -> C6	[style=dashed];	C3	[color=green,		fillcolor="#B0ECA3",		label="C3\n6–12",		shape=box,		style=filled,		tooltip="6–12 laps · risk low · 85% confidence",		class="lightfill"];	C3 -> C6	[style=dashed];	C7	[color=green,		label="C7\n5–10",		shape=ellipse,		tooltip="5–10 laps · risk low · 85% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	C8	[color="#FFAA33",		label="C8\n15–30",		shape=ellipse,		tooltip="15–30 laps · risk medium · 75% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	C7 -> C8	[style=dashed];	C8 -> C9	[style=dashed];	C5	[color=green,		label="C5\n10–18",		shape=ellipse,		tooltip="10–18 laps · risk medium · 80% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	C5 -> C7	[style=dashed];	X4	[color=green,		label="X4\n8–15",		shape=ellipse,		tooltip="8–15 laps · risk medium · 80% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	X5	[color="#FFAA33",		label="X5\n4–8",		shape=ellipse,		tooltip="4–8 laps · risk low · 85% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	X4 -> X5	[style=dashed];	X7	[color=green,		label="X7\n4–8",		shape=ellipse,		tooltip="4–8 laps · risk low · 85% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	X4 -> X7	[style=dashed];	X6	[color=green,		label="X6\n10–20",		shape=ellipse,		tooltip="10–20 laps · risk high · 70% confidence",		style=filled,		fillcolor="#F5B8B0",		class="lightfill"];	X5 -> X6	[style=dashed];	X8	[color="#FFAA33",		label="X8\n12–25",		shape=ellipse,		tooltip="12–25 laps · risk high · 70% confidence",		style=filled,		fillcolor="#F5B8B0",		class="lightfill"];	X7 -> X8	[style=dashed];	X6 -> X8	[style=dashed];	X10	[color="#FFAA33",		label="X10\n15–30",		shape=ellipse,		tooltip="15–30 laps · risk high · 65% confidence",		style=filled,		fillcolor="#F5B8B0",		class="lightfill"];	X6 -> X10	[style=dashed];	X9	[color="#FFAA33",		label="X9\n8–15",		shape=ellipse,		tooltip="8–15 laps · risk high · 70% confidence",		style=filled,		fillcolor="#F5B8B0",		class="lightfill"];	X11	[color=green,		label="X11\n10–20",		shape=ellipse,		tooltip="10–20 laps · risk high · 70% confidence",		style=filled,		fillcolor="#F5B8B0",		class="lightfill"];	X9 -> X11	[style=dashed];	X11 -> C10	[style=dashed];	X8 -> X9	[style=dashed];	C1	[color=green,		fillcolor="#B0ECA3",		label="C1\n3–6",		shape=box,		style=filled,		tooltip="3–6 laps · risk low · 95% confidence",		class="lightfill"];	C1 -> C3	[style=dashed];	C2	[color=green,		label="C2\n5–10",		shape=ellipse,		tooltip="5–10 laps · risk low · 90% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	C1 -> C2	[style=dashed];	C2 -> C5	[style=dashed];	C4	[color=green,		fillcolor="#B0ECA3",		label="C4\n5–10",		shape=box,		style=filled,		tooltip="5–10 laps · risk low · 85% confidence",		class="lightfill"];	C2 -> C4	[style=dashed];	X1	[color="#FFAA33",		label="X1\n6–12",		shape=box,		tooltip="6–12 laps · risk medium · 80% confidence",		style=filled,		fillcolor="#F2DD9E",		class="lightfill"];	C4 -> X1	[style=dashed];	S3	[color=green,		fillcolor="#1CAC78",		label=S3,		shape=ellipse,		style=filled,		class="lightfill"];	S3 -> X6	[style=dashed];	X10 -> X11	[style=dashed];	S1	[color=green,		fillcolor="#B0ECA3",		label="S1\n8–15",		shape=box,		style=filled,		tooltip="8–15 laps · risk low · 90% confidence",		class="lightfill"];	S1 -> C4	[style=dashed];	S2	[color=green,		fillcolor="#B0ECA3",		label="S2\n6–12",		shape=box,		style=filled,		tooltip="6–12 laps · risk low · 90% confidence",		class="lightfill"];	S1 -> S2	[style=dashed];	S2 -> C5	[style=dashed];	S2 -> S3	[style=dashed];	S2 -> X1	[style=dashed];	X2	[color=green,		label="X2\n4–8",		shape=ellipse,		tooltip="4–8 laps · risk low · 90% confidence",		style=filled,		fillcolor="#BFE3C4",		class="lightfill"];	X1 -> X2	[style=dashed];	X2 -> X4	[style=dashed];	X3	[color=green,		fillcolor="#9CEC8B",		label=X3,		shape=ellipse,		style=filled,		class="lightfill"];	X2 -> X3	[style=dashed];	X3 -> X8	[style=dashed];	X3 -> X10	[style=dashed];}`)
     .on("end", interactive);
 
 latexLabelEscaper = function(label) {

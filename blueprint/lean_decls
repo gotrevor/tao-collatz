@@ -10,6 +10,9 @@ Gweight
 geomHalf_local_bound
 geomQuarter_local_bound
 pascal_local_bound
+geomHalf_tail_bound
+geomQuarter_tail_bound
+pascal_tail_bound
 hold_local_bound
 hold_tail_bound
 eC

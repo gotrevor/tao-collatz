@@ -170,7 +170,7 @@
   </div>
   <div class="definition_thmcontent">
   <p>  The Collatz map \(\mathrm{col}(N)=3N+1\) if \(N\) is odd and \(N/2\) otherwise; its orbit minimum \(\mathrm{Colmin}(N)=\inf _k \mathrm{col}^{[k]}(N)\). The odd part \(\mathrm{oddPart}(N)=N/2^{v_2(N)}\), the <b class="bfseries">Syracuse map</b> \(\mathrm{syr}(N)=\mathrm{oddPart}(3N+1)\) (odd \(\to \) odd), and its orbit minimum \(\mathrm{Syrmin}\). The elementary reduction (paper (1.2)) that lets the entire problem be studied on the odd numbers: </p>
-<div class="displaymath" id="a0000000020">
+<div class="displaymath" id="a0000000021">
   \[  0{\lt}N \; \Longrightarrow \;  \mathrm{Colmin}(N) = \mathrm{Syrmin}(\mathrm{oddPart}\, N).  \]
 </div>
 <p> Also the cheap odd-preservation and positivity facts (\(\mathrm{syr}\) maps odds to odds, etc.). </p>
@@ -243,7 +243,7 @@
   </div>
   <div class="lemma_thmcontent">
   <p>   The \(n\)-step <b class="bfseries">valuation vector</b> (paper (1.8)) \(\vec a^{(n)}(N)_i = v_2\bigl(3\, \mathrm{syr}^{[i]}(N)+1\bigr)\), the integerified offset (design D2) \(\texttt{fnat}\, n\, a = \sum _{m{\lt}n} 3^{\, n-1-m}\, 2^{\, a_{[1,m]}}\), and the load-bearing <b class="bfseries">iteration identity</b>, the paper’s (1.7) multiplied through by \(2^{|a|}\) so it holds in \(\mathbb {N}\): for odd \(N\), with \(a=\vec a^{(n)}(N)\), </p>
-<div class="displaymath" id="a0000000021">
+<div class="displaymath" id="a0000000022">
   \[  2^{\, a_{[1,n]}}\cdot \mathrm{syr}^{[n]}(N) = 3^n N + \texttt{fnat}\, n\, a .  \]
 </div>
 <p> (By induction on \(n\); the step is \(2^{a_{n+1}}\mathrm{syr}(\mathrm{syr}^{[n]}N) = 3\, \mathrm{syr}^{[n]}N + 1\).) Together with Lemma&#160;2.1: the valuation vector is the <em>unique</em> tuple with all entries \(\ge 1\) making the affine quotient odd. </p>

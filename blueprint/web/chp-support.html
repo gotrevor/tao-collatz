@@ -268,6 +268,9 @@
 
     <a class="icon proof" href="chp-support.html#S3">#</a>
     
+    <a class="icon proof" href="chp-support.html#a0000000019"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
 </button>
@@ -309,6 +312,12 @@
           
           <li><a href="../docs/find/#doc/pascal_local_bound" class="lean_decl">pascal_local_bound</a></li>
           
+          <li><a href="../docs/find/#doc/geomHalf_tail_bound" class="lean_decl">geomHalf_tail_bound</a></li>
+          
+          <li><a href="../docs/find/#doc/geomQuarter_tail_bound" class="lean_decl">geomQuarter_tail_bound</a></li>
+          
+          <li><a href="../docs/find/#doc/pascal_tail_bound" class="lean_decl">pascal_tail_bound</a></li>
+          
           <li><a href="../docs/find/#doc/hold_local_bound" class="lean_decl">hold_local_bound</a></li>
           
           <li><a href="../docs/find/#doc/hold_tail_bound" class="lean_decl">hold_tail_bound</a></li>
@@ -322,8 +331,19 @@
         </div>
   </div>
   <div class="lemma_thmcontent">
-  <p>   <b class="bfseries">Risk kernel 1.</b> Lemma&#160;2.2(i)(ii): local-limit / Gaussian-type <em>upper</em> bounds on the point masses of sums of \(k\) i.i.d. copies of the relevant lattice distributions (\(\mathrm{Geom}(2)\), \(\mathrm{Geom}(4)\), \(\mathrm{Pascal}\), and the holding law \(\mathrm{Hold}\) of §7), uniform in the shift, of the shape \(\mathbb {P}(S_k = v)\ll k^{-d/2}\) with \(d\) the lattice dimension; together with the weight function \(G_n\) (paper (2.2)). Proved not by the paper’s contour/Morera route but by explicit generating functions plus real-variable exponential tilting (design decision D5): for the \(d=2\) holding sums this is the circle-method form \(\mathbb {P}(S_k=v)=(2\pi )^{-2}M(\lambda )^k e^{-\lambda \cdot v}\int _{[-\pi ,\pi ]^2} |\varphi _\lambda (t)|^k\, dt\) with \(\varphi _\lambda ,M\) explicit rational functions. Statements judge-ratified 2026-07-12 vs pp.14–15: per-instance forms in <span class="ttfamily">Prob/LocalBound.lean</span> (scalar) and <span class="ttfamily">Sec7/Unroll.lean</span> (\(d=2\) Hold, with the correct \((n+1)^{-1}\) prefactor and Euclidean norm fed to the scalar \(G\)); the \(G_{1+n}\)-for-\(G_n\) index is constants-equivalent (in-paper precedent: Lemma 7.7). </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 4–10 treadmill laps; risk <b class="bfseries">medium — risk kernel 1, engine verified</b> (85% (2026-07-12 judge re-rate 2, after laps 33–40: the analytic engine is COMPLETE and judge-verified axiom-clean — the tilted center bound and the full 2-D second-order MGF bound with exact mean \((4,16)\) both check at [propext, Classical.choice, Quot.sound]; what remains is the F5 \(\lambda \)-clip assembly of the Hold instance plus the five 1-D instance discharges) confidence the node completes as stated).</i> </p>
+  <p>   <b class="bfseries">Risk kernel 1.</b> Lemma&#160;2.2(i)(ii): local-limit / Gaussian-type <em>upper</em> bounds on the point masses of sums of \(k\) i.i.d. copies of the relevant lattice distributions (\(\mathrm{Geom}(2)\), \(\mathrm{Geom}(4)\), \(\mathrm{Pascal}\), and the holding law \(\mathrm{Hold}\) of §7), uniform in the shift, of the shape \(\mathbb {P}(S_k = v)\ll k^{-d/2}\) with \(d\) the lattice dimension; together with the weight function \(G_n\) (paper (2.2)). Proved not by the paper’s contour/Morera route but by explicit generating functions plus real-variable exponential tilting (design decision D5): for the \(d=2\) holding sums this is the circle-method form \(\mathbb {P}(S_k=v)=(2\pi )^{-2}M(\lambda )^k e^{-\lambda \cdot v}\int _{[-\pi ,\pi ]^2} |\varphi _\lambda (t)|^k\, dt\) with \(\varphi _\lambda ,M\) explicit rational functions. Statements judge-ratified 2026-07-12 vs pp.14–15: per-instance forms in <span class="ttfamily">Prob/LocalInstances.lean</span> (scalar) and <span class="ttfamily">Sec7/HoldLocal.lean</span> (\(d=2\) Hold, with the correct \((n+1)^{-1}\) prefactor and product norm fed to the scalar \(G\)); the \(G_{1+n}\)-for-\(G_n\) index is constants-equivalent (in-paper precedent: Lemma 7.7). </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000019">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>Risk kernel 1 CLOSED (campaign laps 22–45; judge pass 5, 2026-07-12). All eight obligations — (i) and (ii) for \(\mathrm{Geom}(2)\), \(\mathrm{Geom}(4)\), \(\mathrm{Pascal}\), \(\mathrm{Hold}\) — machine-checked via the D5 route (circle-method inversion, character decay, exponential tilting, second-order MGF bounds with exact means, \(\lambda \)-clip Chernoff assembly), plus the generic engines <span class="ttfamily">iidSum_nat_local_of_quad</span> / <span class="ttfamily">iidSum_nat_tail_of_quad</span>. Judge-run <span class="ttfamily">#print axioms</span> on all ten declarations (2026-07-12): [propext, Classical.choice, Quot.sound] — nothing extra. </p>
 
   </div>
 </div>
@@ -371,7 +391,7 @@
   </div>
   <div class="definition_thmcontent">
   <p>  The additive character \(e(\theta ):=\exp (2\pi i\theta )\) on \(\mathbb {Q}\), the discrete Fourier transform and Parseval identity on \(\mathbb {Z}/3^n\mathbb {Z}\), and the <b class="bfseries">oscillation functional</b> \(\mathrm{Osc}_{m,n}\) (paper (1.24)) measuring how far a weight \(c:\mathbb {Z}/3^n\mathbb {Z}\to \mathbb {R}\) is from being constant on the fibres of the projection to \(\mathbb {Z}/3^m\mathbb {Z}\): </p>
-<div class="displaymath" id="a0000000019">
+<div class="displaymath" id="a0000000020">
   \[  \mathrm{Osc}_{m,n}(c)=\sum _{Y}\Bigl|\, c(Y)-3^{\, m-n}\! \! \sum _{Y'\mapsto \bar Y} c(Y')\, \Bigr|, \qquad m\le n.  \]
 </div>
 <p> Includes the Remark&#160;1.18 triangle inequality that lets \(\mathrm{Osc}\) be controlled scale by scale. </p>

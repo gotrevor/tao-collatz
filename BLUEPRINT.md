@@ -155,7 +155,7 @@ buys nothing. A completed node is the *only* estimate that can't be wrong.
 |----|------|-------|------|------|------|---------|
 | S1 | PMF basics: `dTV`, (1.10), expectation calculus, finite products / iid vectors | §1.4, (1.9)(1.10) | 2 | 8–15 | 90% | — |
 | S2 | Geom/Pascal PMFs, exact negative-binomial point mass `C(L-1,n-1)2^{-L}`, MGFs, 1-D Chernoff tails | Def 1.7, §2 | 2 | 6–12 | 90% | S1 |
-| S3 | **Local 2-D Gaussian-type bound** — Lemma 2.2(i)(ii) for `Geom(2)`, `Geom(4)`, `Pascal`, `Hold`; `G_n` weights (2.2). Statements ratified; engine COMPLETE + judge-verified axiom-clean (laps 33–40: tilted center bound, 2-D MGF quadratic w/ exact mean (4,16)) — remaining: F5 λ-clip assembly + five 1-D instances | Lem 2.2 | 4 | 4–10 | 85% | S2 |
+| S3 | ✅ **COMPLETE (laps 22–45; judge pass 5, 2026-07-12)** — Local 2-D Gaussian-type bound, Lemma 2.2(i)(ii) for `Geom(2)`, `Geom(4)`, `Pascal`, `Hold` + `G_n` weights (2.2). All 8 obligations + 2 generic engines judge-verified `[propext, Classical.choice, Quot.sound]`. Risk kernel 1 CLOSED | Lem 2.2 | 4 | done | — | S2 |
 | S4 | Fourier on `ZMod (3^n)`: `e(θ)`, `ZMod.dft` Parseval, `Osc` (1.24); Remark 1.18 triangle inequality | §6, (1.24) | 2 | 4–8 | 85% | — |
 
 ### Core spine (§1–§5)
@@ -179,7 +179,7 @@ buys nothing. A completed node is the *only* estimate that can't be wrong.
 |----|------|-------|------|------|------|---------|
 | X1 | Setup: character χ (7.1), reversal to (1.26), pairing `b_j = a_{2j-1}+a_{2j} ≡ Pascal`, conditional factorization (7.4)(7.5) | §7.1 pp.33–34 | 3 | 6–12 | 80% | C4, S2 |
 | X2 | θ(j,l) (7.7)(7.8) signed fractional part; **Lemma 7.2** white-point cancellation `|f| ≤ cos(πθ) ≤ exp(-ε³)` | pp.34–35 | 2 | 4–8 | 90% | X1 |
-| X3 | **Lemma 7.4** black set = disjoint separated triangles: θ identities (7.12)–(7.15), weakly-black claims (i)–(iii), l*/j* construction, Claim (*) Cases 1–3 | §7.2 pp.36–41 | 4 | 15–30 | 75% | X2 |
+| X3 | ✅ **COMPLETE (judge-verified 2026-07-12)** — Lemma 7.4 black set = disjoint separated triangles: θ identities (7.12)–(7.15), weakly-black claims (i)–(iii), l*/j* construction, Claim (*) Cases 1–3 | §7.2 pp.36–41 | 4 | done | — | X2 |
 | X4 | §7.3 + D6: `Hold` def, `Q` recursion, bridge (7.28)/(7.34)–(7.36): `EQ(Hold) ≪_A n^{-A}` ⟺ Prop 7.3 | §7.3–7.4 pp.41–44 | 3 | 8–15 | 80% | S2, X2 |
 | X5 | **Lemma 7.6** Hold basics: explicit distribution, exponential tail, aperiodicity, mean (4,16) | p.42 | 2 | 4–8 | 85% | X4 |
 | X6 | **Lemma 7.7** first-passage location distribution | p.43 | 4 | 10–20 | 70% | S3, X5 |

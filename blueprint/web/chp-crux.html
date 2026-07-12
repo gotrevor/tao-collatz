@@ -235,7 +235,7 @@
   </div>
   <div class="lemma_thmcontent">
   <p>   The phase \(\theta (j,l)\) (paper (7.7)/(7.8)), a signed fractional part of \(\xi \cdot 3^{2j-2}\cdot 2^{\, 1-l}/3^n\), and its two scaling identities (7.13)/(7.14): there are integers \(k\) with </p>
-<div class="displaymath" id="a0000000028">
+<div class="displaymath" id="a0000000029">
   \[  \theta (j{+}1,l) = 9\, \theta (j,l) + k, \qquad \theta (j,l{-}1) = 2\, \theta (j,l) + k .  \]
 </div>
 <p> The black/white dichotomy (7.9) with \(\varepsilon = 10^{-4}\): a point is <em>black</em> when \(|\theta (j,l)|\le \varepsilon \), <em>white</em> otherwise. <b class="bfseries">Lemma 7.2</b> (white-point cancellation): at a white point the per-pair factor contracts, \(|f| \le |\cos (\pi \theta )| \le \exp (-\varepsilon ^3)\). </p>
@@ -260,7 +260,7 @@
 
     <a class="icon proof" href="chp-crux.html#X3">#</a>
     
-    <a class="icon proof" href="chp-crux.html#a0000000029"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+    <a class="icon proof" href="chp-crux.html#a0000000030"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
 </a>
     
     
@@ -310,14 +310,14 @@
   </div>
   <div class="lemma_thmcontent">
   <p>   <b class="bfseries">Risk kernel 2.</b> With a triangle (paper (7.11)) the set \(\{ (j,l) : j_0\le j,\  l\le l_0,\  (j-j_0)\log 9 + (l_0-l)\log 2 \le s\} \), Lemma&#160;7.4 asserts the black set inside the strip is a disjoint union of triangles that are (i) confined to the strip \(j+1\le \lfloor n/2\rfloor - \tfrac {1}{10}\log (1/\varepsilon )\), and (ii) pairwise Euclidean-separated by at least \(\tfrac {1}{10}\log (1/\varepsilon )\): </p>
-<div class="displaymath" id="a0000000030">
+<div class="displaymath" id="a0000000031">
   \[  \{ (j,l) : j{+}1\le \lfloor n/2\rfloor ,\  \text{black}(j,l)\}  \; =\;  \bigsqcup _{t\in T} \mathrm{triangle}(t).  \]
 </div>
 <p> Proved through the phase identities (7.12)–(7.15), the weakly-black claims (i)–(iii), the \(l^*/j^*\) construction, and Claim&#160;(\(*\)) Cases&#160;1–3. </p>
 
   </div>
 </div>
-<div class="proof_wrapper" id="a0000000029">
+<div class="proof_wrapper" id="a0000000030">
   <div class="proof_heading">
     <span class="proof_caption">
     Proof
@@ -399,7 +399,7 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   The <b class="bfseries">holding law</b> \(\mathrm{Hold}\) on \(\mathbb {N}\times \mathbb {Z}\) (§7.3), whose first coordinate is always \(\ge 1\), governing how the renewal walk steps between pairs. Design decision D6 replaces the paper’s infinite renewal product (7.34) by the <em>defined</em> downward recursion \(Q:\mathbb {N}\times \mathbb {Z}\to \mathbb {R}\) (paper (7.35)), </p>
-<div class="displaymath" id="a0000000031">
+<div class="displaymath" id="a0000000032">
   \[  Q(j,l) = 1 \  \  (j{\gt}\lfloor n/2\rfloor ); \qquad Q(j,l) = e^{-\varepsilon ^3\mathbf1_W(j,l)}\cdot \! \! \sum _{d}\! (\mathrm{Hold}\, d)\, Q\bigl((j,l)+d\bigr) \  \  (j\le \lfloor n/2\rfloor ),  \]
 </div>
 <p> well-founded on \(\lfloor n/2\rfloor - j\) (Hold’s first coordinate is \(\ge 1\)), with \(0\le Q\le 1\). The bridge (7.28)/(7.34)–(7.36) makes \(\mathbb {E}\, Q(\mathrm{Hold})\ll _A n^{-A}\) equivalent to <b class="bfseries">Proposition 7.3</b> (the renewal white-encounter count, in the finite-vector form over \(\mathrm{Pascal}^{\otimes \lfloor n/2\rfloor }\)). This node exists to validate the D6 finitization. </p>
@@ -798,7 +798,7 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   <b class="bfseries">Case 3</b> assembly (paper (7.48)/(7.49), (7.52)–(7.67)): the events \(E_*,F_*\), the choice \(R=\lfloor A^2/\varepsilon ^4\rfloor \), and the deterministic claim (7.67), combining Lemma&#160;7.9 (node&#160;<a href="chp-crux.html#X9">7.9</a>) and Lemma&#160;7.10 (node&#160;<a href="chp-crux.html#X10">7.10</a>). This closes Prop&#160;7.8, hence Prop&#160;7.3 (node&#160;<a href="chp-crux.html#X4">7.4</a>) and Prop&#160;7.1, hence the <b class="bfseries">crux</b> <b class="bfseries">Proposition 1.17</b> (character-sum decay): for every \(A{\gt}0\) there is \(C{\gt}0\) with, for all \(n\ge 1\) and all \(\xi \) with \(3\nmid \xi \), </p>
-<div class="displaymath" id="a0000000032">
+<div class="displaymath" id="a0000000033">
   \[  \Bigl\| \, \mathbb {E}_{Y\sim \texttt{syracZ}\, n}\,  e\bigl(-\xi \,  Y/3^{n}\bigr)\Bigr\|  \; \le \;  C\, n^{-A}.  \]
 </div>
 <p> This is the single Fourier-analytic input the whole spine reduces to (feeds node&#160;<a href="chp-mixing.html#C10">6.1</a>). </p>
