@@ -1,5 +1,44 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 40 (2026-07-12, sixth box session): (G2c) 2-D MGF BOUND PROVED — (G2) COMPLETE
+
+`Prob/Mgf.lean`: `ennreal_le_of_sq_le_sq` (x² ≤ y² → x ≤ y, via ENNReal.mul_lt_mul
+contrapositive) and **`tiltZ_hold_le_quad`** — on |λᵢ| ≤ 1/200:
+`Z(λ₁,λ₂) ≤ ofReal(1 + 4λ₁ + 16λ₂ + 1000(λ₁²+λ₂²))`. K = 1000 validated
+numerically (K ≤ 700 fails; the CS-doubled cross term 256λ₁λ₂ vs 128λ₁λ₂ costs
+−128λ₁λ₂, absorbed). AXIOM-CLEAN. The full Lemma-2.2 Chernoff MGF estimate with
+exact mean (4,16) is machine-checked.
+
+**(F5) next — final assembly of `hold_local_bound`** (in Sec7/HoldLocal.lean):
+1. Bridge lemma: for λ in the 1/200-box, v = (j,l), n:
+   ((iidSum hold n) v).toReal ≤ (C₀/(1+n))·(1+4λ₁+16λ₂+1000|λ|²)ⁿ·e^{-λ·v}
+   from iidSum_apply_eq_tilt (needs expW2 v ≠ 0,∞ ✓ ofReal exp) +
+   tiltHold_apply_le_center (box 1/200 ⊂ 1/50 ✓) + tiltZ_hold_le_quad; toReal of
+   the product; (1+u)ⁿ ≤ e^{nu} for the Z-power (u ≥ -1: Real.add_one_le_exp +
+   pow mono) ⇒ exponent n(4λ₁+16λ₂+1000|λ|²) - λ·v = -λ·dev + 1000n|λ|²,
+   dev = (j-4n, l-16n).
+2. λ-choice per coordinate: λᵢ = clip(devᵢ/(2000n), 1/200). Exponent
+   = Σᵢ (1000nλᵢ² - λᵢdevᵢ); per coord: if |devᵢ| ≤ 10n: = -devᵢ²/(4000n);
+   else: = -(1/200)|devᵢ| + 1000n/40000 ≤ -(1/200)|devᵢ| + |devᵢ|/40·... check:
+   1000n(1/200)² = n/40 ≤ |devᵢ|/400 (n ≤ |devᵢ|/10) ⇒ exponent ≤ -|devᵢ|(1/200 -
+   1/400) = -|devᵢ|/400.
+3. Gweight matching (sup norm ‖dev‖∞ = max): total exponent ≤ per-max-coord
+   bound; case split on which regime the MAX coordinate is in:
+   - max coord central (≤ 10n): P ≤ C₀/(1+n)·e^{-‖dev‖²/(4000n)}·e^{+slack from
+     other coord ≤ 0} (other coord exponent ≤ 0 by choice at optimum... careful:
+     with per-coordinate independent optimization each term is ≤ 0, so total
+     ≤ max-coord term) ⇒ Gaussian branch: need -‖dev‖²/(4000n) ≤ -(c‖dev‖)²/(1+n):
+     c = 1/100 say with 1+n ≥ n... (c²/(1+n) ≤ 1/(4000n) ⇔ c² ≤ (1+n)/(4000n):
+     c = 1/64 ok since (1+n)/4000n ≥ 1/4000).
+   - max coord tail: e^{-‖dev‖∞/400} ⇒ exp branch with c = 1/400.
+   Gweight t x = exp(-x²/t) + exp(-|x|) ≥ each branch. Statement c existential:
+   pick c = 1/400 uniform: Gaussian branch exp(-dev²/(4000n)) ≤ exp(-(dev/400)²/(1+n))?
+   (1/4000n ≥ 1/160000(1+n) ⇔ 160000(1+n) ≥ 4000n ✓). n = 0 edge: dev = v-0 …
+   check n=0 separately (iidSum 0 = pure 0; mass at v≠0 is 0, at 0: dev=(0,0),
+   Gweight ≥ 1 ⇒ need C ≥ 1 ✓).
+   ℤ-coordinate signs: l - 16n ∈ ℤ, first coord j - 4n could be negative in ℝ ✓
+   all real arithmetic.
+
 ## Lap 39 (2026-07-12, sixth box session): (G2b-2) SECOND-COORD MGF BOUND PROVED
 
 `Prob/Mgf.lean`: **`tiltZ_hold_snd`** (closed form Z(0,μ) = (e^{3μ}/4)·
