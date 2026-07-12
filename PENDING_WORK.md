@@ -1,5 +1,30 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 54 (cont-3): **CLAIM-G coupling PROVED** — `encExpect_normalize` + `_init` axiom-clean
+
+The X9 state-normalization is done: `encExpect_normalize` (invariant induction —
+both folds branch identically off shared pos/barrier; counts/whites advance in
+lockstep; banking fires simultaneously since `σ.count < R'+c ⟺ τ.count < R'`;
+`encVal` factors pathwise as `e^{εc}·max(e^{−k},e^{−w})·encVal_τ`) and its
+consumer instance `encExpect_normalize_init`
+(`E_R(T,σ) ≤ e^{ε·σ.count}·max(e^{−banked},e^{−cumWhite})·E_{R−count}(T, fresh σ.pos)`).
+
+**X9 assembly inventory now**: PROVED = encExpect_succ, encExpect_anti,
+encExpect_block_le, encExpect_of_count_ge (ρ=0 base), encounter_vertex_bound +
+encChainX cap, encExpect_normalize(_init). OPEN = `fpDist_white_exit_deep`
+(external, X8-geometry) + the final Y/Z gluing induction inside
+`many_triangles_white` (induction on remaining budget ρ = R − count via
+`encExpect_of_count_ge` base; per-block: `encExpect_block_le` with
+`g e := ` the normalized continuation, vertex-split the fpDist endpoint mass by
+(whiteStrip × re-encounter) into the `encounter_vertex_bound` LP; whiteness mass
+≥ p₀ from `fpDist_white_exit_deep`). The gluing needs the event-mass bookkeeping:
+express `Σ' fpDist·g` split into the four masses — next sub-step.
+
+Gotcha: `refine ... (by dsimp only; omega)` dies with "No goals" when `dsimp`
+closes a goal that unification already made rfl; `(by dsimp only <;> omega)` is
+vacuous-safe.
+
+
 ## Lap 54 (cont-2): X9 assembly opened — chain arithmetic PROVED, white-exit input named
 
 `ManyTriangles.lean` gains the lap-52 route's real-arithmetic core, all PROVED

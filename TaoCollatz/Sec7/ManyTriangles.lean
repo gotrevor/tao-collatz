@@ -543,6 +543,153 @@ theorem encExpect_anti {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : �
     exact Summable.tsum_le_tsum
       (fun d => mul_le_mul_of_nonneg_left (hstep d) ENNReal.toReal_nonneg) hsum2 hsum1
 
+/-- **The CLAIM-G state-normalization coupling** (lap-52 route; the affine
+reduction of a mid-flight state to a fresh one). A state `σ` with `count = τ.count
++ c`, `cumWhite = τ.cumWhite + w`, and banked counter either still at its initial
+value `k` (no banking event yet, `τ.banked = 0`) or offset by `w`, is dominated by
+the `τ`-fold with `c` fewer block budget:
+
+  `E_{R'+c}(T, σ) ≤ e^{εc} · max(e^{−k}, e^{−w}) · E_{R'}(T, τ)`.
+
+Both folds take the SAME branch at every step (the branch condition reads only
+`pos`/`barrier`, which agree), the counts/whites advance in lockstep, and a banking
+event fires simultaneously (`σ.count < R ⟺ τ.count < R'`), converting the left
+disjunct into the right one. `encVal` then factors pathwise. Used with
+`τ = ⟨σ.pos, σ.barrier, 0, 0, 0⟩` this is the Y/Z induction's state normalization
+(`encExpect_normalize_init`). -/
+theorem encExpect_normalize {n ξ : ℕ} (F : TriangleFamily n ξ) (R' : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (c w k : ℕ) (T : ℕ) :
+    ∀ σ τ : EncState, σ.pos = τ.pos → σ.barrier = τ.barrier →
+    σ.count = τ.count + c → σ.cumWhite = τ.cumWhite + w →
+    ((σ.banked = k ∧ τ.banked = 0) ∨ σ.banked = τ.banked + w) →
+    encExpect F (R' + c) ε T σ
+      ≤ Real.exp (ε * c) * max (Real.exp (-(k : ℝ))) (Real.exp (-(w : ℝ)))
+        * encExpect F R' ε T τ := by
+  set M : ℝ := max (Real.exp (-(k : ℝ))) (Real.exp (-(w : ℝ))) with hM
+  have hM0 : 0 < M := lt_max_of_lt_left (Real.exp_pos _)
+  induction T with
+  | zero =>
+    intro σ τ hpos hbar hcnt hcw hbk
+    rw [encExpect_zero, encExpect_zero, encVal, encVal]
+    have hmin : min σ.count (R' + c) = min τ.count R' + c := by
+      omega
+    have hbank : Real.exp (-(σ.banked : ℝ)) ≤ M * Real.exp (-(τ.banked : ℝ)) := by
+      rcases hbk with ⟨hσk, hτ0⟩ | hoff
+      · rw [hσk, hτ0, hM]
+        simp only [Nat.cast_zero, neg_zero, Real.exp_zero, mul_one]
+        exact le_max_left _ _
+      · rw [hoff]
+        push_cast
+        rw [neg_add, Real.exp_add, mul_comm (Real.exp (-(τ.banked : ℝ)))]
+        exact mul_le_mul_of_nonneg_right (hM ▸ le_max_right _ _)
+          (Real.exp_pos _).le
+    calc Real.exp (-(σ.banked : ℝ) + ε * min σ.count (R' + c))
+        = Real.exp (-(σ.banked : ℝ)) * Real.exp (ε * min τ.count R')
+            * Real.exp (ε * c) := by
+          rw [hmin, ← Real.exp_add, ← Real.exp_add]
+          push_cast
+          ring_nf
+      _ ≤ (M * Real.exp (-(τ.banked : ℝ))) * Real.exp (ε * min τ.count R')
+            * Real.exp (ε * c) :=
+          mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hbank
+            (Real.exp_pos _).le) (Real.exp_pos _).le
+      _ = Real.exp (ε * c) * M
+            * Real.exp (-(τ.banked : ℝ) + ε * min τ.count R') := by
+          rw [Real.exp_add]
+          ring
+  | succ T IH =>
+    intro σ τ hpos hbar hcnt hcw hbk
+    rw [encExpect_succ F (R' + c) ε hε T σ, encExpect_succ F R' ε hε T τ]
+    -- one step preserves the invariant
+    have hstep : ∀ d : ℕ × ℤ,
+        encExpect F (R' + c) ε T (encStep F (R' + c) σ d)
+          ≤ Real.exp (ε * c) * M * encExpect F R' ε T (encStep F R' τ d) := by
+      intro d
+      obtain ⟨p₁, b₁, c₁, w₁, k₁⟩ := σ
+      obtain ⟨p₂, b₂, c₂, w₂, k₂⟩ := τ
+      simp only at hpos hbar hcnt hcw
+      subst hpos hbar hcnt hcw
+      simp only [encStep]
+      by_cases hq : 1 ≤ (p₁ + d).1 ∧ (p₁ + d).1 ≤ n / 2
+          ∧ black n ξ ((p₁ + d).1 - 1) (p₁ + d).2 ∧ b₁ < (p₁ + d).2
+      · -- encounter for both (shared condition)
+        simp only [dif_pos hq]
+        refine IH _ _ rfl rfl (by dsimp only <;> omega) (by dsimp only <;> omega) ?_
+        by_cases hcR : c₂ < R'
+        · -- both bank: land in the right disjunct
+          refine Or.inr ?_
+          dsimp only
+          rw [if_pos (show c₂ + c < R' + c by omega), if_pos hcR]
+          omega
+        · -- neither banks: the disjunction carries over
+          dsimp only
+          rw [if_neg (show ¬ c₂ + c < R' + c by omega), if_neg hcR]
+          simpa using hbk
+      · simp only [dif_neg hq]
+        refine IH _ _ rfl rfl (by dsimp only <;> omega) (by dsimp only <;> omega) ?_
+        dsimp only
+        simpa using hbk
+    -- summability boilerplate, then sum the termwise bound
+    have hnnσ : ∀ d : ℕ × ℤ,
+        0 ≤ (hold d).toReal * encExpect F (R' + c) ε T (encStep F (R' + c) σ d) :=
+      fun d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg _ _ ε T _)
+    have hboundσ : ∀ d : ℕ × ℤ,
+        (hold d).toReal * encExpect F (R' + c) ε T (encStep F (R' + c) σ d)
+          ≤ (hold d).toReal * Real.exp (ε * ((R' + c : ℕ) : ℝ)) :=
+      fun d => mul_le_mul_of_nonneg_left (encExpect_le F (R' + c) ε hε T _)
+        ENNReal.toReal_nonneg
+    have hsumH : Summable (fun d : ℕ × ℤ => (hold d).toReal) :=
+      ENNReal.summable_toReal (by rw [hold.tsum_coe]; exact ENNReal.one_ne_top)
+    have hsumσ : Summable (fun d : ℕ × ℤ =>
+        (hold d).toReal * encExpect F (R' + c) ε T (encStep F (R' + c) σ d)) :=
+      Summable.of_nonneg_of_le hnnσ hboundσ (hsumH.mul_right _)
+    have hboundτ : ∀ d : ℕ × ℤ,
+        (hold d).toReal * encExpect F R' ε T (encStep F R' τ d)
+          ≤ (hold d).toReal * Real.exp (ε * (R' : ℝ)) :=
+      fun d => mul_le_mul_of_nonneg_left (encExpect_le F R' ε hε T _)
+        ENNReal.toReal_nonneg
+    have hsumτ : Summable (fun d : ℕ × ℤ =>
+        (hold d).toReal * encExpect F R' ε T (encStep F R' τ d)) :=
+      Summable.of_nonneg_of_le
+        (fun d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg _ _ ε T _))
+        hboundτ (hsumH.mul_right _)
+    calc ∑' d : ℕ × ℤ,
+          (hold d).toReal * encExpect F (R' + c) ε T (encStep F (R' + c) σ d)
+        ≤ ∑' d : ℕ × ℤ, (hold d).toReal
+            * (Real.exp (ε * c) * M * encExpect F R' ε T (encStep F R' τ d)) := by
+          refine Summable.tsum_le_tsum
+            (fun d => mul_le_mul_of_nonneg_left (hstep d) ENNReal.toReal_nonneg)
+            hsumσ ?_
+          have heq : (fun d : ℕ × ℤ => (hold d).toReal
+              * (Real.exp (ε * c) * M * encExpect F R' ε T (encStep F R' τ d)))
+              = fun d : ℕ × ℤ => Real.exp (ε * c) * M
+                * ((hold d).toReal * encExpect F R' ε T (encStep F R' τ d)) := by
+            funext d
+            ring
+          rw [heq]
+          exact hsumτ.mul_left _
+      _ = Real.exp (ε * c) * M
+            * ∑' d : ℕ × ℤ, (hold d).toReal * encExpect F R' ε T (encStep F R' τ d) := by
+          rw [← tsum_mul_left]
+          exact tsum_congr fun d => by ring
+
+/-- **State normalization to the fresh state** (the CLAIM-G instance the Y/Z
+induction consumes): any mid-flight state `σ` with `σ.count ≤ R` is dominated by
+the zeroed state at its own position with the remaining budget:
+
+  `E_R(T, σ) ≤ e^{ε·σ.count} · max(e^{−σ.banked}, e^{−σ.cumWhite})
+      · E_{R−σ.count}(T, ⟨σ.pos, σ.barrier, 0, 0, 0⟩)`. -/
+theorem encExpect_normalize_init {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) (σ : EncState) (hc : σ.count ≤ R) :
+    encExpect F R ε T σ
+      ≤ Real.exp (ε * σ.count)
+        * max (Real.exp (-(σ.banked : ℝ))) (Real.exp (-(σ.cumWhite : ℝ)))
+        * encExpect F (R - σ.count) ε T ⟨σ.pos, σ.barrier, 0, 0, 0⟩ := by
+  have h := encExpect_normalize F (R - σ.count) ε hε σ.count σ.cumWhite σ.banked T
+    σ ⟨σ.pos, σ.barrier, 0, 0, 0⟩ rfl rfl (by dsimp only <;> omega) (by dsimp only <;> omega)
+    (Or.inl ⟨rfl, rfl⟩)
+  rwa [show R - σ.count + σ.count = R by omega] at h
+
 /-- PMF-weighted sums of `[0,B]`-valued observables are `≤ B` (generic event
 bookkeeping; `B`-scaled `tsum_mul_ofReal_le_one`). -/
 theorem tsum_toReal_mul_le {α : Type*} (p : PMF α) (g : α → ℝ)
