@@ -641,9 +641,15 @@ corrected per-block ledger's closed-form core (lap 54, pass 12): the chain value
 \texttt{encChainX} \(= p_0/(1-(1-p_0)e^{\varepsilon})\) with fixed-point identity, the cap
 \(X \le e^{\varepsilon}\) (whence \(e^{\varepsilon}X \le e^{2\varepsilon}\), the (7.57)
 constant), and the four-mass LP vertex analysis \texttt{encounter\_vertex\_bound} (maximum
-at \((0, 1-p_0)\) = the fixed point) --- all axiom-checked.  Open: the two-level \(Y/Z\)
-induction assembly + the \texttt{fpDist\_white\_exit\_deep} input itself.
-\lapsrisk{3--6}{medium --- gated statement re-ratified; Z-induction assembly + deep-exit input open}{75\% (2026-07-12 judge pass 14: 13 gated fold/chain lemmas re-verified axiom-clean)}
+at \((0, 1-p_0)\) = the fixed point) --- all axiom-checked.  \textbf{Lap 55 (judge pass
+16): the \(Y/Z\) induction is CLOSED} --- \texttt{many\_triangles\_white} is proved with
+sorryAx trail exactly \(\{\texttt{fpDist\_white\_exit\_deep}\}\) (machine-checked); the
+kernel is the node's sole remaining input.  \emph{Kernel mass demand (pass 16)}: the
+proof exhibits \(\varepsilon_0 = \min(1/100, (2p_1-1)/2)\), so the pin's bare
+\(1/2 < p_0\) leaks the \(\varepsilon_0 \ge 10^{-4}\) consumer floor --- the kernel
+re-pin must certify \(51/100 \le p_0\) (numerics \(\approx 0.99\); pre-authorized as a
+ratification-preserving strengthening).
+\lapsrisk{2--4}{medium --- kernel-only: the deep white-exit input (with the 51/100 mass numeral)}{80\% (2026-07-12 judge pass 16: Y/Z induction verified; trail machine-checked)}
 \end{lemma}
 
 \begin{lemma}[Large triangles rarely encountered; Lemma 7.10]\label{X10}

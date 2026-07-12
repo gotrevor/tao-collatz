@@ -104,6 +104,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 13](judge/pass-13.md) — 2026-07-12, lap-55 reflection (docs-only): **X9 RATIFICATION SUSPENDED** ⚠️ — box's near-edge truth challenge to the pinned exp(2ε) judge-concurred (~85%; adversarial edge-strip families extract e^{ε·Cthr} uncompensated); **literature hole #6** (paper's all-starts Lemma 7.9 inherits it via "(7.59) by repeating (7.51)"); both proposed fixes pre-assessed with re-ratification checklists; deep-pin ratification stands (statement untouched).
 - [Pass 14](judge/pass-14.md) — 2026-07-12, lap 55 cont: **X9 RE-RATIFIED** ✅ — depth-gated fold passes the pass-13 checklist (gate conjunct exact, `∃g` quantifier order right, `g=0` degenerates to prior encoding); 13 gated fold/chain lemmas re-verified axiom-clean; deep pin untouched. Suspension lasted one commit.
 - [Pass 15](judge/pass-15.md) — 2026-07-12, consumer pages pp.48–49 + 54–56 read (Trevor-prompted): **BOTH X9 RIDERS DISCHARGED** ✅ — R := ⌊A²/ε⁴⌋ explicit on p.55 (after ε; the −O(A) Markov slack absorbs exp(2ε) or any absolute constant); (7.54)'s 0.9m split + (7.67)'s in-window iteration keep every counted encounter deep (gate-safe). Residual: **X9's proof must exhibit ε₀ ≥ epsBW = 10⁻⁴** (consumer instantiates at the fixed dichotomy ε). Bonus: X10's ∀A-uniform form confirmed at its p.54 union-bound site. All of §7 now judge-read; §5 (C8) is the only unread front.
+- [Pass 16](judge/pass-16.md) — 2026-07-12, lap-55 boundary: **LEMMA 7.9 CLOSED MOD KERNEL** ✅ — `many_triangles_white` proved, Y-induction axiom-clean, sorryAx trail = exactly {`fpDist_white_exit_deep`} (machine-checked). ⚠️ **ε₀-floor LEAK caught**: exhibited ε₀ = min(1/100, (2p₁−1)/2) with p₁ from the pin's bare `1/2 < p₀` — does NOT certify ε₀ ≥ 10⁻⁴. **Kernel demand: re-pin mass to `51/100 ≤ p₀`** (pre-authorized as ratification-preserving strengthening; numerics ≈ 0.99).
 
 ## Live judge state 📍 (update each pass)
 
@@ -118,13 +119,14 @@ two documented deviations: exp(2ε) + gated count), `fpDist_white_exit_deep`
 (pass 12, unchanged through the re-pin).
 
 **Open riders / queued fronts**:
-- **X9 ε₀-floor obligation** (pass 15, supersedes the pass-8 ε-rider): the p.55
-  consumer instantiates Lemma 7.9 at the FIXED dichotomy ε (= `epsBW` = 10⁻⁴), so
-  X9's final proof must exhibit **ε₀ ≥ 10⁻⁴** in its ∃ε₀-family. Numerically
-  comfortable (pin caps ε₀ at 1/100; ledger constraints are far looser), but it is
-  a hard obligation — check it when `many_triangles_white`'s proof lands. The rest
-  of the old rider is DISCHARGED: `R := ⌊A²/ε⁴⌋` is chosen after ε, and the −O(A)
-  Markov slack absorbs exp(2ε) or any absolute constant (pass-15, judge-read).
+- **ε₀-floor → KERNEL MASS DEMAND** (pass 16, checked and found leaking): X9's
+  landed proof exhibits `ε₀ = min(1/100, (2p₁−1)/2)`, so the floor obligation
+  transfers to the kernel: `fpDist_white_exit_deep`'s `1/2 < p₀` must become an
+  explicit rational with margin — **`51/100 ≤ p₀` demanded** (gives ε₀ ≥ 1/100;
+  numerics ≈ 0.99 so free for the proof). Pre-authorized shape: this exact
+  strengthening is ratification-preserving (character diff + numeral arithmetic
+  on landing); any other edit shape = full re-ratification. The kernel is the
+  box's declared next target — right moment to bake the numeral in.
 - **p₀ > 1/2 certification burden — now EMBODIED** (pass 12): the burden lives in
   the pinned `fpDist_white_exit_deep` (demands `1/2 < p₀`; ratified as a documented
   deviation from the paper's `≫ 1`). The box must certify it there (Monte Carlo
