@@ -1,5 +1,29 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 54 (2026-07-12): **X5 CLOSED (RED→GREEN in one lap)** — Lemma 7.6 (p.42, Hold basics) fully machine-checked
+
+New `Sec7/HoldBasics.lean`, SORRY-FREE, axiom-clean. Clause map: exponential
+tail + the "in particular" Lemma 2.2 conclusion were already S3's
+`hold_tail_bound`/`hold_local_bound` (direct Chernoff route (7.29)-(7.30));
+this lap added **mean (4,16)** (`hold_mean_fst`/`hold_mean_snd`, via generic
+`tsum_iid_sum_mul` + `geomHalf_mean`=2, `pascal_mean`=4, `pascalNe3_mean`=13/3
+(paper (7.29)), `geomQuarter_mean`=4, `geomQuarter_mean_sub_one`=3) and
+**aperiodicity** (`hold_aperiodic`: supp Hold ⊆ x+H forces H=⊤; witnesses
+(1,3),(2,5),(2,7),(2,8) → differences (1,2),(1,4),(1,5) generate ℤ²; converse
+support lemma `iid_mem_support` added to go with `iid_support_coord`).
+
+**Node status**: the ONLY remaining RED statement-less node is **C8** (§5 first
+passage). Next per handoff-h: X2 `white_cos_bound` (cheapest Prop-1.17 shrink),
+pin C8, then X9/X10 assemblies (routes in lap-51/52 entries).
+
+Gotchas (corpus-worthy): writing `f (Fin.cons a w i)` in your own statement
+fails elaboration (motive metavar) — ascribe `(Fin.cons a w : Fin (n+1) → α) i`;
+`ENNReal.tsum_eq_add_tsum_ite` bakes in `Classical.propDecidable`, mismatching
+your `instDecidableEqNat` ite — bridge via `by_cases <;> simp`; never backward-rw
+an equation whose RHS numeral occurs inside inverses (`rw [← h] with h : a+b=4`
+hits the `4` in `4⁻¹`) — use `.trans h.symm` + `ENNReal.add_right_inj`.
+
+
 ## Lap 53 (2026-07-12): **X1 CLOSED (RED→GREEN in one lap)** — (7.4)/(7.5) pairing PROVED; Prop 1.17 a theorem over {X2, Prop 7.8 chain}
 
 **Final state**: `Sec7/Reduction.lean` is SORRY-FREE. `cexpect_pairing` (the (7.5)

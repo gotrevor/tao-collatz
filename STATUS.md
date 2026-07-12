@@ -2,7 +2,7 @@
 
 **First-anywhere Lean 4 formalization of Tao 2019 "Almost all Collatz orbits
 attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3276 jobs) ·
-**Updated**: lap 52 · 2026-07-12 · `0ba065f`
+**Updated**: lap 54 · 2026-07-12 · `9321b5c`
 
 ## Where it stands
 
@@ -21,6 +21,15 @@ Syracuse/Statement scaffolding are deliberately still stubbed — downstream of 
 crux, cheap once §7 lands. 24 open `sorry`s in `src/`.
 
 ## What's happened (newest first)
+
+- **lap 54 (2026-07-12)** `9321b5c`: **X5 CLOSED** — Lemma 7.6 (Hold basics,
+  p.42) fully machine-checked: mean (4,16) + aperiodicity proved axiom-clean in
+  new `Sec7/HoldBasics.lean` (tail/Lemma-2.2 clauses already held by S3). Only
+  RED statement-less node left: C8 (§5).
+- **lap 53 (2026-07-12)** `ade5d6d`: **X1 CLOSED** — `cexpect_pairing` ((7.4)/(7.5))
+  proved axiom-clean; Prop 7.1 `key_fourier_decay` and Prop 1.17 `charFn_decay`
+  now theorems over {X2 `white_cos_bound`, Prop 7.8 chain}. `Sec7/Reduction.lean`
+  sorry-free.
 
 - **lap 52 (cont)** `0ba065f`: **encExpect_block_le PROVED** (path→fpDist block
   bridge, the X9 crux sub-step) + **ROUTE FINDING**: the paper's Lemma 7.9 proof
