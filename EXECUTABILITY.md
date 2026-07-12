@@ -287,3 +287,38 @@ PAUSE: the container and its 90k context survived, and the lap resumed by itself
 wake. Distinct failure modes: sleep mid-API-stream = dead turn needing relaunch;
 sleep between requests = free pause. No tooling change warranted — the fix is
 operational (leave the lid open / on AC for overnight runs).
+
+## Judge loop — standing ops while the treadmill runs (2026-07-12)
+
+The treadmill (fable/low grind laps) produces; the HOST session judges. This section is
+the self-contained recipe — a fresh/compacted session should be able to run the loop
+from here alone.
+
+**Trigger**: each new `handoff:` commit (= a lap ended). A host Monitor emits on these;
+also fine to sweep ad hoc.
+
+**Per pass:**
+1. `git-safe -C ~/src/tao-collatz log --oneline <last-judged>..HEAD` — read the lap's
+   commits. Identify NEW or CHANGED *statements* (new `sorry`d theorems, new defs bound
+   for blueprint nodes, any edit to an already-ratified statement — diff those verbatim).
+2. Ratify vs `papers/tao-2019-almost-all-orbits.pdf`. Already ratified (see judge passes
+   1-3 above): Q-cluster/(7.34)-(7.35), Prop 7.3 count, Lemma 2.2 instances (pp.14-15),
+   Lemma 7.6 mean (pp.42-43), Lemma 7.7/fpDist (p.43), Prop 7.8 cluster (7.37)-(7.45)
+   (pp.44-46). NOT yet read/ratified fronts: Case 2/3 details (7.46)-(7.53) pp.46-48,
+   Lemma 7.9 + §7.5 (X9/X10), §5 first-passage (C8), §6 Fourier reduction (X1),
+   Lemma 7.6 joint-tail/aperiodicity statements when X5 lands.
+3. Blueprint flips in `blueprint/src/content.tex`: statement-`\leanok` ONLY when landed
+   + compiled + judge-ratified (add `\lean{...}` bindings, RAW names — `\_` escapes
+   break plasTeX). Proof-`\leanok` ONLY on a judge-run `#print axioms` (host
+   `lake env lean` on a scratch file; expect [propext, Classical.choice, Quot.sound]).
+   Re-rate `\lapsrisk` when the evidence moves; mirror the BLUEPRINT.md §2 ledger row.
+4. Rebuild: `cd blueprint && ./build.sh` (never bare `leanblueprint web`). Verify via
+   the extracted DOT if suspicious (tools: sandbox extract_depgraph_dot.py).
+5. Commit `--no-verify` scoped to `blueprint/ EXECUTABILITY.md BLUEPRINT.md` (never
+   sweep the box's in-flight Lean files); push (boxes cannot).
+6. Append verdicts as a numbered judge-pass section above this one.
+
+**Cautions**: boxes MISLABEL ledger ids (session 4 called Prop 7.3 work "X5") — ratify
+by declaration, never by label. A statement edit to an already-green node REVOKES its
+`\leanok` until re-ratified. Worker claims of axiom-cleanliness are hypotheses until the
+judge reruns `#print axioms`.

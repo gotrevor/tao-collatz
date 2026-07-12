@@ -155,7 +155,7 @@ buys nothing. A completed node is the *only* estimate that can't be wrong.
 |----|------|-------|------|------|------|---------|
 | S1 | PMF basics: `dTV`, (1.10), expectation calculus, finite products / iid vectors | §1.4, (1.9)(1.10) | 2 | 8–15 | 90% | — |
 | S2 | Geom/Pascal PMFs, exact negative-binomial point mass `C(L-1,n-1)2^{-L}`, MGFs, 1-D Chernoff tails | Def 1.7, §2 | 2 | 6–12 | 90% | S1 |
-| S3 | **Local 2-D Gaussian-type bound** — Lemma 2.2(i)(ii) for `Geom(2)`, `Geom(4)`, `Pascal`, `Hold`; `G_n` weights (2.2) | Lem 2.2 | 4 | 20–40 | 70% | S2 |
+| S3 | **Local 2-D Gaussian-type bound** — Lemma 2.2(i)(ii) for `Geom(2)`, `Geom(4)`, `Pascal`, `Hold`; `G_n` weights (2.2). Statements ratified; analytic engine proved (inversion, char decay, center bound, tilting) — remaining: regime assembly | Lem 2.2 | 4 | 12–25 | 78% | S2 |
 | S4 | Fourier on `ZMod (3^n)`: `e(θ)`, `ZMod.dft` Parseval, `Osc` (1.24); Remark 1.18 triangle inequality | §6, (1.24) | 2 | 4–8 | 85% | — |
 
 ### Core spine (§1–§5)
