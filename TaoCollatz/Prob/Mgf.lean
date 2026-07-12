@@ -1,4 +1,5 @@
 import TaoCollatz.Prob.Tilt
+import TaoCollatz.Sec7.Holding
 
 /-!
 # Moment generating functions of the d=1 renewal laws (node S3, step (F2))
@@ -143,5 +144,282 @@ theorem tiltZ_pascalNe3_add (lam : ℝ) :
       rw [div_eq_mul_inv, show (4 : ℝ≥0∞) * 3⁻¹ * 4⁻¹ = (4 * 4⁻¹) * 3⁻¹ from by ring,
         ENNReal.mul_inv_cancel (by norm_num) (by finiteness), one_mul],
     add_comm]
+
+/-! ### Numeric strip bounds on the box `|λ| ≤ 1/50` -/
+
+/-- `e^x ≤ (1-x)⁻¹` on `[0, 1)` (from `1 - x ≤ e^{-x}`). -/
+theorem exp_le_inv_one_sub {x : ℝ} (h0 : 0 ≤ x) (h1 : x < 1) :
+    Real.exp x ≤ (1 - x)⁻¹ := by
+  have hpos : 0 < 1 - x := by linarith
+  have hexp : 0 < Real.exp x := Real.exp_pos x
+  have h : 1 - x ≤ (Real.exp x)⁻¹ := by
+    have := Real.add_one_le_exp (-x)
+    rw [Real.exp_neg] at this
+    linarith
+  have hmul : Real.exp x * (1 - x) ≤ 1 := by
+    have h2 := mul_le_mul_of_nonneg_left h hexp.le
+    rwa [mul_inv_cancel₀ hexp.ne'] at h2
+  calc Real.exp x = Real.exp x * (1 - x) * (1 - x)⁻¹ := by field_simp
+    _ ≤ 1 * (1 - x)⁻¹ := mul_le_mul_of_nonneg_right hmul (by positivity)
+    _ = (1 - x)⁻¹ := one_mul _
+
+/-- Monotone evaluation of the geometric closed form `r(1-r)⁻¹` at a rational
+majorant of the ratio. -/
+theorem geom_closed_le {q q' : ℝ} (h0 : 0 ≤ q) (hqq : q ≤ q') (h1 : q' < 1) :
+    ENNReal.ofReal q * (1 - ENNReal.ofReal q)⁻¹
+      ≤ ENNReal.ofReal (q' / (1 - q')) := by
+  have h1q' : 0 < 1 - q' := by linarith
+  have h0' : 0 ≤ q' := le_trans h0 hqq
+  have hstep : ENNReal.ofReal q * (1 - ENNReal.ofReal q)⁻¹
+      ≤ ENNReal.ofReal q' * (1 - ENNReal.ofReal q')⁻¹ := by
+    gcongr <;> exact ENNReal.ofReal_le_ofReal hqq
+  refine le_trans hstep (le_of_eq ?_)
+  rw [show (1 : ℝ≥0∞) = ENNReal.ofReal 1 from ENNReal.ofReal_one.symm,
+    ← ENNReal.ofReal_sub 1 h0', ← ENNReal.ofReal_inv_of_pos h1q',
+    ← ENNReal.ofReal_mul h0', div_eq_mul_inv]
+
+/-- `Geom(2)` MGF bound on the strip `λ ≤ 1/50`: `Z ≤ 25/24`. -/
+theorem tiltZ_geomHalf_le {lam : ℝ} (hhi : lam ≤ 1 / 50) :
+    tiltZ geomHalf (expW lam) ≤ ENNReal.ofReal (25 / 24) := by
+  have hexp : Real.exp lam ≤ 50 / 49 := by
+    calc Real.exp lam ≤ Real.exp (1 / 50) := Real.exp_le_exp.mpr hhi
+      _ ≤ (1 - 1 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num) (by norm_num)
+      _ ≤ 50 / 49 := by norm_num
+  rw [tiltZ_geomHalf]
+  calc ENNReal.ofReal (Real.exp lam / 2) * (1 - ENNReal.ofReal (Real.exp lam / 2))⁻¹
+      ≤ ENNReal.ofReal ((25 / 49) / (1 - 25 / 49)) :=
+        geom_closed_le (by positivity) (by linarith) (by norm_num)
+    _ = ENNReal.ofReal (25 / 24) := by norm_num
+
+/-- The `pascalNe3` mass at `2` is `3⁻¹`. -/
+theorem pascalNe3_apply_two : pascalNe3 2 = 3⁻¹ := by
+  show (if 2 < 2 ∨ 2 = 3 then (0 : ℝ≥0∞)
+      else (4 / 3) * (((2 - 1 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ 2)) = 3⁻¹
+  rw [if_neg (by omega)]
+  rw [show ((2 - 1 : ℕ) : ℝ≥0∞) = 1 from by norm_num, one_mul, ← ENNReal.inv_pow,
+    show ((2 : ℝ≥0∞) ^ 2)⁻¹ = 4⁻¹ from by norm_num, div_eq_mul_inv,
+    show (4 : ℝ≥0∞) * 3⁻¹ * 4⁻¹ = (4 * 4⁻¹) * 3⁻¹ from by ring,
+    ENNReal.mul_inv_cancel (by norm_num) (by finiteness), one_mul]
+
+theorem tiltZ_pascalNe3_ne_zero (lam : ℝ) : tiltZ pascalNe3 (expW lam) ≠ 0 := by
+  intro h0
+  have hle : pascalNe3 2 * expW lam 2 ≤ tiltZ pascalNe3 (expW lam) :=
+    ENNReal.le_tsum 2
+  rw [h0, le_zero_iff, mul_eq_zero] at hle
+  rcases hle with h | h
+  · rw [pascalNe3_apply_two] at h
+    exact absurd h (by norm_num)
+  · rw [expW, ENNReal.ofReal_eq_zero] at h
+    exact absurd h (not_le.mpr (Real.exp_pos _))
+
+/-- **`pascalNe3` MGF bound on the box `|λ| ≤ 1/50`**: `Z_{ne3}(λ) ≤ 57/50` — the
+`b = 3` atom removal pulls the MGF strictly below `4/3`, which is what makes the
+`Hold` geometric-series ratio `(3/4)e^{λ₁}Z_{ne3} < 1`. -/
+theorem tiltZ_pascalNe3_le {lam : ℝ} (hlo : -(1 / 50) ≤ lam) (hhi : lam ≤ 1 / 50) :
+    tiltZ pascalNe3 (expW lam) ≤ ENNReal.ofReal (57 / 50) := by
+  have hexp2 : Real.exp lam < 2 := by
+    calc Real.exp lam ≤ Real.exp (1 / 50) := Real.exp_le_exp.mpr hhi
+      _ ≤ (1 - 1 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num) (by norm_num)
+      _ < 2 := by norm_num
+  have hZp : tiltZ pascal (expW lam) ≤ ENNReal.ofReal (625 / 576) := by
+    rw [tiltZ_pascal hexp2]
+    calc (tiltZ geomHalf (expW lam)) ^ 2
+        ≤ (ENNReal.ofReal (25 / 24)) ^ 2 :=
+          pow_le_pow_left' (tiltZ_geomHalf_le hhi) 2
+      _ = ENNReal.ofReal (625 / 576) := by
+          rw [← ENNReal.ofReal_pow (by norm_num)]
+          norm_num
+  have he3 : ENNReal.ofReal (47 / 150) ≤ 3⁻¹ * expW lam 3 := by
+    rw [expW, show ((3 : ℝ≥0∞))⁻¹ = ENNReal.ofReal (1 / 3) from by
+        rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_one,
+          ENNReal.ofReal_ofNat, one_div],
+      ← ENNReal.ofReal_mul (by norm_num)]
+    apply ENNReal.ofReal_le_ofReal
+    have h := Real.add_one_le_exp (lam * 3)
+    nlinarith
+  have hfin : (3 : ℝ≥0∞)⁻¹ * expW lam 3 ≠ ∞ :=
+    ENNReal.mul_ne_top (by finiteness) ENNReal.ofReal_ne_top
+  have hmain : tiltZ pascalNe3 (expW lam) + 3⁻¹ * expW lam 3
+      ≤ ENNReal.ofReal (57 / 50) + 3⁻¹ * expW lam 3 := by
+    rw [tiltZ_pascalNe3_add lam]
+    calc (4 / 3 : ℝ≥0∞) * tiltZ pascal (expW lam)
+        ≤ (4 / 3 : ℝ≥0∞) * ENNReal.ofReal (625 / 576) := by gcongr
+      _ = ENNReal.ofReal (625 / 432) := by
+          rw [show (4 / 3 : ℝ≥0∞) = ENNReal.ofReal (4 / 3) from by
+              rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_ofNat,
+                ENNReal.ofReal_ofNat],
+            ← ENNReal.ofReal_mul (by norm_num)]
+          norm_num
+      _ ≤ ENNReal.ofReal (57 / 50) + ENNReal.ofReal (47 / 150) := by
+          rw [← ENNReal.ofReal_add (by norm_num) (by norm_num)]
+          exact ENNReal.ofReal_le_ofReal (by norm_num)
+      _ ≤ ENNReal.ofReal (57 / 50) + 3⁻¹ * expW lam 3 := by gcongr
+  exact (ENNReal.add_le_add_iff_right hfin).mp hmain
+
+/-! ### The `Hold` MGF (paper (7.30), Lemma 7.6 engine) -/
+
+/-- The 2-D exponential tilt weight on the renewal lattice `ℕ × ℤ`. -/
+noncomputable def expW2 (l1 l2 : ℝ) : ℕ × ℤ → ℝ≥0∞ :=
+  fun d => ENNReal.ofReal (Real.exp (l1 * d.1 + l2 * d.2))
+
+theorem expW2_zero (l1 l2 : ℝ) : expW2 l1 l2 0 = 1 := by
+  simp [expW2]
+
+theorem expW2_add (l1 l2 : ℝ) (a b : ℕ × ℤ) :
+    expW2 l1 l2 (a + b) = expW2 l1 l2 a * expW2 l1 l2 b := by
+  simp only [expW2]
+  rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]
+  congr 2
+  simp only [Prod.fst_add, Prod.snd_add]
+  push_cast
+  ring
+
+/-- **The `Hold` MGF factorization** (paper (7.30)): conditioning on the `Geom(4)`
+draw `k`, the increment block contributes `e^{3λ₂}·Z_{ne3}(λ₂)^{k-1}`. -/
+theorem tiltZ_hold_factor (l1 l2 : ℝ)
+    (hZ0 : tiltZ pascalNe3 (expW l2) ≠ 0) (hZt : tiltZ pascalNe3 (expW l2) ≠ ∞) :
+    tiltZ hold (expW2 l1 l2)
+      = ∑' k : ℕ, geomQuarter k
+          * (ENNReal.ofReal (Real.exp (l1 * k + 3 * l2))
+            * (tiltZ pascalNe3 (expW l2)) ^ (k - 1)) := by
+  rw [tiltZ]
+  unfold hold
+  rw [PMF.tsum_bind_mul]
+  refine tsum_congr fun k => ?_
+  congr 1
+  rw [PMF.tsum_map_mul]
+  have hterm : ∀ v : Fin (k - 1) → ℕ,
+      (pascalNe3.iid (k - 1)) v
+          * expW2 l1 l2 ((k : ℕ), ((3 : ℤ) + ∑ i, (v i : ℤ)))
+        = ENNReal.ofReal (Real.exp (l1 * k + 3 * l2))
+          * ((pascalNe3.iid (k - 1)) v * expW l2 (∑ i, v i)) := by
+    intro v
+    simp only [expW2, expW]
+    rw [show l1 * (((k : ℕ), ((3 : ℤ) + ∑ i, (v i : ℤ))).1 : ℕ)
+          + l2 * ((((k : ℕ), ((3 : ℤ) + ∑ i, (v i : ℤ))).2 : ℤ) : ℝ)
+        = (l1 * k + 3 * l2) + l2 * ((∑ i, v i : ℕ) : ℝ) from by
+      push_cast
+      ring]
+    rw [Real.exp_add, ENNReal.ofReal_mul (Real.exp_pos _).le]
+    ring
+  rw [tsum_congr hterm, ENNReal.tsum_mul_left]
+  congr 1
+  have hiid : ∑' v, (pascalNe3.iid (k - 1)) v * expW l2 (∑ i, v i)
+      = tiltZ (iidSum pascalNe3 (k - 1)) (expW l2) := by
+    rw [tiltZ, iidSum, PMF.tsum_map_mul]
+  rw [hiid, tiltZ_iidSum pascalNe3 (expW_zero l2) (expW_add l2) hZ0 hZt]
+
+theorem tiltZ_hold_ne_zero (l1 l2 : ℝ) : tiltZ hold (expW2 l1 l2) ≠ 0 := by
+  intro h0
+  have hle : hold (1, 3) * expW2 l1 l2 (1, 3) ≤ tiltZ hold (expW2 l1 l2) :=
+    ENNReal.le_tsum _
+  rw [h0, le_zero_iff, mul_eq_zero] at hle
+  rcases hle with h | h
+  · have h13 := hold_apply_one_three
+    rw [h, ENNReal.toReal_zero] at h13
+    norm_num at h13
+  · rw [expW2, ENNReal.ofReal_eq_zero] at h
+    exact absurd h (not_le.mpr (Real.exp_pos _))
+
+/-- **`Hold` MGF finiteness on the box `|λᵢ| ≤ 1/50`** (paper (7.30), the Lemma 7.6
+engine): the conditional factorization is dominated by a geometric series with
+ratio `(3/4)·e^{λ₁}·Z_{ne3}(λ₂) ≤ 171/196 < 1`. -/
+theorem tiltZ_hold_ne_top {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 ≤ 1 / 50)
+    (h2lo : -(1 / 50) ≤ l2) (h2hi : l2 ≤ 1 / 50) :
+    tiltZ hold (expW2 l1 l2) ≠ ∞ := by
+  have hZ0 := tiltZ_pascalNe3_ne_zero l2
+  have hZle := tiltZ_pascalNe3_le h2lo h2hi
+  have hZt : tiltZ pascalNe3 (expW l2) ≠ ∞ :=
+    ne_top_of_le_ne_top ENNReal.ofReal_ne_top hZle
+  have hexp1 : Real.exp l1 ≤ 50 / 49 := by
+    calc Real.exp l1 ≤ Real.exp (1 / 50) := Real.exp_le_exp.mpr h1hi
+      _ ≤ (1 - 1 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num) (by norm_num)
+      _ ≤ 50 / 49 := by norm_num
+  have hexp3 : Real.exp (3 * l2) ≤ 50 / 47 := by
+    calc Real.exp (3 * l2) ≤ Real.exp (3 / 50) :=
+          Real.exp_le_exp.mpr (by linarith)
+      _ ≤ (1 - 3 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num) (by norm_num)
+      _ ≤ 50 / 47 := by norm_num
+  rw [tiltZ_hold_factor l1 l2 hZ0 hZt]
+  have hbound : ∀ k : ℕ, geomQuarter k
+        * (ENNReal.ofReal (Real.exp (l1 * k + 3 * l2))
+          * (tiltZ pascalNe3 (expW l2)) ^ (k - 1))
+      ≤ ENNReal.ofReal (171 / 196) ^ (k - 1) := by
+    intro k
+    match k with
+    | 0 =>
+      rw [show geomQuarter 0 = 0 from rfl, zero_mul]
+      positivity
+    | (j + 1) =>
+      rw [show geomQuarter (j + 1)
+          = 4⁻¹ * (3 * 4⁻¹) ^ ((j + 1) - 1) from by
+        rw [show geomQuarter (j + 1)
+            = if (j + 1) = 0 then 0 else 4⁻¹ * (3 * 4⁻¹) ^ ((j + 1) - 1) from rfl,
+          if_neg (by omega)],
+        Nat.add_sub_cancel]
+      have hsplit : ENNReal.ofReal (Real.exp (l1 * (j + 1 : ℕ) + 3 * l2))
+          = ENNReal.ofReal (Real.exp l1 * Real.exp (3 * l2))
+            * ENNReal.ofReal (Real.exp l1) ^ j := by
+        rw [← ENNReal.ofReal_pow (Real.exp_pos _).le,
+          ← ENNReal.ofReal_mul (by positivity), ← Real.exp_nat_mul, ← Real.exp_add,
+          ← Real.exp_add]
+        congr 2
+        push_cast
+        ring
+      rw [hsplit]
+      calc 4⁻¹ * (3 * 4⁻¹) ^ j
+            * (ENNReal.ofReal (Real.exp l1 * Real.exp (3 * l2))
+              * ENNReal.ofReal (Real.exp l1) ^ j
+              * (tiltZ pascalNe3 (expW l2)) ^ j)
+          = (4⁻¹ * ENNReal.ofReal (Real.exp l1 * Real.exp (3 * l2)))
+            * ((3 * 4⁻¹) * ENNReal.ofReal (Real.exp l1)
+              * tiltZ pascalNe3 (expW l2)) ^ j := by
+            rw [mul_pow, mul_pow]
+            ring
+        _ ≤ (4⁻¹ * ENNReal.ofReal ((50 / 49) * (50 / 47)))
+            * ((3 * 4⁻¹) * ENNReal.ofReal (50 / 49)
+              * ENNReal.ofReal (57 / 50)) ^ j := by
+            have ha : ENNReal.ofReal (Real.exp l1 * Real.exp (3 * l2))
+                ≤ ENNReal.ofReal ((50 / 49) * (50 / 47)) :=
+              ENNReal.ofReal_le_ofReal
+                (mul_le_mul hexp1 hexp3 (Real.exp_pos _).le (by norm_num))
+            have hb : ENNReal.ofReal (Real.exp l1) ≤ ENNReal.ofReal (50 / 49) :=
+              ENNReal.ofReal_le_ofReal hexp1
+            gcongr
+        _ ≤ 1 * ENNReal.ofReal (171 / 196) ^ j := by
+            gcongr
+            · calc (4 : ℝ≥0∞)⁻¹ * ENNReal.ofReal ((50 / 49) * (50 / 47))
+                  = ENNReal.ofReal ((1 / 4) * ((50 / 49) * (50 / 47))) := by
+                    rw [show ((4 : ℝ≥0∞))⁻¹ = ENNReal.ofReal (1 / 4) from by
+                        rw [ENNReal.ofReal_div_of_pos (by norm_num),
+                          ENNReal.ofReal_one, ENNReal.ofReal_ofNat, one_div],
+                      ← ENNReal.ofReal_mul (by norm_num)]
+                _ ≤ 1 := by
+                    rw [show (1 : ℝ≥0∞) = ENNReal.ofReal 1 from
+                        ENNReal.ofReal_one.symm]
+                    exact ENNReal.ofReal_le_ofReal (by norm_num)
+            · calc (3 : ℝ≥0∞) * 4⁻¹ * ENNReal.ofReal (50 / 49)
+                    * ENNReal.ofReal (57 / 50)
+                  = ENNReal.ofReal (3 * (1 / 4) * (50 / 49) * (57 / 50)) := by
+                    rw [show ((4 : ℝ≥0∞))⁻¹ = ENNReal.ofReal (1 / 4) from by
+                        rw [ENNReal.ofReal_div_of_pos (by norm_num),
+                          ENNReal.ofReal_one, ENNReal.ofReal_ofNat, one_div],
+                      show ((3 : ℝ≥0∞)) = ENNReal.ofReal 3 from
+                        (ENNReal.ofReal_ofNat 3).symm,
+                      ← ENNReal.ofReal_mul (by norm_num),
+                      ← ENNReal.ofReal_mul (by norm_num),
+                      ← ENNReal.ofReal_mul (by norm_num)]
+                _ ≤ ENNReal.ofReal (171 / 196) :=
+                    ENNReal.ofReal_le_ofReal (by norm_num)
+        _ = ENNReal.ofReal (171 / 196) ^ j := one_mul _
+  refine ne_top_of_le_ne_top ?_ (ENNReal.tsum_le_tsum hbound)
+  have hgeom : ∑' k : ℕ, ENNReal.ofReal (171 / 196) ^ (k - 1)
+      = 1 + ∑' j : ℕ, ENNReal.ofReal (171 / 196) ^ j := by
+    rw [tsum_eq_zero_add' ENNReal.summable]
+    congr 1
+  rw [hgeom, ENNReal.tsum_geometric]
+  refine ENNReal.add_ne_top.mpr ⟨ENNReal.one_ne_top, ENNReal.inv_ne_top.mpr ?_⟩
+  rw [Ne, tsub_eq_zero_iff_le, not_le]
+  exact ENNReal.ofReal_lt_one.mpr (by norm_num)
 
 end TaoCollatz

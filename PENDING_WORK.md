@@ -1,5 +1,38 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 32 (2026-07-12, sixth box session): (F2b) HOLD MGF FINITENESS PROVED
+
+`Prob/Mgf.lean` (now imports Sec7/Holding): `exp_le_inv_one_sub` (e^x ≤ (1-x)⁻¹ on
+[0,1)), `geom_closed_le` (monotone rational evaluation of r(1-r)⁻¹),
+`tiltZ_geomHalf_le` (≤ 25/24 for λ ≤ 1/50), `pascalNe3_apply_two` (= 3⁻¹),
+`tiltZ_pascalNe3_ne_zero`, **`tiltZ_pascalNe3_le`** (≤ 57/50 on |λ| ≤ 1/50 — the
+b=3 atom removal is what pulls it below 4/3; cancel the atom via
+ENNReal.add_le_add_iff_right, margin 625/432 ≤ 218/150), `expW2` 2-D weight (+
+zero/add), **`tiltZ_hold_factor`** (conditional factorization: Σ_k gQ(k)·e^{λ₁k+3λ₂}
+·Z_ne3^{k-1}, via tsum_bind_mul/tsum_map_mul + tiltZ_iidSum), `tiltZ_hold_ne_zero`,
+**`tiltZ_hold_ne_top`** on the box |λᵢ| ≤ 1/50 (geometric domination, ratio
+(3/4)(50/49)(57/50) = 171/196 < 1). ALL AXIOM-CLEAN. Paper (7.30) engine done.
+Gotchas: `rw [ENNReal.ofReal_mul]` grabs the wrong (LHS) occurrence — rewrite
+numeral⁻¹ → ofReal form FIRST then merge with ← ofReal_mul; `.not_le` field gone
+(use `not_le.mpr`); gcongr side goals: pre-`have` the ofReal_le_ofReal facts and
+let gcongr close by assumption; `unfold hold` where `rw [hold]` fails.
+
+**(F3) next — tilted charFn decay**: refactor `charFn_hold_decay` into a parametric
+version `charFn_decay_of_atoms (r : PMF (ZMod N × ZMod N)) (μ : ℝ) (hμ : 0 < μ)`
+taking `μ ≤ min` of the four transferred atom masses at (1,3),(2,5),(2,7),(2,8) and
+concluding `‖charFn r ξ‖² ≤ 1 - c·μ²·(nd² sum)` (the current proof's pair_transfer
+step already isolates the masses — replace the four numerals by μ, constant becomes
+explicit in μ). Then tilted hold atoms: (tilt hold w).apply at atom y =
+hold(y)·w(y)/Z ≥ atom·e^{-|λ|·|y|}/Z with Z ≤ [bound from factor formula ≤ …] — need
+a numeric UPPER bound on tiltZ hold on the box (same geometric sum: ≤ e^{3λ₂}·
+Σ ≤ (50/47)·(1+(1-171/196)⁻¹)-ish — or simpler: atoms of tilt ≥ (1/4)·(min-e-power)
+/Z with Z ≤ ofReal(C) — derive `tiltZ_hold_le` alongside). Then (F4) center bound
+for the tilted walk (reuse (E) Gaussian summation verbatim — it consumed only the
+decay + PMF-ness), (F5) λ-optimization: Z(λ)ⁿe^{-λ·v} ≤ Gaussian/exp factor via
+log Z ≤ λ·(4,16) + K|λ|² on the box (needs E hold = (4,16) — mean computation) OR
+the cruder route: pick λ = ±(1/50) signs to dominate direction, giving the exp(-c|·|)
+Gweight branch only near the boundary. Design decision next lap.
+
 ## Lap 31 (2026-07-12, sixth box session): (F2a) d=1 MGFs PROVED — Prob/Mgf.lean NEW
 
 `Prob/Tilt.lean` additions: **`tiltZ_map`** (partition functions push forward),
