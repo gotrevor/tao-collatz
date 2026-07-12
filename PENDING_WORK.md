@@ -1,5 +1,38 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 48 (2026-07-12, seventh box session): renewalMass_bound TOOLKIT LANDED (X6 step 2 in progress)
+
+Numeric validation done FIRST (python): factorization chain
+Gw(1+k, c1*y_k) <= Gw(1+l, c4*x) * W_k for y_k=|j-4k|+|l-16k|, x=j-l/4,
+W_k = e^{-a z^2/(1+k)} + e^{-b z}, z=|l-16k|; c1=c0/2, c4=c1/2, a=c1^2/2,
+b=c1/2 (c0=1/400 from hold_local_bound) — 200k random trials clean; k-sum
+envelope numeric max C5 ~ 500/sqrt(1+l) (Lean-shaped derivation ~6e14, fine).
+
+PROVED this lap (FpLocation.lean, axiom-clean via build):
+- `Gweight_anti` (antitone in |x|), `exp_neg_le_four_div_sq` (e^{-u} <= 4/u^2
+  from e^{u/2} >= 1+u/2 squared), `one_sub_exp_neg_inv_le_one_add`
+  ((1-e^{-u})^{-1} <= 1+1/u), `sum_range_geom_le`,
+- **`sum_range_exp_neg_sq_le`**: Sum_{m<N} e^{-beta m^2} <= 3 + 2/sqrt(beta) —
+  integral-free M-split (M ~ 1/sqrt(beta) unit terms + m^2 >= Mm geometric
+  tail). This is the Gaussian AP sum engine for the renewal k-sum.
+
+REMAINING for renewalMass_bound (route fixed, see lap-47 entry + python):
+1. `sum_abs_AP_le`: Sum_{k<N} f(|w-16k|) <= 2 Sum_{m<N} f(16m), f antitone
+   nonneg, hypothesis w < 16N. Two branches at q := w/16 (Int ediv):
+   16k<=w: z >= 16(q-k), reindex i=q-k via Finset.sum_image (i <= q < N);
+   16k>w: z >= 16(k-q-1), i=k-q-1. filter split + sum_le_sum + sum_image +
+   sum_le_sum_of_subset_of_nonneg.
+2. `iidSum_hold_snd_zero`: (3k:Z) > q.2 -> iidSum hold k q = 0 (induction on
+   k via iidSum_succ_apply + hold_zero_of_snd_lt) => k-sum truncates at
+   K := l.toNat/3, renewalMass = Finset sum (tsum_eq_sum), 1+k <= 1+l.
+3. Per-k: hold_local_bound + ||v||inf >= y/2 + Gweight_anti + the AB+CD <=
+   (A+C)(B+D) factorization => P_k <= C0/(1+k) * Gw(1+l,c4 x) * W_k.
+4. k-sum: split k < L/32 (z > l/2: W_k <= e^{-(a/8)l}+e^{-(b/2)l}, times
+   (l+1) terms, kill by exp_neg_le_four_div_sq: (1+l)^{3/2}e^{-eps l} <=
+   6/eps^2 constant) vs k >= L/32 (1/(1+k) <= 32/(1+l), quadratic via
+   sum_abs_AP_le + sum_range_exp_neg_sq_le at beta = 256a/(1+l), linear via
+   sum_abs_AP_le + sum_range_geom_le). C5 symbolic in a,b; C := C0*C5.
+
 ## Lap 47 (2026-07-12, seventh box session): X6 CRACKED OPEN — FIRST-PASSAGE RENEWAL DECOMPOSITION PROVED
 
 NEW `Sec7/FpLocation.lean` (imports HoldLocal; `fpDist_location_bound` moved
