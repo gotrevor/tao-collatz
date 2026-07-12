@@ -690,6 +690,133 @@ theorem encExpect_normalize_init {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ
     (Or.inl ⟨rfl, rfl⟩)
   rwa [show R - σ.count + σ.count = R by omega] at h
 
+/-- **Beyond the right edge the fold is frozen** (the out-of-strip exit case of
+the Z-induction): once `pos₁ > n/2` no future point can satisfy the encounter
+condition (`pos₁` is non-decreasing along the fold), so `banked` and `count`
+never change and the expectation collapses to the integrand. -/
+theorem encExpect_of_edge {n ξ : ℕ} (F : TriangleFamily n ξ) (R : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) :
+    ∀ σ : EncState, n / 2 < σ.pos.1 → encExpect F R ε T σ = encVal ε R σ := by
+  classical
+  induction T with
+  | zero => intro σ _; exact encExpect_zero F R ε σ
+  | succ T IH =>
+    intro σ hedge
+    rw [encExpect_succ F R ε hε T σ]
+    have hstep : ∀ d : ℕ × ℤ,
+        encExpect F R ε T (encStep F R σ d) = encVal ε R σ := by
+      intro d
+      have hq : ¬(1 ≤ (σ.pos + d).1 ∧ (σ.pos + d).1 ≤ n / 2
+          ∧ black n ξ ((σ.pos + d).1 - 1) (σ.pos + d).2
+          ∧ σ.barrier < (σ.pos + d).2) := by
+        rintro ⟨-, hle, -, -⟩
+        have : (σ.pos + d).1 = σ.pos.1 + d.1 := rfl
+        omega
+      have hs : encStep F R σ d
+          = ⟨σ.pos + d, σ.barrier, σ.count,
+              σ.cumWhite + (if σ.pos + d ∈ whiteStrip n ξ then 1 else 0), σ.banked⟩ := by
+        rw [encStep, dif_neg hq]
+      rw [hs, IH _ (by dsimp only; show n / 2 < σ.pos.1 + d.1; omega)]
+      rfl
+    rw [tsum_congr fun d => by rw [hstep d], tsum_mul_right, hold_tsum_toReal, one_mul]
+
+/-- **The wander claim** (the between-blocks phase of the Z-induction). After a
+block exit with white credit `w₀` and no instant encounter, the walk wanders with
+`count = 0`, `banked = 0`, `cumWhite = w ≥ w₀`. Given a uniform bound `Z` for
+fresh states at budget `R'`, every wander state at budget `R' + 1` satisfies
+
+  `E_{R'+1}(T, ⟨p, b, 0, w, 0⟩) ≤ max 1 (e^ε·e^{−w₀}·Z)`:
+
+a later encounter banks `cumWhite ≥ w₀` and normalizes onto a fresh state at
+budget `R'` (paying `e^ε` for the count increment, collecting `e^{−w₀}`); a path
+that never encounters ends at `encVal = 1`. Induction on the horizon. -/
+theorem encExpect_wander_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R' : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (Z : ℝ) (hZ : 0 ≤ Z)
+    (hfresh : ∀ (T' : ℕ) (q : ℕ × ℤ) (b : ℤ),
+      encExpect F R' ε T' ⟨q, b, 0, 0, 0⟩ ≤ Z)
+    (w₀ : ℕ) (T : ℕ) :
+    ∀ (p : ℕ × ℤ) (b : ℤ) (w : ℕ), w₀ ≤ w →
+    encExpect F (R' + 1) ε T ⟨p, b, 0, w, 0⟩
+      ≤ max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) := by
+  classical
+  induction T with
+  | zero =>
+    intro p b w hw
+    rw [encExpect_zero]
+    refine le_max_of_le_left ?_
+    rw [encVal]
+    dsimp only
+    simp [Real.exp_le_one_iff]
+  | succ T IH =>
+    intro p b w hw
+    rw [encExpect_succ F (R' + 1) ε hε T _]
+    have hstep : ∀ d : ℕ × ℤ,
+        encExpect F (R' + 1) ε T (encStep F (R' + 1) ⟨p, b, 0, w, 0⟩ d)
+          ≤ max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) := by
+      intro d
+      by_cases hq : 1 ≤ (p + d).1 ∧ (p + d).1 ≤ n / 2
+          ∧ black n ξ ((p + d).1 - 1) (p + d).2 ∧ b < (p + d).2
+      · -- encounter: bank the credit, normalize onto the fresh state at budget R'
+        have hq' : 1 ≤ (p + d).1 ∧ (p + d).1 ≤ n / 2
+            ∧ black n ξ ((p + d).1 - 1) (p + d).2 ∧ b < (p + d).2 := hq
+        set σ' := encStep F (R' + 1) ⟨p, b, 0, w, 0⟩ d with hσ'
+        have hcnt : σ'.count = 1 := by
+          rw [hσ', encStep, dif_pos hq']
+        have hcw : w₀ ≤ σ'.cumWhite := by
+          rw [hσ', encStep, dif_pos hq']
+          dsimp only
+          omega
+        have hbk : σ'.banked = σ'.cumWhite := by
+          rw [hσ', encStep, dif_pos hq']
+          dsimp only
+          rw [if_pos (show (0 : ℕ) < R' + 1 by omega)]
+        have hnorm := encExpect_normalize_init F (R' + 1) ε hε T σ'
+          (by rw [hcnt]; omega)
+        refine le_max_of_le_right (le_trans hnorm ?_)
+        rw [hbk, max_self, hcnt]
+        have h2 : Real.exp (-(σ'.cumWhite : ℝ)) ≤ Real.exp (-(w₀ : ℝ)) := by
+          apply Real.exp_le_exp.mpr
+          have hle : (w₀ : ℝ) ≤ (σ'.cumWhite : ℝ) := Nat.cast_le.mpr hcw
+          linarith
+        have h3 : encExpect F (R' + 1 - 1) ε T ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩ ≤ Z := by
+          simpa using hfresh T σ'.pos σ'.barrier
+        have hE0 : 0 ≤ encExpect F (R' + 1 - 1) ε T ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩ :=
+          encExpect_nonneg _ _ ε T _
+        have hexp1 : Real.exp (ε * ((1 : ℕ) : ℝ)) = Real.exp ε := by norm_num
+        calc Real.exp (ε * ((1 : ℕ) : ℝ)) * Real.exp (-(σ'.cumWhite : ℝ))
+              * encExpect F (R' + 1 - 1) ε T ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩
+            ≤ Real.exp (ε * ((1 : ℕ) : ℝ)) * Real.exp (-(w₀ : ℝ)) * Z :=
+              mul_le_mul (mul_le_mul_of_nonneg_left h2 (Real.exp_pos _).le) h3 hE0
+                (mul_nonneg (Real.exp_pos _).le (Real.exp_pos _).le)
+          _ = Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z := by rw [hexp1]
+      · -- no encounter: still wandering with a larger cumWhite
+        have hs : encStep F (R' + 1) ⟨p, b, 0, w, 0⟩ d
+            = ⟨p + d, b, 0, w + (if p + d ∈ whiteStrip n ξ then 1 else 0), 0⟩ := by
+          rw [encStep, dif_neg (by exact hq)]
+        rw [hs]
+        exact IH (p + d) b _ (by omega)
+    -- sum the pointwise bound against the unit mass
+    have hM0 : 0 ≤ max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) :=
+      le_max_of_le_left zero_le_one
+    have hsumH : Summable (fun d : ℕ × ℤ => (hold d).toReal) :=
+      ENNReal.summable_toReal (by rw [hold.tsum_coe]; exact ENNReal.one_ne_top)
+    have hsumL : Summable (fun d : ℕ × ℤ => (hold d).toReal
+        * encExpect F (R' + 1) ε T (encStep F (R' + 1) ⟨p, b, 0, w, 0⟩ d)) :=
+      Summable.of_nonneg_of_le
+        (fun d => mul_nonneg ENNReal.toReal_nonneg (encExpect_nonneg _ _ ε T _))
+        (fun d => mul_le_mul_of_nonneg_left (encExpect_le _ _ ε hε T _)
+          ENNReal.toReal_nonneg)
+        (hsumH.mul_right _)
+    calc ∑' d : ℕ × ℤ, (hold d).toReal
+          * encExpect F (R' + 1) ε T (encStep F (R' + 1) ⟨p, b, 0, w, 0⟩ d)
+        ≤ ∑' d : ℕ × ℤ, (hold d).toReal
+            * max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) :=
+          Summable.tsum_le_tsum
+            (fun d => mul_le_mul_of_nonneg_left (hstep d) ENNReal.toReal_nonneg)
+            hsumL (hsumH.mul_right _)
+      _ = max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) := by
+          rw [tsum_mul_right, hold_tsum_toReal, one_mul]
+
 /-- PMF-weighted sums of `[0,B]`-valued observables are `≤ B` (generic event
 bookkeeping; `B`-scaled `tsum_mul_ofReal_le_one`). -/
 theorem tsum_toReal_mul_le {α : Type*} (p : PMF α) (g : α → ℝ)
@@ -925,6 +1052,42 @@ theorem encChainX_le_exp {ε p₀ : ℝ} (hε : 0 ≤ ε) (hp : 1 / 2 < p₀) (h
   have hden := encChainX_den_pos hp hp1 hsmall
   rw [encChainX, div_le_iff₀ hden]
   nlinarith [Real.one_le_exp hε, Real.exp_pos ε]
+
+/-- The defining fixed-point identity of the chain value:
+`p₀ + (1−p₀)·e^ε·X = X`. -/
+theorem encChainX_fixed {ε p₀ : ℝ} (hp : 1 / 2 < p₀) (hp1 : p₀ ≤ 1)
+    (hsmall : (1 - p₀) * (Real.exp ε + 1) ≤ 1) :
+    p₀ + (1 - p₀) * Real.exp ε * encChainX ε p₀ = encChainX ε p₀ := by
+  have hden := encChainX_den_pos hp hp1 hsmall
+  rw [encChainX]
+  field_simp
+  ring
+
+/-- **The two-mass block bound** (the collapsed form of the vertex LP that the
+Z-induction actually consumes): weighting the non-`whiteStrip` exit mass
+`d ≤ 1 − p₀` by the re-encounter value `e^ε·X` and everything else by `1` stays
+below the fixed point `X`:
+
+  `(1 − d) + d·e^ε·X ≤ X`.
+
+The white/never-encounter branches all carry value `≤ 1` (a white re-encounter
+banks the credit: `e^{ε−1}X ≤ e^{2ε−1} ≤ 1`; a never-encounter path has
+`encVal = 1`; an out-of-strip exit freezes the fold at `encVal = 1`), so only the
+in-strip-black mass `d` pays the chain factor — and `d ≤ 1 − p₀` by
+`fpDist_white_exit_deep`. -/
+theorem encounter_two_mass_bound {ε p₀ d : ℝ} (hε : 0 ≤ ε)
+    (hp : 1 / 2 < p₀) (hp1 : p₀ ≤ 1)
+    (hsmall : (1 - p₀) * (Real.exp ε + 1) ≤ 1)
+    (hd : 0 ≤ d) (hdp : d ≤ 1 - p₀) :
+    (1 - d) + d * (Real.exp ε * encChainX ε p₀) ≤ encChainX ε p₀ := by
+  have hfix := encChainX_fixed hp hp1 hsmall
+  have hX1 := one_le_encChainX hε hp hp1 hsmall
+  have hu := Real.one_le_exp hε
+  have hEX : 1 ≤ Real.exp ε * encChainX ε p₀ := by nlinarith
+  have hprod : d * (Real.exp ε * encChainX ε p₀ - 1)
+      ≤ (1 - p₀) * (Real.exp ε * encChainX ε p₀ - 1) :=
+    mul_le_mul_of_nonneg_right hdp (by linarith)
+  nlinarith [hprod, hfix]
 
 /-- **The four-mass vertex analysis** (the corrected per-block ledger, lap-52
 route; paper p.51 display corrected). One block from a just-entered state: the

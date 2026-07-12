@@ -423,8 +423,8 @@ now a \emph{theorem} from the pairing + damping + Prop~7.3, and \texttt{charFn\_
 \textbf{COMPLETE (lap 53; judge pass 11, 2026-07-12)}: \texttt{cexpect\_pairing} PROVED via
 the generalized pair-peel \texttt{cexpect\_pairing\_gen} (statement drift-free) and
 judge-verified \([\mathrm{propext}, \mathrm{Classical.choice}, \mathrm{Quot.sound}]\);
-Prop~1.17's remaining trust runs only through \texttt{white\_cos\_bound} (node~\ref{X2})
-and the Prop~7.8 chain.
+Prop~1.17's remaining trust runs only through the Prop~7.8 chain
+(\texttt{white\_cos\_bound} closed lap 54, judge pass 12).
 \end{definition}
 
 \begin{lemma}[Phase identities and white-point cancellation; Lemma 7.2]\label{X2}
@@ -441,8 +441,17 @@ The black/white dichotomy (7.9) with \(\varepsilon = 10^{-4}\): a point is \emph
 \(|\theta(j,l)|\le\varepsilon\), \emph{white} otherwise.  \textbf{Lemma 7.2} (white-point
 cancellation): at a white point the per-pair factor contracts,
 \(|f| \le |\cos(\pi\theta)| \le \exp(-\varepsilon^3)\).
-\lapsrisk{4--8}{low}{90\%}
 \end{lemma}
+\begin{proof}
+  \leanok
+COMPLETE (campaign laps 53--54; judge pass 12, 2026-07-12).  Both halves of Lemma 7.2:
+\texttt{fCond\_three\_norm} (exact value at the paired point, lap 53) and
+\texttt{white\_cos\_bound} (the Taylor half, lap 54): white \(\Rightarrow \varepsilon <
+|\theta| \le 1/2 \Rightarrow |\cos\pi\theta| \le 1 - 2\theta^2 \le 1 - 2\varepsilon^2 \le
+e^{-\varepsilon^3}\) (via mathlib's \texttt{Real.cos\_le\_one\_sub\_mul\_cos\_sq}).
+Judge-run \texttt{\#print axioms} (2026-07-12): [propext, Classical.choice, Quot.sound]
+on both; the damping consumer \texttt{prod\_fCond\_le\_damping} closed with it.
+\end{proof}
 
 \section{The triangle structure of the black set}
 
@@ -497,14 +506,27 @@ This node exists to validate the D6 finitization.
 \end{proposition}
 
 \begin{lemma}[Holding-law basics; Lemma 7.6]\label{X5}
+  \lean{hold_mean_fst, hold_mean_snd, hold_aperiodic}
   \uses{X4}
-  \notready
-\textbf{Lemma 7.6}: the explicit distribution of \(\mathrm{Hold}\), its exponential tail,
-aperiodicity, and mean vector \((4,16)\).  These are the renewal-theory inputs (drift and
-spread) for the first-passage analysis of the walk.
-% TODO-PRECISE: no canonical Lean name in SKELETON-SPEC yet.
-\lapsrisk{4--8}{low}{85\%}
+  \leanok
+\textbf{Lemma 7.6} (paper p.42): the explicit distribution of \(\mathrm{Hold}\), its
+exponential tail, aperiodicity, and mean vector \((4,16)\).  These are the renewal-theory
+inputs (drift and spread) for the first-passage analysis of the walk.  Clause map:
+\emph{exponential tail} + the ``in particular'' Lemma 2.2 conclusion are the S3 engine
+(\texttt{hold\_tail\_bound}/\texttt{hold\_local\_bound}, proved directly by the paper's own
+Chernoff route (7.29)--(7.30)); \emph{mean \((4,16)\)} = \texttt{hold\_mean\_fst/snd}
+(direct sum over the explicit construction, \(\mathbb{E}\mathrm{Pascal}' = 13/3\) per
+(7.29)); \emph{aperiodicity} = \texttt{hold\_aperiodic} (support \(\subseteq x + H\)
+forces \(H = \top\), the paper's own witnesses \((1,3)\), \((1,3)+(1,b)\)).
 \end{lemma}
+\begin{proof}
+  \leanok
+COMPLETE (campaign lap 54; judge pass 12, 2026-07-12).  Statements ratified vs paper p.42
+(previously an unread front): the (7.29) mass function is character-exact, the means follow
+the paper's own arithmetic, and the coset formulation is faithful.  Judge-run
+\texttt{\#print axioms} (2026-07-12): [propext, Classical.choice, Quot.sound] on all
+fifteen \texttt{HoldBasics} declarations.
+\end{proof}
 
 \begin{lemma}[First-passage location of the holding walk; Lemma 7.7]\label{X6}
   \lean{fpDist, fpDist_location_bound}
@@ -569,7 +591,7 @@ requires.
 \end{lemma}
 
 \begin{lemma}[Many triangles \(\Rightarrow\) many white points; Lemma 7.9]\label{X9}
-  \lean{many_triangles_white, EncState, encStep, encVal, encExpect}
+  \lean{many_triangles_white, EncState, encStep, encVal, encExpect, encChainX, encounter_vertex_bound, fpDist_white_exit_deep}
   \uses{X4, X8}
   \leanok
 \textbf{Lemma 7.9} (paper (7.57), pp.50--51): a walk crossing many triangles must encounter
@@ -590,15 +612,24 @@ written; the corrected pay-from-the-previous-block ledger has sharp toy value
 hence the pin's \(e^{2\varepsilon}\) (valid for \(p_0 \ge 1/2\); the p.55 consumer is Markov
 with \(R\) chosen after \(\varepsilon\), so absolute exponent constants wash out).
 \emph{Riders}: (a) verify at node~\ref{X11} that p.55 chooses \(R\) after \(\varepsilon\);
-(b) the \(2\varepsilon\) constant commits the proof to certifying \(p_0 \ge 1/2\) --- node
-\ref{X8}'s kernel is pinned only \(\exists p_0 > 0\) (Monte Carlo \(\approx 0.99\), so
-expected fine, but it is a certification burden --- else re-loosen to an \(\exists C\) form).
+(b) the \(2\varepsilon\) constant commits the proof to certifying \(p_0 > 1/2\) --- now
+\emph{embodied} in the pinned external input \texttt{fpDist\_white\_exit\_deep} (judge pass
+12, ratified vs the p.51 (7.59) reduction: identical to node~\ref{X8}'s Case-2 twin minus
+the budget hypothesis, which the paper's ``repeating the proof of (7.51)'' at arbitrary
+triangle points licenses, with the (7.52) budget \(s = O(m)\) free from membership; the
+\(p_0 > 1/2\) mass demand is the corrected ledger's documented deviation from the paper's
+\(\gg 1\), Monte Carlo \(\approx 0.99\)).
 Other ratified deltas (pass 8): finite horizon \(\forall T\) (D6; T1 did NOT fire);
 \(\exists\varepsilon_0\)-family; index shift matching the Case-2 forms.  Proved so far:
 geometric prerequisites, head-peel \texttt{encExpect\_succ}, block bridge
-\texttt{encExpect\_block\_le}, coupling \texttt{encExpect\_anti} (all axiom-checked pass 9);
-open: the two-level \(Y/Z\) induction + a (7.59)-shaped white-exit variant (node~\ref{X8}).
-\lapsrisk{5--10}{medium --- statement pinned, bridge proved, paper gap routed around}{70\% (2026-07-12 judge pass 9: gap confirmed real; corrected route sound; p$_0\ge$1/2 certification burden added)}
+\texttt{encExpect\_block\_le}, coupling \texttt{encExpect\_anti} (pass 9), and the
+corrected per-block ledger's closed-form core (lap 54, pass 12): the chain value
+\texttt{encChainX} \(= p_0/(1-(1-p_0)e^{\varepsilon})\) with fixed-point identity, the cap
+\(X \le e^{\varepsilon}\) (whence \(e^{\varepsilon}X \le e^{2\varepsilon}\), the (7.57)
+constant), and the four-mass LP vertex analysis \texttt{encounter\_vertex\_bound} (maximum
+at \((0, 1-p_0)\) = the fixed point) --- all axiom-checked.  Open: the two-level \(Y/Z\)
+induction assembly + the \texttt{fpDist\_white\_exit\_deep} input itself.
+\lapsrisk{4--8}{medium --- ledger core proved; induction assembly + deep white-exit open}{75\% (2026-07-12 judge pass 12: chain arithmetic verified; deep-exit pin ratified vs (7.59))}
 \end{lemma}
 
 \begin{lemma}[Large triangles rarely encountered; Lemma 7.10]\label{X10}

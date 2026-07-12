@@ -100,39 +100,40 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 9](judge/pass-09.md) — 2026-07-12: **PAPER GAP in Lemma 7.9 CONFIRMED** 🕳️ (p.51 display banks damping through k₁; true sum stops at t₁); X9 re-ratified at exp(2ε); 10 axiom checks (encounter fold + block bridge) clean; KB literature-holes entry #5.
 - [Pass 10](judge/pass-10.md) — 2026-07-12, pp.33–35: **X1 pinned + ratified** (`cexpect_pairing` = (7.5) verbatim; Lemma 7.2 exact value proved; `key_fourier_decay` + `charFn_decay` drift-free moves/derivations); un-pinned down to C8 + X5; ladder-vs-graph color vocabulary clarified.
 - [Pass 11](judge/pass-11.md) — 2026-07-12: **NODE X1 COMPLETE** ✅ (fourth verified node; `cexpect_pairing` clean, drift-free); box's "axiom-clean" mislabel on `prod_fCond_le_damping` caught (sorryAx via X2); Prop 1.17 trail machine-mapped; definition-badge tint rule shipped.
+- [Pass 12](judge/pass-12.md) — 2026-07-12, lap 54 (3 commits): **X5 + X2 COMPLETE** ✅✅ (Lemma 7.6 ratified vs p.42, 15 decls clean; `white_cos_bound` clean → `prod_fCond_le_damping` closed, trail map confirmed); X9 chain arithmetic verified (`encChainX` cap + LP vertex bound); **`fpDist_white_exit_deep` pinned + ratified vs (7.59)** — the watched-for variant, p₀ > 1/2 burden embodied.
 
 ## Live judge state 📍 (update each pass)
 
 **Verified complete** (dated judge-run `#print axioms`, all exactly
 `[propext, Classical.choice, Quot.sound]`): **X3** (2026-07-10), **S3** (pass 5),
-**X6** (pass 7), **X1** (pass 11 — definition node: defs + the (7.5) crux
-`cexpect_pairing` clean, badge dropped).
+**X6** (pass 7), **X1** (pass 11), **X5** (pass 12 — Lemma 7.6, 15 decls),
+**X2** (pass 12 — both halves; damping consumer closed with it).
 
-**Statements pinned + ratified**: every ledger node except **C8, X5** (no pinned
-Lean statement yet). Latest: X10 (pass 8), X9 (pass 8; **re-ratified at exp(2ε)**
-pass 9 after the paper-gap route finding), X1 (pass 10).
+**Statements pinned + ratified**: every ledger node except **C8** (no pinned Lean
+statement yet — the last un-pinned node). Latest: X1 (pass 10), X5 (pass 12),
+`fpDist_white_exit_deep` (pass 12, bound at X9).
 
 **Open riders / queued fronts**:
 - **X11 ε-rider** (pass 8): when ratifying X11 against pp.55–56 (UNREAD), verify the
   (7.66)–(7.67) consumption chooses `R` after ε, as ManyTriangles' docstring claims;
   otherwise X9's proof must additionally exhibit ε₀ ≥ 10⁻⁴. The exp(2ε) correction
   (pass 9) rides the same check — any absolute exponent constant must wash out there.
-- **p₀ ≥ 1/2 certification burden** (pass 9): X9's exp(2ε) constant hard-codes
-  p₀ ≥ 1/2, but X8's `fpDist_white_exit` is pinned only `∃p₀ > 0`. Either the
-  white-exit proof certifies p₀ ≥ 1/2 (Monte Carlo ≈ 0.99) or X9 re-loosens to an
-  ∃C exponent form — both consumable; watch which way the box goes.
-- **Watch: (7.59)-shaped white-exit variant** — the corrected X9 route needs a white-
-  exit statement WITHOUT the Case-2 budget hypothesis; a new pin to ratify when it
-  lands (re-read (7.59) context pp.50–51 then).
-- **Axiom-check queue**: cleared (pass 11). NB `prod_fCond_le_damping` is sorryAx
-  BY DESIGN (consumes X2's `white_cos_bound`) — the box's "axiom-clean" label on it
-  was wrong; Prop 1.17's whole trail = {white_cos_bound} ∪ {Prop 7.8 chain}.
-- **Unread paper fronts**: §5 first-passage (C8), Lemma 7.6 joint-tail/aperiodicity
-  (X5, when statements land), §7.5 assembly pp.55–56 (X11). pp.33–35 read + ratified
-  pass 10.
+- **p₀ > 1/2 certification burden — now EMBODIED** (pass 12): the burden lives in
+  the pinned `fpDist_white_exit_deep` (demands `1/2 < p₀`; ratified as a documented
+  deviation from the paper's `≫ 1`). The box must certify it there (Monte Carlo
+  ≈ 0.99, harness check 9); X8's Case-2 twin stays `∃p₀ > 0` and needs no retrofit.
+- **Axiom-check queue**: cleared (pass 12). Prop 1.17's whole remaining trail =
+  the Prop 7.8 chain: BlackEdge ×4 (`fpDist_edgeWeight_le`, `fpDist_white_exit`,
+  `Q_black_edge_case2`, `Q_black_edge_case3`) + ManyTriangles ×3
+  (`triangle_encounter_le` X10, `fpDist_white_exit_deep`, `many_triangles_white` X9).
+- **Box docstring nits** (pass 12, box's to fix): `White.lean:11` + `Reduction.lean:12`
+  still describe their (now proved) cruxes as carrying `sorry`.
+- **Unread paper fronts**: §5 first-passage (C8), §7.5 assembly pp.55–56 (X11).
+  pp.41–43 (Lemma 7.6) read + ratified pass 12.
 - **Trust-surface notes**: `fpDist` / `fpDistPlus` encode stopped-walk laws at the
   design level (strong Markov absorbed — D1, ratified passes 2 & 8);
-  `fpDist_white_exit` (X8 kernel) is load-bearing for BOTH X8 and X9.
+  `fpDist_white_exit` (X8) and `fpDist_white_exit_deep` (X9 input) are the two
+  load-bearing white-exit kernels — same geometry, different budget regimes.
 - **Paper-gap ledger**: Lemma 7.9 p.51 conditioning display (pass 9, confirmed ~90%) —
   KB `formalization-literature-holes.md` entry #5. **Per Trevor (2026-07-12): NOT
   announcement material.** It stays documented in-repo (docstring + judge log +

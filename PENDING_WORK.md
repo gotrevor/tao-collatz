@@ -1,5 +1,46 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 54 (cont-4): X9 gluing pieces PROVED — wander claim, edge freeze, two-mass bound, fixed point
+
+**Route simplification found while gluing (supersedes the four-mass LP shape):**
+the LP collapses to TWO masses. White-credit branches are all ≤ 1 pathwise
+(white re-encounter banks the credit: `e^{ε−1}X ≤ e^{2ε−1} ≤ 1`; never-encounter
+ends at `encVal = 1`; out-of-strip exit freezes at `encVal = 1` since `pos₁` is
+non-decreasing so `pos₁ > n/2` kills the encounter condition forever). Only the
+in-strip-black instant-re-encounter mass `d` pays `e^ε·X`, and
+`d ≤ 1 − P(whiteStrip exit) ≤ 1 − p₀`. Proved axiom-clean this pass:
+- `encChainX_fixed`: `p₀ + (1−p₀)e^εX = X`.
+- `encounter_two_mass_bound`: `(1−d) + d·e^εX ≤ X` for `d ≤ 1−p₀`.
+- `encExpect_of_edge`: `pos₁ > n/2 ⟹ encExpect = encVal` (fold frozen).
+- `encExpect_wander_le`: between-blocks wander with credit `w₀`:
+  `E_{R'+1}(T, ⟨p,b,0,w,0⟩) ≤ max 1 (e^ε e^{−w₀} Z)` given fresh-state bound `Z`
+  at budget `R'` (T-induction; encounter branch via `encExpect_normalize_init`
+  handled ABSTRACTLY — set σ' := encStep …, prove count/banked/cumWhite field
+  equations, never name the coveringTriangle barrier).
+
+**Remaining for `many_triangles_white`** (the Z-induction on budget ρ):
+`Z(ρ) := sup over fresh states E_ρ(T, ⟨pos,bar,0,0,0⟩) ≤ X` by induction on ρ:
+base ρ=0 frozen (`encExpect_of_count_ge`, encVal=1 ≤ X); step: block bridge
+`encExpect_block_le` (s := (bar − pos₂).toNat; for non-in-triangle fresh states
+s=0 works) with `g e :=` case-split on the endpoint `pos+e`: (i) instant
+encounter (encStep enters count 1) → normalize → `e^ε e^{−1_W} Z(ρ−1)`;
+(ii) no encounter, in-strip → wander claim with w₀ = 1_W(endpoint);
+(iii) `pos₁+e₁ > n/2` → edge freeze value 1. Uniform g-bound:
+`g e ≤ if (pos+e) ∈ whiteStrip then 1 else e^ε·X` — the white instant-encounter
+case needs `e^{ε−1}X ≤ 1` (`hXe` of the vertex lemma, holds for ε ≤ 1/4 say);
+then `Σ' fpDist·g ≤ (1−d) + d e^εX ≤ X` via `encounter_two_mass_bound` with the
+white mass from `fpDist_white_exit_deep`. CAVEAT to verify while gluing: the
+fresh state entering the Z-claim comes from an encounter at q with (q₁−1, q₂) in
+triangle t — matching `fpDist_white_exit_deep`'s start shape needs m := n/2 − q₁
+≥ Cthr; for q₁ > n/2 − Cthr (near the edge) the white-exit bound is unavailable —
+handle by a separate edge-strip argument (endpoints there leave the strip in
+O(Cthr) blocks... or weaken: for those states use the trivial value ≤ e^εX and
+argue they only occur ≤ once? NEEDS DESIGN — this is the open faithfulness risk
+of the gluing, alongside the p₀-vs-strip-height bookkeeping inside
+fpDist_white_exit_deep itself). Then `many_triangles_white` = init case:
+s=0 block + `g ≤ e^εX` uniformly + `X ≤ e^ε` ⟹ `≤ e^{2ε}`.
+
+
 ## Lap 54 (cont-3): **CLAIM-G coupling PROVED** — `encExpect_normalize` + `_init` axiom-clean
 
 The X9 state-normalization is done: `encExpect_normalize` (invariant induction —
