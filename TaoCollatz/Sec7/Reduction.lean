@@ -287,6 +287,68 @@ theorem expect_mono_le {α : Type*} (p : PMF α) (f g : α → ℝ) (hf0 : ∀ a
     (fun a => mul_le_mul_of_nonneg_left (hfg a) ENNReal.toReal_nonneg) hsumg
 
 open Classical in
+/-- `cexpect` of a pushforward is `cexpect` of the composition (for bounded
+observables): the (1.26) seam between `syracZ` and the raw geometric vector. -/
+theorem cexpect_map {α β : Type*} (p : PMF α) (f : α → β) (g : β → ℂ)
+    (hg : ∀ b, ‖g b‖ ≤ 1) :
+    (p.map f).cexpect g = p.cexpect fun a => g (f a) := by
+  have hsumP : Summable fun a => (p a).toReal :=
+    ENNReal.summable_toReal p.tsum_coe_ne_top
+  have hite0 : ∀ (b : β) (a : α), (0 : ℝ) ≤ (if b = f a then (p a).toReal else 0) := by
+    intro b a; split <;> simp [ENNReal.toReal_nonneg]
+  have hiteP : ∀ (b : β) (a : α), (if b = f a then (p a).toReal else 0) ≤ (p a).toReal := by
+    intro b a; split <;> simp [ENNReal.toReal_nonneg]
+  have hsIte : ∀ b : β, Summable fun a => (if b = f a then (p a).toReal else 0 : ℝ) :=
+    fun b => Summable.of_nonneg_of_le (hite0 b) (hiteP b) hsumP
+  -- the pushforward mass at b, in ℝ
+  have hreal : ∀ b, ((p.map f) b).toReal
+      = ∑' a, (if b = f a then (p a).toReal else 0 : ℝ) := by
+    intro b
+    rw [PMF.map_apply, ENNReal.tsum_toReal_eq]
+    · exact tsum_congr fun a => by rw [apply_ite ENNReal.toReal, ENNReal.toReal_zero]
+    · intro a
+      split
+      · exact p.apply_ne_top a
+      · exact ENNReal.zero_ne_top
+  have hmap : ∀ b, (((p.map f) b).toReal : ℂ)
+      = ∑' a, ((if b = f a then (p a).toReal else 0 : ℝ) : ℂ) := by
+    intro b
+    rw [hreal b]
+    exact (Complex.ofRealCLM.hasSum (hsIte b).hasSum).tsum_eq.symm
+  -- summability on the product
+  have hG : Summable fun ab : β × α => (if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) := by
+    rw [summable_prod_of_nonneg (fun ab => hite0 ab.1 ab.2)]
+    exact ⟨fun b => hsIte b,
+      Summable.of_nonneg_of_le (fun b => tsum_nonneg (hite0 b))
+        (fun b => (hreal b).ge)
+        (ENNReal.summable_toReal (p.map f).tsum_coe_ne_top)⟩
+  have hF : Summable fun ab : β × α =>
+      ((if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) : ℂ) * g ab.1 := by
+    refine Summable.of_norm (Summable.of_nonneg_of_le (fun ab => norm_nonneg _)
+      (fun ab => ?_) hG)
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (hite0 ab.1 ab.2)]
+    calc (if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) * ‖g ab.1‖
+        ≤ (if ab.1 = f ab.2 then (p ab.2).toReal else 0 : ℝ) * 1 :=
+          mul_le_mul_of_nonneg_left (hg ab.1) (hite0 ab.1 ab.2)
+      _ = _ := mul_one _
+  -- assemble
+  show ∑' b, (((p.map f) b).toReal : ℂ) * g b = ∑' a, ((p a).toReal : ℂ) * g (f a)
+  calc ∑' b, (((p.map f) b).toReal : ℂ) * g b
+      = ∑' b, ∑' a, ((if b = f a then (p a).toReal else 0 : ℝ) : ℂ) * g b := by
+        refine tsum_congr fun b => ?_
+        rw [hmap b, tsum_mul_right]
+    _ = ∑' a, ∑' b, ((if b = f a then (p a).toReal else 0 : ℝ) : ℂ) * g b := by
+        refine (Summable.tsum_comm' hF (fun b => ?_) (fun a => ?_)).symm
+        · exact (Complex.ofRealCLM.summable (hsIte b)).mul_right (g b)
+        · refine summable_of_ne_finset_zero (s := {f a}) (fun b hb => ?_)
+          rw [if_neg (by simpa using hb), Complex.ofReal_zero, zero_mul]
+    _ = ∑' a, ((p a).toReal : ℂ) * g (f a) := by
+        refine tsum_congr fun a => ?_
+        rw [tsum_eq_single (f a) (fun b hb => ?_)]
+        · rw [if_pos rfl]
+        · rw [if_neg hb, Complex.ofReal_zero, zero_mul]
+
+open Classical in
 /-- **Proposition 7.1** (= Prop 1.17 restated through the (1.26) reversed form): the
 character sum over the raw valuation vector `a ~ Geom(2)ⁿ` decays polynomially,
 uniformly in `ξ` coprime to 3. PROVED (moved from `Holding.lean`, 2026-07-12) from
