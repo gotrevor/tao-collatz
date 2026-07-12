@@ -650,4 +650,180 @@ theorem tiltZ_hold_fst_le {μ : ℝ} (hlo : -(1 / 100) ≤ μ) (hhi : μ ≤ 1 /
   rw [hE]
   nlinarith [sq_nonneg μ, sq_nonneg (μ - 1 / 100), sq_nonneg (μ + 1 / 100)]
 
+/-- **Closed form for the second-coordinate `Hold` MGF**: conditioning on the
+`Geom(4)` draw, `Z(0,μ) = (e^{3μ}/4)·(1 - (3/4)·Z_{ne3}(μ))⁻¹` (geometric sum in
+`ℝ≥0∞`; stated on the strip where `Z_{ne3}` is finite). -/
+theorem tiltZ_hold_snd {μ : ℝ} (hlo : -(1 / 50) ≤ μ) (hhi : μ ≤ 1 / 50) :
+    tiltZ hold (expW2 0 μ)
+      = ENNReal.ofReal (Real.exp (3 * μ) / 4)
+          * (1 - 3 * 4⁻¹ * tiltZ pascalNe3 (expW μ))⁻¹ := by
+  have hZ0 := tiltZ_pascalNe3_ne_zero μ
+  have hZt : tiltZ pascalNe3 (expW μ) ≠ ∞ :=
+    ne_top_of_le_ne_top ENNReal.ofReal_ne_top (tiltZ_pascalNe3_le hlo hhi)
+  rw [tiltZ_hold_factor 0 μ hZ0 hZt]
+  have hterm : ∀ k : ℕ, geomQuarter k
+        * (ENNReal.ofReal (Real.exp (0 * k + 3 * μ))
+          * (tiltZ pascalNe3 (expW μ)) ^ (k - 1))
+      = if k = 0 then 0
+        else ENNReal.ofReal (Real.exp (3 * μ) / 4)
+          * (3 * 4⁻¹ * tiltZ pascalNe3 (expW μ)) ^ (k - 1) := by
+    intro k
+    match k with
+    | 0 =>
+      rw [show geomQuarter 0 = 0 from rfl, zero_mul]
+      simp
+    | (j + 1) =>
+      rw [if_neg (Nat.succ_ne_zero j), Nat.add_sub_cancel,
+        show geomQuarter (j + 1) = 4⁻¹ * (3 * 4⁻¹) ^ j from by
+          rw [show geomQuarter (j + 1)
+              = if (j + 1) = 0 then 0 else 4⁻¹ * (3 * 4⁻¹) ^ ((j + 1) - 1) from rfl,
+            if_neg (by omega), Nat.add_sub_cancel],
+        show (0 : ℝ) * ((j + 1 : ℕ) : ℝ) + 3 * μ = 3 * μ from by
+          push_cast
+          ring]
+      have hnum : (4⁻¹ : ℝ≥0∞) * ENNReal.ofReal (Real.exp (3 * μ))
+          = ENNReal.ofReal (Real.exp (3 * μ) / 4) := by
+        rw [show (4⁻¹ : ℝ≥0∞) = ENNReal.ofReal (1 / 4) from by
+            rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_one,
+              ENNReal.ofReal_ofNat, one_div],
+          ← ENNReal.ofReal_mul (by norm_num)]
+        congr 1
+        ring
+      calc (4⁻¹ : ℝ≥0∞) * (3 * 4⁻¹) ^ j
+            * (ENNReal.ofReal (Real.exp (3 * μ)) * (tiltZ pascalNe3 (expW μ)) ^ j)
+          = (4⁻¹ * ENNReal.ofReal (Real.exp (3 * μ)))
+            * ((3 * 4⁻¹) * tiltZ pascalNe3 (expW μ)) ^ j := by
+            rw [mul_pow]
+            ring
+        _ = ENNReal.ofReal (Real.exp (3 * μ) / 4)
+            * (3 * 4⁻¹ * tiltZ pascalNe3 (expW μ)) ^ j := by rw [hnum]
+  rw [tsum_congr hterm, tsum_ite_zero_eq_succ
+    (fun k => ENNReal.ofReal (Real.exp (3 * μ) / 4)
+      * (3 * 4⁻¹ * tiltZ pascalNe3 (expW μ)) ^ (k - 1))]
+  simp only [Nat.add_sub_cancel]
+  rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric]
+
+/-- **Quadratic majorant of the `pascalNe3` MGF** (mean 13/3 first order exact):
+`Z_{ne3}(μ) ≤ 1 + (13/3)μ + 30μ²` on `|μ| ≤ 1/100`. Atom-cancellation pattern of
+`tiltZ_pascalNe3_le`, now symbolic in `μ`; numerically validated with margin. -/
+theorem tiltZ_pascalNe3_le_poly {μ : ℝ} (hlo : -(1 / 100) ≤ μ) (hhi : μ ≤ 1 / 100) :
+    tiltZ pascalNe3 (expW μ)
+      ≤ ENNReal.ofReal (1 + (13 / 3) * μ + 30 * μ ^ 2) := by
+  set E : ℝ := 1 + μ + 2 * μ ^ 2 with hE
+  have hexpE : Real.exp μ ≤ E := exp_le_one_add_add_two_sq (by linarith)
+  have hE1 : E / 2 < 1 := by
+    rw [hE]
+    nlinarith
+  have hexp2 : Real.exp μ < 2 := lt_of_le_of_lt hexpE (by rw [hE]; nlinarith)
+  -- Z_pascal ≤ ((E/2)/(1-E/2))²
+  have hgh : tiltZ geomHalf (expW μ)
+      ≤ ENNReal.ofReal ((E / 2) / (1 - E / 2)) := by
+    rw [tiltZ_geomHalf]
+    exact frac_closed_le (by positivity) (by linarith) (by positivity)
+      (by linarith) hE1
+  have hZp : tiltZ pascal (expW μ)
+      ≤ ENNReal.ofReal (((E / 2) / (1 - E / 2)) ^ 2) := by
+    rw [tiltZ_pascal hexp2,
+      ENNReal.ofReal_pow (div_nonneg (by nlinarith [sq_nonneg μ]) (by linarith))]
+    exact pow_le_pow_left' hgh 2
+  -- the subtracted atom: (1/3)(1+3μ) ≤ 3⁻¹e^{3μ}
+  have he3 : ENNReal.ofReal ((1 / 3) * (1 + 3 * μ)) ≤ 3⁻¹ * expW μ 3 := by
+    rw [expW, show ((3 : ℝ≥0∞))⁻¹ = ENNReal.ofReal (1 / 3) from by
+        rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_one,
+          ENNReal.ofReal_ofNat, one_div],
+      ← ENNReal.ofReal_mul (by norm_num)]
+    apply ENNReal.ofReal_le_ofReal
+    have h := Real.add_one_le_exp (μ * 3)
+    nlinarith
+  have hfin : (3 : ℝ≥0∞)⁻¹ * expW μ 3 ≠ ∞ :=
+    ENNReal.mul_ne_top (by finiteness) ENNReal.ofReal_ne_top
+  -- the cleared real inequality: (4/3)·((E/2)/(1-E/2))² ≤ SB + (1/3)(1+3μ)
+  have hreal : (4 / 3 : ℝ) * (((E / 2) / (1 - E / 2)) ^ 2)
+      ≤ (1 + (13 / 3) * μ + 30 * μ ^ 2) + (1 / 3) * (1 + 3 * μ) := by
+    have h2E : 0 < 1 - E / 2 := by linarith
+    calc (4 / 3 : ℝ) * (((E / 2) / (1 - E / 2)) ^ 2)
+        = ((4 / 3) * (E / 2) ^ 2) / (1 - E / 2) ^ 2 := by
+          rw [div_pow]
+          ring
+      _ ≤ (1 + (13 / 3) * μ + 30 * μ ^ 2) + (1 / 3) * (1 + 3 * μ) := by
+          rw [div_le_iff₀ (pow_pos h2E 2)]
+          rw [hE]
+          have h1 : (0 : ℝ) ≤ 1 / 100 - μ := by linarith
+          have h2 : (0 : ℝ) ≤ 1 / 100 + μ := by linarith
+          nlinarith [sq_nonneg μ, sq_nonneg (μ * μ),
+            mul_nonneg (mul_nonneg h1 h2) (sq_nonneg μ),
+            mul_nonneg h1 (sq_nonneg μ), mul_nonneg h2 (sq_nonneg μ),
+            mul_nonneg (mul_nonneg h1 h1) (sq_nonneg μ),
+            mul_nonneg (mul_nonneg h2 h2) (sq_nonneg μ)]
+  have hmain : tiltZ pascalNe3 (expW μ) + 3⁻¹ * expW μ 3
+      ≤ ENNReal.ofReal (1 + (13 / 3) * μ + 30 * μ ^ 2) + 3⁻¹ * expW μ 3 := by
+    rw [tiltZ_pascalNe3_add μ]
+    calc (4 / 3 : ℝ≥0∞) * tiltZ pascal (expW μ)
+        ≤ (4 / 3 : ℝ≥0∞) * ENNReal.ofReal (((E / 2) / (1 - E / 2)) ^ 2) := by
+          gcongr
+      _ = ENNReal.ofReal ((4 / 3) * (((E / 2) / (1 - E / 2)) ^ 2)) := by
+          rw [show (4 / 3 : ℝ≥0∞) = ENNReal.ofReal (4 / 3) from by
+              rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_ofNat,
+                ENNReal.ofReal_ofNat],
+            ← ENNReal.ofReal_mul (by norm_num)]
+      _ ≤ ENNReal.ofReal (1 + (13 / 3) * μ + 30 * μ ^ 2)
+          + ENNReal.ofReal ((1 / 3) * (1 + 3 * μ)) := by
+          rw [← ENNReal.ofReal_add (by nlinarith) (by nlinarith)]
+          exact ENNReal.ofReal_le_ofReal hreal
+      _ ≤ ENNReal.ofReal (1 + (13 / 3) * μ + 30 * μ ^ 2) + 3⁻¹ * expW μ 3 := by
+          gcongr
+  exact (ENNReal.add_le_add_iff_right hfin).mp hmain
+
+/-- **Second-coordinate second-order MGF bound** (mean 16): on `|μ| ≤ 1/100`,
+`Z(0,μ) ≤ 1 + 16μ + 400μ²`. Numerically validated with margin. -/
+theorem tiltZ_hold_snd_le {μ : ℝ} (hlo : -(1 / 100) ≤ μ) (hhi : μ ≤ 1 / 100) :
+    tiltZ hold (expW2 0 μ) ≤ ENNReal.ofReal (1 + 16 * μ + 400 * μ ^ 2) := by
+  set E : ℝ := 1 + μ + 2 * μ ^ 2 with hE
+  set SB : ℝ := 1 + (13 / 3) * μ + 30 * μ ^ 2 with hSB
+  have hexpE : Real.exp μ ≤ E := exp_le_one_add_add_two_sq (by linarith)
+  have hSB0 : 0 ≤ SB := by
+    rw [hSB]
+    nlinarith
+  have hSB1 : (3 / 4 : ℝ) * SB < 1 := by
+    rw [hSB]
+    nlinarith
+  have he3E : Real.exp (3 * μ) ≤ E ^ 3 := by
+    have h : Real.exp (3 * μ) = Real.exp μ ^ 3 := by
+      rw [← Real.exp_nat_mul]
+      norm_num
+    rw [h]
+    exact pow_le_pow_left₀ (Real.exp_pos _).le hexpE 3
+  rw [tiltZ_hold_snd (by linarith) (by linarith)]
+  -- replace the ENNReal ratio by its ofReal majorant
+  have hratio : 3 * 4⁻¹ * tiltZ pascalNe3 (expW μ)
+      ≤ ENNReal.ofReal ((3 / 4) * SB) := by
+    calc 3 * 4⁻¹ * tiltZ pascalNe3 (expW μ)
+        ≤ 3 * 4⁻¹ * ENNReal.ofReal SB := by
+          gcongr
+          exact tiltZ_pascalNe3_le_poly hlo hhi
+      _ = ENNReal.ofReal ((3 / 4) * SB) := by
+          rw [show ((3 : ℝ≥0∞) * 4⁻¹) = ENNReal.ofReal (3 / 4) from by
+              rw [show (4⁻¹ : ℝ≥0∞) = ENNReal.ofReal (1 / 4) from by
+                  rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_one,
+                    ENNReal.ofReal_ofNat, one_div],
+                show ((3 : ℝ≥0∞)) = ENNReal.ofReal 3 from
+                  (ENNReal.ofReal_ofNat 3).symm,
+                ← ENNReal.ofReal_mul (by norm_num)]
+              norm_num,
+            ← ENNReal.ofReal_mul (by norm_num)]
+  have hmono : ENNReal.ofReal (Real.exp (3 * μ) / 4)
+        * (1 - 3 * 4⁻¹ * tiltZ pascalNe3 (expW μ))⁻¹
+      ≤ ENNReal.ofReal (Real.exp (3 * μ) / 4)
+        * (1 - ENNReal.ofReal ((3 / 4) * SB))⁻¹ := by
+    gcongr
+  refine le_trans hmono ?_
+  have h := frac_closed_le (a := Real.exp (3 * μ) / 4) (a' := E ^ 3 / 4)
+    (r := (3 / 4) * SB) (r' := (3 / 4) * SB)
+    (by positivity) (by linarith) (by positivity) le_rfl hSB1
+  refine le_trans h (ENNReal.ofReal_le_ofReal ?_)
+  rw [div_le_iff₀ (by linarith)]
+  rw [hE, hSB]
+  nlinarith [sq_nonneg μ, sq_nonneg (μ - 1 / 100), sq_nonneg (μ + 1 / 100),
+    sq_nonneg (μ * μ), sq_nonneg (μ * μ * μ)]
+
 end TaoCollatz
