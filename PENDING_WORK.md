@@ -1,5 +1,34 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 31 (2026-07-12, sixth box session): (F2a) d=1 MGFs PROVED — Prob/Mgf.lean NEW
+
+`Prob/Tilt.lean` additions: **`tiltZ_map`** (partition functions push forward),
+**`tiltZ_iidSum`** (`Z_{S_n} = Zⁿ`, one-line from the tilting identity + PMF mass 1).
+`Prob/Mgf.lean` NEW: `expW λ a = ofReal e^{λa}` (+ zero/add), **`tiltZ_geomHalf`**
+(exact geometric MGF `r(1-r)⁻¹`, `r = e^λ/2`, unconditional in ℝ≥0∞) + ne_zero/ne_top
+(strip `e^λ < 2`), **`tiltZ_pascal`** (= square, via `pascal = iidSum geomHalf 2`),
+`pascalNe3_eq_ite`, `pascal_apply_three` (= 4⁻¹), **`tiltZ_pascalNe3_add`** (atom
+split: `Z_{pascalNe3} + 3⁻¹e^{3λ} = (4/3)Z_{pascal}`, no ℝ≥0∞ subtraction).
+ALL AXIOM-CLEAN. Gotcha: `ENNReal.tsum_eq_add_tsum_ite` bakes in
+`Classical.propDecidable`; match hand-written ites via `convert … using 3; funext;
+split_ifs <;> rfl`.
+
+**(F2b) next — hold MGF finiteness on the box |λ| ≤ 1/50**:
+1. Numeric strip bound: `tiltZ pascalNe3 (expW λ) ≤ ofReal(4/3·((x/(1-x))² - x³/4·…))`
+   — concretely from the split identity: Z_ne3 = (4/3)Z_pascal - 3⁻¹e^{3λ} (ENNReal
+   sub OK since finite); for |λ| ≤ 1/50: x = e^λ/2 ∈ [49/100, 25/49],
+   Z_gh = x/(1-x) ≤ 25/24, Z_pascal ≤ (25/24)², e^{3λ} ≥ (49/50)³ ⇒
+   Z_ne3 ≤ (4/3)(25/24)² - 3⁻¹(49/50)³ < 1.135 (target: (3/4)e^{λ₁}Z_ne3 < 1 ⇒
+   OK with e^{λ₁} ≤ 50/49: (3/4)(50/49)(1.135) ≈ 0.8686 < 1 ✓).
+2. 2-D weight `expW2 (λ₁ λ₂) (d : ℕ × ℤ)` (needs ℤ version of expW for coord 2).
+3. Factor `tiltZ hold` through hold's bind/map structure (hold_apply_pin route or
+   direct tsum_prod' + tsum_bind_mul/tsum_map_mul): inner sum over increments =
+   e^{3λ₂}·Z_ne3(λ₂)^{k-1} (tiltZ_iidSum on ℕ then push through the (3+Σ) map — mind
+   the ℕ→ℤ cast: use tiltZ_map with the cast hom), outer = Σ_k gQ(k)e^{λ₁k}(…)^{k-1}
+   geometric with ratio (3/4)e^{λ₁}Z_ne3 < 1 ⇒ tiltZ hold ≠ ∞ on the box.
+Then (F3) tilted charFn decay (parametrize charFn_hold_decay by atom-mass lower
+bounds), (F4) tilted center bound, (F5) λ-optimization ⇒ hold_local_bound.
+
 ## Lap 30 (2026-07-12, sixth box session): (F1) TILTING ENGINE PROVED — Prob/Tilt.lean NEW
 
 Generic exponential tilting, entirely in ℝ≥0∞ (no convergence side conditions beyond
