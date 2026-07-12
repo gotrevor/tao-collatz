@@ -1,5 +1,39 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 53 (2026-07-12): **X1 = §7.1 reduction chain RED→YELLOW** — Prop 1.17 now a theorem over the §7 sorries
+
+New `Sec7/Reduction.lean` (statements ratifiable vs paper pp.33–35, (7.1)–(7.6)):
+- PROVED axiom-clean: `eC_norm/eC_add/eC_intCast/eC_char_add` (additive character
+  algebra on `ZMod 3^n`), `fCond_norm_le_one` (7.6), `norm_one_add_eC_neg`
+  (half-angle), **`fCond_three_norm` = Lemma 7.2 exactly** (`|f(x,3)| = |cos πθ|`,
+  via `χ(7x)=χ(5x)χ(2x)` and `2·xArg = 3^{2j}u2^{1-l}` unit algebra),
+  `cexpect_map` (PMF pushforward seam, Fubini via `Summable.tsum_comm'`),
+  `expect_mono_le`, `prod_fCond_le_damping` (product ≤ exp(−ε³·#white), consumes
+  X2 `white_cos_bound`).
+- PIN (the one new sorry): **`cexpect_pairing`** = paper (7.4)/(7.5): `‖S_χ(n)‖ ≤
+  E_{b~Pascal^{n/2}} ∏_j ‖fCond(xArg(j, pre b (j+1)), b_j)‖`.
+- `key_fourier_decay` (Prop 7.1) MOVED Holding→Reduction and PROVED from
+  `cexpect_pairing` + damping + `renewal_white_encounters` (Prop 7.3, proved).
+- `charFn_decay` (**Prop 1.17**, Decay.lean) PROVED from Prop 7.1 + `cexpect_map`
+  (syracZ is definitionally the (1.26) reversed pushforward).
+
+**Next attack on `cexpect_pairing`** (route in its docstring): induction peeling
+TWO `geomHalf` coordinates per step, generalizing over (pair index offset j₀,
+accumulated prefix L, phase multiplier 3^{2j₀}2^{-L}): the (1.26) sum splits via
+`eC_char_add` into head-pair factor × tail; reindex the head double sum by
+`b = a₁+a₂` (uniform over b−1 pairs = `pascal b`; `pascal_eq_map_iid` is the
+model); the tail depends on the head only through `b`. Odd-n leftover: peel the
+final lone coordinate with `‖g‖ ≤ 1` (triangle ineq). Infrastructure that exists:
+`expect_iid_succ`/`tsum_iid_succ_mul` (Prob/Basic), `bridge_vector_gen`
+(Bridge.lean) is the direct template — same fold shape, but over pairs and with a
+complex product instead of a real exponential. Estimated 1–2 laps.
+
+**Node status after lap 53**: un-pinned RED remaining = X5 (Lemma 7.6 joint tail,
+paper p.42: renewal steps have mean (4,16), joint exponential tail, aperiodicity —
+needed by X11 assembly) and C8 (§5 first passage). X10 next steps unchanged
+(lap-51 entry); X9 R-induction assembly unchanged (lap-52 entry).
+
+
 ## Lap 52 (cont): **ROUTE FINDING — paper's Lemma 7.9 proof has a gap; pin corrected to `exp(2ε)`**
 
 While assembling the R-induction the closure ledger was worked in full detail.
