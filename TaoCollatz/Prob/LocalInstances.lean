@@ -1,4 +1,5 @@
 import TaoCollatz.Prob.Mgf
+import TaoCollatz.Prob.CharFn1
 
 /-!
 # The d=1 instances of Lemma 2.2 (node S3 leaves)
@@ -44,6 +45,50 @@ theorem tiltZ_expW_ne_zero (p : PMF ℕ) (lam : ℝ) : tiltZ p (expW lam) ≠ 0 
   have := p.tsum_coe
   rw [tsum_congr hp, tsum_zero] at this
   exact zero_ne_one this
+
+/-- **The λ-clip optimization** ((F5) step 2): for `n ≥ 1` and a deviation `dev`,
+the clipped tilt `λ = clip(dev/(2000n), 1/200)` makes the per-coordinate Chernoff
+exponent `1000nλ² − λ·dev` at most `−min(dev²/(4000n), |dev|/400)`: the central
+regime `|dev| ≤ 10n` gives the Gaussian branch exactly, the tail regime the
+exponential branch. -/
+theorem chernoff_clip_le {n : ℕ} (hn : 1 ≤ n) (dev : ℝ) :
+    ∃ lam : ℝ, -(1 / 200) ≤ lam ∧ lam ≤ 1 / 200 ∧
+      1000 * (n : ℝ) * lam ^ 2 - lam * dev
+        ≤ -min (dev ^ 2 / (4000 * n)) (|dev| / 400) := by
+  have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hnpos : (0 : ℝ) < n := by linarith
+  have hne : (n : ℝ) ≠ 0 := hnpos.ne'
+  by_cases hc : |dev| ≤ 10 * n
+  · -- central regime: λ = dev/(2000n), exponent exactly −dev²/(4000n)
+    have habs : |dev / (2000 * n)| ≤ 1 / 200 := by
+      rw [abs_div, abs_of_pos (by positivity : (0 : ℝ) < 2000 * n),
+        div_le_iff₀ (by positivity)]
+      nlinarith [abs_nonneg dev]
+    obtain ⟨hlo, hhi⟩ := abs_le.mp habs
+    refine ⟨dev / (2000 * n), hlo, hhi, ?_⟩
+    have heq : 1000 * (n : ℝ) * (dev / (2000 * n)) ^ 2 - dev / (2000 * n) * dev
+        = -(dev ^ 2 / (4000 * n)) := by
+      field_simp
+      ring
+    rw [heq, neg_le_neg_iff]
+    exact min_le_left _ _
+  · -- tail regime: λ = ±1/200, exponent ≤ n/40 − |dev|/200 ≤ −|dev|/400
+    push_neg at hc
+    refine ⟨if 0 ≤ dev then (1 / 200 : ℝ) else -(1 / 200), ?_, ?_, ?_⟩
+    · split_ifs <;> norm_num
+    · split_ifs <;> norm_num
+    · have habs : (if 0 ≤ dev then (1 / 200 : ℝ) else -(1 / 200)) * dev
+          = |dev| / 200 := by
+        split_ifs with h
+        · rw [abs_of_nonneg h]; ring
+        · rw [abs_of_neg (lt_of_not_ge h)]; ring
+      have hsq : (if 0 ≤ dev then (1 / 200 : ℝ) else -(1 / 200)) ^ 2
+          = 1 / 40000 := by
+        split_ifs <;> norm_num
+      rw [habs, hsq]
+      refine le_trans ?_
+        (neg_le_neg (min_le_right (dev ^ 2 / (4000 * n)) (|dev| / 400)))
+      linarith
 
 /-- **The λ-clip optimization, nonneg-deviation form** ((F5) step 2, shared by all
 Lemma 2.2 tail assemblies): for `n ≥ 1` and `dev ≥ 0`, the clipped tilt
@@ -323,6 +368,171 @@ theorem iidSum_nat_tail_of_quad (p : PMF ℕ) (m : ℝ) (hm : 0 ≤ m)
           refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
           exact le_trans (Real.exp_le_exp.mpr hexp) (exp_neg_min_le_Gweight hn1 hlam)
 
+
+/-! ### The generic d=1 local bound (Lemma 2.2(i)) -/
+
+/-- `Gweight` is even in its argument. -/
+theorem Gweight_abs (t x : ℝ) : Gweight t |x| = Gweight t x := by
+  rw [Gweight, Gweight, sq_abs, abs_abs]
+
+/-- **The generic d=1 Lemma 2.2(i)** (tilted circle method): any walk on `ℕ`
+with mean `m ≤ 4`, a second-order MGF bound `Z(λ) ≤ 1 + mλ + 1000λ²` on
+`|λ| ≤ 1/200`, and two adjacent atoms `a, a+1 ≤ 3` of mass `≥ 3/16` satisfies
+the local bound with `c = 1/400`, `C = 128`. Chain: the tilted walk keeps mass
+`≥ 1/6` at both atoms (weights `≥ e^{-3/200}`, `Z ≤ 209/200`), so
+`charFn_embMod_decay_of_adjacent_atoms` gives decay constant `c = 4` and
+`iidSum_nat_apply_le_center_of_decay` the tilted center bound `128/√(1+n)`;
+the tilting identity + λ-clip + `Gweight` matching finish as in
+`hold_local_bound`. -/
+theorem iidSum_nat_local_of_quad (p : PMF ℕ) (m : ℝ) (hm0 : 0 ≤ m) (hm4 : m ≤ 4)
+    (hquad : ∀ lam : ℝ, -(1 / 200) ≤ lam → lam ≤ 1 / 200 →
+      tiltZ p (expW lam) ≤ ENNReal.ofReal (1 + m * lam + 1000 * lam ^ 2))
+    (a : ℕ) (ha3 : a + 1 ≤ 3)
+    (hpa : (3 / 16 : ℝ) ≤ (p a).toReal) (hpb : (3 / 16 : ℝ) ≤ (p (a + 1)).toReal)
+    (n L : ℕ) :
+    ((iidSum p n) L).toReal
+      ≤ 128 / Real.sqrt (1 + n) * Gweight (1 + n) (1 / 400 * ((L : ℝ) - m * n)) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · -- n = 0: point mass at the origin
+    rw [iidSum_zero, PMF.pure_apply]
+    simp only [Nat.cast_zero, mul_zero, sub_zero, Real.sqrt_one]
+    split_ifs with h
+    · subst h
+      rw [ENNReal.toReal_one]
+      simp only [Nat.cast_zero, mul_zero]
+      rw [Gweight]
+      norm_num [Real.exp_zero]
+    · rw [ENNReal.toReal_zero]
+      exact mul_nonneg (by norm_num) (Gweight_nonneg _ _)
+  · -- n ≥ 1
+    have hn1 : 1 ≤ n := hn
+    have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+    set dev : ℝ := (L : ℝ) - m * n with hdev
+    obtain ⟨lam, hllo, hlhi, hexp⟩ := chernoff_clip_le hn1 dev
+    -- basic tilt data
+    have hZ0 := tiltZ_expW_ne_zero p lam
+    have hZq := hquad lam hllo hlhi
+    have hZt : tiltZ p (expW lam) ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hZq
+    set q : PMF ℕ := tilt p (expW lam) hZ0 hZt with hq
+    -- Z ≤ 209/200 in real form, and Z > 0
+    have hZle : (tiltZ p (expW lam)).toReal ≤ 209 / 200 := by
+      have h := ENNReal.toReal_mono ENNReal.ofReal_ne_top hZq
+      rw [ENNReal.toReal_ofReal (by nlinarith)] at h
+      nlinarith
+    have hZpos : 0 < (tiltZ p (expW lam)).toReal := ENNReal.toReal_pos hZ0 hZt
+    -- tilted atom masses ≥ 1/6
+    have hatom : ∀ b : ℕ, b ≤ 3 → (3 / 16 : ℝ) ≤ (p b).toReal →
+        (1 / 6 : ℝ) ≤ (q b).toReal := by
+      intro b hb3 hpb'
+      have hqb : q b = p b * expW lam b * (tiltZ p (expW lam))⁻¹ := rfl
+      rw [hqb, ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_inv]
+      have hw : (expW lam b).toReal = Real.exp (lam * b) := by
+        rw [expW, ENNReal.toReal_ofReal (Real.exp_pos _).le]
+      rw [hw]
+      have hb3R : (b : ℝ) ≤ 3 := by exact_mod_cast hb3
+      have hbn : (0 : ℝ) ≤ (b : ℝ) := Nat.cast_nonneg _
+      have harg : -(3 / 200 : ℝ) ≤ lam * b := by nlinarith
+      have hwge : (197 / 200 : ℝ) ≤ Real.exp (lam * b) := by
+        have h := Real.add_one_le_exp (lam * (b : ℝ))
+        linarith [Real.exp_le_exp.mpr harg, Real.add_one_le_exp (-(3 / 200 : ℝ))]
+      have hinv : (200 / 209 : ℝ) ≤ ((tiltZ p (expW lam)).toReal)⁻¹ := by
+        rw [show (200 / 209 : ℝ) = (209 / 200 : ℝ)⁻¹ from by norm_num]
+        gcongr
+      have hppos : (0 : ℝ) ≤ (p b).toReal := ENNReal.toReal_nonneg
+      calc (1 / 6 : ℝ) ≤ 3 / 16 * (197 / 200) * (200 / 209) := by norm_num
+        _ ≤ (p b).toReal * Real.exp (lam * b) * ((tiltZ p (expW lam)).toReal)⁻¹ := by
+            have h1 : (3 / 16 : ℝ) * (197 / 200) ≤ (p b).toReal * Real.exp (lam * b) :=
+              mul_le_mul hpb' hwge (by norm_num) hppos
+            have h2 : (0 : ℝ) ≤ (p b).toReal * Real.exp (lam * b) := by positivity
+            exact mul_le_mul h1 hinv (by norm_num) h2
+    have hqa := hatom a (by omega) hpa
+    have hqb := hatom (a + 1) ha3 hpb
+    -- tilted center bound via the d=1 circle method, decay constant c = 4
+    have hdec : ∀ (N : ℕ) [NeZero N], 4 ≤ N → ∀ j : ZMod N,
+        ‖charFn (q.map (embMod N)) (j, 0)‖ ^ 2 ≤ 1 - ((nd j : ℝ) / N) ^ 2 / 4 := by
+      intro N _ hN4 j
+      have hma : (1 / 6 : ℝ) ≤ ((q.map (embMod N)) (embMod N a)).toReal :=
+        le_trans hqa (ENNReal.toReal_mono (PMF.apply_ne_top _ _)
+          (PMF.apply_le_map_apply _ _ _))
+      have hmb : (1 / 6 : ℝ) ≤ ((q.map (embMod N)) (embMod N (a + 1))).toReal :=
+        le_trans hqb (ENNReal.toReal_mono (PMF.apply_ne_top _ _)
+          (PMF.apply_le_map_apply _ _ _))
+      have h := charFn_embMod_decay_of_adjacent_atoms hN4 (q.map (embMod N))
+        (μ := (1 / 6 : ℝ)) (by norm_num) a hma hmb j
+      have hu : (0 : ℝ) ≤ ((nd j : ℝ) / N) ^ 2 := sq_nonneg _
+      nlinarith
+    have hcenter := iidSum_nat_apply_le_center_of_decay q (c := 4) (by norm_num)
+      hdec n L
+    -- the Chernoff bridge
+    have hwv0 : expW lam L ≠ 0 := by
+      rw [expW]
+      exact (ENNReal.ofReal_pos.mpr (Real.exp_pos _)).ne'
+    have hwvt : expW lam L ≠ ∞ := by
+      rw [expW]
+      exact ENNReal.ofReal_ne_top
+    have key := iidSum_apply_eq_tilt p (expW_zero lam) (expW_add lam)
+      hZ0 hZt n L hwv0 hwvt
+    have hqZ : tiltZ p (expW lam) ≤ ENNReal.ofReal (Real.exp (m * lam + 1000 * lam ^ 2)) :=
+      le_trans hZq (ENNReal.ofReal_le_ofReal (by
+        have h := Real.add_one_le_exp (m * lam + 1000 * lam ^ 2)
+        linarith))
+    have hBpow : tiltZ p (expW lam) ^ n
+        ≤ ENNReal.ofReal (Real.exp ((n : ℝ) * (m * lam + 1000 * lam ^ 2))) := by
+      calc tiltZ p (expW lam) ^ n
+          ≤ ENNReal.ofReal (Real.exp (m * lam + 1000 * lam ^ 2)) ^ n := by gcongr
+        _ = ENNReal.ofReal (Real.exp (m * lam + 1000 * lam ^ 2) ^ n) :=
+            (ENNReal.ofReal_pow (Real.exp_pos _).le n).symm
+        _ = ENNReal.ofReal (Real.exp ((n : ℝ) * (m * lam + 1000 * lam ^ 2))) := by
+            rw [← Real.exp_nat_mul]
+    have hB : ((tiltZ p (expW lam)) ^ n).toReal
+        ≤ Real.exp ((n : ℝ) * (m * lam + 1000 * lam ^ 2)) := by
+      have h := ENNReal.toReal_mono ENNReal.ofReal_ne_top hBpow
+      rwa [ENNReal.toReal_ofReal (Real.exp_pos _).le] at h
+    have hCeq : ((expW lam L)⁻¹).toReal = Real.exp (-(lam * L)) := by
+      rw [expW, ← ENNReal.ofReal_inv_of_pos (Real.exp_pos _), ← Real.exp_neg,
+        ENNReal.toReal_ofReal (Real.exp_pos _).le]
+    have hsq0 : (0 : ℝ) < Real.sqrt (1 + (n : ℝ)) := Real.sqrt_pos.mpr (by positivity)
+    have hbridge : ((iidSum p n) L).toReal
+        ≤ 128 / Real.sqrt (1 + n)
+          * Real.exp (1000 * n * lam ^ 2 - lam * dev) := by
+      rw [key, ENNReal.toReal_mul, ENNReal.toReal_mul, hCeq]
+      have hEeq : (n : ℝ) * (m * lam + 1000 * lam ^ 2) + -(lam * L)
+          = 1000 * n * lam ^ 2 - lam * dev := by
+        rw [hdev]
+        ring
+      calc ((iidSum q n) L).toReal * ((tiltZ p (expW lam)) ^ n).toReal
+            * Real.exp (-(lam * L))
+          ≤ (128 / Real.sqrt (1 + n)
+              * Real.exp ((n : ℝ) * (m * lam + 1000 * lam ^ 2)))
+              * Real.exp (-(lam * L)) := by
+            refine mul_le_mul_of_nonneg_right ?_ (Real.exp_pos _).le
+            have h1 : ((iidSum q n) L).toReal ≤ 128 / Real.sqrt (1 + n) := by
+              refine le_trans hcenter (le_of_eq ?_)
+              norm_num
+            exact mul_le_mul h1 hB ENNReal.toReal_nonneg (by positivity)
+        _ = 128 / Real.sqrt (1 + n)
+              * Real.exp (1000 * n * lam ^ 2 - lam * dev) := by
+            rw [mul_assoc, ← Real.exp_add, hEeq]
+    -- exponent optimization and Gweight matching
+    have hGw : Real.exp (1000 * n * lam ^ 2 - lam * dev)
+        ≤ Gweight (1 + n) (1 / 400 * dev) := by
+      have h1 := Real.exp_le_exp.mpr hexp
+      have h2 : Real.exp (-min (dev ^ 2 / (4000 * n)) (|dev| / 400))
+          ≤ Gweight (1 + n) (1 / 400 * |dev|) := by
+        have h := exp_neg_min_le_Gweight hn1 (abs_nonneg dev)
+        rwa [sq_abs] at h
+      have h3 : Gweight (1 + n) (1 / 400 * |dev|) = Gweight (1 + n) (1 / 400 * dev) := by
+        rw [show (1 / 400 : ℝ) * |dev| = |1 / 400 * dev| from by
+          rw [abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 1 / 400)],
+          Gweight_abs]
+      rw [← h3]
+      exact le_trans h1 h2
+    calc ((iidSum p n) L).toReal
+        ≤ 128 / Real.sqrt (1 + n) * Real.exp (1000 * n * lam ^ 2 - lam * dev) :=
+          hbridge
+      _ ≤ 128 / Real.sqrt (1 + n) * Gweight (1 + n) (1 / 400 * dev) :=
+          mul_le_mul_of_nonneg_left hGw (by positivity)
+
 /-! ### The six ratified d=1 Lemma 2.2 statements (moved from `Prob/LocalBound.lean`) -/
 
 /-- **Lemma 2.2(ii) for `Geom(2)`** (paper p.15, displayed instance):
@@ -365,7 +575,15 @@ theorem geomHalf_local_bound :
     ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n L : ℕ),
       ((iidSum geomHalf n) L).toReal
         ≤ C / Real.sqrt (1 + n) * Gweight (1 + n) (c * ((L : ℝ) - 2 * n)) := by
-  sorry
+  refine ⟨1 / 400, by norm_num, 128, by norm_num, fun n L => ?_⟩
+  exact iidSum_nat_local_of_quad geomHalf 2 (by norm_num) (by norm_num)
+    (fun t hlo hhi => le_trans (tiltZ_geomHalf_le_quad hlo hhi)
+      (ENNReal.ofReal_le_ofReal (by nlinarith [sq_nonneg t])))
+    1 (by omega)
+    (by rw [geomHalf_apply]
+        norm_num [ENNReal.toReal_pow, ENNReal.toReal_inv])
+    (by rw [geomHalf_apply]
+        norm_num [ENNReal.toReal_pow, ENNReal.toReal_inv]) n L
 
 /-- **Lemma 2.2(i) for `Geom(4)`-shaped `geomQuarter`** (mean 4).
 OPEN: same d=1 center-bound prerequisite as `geomHalf_local_bound`. -/
@@ -373,7 +591,12 @@ theorem geomQuarter_local_bound :
     ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n L : ℕ),
       ((iidSum geomQuarter n) L).toReal
         ≤ C / Real.sqrt (1 + n) * Gweight (1 + n) (c * ((L : ℝ) - 4 * n)) := by
-  sorry
+  refine ⟨1 / 400, by norm_num, 128, by norm_num, fun n L => ?_⟩
+  exact iidSum_nat_local_of_quad geomQuarter 4 (by norm_num) (le_refl _)
+    (fun t hlo hhi => tiltZ_geomQuarter_le_quad hlo hhi)
+    1 (by omega)
+    (by rw [geomQuarter_toReal]; norm_num)
+    (by rw [geomQuarter_toReal]; norm_num) n L
 
 /-- **Lemma 2.2(i) for `Pascal`** (mean 4). Via `pascal_eq_map_iid`, `iidSum pascal n`
 is the law of `|Geom(2)_{2n}|`, so this also reduces to the exact negative-binomial
@@ -384,6 +607,20 @@ theorem pascal_local_bound :
     ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n L : ℕ),
       ((iidSum pascal n) L).toReal
         ≤ C / Real.sqrt (1 + n) * Gweight (1 + n) (c * ((L : ℝ) - 4 * n)) := by
-  sorry
+  refine ⟨1 / 400, by norm_num, 128, by norm_num, fun n L => ?_⟩
+  exact iidSum_nat_local_of_quad pascal 4 (by norm_num) (le_refl _)
+    (fun t hlo hhi => tiltZ_pascal_le_quad hlo hhi)
+    2 (by omega)
+    (by
+      have h : pascal 2 = 4⁻¹ := by
+        show (if 2 < 2 then (0 : ℝ≥0∞) else ((2 - 1 : ℕ) : ℝ≥0∞) * 2⁻¹ ^ 2) = 4⁻¹
+        rw [if_neg (by omega)]
+        rw [show ((2 - 1 : ℕ) : ℝ≥0∞) = 1 from by norm_num, one_mul,
+          ← ENNReal.inv_pow]
+        norm_num
+      rw [h]
+      norm_num [ENNReal.toReal_inv])
+    (by rw [pascal_apply_three]
+        norm_num [ENNReal.toReal_inv]) n L
 
 end TaoCollatz

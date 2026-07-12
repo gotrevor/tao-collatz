@@ -1,5 +1,35 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 45 (2026-07-12, seventh box session): ALL THREE d=1 LOCAL BOUNDS PROVED — **NODE S3 FULLY GREEN**
+
+**`geomHalf_local_bound`, `geomQuarter_local_bound`, `pascal_local_bound` are
+theorems** (axiom-clean). With laps 41-44, ALL EIGHT Lemma 2.2 obligations
+(hold local+tail, 3× d=1 local, 3× d=1 tail) are machine-checked. Machinery
+(LocalInstances.lean):
+- `iidSum_nat_local_of_quad` — GENERIC d=1 Lemma 2.2(i): any PMF ℕ with mean
+  m ≤ 4, quad MGF bound (K = 1000, box 1/200), and two adjacent atoms
+  a, a+1 ≤ 3 of mass ≥ 3/16 gets the local bound (c = 1/400, C = 128).
+  Chain: tilted atoms keep mass ≥ 1/6 (weights ≥ e^{-3/200}, Z ≤ 209/200,
+  validated 0.1767 ≥ 1/6), decay c = 4 via adjacent-atom lemma, tilted center
+  128/√(1+n), tilting identity + signed clip + Gweight evenness (`Gweight_abs`).
+- signed `chernoff_clip_le` MOVED HoldLocal → LocalInstances.
+- instances: geomHalf (m=2, atoms 1,2), geomQuarter (m=4, atoms 1,2; mass at 2
+  EXACTLY 3/16), pascal (m=4, atoms 2,3, both 1/4).
+Gotcha: λ is a token — cannot appear in hypothesis names (hλlo fails to parse).
+
+**S3 CLOSED. Next per operator red queue** (BLUEPRINT §2 steering: statement
+pinned + route validated + hardest sub-step probed):
+1. (X8/X10) `Q_black_edge` (Sec7/Monotone.lean:489) — statement design for
+   Prop 7.8 Cases 2/3, eqs (7.46)-(7.53) pp.46-48, over Qstop/fpDist. READ THE
+   PAPER PAGES FIRST (papers/ dir has the PDF; also SUMMARY pdf).
+2. (X9) Lemma 7.9 induction skeleton over Q_rec consuming Q_white_contract.
+3. (X1) key_fourier_decay reduction chain (Fourier side).
+4. (X5) three bridge sorries in Sec7/Bridge.lean (hold_tsum_step most
+   mechanical: split geomQuarter at k=1, peel one pascalNe3 off PMF.iid).
+5. (C8) + X6 `fpDist_location_bound` (Unroll.lean:624) — now UNBLOCKED: it
+   consumes hold_local_bound/hold_tail_bound which are theorems as of today.
+   Check whether X6 is actually the fastest way to spend the analytic win.
+
 ## Lap 44 (2026-07-12, seventh box session): d=1 CIRCLE METHOD BUILT (CharFn1.lean)
 
 NEW `Prob/CharFn1.lean` — the ENTIRE d=1 Fourier engine derived from the 2-D

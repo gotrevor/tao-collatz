@@ -140,50 +140,6 @@ theorem holdSum_apply_le_chernoff {l1 l2 : ℝ}
     _ = 6553600000000 / (1 + (n : ℝ)) * Real.exp ((n : ℝ) * u - θ) := by
         rw [mul_assoc, ← Real.exp_add, sub_eq_add_neg]
 
-/-- **The λ-clip optimization** ((F5) step 2): for `n ≥ 1` and a deviation `dev`,
-the clipped tilt `λ = clip(dev/(2000n), 1/200)` makes the per-coordinate Chernoff
-exponent `1000nλ² − λ·dev` at most `−min(dev²/(4000n), |dev|/400)`: the central
-regime `|dev| ≤ 10n` gives the Gaussian branch exactly, the tail regime the
-exponential branch. -/
-theorem chernoff_clip_le {n : ℕ} (hn : 1 ≤ n) (dev : ℝ) :
-    ∃ lam : ℝ, -(1 / 200) ≤ lam ∧ lam ≤ 1 / 200 ∧
-      1000 * (n : ℝ) * lam ^ 2 - lam * dev
-        ≤ -min (dev ^ 2 / (4000 * n)) (|dev| / 400) := by
-  have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
-  have hnpos : (0 : ℝ) < n := by linarith
-  have hne : (n : ℝ) ≠ 0 := hnpos.ne'
-  by_cases hc : |dev| ≤ 10 * n
-  · -- central regime: λ = dev/(2000n), exponent exactly −dev²/(4000n)
-    have habs : |dev / (2000 * n)| ≤ 1 / 200 := by
-      rw [abs_div, abs_of_pos (by positivity : (0 : ℝ) < 2000 * n),
-        div_le_iff₀ (by positivity)]
-      nlinarith [abs_nonneg dev]
-    obtain ⟨hlo, hhi⟩ := abs_le.mp habs
-    refine ⟨dev / (2000 * n), hlo, hhi, ?_⟩
-    have heq : 1000 * (n : ℝ) * (dev / (2000 * n)) ^ 2 - dev / (2000 * n) * dev
-        = -(dev ^ 2 / (4000 * n)) := by
-      field_simp
-      ring
-    rw [heq, neg_le_neg_iff]
-    exact min_le_left _ _
-  · -- tail regime: λ = ±1/200, exponent ≤ n/40 − |dev|/200 ≤ −|dev|/400
-    push_neg at hc
-    refine ⟨if 0 ≤ dev then (1 / 200 : ℝ) else -(1 / 200), ?_, ?_, ?_⟩
-    · split_ifs <;> norm_num
-    · split_ifs <;> norm_num
-    · have habs : (if 0 ≤ dev then (1 / 200 : ℝ) else -(1 / 200)) * dev
-          = |dev| / 200 := by
-        split_ifs with h
-        · rw [abs_of_nonneg h]; ring
-        · rw [abs_of_neg (lt_of_not_ge h)]; ring
-      have hsq : (if 0 ≤ dev then (1 / 200 : ℝ) else -(1 / 200)) ^ 2
-          = 1 / 40000 := by
-        split_ifs <;> norm_num
-      rw [habs, hsq]
-      refine le_trans ?_
-        (neg_le_neg (min_le_right (dev ^ 2 / (4000 * n)) (|dev| / 400)))
-      linarith
-
 /-- **Lemma 2.2(i) for `Hold`** (paper p.42: "the conclusion of Lemma 2.2 holds for
 `Hold`", mean `(4, 16)`, `d = 2`): the 2-D local Gaussian-type bound
 `P(Hold_{[1,n]} = (j,l)) ≪ (n+1)^{-1} · G_n(c((j,l) − n(4,16)))`. Node S3, the hard
