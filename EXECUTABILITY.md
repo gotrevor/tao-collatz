@@ -103,6 +103,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 12](judge/pass-12.md) — 2026-07-12, lap 54 (5 commits + handoff): **X5 + X2 COMPLETE** ✅✅ (Lemma 7.6 ratified vs p.42, 15 decls clean; `white_cos_bound` clean → `prod_fCond_le_damping` closed, trail map confirmed); X9 ledger core verified (chain cap + LP vertex + normalize/wander/edge gluing, 10 decls); **`fpDist_white_exit_deep` pinned + ratified vs (7.59)** — the watched-for variant, p₀ > 1/2 burden embodied. ⚠️ near-edge tripwire: widening the deep pin's statement revokes its ratification.
 - [Pass 13](judge/pass-13.md) — 2026-07-12, lap-55 reflection (docs-only): **X9 RATIFICATION SUSPENDED** ⚠️ — box's near-edge truth challenge to the pinned exp(2ε) judge-concurred (~85%; adversarial edge-strip families extract e^{ε·Cthr} uncompensated); **literature hole #6** (paper's all-starts Lemma 7.9 inherits it via "(7.59) by repeating (7.51)"); both proposed fixes pre-assessed with re-ratification checklists; deep-pin ratification stands (statement untouched).
 - [Pass 14](judge/pass-14.md) — 2026-07-12, lap 55 cont: **X9 RE-RATIFIED** ✅ — depth-gated fold passes the pass-13 checklist (gate conjunct exact, `∃g` quantifier order right, `g=0` degenerates to prior encoding); 13 gated fold/chain lemmas re-verified axiom-clean; deep pin untouched. Suspension lasted one commit.
+- [Pass 15](judge/pass-15.md) — 2026-07-12, consumer pages pp.48–49 + 54–56 read (Trevor-prompted): **BOTH X9 RIDERS DISCHARGED** ✅ — R := ⌊A²/ε⁴⌋ explicit on p.55 (after ε; the −O(A) Markov slack absorbs exp(2ε) or any absolute constant); (7.54)'s 0.9m split + (7.67)'s in-window iteration keep every counted encounter deep (gate-safe). Residual: **X9's proof must exhibit ε₀ ≥ epsBW = 10⁻⁴** (consumer instantiates at the fixed dichotomy ε). Bonus: X10's ∀A-uniform form confirmed at its p.54 union-bound site. All of §7 now judge-read; §5 (C8) is the only unread front.
 
 ## Live judge state 📍 (update each pass)
 
@@ -117,10 +118,13 @@ two documented deviations: exp(2ε) + gated count), `fpDist_white_exit_deep`
 (pass 12, unchanged through the re-pin).
 
 **Open riders / queued fronts**:
-- **X11 ε-rider** (pass 8): when ratifying X11 against pp.55–56 (UNREAD), verify the
-  (7.66)–(7.67) consumption chooses `R` after ε, as ManyTriangles' docstring claims;
-  otherwise X9's proof must additionally exhibit ε₀ ≥ 10⁻⁴. The exp(2ε) correction
-  (pass 9) rides the same check — any absolute exponent constant must wash out there.
+- **X9 ε₀-floor obligation** (pass 15, supersedes the pass-8 ε-rider): the p.55
+  consumer instantiates Lemma 7.9 at the FIXED dichotomy ε (= `epsBW` = 10⁻⁴), so
+  X9's final proof must exhibit **ε₀ ≥ 10⁻⁴** in its ∃ε₀-family. Numerically
+  comfortable (pin caps ε₀ at 1/100; ledger constraints are far looser), but it is
+  a hard obligation — check it when `many_triangles_white`'s proof lands. The rest
+  of the old rider is DISCHARGED: `R := ⌊A²/ε⁴⌋` is chosen after ε, and the −O(A)
+  Markov slack absorbs exp(2ε) or any absolute constant (pass-15, judge-read).
 - **p₀ > 1/2 certification burden — now EMBODIED** (pass 12): the burden lives in
   the pinned `fpDist_white_exit_deep` (demands `1/2 < p₀`; ratified as a documented
   deviation from the paper's `≫ 1`). The box must certify it there (Monte Carlo
@@ -131,16 +135,16 @@ two documented deviations: exp(2ε) + gated count), `fpDist_white_exit_deep`
   (`triangle_encounter_le` X10, `fpDist_white_exit_deep`, `many_triangles_white` X9).
 - **Box docstring nits** (pass 12, box's to fix): `White.lean:11` + `Reduction.lean:12`
   still describe their (now proved) cruxes as carrying `sorry`.
-- **X9 re-pin: RESOLVED pass 14** (depth-gated fold, re-ratified). Two claims
-  still ride the X11 ratification (judge must read pp.48–49/54–56): (a) the
-  ε-rider (R chosen after ε); (b) the gate consumer-safety claim ((7.54) keeps
-  every (7.67) encounter at depth ≥ 0.1m ≥ g). The deep pin's `p₀ > 1/2` was
-  NOT softened — the p₀-softening tripwire stays armed in case it appears later.
+- **X9 re-pin: RESOLVED pass 14; consumer checks JUDGE-VERIFIED pass 15**
+  (pp.48–49 + 54–56 read: (7.54)'s 0.9m split and (7.67)'s in-window iteration
+  keep every counted encounter at depth ≥ 0.1m ≥ g once `C_{A,ε} ≥ 10g`). The
+  deep pin's `p₀ > 1/2` was NOT softened — the p₀-softening tripwire stays
+  armed in case it appears later.
 - **Paper-gap ledger, entry 2**: literature hole #6 (near-edge overreach in the
   all-starts Lemma 7.9, judge-concurred pass 13) — same document-don't-announce
   handling as #5; KB entry updated.
-- **Unread paper fronts**: §5 first-passage (C8), §7.5 assembly pp.55–56 (X11).
-  pp.41–43 (Lemma 7.6) read + ratified pass 12.
+- **Unread paper fronts**: §5 first-passage (C8) only. All of §7 (pp.33–56) is
+  judge-read: pp.41–43 pass 12, pp.48–49 + 54–56 pass 15.
 - **Trust-surface notes**: `fpDist` / `fpDistPlus` encode stopped-walk laws at the
   design level (strong Markov absorbed — D1, ratified passes 2 & 8);
   `fpDist_white_exit` (X8) and `fpDist_white_exit_deep` (X9 input) are the two

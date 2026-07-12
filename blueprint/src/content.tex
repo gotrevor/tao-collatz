@@ -602,8 +602,12 @@ fix: \texttt{encStep} gains a gate \(g\) (encounters count only at depth \(\ge g
 the strip edge; \(g = 0\) recovers the prior encoding definitionally), and
 \texttt{many\_triangles\_white} binds \(g\) existentially.  Consumer-safe: Case 3's
 (7.54) surviving branch keeps every (7.67) encounter at depth \(\ge 0.1m \ge g\) once
-\(C_{A,\varepsilon} \ge 10g\) (box-verified vs pp.49+55; judge check rides the X11
-ratification).  Both deviations carry full docstrings with paper anchors.
+\(C_{A,\varepsilon} \ge 10g\) --- \textbf{judge-verified vs pp.48--49 + 54--56 (pass 15)},
+along with the \(R := \lfloor A^2/\varepsilon^4\rfloor\)-after-\(\varepsilon\) choice and
+the Markov \(-O(A)\) slack that absorbs the \(e^{2\varepsilon}\) constant.  Remaining
+obligation: the proof's \(\varepsilon_0\) must be \(\ge\) the dichotomy constant
+\(10^{-4}\) (the consumer instantiates there).  Both deviations carry full docstrings
+with paper anchors.
 \textbf{Lemma 7.9} (paper (7.57), pp.50--51): a walk crossing many triangles must encounter
 many white points --- the banked white damping beats the \(\varepsilon\cdot\min(r,R)\) credit.
 \emph{Statement pinned + ratified 2026-07-12 (judge pass 8, lap 52; re-ratified pass 9 after
@@ -681,5 +685,11 @@ This is the single Fourier-analytic input the whole spine reduces to (feeds node
 The Case-3 entry statement \texttt{Q\_black\_edge\_case3} ((7.53)--(7.67) interface, budget
 hypotheses matching (7.52) with the documented lattice slack) is judge-ratified 2026-07-12
 vs pp.48--49 and consumed by the proved \texttt{Q\_black\_edge} split.
-\lapsrisk{10--20}{high}{70\%}
+\emph{Consumer checks pre-cleared (judge pass 15, pp.48--49 + 54--56 read)}: the (7.54)
+0.9m split, the \(R := \lfloor A^2/\varepsilon^4\rfloor\)-after-\(\varepsilon\) choice,
+the \(-O(A)\) Markov slack absorbing X9's \(e^{2\varepsilon}\), the depth of every
+(7.67) encounter, and X10's \(\forall A\)-uniform consumption at the p.54 union bound.
+What remains at ratification time is pinning this node's own statements
+(\(E_*, F_*\), (7.66)/(7.67), the assembly chain) when they land.
+\lapsrisk{10--20}{high --- assembly volume; consumer geometry pre-cleared}{75\% (2026-07-12 judge pass 15)}
 \end{proposition}
