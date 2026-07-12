@@ -127,8 +127,11 @@ exp(2ε)** pass 9 after the paper-gap route finding).
   design level (strong Markov absorbed — D1, ratified passes 2 & 8);
   `fpDist_white_exit` (X8 kernel) is load-bearing for BOTH X8 and X9.
 - **Paper-gap ledger**: Lemma 7.9 p.51 conditioning display (pass 9, confirmed ~90%) —
-  KB `formalization-literature-holes.md` entry #5. Candidate for a polite author note
-  at endgame (Trevor sends).
+  KB `formalization-literature-holes.md` entry #5. **Per Trevor (2026-07-12): NOT
+  announcement material.** It stays documented in-repo (docstring + judge log +
+  README-level docs) because reproducers need it; no public post leads with it, and an
+  author note is Trevor's call only — "little benefit bragging about finding someone
+  else's error, especially a trivially patchable one."
 
 ## Endgame — announcement plan (on full discharge) 📣
 
@@ -137,6 +140,8 @@ Recorded 2026-07-12 (Trevor). **Primary venue: Lean Zulip** — the
 contains a standing request for exactly this proof; answer it in-thread.
 **Secondary (completeness): ccchallenge.org submission** (Tao2022; mirror the audited
 exemplar `tcosmo/BohmSontacchi1978_lean`). Post both. Ren drafts, **Trevor posts**.
+The announcement is about the formalization — the Lemma 7.9 deviation stays in the
+repo docs and is NOT led with or bragged about (Trevor, 2026-07-12).
 Pre-announce tripwires: `curl -s https://ccchallenge.org/api/papers/Tao2022` still
 `not_started`, and `git-safe -C ~/src/clone/tao_collatz_idris2_formalization fetch`
 for competitor movement. Also before going public: the statement-faithfulness audit
