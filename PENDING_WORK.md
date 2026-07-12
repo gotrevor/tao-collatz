@@ -1,5 +1,68 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 51 (2026-07-12, REVIEW lap): course-correct to §7-tail de-risk; pin Lemma 7.10, design Lemma 7.9
+
+**Direction set** (see `DIRECTION.md` CURRENT DIRECTIVE): S3 + X6 closed; X8 Case-2
+is YELLOW (pinned+routed, kernels unblocked). The last RED §7 nodes are X9/X10
+(Lemmas 7.9/7.10 — no Lean statement). Per BLUEPRINT §2 de-risk-breadth-first, pin
+X9/X10 (red→yellow) BEFORE grinding X8 to completion. X8 kernels demoted to
+finish-when-downhill. Read paper pp.50–54 this lap; both lemma statements captured
+verbatim below.
+
+### X10 = Lemma 7.10 (7.60) — PIN THIS (single-marginal, directly expressible)
+Paper: `(j,l) ∈ black triangle Δ`, `s := l_Δ − l > m/log²m` (`m = ⌊n/2⌋ − j`),
+`k` = first-passage time (Lemma 7.7), `p ∈ ℕ`, `1 ≤ s' ≤ m^{0.4}`. `E_{p,s'}` =
+event `(j,l)+v_{[1,k+p]}` lies in a triangle `Δ' ∈ 𝒯` of size `s_{Δ'} ≥ s'`. Then
+`P(E_{p,s'}) ≪ A²(1+p)/s' + exp(−cA²(1+p))` (constants uniform in n,ξ).
+- **Key win**: `v_{[1,k+p]}` has an explicit MARGINAL law: `fpDist s` (the
+  first-passage endpoint, X6 machinery) convolved with `iidSum hold p` (p more
+  Hold steps). NO stopping-time path-space needed. Define
+  `fpDistPlus s p := (fpDist s).bind (e ↦ (iidSum hold p).map (e + ·))`.
+- `E_{p,s'}` = the set `{q | ∃ t ∈ F.T, (s':ℝ) ≤ t.2.2 ∧ q ∈ triangle t.1 t.2.1 t.2.2}`
+  pulled back by `e ↦ (j+e.1, l+e.2)` — the `bigTriangleSet F s'` def.
+- Statement (in new `Sec7/ManyTriangles.lean`): `∃ C c > 0, ∀ A > 0, ∀ … ,
+  Σ' e, (fpDistPlus s p e).toReal · 1_{bigTriangleSet}(j+e.1,l+e.2)
+  ≤ C·A²(1+p)/s' + C·exp(−c·A²(1+p))`.
+- **Route** (7.60)–(7.65), hardest sub-step to probe next: the ≫s'-separated Σ
+  counting (7.63)–(7.65) — triangles of size ≥ s' obeying (7.65) have apexes
+  `(j_Δ', l_Δ)` that are ≫s'-separated (from Lemma 7.4 separation + (7.11) slope),
+  so `Σ_{j'∈ℤ} s^{-1/2}G_{1+s}(c(j'−j−s/4)) ≪ 1` collapses via the Gaussian sum
+  engine `sum_range_exp_neg_sq_le` (already proved for X6). The E′ escape event
+  (7.61) is killed by X6 (`fpDist_location_bound` j-concentration) + Lemma 2.2 (S3).
+  **All inputs (X6, S3, separation) are theorems.**
+
+### X9 = Lemma 7.9 (7.57) — DESIGN recorded, pin next lap (needs recursion object)
+Paper: iid Hold `v₁,v₂,…`; stopping times `t₁,…,t_r` (`t₁` = first entry into a
+triangle; `t_i` = first time after clearing `Δ_{i−1}`'s top that re-enters a
+triangle); `r` = #triangles encountered. Then `E exp(−Σ_{p=1}^{t_{min(r,R)}}
+1_W((j',l')+v_{[1,p]}) + ε·min(r,R)) ≤ exp(ε)` for any `(j',l')`, `R ≥ 1`.
+- **Encoding problem**: LHS is a functional of the WHOLE infinite walk (stopping
+  times couple all `v_i`). D1 forbids the product measure. D6 finitizes via the
+  proof's own induction on R (p.51): condition on the first block up to the first
+  passage `k₁` over the FIRST triangle's top → recursion `Z(·,R) ≤ P(r=0) +
+  ∫ K((j',l'),dq)·Z(q,R−1)`, `Z(·,0)=1`, where `K` = the first-triangle
+  first-passage sub-law carrying `exp(−Σ_{p=1}^{k₁}1_W + ε)`.
+- **Kernel `K` = the decisive new object.** Recommended encoding (B1): the
+  first-triangle first-passage is a plain renewal first-passage to the MOVING
+  barrier `= top of the triangle currently covering q` (monotone-height insight
+  from X6 ⟹ no barrier condition). Reuse `fpDist`-style budget recursion with a
+  position-dependent budget `s(q) = l_{Δ(q)} − l`, `Δ(q)` = the (unique) triangle
+  covering `q` via `cover`.
+- **Prerequisite to state next lap**: `Δ(q)` well-defined needs triangles pairwise
+  DISJOINT on lattice points — provable from `F.separated` (constant
+  `(1/10)log(1/ε) ≈ 0.92 > 0` ⟹ distinct triangles share no integer point). Pin
+  this disjointness lemma first, then `Δ(q)`, then `Z`, then (7.57).
+- Induction close (once pinned): `Σ_{p=1}^{k₁}1_W ≥ 1_W(endpoint)` +
+  `fpDist_white_exit` (7.51, X8 open kernel) ⟹ `Z(·,R) ≤ exp(ε)`. So 7.9 CONSUMES
+  the open `fpDist_white_exit`; 7.10 does not — pin 7.10 first.
+- **Route-trigger T1** (`DIRECTION.md`): if K provably needs an infinite-product
+  measure (D1 unbreakable), escalate — do not import measure theory.
+
+### NEXT after this lap
+Pin 7.10 (this lap) → probe its (7.63)–(7.65) Σ-counting sub-step → pin the
+triangle-disjointness lemma + `Δ(q)` + `Z` recursion + Lemma 7.9 (next lap) →
+then X8 finish-when-downhill / X11 Case-3 assembly consuming 7.9+7.10.
+
 ## Lap 50 (2026-07-12, seventh box session): **LEMMA 7.7 PROVED — NODE X6 CLOSED**
 
 `fpDist_location_bound` is a theorem, axiom-clean. FpLocation.lean is now

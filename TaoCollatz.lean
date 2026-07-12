@@ -23,6 +23,7 @@ import TaoCollatz.Sec7.HoldLocal
 import TaoCollatz.Sec7.FpLocation
 import TaoCollatz.Sec7.Monotone
 import TaoCollatz.Sec7.BlackEdge
+import TaoCollatz.Sec7.ManyTriangles
 import TaoCollatz.Sec7.Bridge
 import TaoCollatz.Sec7.Decay
 import TaoCollatz.Statement
