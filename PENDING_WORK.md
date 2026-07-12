@@ -1,5 +1,55 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 56 (review + crux advance): white-exit kernel DECOMPOSED; reduction glue + overshoot exclusion PROVED
+
+Review: X9 `many_triangles_white` verified CLOSED modulo exactly
+`fpDist_white_exit_deep` (`#print axioms` = trust base + `sorryAx`;
+`encExpect_entered_le` axiom-clean). Directive promoted the shared white-exit
+kernel to THE active move; STATUS + DIRECTION refreshed (commit `2d9747c`).
+
+**Crux advance** (`Sec7/ManyTriangles.lean`, commit pending): `fpDist_white_exit_deep`
+is now **PROVED** from a clean (7.50)-geometry decomposition. The old monolithic
+sorry → two named analytic sub-sorries + one proved helper + axiom-clean glue:
+
+- **`endpoint_notMem_start_triangle`** (PROVED, axiom-clean): the (7.50) "clears
+  the apex" step. `fpDist_support_snd_gt` gives `s < e.2`; with `s = l_Δ - l` the
+  phase height `l+e.2 > l_Δ`, and `triangle` needs height `≤ l₀`, so the endpoint
+  is outside the START triangle. This is why `phaseInFamily` = the FOREIGN mass.
+- **`outStripSet` / `phaseInFamily`** (new defs): the two complement pieces of the
+  white strip. Split via `white = ¬black` + `F.cover`: an endpoint is bad ⟺ its
+  phase point overshoots `⌊n/2⌋` (out-of-strip) OR its phase point (`(q.1-1,q.2)`)
+  lands in some family triangle (non-white). Cover needs `p.1+1 ≤ n/2`, supplied
+  by ¬out + `1 ≤ n/2-m+e.1`.
+- **Reduction glue** (PROVED, axiom-clean): pointwise `1_W(q) ≥ 1 - 1_out(q) -
+  1_tri(q)`, then `∑ fpDist·(1-1_out-1_tri) = 1 - outMass - triMass` (via
+  `Summable.tsum_sub` + `fpDist_tsum_toReal`) `≥ 1 - 1/8 - 1/8 = 3/4`, and
+  `tsum_le_tsum` lifts the pointwise bound. `p₀ := 3/4 > 1/2` clears the chain cap
+  comfortably (numeric white-exit mass ≈ 0.99, harness check 9).
+
+**Next attack — the two residual analytic sub-sorries** (both consume X6
+`fpDist_location_bound`; both are the SAME geometry shared with X8's Case-2 twin):
+
+1. **`fpDist_out_of_strip_le`** (`≤ 1/8`): Gaussian `j`-tail. From X6,
+   `(fpDist s (j,l)).toReal ≤ (D·K)·exp(-cF·(l-s))/√(1+s)·Gweight(1+s, cF·(j-s/4))`.
+   Sum over `j = ⌊n/2⌋-m+e.1 > ⌊n/2⌋` (i.e. `e.1 > m`) and all `l`. The budget
+   `s·log2 ≤ (m+2)·log9` (derive via `budget_le_of_mem_triangle` at the phase
+   point `(⌊n/2⌋-m-1, l)`, `hjm : ⌊n/2⌋ ≤ (⌊n/2⌋-m-1)+1+m`) gives `s/4 ≤ 0.8m`,
+   so `e.1 > m` is a `≥ ~0.2m ≥ ~3s/4·(…)` right-deviation of a Gaussian centered
+   at `s/4` with scale `√(1+s)` — tail `≤ 1/8` for `m ≥ Cthr`. PROBE FIRST: does
+   X6's `Gweight` sum over a half-line give an explicit exp-small bound? (check
+   `Gweight` def + any existing `∑ Gweight` lemma in `FpLocation`/`LocalBound`.)
+2. **`fpDist_any_triangle_le`** (`≤ 1/8`): the separation fight. `phaseInFamily`
+   mass = foreign mass (start excluded). Each foreign triangle t'' is
+   `(1/10)log(1/ε) ≈ 0.92` from t (`F.separated`); the (7.11) slope band confines
+   the endpoint to an `O(1)` slab about t's diagonal; sum the Gaussian envelope
+   over the `≫`-separated foreign apexes (reuse the `apex_separation` +
+   Gaussian-AP engine that X10 uses). This is the genuinely hard half.
+
+**Derive X8's twin**: `fpDist_white_exit` (BlackEdge.lean) has the SAME conclusion
++ the extra `s ≤ m/log²m` hyp (unused for whiteness). Once the two sub-sorries
+land, `fpDist_white_exit` follows by discarding that hyp and reusing the same
+decomposition (or citing `fpDist_white_exit_deep` directly — `p₀ = 3/4 > 0`).
+
 ## Lap 55 (cont-2): **LEMMA 7.9 CLOSED (modulo its one kernel)** — `many_triangles_white` PROVED
 
 Directive step 2 done in the same lap as the design. The (7.57) pin is now a

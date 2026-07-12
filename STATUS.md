@@ -13,21 +13,28 @@ under active assault. **Seven crux nodes are CLOSED and axiom-clean**: S3
 — `many_triangles_white` verified CLOSED (`#print axioms` = trust base +
 `sorryAx` via exactly ONE input, the Y-induction `encExpect_entered_le` is
 axiom-clean). X4/X7 (D6 Q-recursion, Q_m + Case 1) are also complete (files
-sorry-free). Prop 1.17 is a theorem over exactly the Prop 7.8 chain: **6 open
-crux sorries** (BlackEdge ×4, ManyTriangles ×2), plus 13 deliberate spine stubs.
-The active target is the **white-exit kernel** `fpDist_white_exit_deep` —
-X9's only remaining input AND the geometry shared by X8's Case-2 twin
-`fpDist_white_exit`; proving it general closes X9 whole and unblocks X8. X10's
-route was re-grounded against pp.52–54: precedented volume, not novelty. 19 open
-`sorry`s in `src/` total.
+sorry-free). Prop 1.17 is a theorem over exactly the Prop 7.8 chain: **7 open
+crux sorries** (BlackEdge ×4, ManyTriangles ×3), plus 13 deliberate spine stubs.
+This lap the white-exit kernel `fpDist_white_exit_deep` was **PROVED from a clean
+(7.50)-geometry decomposition** — the monolithic sorry became two named analytic
+sub-sorries (`fpDist_out_of_strip_le`, `fpDist_any_triangle_le`, both `≤ 1/8`
+Gaussian tails) + the axiom-clean reduction glue + the proved overshoot-exclusion
+helper `endpoint_notMem_start_triangle`. Both sub-sorries consume X6
+`fpDist_location_bound` and are the SAME geometry shared with X8's Case-2 twin
+`fpDist_white_exit`. X10's route was re-grounded against pp.52–54: precedented
+volume, not novelty. 20 open `sorry`s in `src/` total (decomposition raised the
+count by 1 — progress, not regression).
 
 ## What's happened (newest first)
 
-- **lap 56 (2026-07-12, REVIEW)**: verified X9 `many_triangles_white` CLOSED
-  modulo exactly `fpDist_white_exit_deep` (real `#print axioms`: trust base +
-  `sorryAx`; `encExpect_entered_le` clean). Route verdict **CONTINUE**, no
-  trigger fired. Directive promoted the shared white-exit kernel to THE active
-  move (lap-55 steps 1–2 done). Confirmed Aristotle idle (no job in flight).
+- **lap 56 (2026-07-12, REVIEW + crux advance)**: verified X9 CLOSED modulo
+  exactly `fpDist_white_exit_deep`; route **CONTINUE**, no trigger; Aristotle
+  idle. Then **PROVED `fpDist_white_exit_deep`** from the (7.50)-geometry
+  decomposition: `endpoint_notMem_start_triangle` (overshoot clears the apex,
+  axiom-clean) + `outStripSet`/`phaseInFamily` complement split via
+  `white=¬black` + `F.cover` + axiom-clean tsum reduction glue; residual =
+  two named `≤ 1/8` analytic tails (`fpDist_out_of_strip_le`,
+  `fpDist_any_triangle_le`), both X6-Gaussian. `p₀ = 3/4`.
 - **lap 55 (2026-07-12, DEEP REFLECTION)**: route verdict **CONTINUE** (T1
   cleared lap 52; T2 source-grounded as unlikely — the (7.65) separation comes
   from Lemma 7.4 integer-disjointness, already proved as `apex_separation`).

@@ -1393,6 +1393,88 @@ theorem encExpect_entered_le {n ξ : ℕ} (F : TriangleFamily n ξ) (g : ℕ) (�
     have hwm := hwhite w hw1 hwg t ht hmem s hsZ
     nlinarith [hwm, hexpX1, hfix]
 
+/-! ### White-exit kernel decomposition (lap 56)
+
+`fpDist_white_exit_deep` (X9's only open input, shared with X8's Case-2 twin) is
+reduced here to two analytic mass bounds via the exact (7.50) geometry. Writing
+`q = (⌊n/2⌋-m+e.1, l+e.2)` for the endpoint's phase point, the complement of the
+white strip splits (by `white = ¬black` + `F.cover`) into
+  • `outStripSet` — `q` overshoots the far edge `⌊n/2⌋` (X6 Gaussian `j`-tail);
+  • `phaseInFamily` — `q`'s phase point lands in SOME family triangle.
+The start triangle contributes ZERO to the second (`endpoint_notMem_start_triangle`,
+proved: the first passage overshoots the budget, so the endpoint clears the apex
+height), so it is the FOREIGN-triangle mass, killed by the (7.11) slope band +
+`F.separated`. The reduction glue below is axiom-clean; the two `≤ 1/8` tails are
+the remaining sorries (`p₀ = 3/4` comfortably clears the numeric `≈ 0.99`). -/
+
+/-- **Out-of-strip endpoints** (the in-strip clause of (7.50), p.48): the phase
+point overshoots the far edge `⌊n/2⌋`. Their mass is a Gaussian `j`-tail of
+`fpDist_location_bound` (X6): the endpoint's `j` concentrates at `s/4`, and the
+(7.52) budget `s = O(m)` gives `s/4 < m`, so `⌊n/2⌋-m+e.1 > ⌊n/2⌋` (i.e.
+`e.1 > m`) is a `≳ 3s/4` deviation. -/
+def outStripSet (n : ℕ) : Set (ℕ × ℤ) := {q : ℕ × ℤ | n / 2 < q.1}
+
+/-- **Endpoints whose phase point lands in some family triangle** (the whiteness
+clause of (7.50)): `(q.1-1, q.2)` — the coordinate `whiteSet` consults — lies in
+a triangle of `F`. By `F.cover` this is exactly the black (non-white) event
+inside the strip. The start triangle contributes no mass
+(`endpoint_notMem_start_triangle`), so this equals the FOREIGN-triangle mass,
+controlled by the (7.11) slope band + `F.separated`. -/
+def phaseInFamily {n ξ : ℕ} (F : TriangleFamily n ξ) : Set (ℕ × ℤ) :=
+  {q : ℕ × ℤ | ∃ t ∈ F.T, ((q.1 - 1, q.2) : ℕ × ℤ) ∈ triangle t.1 t.2.1 t.2.2}
+
+/-- **Overshoot clears the start-triangle top** (the (7.50) "above the apex" step,
+p.48). Every first-passage endpoint overshoots its budget
+(`fpDist_support_snd_gt`: `s < e.2`); with `s = l_Δ - l` the phase height
+`l + e.2` then exceeds the apex height `l_Δ`, and `triangle` requires height
+`≤ l₀`, so the phase point is outside the start triangle. This is why
+`phaseInFamily` reduces to the FOREIGN triangles (input to `fpDist_any_triangle_le`). -/
+theorem endpoint_notMem_start_triangle {s : ℕ} {l lΔ : ℤ} (hs : (s : ℤ) = lΔ - l)
+    {e : ℕ × ℤ} (he : e ∈ (fpDist s).support) {j₀ a : ℕ} {sΔ : ℝ} :
+    ((a, l + e.2) : ℕ × ℤ) ∉ triangle j₀ lΔ sΔ := by
+  intro hmem
+  have hgt := fpDist_support_snd_gt s e he
+  have h2 : l + e.2 ≤ lΔ := hmem.2.1
+  omega
+
+/-- **Out-of-strip tail** (⅛ of the (7.50) budget): the first-passage endpoint
+overshoots the far edge `⌊n/2⌋` with probability `≤ 1/8`. Route: `fpDist s`'s
+`j`-marginal is Gaussian-concentrated at `s/4` (`fpDist_location_bound`, X6);
+the (7.52) budget `s·log 2 ≤ (m+2)·log 9` gives `s/4 ≤ 0.8m < m`, so
+`⌊n/2⌋-m+e.1 > ⌊n/2⌋` needs `e.1 > m`, a `≳ 3s/4` right-tail; sum the Gaussian.
+
+OPEN (node X8, shared with X9): consumes `fpDist_location_bound` (X6) + the
+budget cast from `budget_le_of_mem_triangle`. -/
+theorem fpDist_out_of_strip_le :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
+      ∀ F : TriangleFamily n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      ∑' e : ℕ × ℤ, (fpDist s e).toReal
+        * Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2) ≤ 1 / 8 := by
+  sorry
+
+/-- **Foreign-triangle mass** (⅛ of the (7.50) budget): the first-passage endpoint's
+phase point lands in some family triangle with probability `≤ 1/8`. The start
+triangle contributes nothing (`endpoint_notMem_start_triangle`), so this is the
+foreign mass. Route: the (7.11) slope band `-O(1) ≤ (j'-j_Δ)log 9 ≤ s_Δ + O(1)`
+confines the Gaussian-concentrated endpoint to an `O(1)` slab about the start
+triangle's diagonal; `F.separated`'s `(1/10)log(1/ε)` gap keeps every other
+triangle out of that slab beyond an `O(1)` overlap, whose Gaussian mass is `≤ 1/8`.
+
+OPEN (node X8, shared with X9): consumes `fpDist_location_bound` (X6),
+`endpoint_notMem_start_triangle`, and `F.separated` (X3). -/
+theorem fpDist_any_triangle_le :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
+      ∀ F : TriangleFamily n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      ∑' e : ℕ × ℤ, (fpDist s e).toReal
+        * Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2) ≤ 1 / 8 := by
+  sorry
+
 /-- **The (7.59)-shaped deep white-exit bound** (the ONLY open external input of
 the X9 induction; sibling of the Case-2 kernel `fpDist_white_exit` in
 `BlackEdge.lean`). Identical statement with the Case-2 budget hypothesis
@@ -1417,7 +1499,97 @@ theorem fpDist_white_exit_deep :
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       p₀ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
         * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) := by
-  sorry
+  obtain ⟨CthrO, hOut⟩ := fpDist_out_of_strip_le
+  obtain ⟨CthrT, hTri⟩ := fpDist_any_triangle_le
+  refine ⟨3 / 4, by norm_num, max CthrO CthrT, ?_⟩
+  intro n ξ hξ F m hm hmn l hl t ht htmem s hs
+  have hout := hOut n ξ hξ F m (le_trans (le_max_left _ _) hm) hmn l hl t ht htmem s hs
+  have htri := hTri n ξ hξ F m (le_trans (le_max_right _ _) hm) hmn l hl t ht htmem s hs
+  -- total mass of `fpDist s` is 1; the summand-vs-indicator bookkeeping
+  have hmass : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal) :=
+    ENNReal.summable_toReal (by rw [(fpDist s).tsum_coe]; exact ENNReal.one_ne_top)
+  have hsummand : ∀ (S : Set (ℕ × ℤ)),
+      Summable (fun e : ℕ × ℤ => (fpDist s e).toReal
+        * Set.indicator S 1 (n / 2 - m + e.1, l + e.2)) := by
+    intro S
+    refine Summable.of_nonneg_of_le
+      (fun e => mul_nonneg ENNReal.toReal_nonneg
+        (Set.indicator_nonneg (fun _ _ => zero_le_one) _)) (fun e => ?_) hmass
+    refine mul_le_of_le_one_right ENNReal.toReal_nonneg ?_
+    by_cases h : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ S
+    · simp [Set.indicator_of_mem h]
+    · simp [Set.indicator_of_notMem h]
+  -- POINTWISE: `1_W(q) ≥ 1 - 1_out(q) - 1_tri(q)` (the (7.50) cover split)
+  have hptw : ∀ e : ℕ × ℤ,
+      (1 : ℝ) - Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2)
+              - Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2)
+        ≤ Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) := by
+    intro e
+    have hWnn : (0 : ℝ) ≤ Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) _
+    have hOnn : (0 : ℝ) ≤ Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2) :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) _
+    have hPnn : (0 : ℝ) ≤ Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2) :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) _
+    have hq1 : 1 ≤ n / 2 - m + e.1 := by omega
+    by_cases hO : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ outStripSet n
+    · rw [Set.indicator_of_mem hO]; simp only [Pi.one_apply]; linarith
+    · by_cases hP : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ phaseInFamily F
+      · rw [Set.indicator_of_mem hP]; simp only [Pi.one_apply]; linarith
+      · -- neither: the endpoint is white and in-strip
+        have hle : n / 2 - m + e.1 ≤ n / 2 := by
+          simp only [outStripSet, Set.mem_setOf_eq, not_lt] at hO; exact hO
+        have hWmem : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ whiteStrip n ξ := by
+          refine ⟨hle, hq1, ?_⟩
+          intro hblack
+          apply hP
+          have hcov : ((n / 2 - m + e.1 - 1, l + e.2) : ℕ × ℤ)
+              ∈ {p : ℕ × ℤ | p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2} :=
+            ⟨by omega, hblack⟩
+          rw [F.cover] at hcov
+          simp only [Set.mem_iUnion, exists_prop] at hcov
+          obtain ⟨t'', ht'', hmem''⟩ := hcov
+          exact ⟨t'', ht'', hmem''⟩
+        rw [Set.indicator_of_mem hWmem, Set.indicator_of_notMem hO,
+          Set.indicator_of_notMem hP]
+        simp
+  -- ASSEMBLE: `∑ fpDist·(1 - 1_out - 1_tri) = 1 - outMass - triMass ≥ 3/4`
+  have hsumLHS : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal
+      * ((1 : ℝ) - Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2)
+                 - Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2))) :=
+    ((hmass.sub (hsummand (outStripSet n))).sub (hsummand (phaseInFamily F))).congr
+      (fun e => by ring)
+  have hexpand : ∑' e : ℕ × ℤ, (fpDist s e).toReal
+        * ((1 : ℝ) - Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2)
+                   - Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2))
+      = 1 - (∑' e : ℕ × ℤ, (fpDist s e).toReal
+              * Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2))
+          - (∑' e : ℕ × ℤ, (fpDist s e).toReal
+              * Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2)) := by
+    have h1 : ∀ e : ℕ × ℤ, (fpDist s e).toReal
+        * ((1 : ℝ) - Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2)
+                   - Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2))
+        = (fpDist s e).toReal
+            - (fpDist s e).toReal * Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2)
+            - (fpDist s e).toReal * Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2) := by
+      intro e; ring
+    simp_rw [h1]
+    rw [Summable.tsum_sub (hmass.sub (hsummand (outStripSet n))) (hsummand (phaseInFamily F)),
+      Summable.tsum_sub hmass (hsummand (outStripSet n)), fpDist_tsum_toReal]
+  calc (3 : ℝ) / 4 = 1 - 1 / 8 - 1 / 8 := by norm_num
+    _ ≤ 1 - (∑' e : ℕ × ℤ, (fpDist s e).toReal
+              * Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2))
+          - (∑' e : ℕ × ℤ, (fpDist s e).toReal
+              * Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2)) := by
+        linarith [hout, htri]
+    _ = ∑' e : ℕ × ℤ, (fpDist s e).toReal
+          * ((1 : ℝ) - Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2)
+                     - Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2)) := hexpand.symm
+    _ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
+          * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) :=
+        Summable.tsum_le_tsum
+          (fun e => mul_le_mul_of_nonneg_left (hptw e) ENNReal.toReal_nonneg)
+          hsumLHS (hsummand (whiteStrip n ξ))
 
 /-- **Lemma 7.9 — many triangles usually implies many white points** (paper (7.57),
 pp.50–51, WITH A CORRECTED CONSTANT — see the deviation note below). For the `T`-step
