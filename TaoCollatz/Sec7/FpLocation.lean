@@ -590,17 +590,47 @@ theorem iidSum_hold_snd_zero : ∀ (k : ℕ) (q : ℕ × ℤ), q.2 < 3 * (k : �
 
 /-- The renewal mass at height `l ≥ 0` is a FINITE sum over `k ≤ ⌊l/3⌋`
 (later layers cannot reach down to height `l`). -/
+theorem renewalMass_eq_sum (j : ℕ) (l : ℤ) :
+    renewalMass (j, l) = ∑ k ∈ Finset.range (l.toNat / 3 + 1), iidSum hold k (j, l) := by
+  rw [renewalMass]
+  refine tsum_eq_sum fun k hk => iidSum_hold_snd_zero k (j, l) ?_
+  have hk' : l.toNat / 3 + 1 ≤ k := Nat.le_of_not_lt fun h => hk (Finset.mem_range.mpr h)
+  show l < 3 * (k : ℤ)
+  omega
+
 theorem renewalMass_toReal_eq (j : ℕ) (l : ℤ) :
     (renewalMass (j, l)).toReal
       = ∑ k ∈ Finset.range (l.toNat / 3 + 1), (iidSum hold k (j, l)).toReal := by
-  have htr : renewalMass (j, l)
-      = ∑ k ∈ Finset.range (l.toNat / 3 + 1), iidSum hold k (j, l) := by
-    rw [renewalMass]
-    refine tsum_eq_sum fun k hk => iidSum_hold_snd_zero k (j, l) ?_
-    have hk' : l.toNat / 3 + 1 ≤ k := Nat.le_of_not_lt fun h => hk (Finset.mem_range.mpr h)
-    show l < 3 * (k : ℤ)
-    omega
-  rw [htr, ENNReal.toReal_sum fun k _ => PMF.apply_ne_top _ _]
+  rw [renewalMass_eq_sum, ENNReal.toReal_sum fun k _ => PMF.apply_ne_top _ _]
+
+/-- The renewal mass is finite (it is a finite sum of PMF values). -/
+theorem renewalMass_ne_top (p : ℕ × ℤ) : renewalMass p ≠ ⊤ := by
+  obtain ⟨j, l⟩ := p
+  rw [renewalMass_eq_sum]
+  exact (ENNReal.sum_lt_top.mpr fun k _ =>
+    lt_of_le_of_lt (PMF.coe_le_one _ _) ENNReal.one_lt_top).ne
+
+/-- Negative heights carry no renewal mass. -/
+theorem renewalMass_zero_of_snd_neg {p : ℕ × ℤ} (hp : p.2 < 0) : renewalMass p = 0 := by
+  rw [renewalMass]
+  refine ENNReal.tsum_eq_zero.mpr fun k => iidSum_hold_snd_zero k p ?_
+  have : (0 : ℤ) ≤ 3 * (k : ℤ) := by positivity
+  omega
+
+/-- One draw: `iidSum hold 1 = hold` pointwise. -/
+theorem iidSum_one_apply (p : ℕ × ℤ) : iidSum hold 1 p = hold p := by
+  rw [show (1 : ℕ) = 0 + 1 from rfl, iidSum_succ_apply]
+  simp only [iidSum_zero]
+  have hinner : ∀ d : ℕ × ℤ,
+      (∑' q : ℕ × ℤ, if p = d + q then (PMF.pure (0 : ℕ × ℤ)) q else 0)
+        = if p = d then 1 else 0 := by
+    intro d
+    rw [tsum_eq_single (0 : ℕ × ℤ)
+      (fun q hq => by rw [PMF.pure_apply, if_neg hq, ite_self]), add_zero,
+      PMF.pure_apply, if_pos rfl]
+  rw [tsum_congr fun d => by rw [hinner d]]
+  rw [tsum_eq_single p (fun d hd => by rw [if_neg (fun h => hd h.symm), mul_zero]),
+    if_pos rfl, mul_one]
 
 /-- **Gweight factorization** for the renewal `k`-sum: peel a Gaussian ×
 exponential weight in the height offset `z` off the target weight in `x`, at
@@ -1051,6 +1081,423 @@ theorem renewalMass_bound :
         apply mul_le_mul_of_nonneg_left (hsum l hl) (by positivity)
     _ = C0 * C5 / Real.sqrt (1 + (l : ℝ)) * G := by ring
 
+/-! ### Gweight algebra for the last-step convolution (Lemma 7.7 assembly)
+
+The overshoot step contributes an exponential factor in both coordinates
+(`Gweight_two_le` on `hold_local_bound` at `n = 1`); convolving it against the
+renewal Gaussian needs: a step-1 arithmetic-progression sum, a pointwise
+Gaussian×exponential convolution bound, a shift-absorption lemma (recentring
+`j - l₁/4` to `j - s/4` at cost `e^{c|δ|}`), and the `l₁`-sum envelope. -/
+
+/-- The exponential part alone lower-bounds `Gweight`. -/
+theorem exp_neg_abs_le_Gweight (t x : ℝ) : Real.exp (-|x|) ≤ Gweight t x := by
+  unfold Gweight
+  linarith [(Real.exp_pos (-x ^ 2 / t)).le]
+
+/-- `Gweight` is monotone in the time scale. -/
+theorem Gweight_mono_t {t1 t2 : ℝ} (ht1 : 0 < t1) (ht : t1 ≤ t2) (x : ℝ) :
+    Gweight t1 x ≤ Gweight t2 x := by
+  unfold Gweight
+  have ht2 : 0 < t2 := lt_of_lt_of_le ht1 ht
+  have h1 : Real.exp (-x ^ 2 / t1) ≤ Real.exp (-x ^ 2 / t2) := by
+    apply Real.exp_le_exp.mpr
+    rw [neg_div, neg_div, neg_le_neg_iff]
+    exact div_le_div_of_nonneg_left (sq_nonneg x) ht1 ht
+  linarith
+
+/-- At time scale `2` the Gaussian part is dominated by the exponential:
+`Gweight 2 x ≤ 4·e^{-x/2}` for `x ≥ 0`. -/
+theorem Gweight_two_le {x : ℝ} (hx : 0 ≤ x) : Gweight 2 x ≤ 4 * Real.exp (-x / 2) := by
+  unfold Gweight
+  have hg : Real.exp (-x ^ 2 / 2) ≤ 3 * Real.exp (-x / 2) := by
+    rcases le_total x 1 with h1 | h1
+    · have hhalf : (1 : ℝ) / 2 ≤ Real.exp (-x / 2) := by
+        have := Real.add_one_le_exp (-x / 2)
+        linarith
+      have h1 : Real.exp (-x ^ 2 / 2) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith)
+      linarith
+    · calc Real.exp (-x ^ 2 / 2) ≤ Real.exp (-x / 2) :=
+            Real.exp_le_exp.mpr (by nlinarith)
+        _ ≤ 3 * Real.exp (-x / 2) := by linarith [(Real.exp_pos (-x / 2)).le]
+  have he : Real.exp (-|x|) ≤ Real.exp (-x / 2) := by
+    apply Real.exp_le_exp.mpr
+    rw [abs_of_nonneg hx]
+    linarith
+  linarith
+
+/-- Step-1 analogue of `sum_abs_AP_le`, with an integer (possibly negative)
+centre: the offsets `|w - k|`, `k < J`, cover each value `m` at most twice. -/
+theorem sum_abs_int_le {f : ℝ → ℝ} (hnn : ∀ u, 0 ≤ f u)
+    (hanti : ∀ ⦃u v : ℝ⦄, 0 ≤ u → u ≤ v → f v ≤ f u)
+    (w : ℤ) (J : ℕ) (hw : w.toNat < J) :
+    ∑ k ∈ Finset.range J, f |(w : ℝ) - k| ≤ 2 * ∑ m ∈ Finset.range J, f m := by
+  set q : ℕ := w.toNat with hq
+  have hcast : ∀ k : ℕ, ∀ n : ℕ, ((n : ℤ) ≤ |w - (k : ℤ)|) →
+      ((n : ℝ) ≤ |(w : ℝ) - (k : ℝ)|) := by
+    intro k n h
+    have h2 : ((n : ℤ) : ℝ) ≤ ((|w - (k : ℤ)| : ℤ) : ℝ) := Int.cast_le.mpr h
+    push_cast at h2
+    exact h2
+  rw [← Finset.sum_filter_add_sum_filter_not (Finset.range J) (fun k => k ≤ q)]
+  have hA : ∑ k ∈ (Finset.range J).filter (fun k => k ≤ q), f |(w : ℝ) - k|
+      ≤ ∑ m ∈ Finset.range J, f m := by
+    have hstep : ∀ k ∈ (Finset.range J).filter (fun k => k ≤ q),
+        f |(w : ℝ) - k| ≤ f ((q - k : ℕ) : ℝ) := by
+      intro k hk
+      have hkq : k ≤ q := (Finset.mem_filter.mp hk).2
+      refine hanti (by positivity) (hcast k _ ?_)
+      rcases abs_cases (w - (k : ℤ)) with ⟨he, h0⟩ | ⟨he, h0⟩ <;> omega
+    have hinj : ∀ x ∈ (Finset.range J).filter (fun k => k ≤ q),
+        ∀ y ∈ (Finset.range J).filter (fun k => k ≤ q), q - x = q - y → x = y := by
+      intro x hx y hy hxy
+      have := (Finset.mem_filter.mp hx).2
+      have := (Finset.mem_filter.mp hy).2
+      omega
+    have key : ∑ m ∈ ((Finset.range J).filter (fun k => k ≤ q)).image (fun k => q - k),
+        f (m : ℝ)
+        = ∑ k ∈ (Finset.range J).filter (fun k => k ≤ q), f ((q - k : ℕ) : ℝ) :=
+      Finset.sum_image hinj
+    calc ∑ k ∈ (Finset.range J).filter (fun k => k ≤ q), f |(w : ℝ) - k|
+        ≤ ∑ k ∈ (Finset.range J).filter (fun k => k ≤ q), f ((q - k : ℕ) : ℝ) :=
+          Finset.sum_le_sum hstep
+      _ = ∑ m ∈ ((Finset.range J).filter (fun k => k ≤ q)).image (fun k => q - k),
+            f (m : ℝ) := key.symm
+      _ ≤ ∑ m ∈ Finset.range J, f m := by
+          refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun m _ _ => hnn _
+          intro m hm
+          obtain ⟨k, hk, rfl⟩ := Finset.mem_image.mp hm
+          exact Finset.mem_range.mpr (by omega)
+  have hB : ∑ k ∈ (Finset.range J).filter (fun k => ¬ k ≤ q), f |(w : ℝ) - k|
+      ≤ ∑ m ∈ Finset.range J, f m := by
+    have hstep : ∀ k ∈ (Finset.range J).filter (fun k => ¬ k ≤ q),
+        f |(w : ℝ) - k| ≤ f ((k - (q + 1) : ℕ) : ℝ) := by
+      intro k hk
+      have hkq : q < k := Nat.lt_of_not_le (Finset.mem_filter.mp hk).2
+      refine hanti (by positivity) (hcast k _ ?_)
+      rcases abs_cases (w - (k : ℤ)) with ⟨he, h0⟩ | ⟨he, h0⟩ <;> omega
+    have hinj : ∀ x ∈ (Finset.range J).filter (fun k => ¬ k ≤ q),
+        ∀ y ∈ (Finset.range J).filter (fun k => ¬ k ≤ q),
+          x - (q + 1) = y - (q + 1) → x = y := by
+      intro x hx y hy hxy
+      have := Nat.lt_of_not_le (Finset.mem_filter.mp hx).2
+      have := Nat.lt_of_not_le (Finset.mem_filter.mp hy).2
+      omega
+    have key : ∑ m ∈ ((Finset.range J).filter (fun k => ¬ k ≤ q)).image
+          (fun k => k - (q + 1)), f (m : ℝ)
+        = ∑ k ∈ (Finset.range J).filter (fun k => ¬ k ≤ q), f ((k - (q + 1) : ℕ) : ℝ) :=
+      Finset.sum_image hinj
+    calc ∑ k ∈ (Finset.range J).filter (fun k => ¬ k ≤ q), f |(w : ℝ) - k|
+        ≤ ∑ k ∈ (Finset.range J).filter (fun k => ¬ k ≤ q), f ((k - (q + 1) : ℕ) : ℝ) :=
+          Finset.sum_le_sum hstep
+      _ = ∑ m ∈ ((Finset.range J).filter (fun k => ¬ k ≤ q)).image
+            (fun k => k - (q + 1)), f (m : ℝ) := key.symm
+      _ ≤ ∑ m ∈ Finset.range J, f m := by
+          refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun m _ _ => hnn _
+          intro m hm
+          obtain ⟨k, hk, rfl⟩ := Finset.mem_image.mp hm
+          have := Finset.mem_range.mp (Finset.mem_filter.mp hk).1
+          exact Finset.mem_range.mpr (by omega)
+  linarith
+
+/-- Geometric comparison: `∑_{m<J} e^{-γm} ≤ 1 + 1/γ`. -/
+theorem sum_exp_geom_le {γ : ℝ} (hγ : 0 < γ) (J : ℕ) :
+    ∑ m ∈ Finset.range J, Real.exp (-γ * m) ≤ 1 + 1 / γ := by
+  have hterm : ∀ m : ℕ, Real.exp (-γ * m) = Real.exp (-γ) ^ m := by
+    intro m
+    rw [← Real.exp_nat_mul]
+    exact congrArg Real.exp (by ring)
+  rw [Finset.sum_congr rfl fun m _ => hterm m]
+  have hr1 : Real.exp (-γ) < 1 := Real.exp_lt_one_iff.mpr (by linarith)
+  calc ∑ m ∈ Finset.range J, Real.exp (-γ) ^ m
+      ≤ (1 - Real.exp (-γ))⁻¹ := sum_range_geom_le (Real.exp_pos _).le hr1 J
+    _ ≤ 1 + 1 / γ := one_sub_exp_neg_inv_le_one_add hγ
+
+/-- **Shift absorption**: recentring the `Gweight` argument by `δ` (and
+widening the time scale) costs a factor `2·e^{c|δ|}` and half the decay
+constant. -/
+theorem Gweight_shift {t1 t2 c : ℝ} (ht1 : 0 < t1) (ht : t1 ≤ t2) (hc : 0 < c)
+    (X δ : ℝ) :
+    Gweight t1 (c * (X + δ)) ≤ 2 * Real.exp (c * |δ|) * Gweight t2 (c / 2 * X) := by
+  have hE1 : (1 : ℝ) ≤ Real.exp (c * |δ|) :=
+    Real.one_le_exp (by positivity)
+  rcases le_total |X| (2 * |δ|) with hcase | hcase
+  · -- near: crude bound 2, matched by the shift factor
+    calc Gweight t1 (c * (X + δ)) ≤ 2 := Gweight_le_two _ _ ht1.le
+      _ ≤ 2 * Real.exp (c * |δ|) * Real.exp (-|c / 2 * X|) := by
+          rw [mul_assoc, ← Real.exp_add]
+          have hle : 0 ≤ c * |δ| - |c / 2 * X| := by
+            rw [abs_mul, abs_of_pos (by positivity : (0:ℝ) < c / 2)]
+            nlinarith [abs_nonneg X, abs_nonneg δ]
+          have := Real.one_le_exp (by linarith : (0:ℝ) ≤ c * |δ| + -|c / 2 * X|)
+          linarith
+      _ ≤ 2 * Real.exp (c * |δ|) * Gweight t2 (c / 2 * X) := by
+          apply mul_le_mul_of_nonneg_left (exp_neg_abs_le_Gweight _ _) (by positivity)
+  · -- far: |X + δ| ≥ |X|/2, use antitonicity and time-scale monotonicity
+    have habs : |X| / 2 ≤ |X + δ| := by
+      have := abs_add_le (X + δ) (-δ)
+      simp only [add_neg_cancel_right, abs_neg] at this
+      linarith
+    calc Gweight t1 (c * (X + δ))
+        = Gweight t1 (c * |X + δ|) := by rw [← Gweight_abs, abs_mul, abs_of_pos hc]
+      _ ≤ Gweight t1 (c / 2 * |X|) := by
+          apply Gweight_anti ht1 (by positivity)
+          nlinarith [abs_nonneg (X + δ)]
+      _ ≤ Gweight t2 (c / 2 * |X|) := Gweight_mono_t ht1 ht _
+      _ = Gweight t2 (c / 2 * X) := by
+          rw [show c / 2 * |X| = |c / 2 * X| by
+            rw [abs_mul, abs_of_pos (by positivity : (0:ℝ) < c / 2)], Gweight_abs]
+      _ ≤ 2 * Real.exp (c * |δ|) * Gweight t2 (c / 2 * X) := by
+          nlinarith [Gweight_nonneg t2 (c / 2 * X)]
+
+/-- **Discrete Gaussian × exponential convolution** (the `j₁`-sum of the
+Lemma 7.7 assembly): summing the renewal Gaussian at centre `μ` against an
+exponential window at centre `w` reproduces a Gaussian at centre `w`, with
+decay constant `min(c/2, γ/4)`. -/
+theorem conv_Gweight_exp {t c γ : ℝ} (ht : 0 < t) (hc : 0 < c) (hγ : 0 < γ)
+    (μ : ℝ) (w : ℤ) (J : ℕ) (hw : w.toNat < J) :
+    ∑ k ∈ Finset.range J, Gweight t (c * (k - μ)) * Real.exp (-γ * |(w : ℝ) - k|)
+      ≤ (4 + 8 / γ) * Gweight t (min (c / 2) (γ / 4) * ((w : ℝ) - μ)) := by
+  set c9 : ℝ := min (c / 2) (γ / 4) with hc9def
+  have hc9 : 0 < c9 := lt_min (by positivity) (by positivity)
+  set G : ℝ := Gweight t (c9 * ((w : ℝ) - μ)) with hGdef
+  have hG : 0 ≤ G := Gweight_nonneg _ _
+  -- pointwise: each term ≤ 2·G·e^{-(γ/2)|w-k|}
+  have hpt : ∀ k : ℕ, Gweight t (c * (k - μ)) * Real.exp (-γ * |(w : ℝ) - k|)
+      ≤ 2 * G * Real.exp (-(γ / 2) * |(w : ℝ) - k|) := by
+    intro k
+    rcases le_total (|(w : ℝ) - μ| / 2) |(k : ℝ) - μ| with hfar | hnear
+    · -- far from the Gaussian centre: the Gaussian factor is already small
+      have h1 : Gweight t (c * (k - μ)) ≤ G := by
+        rw [hGdef, ← Gweight_abs t (c9 * _), ← Gweight_abs t (c * _)]
+        rw [abs_mul, abs_mul, abs_of_pos hc, abs_of_pos hc9]
+        apply Gweight_anti ht (by positivity)
+        have hc92 : c9 ≤ c / 2 := min_le_left _ _
+        nlinarith [abs_nonneg ((w : ℝ) - μ), abs_nonneg ((k : ℝ) - μ)]
+      have h2 : Real.exp (-γ * |(w : ℝ) - k|) ≤ Real.exp (-(γ / 2) * |(w : ℝ) - k|) := by
+        apply Real.exp_le_exp.mpr
+        nlinarith [abs_nonneg ((w : ℝ) - k)]
+      calc Gweight t (c * (k - μ)) * Real.exp (-γ * |(w : ℝ) - k|)
+          ≤ G * Real.exp (-(γ / 2) * |(w : ℝ) - k|) :=
+            mul_le_mul h1 h2 (Real.exp_pos _).le hG
+        _ ≤ 2 * G * Real.exp (-(γ / 2) * |(w : ℝ) - k|) := by
+            nlinarith [(Real.exp_pos (-(γ / 2) * |(w : ℝ) - k|)).le, hG]
+    · -- near the Gaussian centre: the exponential window is small there
+      have hwk : |(w : ℝ) - μ| / 2 ≤ |(w : ℝ) - k| := by
+        have := abs_add_le ((w : ℝ) - k) ((k : ℝ) - μ)
+        have heq : (w : ℝ) - k + ((k : ℝ) - μ) = (w : ℝ) - μ := by ring
+        rw [heq] at this
+        linarith
+      have h1 : Gweight t (c * (k - μ)) ≤ 2 := Gweight_le_two _ _ ht.le
+      have h2 : Real.exp (-γ * |(w : ℝ) - k|)
+          ≤ Real.exp (-(γ / 2) * |(w : ℝ) - k|) * Real.exp (-(γ / 4) * |(w : ℝ) - μ|) := by
+        rw [← Real.exp_add]
+        apply Real.exp_le_exp.mpr
+        nlinarith [abs_nonneg ((w : ℝ) - k), abs_nonneg ((w : ℝ) - μ)]
+      have h3 : Real.exp (-(γ / 4) * |(w : ℝ) - μ|) ≤ G := by
+        rw [hGdef]
+        calc Real.exp (-(γ / 4) * |(w : ℝ) - μ|)
+            ≤ Real.exp (-|c9 * ((w : ℝ) - μ)|) := by
+              apply Real.exp_le_exp.mpr
+              rw [abs_mul, abs_of_pos hc9]
+              have hc94 : c9 ≤ γ / 4 := min_le_right _ _
+              nlinarith [abs_nonneg ((w : ℝ) - μ)]
+          _ ≤ Gweight t (c9 * ((w : ℝ) - μ)) := exp_neg_abs_le_Gweight _ _
+      calc Gweight t (c * (k - μ)) * Real.exp (-γ * |(w : ℝ) - k|)
+          ≤ 2 * (Real.exp (-(γ / 2) * |(w : ℝ) - k|)
+              * Real.exp (-(γ / 4) * |(w : ℝ) - μ|)) := by
+            apply mul_le_mul h1 h2 (Real.exp_pos _).le (by norm_num)
+        _ ≤ 2 * G * Real.exp (-(γ / 2) * |(w : ℝ) - k|) := by
+            have := mul_le_mul_of_nonneg_left h3 (Real.exp_pos (-(γ / 2) * |(w : ℝ) - k|)).le
+            nlinarith
+  calc ∑ k ∈ Finset.range J, Gweight t (c * (k - μ)) * Real.exp (-γ * |(w : ℝ) - k|)
+      ≤ ∑ k ∈ Finset.range J, 2 * G * Real.exp (-(γ / 2) * |(w : ℝ) - k|) :=
+        Finset.sum_le_sum fun k _ => hpt k
+    _ = 2 * G * ∑ k ∈ Finset.range J, Real.exp (-(γ / 2) * |(w : ℝ) - k|) := by
+        rw [Finset.mul_sum]
+    _ ≤ 2 * G * (2 * (1 + 1 / (γ / 2))) := by
+        apply mul_le_mul_of_nonneg_left ?_ (by positivity)
+        calc ∑ k ∈ Finset.range J, Real.exp (-(γ / 2) * |(w : ℝ) - k|)
+            ≤ 2 * ∑ m ∈ Finset.range J, Real.exp (-(γ / 2) * m) :=
+              sum_abs_int_le (fun u => (Real.exp_pos _).le)
+                (fun u v hu huv => Real.exp_le_exp.mpr (by nlinarith)) w J hw
+          _ ≤ 2 * (1 + 1 / (γ / 2)) := by
+              have := sum_exp_geom_le (by positivity : (0:ℝ) < γ / 2) J
+              linarith
+    _ = (4 + 8 / γ) * G := by
+        field_simp
+        ring
+
+/-- **The single-overshoot-step bound**: one `hold` step has exponential decay
+in both drift-recentred coordinates (from `hold_local_bound` at `n = 1` via
+`Gweight_two_le`). -/
+theorem hold_step_bound :
+    ∃ γ > (0 : ℝ), ∃ C7 > (0 : ℝ), ∀ d : ℕ × ℤ,
+      (hold d).toReal
+        ≤ C7 * Real.exp (-γ * |(d.1 : ℝ) - 4|) * Real.exp (-γ * |(d.2 : ℝ) - 16|) := by
+  obtain ⟨c0, hc0, C0, hC0, hloc⟩ := hold_local_bound
+  refine ⟨c0 / 4, by positivity, 2 * C0, by positivity, fun d => ?_⟩
+  have h1 := hloc 1 d.1 d.2
+  rw [holdSum_eq_iidSum] at h1
+  have hd : ((d.1, d.2) : ℕ × ℤ) = d := rfl
+  rw [hd, iidSum_one_apply] at h1
+  refine h1.trans ?_
+  set A : ℝ := (d.1 : ℝ) - 4 * (1 : ℕ) with hA
+  set B : ℝ := (d.2 : ℝ) - 16 * (1 : ℕ) with hB
+  have hnorm : ‖((A, B) : ℝ × ℝ)‖ = max |A| |B| := by
+    rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs]
+  have h2 : (0 : ℝ) < 1 + (1 : ℕ) := by norm_num
+  have hstep1 : Gweight (1 + ((1 : ℕ) : ℝ)) (c0 * ‖((A, B) : ℝ × ℝ)‖)
+      ≤ Gweight (1 + ((1 : ℕ) : ℝ)) (c0 / 2 * (|A| + |B|)) := by
+    apply Gweight_anti (by push_cast; norm_num) (by positivity)
+    rw [hnorm]
+    rcases max_cases |A| |B| with ⟨hm, hle⟩ | ⟨hm, hle⟩ <;> rw [hm] <;>
+      nlinarith [abs_nonneg A, abs_nonneg B, hc0.le]
+  have hstep2 : Gweight (1 + ((1 : ℕ) : ℝ)) (c0 / 2 * (|A| + |B|))
+      ≤ 4 * Real.exp (-(c0 / 4) * |A|) * Real.exp (-(c0 / 4) * |B|) := by
+    have h12 : (1 : ℝ) + ((1 : ℕ) : ℝ) = 2 := by push_cast; norm_num
+    rw [h12]
+    calc Gweight 2 (c0 / 2 * (|A| + |B|))
+        ≤ 4 * Real.exp (-(c0 / 2 * (|A| + |B|)) / 2) :=
+          Gweight_two_le (by positivity)
+      _ = 4 * Real.exp (-(c0 / 4) * |A|) * Real.exp (-(c0 / 4) * |B|) := by
+          rw [mul_assoc, ← Real.exp_add]
+          exact congrArg (4 * ·) (congrArg Real.exp (by ring))
+  have hAe : |A| = |(d.1 : ℝ) - 4| := by rw [hA]; push_cast; norm_num
+  have hBe : |B| = |(d.2 : ℝ) - 16| := by rw [hB]; push_cast; norm_num
+  calc C0 / (1 + ((1 : ℕ) : ℝ))
+      * Gweight (1 + ((1 : ℕ) : ℝ)) (c0 * ‖((A, B) : ℝ × ℝ)‖)
+      ≤ C0 / (1 + ((1 : ℕ) : ℝ))
+        * (4 * Real.exp (-(c0 / 4) * |A|) * Real.exp (-(c0 / 4) * |B|)) := by
+        apply mul_le_mul_of_nonneg_left (hstep1.trans hstep2) (by positivity)
+    _ = 2 * C0 * Real.exp (-(c0 / 4) * |A|) * Real.exp (-(c0 / 4) * |B|) := by
+        push_cast
+        ring
+    _ = 2 * C0 * Real.exp (-(c0 / 4) * |(d.1 : ℝ) - 4|)
+        * Real.exp (-(c0 / 4) * |(d.2 : ℝ) - 16|) := by
+        rw [hAe, hBe]
+
+/-- The `l₁`-sum envelope for the Lemma 7.7 assembly: the exponential window
+at the budget line beats the `1/√(1+l₁)` renewal prefactor, at cost
+`1/√(1+s)`. -/
+theorem sum_sqrt_exp_le {γ : ℝ} (hγ : 0 < γ) :
+    ∃ K > (0 : ℝ), ∀ s : ℕ,
+      ∑ m ∈ Finset.range (s + 1), Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+        ≤ K / Real.sqrt (1 + s) := by
+  refine ⟨2 * (1 + 1 / γ) + 64 / γ ^ 2, by positivity, fun s => ?_⟩
+  have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
+  have hs0 : 0 < Real.sqrt (1 + (s : ℝ)) := Real.sqrt_pos.mpr h1s
+  rw [← Finset.sum_filter_add_sum_filter_not (Finset.range (s + 1)) (fun m => s ≤ 2 * m)]
+  have hhigh : ∑ m ∈ (Finset.range (s + 1)).filter (fun m => s ≤ 2 * m),
+      Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+      ≤ (2 * (1 + 1 / γ)) / Real.sqrt (1 + s) := by
+    have hpt : ∀ m ∈ (Finset.range (s + 1)).filter (fun m => s ≤ 2 * m),
+        Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+          ≤ Real.exp (-γ * ((s : ℝ) - m)) * (2 / Real.sqrt (1 + s)) := by
+      intro m hm
+      have hm2 : s ≤ 2 * m := (Finset.mem_filter.mp hm).2
+      have h1m : (0 : ℝ) < 1 + (m : ℝ) := by positivity
+      have hsm : Real.sqrt (1 + (s : ℝ)) ≤ 2 * Real.sqrt (1 + (m : ℝ)) := by
+        calc Real.sqrt (1 + (s : ℝ)) ≤ Real.sqrt (4 * (1 + (m : ℝ))) := by
+              apply Real.sqrt_le_sqrt
+              have : (s : ℝ) ≤ 2 * (m : ℝ) := by exact_mod_cast hm2
+              linarith
+          _ = 2 * Real.sqrt (1 + (m : ℝ)) := by
+              rw [show (4 : ℝ) * (1 + (m : ℝ)) = 2 ^ 2 * (1 + (m : ℝ)) by ring,
+                Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2 ^ 2),
+                Real.sqrt_sq (by norm_num : (0:ℝ) ≤ 2)]
+      have hfrac : 1 / Real.sqrt (1 + (m : ℝ)) ≤ 2 / Real.sqrt (1 + (s : ℝ)) := by
+        rw [div_le_div_iff₀ (Real.sqrt_pos.mpr h1m) hs0]
+        linarith
+      calc Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+          = Real.exp (-γ * ((s : ℝ) - m)) * (1 / Real.sqrt (1 + (m : ℝ))) := by ring
+        _ ≤ Real.exp (-γ * ((s : ℝ) - m)) * (2 / Real.sqrt (1 + (s : ℝ))) :=
+            mul_le_mul_of_nonneg_left hfrac (Real.exp_pos _).le
+    calc ∑ m ∈ (Finset.range (s + 1)).filter (fun m => s ≤ 2 * m),
+        Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+        ≤ ∑ m ∈ (Finset.range (s + 1)).filter (fun m => s ≤ 2 * m),
+          Real.exp (-γ * ((s : ℝ) - m)) * (2 / Real.sqrt (1 + s)) :=
+          Finset.sum_le_sum hpt
+      _ ≤ ∑ m ∈ Finset.range (s + 1),
+          Real.exp (-γ * ((s : ℝ) - m)) * (2 / Real.sqrt (1 + s)) :=
+          Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
+            fun m _ _ => by positivity
+      _ = (∑ m ∈ Finset.range (s + 1), Real.exp (-γ * ((s : ℝ) - m)))
+          * (2 / Real.sqrt (1 + s)) := by rw [← Finset.sum_mul]
+      _ ≤ (1 + 1 / γ) * (2 / Real.sqrt (1 + s)) := by
+          apply mul_le_mul_of_nonneg_right ?_ (by positivity)
+          have hre : ∑ m ∈ Finset.range (s + 1), Real.exp (-γ * ((s : ℝ) - m))
+              = ∑ m ∈ Finset.range (s + 1), Real.exp (-γ * (m : ℝ)) := by
+            rw [← Finset.sum_range_reflect (fun m => Real.exp (-γ * (m : ℝ))) (s + 1)]
+            refine Finset.sum_congr rfl fun m hm => ?_
+            have hm' : m ≤ s := by
+              have := Finset.mem_range.mp hm
+              omega
+            congr 1
+            rw [show s + 1 - 1 - m = s - m by omega, Nat.cast_sub hm']
+          rw [hre]
+          exact sum_exp_geom_le hγ (s + 1)
+      _ = (2 * (1 + 1 / γ)) / Real.sqrt (1 + s) := by ring
+  have hlow : ∑ m ∈ (Finset.range (s + 1)).filter (fun m => ¬ s ≤ 2 * m),
+      Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+      ≤ (64 / γ ^ 2) / Real.sqrt (1 + s) := by
+    rcases Nat.eq_zero_or_pos s with rfl | hs1
+    · rw [Finset.filter_false_of_mem (fun m hm => by
+        have := Finset.mem_range.mp hm
+        omega), Finset.sum_empty]
+      positivity
+    · have hsR : (1 : ℝ) ≤ (s : ℝ) := by exact_mod_cast hs1
+      have hpt : ∀ m ∈ (Finset.range (s + 1)).filter (fun m => ¬ s ≤ 2 * m),
+          Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+            ≤ Real.exp (-(γ * s / 2)) := by
+        intro m hm
+        have hm2 : 2 * m < s := Nat.lt_of_not_le (Finset.mem_filter.mp hm).2
+        have hm2R : 2 * (m : ℝ) < (s : ℝ) := by exact_mod_cast hm2
+        have hsq1 : (1 : ℝ) ≤ Real.sqrt (1 + (m : ℝ)) :=
+          Real.one_le_sqrt.mpr (le_add_of_nonneg_right (Nat.cast_nonneg m))
+        calc Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+            ≤ Real.exp (-γ * ((s : ℝ) - m)) / 1 := by
+              exact div_le_div_of_nonneg_left (Real.exp_pos _).le one_pos hsq1
+          _ = Real.exp (-γ * ((s : ℝ) - m)) := by rw [div_one]
+          _ ≤ Real.exp (-(γ * s / 2)) := by
+              apply Real.exp_le_exp.mpr
+              nlinarith
+      calc ∑ m ∈ (Finset.range (s + 1)).filter (fun m => ¬ s ≤ 2 * m),
+          Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+          ≤ ∑ _m ∈ (Finset.range (s + 1)).filter (fun m => ¬ s ≤ 2 * m),
+            Real.exp (-(γ * s / 2)) := Finset.sum_le_sum hpt
+        _ = (((Finset.range (s + 1)).filter (fun m => ¬ s ≤ 2 * m)).card : ℝ)
+            * Real.exp (-(γ * s / 2)) := by rw [Finset.sum_const, nsmul_eq_mul]
+        _ ≤ (1 + (s : ℝ)) * Real.exp (-(γ * s / 2)) := by
+            apply mul_le_mul_of_nonneg_right ?_ (Real.exp_pos _).le
+            have hc : ((Finset.range (s + 1)).filter (fun m => ¬ s ≤ 2 * m)).card ≤ s + 1 :=
+              le_trans (Finset.card_filter_le _ _) (by rw [Finset.card_range])
+            calc (((Finset.range (s + 1)).filter (fun m => ¬ s ≤ 2 * m)).card : ℝ)
+                ≤ ((s + 1 : ℕ) : ℝ) := Nat.cast_le.mpr hc
+              _ = 1 + (s : ℝ) := by push_cast; ring
+        _ ≤ (64 / γ ^ 2) / Real.sqrt (1 + s) := by
+            rw [le_div_iff₀ hs0]
+            have hsle : Real.sqrt (1 + (s : ℝ)) ≤ 1 + (s : ℝ) := by
+              have h := Real.sqrt_le_sqrt (show (1:ℝ) + s ≤ (1 + s) ^ 2 by nlinarith)
+              rwa [Real.sqrt_sq h1s.le] at h
+            have hexp : Real.exp (-(γ * s / 2)) ≤ 4 / (γ * s / 2) ^ 2 :=
+              exp_neg_le_four_div_sq (by positivity)
+            calc (1 + (s : ℝ)) * Real.exp (-(γ * s / 2)) * Real.sqrt (1 + s)
+                ≤ (1 + (s : ℝ)) * Real.exp (-(γ * s / 2)) * (1 + (s : ℝ)) := by
+                  apply mul_le_mul_of_nonneg_left hsle (by positivity)
+              _ = (1 + (s : ℝ)) ^ 2 * Real.exp (-(γ * s / 2)) := by ring
+              _ ≤ (2 * (s : ℝ)) ^ 2 * (4 / (γ * s / 2) ^ 2) := by
+                  apply mul_le_mul (by nlinarith) hexp (Real.exp_pos _).le (by positivity)
+              _ = 64 / γ ^ 2 := by
+                  field_simp
+                  ring
+  calc ∑ m ∈ (Finset.range (s + 1)).filter (fun m => s ≤ 2 * m),
+        Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+      + ∑ m ∈ (Finset.range (s + 1)).filter (fun m => ¬ s ≤ 2 * m),
+        Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+      ≤ (2 * (1 + 1 / γ)) / Real.sqrt (1 + s) + (64 / γ ^ 2) / Real.sqrt (1 + s) :=
+        add_le_add hhigh hlow
+    _ = (2 * (1 + 1 / γ) + 64 / γ ^ 2) / Real.sqrt (1 + s) := (add_div _ _ _).symm
+
 /-- **Lemma 7.7 (Distribution of first passage location), D6 statement** (paper
 p.43, (7.30)–(7.33)): the first-passage endpoint mass at `(j, l)` is
 Gaussian-concentrated — `j` near `s/4` at scale `(1+s)^{1/2}`, `l` within
@@ -1067,6 +1514,300 @@ theorem fpDist_location_bound :
       (fpDist s (j, l)).toReal
         ≤ C * (Real.exp (-c * ((l : ℝ) - s)) / Real.sqrt (1 + s))
             * Gweight (1 + s) (c * ((j : ℝ) - s / 4)) := by
-  sorry
+  obtain ⟨c6, hc6, C6, hC6, hU⟩ := renewalMass_bound
+  obtain ⟨γ, hγ, C7, hC7, hstep⟩ := hold_step_bound
+  set c9 : ℝ := min (c6 / 2) (γ / 4) with hc9def
+  have hc9 : 0 < c9 := lt_min (by positivity) (by positivity)
+  have hc9γ : c9 ≤ γ / 4 := min_le_right _ _
+  obtain ⟨K, hK, hKs⟩ := sum_sqrt_exp_le (γ := γ / 2) (by positivity)
+  set cF : ℝ := min (c9 / 2) γ with hcFdef
+  have hcF : 0 < cF := lt_min (by positivity) hγ
+  set D : ℝ := C6 * C7 * Real.exp (16 * γ) * (4 + 8 / γ) * (2 * Real.exp (4 * c9))
+    with hDdef
+  have hD : 0 < D := by rw [hDdef]; positivity
+  refine ⟨cF, hcF, D * K, by positivity, fun s j l => ?_⟩
+  have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
+  have hsq : 0 < Real.sqrt (1 + (s : ℝ)) := Real.sqrt_pos.mpr h1s
+  set X : ℝ := (j : ℝ) - s / 4 with hXdef
+  have hGF : 0 ≤ Gweight (1 + (s : ℝ)) (cF * X) := Gweight_nonneg _ _
+  by_cases hls : l ≤ (s : ℤ)
+  · -- below the budget line the first passage carries no mass
+    have h0 : fpDist s (j, l) = 0 := by
+      by_contra h
+      exact absurd (fpDist_support_snd_gt s (j, l) (by rwa [PMF.mem_support_iff]))
+        (not_lt.mpr hls)
+    rw [h0, ENNReal.toReal_zero]
+    positivity
+  push_neg at hls
+  have hlsR : (s : ℝ) ≤ (l : ℝ) := by exact_mod_cast hls.le
+  -- ── Step 1: finite-sum reduction of the renewal convolution (in ℝ≥0∞) ──
+  set F : Finset (ℕ × ℤ) := (Finset.range (j + 1)) ×ˢ (Finset.Icc (0 : ℤ) (s : ℤ))
+    with hF
+  have hinner : ∀ p : ℕ × ℤ,
+      (∑' d : ℕ × ℤ, if (j, l) = p + d then hold d else 0)
+        = if p.1 ≤ j then hold (j - p.1, l - p.2) else 0 := by
+    intro p
+    by_cases hp : p.1 ≤ j
+    · rw [if_pos hp, tsum_eq_single ((j - p.1, l - p.2) : ℕ × ℤ) ?_, if_pos ?_]
+      · apply Prod.ext
+        · show j = p.1 + (j - p.1)
+          omega
+        · show l = p.2 + (l - p.2)
+          ring
+      · intro d hd
+        rw [if_neg]
+        intro he
+        apply hd
+        have h1 : j = p.1 + d.1 := congrArg Prod.fst he
+        have h2 : l = p.2 + d.2 := congrArg Prod.snd he
+        obtain ⟨d1, d2⟩ := d
+        apply Prod.ext
+        · show d1 = j - p.1
+          simp only at h1
+          omega
+        · show d2 = l - p.2
+          simp only at h2
+          omega
+    · rw [if_neg hp]
+      refine ENNReal.tsum_eq_zero.mpr fun d => ?_
+      rw [if_neg]
+      intro he
+      apply hp
+      have h1 : j = p.1 + d.1 := congrArg Prod.fst he
+      omega
+  have hred : (∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+        * ∑' d : ℕ × ℤ, (if (j, l) = p + d then hold d else 0))
+      = ∑ p ∈ F, renewalMass p * hold (j - p.1, l - p.2) := by
+    rw [tsum_congr fun p => by rw [hinner p]]
+    rw [tsum_eq_sum (s := F) ?_]
+    · refine Finset.sum_congr rfl fun p hp => ?_
+      obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp
+      have h1 : p.1 ≤ j := by
+        have := Finset.mem_range.mp hp1
+        omega
+      have h2 := (Finset.mem_Icc.mp hp2).2
+      rw [if_pos h2, if_pos h1]
+    · intro p hp
+      by_cases h1 : p.1 ≤ j
+      · by_cases h2 : p.2 ≤ (s : ℤ)
+        · have h3 : p.2 < 0 := by
+            by_contra h3
+            push_neg at h3
+            exact hp (Finset.mem_product.mpr
+              ⟨Finset.mem_range.mpr (by omega), Finset.mem_Icc.mpr ⟨h3, h2⟩⟩)
+          rw [renewalMass_zero_of_snd_neg h3, ite_self, zero_mul]
+        · rw [if_neg h2, zero_mul]
+      · rw [if_neg h1, mul_zero]
+  have hfp : fpDist s (j, l) ≤ ∑ p ∈ F, renewalMass p * hold (j - p.1, l - p.2) :=
+    hred ▸ fpDist_le_renewal_conv s (j, l)
+  -- ── Step 2: pass to real numbers ──
+  have hterm_ne : ∀ p ∈ F, renewalMass p * hold (j - p.1, l - p.2) ≠ ⊤ := fun p _ =>
+    ENNReal.mul_ne_top (renewalMass_ne_top p) (PMF.apply_ne_top _ _)
+  have hsum_ne : (∑ p ∈ F, renewalMass p * hold (j - p.1, l - p.2)) ≠ ⊤ :=
+    (ENNReal.sum_lt_top.mpr fun p hp => (hterm_ne p hp).lt_top).ne
+  have hreal : (fpDist s (j, l)).toReal
+      ≤ ∑ p ∈ F, (renewalMass p).toReal * (hold (j - p.1, l - p.2)).toReal := by
+    calc (fpDist s (j, l)).toReal
+        ≤ (∑ p ∈ F, renewalMass p * hold (j - p.1, l - p.2)).toReal :=
+          ENNReal.toReal_mono hsum_ne hfp
+      _ = ∑ p ∈ F, (renewalMass p).toReal * (hold (j - p.1, l - p.2)).toReal := by
+          rw [ENNReal.toReal_sum hterm_ne]
+          exact Finset.sum_congr rfl fun p _ => ENNReal.toReal_mul
+  refine hreal.trans ?_
+  -- ── Step 3: ℕ-indexed double sum ──
+  have hIcc : Finset.Icc (0 : ℤ) (s : ℤ) = (Finset.range (s + 1)).image
+      (fun m : ℕ => (m : ℤ)) := by
+    ext x
+    simp only [Finset.mem_Icc, Finset.mem_image, Finset.mem_range]
+    constructor
+    · rintro ⟨h0, hs'⟩
+      exact ⟨x.toNat, by omega, by omega⟩
+    · rintro ⟨m, hm, rfl⟩
+      omega
+  have hsplit : ∑ p ∈ F, (renewalMass p).toReal * (hold (j - p.1, l - p.2)).toReal
+      = ∑ j₁ ∈ Finset.range (j + 1), ∑ m ∈ Finset.range (s + 1),
+          (renewalMass (j₁, (m : ℤ))).toReal * (hold (j - j₁, l - m)).toReal := by
+    rw [hF, Finset.sum_product]
+    refine Finset.sum_congr rfl fun j₁ _ => ?_
+    rw [hIcc, Finset.sum_image (fun a _ b _ h => by exact_mod_cast h)]
+  rw [hsplit]
+  -- ── Step 4: per-(j₁, m) envelope, then j₁-convolution, shift, m-sum ──
+  set G2 : ℝ := Gweight (1 + (s : ℝ)) (c9 / 2 * X) with hG2def
+  have hG2 : 0 ≤ G2 := Gweight_nonneg _ _
+  have hmsum : ∀ m ∈ Finset.range (s + 1),
+      ∑ j₁ ∈ Finset.range (j + 1),
+        (renewalMass (j₁, (m : ℤ))).toReal * (hold (j - j₁, l - m)).toReal
+      ≤ D * Real.exp (-γ * ((l : ℝ) - s)) * G2
+          * (Real.exp (-(γ / 2) * ((s : ℝ) - m)) / Real.sqrt (1 + m)) := by
+    intro m hm
+    have hms : m ≤ s := by
+      have := Finset.mem_range.mp hm
+      omega
+    have hmsR : (m : ℝ) ≤ (s : ℝ) := by exact_mod_cast hms
+    have h1m : (0 : ℝ) < 1 + (m : ℝ) := by positivity
+    have h1ms : 1 + (m : ℝ) ≤ 1 + (s : ℝ) := by linarith
+    -- per-term envelope
+    have hterm : ∀ j₁ ∈ Finset.range (j + 1),
+        (renewalMass (j₁, (m : ℤ))).toReal * (hold (j - j₁, l - m)).toReal
+        ≤ (C7 * Real.exp (16 * γ) * Real.exp (-γ * ((l : ℝ) - m)))
+            * (C6 / Real.sqrt (1 + m))
+            * (Gweight (1 + (m : ℝ)) (c6 * ((j₁ : ℝ) - (m : ℝ) / 4))
+              * Real.exp (-γ * |((((j : ℤ) - 4) : ℤ) : ℝ) - (j₁ : ℝ)|)) := by
+      intro j₁ hj₁
+      have hj₁j : j₁ ≤ j := by
+        have := Finset.mem_range.mp hj₁
+        omega
+      have hUb := hU j₁ (m : ℤ) (Int.natCast_nonneg m)
+      simp only [Int.cast_natCast] at hUb
+      have hsb := hstep (j - j₁, l - m)
+      have hc1 : (((j - j₁ : ℕ) : ℝ)) = (j : ℝ) - j₁ := by
+        rw [Nat.cast_sub hj₁j]
+      have hc2 : (((l - m : ℤ) : ℝ)) = (l : ℝ) - m := by push_cast; ring
+      dsimp only at hsb
+      rw [hc1, hc2] at hsb
+      have habs1 : |(j : ℝ) - j₁ - 4| = |((((j : ℤ) - 4) : ℤ) : ℝ) - (j₁ : ℝ)| := by
+        congr 1
+        push_cast
+        ring
+      have hexp2 : Real.exp (-γ * |(l : ℝ) - m - 16|)
+          ≤ Real.exp (16 * γ) * Real.exp (-γ * ((l : ℝ) - m)) := by
+        rw [← Real.exp_add]
+        apply Real.exp_le_exp.mpr
+        have := le_abs_self ((l : ℝ) - m - 16)
+        nlinarith
+      have hhold : (hold (j - j₁, l - m)).toReal
+          ≤ C7 * Real.exp (-γ * |((((j : ℤ) - 4) : ℤ) : ℝ) - (j₁ : ℝ)|)
+            * (Real.exp (16 * γ) * Real.exp (-γ * ((l : ℝ) - m))) := by
+        rw [← habs1]
+        calc (hold (j - j₁, l - m)).toReal
+            ≤ C7 * Real.exp (-γ * |(j : ℝ) - j₁ - 4|)
+              * Real.exp (-γ * |(l : ℝ) - m - 16|) := hsb
+          _ ≤ C7 * Real.exp (-γ * |(j : ℝ) - j₁ - 4|)
+              * (Real.exp (16 * γ) * Real.exp (-γ * ((l : ℝ) - m))) := by
+              apply mul_le_mul_of_nonneg_left hexp2 (by positivity)
+      calc (renewalMass (j₁, (m : ℤ))).toReal * (hold (j - j₁, l - m)).toReal
+          ≤ (C6 / Real.sqrt (1 + (m : ℝ))
+              * Gweight (1 + (m : ℝ)) (c6 * ((j₁ : ℝ) - (m : ℝ) / 4)))
+            * (C7 * Real.exp (-γ * |((((j : ℤ) - 4) : ℤ) : ℝ) - (j₁ : ℝ)|)
+              * (Real.exp (16 * γ) * Real.exp (-γ * ((l : ℝ) - m)))) := by
+            apply mul_le_mul hUb hhold ENNReal.toReal_nonneg
+              (mul_nonneg (by positivity) (Gweight_nonneg _ _))
+        _ = (C7 * Real.exp (16 * γ) * Real.exp (-γ * ((l : ℝ) - m)))
+            * (C6 / Real.sqrt (1 + m))
+            * (Gweight (1 + (m : ℝ)) (c6 * ((j₁ : ℝ) - (m : ℝ) / 4))
+              * Real.exp (-γ * |((((j : ℤ) - 4) : ℤ) : ℝ) - (j₁ : ℝ)|)) := by
+            ring
+    -- j₁-convolution
+    have hconv := conv_Gweight_exp (t := 1 + (m : ℝ)) (c := c6) (γ := γ)
+      h1m hc6 hγ ((m : ℝ) / 4) ((j : ℤ) - 4) (j + 1) (by omega)
+    -- shift to the (j - s/4) centre at time scale 1+s
+    have hshift : Gweight (1 + (m : ℝ)) (c9 * ((((j : ℤ) - 4 : ℤ) : ℝ) - (m : ℝ) / 4))
+        ≤ 2 * Real.exp (4 * c9) * Real.exp ((c9 / 4) * ((s : ℝ) - m)) * G2 := by
+      have harg : (((j : ℤ) - 4 : ℤ) : ℝ) - (m : ℝ) / 4
+          = X + (((s : ℝ) - m) / 4 - 4) := by
+        rw [hXdef]
+        push_cast
+        ring
+      rw [harg, hG2def]
+      refine (Gweight_shift h1m h1ms hc9 X (((s : ℝ) - m) / 4 - 4)).trans ?_
+      have hδ : |((s : ℝ) - m) / 4 - 4| ≤ ((s : ℝ) - m) / 4 + 4 := by
+        rw [abs_le]
+        constructor <;> nlinarith
+      have hE : Real.exp (c9 * |((s : ℝ) - m) / 4 - 4|)
+          ≤ Real.exp (4 * c9) * Real.exp ((c9 / 4) * ((s : ℝ) - m)) := by
+        rw [← Real.exp_add]
+        apply Real.exp_le_exp.mpr
+        nlinarith [hc9.le]
+      calc 2 * Real.exp (c9 * |((s : ℝ) - m) / 4 - 4|)
+            * Gweight (1 + (s : ℝ)) (c9 / 2 * X)
+          ≤ 2 * (Real.exp (4 * c9) * Real.exp ((c9 / 4) * ((s : ℝ) - m)))
+            * Gweight (1 + (s : ℝ)) (c9 / 2 * X) := by
+            apply mul_le_mul_of_nonneg_right ?_ (Gweight_nonneg _ _)
+            apply mul_le_mul_of_nonneg_left hE (by norm_num)
+        _ = 2 * Real.exp (4 * c9) * Real.exp ((c9 / 4) * ((s : ℝ) - m))
+            * Gweight (1 + (s : ℝ)) (c9 / 2 * X) := by ring
+    -- exponent bookkeeping: e^{-γ(l-m)}·e^{(c9/4)(s-m)} ≤ e^{-γ(l-s)}·e^{-(γ/2)(s-m)}
+    have hexps : Real.exp (-γ * ((l : ℝ) - m)) * Real.exp ((c9 / 4) * ((s : ℝ) - m))
+        ≤ Real.exp (-γ * ((l : ℝ) - s)) * Real.exp (-(γ / 2) * ((s : ℝ) - m)) := by
+      rw [← Real.exp_add, ← Real.exp_add]
+      apply Real.exp_le_exp.mpr
+      nlinarith [mul_le_mul_of_nonneg_right hc9γ (by linarith : (0:ℝ) ≤ (s : ℝ) - m)]
+    calc ∑ j₁ ∈ Finset.range (j + 1),
+        (renewalMass (j₁, (m : ℤ))).toReal * (hold (j - j₁, l - m)).toReal
+        ≤ ∑ j₁ ∈ Finset.range (j + 1),
+          (C7 * Real.exp (16 * γ) * Real.exp (-γ * ((l : ℝ) - m)))
+            * (C6 / Real.sqrt (1 + m))
+            * (Gweight (1 + (m : ℝ)) (c6 * ((j₁ : ℝ) - (m : ℝ) / 4))
+              * Real.exp (-γ * |((((j : ℤ) - 4) : ℤ) : ℝ) - (j₁ : ℝ)|)) :=
+          Finset.sum_le_sum hterm
+      _ = (C7 * Real.exp (16 * γ) * Real.exp (-γ * ((l : ℝ) - m)))
+          * (C6 / Real.sqrt (1 + m))
+          * ∑ j₁ ∈ Finset.range (j + 1),
+            Gweight (1 + (m : ℝ)) (c6 * ((j₁ : ℝ) - (m : ℝ) / 4))
+              * Real.exp (-γ * |((((j : ℤ) - 4) : ℤ) : ℝ) - (j₁ : ℝ)|) := by
+          rw [Finset.mul_sum]
+      _ ≤ (C7 * Real.exp (16 * γ) * Real.exp (-γ * ((l : ℝ) - m)))
+          * (C6 / Real.sqrt (1 + m))
+          * ((4 + 8 / γ)
+            * (2 * Real.exp (4 * c9) * Real.exp ((c9 / 4) * ((s : ℝ) - m)) * G2)) := by
+          apply mul_le_mul_of_nonneg_left ?_ (by positivity)
+          refine hconv.trans ?_
+          exact mul_le_mul_of_nonneg_left hshift (by positivity)
+      _ = (D * G2) * (Real.exp (-γ * ((l : ℝ) - m))
+            * Real.exp ((c9 / 4) * ((s : ℝ) - m)))
+          * (1 / Real.sqrt (1 + m)) := by
+          rw [hDdef]
+          ring
+      _ ≤ (D * G2) * (Real.exp (-γ * ((l : ℝ) - s))
+            * Real.exp (-(γ / 2) * ((s : ℝ) - m)))
+          * (1 / Real.sqrt (1 + m)) := by
+          apply mul_le_mul_of_nonneg_right ?_ (by positivity)
+          apply mul_le_mul_of_nonneg_left hexps (by positivity)
+      _ = D * Real.exp (-γ * ((l : ℝ) - s)) * G2
+          * (Real.exp (-(γ / 2) * ((s : ℝ) - m)) / Real.sqrt (1 + m)) := by
+          ring
+  -- ── Step 5: the m-sum and the final constant/decay relaxations ──
+  calc ∑ j₁ ∈ Finset.range (j + 1), ∑ m ∈ Finset.range (s + 1),
+        (renewalMass (j₁, (m : ℤ))).toReal * (hold (j - j₁, l - m)).toReal
+      = ∑ m ∈ Finset.range (s + 1), ∑ j₁ ∈ Finset.range (j + 1),
+        (renewalMass (j₁, (m : ℤ))).toReal * (hold (j - j₁, l - m)).toReal :=
+        Finset.sum_comm
+    _ ≤ ∑ m ∈ Finset.range (s + 1),
+        D * Real.exp (-γ * ((l : ℝ) - s)) * G2
+          * (Real.exp (-(γ / 2) * ((s : ℝ) - m)) / Real.sqrt (1 + m)) :=
+        Finset.sum_le_sum hmsum
+    _ = D * Real.exp (-γ * ((l : ℝ) - s)) * G2
+        * ∑ m ∈ Finset.range (s + 1),
+          Real.exp (-(γ / 2) * ((s : ℝ) - m)) / Real.sqrt (1 + m) := by
+        rw [Finset.mul_sum]
+    _ ≤ D * Real.exp (-γ * ((l : ℝ) - s)) * G2 * (K / Real.sqrt (1 + s)) := by
+        apply mul_le_mul_of_nonneg_left (hKs s) (by positivity)
+    _ ≤ D * K * (Real.exp (-cF * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+        * Gweight (1 + (s : ℝ)) (cF * X) := by
+        have hexpF : Real.exp (-γ * ((l : ℝ) - s)) ≤ Real.exp (-cF * ((l : ℝ) - s)) := by
+          apply Real.exp_le_exp.mpr
+          have hcFγ : cF ≤ γ := min_le_right _ _
+          have h := mul_le_mul_of_nonneg_right hcFγ (sub_nonneg.mpr hlsR)
+          linarith only [h]
+        have hGrel : G2 ≤ Gweight (1 + (s : ℝ)) (cF * X) := by
+          rw [hG2def, ← Gweight_abs _ (c9 / 2 * X), ← Gweight_abs _ (cF * X),
+            abs_mul, abs_mul, abs_of_pos (by positivity : (0:ℝ) < c9 / 2),
+            abs_of_pos hcF]
+          apply Gweight_anti h1s (by positivity)
+          have hcF9 : cF ≤ c9 / 2 := min_le_left _ _
+          linarith only [mul_le_mul_of_nonneg_right hcF9 (abs_nonneg X)]
+        calc D * Real.exp (-γ * ((l : ℝ) - s)) * G2 * (K / Real.sqrt (1 + s))
+            ≤ D * Real.exp (-cF * ((l : ℝ) - s))
+              * Gweight (1 + (s : ℝ)) (cF * X) * (K / Real.sqrt (1 + s)) := by
+              apply mul_le_mul_of_nonneg_right ?_ (by positivity)
+              calc D * Real.exp (-γ * ((l : ℝ) - s)) * G2
+                  ≤ D * Real.exp (-cF * ((l : ℝ) - s)) * G2 := by
+                    apply mul_le_mul_of_nonneg_right ?_ hG2
+                    exact mul_le_mul_of_nonneg_left hexpF hD.le
+                _ ≤ D * Real.exp (-cF * ((l : ℝ) - s))
+                    * Gweight (1 + (s : ℝ)) (cF * X) := by
+                    apply mul_le_mul_of_nonneg_left hGrel (by positivity)
+            _ = D * K * (Real.exp (-cF * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+                * Gweight (1 + (s : ℝ)) (cF * X) := by ring
 
 end TaoCollatz

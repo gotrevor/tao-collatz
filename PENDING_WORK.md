@@ -1,5 +1,53 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 50 (2026-07-12, seventh box session): **LEMMA 7.7 PROVED — NODE X6 CLOSED**
+
+`fpDist_location_bound` is a theorem, axiom-clean. FpLocation.lean is now
+SORRY-FREE: the full chain first-passage decomposition → renewal Gaussian
+bound → last-step convolution is machine-checked. New machinery (all
+numerically validated before formalizing; 200k-trial clean):
+- `hold_step_bound` — one hold step ≤ C₇·e^{-γ|d₁-4|}e^{-γ|d₂-16|}
+  (hold_local_bound at n=1 + `Gweight_two_le`: Gw 2 x ≤ 4e^{-x/2}, elementary
+  via e^{-x/2} ≥ 1/2 on x ≤ 1 — no ExponentialBounds import needed);
+  `iidSum_one_apply`.
+- `sum_abs_int_le` — step-1 AP sum with ℤ (possibly negative) centre,
+  q := w.toNat, abs_cases+omega per branch.
+- `conv_Gweight_exp` — discrete Gaussian×exponential convolution: pointwise
+  near/far split at |w-μ|/2, output decay min(c/2, γ/4), constant 4+8/γ.
+- `Gweight_shift` — recentring by δ costs 2e^{c|δ|} and half the constant
+  (case split |X| ≤ 2|δ| via Gweight_le_two vs |X+δ| ≥ |X|/2).
+- `sum_sqrt_exp_le` — Σ_{m≤s} e^{-γ(s-m)}/√(1+m) ≤ (2(1+1/γ)+64/γ²)/√(1+s)
+  (Finset.sum_range_reflect for the geometric reindex — no nbij needed).
+- Assembly: fpDist ≤ renewal⋆hold truncated to the finite box
+  range(j+1) ×ˢ Icc 0 s (`renewalMass_zero_of_snd_neg`/`renewalMass_ne_top`
+  kill the complement, tsum_eq_single collapses the step), ENNReal→ℝ via
+  toReal_mono + toReal_sum, then per-m: j₁-convolution → shift to centre
+  j-s/4 at scale 1+s (δ = (s-m)/4-4, e^{c₉(s-m)/4} absorbed since c₉ ≤ γ/4)
+  → m-sum. Final c = min(min(c₆/2,γ/4)/2, γ), C = C₆C₇e^{16γ}(4+8/γ)·2e^{4c₉}K.
+  l ≤ s case free via fpDist_support_snd_gt.
+
+Gotchas this lap:
+- In a huge proof context (giant tsum equalities in scope) plain
+  linarith/nlinarith hit isDefEq TIMEOUTS — use `linarith only [facts]`.
+- `positivity` can't see `Gweight` nonnegativity — pass
+  `mul_nonneg (by positivity) (Gweight_nonneg _ _)` explicitly.
+- `hstep (a, b)` leaves unreduced `((a,b)).1` projections in the
+  instantiated statement — `dsimp only at h` before rw.
+- `tsum_eq_single` side-goal order: the `if_pos` equality goal comes FIRST,
+  the ∀ b' ≠ b vanishing goal second.
+- `Prod.ext` via `exact` leaves component mvars (`?m.1 = ?m.1`) — use
+  `apply Prod.ext` then `show`-pinned component goals.
+- `abs_add` → `abs_add_le` (mathlib rename); tuple type ascription must be
+  `((a : ℕ), b)` not `(a : ℕ, b)`.
+- `Real.one_le_sqrt` needs `1 ≤ x` — `positivity` can't produce it; use
+  `le_add_of_nonneg_right (Nat.cast_nonneg m)`.
+
+NEXT (X8 Case-2 kernels, per lap-46 pin): `fpDist_edgeWeight_le`
+((7.48)/(7.49)) — consume fpDist_location_bound j-concentration + Geom(4)
+tail via edgeWeight; then `fpDist_white_exit` ((7.50)/(7.51)) — endpoint
+localization + family separation; then `Q_black_edge_case2` assembly; X9
+Lemma 7.9 skeleton for Case 3.
+
 ## Lap 49 (2026-07-12, seventh box session): **renewalMass_bound PROVED** (X6 step 2 COMPLETE)
 
 The renewal Gaussian bound (paper p.44 first display) is a theorem,
