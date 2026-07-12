@@ -1,5 +1,28 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 34 (2026-07-12, sixth box session): (F3b) TILTED ATOM MASSES PROVED
+
+`Prob/Mgf.lean`: **`tiltZ_hold_le`** (Z_hold ≤ 221/25 on the box |λᵢ| ≤ 1/50 —
+the ne_top domination series evaluated: 1 + (1 - 171/196)⁻¹; `tiltZ_hold_ne_top`
+now a one-line corollary) and **`tilt_hold_apply_ge`** — tilted hold atoms keep
+mass ≥ 1/400 in the window y₁ ≤ 2, 0 ≤ y₂ ≤ 8 (weight ≥ e^{-1/5} ≥ 4/5,
+(1/32)(4/5)(25/221) = 5/1768 > 1/400). AXIOM-CLEAN. Gotcha: `inv_le_inv_of_le`
+is gone — the antitone inverse lemma is `inv_anti₀ (hb : 0 < b) (hba : b ≤ a)`.
+
+**(F4) next — tilted center bound**: `tiltHold l1 l2 := tilt hold (expW2 l1 l2) …`
+(abbreviation to tame the proof-term arguments). Transfer the four atoms through
+modPair (`PMF.apply_le_map_apply` + `tilt_hold_apply_ge` at (1,3),(2,5),(2,7),(2,8),
+hold masses from hold_apply_* ≥ 1/32 in toReal) ⇒ `charFn_decay_of_atoms` at
+μ = 1/400 ⇒ decay constant 2·(1/400)⁻²… = 1/80000. Then replay `holdSum_apply_le_center`
+with 768 → 80000·(3/8)-ish: generalize the (E) Gaussian-summation proof over the
+decay constant `c` (a = n/(4c·N²), threshold a ≥ 1/(8c), sum ≤ (4/a)² ⇒
+C(c) = (32c)²) — refactor `holdSum_apply_le_center` into
+`iidSum_apply_le_center_of_decay (r : PMF (ℕ × ℤ))` taking the parametric decay
+as hypothesis. Then (F5) λ-optimization via the tilting identity
+`iidSum_apply_eq_tilt`: P(S_n = v) = P_tilt(S_n = v)·Zⁿ·e^{-λ·v} ≤
+(C/(1+n))·exp(n·log Z - λ·v); need log Z ≤ λ·mean + K|λ|² (mean (4,16)) or crude
+sign-choice at |λ| = 1/50 for the Gweight branch ⇒ `hold_local_bound`.
+
 ## Lap 33 (2026-07-12, sixth box session): (F3a) PARAMETRIC CHARACTER DECAY
 
 `Sec7/Unroll.lean`: **`charFn_decay_of_atoms`** — charFn_hold_decay abstracted over
