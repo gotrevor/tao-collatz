@@ -149,6 +149,21 @@ laps gets finished, because a completed axiom-clean proof is ground truth that r
 its neighbors (X3's exact fibre identity re-rated X8), and abandoning cheap completions
 buys nothing. A completed node is the *only* estimate that can't be wrong.
 
+**⚡ Active statement demands (judge → grind laps; check here before working the
+named target).** Current items:
+
+1. **`fpDist_white_exit_deep` (THE active move): pin the mass at `51/100 ≤ p₀`,
+   not `1/2 < p₀`** (judge pass 16, 2026-07-12). Reason: `many_triangles_white`'s
+   proof exhibits `ε₀ = min(1/100, (2p₁−1)/2)` with `p₁` eliminated anonymously
+   from the kernel's existential, and X11 instantiates at the fixed dichotomy
+   `ε = epsBW = 10⁻⁴` — so `ε₀ ≥ 10⁻⁴` must be PROVABLE from the pin's statement,
+   which bare `1/2 < p₀` cannot give (existential witnesses are invisible to
+   consumers). `51/100` makes `ε₀ ≥ 1/100` by arithmetic; the true mass ≈ 0.99, so
+   the strengthening is free for the proof. Re-pin BEFORE proving (statement edit
+   is pre-authorized as ratification-preserving — judge/pass-16.md); update
+   `many_triangles_white`'s ε₀ shell only if its arithmetic needs the numeral name.
+   Retire this item in the lap notes once the re-pin lands.
+
 **Color vocabulary — ladder vs graph (clarified 2026-07-12, after an operator/box
 mismatch).** The RED/YELLOW/GREEN above is the *de-risk ladder*: RED = no pinned Lean
 statement (pure paper-risk; renders as an **orange border** on the dep graph's
