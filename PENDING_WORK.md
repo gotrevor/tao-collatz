@@ -1,5 +1,120 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Reflection — 2026-07-12 (lap 55, deep reflection; strong-model altitude pass)
+
+### Route verdict: **CONTINUE** — no registered trigger has fired
+
+- **T1** (D6 finitization forces measure theory): tested and CLEARED in lap 52 —
+  the encounter-fold encoding carried the head-peel recursion, block bridge,
+  CLAIM-G coupling, all proved axiom-clean. No infinite-product measure anywhere.
+- **T2** (ε = 10⁻⁴ separation too weak for the (7.65) Σ-sum): re-grounded against
+  the actual pp.52–54 text this lap. The ≫s′ separation of Σ comes from Lemma
+  7.4's *integer-disjointness* of apex intervals plus (7.60) `s′ ≥ CA²(1+p)` —
+  NOT from the raw 0.92 constant — and that geometric core is already PROVED
+  (`apex_gap`, `apex_separation`, `not_mem_two`). T2 is unlikely to fire; keep it
+  registered until the Σ-sum closes in Lean.
+- **False-summit check**: laps 50–54 closed X6, X1, X2, X5 as whole nodes, each
+  re-verified clean this lap with real `#print axioms` runs. No recurring
+  "almost-cracked" claim; the one confidence downgrade (X9 75→70) had a concrete
+  cause (the confirmed paper gap). This is real motion, not circling.
+- **Destination check**: no prior art (web-checked 2026-07-12; nothing beyond
+  unrelated conditional/full-conjecture Collatz artifacts). Full discharge
+  remains the realistic endpoint: every kernel attacked so far has fallen, and
+  nothing on the remaining path looks generational.
+
+### The load-bearing finding: X9's near-edge regime is a STATEMENT-truth risk
+
+The lap-54 "NEEDS DESIGN" caveat is sharper than recorded. `fpDist_location_bound`
+is unconditional in `s`, but the white-exit lower bound genuinely FAILS at depth
+`m < Cthr` (the endpoint's `j`-advance `≈ s/4 = O(m)` can leave the strip: the
+whiteStrip mass really does collapse near the edge — it is not merely
+unprovable-with-current-tools). Since `many_triangles_white` quantifies over ALL
+starts and ALL `TriangleFamily` instances, an adversarial family stacked along
+the drift line in the edge strip can chain near-edge encounters whose `e^ε`
+payments have no white-exit compensation. **The pinned `exp(2ε)` is plausibly
+FALSE as stated.** The paper's own proof glosses exactly this: its (7.59) step
+says "repeating the proof of (7.51)" — but (7.51)'s geometry needs the triangle
+deep. This is a second literature hole adjacent to the judge-confirmed banking
+gap (pass 9).
+
+Two fixes, BOTH verified this lap against the actual consumer (pp.49 + 55 read
+in full):
+
+1. **Depth-gated fold (RECOMMENDED — keeps `exp(2ε)`)**: change `encStep` to
+   count an encounter only when the covering triangle sits at depth
+   `≥ Cthr` (equivalently `pos₁ ≤ n/2 − Cthr` at encounter time, `Cthr` = the
+   white-exit threshold). Consumer-safe: in Case 3 the surviving branch of the
+   (7.54) split has `j_{[1,k+P]} < 0.9m`, so the walk stays at depth `≥ 0.1m ≥
+   Cthr` (Case 3 has `m ≥ C_{A,ε}`) throughout the (7.67) window — every
+   encounter the deterministic claim produces IS deep, so `r ≥ R` still holds
+   with the gated count. Cost: rework `encStep` + re-prove ~3 short lemmas
+   (`encExpect_of_edge` → `encExpect_of_shallow`: below the gate the fold's
+   count/banked freeze, so `encExpect = encVal`), and judge re-ratification of
+   the encoding (pass-12 tripwire anticipated an edit here).
+2. **∃C re-pin (FALLBACK)**: `encExpect ≤ C` for an absolute `C`. Provable with
+   machinery on hand: `pos₁` strictly increases per step (Hold's first coord
+   ≥ 1), so the walk spends ≤ `Cthr` steps below the gate line, hence ≤ `Cthr`
+   uncompensated encounters, hence a pathwise factor `e^{ε·Cthr}`; total
+   `C = e^{2ε + ε·Cthr}`, uniform in `n, ξ, F, R, T, start`. Consumer absorbs
+   it: p.55 applies Markov at threshold `10^A`, giving `P(F_*) ≤ C·10^{−A−2}`,
+   and Prop 7.3's `∀A` quantifier eats any absolute constant (the paper's
+   (7.56) target is "say"-slack).
+
+Either way the X9 assembly becomes downhill — all other ingredients
+(`encExpect_block_le`, `encounter_vertex_bound`, `encExpect_normalize(_init)`,
+`encExpect_wander_le`, two-mass bound, chain fixed point) are proved. The
+two-mass ledger generalizes monotonically to any `Z ≥ encChainX` (the vertex
+inequality `p₀ + (1−p₀)e^εZ ≤ Z` is monotone in `Z` above the fixed point), so
+mixing the deep bound with a larger edge constant costs nothing.
+
+### Second finding: the p₀ > 1/2 certification burden is softer than recorded
+
+The paper only ever proves white-exit mass "`≫ 1`" at (7.59) — it never needs
+1/2. Our corrected ledger needs `p₀ > 1/2` only for the *clean* `exp(2ε)`
+constant: for any certified absolute `c₀ > ~ε` the chain value is
+`exp(O(ε/c₀))` — absolute, hence consumable by the same p.55 argument. So if
+certifying `p₀ > 1/2` through X6's (non-sharp) Gaussian constants fights,
+`fpDist_white_exit_deep` may be weakened to `∃p₀ > 0` plus an explicit numeral
+`c₀` (e.g. 1/100) without route damage. Judge pass-9's rider stands but is a
+constant-quality question, not feasibility.
+
+### X10 re-rated (up): volume, not novelty
+
+Read pp.52–54 in full against the Lean state. The proof is: (7.60) triviality
+reduction; escape event E′ = two tail bounds (Lemma 7.7 = X6 ✓ + Lemma 2.2 = S3
+✓, applied to `fpDistPlus`); the (7.63)–(7.65) geometric implication (elementary,
+apex core already proved); the Σ mass sum = per-point Gaussian location bound
+summed over a ≫s′-separated set = `(1/s′)` × the existing Gaussian-AP engine
+(`sum_range_exp_neg_sq_le` family). ONE genuinely new prerequisite: a
+**fpDistPlus location bound** — Lemma 7.7's bound convolved with `p` extra iid
+Hold steps ("(7.48) as before", then Lemma 2.2 for the `l`-tail of the added
+steps). Name it, prove it first; the rest is assembly. Confidence 70% → ~78%.
+
+### KEEP / STOP / bookkeeping
+
+- **KEEP**: hardest-first inside §7; per-lemma `#print axioms` verification; the
+  judge's statement-ratification loop (it caught the banking gap — it is
+  earning its cost); committing every green build.
+- **STOP**: carrying the stale "24/26 open sorries" number — ground truth is
+  **20** (7 crux: BlackEdge ×4, ManyTriangles ×3; 13 spine stubs). Also stop
+  listing X4/X7 as open in prose: `Holding/Monotone/Bridge.lean` are sorry-free;
+  their blueprint rows deserve ✅ at the next judge pass.
+- **Kernel merge (architecture)**: prove `fpDist_white_exit_deep` GENERAL and
+  derive X8's `fpDist_white_exit` from it (its extra `s ≤ m/log²m` hypothesis is
+  used only for edgeWeight degradation, per its own docstring) — collapses two
+  open kernels into one obligation.
+
+### Priority order (binding version in DIRECTION.md)
+
+1. X9 near-edge design: implement the depth-gated fold (fallback: ∃C re-pin);
+   flag the edited statement for judge re-ratification; then close
+   `many_triangles_white`.
+2. `fpDist_white_exit_deep` (then derive the X8 twin).
+3. X10: fpDistPlus location bound → E′ → separated-Σ assembly.
+4. X11 assembly (`Q_black_edge_case3` internals) + X8 assembly.
+5. C8 pin (last RED) opportunistically; spine stubs stay frozen.
+
+
 ## Lap 54 (cont-4): X9 gluing pieces PROVED — wander claim, edge freeze, two-mass bound, fixed point
 
 **Route simplification found while gluing (supersedes the four-mass LP shape):**

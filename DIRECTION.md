@@ -6,42 +6,51 @@ detail lives in PENDING_WORK.md.*
 
 ---
 
-## CURRENT DIRECTIVE (lap 51 review, 2026-07-12)
+## CURRENT DIRECTIVE (lap 55 deep reflection, 2026-07-12)
 
-**THE objective**: de-risk the §7 crux TAIL (X9 Lemma 7.9, X10 Lemma 7.10) by
-turning it from RED → YELLOW — statement pinned against the paper + route
-validated + hardest sub-step probed. This is the last un-pinned stretch on the
-critical path `S3✓ → X6✓ → {X8, X10} → X11 → C10 → …`.
+**THE objective**: close Lemma 7.9 (X9) — starting with the near-edge design
+decision that this reflection found to be a STATEMENT-truth risk — then take the
+two remaining §7 kernels in risk order. The RED→YELLOW phase is essentially
+complete (only C8 un-pinned); the campaign now converts pinned YELLOW sorries
+into closed nodes, hardest-first.
 
 **Mandated next move** (in order):
-1. **Pin Lemma 7.10 (X10), (7.60)** — the campaign's single highest-uncertainty
-   node (diff 5, conf 65%). It is DIRECTLY expressible: its event `E_{p,s'}` is a
-   *single-marginal* probability of the renewal endpoint `(j,l)+v_{[1,k+p]}`,
-   whose law is `fpDist s` convolved with `iidSum hold p` — NO path-space needed.
-   Pin `P(E_{p,s'}) ≤ C·A²(1+p)/s' + C·exp(-c·A²(1+p))` with a (7.60)–(7.65)
-   route docstring. Probe the hardest sub-step (the ≫s'-separated Σ counting,
-   (7.63)–(7.65)).
-2. **Design + pin Lemma 7.9 (X9), (7.57)** — needs the stopping-time renewal
-   expectation as a RECURSION on R (D1 forbids measure theory; D6 finitizes to a
-   recursion over `fpDist`/`Q`). Record the encoding design in PENDING_WORK first;
-   pin only a FAITHFUL statement (copy-not-compose — an unfaithful pin is worse
-   than none).
+1. **X9 near-edge fix**: implement the **depth-gated encounter fold** — `encStep`
+   counts an encounter only at depth `≥ Cthr` (gate constant = the white-exit
+   threshold). Keeps `exp(2ε)`; consumer-verified vs pp.49/55 (Case 3's (7.54)
+   split keeps all consumed encounters deep). Rework `encExpect_of_edge` →
+   shallow-freeze; flag the edited encoding for judge re-ratification (pass-12
+   tripwire). FALLBACK if the gate fights: re-pin `many_triangles_white` at
+   `∃C` absolute (deterministic `e^{ε·Cthr}` edge cap; also consumer-verified —
+   p.55 Markov absorbs any absolute constant). Do not grind the old statement.
+2. **Close `many_triangles_white`** — the Z-induction gluing; every internal
+   lemma is already proved (block bridge, vertex LP, coupling, wander, two-mass;
+   the two-mass step is monotone in `Z` above the fixed point, so the edge
+   constant folds in free).
+3. **`fpDist_white_exit_deep`** — X9's only external input. Prove it GENERAL and
+   then DERIVE X8's `fpDist_white_exit` from it (kernel merge — the Case-2 budget
+   hypothesis is only used for edgeWeight, per its docstring). If certifying
+   `p₀ > 1/2` through X6's constants fights, any explicit `c₀ > ~ε` suffices
+   (chain value `exp(O(ε/c₀))` is consumable) — weaken, don't stall.
+4. **X10 assembly**: FIRST name and prove the fpDistPlus location bound
+   (Lemma 7.7 ⋆ p iid Hold steps); then E′ tails (X6+S3 applications); then the
+   separated-Σ mass sum (existing Gaussian-AP engine + proved apex separation).
 
 **Forbidden drift**:
-- Do NOT grind X8's Case-2 kernels (`fpDist_edgeWeight_le`, `fpDist_white_exit`)
-  or the Case-2/3 assembly to completion. X8 is already YELLOW (pinned + routed,
-  kernels unblocked by X6). It is *finish-when-downhill secondary* only — touch it
-  only if a kernel is clearly ≤1 lap AND X9/X10 pinning is already done this lap.
-- Do NOT sink the lap into off-§7 leaves (SyracRV / ValuationDist / Basic /
-  Statement / Sec5/Sec6 stubs). Those are downstream of the crux and cheap later.
+- No spine leaves (SyracRV / ValuationDist / Basic / Statement / Sec5 / Sec6 /
+  Prob stubs) — downstream, cheap later.
+- No `fpDist_edgeWeight_le` grinding before the white-exit twins land (Case-2-only,
+  not route-decisive).
+- C8 pinning is allowed as statement-work variety, at most one lap, never
+  displacing steps 1–3.
 
-**Why**: the expedition verdict is binary (full-discharge-or-abandon), so laps buy
-the most by reducing the odds of a LATE FATAL WALL. X10 is the likeliest such wall
-(the paper's pinnacle, "separated-Σ counting"). The decisive unknown for the whole
-Case-3 subtree (X9/X10/X11) is whether the paper's stopping-time/renewal-process
-arguments survive the D1-no-measure-theory + D6-finitization translation. Pinning
-+ probing 7.9/7.10 tests exactly that, and is worth more than completing an already
-de-risked X8. A fired route-trigger (see below) means ESCALATE, not grind.
+**Why**: the reflection's ground-truth read (pp.49–55 + the compiler) shows the
+remaining §7 risk is concentrated in (a) the X9 near-edge statement question —
+the only place a ratified pin might be *false*, hence fix-first — and (b) the
+white-exit kernel shared by X9/X8. X10, previously rated the summit, is
+precedented volume (conf ~78%): its geometric core and analytic engines are
+already proved. Closing X9 whole re-rates the entire Case-3 subtree with ground
+truth.
 
 ### Route-level triggers / abort conditions
 - **T1 (7.9 encoding)**: if the stopping-time expectation (7.57) provably CANNOT be
@@ -54,6 +63,10 @@ de-risked X8. A fired route-trigger (see below) means ESCALATE, not grind.
   finitely many inequalities, numerics-checkable first.
 
 ### Directive history
+- lap 55 (2026-07-12, deep reflection): RED→YELLOW phase done (C8 excepted) —
+  pivot to closing X9 (near-edge depth-gate fix first; statement-truth risk),
+  then white-exit kernel (merged twins), then X10 assembly. T1 cleared, T2
+  source-grounded unlikely; route CONTINUE.
 - lap 51 (2026-07-12): set — de-risk §7 tail; pin Lemma 7.10 then design/pin 7.9;
   X8 relegated to finish-when-downhill. (Prev grind laps had X8-completion momentum
   from the lap-50 handoff; corrected to breadth-first per BLUEPRINT §2.)
