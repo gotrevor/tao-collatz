@@ -157,6 +157,28 @@ theorem TriangleFamily.eq_coveringTriangle {n ξ : ℕ} (F : TriangleFamily n ξ
   (F.existsUnique_cover hq).unique ⟨ht, hqt⟩
     ⟨F.coveringTriangle_mem hq, F.coveringTriangle_covers hq⟩
 
+/-- **The apex-gap inequality** — the geometric heart of Lemma 7.10's ≫s′-separation
+((7.65), paper p.54). If a lattice height `l*` sits inside a triangle `t''` at its own
+apex column (`(j_{t''}, l*) ∈ t''`), and `t'` is a distinct family triangle with
+`j_{t'} ≤ j_{t''}`, `l* ≤ l_{t'}`, then that apex-column point of `t''` cannot also lie
+in `t'` (`not_mem_two`), forcing
+
+  `s_{t'} < (j_{t''} − j_{t'})·log 9 + (l_{t'} − l*)·log 2`.
+
+Combined with the (7.65) height condition `l_{t'} − s_{t'}/log 2 ≈ l_Δ` and `l* =
+l_Δ + ⌊s'/2⌋`, this yields the apex separation `j_{t''} − j_{t'} ≫ s'` that makes the
+size-`≥ s'` triangle apexes a ≫s′-separated set. -/
+theorem apex_gap {n ξ : ℕ} (F : TriangleFamily n ξ) {t' t'' : ℕ × ℤ × ℝ}
+    (ht' : t' ∈ F.T) (ht'' : t'' ∈ F.T) (hne : t' ≠ t'')
+    (hj : t'.1 ≤ t''.1) {lstar : ℤ} (hl' : lstar ≤ t'.2.1)
+    (hmem'' : ((t''.1, lstar) : ℕ × ℤ) ∈ triangle t''.1 t''.2.1 t''.2.2) :
+    t'.2.2 < ((t''.1 : ℝ) - t'.1) * Real.log 9 + ((t'.2.1 : ℝ) - lstar) * Real.log 2 := by
+  have hnot : ((t''.1, lstar) : ℕ × ℤ) ∉ triangle t'.1 t'.2.1 t'.2.2 :=
+    fun hmem' => F.not_mem_two ht' ht'' hne hmem' hmem''
+  rw [triangle, Set.mem_setOf_eq] at hnot
+  push_neg at hnot
+  exact hnot hj hl'
+
 /-- **Lemma 7.10 — large triangles are rarely encountered shortly after a lengthy
 crossing** (paper (7.60), pp.51–54). Starting the renewal walk at a point `(j,l)` of
 a black triangle `Δ = t₀` with budget `s = l_Δ − l` obeying `s > m/log²m`

@@ -26,12 +26,16 @@ event `(j,l)+v_{[1,k+p]}` lies in a triangle `Δ' ∈ 𝒯` of size `s_{Δ'} ≥
 - **Proof step 0 DONE (lap 51)**: `fpDistPlus_indicator_sum_le_one` (event prob ≤ 1
   via PMF total mass) + `fpDistPlus_tsum_toReal` — discharges the (7.60) "trivial
   otherwise" regime (`s' < C·A²(1+p)` ⟹ RHS > 1 ≥ LHS), and is general bookkeeping.
-- **Route** (7.60)–(7.65), hardest sub-step to probe next: the ≫s'-separated Σ
-  counting (7.63)–(7.65) — triangles of size ≥ s' obeying (7.65) have apexes
-  `(j_Δ', l_Δ)` that are ≫s'-separated (from Lemma 7.4 separation + (7.11) slope),
-  so `Σ_{j'∈ℤ} s^{-1/2}G_{1+s}(c(j'−j−s/4)) ≪ 1` collapses via the Gaussian sum
-  engine `sum_range_exp_neg_sq_le` (already proved for X6). The E′ escape event
-  (7.61) is killed by X6 (`fpDist_location_bound` j-concentration) + Lemma 2.2 (S3).
+- **Apex-gap DONE (lap 51)**: `apex_gap` — the geometric HEART of (7.65): distinct
+  family triangles t', t'' with `j' ≤ j''`, `l* ≤ l_{t'}`, and `(j'', l*) ∈ t''`
+  satisfy `s_{t'} < (j''−j')log9 + (l_{t'}−l*)log2` (from `not_mem_two`: the apex
+  column point of t'' at height l* cannot lie in t'). This is the "two intervals
+  share no integer" step, cleanly extracted + axiom-clean.
+- **Route** (7.60)–(7.65), remaining Σ-count assembly: feed `apex_gap` the (7.65)
+  height condition `l_{t'} − s_{t'}/log2 ≈ l_Δ` (from being outside E′) + `l* =
+  l_Δ + ⌊s'/2⌋` ⟹ `j''−j' ≫ s'` ⟹ size-≥s' apexes are ≫s'-separated ⟹
+  `Σ_{j'∈ℤ} s^{-1/2}G_{1+s}(c(j'−j−s/4)) ≪ 1` via `sum_range_exp_neg_sq_le` (X6).
+  The E′ escape event (7.61) is killed by X6 (`fpDist_location_bound`) + Lemma 2.2.
   **All inputs (X6, S3, separation) are theorems.**
 
 ### X9 = Lemma 7.9 (7.57) — DESIGN recorded, pin next lap (needs recursion object)
