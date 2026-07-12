@@ -495,28 +495,31 @@ theorem charFn_hold_decay {N : ℕ} [NeZero N] (hN : 4 ≤ N) (ξ : ZMod N × ZM
         have hd : D / 768 = (1 / 768 : ℝ) * D := by ring
         linarith [hd ▸ this]
 
-/-- **Center-regime local bound for the `Hold` walk** ((E) of node S3, Gaussian
-summation at `N = ⌊√n⌋ + 1`): uniformly in the target `v`, the `n`-fold `Hold` walk
-has point masses `≤ C/(1+n)` with the explicit constant `C = 24576² = 603979776`.
-Route: `holdSum_toReal_le_charFn` + `charFn_hold_decay` per frequency,
-`pow_le_exp_of_sq_le_one_sub`, factorization of the 2-D frequency sum into the
-square of a 1-D sum, `sum_exp_neg_nd_sq_le` + `one_sub_exp_neg_inv_le` at
-`a = n/(3072·N²) ∈ [1/6144, 1]`, and `N² ∈ [n+1, 2n]`. The Gaussian factor of
-Lemma 2.2(i) off-center is the tilting step (F), which multiplies this bound. -/
-theorem holdSum_apply_le_center (n : ℕ) (v : ℕ × ℤ) :
-    ((holdSum n) v).toReal ≤ 603979776 / (1 + (n : ℝ)) := by
+/-- **Parametric center-regime local bound** ((F4) of node S3, Gaussian summation
+at `N = ⌊√n⌋ + 1` from a character-decay hypothesis with constant `c`): any walk on
+the renewal lattice whose projected characteristic functions decay like
+`1 - (nd-sum)/c` uniformly in `N ≥ 4` has point masses `≤ (32c)²/(1+n)`.
+Instantiated at `hold` (`c = 768`) and at the tilted hold walk
+(`c = 80000`, via `charFn_decay_of_atoms` + `tilt_hold_apply_ge`). -/
+theorem iidSum_apply_le_center_of_decay (p : PMF (ℕ × ℤ)) {c : ℝ} (hc : 1 ≤ c)
+    (hdec : ∀ (N : ℕ) [NeZero N], 4 ≤ N → ∀ ξ : ZMod N × ZMod N,
+      ‖charFn (p.map (modPair N)) ξ‖ ^ 2
+        ≤ 1 - (((nd ξ.1 : ℝ) / N) ^ 2 + ((nd ξ.2 : ℝ) / N) ^ 2) / c)
+    (n : ℕ) (v : ℕ × ℤ) :
+    ((iidSum p n) v).toReal ≤ (32 * c) ^ 2 / (1 + (n : ℝ)) := by
+  have hc0 : (0 : ℝ) < c := lt_of_lt_of_le one_pos hc
   have h1n : (0 : ℝ) < 1 + n := by positivity
   rcases le_or_gt n 8 with hn8 | hn9
   · -- small n: the trivial mass bound suffices
-    have h1 : ((holdSum n) v).toReal ≤ 1 := by
-      have := (holdSum n).coe_le_one v
-      calc ((holdSum n) v).toReal ≤ (1 : ℝ≥0∞).toReal :=
+    have h1 : (((iidSum p n)) v).toReal ≤ 1 := by
+      have := (iidSum p n).coe_le_one v
+      calc (((iidSum p n)) v).toReal ≤ (1 : ℝ≥0∞).toReal :=
             ENNReal.toReal_mono ENNReal.one_ne_top this
         _ = 1 := ENNReal.toReal_one
     have hcast : (n : ℝ) ≤ 8 := by exact_mod_cast hn8
     refine le_trans h1 ?_
     rw [le_div_iff₀ h1n]
-    linarith
+    nlinarith
   · -- large n: circle method at N = √n + 1
     have hn9' : 9 ≤ n := hn9
     set N := n.sqrt + 1 with hN
@@ -532,7 +535,7 @@ theorem holdSum_apply_le_center (n : ℕ) (v : ℕ × ℤ) :
       have : 0 < N := by omega
       exact_mod_cast this
     -- the decay rate
-    set a : ℝ := (n : ℝ) / (3072 * (N : ℝ) ^ 2) with ha
+    set a : ℝ := (n : ℝ) / (4 * c * (N : ℝ) ^ 2) with ha
     have hNlowR : (n : ℝ) + 1 ≤ (N : ℝ) ^ 2 := by exact_mod_cast hNlow
     have hNhighR : (N : ℝ) ^ 2 ≤ 2 * n := by exact_mod_cast hNhigh
     have ha0 : 0 < a := by
@@ -542,16 +545,20 @@ theorem holdSum_apply_le_center (n : ℕ) (v : ℕ × ℤ) :
     have ha1 : a ≤ 1 := by
       rw [ha, div_le_one (by positivity)]
       nlinarith
-    have ha_low : 1 / 6144 ≤ a := by
+    have ha_low : 1 / (8 * c) ≤ a := by
       rw [ha, le_div_iff₀ (by positivity)]
-      nlinarith
+      have hkey : 1 / (8 * c) * (4 * c * (N : ℝ) ^ 2) = (N : ℝ) ^ 2 / 2 := by
+        field_simp
+        ring
+      rw [hkey]
+      linarith
     -- per-frequency exponential bound
     have hfreq : ∀ ξ : ZMod N × ZMod N,
-        ‖charFn (hold.map (modPair N)) ξ‖ ^ n
+        ‖charFn (p.map (modPair N)) ξ‖ ^ n
           ≤ Real.exp (-(a * ((nd ξ.1 : ℝ)) ^ 2)) * Real.exp (-(a * ((nd ξ.2 : ℝ)) ^ 2)) := by
       intro ξ
-      have hdecay := charFn_hold_decay hN4 ξ
-      set D : ℝ := (((nd ξ.1 : ℝ) / N) ^ 2 + ((nd ξ.2 : ℝ) / N) ^ 2) / 768 with hD
+      have hdecay := hdec N hN4 ξ
+      set D : ℝ := (((nd ξ.1 : ℝ) / N) ^ 2 + ((nd ξ.2 : ℝ) / N) ^ 2) / c with hD
       have hD0 : 0 ≤ D := by positivity
       have hpow := pow_le_exp_of_sq_le_one_sub n (by omega) (norm_nonneg _) hD0
         (by rw [hD]; linarith)
@@ -562,42 +569,68 @@ theorem holdSum_apply_le_center (n : ℕ) (v : ℕ × ℤ) :
       field_simp
       ring
     -- assemble
-    have hmain := holdSum_toReal_le_charFn n N v
+    have hle1 : (iidSum p n) v ≤ (iidSum (p.map (modPair N)) n) (modPair N v) := by
+      calc (iidSum p n) v
+          ≤ ((iidSum p n).map (modPair N)) (modPair N v) :=
+            PMF.apply_le_map_apply _ _ _
+        _ = (iidSum (p.map (modPair N)) n) (modPair N v) := by
+            rw [iidSum_map p (modPair N) (by simp [modPair])
+              (fun a b => by simp [modPair, Prod.ext_iff])]
+    have hmain : ((iidSum p n) v).toReal
+        ≤ ((N : ℝ) ^ 2)⁻¹ * ∑ ξ : ZMod N × ZMod N, ‖charFn (p.map (modPair N)) ξ‖ ^ n :=
+      le_trans (ENNReal.toReal_mono
+          ((iidSum (p.map (modPair N)) n).apply_ne_top _) hle1)
+        (iidSum_apply_toReal_le (p.map (modPair N)) n (modPair N v))
     set g : ZMod N → ℝ := fun t => Real.exp (-(a * ((nd t : ℝ)) ^ 2)) with hg
-    have hsum2 : ∑ ξ : ZMod N × ZMod N, ‖charFn (hold.map (modPair N)) ξ‖ ^ n
+    have hsum2 : ∑ ξ : ZMod N × ZMod N, ‖charFn (p.map (modPair N)) ξ‖ ^ n
         ≤ (∑ t : ZMod N, g t) ^ 2 := by
-      calc ∑ ξ : ZMod N × ZMod N, ‖charFn (hold.map (modPair N)) ξ‖ ^ n
+      calc ∑ ξ : ZMod N × ZMod N, ‖charFn (p.map (modPair N)) ξ‖ ^ n
           ≤ ∑ ξ : ZMod N × ZMod N, g ξ.1 * g ξ.2 :=
             Finset.sum_le_sum fun ξ _ => hfreq ξ
         _ = (∑ t : ZMod N, g t) * (∑ t : ZMod N, g t) := by
             rw [Finset.sum_mul_sum, Fintype.sum_prod_type]
         _ = (∑ t : ZMod N, g t) ^ 2 := (sq _).symm
-    have hg_bound : ∑ t : ZMod N, g t ≤ 24576 := by
+    have hg_bound : ∑ t : ZMod N, g t ≤ 32 * c := by
       calc ∑ t : ZMod N, g t ≤ 2 * (1 - Real.exp (-a))⁻¹ := sum_exp_neg_nd_sq_le ha0
         _ ≤ 2 * (2 / a) := by
             have := one_sub_exp_neg_inv_le ha0 ha1
             linarith
         _ = 4 / a := by ring
-        _ ≤ 24576 := by
+        _ ≤ 32 * c := by
             rw [div_le_iff₀ ha0]
-            calc (4 : ℝ) = 24576 * (1 / 6144) := by norm_num
-              _ ≤ 24576 * a := by linarith
+            have hkey : 32 * c * (1 / (8 * c)) = 4 := by
+              field_simp
+              ring
+            calc (4 : ℝ) = 32 * c * (1 / (8 * c)) := hkey.symm
+              _ ≤ 32 * c * a := by
+                  exact mul_le_mul_of_nonneg_left ha_low (by positivity)
     have hgnn : 0 ≤ ∑ t : ZMod N, g t :=
       Finset.sum_nonneg fun t _ => (Real.exp_pos _).le
     have hinvN : ((N : ℝ) ^ 2)⁻¹ ≤ (1 + (n : ℝ))⁻¹ := by
       gcongr
       linarith
-    calc ((holdSum n) v).toReal
+    calc ((iidSum p n) v).toReal
         ≤ ((N : ℝ) ^ 2)⁻¹ * ∑ ξ : ZMod N × ZMod N,
-            ‖charFn (hold.map (modPair N)) ξ‖ ^ n := hmain
+            ‖charFn (p.map (modPair N)) ξ‖ ^ n := hmain
       _ ≤ ((N : ℝ) ^ 2)⁻¹ * (∑ t : ZMod N, g t) ^ 2 := by
           gcongr
-      _ ≤ ((N : ℝ) ^ 2)⁻¹ * 24576 ^ 2 := by
+      _ ≤ ((N : ℝ) ^ 2)⁻¹ * (32 * c) ^ 2 := by
           gcongr
-      _ ≤ (1 + (n : ℝ))⁻¹ * 24576 ^ 2 := by gcongr
-      _ = 603979776 / (1 + (n : ℝ)) := by
-          rw [inv_mul_eq_div]
-          norm_num
+      _ ≤ (1 + (n : ℝ))⁻¹ * (32 * c) ^ 2 := by
+          gcongr
+      _ = (32 * c) ^ 2 / (1 + (n : ℝ)) := inv_mul_eq_div _ _
+
+/-- **Center-regime local bound for the `Hold` walk** ((E) of node S3): the
+`c = 768` instance of `iidSum_apply_le_center_of_decay` via `charFn_hold_decay`;
+`C = (32·768)² = 24576² = 603979776`. The Gaussian factor of Lemma 2.2(i)
+off-center is the tilting step (F), which multiplies this bound. -/
+theorem holdSum_apply_le_center (n : ℕ) (v : ℕ × ℤ) :
+    ((holdSum n) v).toReal ≤ 603979776 / (1 + (n : ℝ)) := by
+  have h := iidSum_apply_le_center_of_decay hold (c := 768) (by norm_num)
+    (by intro N _ hN ξ; exact charFn_hold_decay hN ξ) n v
+  rw [holdSum_eq_iidSum]
+  refine le_trans h (le_of_eq ?_)
+  norm_num
 
 /-- **Lemma 7.7 (Distribution of first passage location), D6 statement** (paper p.43,
 (7.30)–(7.33)): the first-passage endpoint mass at `(j, l)` is Gaussian-concentrated —
