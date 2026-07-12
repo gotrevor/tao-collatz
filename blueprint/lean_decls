@@ -57,6 +57,14 @@ fpDist_location_bound
 Qm
 prop_7_8
 Q_white_case1
+Q_black_edge
 Q_polynomial_decay
+TriangleFamily
+Q_black_edge_case2
+Q_fp_endpoint_le
+fpDist_edgeWeight_le
+fpDist_white_exit
+budget_le_of_mem_triangle
 charFn_decay
 key_fourier_decay
+Q_black_edge_case3
