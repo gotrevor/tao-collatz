@@ -315,33 +315,25 @@ theorem pair_transfer {X m0 m1 c0 c1 R u : ℝ} (hm0 : c0 ≤ m0) (hm1 : c1 ≤ 
 
 /-! ### Character decay for `hold mod N` -/
 
-/-- **Character decay for the projected holding distribution** ((D) of node S3):
-uniformly in the modulus `N ≥ 4`, the characteristic function of `hold mod N` decays
-quadratically in the cyclic distance of the frequency. Nondegeneracy comes from the
-four explicit atoms `(1,3), (2,5), (2,7), (2,8)` whose differences `(1,2), (0,2),
-(0,3)` affinely generate `ℤ²`. -/
-theorem charFn_hold_decay {N : ℕ} [NeZero N] (hN : 4 ≤ N) (ξ : ZMod N × ZMod N) :
-    ‖charFn (hold.map (modPair N)) ξ‖ ^ 2
-      ≤ 1 - (((nd ξ.1 : ℝ) / N) ^ 2 + ((nd ξ.2 : ℝ) / N) ^ 2) / 768 := by
+/-- **Parametric character decay from four atom-mass lower bounds** ((F3) of node S3):
+any PMF `r` on `ZMod N × ZMod N` (`N ≥ 4`) whose masses at the four projected points
+`(1,3), (2,5), (2,7), (2,8) mod N` are all `≥ μ` has characteristic function decaying
+quadratically in the cyclic frequency distance, with explicit constant `2·μ²`.
+This is `charFn_hold_decay` with the hold atom masses abstracted out, so it applies
+verbatim to the exponentially tilted hold walk (whose atom masses at the same four
+points are merely perturbed) — the tilting step (F) of Lemma 2.2(i), paper pp.14–15. -/
+theorem charFn_decay_of_atoms {N : ℕ} [NeZero N] (hN : 4 ≤ N)
+    (r : PMF (ZMod N × ZMod N)) {μ : ℝ} (hμ : 0 ≤ μ)
+    (hm13 : μ ≤ (r (modPair N (1, 3))).toReal)
+    (hm25 : μ ≤ (r (modPair N (2, 5))).toReal)
+    (hm27 : μ ≤ (r (modPair N (2, 7))).toReal)
+    (hm28 : μ ≤ (r (modPair N (2, 8))).toReal)
+    (ξ : ZMod N × ZMod N) :
+    ‖charFn r ξ‖ ^ 2
+      ≤ 1 - 2 * μ ^ 2 * (((nd ξ.1 : ℝ) / N) ^ 2 + ((nd ξ.2 : ℝ) / N) ^ 2) := by
   have hNpos : (0 : ℝ) < N := by
     have : 0 < N := by omega
     exact_mod_cast this
-  set r := hold.map (modPair N) with hr
-  -- transferred atom masses
-  have hmass : ∀ (d : ℕ × ℤ), (hold d).toReal ≤ (r (modPair N d)).toReal := fun d =>
-    ENNReal.toReal_mono (r.apply_ne_top _) (PMF.apply_le_map_apply hold (modPair N) d)
-  have hm13 : (4⁻¹ : ℝ) ≤ (r (modPair N (1, 3))).toReal := by
-    have h := hmass (1, 3)
-    rwa [hold_apply_one_three] at h
-  have hm25 : (16⁻¹ : ℝ) ≤ (r (modPair N (2, 5))).toReal := by
-    have h := hmass (2, 5)
-    rwa [hold_apply_two_five] at h
-  have hm27 : (3 / 64 : ℝ) ≤ (r (modPair N (2, 7))).toReal := by
-    have h := hmass (2, 7)
-    rwa [hold_apply_two_seven] at h
-  have hm28 : (32⁻¹ : ℝ) ≤ (r (modPair N (2, 8))).toReal := by
-    have h := hmass (2, 8)
-    rwa [hold_apply_two_eight] at h
   -- distinctness of the projected atoms (any collision forces N ∣ 1, 2 or 3)
   have hdvd : ∀ k : ℕ, 0 < k → k < 4 → ¬ ((k : ZMod N) = 0) := by
     intro k hk0 hk4 h
@@ -414,15 +406,15 @@ theorem charFn_hold_decay {N : ℕ} [NeZero N] (hN : 4 ≤ N) (ξ : ZMod N × ZM
   rw [hw3] at hb3
   -- combined per-pair lower bounds on 1 - ‖φ‖²
   set X : ℝ := 1 - ‖charFn r ξ‖ ^ 2 with hX
-  have hA1 : 2 * 16⁻¹ * 4⁻¹ * (8 * u1 ^ 2) ≤ X :=
-    pair_transfer hm25 hm13 (by norm_num) (by norm_num) hJ1 hb1
-  have hA2 : 2 * (3 / 64) * 16⁻¹ * (8 * u2 ^ 2) ≤ X :=
-    pair_transfer hm27 hm25 (by norm_num) (by norm_num) hJ2 hb2
-  have hA3 : 2 * 32⁻¹ * 16⁻¹ * (8 * u3 ^ 2) ≤ X :=
-    pair_transfer hm28 hm25 (by norm_num) (by norm_num) hJ3 hb3
-  have hu1X : u1 ^ 2 ≤ 4 * X := by linarith
-  have hu2X : u2 ^ 2 ≤ (64 / 3) * X := by linarith
-  have hu3X : u3 ^ 2 ≤ 32 * X := by linarith
+  have hA1 : 2 * μ * μ * (8 * u1 ^ 2) ≤ X :=
+    pair_transfer hm25 hm13 hμ hμ hJ1 hb1
+  have hA2 : 2 * μ * μ * (8 * u2 ^ 2) ≤ X :=
+    pair_transfer hm27 hm25 hμ hμ hJ2 hb2
+  have hA3 : 2 * μ * μ * (8 * u3 ^ 2) ≤ X :=
+    pair_transfer hm28 hm25 hμ hμ hJ3 hb3
+  have hu1X : 16 * (μ ^ 2 * u1 ^ 2) ≤ X := by linarith [hA1]
+  have hu2X : 16 * (μ ^ 2 * u2 ^ 2) ≤ X := by linarith [hA2]
+  have hu3X : 16 * (μ ^ 2 * u3 ^ 2) ≤ X := by linarith [hA3]
   -- triangle: recover ξ from the pinned frequencies
   have ht1 : nd ξ.1 ≤ nd j1 + nd j2 := by
     have h := nd_sub_le j1 j2
@@ -452,7 +444,56 @@ theorem charFn_hold_decay {N : ℕ} [NeZero N] (hN : 4 ≤ N) (ξ : ZMod N × ZM
     nlinarith [ht1R, hnd1nn, sq_nonneg (u1 - u2)]
   have hb2' : ((nd ξ.2 : ℝ) / N) ^ 2 ≤ 2 * u3 ^ 2 + 2 * u2 ^ 2 := by
     nlinarith [ht2R, hnd2nn, sq_nonneg (u3 - u2)]
-  linarith [ha2, hb2', hu1X, hu2X, hu3X, sq_nonneg u1, sq_nonneg u2, sq_nonneg u3]
+  -- 2μ²·D ≤ 2μ²(2u1² + 4u2² + 2u3²) = 4(μ²u1²) + 8(μ²u2²) + 4(μ²u3²) ≤ X/4 + X/2 + X/4
+  have hDa : μ ^ 2 * ((nd ξ.1 : ℝ) / N) ^ 2 ≤ μ ^ 2 * (2 * u1 ^ 2 + 2 * u2 ^ 2) :=
+    mul_le_mul_of_nonneg_left ha2 (sq_nonneg μ)
+  have hDb : μ ^ 2 * ((nd ξ.2 : ℝ) / N) ^ 2 ≤ μ ^ 2 * (2 * u3 ^ 2 + 2 * u2 ^ 2) :=
+    mul_le_mul_of_nonneg_left hb2' (sq_nonneg μ)
+  linarith [hDa, hDb, hu1X, hu2X, hu3X]
+
+/-- **Character decay for the projected holding distribution** ((D) of node S3):
+uniformly in the modulus `N ≥ 4`, the characteristic function of `hold mod N` decays
+quadratically in the cyclic distance of the frequency. Nondegeneracy comes from the
+four explicit atoms `(1,3), (2,5), (2,7), (2,8)` whose differences `(1,2), (0,2),
+(0,3)` affinely generate `ℤ²`. Instance of `charFn_decay_of_atoms` at `μ = 1/32`
+(the smallest of the four hold atom masses), since `2·(1/32)² = 1/512 ≥ 1/768`. -/
+theorem charFn_hold_decay {N : ℕ} [NeZero N] (hN : 4 ≤ N) (ξ : ZMod N × ZMod N) :
+    ‖charFn (hold.map (modPair N)) ξ‖ ^ 2
+      ≤ 1 - (((nd ξ.1 : ℝ) / N) ^ 2 + ((nd ξ.2 : ℝ) / N) ^ 2) / 768 := by
+  have hNpos : (0 : ℝ) < N := by
+    have : 0 < N := by omega
+    exact_mod_cast this
+  set r := hold.map (modPair N) with hr
+  have hmass : ∀ (d : ℕ × ℤ), (hold d).toReal ≤ (r (modPair N d)).toReal := fun d =>
+    ENNReal.toReal_mono (r.apply_ne_top _) (PMF.apply_le_map_apply hold (modPair N) d)
+  have hm13 : ((32 : ℝ)⁻¹ : ℝ) ≤ (r (modPair N (1, 3))).toReal := by
+    have h := hmass (1, 3)
+    rw [hold_apply_one_three] at h
+    have h' : ((32 : ℝ)⁻¹ : ℝ) ≤ (4⁻¹ : ℝ) := by norm_num
+    linarith
+  have hm25 : ((32 : ℝ)⁻¹ : ℝ) ≤ (r (modPair N (2, 5))).toReal := by
+    have h := hmass (2, 5)
+    rw [hold_apply_two_five] at h
+    have h' : ((32 : ℝ)⁻¹ : ℝ) ≤ (16⁻¹ : ℝ) := by norm_num
+    linarith
+  have hm27 : ((32 : ℝ)⁻¹ : ℝ) ≤ (r (modPair N (2, 7))).toReal := by
+    have h := hmass (2, 7)
+    rw [hold_apply_two_seven] at h
+    have h' : ((32 : ℝ)⁻¹ : ℝ) ≤ (3 / 64 : ℝ) := by norm_num
+    linarith
+  have hm28 : ((32 : ℝ)⁻¹ : ℝ) ≤ (r (modPair N (2, 8))).toReal := by
+    have h := hmass (2, 8)
+    rwa [hold_apply_two_eight] at h
+  have h := charFn_decay_of_atoms hN r (μ := (32 : ℝ)⁻¹) (by norm_num)
+    hm13 hm25 hm27 hm28 ξ
+  have hD0 : 0 ≤ ((nd ξ.1 : ℝ) / N) ^ 2 + ((nd ξ.2 : ℝ) / N) ^ 2 := by positivity
+  have hcoef : (1 / 768 : ℝ) ≤ 2 * ((32 : ℝ)⁻¹) ^ 2 := by norm_num
+  set D : ℝ := ((nd ξ.1 : ℝ) / N) ^ 2 + ((nd ξ.2 : ℝ) / N) ^ 2 with hDdef
+  calc ‖charFn r ξ‖ ^ 2 ≤ 1 - 2 * ((32 : ℝ)⁻¹) ^ 2 * D := h
+    _ ≤ 1 - D / 768 := by
+        have := mul_le_mul_of_nonneg_right hcoef hD0
+        have hd : D / 768 = (1 / 768 : ℝ) * D := by ring
+        linarith [hd ▸ this]
 
 /-- **Center-regime local bound for the `Hold` walk** ((E) of node S3, Gaussian
 summation at `N = ⌊√n⌋ + 1`): uniformly in the target `v`, the `n`-fold `Hold` walk
