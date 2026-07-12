@@ -57,6 +57,37 @@ theorem fpDistPlus_zero (s : ℕ) : fpDistPlus s 0 = fpDist s := by
     rw [iidSum_zero, PMF.pure_map, add_zero]
   rw [fpDistPlus, h, PMF.bind_pure]
 
+/-- `∑' (fpDistPlus s p e).toReal = 1` (total mass of a PMF, transported to `ℝ`). -/
+theorem fpDistPlus_tsum_toReal (s p : ℕ) :
+    ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal = 1 := by
+  rw [← ENNReal.tsum_toReal_eq (fun e => PMF.apply_ne_top _ _), (fpDistPlus s p).tsum_coe,
+    ENNReal.toReal_one]
+
+/-- **Any event-probability of the renewal endpoint is `≤ 1`** — `fpDistPlus` is a
+`PMF`, so summing its mass against a `{0,1}` indicator is `≤` its total mass `1`. The
+concrete first step of Lemma 7.10's proof (the (7.60) "trivial otherwise" reduction:
+when `s' < C·A²(1+p)` the RHS already exceeds `1`), and general fpDist bookkeeping. -/
+theorem fpDistPlus_indicator_sum_le_one (s p : ℕ) (S : Set (ℕ × ℤ))
+    (f : ℕ × ℤ → ℕ × ℤ) :
+    ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal * Set.indicator S 1 (f e) ≤ 1 := by
+  have hsum : Summable (fun e : ℕ × ℤ => (fpDistPlus s p e).toReal) :=
+    ENNReal.summable_toReal (by rw [(fpDistPlus s p).tsum_coe]; exact ENNReal.one_ne_top)
+  have hle : ∀ e : ℕ × ℤ, (fpDistPlus s p e).toReal * Set.indicator S 1 (f e)
+      ≤ (fpDistPlus s p e).toReal := by
+    intro e
+    refine mul_le_of_le_one_right ENNReal.toReal_nonneg ?_
+    by_cases h : f e ∈ S
+    · simp [Set.indicator_of_mem h]
+    · simp [Set.indicator_of_notMem h]
+  have hsumL : Summable
+      (fun e : ℕ × ℤ => (fpDistPlus s p e).toReal * Set.indicator S 1 (f e)) :=
+    Summable.of_nonneg_of_le
+      (fun e => mul_nonneg ENNReal.toReal_nonneg
+        (Set.indicator_nonneg (fun _ _ => zero_le_one) _)) hle hsum
+  calc ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal * Set.indicator S 1 (f e)
+      ≤ ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal := Summable.tsum_le_tsum hle hsumL hsum
+    _ = 1 := fpDistPlus_tsum_toReal s p
+
 /-- **The size-`≥ s'` sub-cover** (paper `⋃_{Δ ∈ 𝒯, s_Δ ≥ s'} Δ`): the union of the
 family's triangles whose size is at least `s'`. Lemma 7.10 bounds the chance the
 renewal endpoint lands in this set. -/

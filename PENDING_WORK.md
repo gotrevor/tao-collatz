@@ -23,6 +23,9 @@ event `(j,l)+v_{[1,k+p]}` lies in a triangle `Δ' ∈ 𝒯` of size `s_{Δ'} ≥
 - Statement (in new `Sec7/ManyTriangles.lean`): `∃ C c > 0, ∀ A > 0, ∀ … ,
   Σ' e, (fpDistPlus s p e).toReal · 1_{bigTriangleSet}(j+e.1,l+e.2)
   ≤ C·A²(1+p)/s' + C·exp(−c·A²(1+p))`.
+- **Proof step 0 DONE (lap 51)**: `fpDistPlus_indicator_sum_le_one` (event prob ≤ 1
+  via PMF total mass) + `fpDistPlus_tsum_toReal` — discharges the (7.60) "trivial
+  otherwise" regime (`s' < C·A²(1+p)` ⟹ RHS > 1 ≥ LHS), and is general bookkeeping.
 - **Route** (7.60)–(7.65), hardest sub-step to probe next: the ≫s'-separated Σ
   counting (7.63)–(7.65) — triangles of size ≥ s' obeying (7.65) have apexes
   `(j_Δ', l_Δ)` that are ≫s'-separated (from Lemma 7.4 separation + (7.11) slope),
