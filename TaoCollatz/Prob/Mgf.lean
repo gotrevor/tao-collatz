@@ -321,12 +321,14 @@ theorem tiltZ_hold_ne_zero (l1 l2 : ℝ) : tiltZ hold (expW2 l1 l2) ≠ 0 := by
   · rw [expW2, ENNReal.ofReal_eq_zero] at h
     exact absurd h (not_le.mpr (Real.exp_pos _))
 
-/-- **`Hold` MGF finiteness on the box `|λᵢ| ≤ 1/50`** (paper (7.30), the Lemma 7.6
-engine): the conditional factorization is dominated by a geometric series with
-ratio `(3/4)·e^{λ₁}·Z_{ne3}(λ₂) ≤ 171/196 < 1`. -/
-theorem tiltZ_hold_ne_top {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 ≤ 1 / 50)
+/-- **`Hold` MGF numeric bound on the box `|λᵢ| ≤ 1/50`** (paper (7.30), the Lemma
+7.6 engine, quantitative form): the conditional factorization is dominated by a
+geometric series with ratio `(3/4)·e^{λ₁}·Z_{ne3}(λ₂) ≤ 171/196 < 1`, giving
+`Z_hold ≤ 1 + (1 - 171/196)⁻¹ = 221/25`. The explicit constant feeds the tilted
+atom-mass lower bounds of step (F3). -/
+theorem tiltZ_hold_le {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 ≤ 1 / 50)
     (h2lo : -(1 / 50) ≤ l2) (h2hi : l2 ≤ 1 / 50) :
-    tiltZ hold (expW2 l1 l2) ≠ ∞ := by
+    tiltZ hold (expW2 l1 l2) ≤ ENNReal.ofReal (221 / 25) := by
   have hZ0 := tiltZ_pascalNe3_ne_zero l2
   have hZle := tiltZ_pascalNe3_le h2lo h2hi
   have hZt : tiltZ pascalNe3 (expW l2) ≠ ∞ :=
@@ -412,14 +414,72 @@ theorem tiltZ_hold_ne_top {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 ≤
                 _ ≤ ENNReal.ofReal (171 / 196) :=
                     ENNReal.ofReal_le_ofReal (by norm_num)
         _ = ENNReal.ofReal (171 / 196) ^ j := one_mul _
-  refine ne_top_of_le_ne_top ?_ (ENNReal.tsum_le_tsum hbound)
+  refine le_trans (ENNReal.tsum_le_tsum hbound) ?_
   have hgeom : ∑' k : ℕ, ENNReal.ofReal (171 / 196) ^ (k - 1)
       = 1 + ∑' j : ℕ, ENNReal.ofReal (171 / 196) ^ j := by
     rw [tsum_eq_zero_add' ENNReal.summable]
     congr 1
   rw [hgeom, ENNReal.tsum_geometric]
-  refine ENNReal.add_ne_top.mpr ⟨ENNReal.one_ne_top, ENNReal.inv_ne_top.mpr ?_⟩
-  rw [Ne, tsub_eq_zero_iff_le, not_le]
-  exact ENNReal.ofReal_lt_one.mpr (by norm_num)
+  have hsub : (1 : ℝ≥0∞) - ENNReal.ofReal (171 / 196) = ENNReal.ofReal (25 / 196) := by
+    rw [show (1 : ℝ≥0∞) = ENNReal.ofReal 1 from ENNReal.ofReal_one.symm,
+      ← ENNReal.ofReal_sub 1 (by norm_num)]
+    norm_num
+  rw [hsub, ← ENNReal.ofReal_inv_of_pos (by norm_num),
+    show ((25 / 196 : ℝ))⁻¹ = 196 / 25 from by norm_num,
+    show (1 : ℝ≥0∞) = ENNReal.ofReal 1 from ENNReal.ofReal_one.symm,
+    ← ENNReal.ofReal_add (by norm_num) (by norm_num)]
+  exact ENNReal.ofReal_le_ofReal (by norm_num)
+
+/-- **`Hold` MGF finiteness on the box `|λᵢ| ≤ 1/50`** (paper (7.30), the Lemma 7.6
+engine): corollary of the numeric bound `tiltZ_hold_le`. -/
+theorem tiltZ_hold_ne_top {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 ≤ 1 / 50)
+    (h2lo : -(1 / 50) ≤ l2) (h2hi : l2 ≤ 1 / 50) :
+    tiltZ hold (expW2 l1 l2) ≠ ∞ :=
+  ne_top_of_le_ne_top ENNReal.ofReal_ne_top (tiltZ_hold_le h1lo h1hi h2lo h2hi)
+
+/-! ### Tilted `Hold` atom masses (step (F3b)) -/
+
+/-- **Tilted `Hold` atom-mass lower bound** ((F3b) of node S3): on the tilt box
+`|λᵢ| ≤ 1/50`, any `hold` atom `y` in the window `y₁ ≤ 2`, `0 ≤ y₂ ≤ 8` of mass
+`≥ 1/32` keeps mass `≥ 1/400` after tilting: the weight loses at most
+`e^{-1/5} ≥ 4/5` and the partition function is at most `221/25`
+(`(1/32)·(4/5)·(25/221) = 5/1768 > 1/400`). Feeds `charFn_decay_of_atoms` at
+`μ = 1/400` for the tilted walk — the four nondegeneracy atoms
+`(1,3), (2,5), (2,7), (2,8)` all lie in the window. -/
+theorem tilt_hold_apply_ge {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 ≤ 1 / 50)
+    (h2lo : -(1 / 50) ≤ l2) (h2hi : l2 ≤ 1 / 50) (y : ℕ × ℤ)
+    (hy1 : (y.1 : ℝ) ≤ 2) (hy2 : (0 : ℝ) ≤ (y.2 : ℝ)) (hy2' : (y.2 : ℝ) ≤ 8)
+    (hm : (1 / 32 : ℝ) ≤ (hold y).toReal) :
+    (1 / 400 : ℝ)
+      ≤ ((tilt hold (expW2 l1 l2) (tiltZ_hold_ne_zero l1 l2)
+          (tiltZ_hold_ne_top h1lo h1hi h2lo h2hi)) y).toReal := by
+  have hZ0 := tiltZ_hold_ne_zero l1 l2
+  have hZt := tiltZ_hold_ne_top h1lo h1hi h2lo h2hi
+  rw [tilt_apply, ENNReal.toReal_mul, ENNReal.toReal_mul]
+  -- weight lower bound: the exponent is ≥ -1/5 on the window
+  have hw : (4 / 5 : ℝ) ≤ (expW2 l1 l2 y).toReal := by
+    rw [expW2, ENNReal.toReal_ofReal (Real.exp_pos _).le]
+    have hy1' : (0 : ℝ) ≤ (y.1 : ℝ) := Nat.cast_nonneg _
+    have habs : -(1 / 5) ≤ l1 * (y.1 : ℝ) + l2 * (y.2 : ℝ) := by nlinarith
+    calc (4 / 5 : ℝ) = -(1 / 5) + 1 := by norm_num
+      _ ≤ Real.exp (-(1 / 5)) := Real.add_one_le_exp _
+      _ ≤ Real.exp (l1 * (y.1 : ℝ) + l2 * (y.2 : ℝ)) := Real.exp_le_exp.mpr habs
+  -- partition function upper bound in ℝ
+  have hZr : (tiltZ hold (expW2 l1 l2)).toReal ≤ 221 / 25 := by
+    have h := ENNReal.toReal_mono ENNReal.ofReal_ne_top
+      (tiltZ_hold_le h1lo h1hi h2lo h2hi)
+    rwa [ENNReal.toReal_ofReal (by norm_num)] at h
+  have hZpos : 0 < (tiltZ hold (expW2 l1 l2)).toReal := ENNReal.toReal_pos hZ0 hZt
+  have hinv : (25 / 221 : ℝ) ≤ ((tiltZ hold (expW2 l1 l2))⁻¹).toReal := by
+    rw [ENNReal.toReal_inv]
+    calc (25 / 221 : ℝ) = (221 / 25 : ℝ)⁻¹ := by norm_num
+      _ ≤ ((tiltZ hold (expW2 l1 l2)).toReal)⁻¹ := inv_anti₀ hZpos hZr
+  calc (1 / 400 : ℝ) ≤ 1 / 32 * (4 / 5) * (25 / 221) := by norm_num
+    _ ≤ (hold y).toReal * (expW2 l1 l2 y).toReal
+          * ((tiltZ hold (expW2 l1 l2))⁻¹).toReal :=
+        mul_le_mul
+          (mul_le_mul hm hw (by norm_num) ENNReal.toReal_nonneg)
+          hinv (by norm_num)
+          (mul_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg)
 
 end TaoCollatz
