@@ -25,7 +25,11 @@ HTML = HERE / "web/dep_graph_document.html"
 
 TINT = {"high": "#F5B8B0", "medium": "#F2DD9E", "low": "#BFE3C4"}
 
-ENV_RE = re.compile(r"\\label\{([A-Z]\d+)\}(.*?)\\end\{", re.DOTALL)
+ENV_RE = re.compile(
+    r"\\begin\{(definition|lemma|theorem|proposition|corollary)\}"
+    r".*?\\label\{([A-Z]\d+)\}(.*?)\\end\{",
+    re.DOTALL,
+)
 LAPSRISK_RE = re.compile(r"\\lapsrisk\{([^}]*)\}\{([^}]*)\}\{([^}]*)\}")
 NODE_RE = re.compile(r"(?P<pre>[;{]\s*)(?P<id>[A-Z]\d+)\s*\[(?P<attrs>[^\]]*)\]")
 
@@ -41,11 +45,11 @@ def sanitize(s: str) -> str:
     return SAFE_RE.sub("", s).strip()
 
 
-def read_estimates() -> dict[str, tuple[str, str, str]]:
-    """label -> (laps '8–15', risk word, conf '90%'), from content.tex."""
+def read_estimates() -> dict[str, tuple[str, str, str, str]]:
+    """label -> (laps '8–15', risk word, conf '90%', env type), from content.tex."""
     out = {}
     for m in ENV_RE.finditer(TEX.read_text()):
-        label, body = m.group(1), m.group(2)
+        env, label, body = m.group(1), m.group(2), m.group(3)
         lr = LAPSRISK_RE.search(body)
         if not lr:
             continue
@@ -55,7 +59,7 @@ def read_estimates() -> dict[str, tuple[str, str, str]]:
         # for the modal, not a hover tooltip (and their LaTeX is what broke the JS).
         conf_m = re.match(r"\s*(\d+\s*\\?%)", lr.group(3))
         conf = conf_m.group(1).replace("\\", "") if conf_m else sanitize(lr.group(3))[:24]
-        out[label] = (laps, risk_word, conf)
+        out[label] = (laps, risk_word, conf, env)
     return out
 
 
@@ -64,11 +68,24 @@ def patch_node(m: re.Match, est: dict) -> str:
     if "class=" in attrs:  # already processed (idempotency)
         return m.group(0)
     if node_id in est and "tooltip=" not in attrs:
-        laps, risk, conf = est[node_id]
+        laps, risk, conf, env = est[node_id]
+        # Definition nodes carry no proof obligation, so leanblueprint fills them
+        # green (dark green once the ancestor cone is green) as soon as their bound
+        # defs compile — while the badge tracks the node's still-open SUPPORT work
+        # (sorried helper lemmas in its files). Say so on the node itself, or a
+        # green box with a lap count reads as a contradiction.
+        line = f"support {laps}" if env == "definition" else laps
+        tip = (
+            f"{laps} support-lemma laps still open · risk {risk} · {conf} confidence "
+            "(green fill only means the bound defs compile - definitions have no "
+            "proof obligation in leanblueprint)"
+            if env == "definition"
+            else f"{laps} laps · risk {risk} · {conf} confidence"
+        )
         # Two-line label: id + lap range. The file holds \\n so the JS template
         # literal collapses it to \n, which graphviz renders as a line break.
-        attrs = re.sub(rf"label={node_id}\b", f'label="{node_id}\\\\n{laps}"', attrs)
-        attrs += f',\t\ttooltip="{laps} laps · risk {risk} · {conf} confidence"'
+        attrs = re.sub(rf"label={node_id}\b", f'label="{node_id}\\\\n{line}"', attrs)
+        attrs += f',\t\ttooltip="{tip}"'
         if "fillcolor" not in attrs:  # never override a leanblueprint status fill
             attrs += f',\t\tstyle=filled,\t\tfillcolor="{TINT[risk]}"'
     # EVERY filled node — our risk tints AND leanblueprint's own status fills
@@ -89,6 +106,11 @@ LEGEND_EXTRA = (
     "second line = estimated treadmill laps)</dd>"
     "\n      \n      <dt>Pale amber background</dt><dd>campaign risk: <em>medium</em></dd>"
     "\n      \n      <dt>Pale green background</dt><dd>campaign risk: <em>low</em></dd>"
+    "\n      \n      <dt>Green box, “support N–M” label</dt><dd>a "
+    "<em>definition</em> node: its bound defs compile (that is all the green fill "
+    "certifies — definitions have no proof obligation), while N–M laps of "
+    "support-lemma work inside its files are still open; the lap line drops when "
+    "that work is done</dd>"
 )
 
 # Filled nodes always carry a light pastel (risk tint or leanblueprint status
