@@ -5,6 +5,7 @@ import TaoCollatz.Prob.Basic
 import TaoCollatz.Prob.Geometric
 import TaoCollatz.Prob.LocalBound
 import TaoCollatz.Prob.CharFn
+import TaoCollatz.Prob.CharFn1
 import TaoCollatz.Prob.Tilt
 import TaoCollatz.Prob.Mgf
 import TaoCollatz.Prob.LocalInstances

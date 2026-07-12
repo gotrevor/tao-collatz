@@ -1,5 +1,50 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 44 (2026-07-12, seventh box session): d=1 CIRCLE METHOD BUILT (CharFn1.lean)
+
+NEW `Prob/CharFn1.lean` — the ENTIRE d=1 Fourier engine derived from the 2-D
+module via the first-coordinate embedding `embMod N L = (L mod N, 0)` (zero
+re-proving of Fourier machinery):
+- `charFn_map_embMod_snd` — embedded charFn is ξ₂-free (mass off the axis is 0),
+  so the 2-D inversion `N⁻² Σ_ξ` collapses to `N⁻¹ Σ_j`;
+- `iidSum_nat_apply_toReal_le` — P(S_n = L) ≤ N⁻¹ Σ_j ‖φ(j)‖ⁿ;
+- `charFn_embMod_decay_of_adjacent_atoms` — decay 1 − 16μ²(nd j/N)² from atom
+  masses ≥ μ at ADJACENT a, a+1 (no triangle step; abstract r, so applies to
+  tilted projected walks);
+- `iidSum_nat_apply_le_center_of_decay` — the d=1 center bound 32c/√(1+n) at
+  N = ⌊√n⌋+1 (mirror of the 2-D Gaussian summation, single factor).
+All axiom-clean (checked via full-build warnings only; #print pending next lap
+commit). Gotchas: field_simp overshoots `ring` (drop it / add norm_num);
+`(embMod N L).2 = 0` needs explicit rfl after rw.
+
+**NEXT — assemble the three d=1 local bounds** (LocalInstances.lean sorries):
+per walk p ∈ {geomHalf (atoms 1,2; masses 1/2,1/4), geomQuarter (atoms 1,2;
+1/4,3/16), pascal (atoms 2,3; 1/4,1/4)}:
+1. Tilted atom-mass lower bounds (mirror tilt_hold_apply_ge, easier):
+   tilt p (expW λ) at atom d: p_d·e^{λd}/Z ≥ p_d·e^{-3/200}/Z; Z ≤ quad(1/200)
+   ≤ 1.03 ⇒ tilted mass ≥ (3/16)·0.985/1.03 ≥ 1/6 uniform ⇒ μ = 1/6,
+   c = (16μ²)⁻¹ = 9/4... use c = 4 (≥ 1 and ≥ (16μ²)⁻¹). VALIDATE numerically.
+   Transfer through map: PMF.apply_le_map_apply to (tilt p).map (embMod N).
+2. Tilted center bound: iidSum_nat_apply_le_center_of_decay at the tilted walk
+   (c uniform on box) ⇒ P_tilt(S̃_n = L) ≤ 128/√(1+n)-ish =: C₀/√(1+n).
+3. d=1 Chernoff bridge (mirror holdSum_apply_le_chernoff, 1-D weights expW):
+   P(S_n = L) ≤ C₀/√(1+n)·e^{n(mλ+1000λ²) − λL} via iidSum_apply_eq_tilt +
+   quad bounds (already proved: tiltZ_{geomHalf,geomQuarter,pascal}_le_quad).
+   Note tiltZ_expW_ne_zero gives hZ0; hZt from quad bound.
+4. Assembly = hold_local_bound pattern verbatim with √(1+n) and 1-D clip
+   (chernoff_clip_le SIGNED version is in HoldLocal — either import or the
+   nonneg one + case split on sign of dev; dev = L − mn ∈ ℝ signed: need the
+   SIGNED clip: move chernoff_clip_le from HoldLocal to LocalInstances, or
+   restate; then Gweight matching via exp_neg_min_le_Gweight + |dev| symmetry:
+   exponent bound uses min(dev²/4000n, |dev|/400) — matches Gweight(c·(L−mn))
+   since Gweight is even in its argument (|·| and square) — CHECK: Gweight t x
+   uses x² and |x| only ⇒ Gweight(c·dev) = Gweight(c·|dev|) ✓ need tiny lemma
+   Gweight_abs or just work with x = c*(L−mn) directly, matching hold pattern
+   where M was ‖dev‖ ≥ 0 — here pass |dev| and rewrite by evenness).
+   Consider a GENERIC `iidSum_nat_local_of_quad_center` mirroring
+   iidSum_nat_tail_of_quad to do all three at once (hypotheses: quad bound +
+   tilted center bound). Then S3 FULLY GREEN.
+
 ## Lap 43 (2026-07-12, seventh box session): ALL THREE d=1 TAIL BOUNDS PROVED
 
 **`geomHalf_tail_bound`, `geomQuarter_tail_bound`, `pascal_tail_bound` are
