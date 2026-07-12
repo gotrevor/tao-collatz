@@ -401,15 +401,27 @@ to hit many white points --- unless it is trapped in a large triangle, which is 
 \section{Setup and the phase functions}
 
 \begin{definition}[§7 setup: character, pairing, factorization]\label{X1}
+  \lean{fCond, xArg, cexpect_pairing}
   \uses{C4, S2}
-  \notready
+  \leanok
 The character \(\chi\) (paper (7.1)) and the reduction of Prop~1.17 to a bound on
 \(\mathbb{E}\,\chi\) through the reversed form (1.26); the \textbf{pairing}
 \(b_j = a_{2j-1}+a_{2j}\sim\mathrm{Pascal}\) that groups the geometric valuations two at a
 time; and the conditional \textbf{factorization} (7.4)/(7.5) of the Fourier coefficient into a
 product of per-pair factors \(f\) (with the low-order piece \(g\) split off).
-% TODO-PRECISE: no canonical Lean name for the §7.1 setup in SKELETON-SPEC yet.
-\lapsrisk{6--12}{medium}{80\%}
+\emph{Pinned + ratified 2026-07-12 (judge pass 10, lap 53, paper pp.33--35)}:
+\texttt{cexpect\_pairing} is the (7.5) bound verbatim --- LHS = the (7.2) reversed character
+sum over \(\mathrm{Geom}(2)^n\), RHS = the \(\mathrm{Pascal}^{\lfloor n/2\rfloor}\)
+expectation of \(\prod_j \|f(x_j,b_j)\|\), the \(|g|\le 1\) leftover drop built in, and no
+\(3\nmid\xi\) hypothesis needed (pure algebra, a harmless strengthening).  \texttt{fCond} is
+(7.4) in concrete uniform-pair form (junk value \(0\) off Pascal's support, documented);
+\texttt{xArg} carries the 0-based \(j\)-shift (RATIFY-4).  Character algebra, (7.6), and
+Lemma~7.2's exact value \(\|f(x,3)\| = |\cos\pi\theta|\) are \emph{proved};
+\texttt{key\_fourier\_decay} (Prop~7.1) moved drift-free from \texttt{Holding.lean} and is
+now a \emph{theorem} from the pairing + damping + Prop~7.3, and \texttt{charFn\_decay}
+(Prop~1.17) is derived across the (1.26) seam.  Open: the \texttt{cexpect\_pairing}
+induction itself (the lone X1 sorry).
+\lapsrisk{4--8}{medium --- statement pinned, factorization algebra proved}{80\% (2026-07-12 judge pass 10: (7.5) ratified vs pp.33--35)}
 \end{definition}
 
 \begin{lemma}[Phase identities and white-point cancellation; Lemma 7.2]\label{X2}

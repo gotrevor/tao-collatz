@@ -129,6 +129,8 @@
     <span class="definition_thmtitle">§7 setup: character, pairing, factorization</span>
     <div class="thm_header_extras">
 
+    
+    ✓
         </div>
     <div class="thm_header_hidden_extras">
 
@@ -158,11 +160,34 @@
 
     
     
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/fCond" class="lean_decl">fCond</a></li>
+          
+          <li><a href="../docs/find/#doc/xArg" class="lean_decl">xArg</a></li>
+          
+          <li><a href="../docs/find/#doc/cexpect_pairing" class="lean_decl">cexpect_pairing</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
         </div>
   </div>
   <div class="definition_thmcontent">
-  <p>  The character \(\chi \) (paper (7.1)) and the reduction of Prop&#160;1.17 to a bound on \(\mathbb {E}\, \chi \) through the reversed form (1.26); the <b class="bfseries">pairing</b> \(b_j = a_{2j-1}+a_{2j}\sim \mathrm{Pascal}\) that groups the geometric valuations two at a time; and the conditional <b class="bfseries">factorization</b> (7.4)/(7.5) of the Fourier coefficient into a product of per-pair factors \(f\) (with the low-order piece \(g\) split off). </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 6–12 treadmill laps; risk <b class="bfseries">medium</b> (80% confidence the node completes as stated).</i> </p>
+  <p>   The character \(\chi \) (paper (7.1)) and the reduction of Prop&#160;1.17 to a bound on \(\mathbb {E}\, \chi \) through the reversed form (1.26); the <b class="bfseries">pairing</b> \(b_j = a_{2j-1}+a_{2j}\sim \mathrm{Pascal}\) that groups the geometric valuations two at a time; and the conditional <b class="bfseries">factorization</b> (7.4)/(7.5) of the Fourier coefficient into a product of per-pair factors \(f\) (with the low-order piece \(g\) split off). <em>Pinned + ratified 2026-07-12 (judge pass 10, lap 53, paper pp.33–35)</em>: <span class="ttfamily">cexpect_pairing</span> is the (7.5) bound verbatim — LHS = the (7.2) reversed character sum over \(\mathrm{Geom}(2)^n\), RHS = the \(\mathrm{Pascal}^{\lfloor n/2\rfloor }\) expectation of \(\prod _j \| f(x_j,b_j)\| \), the \(|g|\le 1\) leftover drop built in, and no \(3\nmid \xi \) hypothesis needed (pure algebra, a harmless strengthening). <span class="ttfamily">fCond</span> is (7.4) in concrete uniform-pair form (junk value \(0\) off Pascal’s support, documented); <span class="ttfamily">xArg</span> carries the 0-based \(j\)-shift (RATIFY-4). Character algebra, (7.6), and Lemma&#160;7.2’s exact value \(\| f(x,3)\|  = |\cos \pi \theta |\) are <em>proved</em>; <span class="ttfamily">key_fourier_decay</span> (Prop&#160;7.1) moved drift-free from <span class="ttfamily">Holding.lean</span> and is now a <em>theorem</em> from the pairing + damping + Prop&#160;7.3, and <span class="ttfamily">charFn_decay</span> (Prop&#160;1.17) is derived across the (1.26) seam. Open: the <span class="ttfamily">cexpect_pairing</span> induction itself (the lone X1 sorry). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 4–8 treadmill laps; risk <b class="bfseries">medium — statement pinned, factorization algebra proved</b> (80% (2026-07-12 judge pass 10: (7.5) ratified vs pp.33–35) confidence the node completes as stated).</i> </p>
 
   </div>
 </div>

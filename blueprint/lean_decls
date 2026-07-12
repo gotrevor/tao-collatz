@@ -41,6 +41,9 @@ passTime
 passLoc
 stabilization
 fine_scale_mixing
+fCond
+xArg
+cexpect_pairing
 sfrac
 θq
 θq_succ_j

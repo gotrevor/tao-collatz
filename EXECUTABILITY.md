@@ -98,6 +98,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 7](judge/pass-07.md) — 2026-07-12: **NODE X6 COMPLETE** ✅ (Lemma 7.7; Case-2 kernels unblocked).
 - [Pass 8](judge/pass-08.md) — 2026-07-12, pp.50–54: **X10 + X9 pinned + ratified** (zero un-pinned crux nodes); apex core proved; graph-semantics audit; density spot-check.
 - [Pass 9](judge/pass-09.md) — 2026-07-12: **PAPER GAP in Lemma 7.9 CONFIRMED** 🕳️ (p.51 display banks damping through k₁; true sum stops at t₁); X9 re-ratified at exp(2ε); 10 axiom checks (encounter fold + block bridge) clean; KB literature-holes entry #5.
+- [Pass 10](judge/pass-10.md) — 2026-07-12, pp.33–35: **X1 pinned + ratified** (`cexpect_pairing` = (7.5) verbatim; Lemma 7.2 exact value proved; `key_fourier_decay` + `charFn_decay` drift-free moves/derivations); un-pinned down to C8 + X5; ladder-vs-graph color vocabulary clarified.
 
 ## Live judge state 📍 (update each pass)
 
@@ -105,9 +106,9 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 `[propext, Classical.choice, Quot.sound]`): **X3** (2026-07-10), **S3** (pass 5),
 **X6** (pass 7).
 
-**Statements pinned + ratified**: every ledger node except **C8, X1, X5** (no pinned
-Lean statement yet). Latest: X8 (pass 6), X10 (pass 8), X9 (pass 8; **re-ratified at
-exp(2ε)** pass 9 after the paper-gap route finding).
+**Statements pinned + ratified**: every ledger node except **C8, X5** (no pinned
+Lean statement yet). Latest: X10 (pass 8), X9 (pass 8; **re-ratified at exp(2ε)**
+pass 9 after the paper-gap route finding), X1 (pass 10).
 
 **Open riders / queued fronts**:
 - **X11 ε-rider** (pass 8): when ratifying X11 against pp.55–56 (UNREAD), verify the
@@ -121,8 +122,12 @@ exp(2ε)** pass 9 after the paper-gap route finding).
 - **Watch: (7.59)-shaped white-exit variant** — the corrected X9 route needs a white-
   exit statement WITHOUT the Case-2 budget hypothesis; a new pin to ratify when it
   lands (re-read (7.59) context pp.50–51 then).
-- **Unread paper fronts**: §5 first-passage (C8), §6 Fourier reduction (X1), Lemma 7.6
-  joint-tail/aperiodicity (X5, when statements land), §7.5 assembly pp.55–56 (X11).
+- **Axiom-check queue** (next session boundary): lap-53 proved decls — `eC_norm`,
+  `eC_add`, `eC_intCast`, `eC_char_add`, `fCond_norm_le_one`, `norm_one_add_eC_neg`,
+  `fCond_three_norm`, `prod_fCond_le_damping`, `expect_mono_le`, `cexpect_map`.
+- **Unread paper fronts**: §5 first-passage (C8), Lemma 7.6 joint-tail/aperiodicity
+  (X5, when statements land), §7.5 assembly pp.55–56 (X11). pp.33–35 read + ratified
+  pass 10.
 - **Trust-surface notes**: `fpDist` / `fpDistPlus` encode stopped-walk laws at the
   design level (strong Markov absorbed — D1, ratified passes 2 & 8);
   `fpDist_white_exit` (X8 kernel) is load-bearing for BOTH X8 and X9.
