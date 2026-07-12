@@ -1636,8 +1636,10 @@ the X9 induction; sibling of the Case-2 kernel `fpDist_white_exit` in
 `BlackEdge.lean`). Identical statement with the Case-2 budget hypothesis
 `s ≤ m/log²m` REMOVED (any triangle point qualifies — the (7.52) bound
 `budget_le_of_mem_triangle` caps `s = O(m)` for free) and the mass sharpened to
-`p₀ > 1/2` (the chain cap `encChainX_le_exp` needs it; numerically the white-exit
-mass is ≈ 0.99, harness check 9, 2026-07-10).
+`51/100 ≤ p₀` (explicit margin per judge pass 16: the consumer's
+`ε₀ = min(1/100, (2p₀−1)/2)` must clear X11's fixed `ε = 10⁻⁴`, which bare
+`1/2 < p₀` does not certify; numerically the white-exit mass is ≈ 0.99,
+harness check 9, 2026-07-10).
 
 Route: as for `fpDist_white_exit` — Lemma 7.7 (`fpDist_location_bound`, X6)
 concentrates the endpoint at `(j + s/4 + O(√(1+s)), l_Δ + O(1))`; every endpoint
@@ -1648,7 +1650,7 @@ endpoint is white; in-strip since `s/4 + O(√s) ≤ 0.8·m + O(√m) < m`. The
 `edgeWeight` degradation, not for whiteness — this deep variant is the same
 geometry with a larger (still `O(m)`) budget. -/
 theorem fpDist_white_exit_deep :
-    ∃ p₀ : ℝ, 1 / 2 < p₀ ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
+    ∃ p₀ : ℝ, 51 / 100 ≤ p₀ ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
       ∀ F : TriangleFamily n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
       ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
@@ -1807,7 +1809,7 @@ theorem many_triangles_white :
   obtain ⟨p₀, hp₀, Cthr, hkernel⟩ := fpDist_white_exit_deep
   -- normalize the mass into (1/2, 1]
   set p₁ : ℝ := min p₀ 1 with hp₁def
-  have hp : 1 / 2 < p₁ := lt_min hp₀ (by norm_num)
+  have hp : 1 / 2 < p₁ := lt_min (by linarith) (by norm_num)
   have hp1 : p₁ ≤ 1 := min_le_right _ _
   refine ⟨min (1 / 100) ((2 * p₁ - 1) / 2),
     lt_min (by norm_num) (by nlinarith), min_le_left _ _, Cthr, ?_⟩
