@@ -6,6 +6,12 @@ geomHalf
 geomQuarter
 pascal
 pascalNe3
+Gweight
+geomHalf_local_bound
+geomQuarter_local_bound
+pascal_local_bound
+hold_local_bound
+hold_tail_bound
 eC
 osc
 col
@@ -43,5 +49,11 @@ hold
 Q_rec
 Q_boundary
 renewal_white_encounters
+fpDist
+fpDist_location_bound
+Qm
+prop_7_8
+Q_white_case1
+Q_polynomial_decay
 charFn_decay
 key_fourier_decay

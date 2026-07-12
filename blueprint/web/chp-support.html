@@ -261,6 +261,8 @@
     <span class="lemma_thmtitle">Local 2-D Gaussian-type bound; Lemma 2.2</span>
     <div class="thm_header_extras">
 
+    
+    ✓
         </div>
     <div class="thm_header_hidden_extras">
 
@@ -288,10 +290,39 @@
 
     
     
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/Gweight" class="lean_decl">Gweight</a></li>
+          
+          <li><a href="../docs/find/#doc/geomHalf_local_bound" class="lean_decl">geomHalf_local_bound</a></li>
+          
+          <li><a href="../docs/find/#doc/geomQuarter_local_bound" class="lean_decl">geomQuarter_local_bound</a></li>
+          
+          <li><a href="../docs/find/#doc/pascal_local_bound" class="lean_decl">pascal_local_bound</a></li>
+          
+          <li><a href="../docs/find/#doc/hold_local_bound" class="lean_decl">hold_local_bound</a></li>
+          
+          <li><a href="../docs/find/#doc/hold_tail_bound" class="lean_decl">hold_tail_bound</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
         </div>
   </div>
   <div class="lemma_thmcontent">
-  <p>  <b class="bfseries">Risk kernel 1.</b> Lemma&#160;2.2(i)(ii): local-limit / Gaussian-type <em>upper</em> bounds on the point masses of sums of \(k\) i.i.d. copies of the relevant lattice distributions (\(\mathrm{Geom}(2)\), \(\mathrm{Geom}(4)\), \(\mathrm{Pascal}\), and the holding law \(\mathrm{Hold}\) of §7), uniform in the shift, of the shape \(\mathbb {P}(S_k = v)\ll k^{-d/2}\) with \(d\) the lattice dimension; together with the weight function \(G_n\) (paper (2.2)). Proved not by the paper’s contour/Morera route but by explicit generating functions plus real-variable exponential tilting (design decision D5): for the \(d=2\) holding sums this is the circle-method form \(\mathbb {P}(S_k=v)=(2\pi )^{-2}M(\lambda )^k e^{-\lambda \cdot v}\int _{[-\pi ,\pi ]^2} |\varphi _\lambda (t)|^k\, dt\) with \(\varphi _\lambda ,M\) explicit rational functions. </p>
+  <p>   <b class="bfseries">Risk kernel 1.</b> Lemma&#160;2.2(i)(ii): local-limit / Gaussian-type <em>upper</em> bounds on the point masses of sums of \(k\) i.i.d. copies of the relevant lattice distributions (\(\mathrm{Geom}(2)\), \(\mathrm{Geom}(4)\), \(\mathrm{Pascal}\), and the holding law \(\mathrm{Hold}\) of §7), uniform in the shift, of the shape \(\mathbb {P}(S_k = v)\ll k^{-d/2}\) with \(d\) the lattice dimension; together with the weight function \(G_n\) (paper (2.2)). Proved not by the paper’s contour/Morera route but by explicit generating functions plus real-variable exponential tilting (design decision D5): for the \(d=2\) holding sums this is the circle-method form \(\mathbb {P}(S_k=v)=(2\pi )^{-2}M(\lambda )^k e^{-\lambda \cdot v}\int _{[-\pi ,\pi ]^2} |\varphi _\lambda (t)|^k\, dt\) with \(\varphi _\lambda ,M\) explicit rational functions. Statements judge-ratified 2026-07-12 vs pp.14–15: per-instance forms in <span class="ttfamily">Prob/LocalBound.lean</span> (scalar) and <span class="ttfamily">Sec7/Unroll.lean</span> (\(d=2\) Hold, with the correct \((n+1)^{-1}\) prefactor and Euclidean norm fed to the scalar \(G\)); the \(G_{1+n}\)-for-\(G_n\) index is constants-equivalent (in-paper precedent: Lemma 7.7). </p>
 <p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 20–40 treadmill laps; risk <b class="bfseries">high — risk kernel 1</b> (70% confidence the node completes as stated).</i> </p>
 
   </div>

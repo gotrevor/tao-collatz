@@ -11,9 +11,9 @@
 %  reproduced verbatim here a `% TODO-PRECISE` marks the coarse spot.
 %
 %  STATUS DISCIPLINE (updated 2026-07-10, post judge pass):
-%    * Statement-`\leanok` is set on the 18 nodes whose `\lean{}`-bound statements are
-%      landed, compiled, and judge-ratified (S1 S2 S4 C1--C7 C9 C10 X2 X3 X4 X6 X7 X11).
-%      The 7 nodes with no canonical Lean name yet (S3 C8 X1 X5 X8 X9 X10) keep `\notready` until
+%    * Statement-`\leanok` is set on the 19 nodes whose `\lean{}`-bound statements are
+%      landed, compiled, and judge-ratified (S1--S4 C1--C7 C9 C10 X2 X3 X4 X6 X7 X11).
+%      The 6 nodes with no canonical Lean name yet (C8 X1 X5 X8 X9 X10) keep `\notready` until
 %      their statements are pinned.  PROOF-`\leanok` (green background) is set ONLY on a
 %      dated judge-run `#print axioms` verification of the bound decls -- the manual form
 %      of the future BlueprintAudit reconciler; never on a worker's claim alone.
@@ -155,8 +155,9 @@ functions and the one-dimensional Chernoff upper-tail bounds derived from them.
 \end{definition}
 
 \begin{lemma}[Local 2-D Gaussian-type bound; Lemma 2.2]\label{S3}
+  \lean{Gweight, geomHalf_local_bound, geomQuarter_local_bound, pascal_local_bound, hold_local_bound, hold_tail_bound}
   \uses{S2}
-  \notready
+  \leanok
 \textbf{Risk kernel 1.}  Lemma~2.2(i)(ii): local-limit / Gaussian-type \emph{upper} bounds on
 the point masses of sums of \(k\) i.i.d.\ copies of the relevant lattice distributions
 (\(\mathrm{Geom}(2)\), \(\mathrm{Geom}(4)\), \(\mathrm{Pascal}\), and the holding law
@@ -167,7 +168,10 @@ generating functions plus real-variable exponential tilting (design decision D5)
 \(d=2\) holding sums this is the circle-method form
 \(\mathbb{P}(S_k=v)=(2\pi)^{-2}M(\lambda)^k e^{-\lambda\cdot v}\int_{[-\pi,\pi]^2}
 |\varphi_\lambda(t)|^k\,dt\) with \(\varphi_\lambda,M\) explicit rational functions.
-% TODO-PRECISE: exact Gaussian window / constant in Lemma 2.2(i)(ii) not transcribed here.
+Statements judge-ratified 2026-07-12 vs pp.14--15: per-instance forms in
+\texttt{Prob/LocalBound.lean} (scalar) and \texttt{Sec7/Unroll.lean} (\(d=2\) Hold, with
+the correct \((n+1)^{-1}\) prefactor and Euclidean norm fed to the scalar \(G\)); the
+\(G_{1+n}\)-for-\(G_n\) index is constants-equivalent (in-paper precedent: Lemma 7.7).
 \lapsrisk{20--40}{high --- risk kernel 1}{70\%}
 \end{lemma}
 
