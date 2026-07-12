@@ -6,35 +6,37 @@ detail lives in PENDING_WORK.md.*
 
 ---
 
-## CURRENT DIRECTIVE (lap 55 deep reflection, 2026-07-12)
+## CURRENT DIRECTIVE (lap 56 review, 2026-07-12)
 
-**THE objective**: close Lemma 7.9 (X9) — starting with the near-edge design
-decision that this reflection found to be a STATEMENT-truth risk — then take the
-two remaining §7 kernels in risk order. The RED→YELLOW phase is essentially
-complete (only C8 un-pinned); the campaign now converts pinned YELLOW sorries
-into closed nodes, hardest-first.
+**THE objective**: prove the **white-exit kernel** `fpDist_white_exit_deep` —
+now X9's ONLY open input (`many_triangles_white` verified closed modulo exactly
+it, `#print axioms` = trust base + `sorryAx` via that one sorry) AND the geometry
+shared by X8's Case-2 twin `fpDist_white_exit`. This is the route-decisive
+blocker: if `p₀ > 1/2` cannot be certified through X6's constants vs the
+ε=10⁻⁴ separation, the ∃C fallback re-pin is forced (a redesign), so it is
+hardest-first. Steps 1–2 of the lap-55 directive (depth gate, close
+`many_triangles_white`) are DONE.
 
 **Mandated next move** (in order):
-1. **X9 near-edge fix**: implement the **depth-gated encounter fold** — `encStep`
-   counts an encounter only at depth `≥ Cthr` (gate constant = the white-exit
-   threshold). Keeps `exp(2ε)`; consumer-verified vs pp.49/55 (Case 3's (7.54)
-   split keeps all consumed encounters deep). Rework `encExpect_of_edge` →
-   shallow-freeze; flag the edited encoding for judge re-ratification (pass-12
-   tripwire). FALLBACK if the gate fights: re-pin `many_triangles_white` at
-   `∃C` absolute (deterministic `e^{ε·Cthr}` edge cap; also consumer-verified —
-   p.55 Markov absorbs any absolute constant). Do not grind the old statement.
-2. **Close `many_triangles_white`** — the Z-induction gluing; every internal
-   lemma is already proved (block bridge, vertex LP, coupling, wander, two-mass;
-   the two-mass step is monotone in `Z` above the fixed point, so the edge
-   constant folds in free).
-3. **`fpDist_white_exit_deep`** — X9's only external input. Prove it GENERAL and
-   then DERIVE X8's `fpDist_white_exit` from it (kernel merge — the Case-2 budget
-   hypothesis is only used for edgeWeight, per its docstring). If certifying
-   `p₀ > 1/2` through X6's constants fights, any explicit `c₀ > ~ε` suffices
-   (chain value `exp(O(ε/c₀))` is consumable) — weaken, don't stall.
-4. **X10 assembly**: FIRST name and prove the fpDistPlus location bound
-   (Lemma 7.7 ⋆ p iid Hold steps); then E′ tails (X6+S3 applications); then the
-   separated-Σ mass sum (existing Gaussian-AP engine + proved apex separation).
+1. **`fpDist_white_exit_deep`** (THE active move). Prove it GENERAL, then DERIVE
+   X8's `fpDist_white_exit` from it (kernel merge — the Case-2 budget hypothesis
+   `s ≤ m/log²m` is used downstream ONLY for `edgeWeight`, per the docstring).
+   Route (both twins share it): Lemma 7.7 `fpDist_location_bound` (X6, PROVED)
+   concentrates the endpoint at `(j+s/4+O(√(1+s)), l_Δ+O(1))`;
+   `fpDist_support_snd_gt` clears the triangle top; (7.11) slope + X3
+   `apex_separation` exclude every other triangle → white; in-strip since
+   `s/4+O(√s) ≪ m`. Decompose into named sub-`sorry`s in `src/` (support-clears,
+   slope-excludes-others, in-strip, mass≥p₀) — that RAISES the src count and is
+   the progress. If certifying `p₀ > 1/2` through X6's constants fights, any
+   explicit `c₀ > ~ε` suffices (chain value `exp(O(ε/c₀))` consumable) — weaken
+   the pin, don't stall; but the deep variant is pinned at 1/2 for the chain cap
+   `encChainX_le_exp`, so the weakening propagates to `many_triangles_white`.
+2. **X10 assembly** (`triangle_encounter_le`): FIRST name and prove the
+   fpDistPlus location bound (Lemma 7.7 ⋆ p iid Hold steps); then E′ tails
+   (X6+S3 applications); then the separated-Σ mass sum (existing Gaussian-AP
+   engine + proved `apex_separation`).
+3. **X8/X11 assembly**: `Q_black_edge_case2` (mechanical once both kernels land),
+   then `fpDist_edgeWeight_le`, then `Q_black_edge_case3` (X11 (7.53)–(7.67)).
 
 **Forbidden drift**:
 - No spine leaves (SyracRV / ValuationDist / Basic / Statement / Sec5 / Sec6 /
@@ -63,6 +65,10 @@ truth.
   finitely many inequalities, numerics-checkable first.
 
 ### Directive history
+- lap 56 (2026-07-12, review): X9 `many_triangles_white` verified CLOSED modulo
+  exactly `fpDist_white_exit_deep` (`#print axioms` = trust base + `sorryAx`);
+  promote the shared white-exit kernel to THE active move (steps 1–2 of lap-55
+  done); route CONTINUE, no trigger fired.
 - lap 55 (2026-07-12, deep reflection): RED→YELLOW phase done (C8 excepted) —
   pivot to closing X9 (near-edge depth-gate fix first; statement-truth risk),
   then white-exit kernel (merged twins), then X10 assembly. T1 cleared, T2

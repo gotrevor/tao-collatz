@@ -2,28 +2,32 @@
 
 **First-anywhere Lean 4 formalization of Tao 2019 "Almost all Collatz orbits
 attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3280 jobs) ·
-**Updated**: lap 55 (reflection) · 2026-07-12 · `6876501`
+**Updated**: lap 56 (review) · 2026-07-12 · `cb1156b`
 
 ## Where it stands
 
 Multi-month campaign; the §7 crux (Prop 1.17) is the risk concentration and is
-under active assault. **Six crux nodes are CLOSED and axiom-clean** (re-verified
-this lap with real `#print axioms` runs): S3 (Lemma 2.2 engine), X3 (Lemma 7.4
-triangles), X6 (Lemma 7.7 first passage), X1 ((7.4)/(7.5) pairing), X2 (Lemma
-7.2), X5 (Lemma 7.6); X4/X7 (D6 Q-recursion, Q_m + Case 1) are also effectively
-complete (files sorry-free). Prop 1.17 is a theorem over exactly the Prop 7.8
-chain: **7 open crux sorries** (BlackEdge ×4, ManyTriangles ×3), plus 13
-deliberate spine stubs downstream. The X9 assembly is one design decision away
-from downhill: this lap's reflection found the pinned `exp(2ε)` is at risk of
-being *false as stated* in the near-edge regime (the paper's own proof glosses
-it) and identified two consumer-verified fixes (depth-gated encounter fold,
-recommended; ∃C re-pin, fallback) — see PENDING_WORK Reflection. X10's route
-was re-grounded against pp.52–54: all ingredients precedented by existing
-machinery; it is volume, not novelty. 20 open `sorry`s in `src/` total (earlier
-24/26 counts were stale).
+under active assault. **Seven crux nodes are CLOSED and axiom-clean**: S3
+(Lemma 2.2 engine), X3 (Lemma 7.4 triangles), X6 (Lemma 7.7 first passage), X1
+((7.4)/(7.5) pairing), X2 (Lemma 7.2), X5 (Lemma 7.6), and now **X9 Lemma 7.9**
+— `many_triangles_white` verified CLOSED (`#print axioms` = trust base +
+`sorryAx` via exactly ONE input, the Y-induction `encExpect_entered_le` is
+axiom-clean). X4/X7 (D6 Q-recursion, Q_m + Case 1) are also complete (files
+sorry-free). Prop 1.17 is a theorem over exactly the Prop 7.8 chain: **6 open
+crux sorries** (BlackEdge ×4, ManyTriangles ×2), plus 13 deliberate spine stubs.
+The active target is the **white-exit kernel** `fpDist_white_exit_deep` —
+X9's only remaining input AND the geometry shared by X8's Case-2 twin
+`fpDist_white_exit`; proving it general closes X9 whole and unblocks X8. X10's
+route was re-grounded against pp.52–54: precedented volume, not novelty. 19 open
+`sorry`s in `src/` total.
 
 ## What's happened (newest first)
 
+- **lap 56 (2026-07-12, REVIEW)**: verified X9 `many_triangles_white` CLOSED
+  modulo exactly `fpDist_white_exit_deep` (real `#print axioms`: trust base +
+  `sorryAx`; `encExpect_entered_le` clean). Route verdict **CONTINUE**, no
+  trigger fired. Directive promoted the shared white-exit kernel to THE active
+  move (lap-55 steps 1–2 done). Confirmed Aristotle idle (no job in flight).
 - **lap 55 (2026-07-12, DEEP REFLECTION)**: route verdict **CONTINUE** (T1
   cleared lap 52; T2 source-grounded as unlikely — the (7.65) separation comes
   from Lemma 7.4 integer-disjointness, already proved as `apex_separation`).
@@ -72,13 +76,16 @@ machinery; it is volume, not novelty. 20 open `sorry`s in `src/` total (earlier
 ## Outstanding
 
 ### Short-term (mirror PENDING_WORK top)
-- **X9 near-edge design** (the mandated next move): depth-gate the encounter
-  fold (keep exp(2ε)); fallback ∃C re-pin. Both consumer-verified vs p.49/p.55.
-  Then close `many_triangles_white` (all internal lemmas already proved).
-- **`fpDist_white_exit_deep`** — X9's only external input; prove general, then
-  derive X8's Case-2 twin `fpDist_white_exit` from it (kernel merge).
-- **X10 assembly**: fpDistPlus location bound (7.48)+p-steps prerequisite →
-  escape event E′ tails → separated-Σ mass sum (existing Gaussian-AP engine).
+- **`fpDist_white_exit_deep`** (THE mandated next move) — X9's only remaining
+  input AND X8's Case-2 twin geometry. Prove general (route: X6 location bound
+  + `fpDist_support_snd_gt` top-clear + X3 `apex_separation` slope-exclusion +
+  in-strip), then derive `fpDist_white_exit` from it (kernel merge). Decompose
+  into named sub-`sorry`s in `src/`.
+- **X10 assembly** (`triangle_encounter_le`): fpDistPlus location bound
+  (7.48)+p-steps prerequisite → escape event E′ tails → separated-Σ mass sum
+  (existing Gaussian-AP engine).
+- **X8/X11 assembly**: `Q_black_edge_case2` (mechanical once kernels land),
+  `fpDist_edgeWeight_le`, `Q_black_edge_case3` (X11 (7.53)–(7.67)).
 
 ### Long-term
 - X11 assembly inside `Q_black_edge_case3` ((7.53)–(7.56), (7.66)–(7.67)); X8
@@ -106,9 +113,9 @@ the §7 crux is built bottom-up. Ledger re-run this lap (2026-07-12, real
 | X1 `cexpect_pairing` | (7.4)/(7.5) | `[propext, choice, Quot.sound]` | 🟢 done, clean |
 | X2 `white_cos_bound` / `fCond_three_norm` | Lemma 7.2 | `[propext, choice, Quot.sound]` | 🟢 done, clean |
 | X5 `hold_mean_fst` / `hold_aperiodic` | Lemma 7.6 | `[propext, choice, Quot.sound]` | 🟢 done, clean |
-| X9 machinery (block bridge, coupling, LP, wander ×10) | p.50–51 route | `[propext, choice, Quot.sound]` | 🟢 clean (internal lemmas) |
+| X9 `many_triangles_white` (Lemma 7.9) | (7.57) pp.50–51 | trust base + `sorryAx` | 🟢 CLOSED modulo exactly `fpDist_white_exit_deep`; `encExpect_entered_le` clean |
 | X10 `apex_separation` | (7.65) geometry | `[propext, choice, Quot.sound]` | 🟢 clean (geometric core) |
-| Prop 1.17 `charFn_decay` / Prop 7.1 / Prop 7.3 | §7 headline | trust base + `sorryAx` | 🟡 theorem over the 7 open Prop-7.8-chain sorries |
+| Prop 1.17 `charFn_decay` / Prop 7.1 / Prop 7.3 | §7 headline | trust base + `sorryAx` | 🟡 theorem over the 6 open Prop-7.8-chain sorries |
 
 Math-axiom count on every completed node = **0** (trust base only). No 🔴
 (open-conjecture) axioms anywhere — correct, since Thm 1.3 is unconditional. No
