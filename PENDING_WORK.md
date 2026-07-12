@@ -1,5 +1,40 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 38 (2026-07-12, sixth box session): (G2b-1) FIRST-COORD MGF BOUND PROVED
+
+`Prob/Mgf.lean`: `exp_le_one_add_add_two_sq` (e^u ≤ 1+u+2u², u ≤ 1/2, via
+(1-u)⁻¹), `frac_closed_le` (monotone evaluation of a(1-r)⁻¹, free numerator),
+**`tiltZ_hold_fst`** (EXACT closed form Z(μ,0) = (e^μ/4)(1-(3/4)e^μ)⁻¹, every μ),
+**`tiltZ_hold_fst_le`** (Z(μ,0) ≤ ofReal(1+4μ+32μ²) on |μ| ≤ 1/100 — mean 4 first
+order exact). AXIOM-CLEAN. Numerics validated pre-formalization: env1 margin
+comfortable, K₁ = 32 (even 16 works); box 1/100 (box 1/25 FAILS for the second
+coordinate — K₂ would blow past 600).
+
+**(G2b-2) next — second-coordinate closed form + bound** (numerics already
+validated: K₂ = 400 works at box 1/100 with E = 1+u+2u² envelope; (3/4)S < 1 holds):
+1. `tiltZ_hold_snd` closed form: Z(0,μ) = ofReal(e^{3μ}/4)·(1-(3/4)·Z_ne3(μ))⁻¹ —
+   wait, Z_ne3 is ℝ≥0∞-valued; state as = ofReal(e^{3μ}/4) * (1 - (3·4⁻¹)*tiltZ
+   pascalNe3 (expW μ))⁻¹ (ENNReal form, from tiltZ_hold_factor at l1 = 0 + geometric
+   sum — needs ENNReal.tsum_geometric on ratio (3/4)Z_ne3 which needs no side
+   condition, both sides ∞ together).
+2. `tiltZ_pascalNe3_le_poly`: Z_ne3(μ) ≤ ofReal((4/3)(X/(1-X))² - (1/3)(1+3μ)),
+   X = E/2 — from tiltZ_pascalNe3_add: cancel the atom term via
+   ENNReal.add_le_add_iff_right (pattern of tiltZ_pascalNe3_le, now symbolic);
+   uses e^{3μ} ≥ 1+3μ (add_one_le_exp) on the subtracted side and
+   Z_pascal = Z_gh² ≤ ofReal((X'/(1-X'))²) (tiltZ_pascal + geom_closed_le square).
+3. `tiltZ_hold_snd_le`: ≤ ofReal(1+16μ+400μ²) on |μ| ≤ 1/100: frac_closed_le with
+   numerator e^{3μ} ≤ E³ (pow of envelope) wait e^{3μ} = (e^μ)³ ≤ E³ ✓, ratio
+   (3/4)S; the final real inequality E³/4 ≤ (1+16μ+400μ²)(1-(3/4)S(μ)) after
+   clearing (1-X)² — nlinarith, may need staged haves (degree 8; if nlinarith
+   stalls: intermediate bound S ≤ rational quadratic first, numerically:
+   S(u) ≈ 1+(13/3)·3u?? no: S'(0) = 13/3·... just S ≤ 1 + 13u + 60u² check
+   numerically then chain).
+4. Combine via tiltZ_expW2_sq_le + sqrt-free helper (x² ≤ ofReal(a)·ofReal(b) →
+   x ≤ ofReal(√(ab)) avoided: state target Z ≤ ofReal(exp(4λ₁+16λ₂+K̄|λ|²)) and
+   verify square: need x ≤ y from x² ≤ y²: ENNReal.pow_le_pow_iff_left or
+   contrapositive with pow_lt_pow_left, y = ofReal exp ≠ 0).
+Then (F5) final assembly (see lap 36 entry).
+
 ## Lap 37 (2026-07-12, sixth box session): (G2a) CAUCHY–SCHWARZ MGF SPLIT PROVED
 
 `Prob/Tilt.lean`: **`tsum_mul_mul_sq_le`** — weighted Cauchy–Schwarz
