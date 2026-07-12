@@ -1,5 +1,16 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 54 (cont): **X2 CLOSED** — `white_cos_bound` (Lemma 7.2 sharp half) PROVED; Sec7/White.lean sorry-free
+
+Chain (all mathlib-elementary): white ⟹ `ε < |θ| ≤ 1/2` (sfrac = `abs_sub_round`)
+⟹ `cos(πθ) ≥ 0` ⟹ `|cos πθ| ≤ 1 − 2θ²` (`Real.cos_le_one_sub_mul_cos_sq`,
+Jordan-type; `2/π²·(πθ)² = 2θ²` exactly) `≤ 1 − 2ε² ≤ 1 + (−ε³) ≤ exp(−ε³)`
+(`Real.add_one_le_exp`), numerics at ε = 1/10⁴ by nlinarith.
+**Prop 1.17's sorry surface is now EXACTLY the Prop 7.8 chain** (BlackEdge ×4,
+ManyTriangles ×2). Next: X9 R-induction assembly (lap-52 route), X10 Σ-count
+(lap-51 route), pin C8 (last RED statement).
+
+
 ## Lap 54 (2026-07-12): **X5 CLOSED (RED→GREEN in one lap)** — Lemma 7.6 (p.42, Hold basics) fully machine-checked
 
 New `Sec7/HoldBasics.lean`, SORRY-FREE, axiom-clean. Clause map: exponential

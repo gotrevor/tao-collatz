@@ -22,6 +22,10 @@ crux, cheap once §7 lands. 24 open `sorry`s in `src/`.
 
 ## What's happened (newest first)
 
+- **lap 54 cont (2026-07-12)**: **X2 CLOSED** — `white_cos_bound` (Lemma 7.2
+  sharp half) proved axiom-clean via mathlib's Jordan-type quadratic cos bound;
+  `Sec7/White.lean` sorry-free. Prop 1.17's surface is now exactly the Prop 7.8
+  chain (BlackEdge ×4, ManyTriangles ×2).
 - **lap 54 (2026-07-12)** `9321b5c`: **X5 CLOSED** — Lemma 7.6 (Hold basics,
   p.42) fully machine-checked: mean (4,16) + aperiodicity proved axiom-clean in
   new `Sec7/HoldBasics.lean` (tail/Lemma-2.2 clauses already held by S3). Only
