@@ -696,6 +696,8 @@
     <span class="lemma_thmtitle">Many triangles \(\Rightarrow \) many white points; Lemma 7.9</span>
     <div class="thm_header_extras">
 
+    
+    ✓
         </div>
     <div class="thm_header_hidden_extras">
 
@@ -725,11 +727,38 @@
 
     
     
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/many_triangles_white" class="lean_decl">many_triangles_white</a></li>
+          
+          <li><a href="../docs/find/#doc/EncState" class="lean_decl">EncState</a></li>
+          
+          <li><a href="../docs/find/#doc/encStep" class="lean_decl">encStep</a></li>
+          
+          <li><a href="../docs/find/#doc/encVal" class="lean_decl">encVal</a></li>
+          
+          <li><a href="../docs/find/#doc/encExpect" class="lean_decl">encExpect</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
         </div>
   </div>
   <div class="lemma_thmcontent">
-  <p>  <b class="bfseries">Lemma 7.9</b>: an induction on \(R\) over the \(Q\)-recursion (node&#160;<a href="chp-crux.html#X4">7.4</a>) showing that a walk crossing many triangles must encounter many white points, so the accumulated \(e^{-\varepsilon ^3}\) factors give the exponential decay. </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 8–15 treadmill laps; risk <b class="bfseries">high</b> (70% confidence the node completes as stated).</i> </p>
+  <p>   <b class="bfseries">Lemma 7.9</b> (paper (7.57), pp.50–51): a walk crossing many triangles must encounter many white points — the banked white damping beats the \(\varepsilon \cdot \min (r,R)\) credit. <em>Statement pinned + ratified 2026-07-12 (judge pass 8, lap 52)</em>: the stopping-time data \((t_i, \Delta _i, r)\) is a left fold (<span class="ttfamily">EncState</span>/<span class="ttfamily">encStep</span>: position, clearing barrier, encounter count, running + banked white counts), and <span class="ttfamily">many_triangles_white</span> states \(\texttt{encExpect} \le e^{\varepsilon }\) for all horizons \(T\), all \(R \ge 1\), all \(\varepsilon \le \varepsilon _0\). Three ratified deltas vs the paper: <em>finite horizon</em> \(\forall T\) (D6 — no infinite product measure; route-trigger T1 did NOT fire); <em>\(\exists \varepsilon _0\, \forall \varepsilon \le \varepsilon _0\)</em> in place of the fixed section constant (rider: verify at node&#160;<a href="chp-crux.html#X11">7.11</a> that the p.55 consumption chooses \(R\) after \(\varepsilon \)); <em>index shift</em> (triangle/black read at the phase point \((q_1-1, q_2)\), matching the ratified Case-2 forms). The geometric prerequisites (<span class="ttfamily">not_mem_two</span>, \(\Delta (q)\)) and the head-peel recursion <span class="ttfamily">encExpect_succ</span> (the p.51 conditioning skeleton) are already <em>proved</em>; open: the \(R\)-induction + the path\(\to \)<span class="ttfamily">fpDist</span> bridge, closed by <span class="ttfamily">fpDist_white_exit</span> (node&#160;<a href="chp-crux.html#X8">7.8</a>). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 5–10 treadmill laps; risk <b class="bfseries">medium — statement pinned, head-peel recursion proved</b> (75% (2026-07-12 judge: encoding ratified vs pp.50–51; R-induction + bridge open) confidence the node completes as stated).</i> </p>
 
   </div>
 </div>
@@ -742,6 +771,8 @@
     <span class="lemma_thmtitle">Large triangles rarely encountered; Lemma 7.10</span>
     <div class="thm_header_extras">
 
+    
+    ✓
         </div>
     <div class="thm_header_hidden_extras">
 
@@ -764,6 +795,8 @@
           
           <li><a href="chp-crux.html#X6">Lemma 7.6</a></li>
           
+          <li><a href="chp-support.html#S3">Lemma 2.3</a></li>
+          
         </ul>
     
       </div>
@@ -771,11 +804,36 @@
 
     
     
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/triangle_encounter_le" class="lean_decl">triangle_encounter_le</a></li>
+          
+          <li><a href="../docs/find/#doc/fpDistPlus" class="lean_decl">fpDistPlus</a></li>
+          
+          <li><a href="../docs/find/#doc/bigTriangleSet" class="lean_decl">bigTriangleSet</a></li>
+          
+          <li><a href="../docs/find/#doc/TriangleFamily.not_mem_two" class="lean_decl">TriangleFamily.not_mem_two</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
         </div>
   </div>
   <div class="lemma_thmcontent">
-  <p>  <b class="bfseries">Risk kernel 3b.</b> <b class="bfseries">Lemma 7.10</b> (paper (7.60)–(7.65)): after a lengthy crossing, large triangles are rarely encountered, by a separated-\(\Sigma \) counting argument over the triangle family (node&#160;<a href="chp-crux.html#X3">7.3</a>) using the first-passage location law (node&#160;<a href="chp-crux.html#X6">7.6</a>). This is the complementary tail to Case&#160;2. </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 15–30 treadmill laps; risk <b class="bfseries">high — risk kernel 3b</b> (65% (2026-07-10: row-disjointness + \(\Sigma \) \(j\)-separation verified on real triangle inventory) confidence the node completes as stated).</i> </p>
+  <p>   <b class="bfseries">Risk kernel 3b.</b> <b class="bfseries">Lemma 7.10</b> (paper (7.60)–(7.65)): after a lengthy crossing, large triangles are rarely encountered, by a separated-\(\Sigma \) counting argument over the triangle family (node&#160;<a href="chp-crux.html#X3">7.3</a>) using the first-passage location law (node&#160;<a href="chp-crux.html#X6">7.6</a>). This is the complementary tail to Case&#160;2. <em>Statement pinned + ratified 2026-07-12 (judge pass 8, paper pp.51–54)</em>: <span class="ttfamily">triangle_encounter_le</span> states \(\mathbb {P}(E_{p,s'}) \le C A^2(1+p)/s' + C e^{-cA^2(1+p)}\) over the endpoint law \(\texttt{fpDistPlus}\; s\; p = \texttt{fpDist}\; s \star \texttt{iidSum hold}\; p\) — the D1 encoding of \(v_{[1,\mathbf{k}+p]}\); the strong-Markov identification is absorbed into the encoding, with the same trust status as <span class="ttfamily">fpDist</span> itself. Quantifying \(\forall A{\gt}0\) with uniform \(C,c\) strengthens the paper’s fixed-\(A\) form, which the p.54 union bound requires. The (7.65) apex-interval disjointness step (<span class="ttfamily">TriangleFamily.not_mem_two</span>) is already <em>proved</em> from node&#160;<a href="chp-crux.html#X3">7.3</a>’s separation. </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 10–20 treadmill laps; risk <b class="bfseries">high — risk kernel 3b, statement pinned</b> (70% (2026-07-12 judge: statement ratified vs pp.51–54; separated-\(\Sigma \) summation still open) confidence the node completes as stated).</i> </p>
 
   </div>
 </div>

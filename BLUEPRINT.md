@@ -185,8 +185,8 @@ buys nothing. A completed node is the *only* estimate that can't be wrong.
 | X6 | ✅ **COMPLETE (laps 46–50; judge pass 7, 2026-07-12)** — Lemma 7.7 first-passage location distribution; `fpDist_location_bound` + `renewalMass_bound` judge-verified `[propext, Classical.choice, Quot.sound]`; FpLocation.lean sorry-free | p.43 | 4 | done | — | S3, X5 |
 | X7 | `Q_m` (7.38); Prop 7.8 skeleton; **Case 1** (white point) (7.42)–(7.43) | §7.4 pp.45–46 | 2 | 4–8 | 85% | X4 |
 | X8 | **Case 2** (shallow in triangle): (7.44)–(7.51) — statements pinned + ratified (judge pass 6); endpoint step + budget PROVED; open: weight degradation + white-exit (both consume X6) | pp.46–48 | 5 | 8–16 | 75% | X3, X6, X7 |
-| X9 | **Lemma 7.9** many-triangles ⟹ many-white-points (induction on R over the Q-recursion) | pp.50–51 | 4 | 8–15 | 70% | X4, X8 |
-| X10 | **Lemma 7.10** large triangles rarely encountered after a lengthy crossing ((7.60)–(7.65), separated-Σ counting) | pp.51–54 | 5 | 15–30 | 65% | X3, X6 |
+| X9 | **Lemma 7.9** many-triangles ⟹ many-white-points — statement pinned + ratified (judge pass 8, 2026-07-12): encounter-fold D6 encoding (`EncState` left fold, `many_triangles_white` ∀T ∀R≥1 ∀ε≤ε₀; T1 did NOT fire); head-peel `encExpect_succ` + frozen-state + white-coupling + Δ(q) prereqs PROVED; open: R-induction + path→fpDist bridge (consumes fpDist_white_exit) | pp.50–51 | 4 | 5–10 | 75% | X4, X8 |
+| X10 | **Lemma 7.10** large triangles rarely encountered ((7.60)–(7.65), separated-Σ counting) — statement pinned + ratified (judge pass 8, 2026-07-12): `triangle_encounter_le` over `fpDistPlus = fpDist ⋆ iidSum hold p` (D1 encoding, strong-Markov absorbed); (7.65) disjointness step (not_mem_two) PROVED; open: escape event E′ + separated-Σ summation | pp.51–54 | 5 | 10–20 | 70% | X3, X6, S3 |
 | X11 | **Case 3** assembly (E_*, F_*, R = ⌊A²/ε⁴⌋, deterministic claim (7.67)); **Prop 7.8 → 7.3 → 7.1 → Prop 1.17** | pp.48–49, 54–56 | 4 | 10–20 | 70% | X9, X10 |
 
 **Totals**: ~17k–28k lines, **~250–450 laps**. With g-i-calibrated lap throughput this is a

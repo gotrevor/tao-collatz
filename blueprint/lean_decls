@@ -65,6 +65,15 @@ Q_fp_endpoint_le
 fpDist_edgeWeight_le
 fpDist_white_exit
 budget_le_of_mem_triangle
+many_triangles_white
+EncState
+encStep
+encVal
+encExpect
+triangle_encounter_le
+fpDistPlus
+bigTriangleSet
+TriangleFamily.not_mem_two
 charFn_decay
 key_fourier_decay
 Q_black_edge_case3
