@@ -81,3 +81,27 @@ X2 proof-leanok + badge dropped; X5 statement+proof leanok, bindings added, badg
 dropped; X9 bindings += `encChainX, encounter_vertex_bound, fpDist_white_exit_deep`,
 rider (b) re-worded (embodied), badge re-rated {4–8}{medium}{75%}; X0-adjacent
 trust note updated (Prop 1.17 trust = Prop 7.8 chain only).
+
+## Addendum — lap 54 cont-3/cont-4 + handoff (`6c7522c`, `4734fc9`, `6876501`)
+
+Two more box commits landed mid-pass; extended this pass to the full lap-54
+boundary rather than opening a pass 13.
+
+- **Six more X9 internal lemmas, all judge-verified clean** (dated run at handoff
+  HEAD, rebuild green): `encExpect_normalize(_init)` (CLAIM-G lockstep coupling —
+  mid-flight state ≤ e^{ε·count}·max(e^{−banked},e^{−cumWhite})·fresh state),
+  `encChainX_fixed`, `encounter_two_mass_bound` (the LP collapsed to two masses —
+  white-credit branches ≤ 1 pathwise), `encExpect_of_edge` (out-of-strip freeze),
+  `encExpect_wander_le`. These are route machinery, not paper-statement pins — no
+  ratification obligation beyond the axiom runs. X9's open surface is now exactly
+  {`many_triangles_white` final Z-induction gluing, `fpDist_white_exit_deep`}.
+- **TRIPWIRE — near-edge design decision**: the box flags that fresh states with
+  `m = n/2 − pos₁ < Cthr` fall outside `fpDist_white_exit_deep`'s hypotheses, and
+  one candidate fix is to *widen the deep kernel's statement*. Any edit to that
+  ratified statement REVOKES today's ratification until re-ratified vs (7.59) —
+  watch the next diffs for it.
+- **Sweep incident (benign, noted)**: `4734fc9` (box `git add -A` on the shared
+  tree) committed the judge's in-flight pass-12 files (this file, EXECUTABILITY,
+  content.tex) mid-edit. Content verified intact at HEAD — the box's own
+  content.tex delta was zero. Per the no-provenance-fussing doctrine: no rewrite;
+  just recording that judge-file authorship in lap-54's history is mixed.

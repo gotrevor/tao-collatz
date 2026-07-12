@@ -186,7 +186,7 @@
         </div>
   </div>
   <div class="definition_thmcontent">
-  <p>   The character \(\chi \) (paper (7.1)) and the reduction of Prop&#160;1.17 to a bound on \(\mathbb {E}\, \chi \) through the reversed form (1.26); the <b class="bfseries">pairing</b> \(b_j = a_{2j-1}+a_{2j}\sim \mathrm{Pascal}\) that groups the geometric valuations two at a time; and the conditional <b class="bfseries">factorization</b> (7.4)/(7.5) of the Fourier coefficient into a product of per-pair factors \(f\) (with the low-order piece \(g\) split off). <em>Pinned + ratified 2026-07-12 (judge pass 10, lap 53, paper pp.33–35)</em>: <span class="ttfamily">cexpect_pairing</span> is the (7.5) bound verbatim — LHS = the (7.2) reversed character sum over \(\mathrm{Geom}(2)^n\), RHS = the \(\mathrm{Pascal}^{\lfloor n/2\rfloor }\) expectation of \(\prod _j \| f(x_j,b_j)\| \), the \(|g|\le 1\) leftover drop built in, and no \(3\nmid \xi \) hypothesis needed (pure algebra, a harmless strengthening). <span class="ttfamily">fCond</span> is (7.4) in concrete uniform-pair form (junk value \(0\) off Pascal’s support, documented); <span class="ttfamily">xArg</span> carries the 0-based \(j\)-shift (RATIFY-4). Character algebra, (7.6), and Lemma&#160;7.2’s exact value \(\| f(x,3)\|  = |\cos \pi \theta |\) are <em>proved</em>; <span class="ttfamily">key_fourier_decay</span> (Prop&#160;7.1) moved drift-free from <span class="ttfamily">Holding.lean</span> and is now a <em>theorem</em> from the pairing + damping + Prop&#160;7.3, and <span class="ttfamily">charFn_decay</span> (Prop&#160;1.17) is derived across the (1.26) seam. <b class="bfseries">COMPLETE (lap 53; judge pass 11, 2026-07-12)</b>: <span class="ttfamily">cexpect_pairing</span> PROVED via the generalized pair-peel <span class="ttfamily">cexpect_pairing_gen</span> (statement drift-free) and judge-verified \([\mathrm{propext}, \mathrm{Classical.choice}, \mathrm{Quot.sound}]\); Prop&#160;1.17’s remaining trust runs only through <span class="ttfamily">white_cos_bound</span> (node&#160;<a href="chp-crux.html#X2">7.2</a>) and the Prop&#160;7.8 chain. </p>
+  <p>   The character \(\chi \) (paper (7.1)) and the reduction of Prop&#160;1.17 to a bound on \(\mathbb {E}\, \chi \) through the reversed form (1.26); the <b class="bfseries">pairing</b> \(b_j = a_{2j-1}+a_{2j}\sim \mathrm{Pascal}\) that groups the geometric valuations two at a time; and the conditional <b class="bfseries">factorization</b> (7.4)/(7.5) of the Fourier coefficient into a product of per-pair factors \(f\) (with the low-order piece \(g\) split off). <em>Pinned + ratified 2026-07-12 (judge pass 10, lap 53, paper pp.33–35)</em>: <span class="ttfamily">cexpect_pairing</span> is the (7.5) bound verbatim — LHS = the (7.2) reversed character sum over \(\mathrm{Geom}(2)^n\), RHS = the \(\mathrm{Pascal}^{\lfloor n/2\rfloor }\) expectation of \(\prod _j \| f(x_j,b_j)\| \), the \(|g|\le 1\) leftover drop built in, and no \(3\nmid \xi \) hypothesis needed (pure algebra, a harmless strengthening). <span class="ttfamily">fCond</span> is (7.4) in concrete uniform-pair form (junk value \(0\) off Pascal’s support, documented); <span class="ttfamily">xArg</span> carries the 0-based \(j\)-shift (RATIFY-4). Character algebra, (7.6), and Lemma&#160;7.2’s exact value \(\| f(x,3)\|  = |\cos \pi \theta |\) are <em>proved</em>; <span class="ttfamily">key_fourier_decay</span> (Prop&#160;7.1) moved drift-free from <span class="ttfamily">Holding.lean</span> and is now a <em>theorem</em> from the pairing + damping + Prop&#160;7.3, and <span class="ttfamily">charFn_decay</span> (Prop&#160;1.17) is derived across the (1.26) seam. <b class="bfseries">COMPLETE (lap 53; judge pass 11, 2026-07-12)</b>: <span class="ttfamily">cexpect_pairing</span> PROVED via the generalized pair-peel <span class="ttfamily">cexpect_pairing_gen</span> (statement drift-free) and judge-verified \([\mathrm{propext}, \mathrm{Classical.choice}, \mathrm{Quot.sound}]\); Prop&#160;1.17’s remaining trust runs only through the Prop&#160;7.8 chain (<span class="ttfamily">white_cos_bound</span> closed lap 54, judge pass 12). </p>
 
   </div>
 </div>
@@ -205,6 +205,9 @@
     <div class="thm_header_hidden_extras">
 
     <a class="icon proof" href="chp-crux.html#X2">#</a>
+    
+    <a class="icon proof" href="chp-crux.html#a0000000029"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
     
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
@@ -263,11 +266,22 @@
   </div>
   <div class="lemma_thmcontent">
   <p>   The phase \(\theta (j,l)\) (paper (7.7)/(7.8)), a signed fractional part of \(\xi \cdot 3^{2j-2}\cdot 2^{\, 1-l}/3^n\), and its two scaling identities (7.13)/(7.14): there are integers \(k\) with </p>
-<div class="displaymath" id="a0000000029">
+<div class="displaymath" id="a0000000030">
   \[  \theta (j{+}1,l) = 9\, \theta (j,l) + k, \qquad \theta (j,l{-}1) = 2\, \theta (j,l) + k .  \]
 </div>
 <p> The black/white dichotomy (7.9) with \(\varepsilon = 10^{-4}\): a point is <em>black</em> when \(|\theta (j,l)|\le \varepsilon \), <em>white</em> otherwise. <b class="bfseries">Lemma 7.2</b> (white-point cancellation): at a white point the per-pair factor contracts, \(|f| \le |\cos (\pi \theta )| \le \exp (-\varepsilon ^3)\). </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 4–8 treadmill laps; risk <b class="bfseries">low</b> (90% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000029">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>COMPLETE (campaign laps 53–54; judge pass 12, 2026-07-12). Both halves of Lemma 7.2: <span class="ttfamily">fCond_three_norm</span> (exact value at the paired point, lap 53) and <span class="ttfamily">white_cos_bound</span> (the Taylor half, lap 54): white \(\Rightarrow \varepsilon {\lt} |\theta | \le 1/2 \Rightarrow |\cos \pi \theta | \le 1 - 2\theta ^2 \le 1 - 2\varepsilon ^2 \le e^{-\varepsilon ^3}\) (via mathlib’s <span class="ttfamily">Real.cos_le_one_sub_mul_cos_sq</span>). Judge-run <span class="ttfamily">#print axioms</span> (2026-07-12): [propext, Classical.choice, Quot.sound] on both; the damping consumer <span class="ttfamily">prod_fCond_le_damping</span> closed with it. </p>
 
   </div>
 </div>
@@ -288,7 +302,7 @@
 
     <a class="icon proof" href="chp-crux.html#X3">#</a>
     
-    <a class="icon proof" href="chp-crux.html#a0000000030"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+    <a class="icon proof" href="chp-crux.html#a0000000031"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
 </a>
     
     
@@ -338,14 +352,14 @@
   </div>
   <div class="lemma_thmcontent">
   <p>   <b class="bfseries">Risk kernel 2.</b> With a triangle (paper (7.11)) the set \(\{ (j,l) : j_0\le j,\  l\le l_0,\  (j-j_0)\log 9 + (l_0-l)\log 2 \le s\} \), Lemma&#160;7.4 asserts the black set inside the strip is a disjoint union of triangles that are (i) confined to the strip \(j+1\le \lfloor n/2\rfloor - \tfrac {1}{10}\log (1/\varepsilon )\), and (ii) pairwise Euclidean-separated by at least \(\tfrac {1}{10}\log (1/\varepsilon )\): </p>
-<div class="displaymath" id="a0000000031">
+<div class="displaymath" id="a0000000032">
   \[  \{ (j,l) : j{+}1\le \lfloor n/2\rfloor ,\  \text{black}(j,l)\}  \; =\;  \bigsqcup _{t\in T} \mathrm{triangle}(t).  \]
 </div>
 <p> Proved through the phase identities (7.12)–(7.15), the weakly-black claims (i)–(iii), the \(l^*/j^*\) construction, and Claim&#160;(\(*\)) Cases&#160;1–3. </p>
 
   </div>
 </div>
-<div class="proof_wrapper" id="a0000000030">
+<div class="proof_wrapper" id="a0000000031">
   <div class="proof_heading">
     <span class="proof_caption">
     Proof
@@ -427,7 +441,7 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   The <b class="bfseries">holding law</b> \(\mathrm{Hold}\) on \(\mathbb {N}\times \mathbb {Z}\) (§7.3), whose first coordinate is always \(\ge 1\), governing how the renewal walk steps between pairs. Design decision D6 replaces the paper’s infinite renewal product (7.34) by the <em>defined</em> downward recursion \(Q:\mathbb {N}\times \mathbb {Z}\to \mathbb {R}\) (paper (7.35)), </p>
-<div class="displaymath" id="a0000000032">
+<div class="displaymath" id="a0000000033">
   \[  Q(j,l) = 1 \  \  (j{\gt}\lfloor n/2\rfloor ); \qquad Q(j,l) = e^{-\varepsilon ^3\mathbf1_W(j,l)}\cdot \! \! \sum _{d}\! (\mathrm{Hold}\, d)\, Q\bigl((j,l)+d\bigr) \  \  (j\le \lfloor n/2\rfloor ),  \]
 </div>
 <p> well-founded on \(\lfloor n/2\rfloor - j\) (Hold’s first coordinate is \(\ge 1\)), with \(0\le Q\le 1\). The bridge (7.28)/(7.34)–(7.36) makes \(\mathbb {E}\, Q(\mathrm{Hold})\ll _A n^{-A}\) equivalent to <b class="bfseries">Proposition 7.3</b> (the renewal white-encounter count, in the finite-vector form over \(\mathrm{Pascal}^{\otimes \lfloor n/2\rfloor }\)). This node exists to validate the D6 finitization. </p>
@@ -444,10 +458,15 @@
     <span class="lemma_thmtitle">Holding-law basics; Lemma 7.6</span>
     <div class="thm_header_extras">
 
+    
+    ✓
         </div>
     <div class="thm_header_hidden_extras">
 
     <a class="icon proof" href="chp-crux.html#X5">#</a>
+    
+    <a class="icon proof" href="chp-crux.html#a0000000034"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
     
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
@@ -471,11 +490,45 @@
 
     
     
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/hold_mean_fst" class="lean_decl">hold_mean_fst</a></li>
+          
+          <li><a href="../docs/find/#doc/hold_mean_snd" class="lean_decl">hold_mean_snd</a></li>
+          
+          <li><a href="../docs/find/#doc/hold_aperiodic" class="lean_decl">hold_aperiodic</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
         </div>
   </div>
   <div class="lemma_thmcontent">
-  <p>  <b class="bfseries">Lemma 7.6</b>: the explicit distribution of \(\mathrm{Hold}\), its exponential tail, aperiodicity, and mean vector \((4,16)\). These are the renewal-theory inputs (drift and spread) for the first-passage analysis of the walk. </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 4–8 treadmill laps; risk <b class="bfseries">low</b> (85% confidence the node completes as stated).</i> </p>
+  <p>   <b class="bfseries">Lemma 7.6</b> (paper p.42): the explicit distribution of \(\mathrm{Hold}\), its exponential tail, aperiodicity, and mean vector \((4,16)\). These are the renewal-theory inputs (drift and spread) for the first-passage analysis of the walk. Clause map: <em>exponential tail</em> + the “in particular” Lemma 2.2 conclusion are the S3 engine (<span class="ttfamily">hold_tail_bound</span>/<span class="ttfamily">hold_local_bound</span>, proved directly by the paper’s own Chernoff route (7.29)–(7.30)); <em>mean \((4,16)\)</em> = <span class="ttfamily">hold_mean_fst/snd</span> (direct sum over the explicit construction, \(\mathbb {E}\mathrm{Pascal}' = 13/3\) per (7.29)); <em>aperiodicity</em> = <span class="ttfamily">hold_aperiodic</span> (support \(\subseteq x + H\) forces \(H = \top \), the paper’s own witnesses \((1,3)\), \((1,3)+(1,b)\)). </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000034">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>COMPLETE (campaign lap 54; judge pass 12, 2026-07-12). Statements ratified vs paper p.42 (previously an unread front): the (7.29) mass function is character-exact, the means follow the paper’s own arithmetic, and the coset formulation is faithful. Judge-run <span class="ttfamily">#print axioms</span> (2026-07-12): [propext, Classical.choice, Quot.sound] on all fifteen <span class="ttfamily">HoldBasics</span> declarations. </p>
 
   </div>
 </div>
@@ -495,7 +548,7 @@
 
     <a class="icon proof" href="chp-crux.html#X6">#</a>
     
-    <a class="icon proof" href="chp-crux.html#a0000000033"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+    <a class="icon proof" href="chp-crux.html#a0000000035"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
 </a>
     
     
@@ -550,7 +603,7 @@
 
   </div>
 </div>
-<div class="proof_wrapper" id="a0000000033">
+<div class="proof_wrapper" id="a0000000035">
   <div class="proof_heading">
     <span class="proof_caption">
     Proof
@@ -776,6 +829,12 @@
           
           <li><a href="../docs/find/#doc/encExpect" class="lean_decl">encExpect</a></li>
           
+          <li><a href="../docs/find/#doc/encChainX" class="lean_decl">encChainX</a></li>
+          
+          <li><a href="../docs/find/#doc/encounter_vertex_bound" class="lean_decl">encounter_vertex_bound</a></li>
+          
+          <li><a href="../docs/find/#doc/fpDist_white_exit_deep" class="lean_decl">fpDist_white_exit_deep</a></li>
+          
         </ul>
     
       </div>
@@ -785,8 +844,8 @@
         </div>
   </div>
   <div class="lemma_thmcontent">
-  <p>   <b class="bfseries">Lemma 7.9</b> (paper (7.57), pp.50–51): a walk crossing many triangles must encounter many white points — the banked white damping beats the \(\varepsilon \cdot \min (r,R)\) credit. <em>Statement pinned + ratified 2026-07-12 (judge pass 8, lap 52; re-ratified pass 9 after the constant correction)</em>: the stopping-time data \((t_i, \Delta _i, r)\) is a left fold (<span class="ttfamily">EncState</span>/<span class="ttfamily">encStep</span>: position, clearing barrier, encounter count, running + banked white counts), and <span class="ttfamily">many_triangles_white</span> states \(\texttt{encExpect} \le e^{2\varepsilon }\) for all horizons \(T\), all \(R \ge 1\), all \(\varepsilon \le \varepsilon _0\). <b class="bfseries">Deviation from the paper (lap 52 route finding, judge-CONFIRMED pass 9):</b> the paper’s p.51 conditional-expectation display banks white damping through the full first block (\(\sum _{p\le k_1}\)), but on stopped chains the true (7.57) sum ends at \(t_1 {\lt} k_1\) — and the discrepancy is typically the \(k_1\) exit-whiteness itself, the very term (7.59) cashes. The display under-states the true conditional expectation, so the derivation is unsound as written; the corrected pay-from-the-previous-block ledger has sharp toy value \(e^{\varepsilon }p_0/(1-(1-p_0)e^{\varepsilon }) \approx e^{\varepsilon /p_0} {\gt} e^{\varepsilon }\), hence the pin’s \(e^{2\varepsilon }\) (valid for \(p_0 \ge 1/2\); the p.55 consumer is Markov with \(R\) chosen after \(\varepsilon \), so absolute exponent constants wash out). <em>Riders</em>: (a) verify at node&#160;<a href="chp-crux.html#X11">7.11</a> that p.55 chooses \(R\) after \(\varepsilon \); (b) the \(2\varepsilon \) constant commits the proof to certifying \(p_0 \ge 1/2\) — node <a href="chp-crux.html#X8">7.8</a>’s kernel is pinned only \(\exists p_0 {\gt} 0\) (Monte Carlo \(\approx 0.99\), so expected fine, but it is a certification burden — else re-loosen to an \(\exists C\) form). Other ratified deltas (pass 8): finite horizon \(\forall T\) (D6; T1 did NOT fire); \(\exists \varepsilon _0\)-family; index shift matching the Case-2 forms. Proved so far: geometric prerequisites, head-peel <span class="ttfamily">encExpect_succ</span>, block bridge <span class="ttfamily">encExpect_block_le</span>, coupling <span class="ttfamily">encExpect_anti</span> (all axiom-checked pass 9); open: the two-level \(Y/Z\) induction + a (7.59)-shaped white-exit variant (node&#160;<a href="chp-crux.html#X8">7.8</a>). </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 5–10 treadmill laps; risk <b class="bfseries">medium — statement pinned, bridge proved, paper gap routed around</b> (70% (2026-07-12 judge pass 9: gap confirmed real; corrected route sound; p\(_0\ge \)1/2 certification burden added) confidence the node completes as stated).</i> </p>
+  <p>   <b class="bfseries">Lemma 7.9</b> (paper (7.57), pp.50–51): a walk crossing many triangles must encounter many white points — the banked white damping beats the \(\varepsilon \cdot \min (r,R)\) credit. <em>Statement pinned + ratified 2026-07-12 (judge pass 8, lap 52; re-ratified pass 9 after the constant correction)</em>: the stopping-time data \((t_i, \Delta _i, r)\) is a left fold (<span class="ttfamily">EncState</span>/<span class="ttfamily">encStep</span>: position, clearing barrier, encounter count, running + banked white counts), and <span class="ttfamily">many_triangles_white</span> states \(\texttt{encExpect} \le e^{2\varepsilon }\) for all horizons \(T\), all \(R \ge 1\), all \(\varepsilon \le \varepsilon _0\). <b class="bfseries">Deviation from the paper (lap 52 route finding, judge-CONFIRMED pass 9):</b> the paper’s p.51 conditional-expectation display banks white damping through the full first block (\(\sum _{p\le k_1}\)), but on stopped chains the true (7.57) sum ends at \(t_1 {\lt} k_1\) — and the discrepancy is typically the \(k_1\) exit-whiteness itself, the very term (7.59) cashes. The display under-states the true conditional expectation, so the derivation is unsound as written; the corrected pay-from-the-previous-block ledger has sharp toy value \(e^{\varepsilon }p_0/(1-(1-p_0)e^{\varepsilon }) \approx e^{\varepsilon /p_0} {\gt} e^{\varepsilon }\), hence the pin’s \(e^{2\varepsilon }\) (valid for \(p_0 \ge 1/2\); the p.55 consumer is Markov with \(R\) chosen after \(\varepsilon \), so absolute exponent constants wash out). <em>Riders</em>: (a) verify at node&#160;<a href="chp-crux.html#X11">7.11</a> that p.55 chooses \(R\) after \(\varepsilon \); (b) the \(2\varepsilon \) constant commits the proof to certifying \(p_0 {\gt} 1/2\) — now <em>embodied</em> in the pinned external input <span class="ttfamily">fpDist_white_exit_deep</span> (judge pass 12, ratified vs the p.51 (7.59) reduction: identical to node&#160;<a href="chp-crux.html#X8">7.8</a>’s Case-2 twin minus the budget hypothesis, which the paper’s “repeating the proof of (7.51)” at arbitrary triangle points licenses, with the (7.52) budget \(s = O(m)\) free from membership; the \(p_0 {\gt} 1/2\) mass demand is the corrected ledger’s documented deviation from the paper’s \(\gg 1\), Monte Carlo \(\approx 0.99\)). Other ratified deltas (pass 8): finite horizon \(\forall T\) (D6; T1 did NOT fire); \(\exists \varepsilon _0\)-family; index shift matching the Case-2 forms. Proved so far: geometric prerequisites, head-peel <span class="ttfamily">encExpect_succ</span>, block bridge <span class="ttfamily">encExpect_block_le</span>, coupling <span class="ttfamily">encExpect_anti</span> (pass 9), and the corrected per-block ledger’s closed-form core (lap 54, pass 12): the chain value <span class="ttfamily">encChainX</span> \(= p_0/(1-(1-p_0)e^{\varepsilon })\) with fixed-point identity, the cap \(X \le e^{\varepsilon }\) (whence \(e^{\varepsilon }X \le e^{2\varepsilon }\), the (7.57) constant), and the four-mass LP vertex analysis <span class="ttfamily">encounter_vertex_bound</span> (maximum at \((0, 1-p_0)\) = the fixed point) — all axiom-checked. Open: the two-level \(Y/Z\) induction assembly + the <span class="ttfamily">fpDist_white_exit_deep</span> input itself. </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 4–8 treadmill laps; risk <b class="bfseries">medium — ledger core proved; induction assembly + deep white-exit open</b> (75% (2026-07-12 judge pass 12: chain arithmetic verified; deep-exit pin ratified vs (7.59)) confidence the node completes as stated).</i> </p>
 
   </div>
 </div>
@@ -933,7 +992,7 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   <b class="bfseries">Case 3</b> assembly (paper (7.48)/(7.49), (7.52)–(7.67)): the events \(E_*,F_*\), the choice \(R=\lfloor A^2/\varepsilon ^4\rfloor \), and the deterministic claim (7.67), combining Lemma&#160;7.9 (node&#160;<a href="chp-crux.html#X9">7.9</a>) and Lemma&#160;7.10 (node&#160;<a href="chp-crux.html#X10">7.10</a>). This closes Prop&#160;7.8, hence Prop&#160;7.3 (node&#160;<a href="chp-crux.html#X4">7.4</a>) and Prop&#160;7.1, hence the <b class="bfseries">crux</b> <b class="bfseries">Proposition 1.17</b> (character-sum decay): for every \(A{\gt}0\) there is \(C{\gt}0\) with, for all \(n\ge 1\) and all \(\xi \) with \(3\nmid \xi \), </p>
-<div class="displaymath" id="a0000000034">
+<div class="displaymath" id="a0000000036">
   \[  \Bigl\| \, \mathbb {E}_{Y\sim \texttt{syracZ}\, n}\,  e\bigl(-\xi \,  Y/3^{n}\bigr)\Bigr\|  \; \le \;  C\, n^{-A}.  \]
 </div>
 <p> This is the single Fourier-analytic input the whole spine reduces to (feeds node&#160;<a href="chp-mixing.html#C10">6.1</a>). The Case-3 entry statement <span class="ttfamily">Q_black_edge_case3</span> ((7.53)–(7.67) interface, budget hypotheses matching (7.52) with the documented lattice slack) is judge-ratified 2026-07-12 vs pp.48–49 and consumed by the proved <span class="ttfamily">Q_black_edge</span> split. </p>

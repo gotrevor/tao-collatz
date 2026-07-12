@@ -100,7 +100,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 9](judge/pass-09.md) — 2026-07-12: **PAPER GAP in Lemma 7.9 CONFIRMED** 🕳️ (p.51 display banks damping through k₁; true sum stops at t₁); X9 re-ratified at exp(2ε); 10 axiom checks (encounter fold + block bridge) clean; KB literature-holes entry #5.
 - [Pass 10](judge/pass-10.md) — 2026-07-12, pp.33–35: **X1 pinned + ratified** (`cexpect_pairing` = (7.5) verbatim; Lemma 7.2 exact value proved; `key_fourier_decay` + `charFn_decay` drift-free moves/derivations); un-pinned down to C8 + X5; ladder-vs-graph color vocabulary clarified.
 - [Pass 11](judge/pass-11.md) — 2026-07-12: **NODE X1 COMPLETE** ✅ (fourth verified node; `cexpect_pairing` clean, drift-free); box's "axiom-clean" mislabel on `prod_fCond_le_damping` caught (sorryAx via X2); Prop 1.17 trail machine-mapped; definition-badge tint rule shipped.
-- [Pass 12](judge/pass-12.md) — 2026-07-12, lap 54 (3 commits): **X5 + X2 COMPLETE** ✅✅ (Lemma 7.6 ratified vs p.42, 15 decls clean; `white_cos_bound` clean → `prod_fCond_le_damping` closed, trail map confirmed); X9 chain arithmetic verified (`encChainX` cap + LP vertex bound); **`fpDist_white_exit_deep` pinned + ratified vs (7.59)** — the watched-for variant, p₀ > 1/2 burden embodied.
+- [Pass 12](judge/pass-12.md) — 2026-07-12, lap 54 (5 commits + handoff): **X5 + X2 COMPLETE** ✅✅ (Lemma 7.6 ratified vs p.42, 15 decls clean; `white_cos_bound` clean → `prod_fCond_le_damping` closed, trail map confirmed); X9 ledger core verified (chain cap + LP vertex + normalize/wander/edge gluing, 10 decls); **`fpDist_white_exit_deep` pinned + ratified vs (7.59)** — the watched-for variant, p₀ > 1/2 burden embodied. ⚠️ near-edge tripwire: widening the deep pin's statement revokes its ratification.
 
 ## Live judge state 📍 (update each pass)
 
@@ -128,6 +128,9 @@ statement yet — the last un-pinned node). Latest: X1 (pass 10), X5 (pass 12),
   (`triangle_encounter_le` X10, `fpDist_white_exit_deep`, `many_triangles_white` X9).
 - **Box docstring nits** (pass 12, box's to fix): `White.lean:11` + `Reduction.lean:12`
   still describe their (now proved) cruxes as carrying `sorry`.
+- **Near-edge tripwire** (pass 12 addendum): the box may resolve the
+  `m < Cthr` fresh-state gap by widening `fpDist_white_exit_deep`'s statement —
+  any such edit REVOKES its (7.59) ratification until judge re-ratifies.
 - **Unread paper fronts**: §5 first-passage (C8), §7.5 assembly pp.55–56 (X11).
   pp.41–43 (Lemma 7.6) read + ratified pass 12.
 - **Trust-surface notes**: `fpDist` / `fpDistPlus` encode stopped-walk laws at the

@@ -57,6 +57,9 @@ hold
 Q_rec
 Q_boundary
 renewal_white_encounters
+hold_mean_fst
+hold_mean_snd
+hold_aperiodic
 fpDist
 fpDist_location_bound
 Qm
@@ -75,6 +78,9 @@ EncState
 encStep
 encVal
 encExpect
+encChainX
+encounter_vertex_bound
+fpDist_white_exit_deep
 triangle_encounter_le
 fpDistPlus
 bigTriangleSet
