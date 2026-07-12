@@ -1,5 +1,53 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 52 (2026-07-12): **X9 = Lemma 7.9 PINNED (RED→YELLOW)** — encounter-fold encoding, T1 does NOT fire
+
+`DIRECTION.md` mandate 2 executed. All in `Sec7/ManyTriangles.lean`, green,
+new proved decls axiom-clean (`#print axioms` checked).
+
+### The D6 encoding decision (recorded per directive; ratified against pp.50–51, 55)
+- **No infinite-product measure needed (route-trigger T1 does NOT fire).**
+  The ONLY consumption of Lemma 7.9 is p.55 — Markov on the finite window after
+  the first passage (`(j',l') := (j,l)+v_{[1,k]}`, horizon `P`), with all stopping
+  times inside the window by the deterministic (7.67) argument. So (7.57) is
+  pinned for the FINITE `T`-step walk `hold.iid T`, uniformly in `T` (existing
+  `PMF.iid` head-peel machinery, `Prob/Basic.lean`). Finite path space is D1-safe.
+- **Stopping times = a left fold**: `EncState` (pos, barrier, count, cumWhite,
+  banked) with `encStep`: encounter ⟺ phase point `(q₁−1, q₂)` black-strip AND
+  `barrier < q₂`; new barrier := top of `Δ(q)` via `coveringTriangle`; `banked`
+  freezes `cumWhite` at encounter `min(r,R)`. So `banked = Σ_{p=1}^{t_min(r,R)} 1_W`
+  EXACTLY and (7.57)'s integrand is `encVal ε R (final) = exp(−banked + ε·min(count,R))`.
+- **ε existentially small** (`∃ ε₀ ∈ (0,1/100]`), not the fixed section constant:
+  closure needs `e^{2ε}(1−(1−1/e)p₀) ≤ e^ε` against the EXISTENTIAL `p₀` of
+  `fpDist_white_exit`; consumer insensitive (p.55 picks `R` after ε:
+  `R := ⌈(10A/ε_Q³+O(A)+1)/ε⌉` re-closes (7.66)).
+- **Index shift**: encounters/white read at phase point `(q₁−1, q₂)`, matching
+  `fpDist_white_exit` + `Q_black_edge` glue + `whiteStrip`.
+
+### Proved this lap (axiom-clean)
+`encVal_le` (envelope `≤ e^{εR}`), `encExpect_zero` (base), **`encExpect_succ`**
+(head-peel recursion `encExpect (T+1) σ = Σ'_d hold(d) · encExpect T (encStep σ d)`
+— the p.51 first-block conditioning finitized; proof normalizes by `e^{−εR}` into
+`expect_iid_succ`'s `[0,1]` window, then cancels), `encExpect_le`.
+PIN: `many_triangles_white` (7.57) — the X9 sorry.
+
+### NEXT for X9 (the proof; in order)
+1. **Path→`fpDist` bridge** (decisive): from an encounter state (pos `q` in a
+   triangle with top `b`, budget `s = (b − q.2).toNat`), iterating `encExpect_succ`
+   until the barrier clears reconstructs `fpDist s` (passage time ≤ `s/3+1`,
+   `hold_support_snd_ge`). Bridge at the level of `encExpect` (carry the integrand),
+   NOT bare laws; mid-block white damping ≤ 1 may be DROPPED (we prove `≤`). Strong
+   induction on `s` mirroring `fpDist`'s budget recursion.
+2. **Induction on `R`** (p.51 shape): `Z(R,σ) ≤ P(no encounter) + e^{2ε}·
+   E[1_enc e^{−1_W(fp endpoint)}]·sup Z(R−1)`, closed by `fpDist_white_exit`
+   (`≤ 1−(1−1/e)p₀ ≤ e^{−ε}`). Truncation branch `t₁ ≤ T < k₁`: `min(r_T,R)=1`,
+   value ≤ e^ε directly. `fpDist_white_exit` (X8 kernel) is the only open input —
+   needed ONLY at the final closure; do bridge + skeleton first.
+3. X11 consumption: Markov over the window + deterministic (7.67) pigeonhole
+   (needs 7.10's size bound + (7.11) exit-time bound).
+
+### X10 unchanged (Σ-count assembly = its next step; see lap-51 entry)
+
 ## Lap 51 (2026-07-12, REVIEW lap): course-correct to §7-tail de-risk; pin Lemma 7.10, design Lemma 7.9
 
 **Direction set** (see `DIRECTION.md` CURRENT DIRECTIVE): S3 + X6 closed; X8 Case-2

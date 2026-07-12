@@ -2,7 +2,7 @@
 
 **First-anywhere Lean 4 formalization of Tao 2019 "Almost all Collatz orbits
 attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3276 jobs) ·
-**Updated**: lap 51 · 2026-07-12 · `d2ac8cd`
+**Updated**: lap 52 · 2026-07-12 · `1c9b2c8`
 
 ## Where it stands
 
@@ -12,13 +12,23 @@ axiom-clean**: S3 (Lemma 2.2 local/tail bounds for Hold + 3 d=1 walks, laps 22�
 and X6 (Lemma 7.7 first-passage location, laps 47–50). X3 (Lemma 7.4 triangles)
 also done. The critical path `S3✓ → X6✓ → {X8, X10} → X11 → C10 → …` now sits at
 the §7.4 case analysis: X8 Case 2 is YELLOW (statements pinned + routed, two
-kernels open but unblocked by X6); **X9/X10 (Lemmas 7.9/7.10) are the last un-pinned
-RED §7 nodes** and hold the campaign's completion risk. The C-spine (§1–§6) and the
+kernels open but unblocked by X6); **X10 and X9 (Lemmas 7.10/7.9) are now BOTH
+pinned (YELLOW)** — 7.10 with its geometric core (apex separation) proved, 7.9 via
+the finite-horizon encounter-fold encoding with the head-peel recursion proved and
+route-trigger T1 confirmed NOT to fire. No RED statement-less node remains on the
+§7 critical path; the risk is now concentrated in the pinned sorries themselves. The C-spine (§1–§6) and the
 Syracuse/Statement scaffolding are deliberately still stubbed — downstream of the
 crux, cheap once §7 lands. 24 open `sorry`s in `src/`.
 
 ## What's happened (newest first)
 
+- **lap 52 (2026-07-12)** `1c9b2c8`: **Lemma 7.9 (X9) PINNED, RED→YELLOW** —
+  `EncState`/`encStep` encounter fold (stopping times as a left fold over
+  `hold.iid T`, finite horizon uniformly in T), `many_triangles_white` (7.57) pin,
+  `encExpect_succ` head-peel recursion + envelope lemmas proved axiom-clean.
+  Read pp.48–55: T1 does not fire (consumer only uses finite windows). Next:
+  path→fpDist bridge, then the R-induction (closure blocked only on
+  `fpDist_white_exit`).
 - **lap 51 (2026-07-12, review)**: fresh-mind course-correction. Verified build
   green + S3/X3/X6 axiom-clean via real `#print axioms`. Read paper pp.50–54
   (Lemmas 7.9/7.10). Set CURRENT DIRECTIVE: de-risk §7 tail (pin 7.10 then 7.9)
