@@ -48,11 +48,17 @@ triangle); `r` = #triangles encountered. Then `E exp(−Σ_{p=1}^{t_{min(r,R)}}
   from X6 ⟹ no barrier condition). Reuse `fpDist`-style budget recursion with a
   position-dependent budget `s(q) = l_{Δ(q)} − l`, `Δ(q)` = the (unique) triangle
   covering `q` via `cover`.
-- **Prerequisite `TriangleFamily.not_mem_two` — DONE (lap 51, axiom-clean)**:
-  distinct family triangles share no lattice point (from `F.separated`, constant
-  `(1/10)log(1/ε) ≈ 0.92 > 0`). Also serves 7.10's (7.65) ≫s′-separation step.
-  NEXT for X9: `Δ(q)` (the covering triangle, via `cover` existence + `not_mem_two`
-  uniqueness ⟹ `∃!`), then the `Z` budget recursion on R, then (7.57).
+- **Prerequisites DONE (lap 51, both axiom-clean)**:
+  `TriangleFamily.not_mem_two` (distinct family triangles share no lattice point,
+  from `F.separated` const `≈ 0.92 > 0`; also serves 7.10's (7.65) ≫s′-separation)
+  and `TriangleFamily.existsUnique_cover` (every black-strip point lies in exactly
+  one family triangle — `cover` existence + `not_mem_two` uniqueness ⟹ `∃!`). The
+  covering triangle `Δ(q)` is now well-defined.
+  NEXT for X9: (a) turn `existsUnique_cover` into a function `Δ : (strip pt) → T`
+  (via `Classical.choose` / `ExistsUnique.choose`) + its spec lemmas; (b) the moving-
+  barrier budget `s(q) := (Δ(q).2.1 − q.2).toNat`; (c) the `Z` budget recursion on R
+  (mirror `Qstop`/`fpDist` recursion shape, `Unroll.lean`); (d) pin (7.57), close by
+  induction on R using `fpDist_white_exit` (7.51).
 - Induction close (once pinned): `Σ_{p=1}^{k₁}1_W ≥ 1_W(endpoint)` +
   `fpDist_white_exit` (7.51, X8 open kernel) ⟹ `Z(·,R) ≤ exp(ε)`. So 7.9 CONSUMES
   the open `fpDist_white_exit`; 7.10 does not — pin 7.10 first.

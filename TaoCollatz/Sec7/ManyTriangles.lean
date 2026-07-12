@@ -82,6 +82,22 @@ theorem TriangleFamily.not_mem_two {n ξ : ℕ} (F : TriangleFamily n ξ)
   have hzero : ((q.1 : ℝ) - (q.1 : ℝ)) ^ 2 + ((q.2 : ℝ) - (q.2 : ℝ)) ^ 2 = 0 := by ring
   linarith [hsep, hzero, hpos]
 
+/-- **The covering triangle `Δ(q)` is well-defined** (paper: every black strip point
+lies in exactly one triangle of the family): `cover` gives existence, `not_mem_two`
+gives uniqueness. This `∃!` is the foundation of the Lemma 7.9 recursion kernel (X9) —
+the moving-barrier first-passage budget `s(q) = l_{Δ(q)} − l` reads off `Δ(q).2.1`. -/
+theorem TriangleFamily.existsUnique_cover {n ξ : ℕ} (F : TriangleFamily n ξ)
+    {q : ℕ × ℤ} (hq : q.1 + 1 ≤ n / 2 ∧ black n ξ q.1 q.2) :
+    ∃! t : ℕ × ℤ × ℝ, t ∈ F.T ∧ q ∈ triangle t.1 t.2.1 t.2.2 := by
+  have hmem : q ∈ {p : ℕ × ℤ | p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2} := hq
+  rw [F.cover] at hmem
+  simp only [Set.mem_iUnion, exists_prop] at hmem
+  obtain ⟨t, ht, hqt⟩ := hmem
+  refine ⟨t, ⟨ht, hqt⟩, ?_⟩
+  rintro t' ⟨ht', hqt'⟩
+  by_contra hne
+  exact F.not_mem_two ht' ht hne hqt' hqt
+
 /-- **Lemma 7.10 — large triangles are rarely encountered shortly after a lengthy
 crossing** (paper (7.60), pp.51–54). Starting the renewal walk at a point `(j,l)` of
 a black triangle `Δ = t₀` with budget `s = l_Δ − l` obeying `s > m/log²m`
