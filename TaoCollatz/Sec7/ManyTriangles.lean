@@ -100,6 +100,11 @@ theorem fpDistPlus_tsum_toReal (s p : ℕ) :
   rw [← ENNReal.tsum_toReal_eq (fun e => PMF.apply_ne_top _ _), (fpDistPlus s p).tsum_coe,
     ENNReal.toReal_one]
 
+/-- `∑' (fpDist s e).toReal = 1` (the `p = 0` case, via `fpDistPlus_zero`). -/
+theorem fpDist_tsum_toReal (s : ℕ) : ∑' e : ℕ × ℤ, (fpDist s e).toReal = 1 := by
+  rw [← fpDistPlus_zero s]
+  exact fpDistPlus_tsum_toReal s 0
+
 /-- **Any event-probability of the renewal endpoint is `≤ 1`** — `fpDistPlus` is a
 `PMF`, so summing its mass against a `{0,1}` indicator is `≤` its total mass `1`. The
 concrete first step of Lemma 7.10's proof (the (7.60) "trivial otherwise" reduction:
@@ -736,17 +741,22 @@ theorem encExpect_of_edge {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε
 /-- **The wander claim** (the between-blocks phase of the Z-induction). After a
 block exit with white credit `w₀` and no instant encounter, the walk wanders with
 `count = 0`, `banked = 0`, `cumWhite = w ≥ w₀`. Given a uniform bound `Z` for
-fresh states at budget `R'`, every wander state at budget `R' + 1` satisfies
+JUST-ENTERED fresh states at budget `R'` (the entered class: position satisfying
+the gated encounter conditions, barrier = its covering triangle's top — the only
+fresh states a wander can normalize onto), every wander state at budget `R' + 1`
+satisfies
 
   `E_{R'+1}(T, ⟨p, b, 0, w, 0⟩) ≤ max 1 (e^ε·e^{−w₀}·Z)`:
 
-a later encounter banks `cumWhite ≥ w₀` and normalizes onto a fresh state at
-budget `R'` (paying `e^ε` for the count increment, collecting `e^{−w₀}`); a path
+a later encounter banks `cumWhite ≥ w₀` and normalizes onto an entered fresh state
+at budget `R'` (paying `e^ε` for the count increment, collecting `e^{−w₀}`); a path
 that never encounters ends at `encVal = 1`. Induction on the horizon. -/
 theorem encExpect_wander_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R' g : ℕ) (ε : ℝ)
     (hε : 0 ≤ ε) (Z : ℝ) (hZ : 0 ≤ Z)
-    (hfresh : ∀ (T' : ℕ) (q : ℕ × ℤ) (b : ℤ),
-      encExpect F R' g ε T' ⟨q, b, 0, 0, 0⟩ ≤ Z)
+    (hfresh : ∀ (T' : ℕ) (q : ℕ × ℤ), 1 ≤ q.1 → q.1 + g ≤ n / 2 →
+      ∀ hcov : (q.1 - 1) + 1 ≤ n / 2 ∧ black n ξ (q.1 - 1) q.2,
+      encExpect F R' g ε T'
+        ⟨q, (F.coveringTriangle (q.1 - 1, q.2) hcov).2.1, 0, 0, 0⟩ ≤ Z)
     (w₀ : ℕ) (T : ℕ) :
     ∀ (p : ℕ × ℤ) (b : ℤ) (w : ℕ), w₀ ≤ w →
     encExpect F (R' + 1) g ε T ⟨p, b, 0, w, 0⟩
@@ -791,8 +801,16 @@ theorem encExpect_wander_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R' g : ℕ) 
           apply Real.exp_le_exp.mpr
           have hle : (w₀ : ℝ) ≤ (σ'.cumWhite : ℝ) := Nat.cast_le.mpr hcw
           linarith
+        have hpos' : σ'.pos = p + d := by
+          rw [hσ', encStep, dif_pos hq']
+        have hcov : ((p + d).1 - 1) + 1 ≤ n / 2 ∧ black n ξ ((p + d).1 - 1) (p + d).2 :=
+          ⟨by omega, hq'.2.2.1⟩
+        have hbar' : σ'.barrier
+            = (F.coveringTriangle ((p + d).1 - 1, (p + d).2) hcov).2.1 := by
+          rw [hσ', encStep, dif_pos hq']
         have h3 : encExpect F (R' + 1 - 1) g ε T ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩ ≤ Z := by
-          simpa using hfresh T σ'.pos σ'.barrier
+          rw [hpos', hbar']
+          simpa using hfresh T (p + d) hq'.1 hq'.2.1 hcov
         have hE0 : 0 ≤ encExpect F (R' + 1 - 1) g ε T ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩ :=
           encExpect_nonneg _ _ _ ε T _
         have hexp1 : Real.exp (ε * ((1 : ℕ) : ℝ)) = Real.exp ε := by norm_num
@@ -910,9 +928,10 @@ conditioning on `v₁, …, v_{k₁}` in D6 form). From any state `σ` at height
 to the fold (no encounter can trigger below the barrier, and mid-block white
 increments are DROPPED via the coupling `encExpect_anti` — the paper's
 `Σ 1_W ≥ 1_W(endpoint)` reduction), so the expectation is dominated by the
-first-passage endpoint law: for any horizon `T ≥ s/3 + 1` (enough steps to clear —
-each `Hold` step spends height `≥ 3`) and any `[0,B]`-valued `f` dominating all
-shorter-horizon continuations from the clearing step,
+first-passage endpoint law: for EVERY horizon `T` and any `[0,B]`-valued `f` that
+dominates all shorter-horizon continuations from the clearing step AND the state's
+own integrand `encVal σ` (the latter absorbs paths whose passage is unfinished at
+the horizon — mid-block steps do not change `encVal`, and `fpDist` has total mass 1),
 
   `encExpect T σ ≤ Σ'_e fpDist s (e) · f e`.
 
@@ -922,19 +941,37 @@ condition `s < d₂` — the two recursions match step for step (strong inductio
 theorem encExpect_block_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε : ℝ)
     (hε : 0 ≤ ε) :
     ∀ s : ℕ, ∀ σ : EncState, (s : ℤ) = σ.barrier - σ.pos.2 →
-    ∀ T : ℕ, s / 3 + 1 ≤ T →
+    ∀ T : ℕ,
     ∀ f : ℕ × ℤ → ℝ, (∀ e, 0 ≤ f e) → ∀ B : ℝ, (∀ e, f e ≤ B) →
+    (∀ e : ℕ × ℤ, encVal ε R σ ≤ f e) →
     (∀ e : ℕ × ℤ, (s : ℤ) < e.2 → ∀ T' : ℕ, T' < T →
       encExpect F R g ε T' (encStep F R g σ e) ≤ f e) →
     encExpect F R g ε T σ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal * f e := by
   intro s
   induction s using Nat.strong_induction_on with
   | _ s IH =>
-    intro σ hs T hT f hg0 B hgB hg
+    intro σ hs T f hg0 B hgB hf1 hg
     classical
     have hB : 0 ≤ B := le_trans (hg0 (0, 0)) (hgB (0, 0))
+    -- horizon 0: the integrand is dominated pointwise, and fpDist has mass 1
+    rcases T with _ | T'
+    · rw [encExpect_zero]
+      have hsum0 : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal) :=
+        ENNReal.summable_toReal (by rw [(fpDist s).tsum_coe]; exact ENNReal.one_ne_top)
+      have hle0 : ∀ e : ℕ × ℤ,
+          (fpDist s e).toReal * encVal ε R σ ≤ (fpDist s e).toReal * f e :=
+        fun e => mul_le_mul_of_nonneg_left (hf1 e) ENNReal.toReal_nonneg
+      have hsumR0 : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal * f e) :=
+        Summable.of_nonneg_of_le
+          (fun e => mul_nonneg ENNReal.toReal_nonneg (hg0 e))
+          (fun e => mul_le_mul_of_nonneg_left (hgB e) ENNReal.toReal_nonneg)
+          (hsum0.mul_right B)
+      calc encVal ε R σ
+          = ∑' e : ℕ × ℤ, (fpDist s e).toReal * encVal ε R σ := by
+            rw [tsum_mul_right, fpDist_tsum_toReal, one_mul]
+        _ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal * f e :=
+            Summable.tsum_le_tsum hle0 (hsum0.mul_right _) hsumR0
     -- peel one step
-    obtain ⟨T', rfl⟩ : ∃ T', T = T' + 1 := ⟨T - 1, by omega⟩
     rw [encExpect_succ F R g ε hε T' σ]
     -- unfold one step of fpDist on the right
     conv_rhs => rw [fpDist]
@@ -982,8 +1019,8 @@ theorem encExpect_block_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (�
         have hrec : encExpect F R g ε T'
               ⟨σ.pos + d, σ.barrier, σ.count, σ.cumWhite, σ.banked⟩
             ≤ ∑' e', (fpDist s'' e').toReal * f (d + e') := by
-          refine IH s'' (by omega) _ ?_ T' (by omega) _ (fun e' => hg0 _) B
-            (fun e' => hgB _) ?_
+          refine IH s'' (by omega) _ ?_ T' _ (fun e' => hg0 _) B
+            (fun e' => hgB _) (fun e' => hf1 (d + e')) ?_
           · show (s'' : ℤ) = σ.barrier - (σ.pos + d).2
             have : (σ.pos + d).2 = σ.pos.2 + d.2 := rfl
             omega
@@ -1147,6 +1184,215 @@ theorem encounter_vertex_bound {ε p₀ a d : ℝ} (hε : 0 ≤ ε)
     _ = encChainX ε p₀ := hfix
     _ ≤ Real.exp ε * encChainX ε p₀ := by nlinarith
 
+/-- **The Y-induction: the just-entered-state bound of the corrected Lemma 7.9
+ledger** (lap-52 route + lap-55 depth gate; paper p.51's induction, corrected).
+From any JUST-ENTERED fresh state — position `w` satisfying the gated encounter
+conditions, barrier = the top of a family triangle `t` covering the phase point
+`(w₁−1, w₂)` — the expectation is bounded by the chain value `X = encChainX ε p₀`,
+uniformly in the budget `R`, the horizon `T`, and the entry point:
+
+  `E_R(T, ⟨w, l_t, 0, 0, 0⟩) ≤ X`.
+
+Induction on `R`. Base `R = 0`: the fold is frozen (`encExpect_of_count_ge`),
+value `1 ≤ X`. Step: the block bridge (`encExpect_block_le`) reduces the block to
+the `fpDist` exit law at budget `s = l_t − w₂`; the exit observable is `1` on
+`whiteStrip` exits (an instant white re-encounter banks its credit —
+`e^{ε−1}X ≤ 1` — and a white wander carries `w₀ = 1` into `encExpect_wander_le`)
+and `e^ε·X` off it (an undamped re-encounter re-pays the chain); the white-exit
+mass is `≥ p₀` (hypothesis `hwhite`, discharged by `fpDist_white_exit_deep` with
+gate `g = Cthr`), and the two-mass value sits below the fixed point:
+`e^εX − (e^εX − 1)·p₀ = p₀ + (1−p₀)e^εX = X` (`encChainX_fixed`). -/
+theorem encExpect_entered_le {n ξ : ℕ} (F : TriangleFamily n ξ) (g : ℕ) (ε p₀ : ℝ)
+    (hε : 0 ≤ ε) (hp : 1 / 2 < p₀) (hp1 : p₀ ≤ 1)
+    (hsmall : (1 - p₀) * (Real.exp ε + 1) ≤ 1)
+    (hXe1 : Real.exp (ε - 1) * encChainX ε p₀ ≤ 1)
+    (hwhite : ∀ w : ℕ × ℤ, 1 ≤ w.1 → w.1 + g ≤ n / 2 →
+      ∀ t ∈ F.T, (w.1 - 1, w.2) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - w.2 →
+      p₀ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
+        * Set.indicator (whiteStrip n ξ) 1 (w + e)) :
+    ∀ (R T : ℕ) (w : ℕ × ℤ), 1 ≤ w.1 → w.1 + g ≤ n / 2 →
+      ∀ t ∈ F.T, (w.1 - 1, w.2) ∈ triangle t.1 t.2.1 t.2.2 →
+      encExpect F R g ε T ⟨w, t.2.1, 0, 0, 0⟩ ≤ encChainX ε p₀ := by
+  classical
+  have hX1 : 1 ≤ encChainX ε p₀ := one_le_encChainX hε hp hp1 hsmall
+  have hX0 : 0 ≤ encChainX ε p₀ := le_trans zero_le_one hX1
+  have hfix := encChainX_fixed hp hp1 hsmall
+  have hexpX1 : 1 ≤ Real.exp ε * encChainX ε p₀ := by
+    nlinarith [Real.one_le_exp hε]
+  intro R
+  induction R with
+  | zero =>
+    intro T w hw1 hwg t ht hmem
+    rw [encExpect_of_count_ge F 0 g ε hε T _ (Nat.zero_le _)]
+    calc encVal ε 0 (⟨w, t.2.1, 0, 0, 0⟩ : EncState) = 1 := by simp [encVal]
+      _ ≤ encChainX ε p₀ := hX1
+  | succ ρ IH =>
+    intro T w hw1 hwg t ht hmem
+    -- the entered-class wander hypothesis at budget ρ, from the R-induction IH
+    have hfreshIH : ∀ (T' : ℕ) (q : ℕ × ℤ), 1 ≤ q.1 → q.1 + g ≤ n / 2 →
+        ∀ hcov : (q.1 - 1) + 1 ≤ n / 2 ∧ black n ξ (q.1 - 1) q.2,
+        encExpect F ρ g ε T'
+          ⟨q, (F.coveringTriangle (q.1 - 1, q.2) hcov).2.1, 0, 0, 0⟩
+          ≤ encChainX ε p₀ :=
+      fun T' q h1 h2 hcov =>
+        IH T' q h1 h2 _ (F.coveringTriangle_mem hcov)
+          (F.coveringTriangle_covers hcov)
+    -- the block budget
+    have hwt : w.2 ≤ t.2.1 := hmem.2.1
+    set s : ℕ := (t.2.1 - w.2).toNat with hsdef
+    have hsZ : (s : ℤ) = t.2.1 - w.2 := Int.toNat_of_nonneg (by omega)
+    -- the exit observable: 1 on white exits, the chain re-payment off them
+    set f : ℕ × ℤ → ℝ := fun e =>
+      if w + e ∈ whiteStrip n ξ then 1 else Real.exp ε * encChainX ε p₀ with hfdef
+    have hf1' : ∀ e, (1 : ℝ) ≤ f e := by
+      intro e
+      rw [hfdef]
+      dsimp only
+      split
+      · exact le_refl 1
+      · exact hexpX1
+    have hf0 : ∀ e, 0 ≤ f e := fun e => le_trans zero_le_one (hf1' e)
+    have hfB : ∀ e, f e ≤ Real.exp ε * encChainX ε p₀ := by
+      intro e
+      rw [hfdef]
+      dsimp only
+      split
+      · exact hexpX1
+      · exact le_refl _
+    -- the bridge hypothesis: every clearing-step continuation is dominated by f
+    have hstep : ∀ e : ℕ × ℤ, (s : ℤ) < e.2 → ∀ T' : ℕ, T' < T →
+        encExpect F (ρ + 1) g ε T'
+          (encStep F (ρ + 1) g ⟨w, t.2.1, 0, 0, 0⟩ e) ≤ f e := by
+      intro e he T' hT'
+      by_cases hq : 1 ≤ (w + e).1 ∧ (w + e).1 + g ≤ n / 2
+          ∧ black n ξ ((w + e).1 - 1) (w + e).2 ∧ t.2.1 < (w + e).2
+      · -- instant re-encounter: normalize onto the entered state at budget ρ
+        set σ'' := encStep F (ρ + 1) g ⟨w, t.2.1, 0, 0, 0⟩ e with hσ''
+        have hcnt : σ''.count = 1 := by rw [hσ'', encStep, dif_pos hq]
+        have hpos'' : σ''.pos = w + e := by rw [hσ'', encStep, dif_pos hq]
+        have hcov'' : ((w + e).1 - 1) + 1 ≤ n / 2
+            ∧ black n ξ ((w + e).1 - 1) (w + e).2 := ⟨by omega, hq.2.2.1⟩
+        have hbar'' : σ''.barrier
+            = (F.coveringTriangle ((w + e).1 - 1, (w + e).2) hcov'').2.1 := by
+          rw [hσ'', encStep, dif_pos hq]
+        have hnorm := encExpect_normalize_init F (ρ + 1) g ε hε T' σ''
+          (by rw [hcnt]; omega)
+        have hcont : encExpect F (ρ + 1 - 1) g ε T'
+            ⟨σ''.pos, σ''.barrier, 0, 0, 0⟩ ≤ encChainX ε p₀ := by
+          rw [hpos'', hbar'']
+          simpa using hfreshIH T' (w + e) hq.1 hq.2.1 hcov''
+        by_cases hW : w + e ∈ whiteStrip n ξ
+        · -- white instant re-encounter: banks e^{−1}, total e^{ε−1}X ≤ 1 = f e
+          have hbk1 : σ''.banked = 1 := by
+            rw [hσ'', encStep, dif_pos hq]
+            simp [hW]
+          have hcw1 : σ''.cumWhite = 1 := by
+            rw [hσ'', encStep, dif_pos hq]
+            simp [hW]
+          rw [hcnt, hbk1, hcw1, max_self] at hnorm
+          have hfe : f e = 1 := by rw [hfdef]; simp [hW]
+          rw [hfe]
+          refine le_trans hnorm (le_trans
+            (mul_le_mul_of_nonneg_left hcont (by positivity)) ?_)
+          have hee : Real.exp (ε * ((1 : ℕ) : ℝ)) * Real.exp (-((1 : ℕ) : ℝ))
+              * encChainX ε p₀ = Real.exp (ε - 1) * encChainX ε p₀ := by
+            rw [← Real.exp_add,
+              show ε * ((1 : ℕ) : ℝ) + -((1 : ℕ) : ℝ) = ε - 1 by push_cast; ring]
+          rw [hee]
+          exact hXe1
+        · -- black instant re-encounter: undamped chain re-payment e^ε·X = f e
+          have hbk0 : σ''.banked = 0 := by
+            rw [hσ'', encStep, dif_pos hq]
+            simp [hW]
+          have hcw0 : σ''.cumWhite = 0 := by
+            rw [hσ'', encStep, dif_pos hq]
+            simp [hW]
+          rw [hcnt, hbk0, hcw0, max_self] at hnorm
+          have hfe : f e = Real.exp ε * encChainX ε p₀ := by rw [hfdef]; simp [hW]
+          rw [hfe]
+          refine le_trans hnorm (le_trans
+            (mul_le_mul_of_nonneg_left hcont (by positivity)) ?_)
+          have hee : Real.exp (ε * ((1 : ℕ) : ℝ)) * Real.exp (-((0 : ℕ) : ℝ))
+              * encChainX ε p₀ = Real.exp ε * encChainX ε p₀ := by
+            rw [← Real.exp_add]
+            norm_num
+          rw [hee]
+      · -- no instant re-encounter: the exit wanders with its whiteness credit
+        by_cases hW : w + e ∈ whiteStrip n ξ
+        · have hsx : encStep F (ρ + 1) g ⟨w, t.2.1, 0, 0, 0⟩ e
+              = ⟨w + e, t.2.1, 0, 1, 0⟩ := by
+            rw [encStep, dif_neg (by exact hq)]
+            simp [hW]
+          rw [hsx]
+          have hwander := encExpect_wander_le F ρ g ε hε (encChainX ε p₀) hX0
+            hfreshIH 1 T' (w + e) t.2.1 1 (le_refl 1)
+          refine le_trans hwander ?_
+          have hfe : f e = 1 := by rw [hfdef]; simp [hW]
+          rw [hfe]
+          refine max_le (le_refl 1) ?_
+          have hee : Real.exp ε * Real.exp (-((1 : ℕ) : ℝ)) * encChainX ε p₀
+              = Real.exp (ε - 1) * encChainX ε p₀ := by
+            rw [← Real.exp_add,
+              show ε + -((1 : ℕ) : ℝ) = ε - 1 by push_cast; ring]
+          rw [hee]
+          exact hXe1
+        · have hsx : encStep F (ρ + 1) g ⟨w, t.2.1, 0, 0, 0⟩ e
+              = ⟨w + e, t.2.1, 0, 0, 0⟩ := by
+            rw [encStep, dif_neg (by exact hq)]
+            simp [hW]
+          rw [hsx]
+          have hwander := encExpect_wander_le F ρ g ε hε (encChainX ε p₀) hX0
+            hfreshIH 0 T' (w + e) t.2.1 0 (le_refl 0)
+          refine le_trans hwander ?_
+          have hfe : f e = Real.exp ε * encChainX ε p₀ := by rw [hfdef]; simp [hW]
+          rw [hfe]
+          refine max_le hexpX1 ?_
+          have hee : Real.exp ε * Real.exp (-((0 : ℕ) : ℝ)) * encChainX ε p₀
+              = Real.exp ε * encChainX ε p₀ := by
+            rw [← Real.exp_add]
+            norm_num
+          rw [hee]
+    -- the bridge, then the two-mass computation at the fixed point
+    have hval1 : encVal ε (ρ + 1) (⟨w, t.2.1, 0, 0, 0⟩ : EncState) = 1 := by
+      simp [encVal]
+    have hbridge := encExpect_block_le F (ρ + 1) g ε hε s ⟨w, t.2.1, 0, 0, 0⟩
+      (show (s : ℤ) = t.2.1 - w.2 from hsZ) T f hf0
+      (Real.exp ε * encChainX ε p₀) hfB (fun e => hval1.trans_le (hf1' e)) hstep
+    refine le_trans hbridge ?_
+    have hmass : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal) :=
+      ENNReal.summable_toReal (by rw [(fpDist s).tsum_coe]; exact ENNReal.one_ne_top)
+    have hWsum : Summable (fun e : ℕ × ℤ =>
+        (fpDist s e).toReal * Set.indicator (whiteStrip n ξ) 1 (w + e)) := by
+      refine Summable.of_nonneg_of_le (fun e => mul_nonneg ENNReal.toReal_nonneg
+        (Set.indicator_nonneg (fun _ _ => zero_le_one) _)) (fun e => ?_) hmass
+      refine mul_le_of_le_one_right ENNReal.toReal_nonneg ?_
+      by_cases hW : w + e ∈ whiteStrip n ξ
+      · simp [Set.indicator_of_mem hW]
+      · simp [Set.indicator_of_notMem hW]
+    have hfid : (fun e : ℕ × ℤ => (fpDist s e).toReal * f e)
+        = fun e : ℕ × ℤ =>
+          Real.exp ε * encChainX ε p₀ * (fpDist s e).toReal
+            - (Real.exp ε * encChainX ε p₀ - 1)
+              * ((fpDist s e).toReal * Set.indicator (whiteStrip n ξ) 1 (w + e)) := by
+      funext e
+      by_cases hW : w + e ∈ whiteStrip n ξ
+      · rw [hfdef]
+        simp only [if_pos hW, Set.indicator_of_mem hW, Pi.one_apply]
+        ring
+      · rw [hfdef]
+        simp only [if_neg hW, Set.indicator_of_notMem hW]
+        ring
+    rw [show ∑' e : ℕ × ℤ, (fpDist s e).toReal * f e
+        = ∑' e : ℕ × ℤ, (Real.exp ε * encChainX ε p₀ * (fpDist s e).toReal
+          - (Real.exp ε * encChainX ε p₀ - 1)
+            * ((fpDist s e).toReal * Set.indicator (whiteStrip n ξ) 1 (w + e)))
+      from by rw [hfid],
+      Summable.tsum_sub (hmass.mul_left _) (hWsum.mul_left _),
+      tsum_mul_left, tsum_mul_left, fpDist_tsum_toReal, mul_one]
+    have hwm := hwhite w hw1 hwg t ht hmem s hsZ
+    nlinarith [hwm, hexpX1, hfix]
+
 /-- **The (7.59)-shaped deep white-exit bound** (the ONLY open external input of
 the X9 induction; sibling of the Case-2 kernel `fpDist_white_exit` in
 `BlackEdge.lean`). Identical statement with the Case-2 budget hypothesis
@@ -1218,22 +1464,95 @@ claim (7.67) produces sits at depth `≥ 0.1m ≥ g` once `C_{A,ε} ≥ 10·g` �
 count still reaches `R`, and the p.55 Markov consumption is unchanged. `g = 0`
 recovers the ungated encoding verbatim.
 
-OPEN (node X9): corrected proof route (recorded in `PENDING_WORK.md` lap 52 +
-lap-55 Reflection): two-level claim over fresh states — `Y(q, b, ρ) ≤ e^ε·X` for
-JUST-ENTERED states (`X := p₀/(1−(1−p₀)e^ε)`) and `Z ≤ max(1, Y-bound)` for
-generic states — by induction on `ρ` (remaining blocks) with an inner strong
-induction on `T`. Per block: `encExpect_block_le` (proved) reduces to the `fpDist`
-exit law; the two-mass vertex analysis (white-credit branches ≤ 1 pathwise) closes
-with `encounter_two_mass_bound` and the white-exit mass `P(w) ≥ p₀` from
-`fpDist_white_exit_deep` (the only open input) — available at every GATED
-encounter since its depth is ≥ `g = Cthr`; below the gate the fold is frozen
-(`encExpect_of_edge`). The affine state-normalization is `encExpect_normalize`. -/
+PROOF (lap 55; sole external input = `fpDist_white_exit_deep`, whose `Cthr` is
+the gate `g`): the init state is a credit-0 wander state, so `encExpect_wander_le`
+bounds it by `max 1 (e^ε·X) ≤ e^{2ε}` (`encChainX_le_exp`), with the entered-class
+hypothesis supplied by the Y-induction `encExpect_entered_le` at budget `R − 1`.
+The smallness shell: `ε₀ = min(1/100, (2p₀−1)/2)` makes `(1−p₀)(e^ε+1) ≤ 1` (via
+`e^ε(1−ε) ≤ 1`) and `e^{ε−1}X ≤ e^{2ε−1} ≤ 1`. -/
 theorem many_triangles_white :
     ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
     ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
     ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
     ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (j' : ℕ) (l' : ℤ),
     encExpect F R g ε T (encInit j' l') ≤ Real.exp (2 * ε) := by
-  sorry
+  obtain ⟨p₀, hp₀, Cthr, hkernel⟩ := fpDist_white_exit_deep
+  -- normalize the mass into (1/2, 1]
+  set p₁ : ℝ := min p₀ 1 with hp₁def
+  have hp : 1 / 2 < p₁ := lt_min hp₀ (by norm_num)
+  have hp1 : p₁ ≤ 1 := min_le_right _ _
+  refine ⟨min (1 / 100) ((2 * p₁ - 1) / 2),
+    lt_min (by norm_num) (by nlinarith), min_le_left _ _, Cthr, ?_⟩
+  intro ε hε hεε₀ n ξ hξ F R hR T j' l'
+  have hε100 : ε ≤ 1 / 100 := le_trans hεε₀ (min_le_left _ _)
+  have hεp : ε ≤ (2 * p₁ - 1) / 2 := le_trans hεε₀ (min_le_right _ _)
+  have hε1 : ε < 1 := by linarith
+  -- smallness: (1 − p₁)(e^ε + 1) ≤ 1, via e^ε·(1 − ε) ≤ 1
+  have hkey : Real.exp ε * (1 - ε) ≤ 1 := by
+    have h := Real.add_one_le_exp (-ε)
+    calc Real.exp ε * (1 - ε) = Real.exp ε * (-ε + 1) := by ring
+      _ ≤ Real.exp ε * Real.exp (-ε) :=
+          mul_le_mul_of_nonneg_left h (Real.exp_pos ε).le
+      _ = 1 := by rw [← Real.exp_add]; simp
+  have hsmall : (1 - p₁) * (Real.exp ε + 1) ≤ 1 := by
+    have h2 : (Real.exp ε + 1) * (1 - ε) ≤ 2 - ε := by nlinarith
+    have h3 : (1 - p₁) * (2 - ε) ≤ 1 - ε := by
+      have hprod : ε * p₁ ≤ ε * 1 :=
+        mul_le_mul_of_nonneg_left hp1 hε.le
+      nlinarith
+    have h4 : (1 - p₁) * (Real.exp ε + 1) * (1 - ε) ≤ 1 * (1 - ε) := by
+      have := mul_le_mul_of_nonneg_left h2 (show (0:ℝ) ≤ 1 - p₁ by linarith)
+      calc (1 - p₁) * (Real.exp ε + 1) * (1 - ε)
+          = (1 - p₁) * ((Real.exp ε + 1) * (1 - ε)) := by ring
+        _ ≤ (1 - p₁) * (2 - ε) := this
+        _ ≤ 1 - ε := h3
+        _ = 1 * (1 - ε) := (one_mul _).symm
+    exact le_of_mul_le_mul_right h4 (by linarith)
+  have hXe : encChainX ε p₁ ≤ Real.exp ε := encChainX_le_exp hε.le hp hp1 hsmall
+  have hX1 : 1 ≤ encChainX ε p₁ := one_le_encChainX hε.le hp hp1 hsmall
+  have hX0 : 0 ≤ encChainX ε p₁ := le_trans zero_le_one hX1
+  have hXe1 : Real.exp (ε - 1) * encChainX ε p₁ ≤ 1 := by
+    calc Real.exp (ε - 1) * encChainX ε p₁
+        ≤ Real.exp (ε - 1) * Real.exp ε :=
+          mul_le_mul_of_nonneg_left hXe (Real.exp_pos _).le
+      _ = Real.exp (ε - 1 + ε) := (Real.exp_add _ _).symm
+      _ ≤ 1 := by
+          rw [Real.exp_le_one_iff]
+          linarith
+  -- the white-mass hypothesis in the entered-state form, from the kernel
+  have hwhite : ∀ w : ℕ × ℤ, 1 ≤ w.1 → w.1 + Cthr ≤ n / 2 →
+      ∀ t ∈ F.T, (w.1 - 1, w.2) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - w.2 →
+      p₁ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
+        * Set.indicator (whiteStrip n ξ) 1 (w + e) := by
+    intro w hw1 hwg t ht hmem s hsZ
+    have hm : n / 2 - (n / 2 - w.1) = w.1 := by omega
+    have h := hkernel n ξ hξ F (n / 2 - w.1) (by omega) (by omega) w.2 (by omega)
+      t ht (by rw [show n / 2 - (n / 2 - w.1) - 1 = w.1 - 1 from by omega]; exact hmem)
+      s hsZ
+    refine le_trans (min_le_left _ _) (h.trans_eq (tsum_congr fun e => ?_))
+    rw [hm]
+    rfl
+  -- the Y-bound for entered states, and the induced wander hypothesis at R − 1
+  have hY := encExpect_entered_le F Cthr ε p₁ hε.le hp hp1 hsmall hXe1 hwhite
+  have hfresh : ∀ (T' : ℕ) (q : ℕ × ℤ), 1 ≤ q.1 → q.1 + Cthr ≤ n / 2 →
+      ∀ hcov : (q.1 - 1) + 1 ≤ n / 2 ∧ black n ξ (q.1 - 1) q.2,
+      encExpect F (R - 1) Cthr ε T'
+        ⟨q, (F.coveringTriangle (q.1 - 1, q.2) hcov).2.1, 0, 0, 0⟩
+        ≤ encChainX ε p₁ :=
+    fun T' q h1 h2 hcov =>
+      hY (R - 1) T' q h1 h2 _ (F.coveringTriangle_mem hcov)
+        (F.coveringTriangle_covers hcov)
+  -- the init state is a wander state with zero credit
+  have hwander := encExpect_wander_le F (R - 1) Cthr ε hε.le (encChainX ε p₁) hX0
+    hfresh 0 T (j', l') l' 0 (le_refl 0)
+  rw [show R - 1 + 1 = R from by omega] at hwander
+  refine le_trans hwander ?_
+  refine max_le (Real.one_le_exp (by positivity)) ?_
+  calc Real.exp ε * Real.exp (-((0 : ℕ) : ℝ)) * encChainX ε p₁
+      = Real.exp ε * encChainX ε p₁ := by norm_num
+    _ ≤ Real.exp ε * Real.exp ε :=
+        mul_le_mul_of_nonneg_left hXe (Real.exp_pos _).le
+    _ = Real.exp (2 * ε) := by rw [← Real.exp_add]; ring_nf
 
 end TaoCollatz

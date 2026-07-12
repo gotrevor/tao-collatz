@@ -1,5 +1,45 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 55 (cont-2): **LEMMA 7.9 CLOSED (modulo its one kernel)** — `many_triangles_white` PROVED
+
+Directive step 2 done in the same lap as the design. The (7.57) pin is now a
+THEOREM; `#print axioms many_triangles_white` = trust base + `sorryAx` via
+exactly `fpDist_white_exit_deep` (the pinned external input, directive step 3).
+New machinery, all verified `[propext, Classical.choice, Quot.sound]`:
+
+- `encExpect_block_le` GENERALIZED: the `s/3 + 1 ≤ T` horizon hypothesis is
+  REPLACED by `∀ e, encVal ε R σ ≤ f e` — the bridge now holds at EVERY horizon
+  (short-horizon leftovers keep `encVal` constant mid-block and `fpDist` has
+  mass 1, so the pointwise domination absorbs them). This removed the entire
+  small-`T` case split the lap-54 plan was stuck on.
+- `encExpect_wander_le` hfresh RESTRICTED to the entered class (`∀ hcov`-form
+  over `coveringTriangle` — proof-irrelevance makes the barrier field equation
+  rewrite cleanly). This kills the divergent general-fresh Z-channel: wander
+  encounters always normalize onto ENTERED states.
+- **`encExpect_entered_le` (the Y-induction, AXIOM-CLEAN)**: entered states are
+  ≤ `encChainX ε p₀`, by induction on the budget `R`; per block the bridge maps
+  exits through `f = 1_W + e^εX·1_{¬W}`; instant re-encounters normalize via
+  `encExpect_normalize_init` (white banks `e^{ε−1}X ≤ 1`), wander exits carry
+  their credit into the wander lemma; the fixed point
+  `e^εX − (e^εX−1)p₀ = X` (`encChainX_fixed`) closes the induction. The white
+  mass `≥ p₀` enters as HYPOTHESIS `hwhite`, so this theorem is clean.
+- `many_triangles_white`: init = credit-0 wander state; `ε₀ := min(1/100,
+  (2p₁−1)/2)` with `p₁ := min p₀ 1`; smallness via `e^ε(1−ε) ≤ 1`; final bound
+  `max 1 (e^ε·X) ≤ e^{2ε}` via `encChainX_le_exp`. Gate `g := Cthr` of the
+  kernel — exactly what makes `hwhite` available at every gated encounter.
+- `fpDist_tsum_toReal` helper.
+
+**Note for the judge**: `encounter_two_mass_bound` / `encounter_vertex_bound`
+ended up NOT consumed by the final gluing (the fixed-point computation is done
+inline via `encChainX_fixed` in `encExpect_entered_le`); they remain as the
+ledger's documentation/alternate route.
+
+**Next (directive step 3)**: `fpDist_white_exit_deep` — X9's only remaining
+input; prove GENERAL then derive X8's `fpDist_white_exit`. Route: X6
+`fpDist_location_bound` concentration + `fpDist_support_snd_gt` top-clearing +
+X3 separation excludes other triangles + in-strip via `s = O(m)` ((7.52)).
+Then X10 (fpDistPlus location bound first).
+
 ## Lap 55 (cont): DEPTH-GATED FOLD LANDED — directive step 1 done, X9 gluing unblocked
 
 `encStep`/`encExpect` now carry a gate `g : ℕ`: the encounter condition's strip
