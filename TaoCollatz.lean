@@ -7,6 +7,7 @@ import TaoCollatz.Prob.LocalBound
 import TaoCollatz.Prob.CharFn
 import TaoCollatz.Prob.Tilt
 import TaoCollatz.Prob.Mgf
+import TaoCollatz.Prob.LocalInstances
 import TaoCollatz.Syracuse.SyracRV
 import TaoCollatz.Syracuse.ValuationDist
 import TaoCollatz.Fourier.ZMod3

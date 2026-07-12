@@ -1,5 +1,47 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 43 (2026-07-12, seventh box session): ALL THREE d=1 TAIL BOUNDS PROVED
+
+**`geomHalf_tail_bound`, `geomQuarter_tail_bound`, `pascal_tail_bound` are
+theorems** (axiom-clean), in NEW `Prob/LocalInstances.lean` (statements moved
+from LocalBound.lean — proofs need the Mgf engine, which imports LocalBound;
+NOTE at old site; shared `chernoff_clip_le_nonneg` + `exp_neg_min_le_Gweight`
+moved here from HoldLocal, which now imports this module). Machinery:
+- `tiltZ_expW_ne_zero` — Z ≠ 0 generic on PMF ℕ (weights positive, mass 1);
+- 1-D quadratic MGF bounds, uniform K = 1000 (validated numerically):
+  `tiltZ_geomHalf_le_quad` (K = 8 tight, envelope E = 1+λ+2λ² through
+  frac_closed_le), `tiltZ_pascal_le_quad` (square of geomHalf),
+  `tiltZ_geomQuarter_le_quad` (transfer of tiltZ_hold_fst_le via NEW
+  `tiltZ_geomQuarter_eq` = hold_map_fst + tiltZ_map);
+- `iidSum_nat_halfspace_le` — generic 1-D one-sided Markov under tilt;
+- `iidSum_nat_tail_of_quad` — GENERIC d=1 Lemma 2.2(ii): any PMF ℕ with
+  Z ≤ 1+mλ+1000λ² on |λ| ≤ 1/200 gets the tail bound (c = 1/400, C = 2);
+  the three instances are 3-liners over it.
+Gotcha: degree-4 envelope nlinarith needs box-product×λ² hints
+(mul_nonneg (1/200±λ) (sq_nonneg λ)).
+
+**S3 ledger now: only the three d=1 LOCAL bounds remain** (sorries in
+LocalInstances.lean): geomHalf/geomQuarter/pascal_local_bound. They need the
+d=1 center bound C/√(1+n): a single-ZMod circle-method analogue of
+`iidSum_apply_le_center_of_decay` (CharFn.lean) — same proof shape, ONE charFn
+decay factor, N = ⌊√n⌋+1 gives C·N⁻¹... wait C/N with N ~ √n ✓. Steps:
+1. `iidSum_nat_apply_le_center_of_decay (p : PMF ℕ) (c) (hdec : ∀ N [NeZero N],
+   4 ≤ N → ∀ ξ : ZMod N, ‖charFn (p.map (Nat.cast) : PMF (ZMod N)) ξ‖^2 ≤
+   1 - ((nd ξ : ℝ)/N)^2/c) : ((iidSum p n) v).toReal ≤ (32·c... )/sqrt(1+n)` —
+   mirror the 2-D proof in CharFn.lean (read `iidSum_apply_le_center_of_decay`
+   first; the 1-D version drops one factor and the constant becomes 32c/√ not
+   (32c)²/n).
+2. charFn decay for the TILTED 1-D walks from atom masses: need two atoms at
+   distance 1 (geomHalf: masses at 1,2 = 1/2,1/4; tilted ≥ ~1/5 on box;
+   geomQuarter: atoms 1,2; pascal: atoms 2,3) — reuse `charFn_decay_of_atoms`?
+   That one is 2-D (ZMod N × ZMod N); check if a 1-D atom-decay lemma exists in
+   CharFn.lean or needs writing (mirror).
+3. Tilted-walk assembly identical to hold_local_bound (1-D chernoff bridge +
+   clip + Gweight; all shared pieces already factored).
+Then S3 is fully GREEN. After that: operator red queue (2) X8/X10 statement
+design Prop 7.8 Cases 2/3 (7.46)-(7.53); (3) X9 Lemma 7.9 skeleton; (4) X1;
+(5) X5 bridge sorries; (6) C8.
+
 ## Lap 42 (2026-07-12, seventh box session): `hold_tail_bound` PROVED — S3 2-D SIDE COMPLETE
 
 **Lemma 2.2(ii) for `Hold` is a theorem** (axiom-clean), same lap-41 engine, no

@@ -148,51 +148,8 @@ theorem iidSum_pascal_apply (n L : ℕ) (hn : 1 ≤ n) (hL : 1 ≤ L) :
   rw [pascal_eq_iidSum, iidSum_iidSum, show n * 2 = 2 * n from by ring]
   exact negBinomial_apply (2 * n) L (by omega) hL
 
-/-- **Lemma 2.2(i) for `Geom(2)`** (paper p.15, displayed instance):
-`P(|Geom(2)_n| = L) ≪ (n+1)^{-1/2} · G_n(c(L − 2n))`. -/
-theorem geomHalf_local_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n L : ℕ),
-      ((iidSum geomHalf n) L).toReal
-        ≤ C / Real.sqrt (1 + n) * Gweight (1 + n) (c * ((L : ℝ) - 2 * n)) := by
-  sorry
-
-/-- **Lemma 2.2(ii) for `Geom(2)`** (paper p.15, displayed instance):
-`P(||Geom(2)_n| − 2n| ≥ λ) ≪ G_n(cλ)`. -/
-theorem geomHalf_tail_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
-      (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0)
-        ≤ C * Gweight (1 + n) (c * lam) := by
-  sorry
-
-/-- **Lemma 2.2(i) for `Geom(4)`-shaped `geomQuarter`** (mean 4; §7.3 consumes this
-through `Hold`'s first coordinate). -/
-theorem geomQuarter_local_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n L : ℕ),
-      ((iidSum geomQuarter n) L).toReal
-        ≤ C / Real.sqrt (1 + n) * Gweight (1 + n) (c * ((L : ℝ) - 4 * n)) := by
-  sorry
-
-/-- **Lemma 2.2(ii) for `geomQuarter`**. -/
-theorem geomQuarter_tail_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
-      (∑' L : ℕ, if lam ≤ |(L : ℝ) - 4 * n| then ((iidSum geomQuarter n) L).toReal else 0)
-        ≤ C * Gweight (1 + n) (c * lam) := by
-  sorry
-
-/-- **Lemma 2.2(i) for `Pascal`** (mean 4). Via `pascal_eq_map_iid`, `iidSum pascal n`
-is the law of `|Geom(2)_{2n}|`, so this reduces to the exact negative-binomial point
-mass `C(L-1, 2n-1)·2^{-L}` (`negBinomial_apply`) plus Stirling-type estimates. -/
-theorem pascal_local_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n L : ℕ),
-      ((iidSum pascal n) L).toReal
-        ≤ C / Real.sqrt (1 + n) * Gweight (1 + n) (c * ((L : ℝ) - 4 * n)) := by
-  sorry
-
-/-- **Lemma 2.2(ii) for `Pascal`**. -/
-theorem pascal_tail_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
-      (∑' L : ℕ, if lam ≤ |(L : ℝ) - 4 * n| then ((iidSum pascal n) L).toReal else 0)
-        ≤ C * Gweight (1 + n) (c * lam) := by
-  sorry
+-- NOTE: the six d=1 Lemma 2.2 statements (`geomHalf/geomQuarter/pascal` ×
+-- `local/tail`) live in `Prob/LocalInstances.lean`: their proofs consume the
+-- tilting/MGF engine of `Prob/Mgf.lean`, which imports this module.
 
 end TaoCollatz

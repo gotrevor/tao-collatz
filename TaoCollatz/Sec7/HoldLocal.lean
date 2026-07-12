@@ -1,5 +1,6 @@
 import TaoCollatz.Sec7.Unroll
 import TaoCollatz.Prob.Mgf
+import TaoCollatz.Prob.LocalInstances
 
 /-!
 # Lemma 2.2(i) for `Hold`: assembly of the tilted circle method (node S3, steps F4–F5)
@@ -281,54 +282,6 @@ theorem hold_local_bound :
           mul_le_mul_of_nonneg_left hGw (by positivity)
       _ = 6553600000000 / (1 + (n : ℝ))
           * Gweight (1 + n) (1 / 400 * ‖((d1, d2) : ℝ × ℝ)‖) := by rw [hnorm]
-
-/-- The nonneg-deviation form of `chernoff_clip_le`, exposing the SIGN of the
-optimal tilt (`μ ≥ 0` when `dev ≥ 0`) — needed by the one-sided Chernoff tail
-bounds, where the tilt direction must match the half-space. -/
-theorem chernoff_clip_le_nonneg {n : ℕ} (hn : 1 ≤ n) {dev : ℝ} (hdev : 0 ≤ dev) :
-    ∃ mu : ℝ, 0 ≤ mu ∧ mu ≤ 1 / 200 ∧
-      1000 * (n : ℝ) * mu ^ 2 - mu * dev
-        ≤ -min (dev ^ 2 / (4000 * n)) (dev / 400) := by
-  have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
-  have hnpos : (0 : ℝ) < n := by linarith
-  have hne : (n : ℝ) ≠ 0 := hnpos.ne'
-  by_cases hc : dev ≤ 10 * n
-  · refine ⟨dev / (2000 * n), by positivity, ?_, ?_⟩
-    · rw [div_le_iff₀ (by positivity)]
-      linarith
-    · have heq : 1000 * (n : ℝ) * (dev / (2000 * n)) ^ 2 - dev / (2000 * n) * dev
-          = -(dev ^ 2 / (4000 * n)) := by
-        field_simp
-        ring
-      rw [heq, neg_le_neg_iff]
-      exact min_le_left _ _
-  · push_neg at hc
-    refine ⟨1 / 200, by norm_num, le_refl _, ?_⟩
-    refine le_trans ?_ (neg_le_neg (min_le_right (dev ^ 2 / (4000 * n)) (dev / 400)))
-    nlinarith
-
-/-- Matching the optimized Chernoff exponent to the two `Gweight` branches
-(shared by `hold_local_bound` and `hold_tail_bound`): for `n ≥ 1`, `x ≥ 0`,
-`e^{−min(x²/4000n, x/400)} ≤ G_{1+n}(x/400)`. -/
-theorem exp_neg_min_le_Gweight {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 0 ≤ x) :
-    Real.exp (-min (x ^ 2 / (4000 * n)) (x / 400)) ≤ Gweight (1 + n) (1 / 400 * x) := by
-  have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
-  have hnpos : (0 : ℝ) < n := by linarith
-  rcases min_cases (x ^ 2 / (4000 * (n : ℝ))) (x / 400) with ⟨hm, _⟩ | ⟨hm, _⟩
-  · rw [hm]
-    have hbr : Real.exp (-(x ^ 2 / (4000 * n)))
-        ≤ Real.exp (-((1 / 400 * x) ^ 2) / (1 + (n : ℝ))) := by
-      apply Real.exp_le_exp.mpr
-      rw [neg_div, neg_le_neg_iff,
-        div_le_div_iff₀ (by positivity) (by positivity)]
-      nlinarith [sq_nonneg x, mul_nonneg (sq_nonneg x) hnpos.le]
-    exact le_trans hbr (le_add_of_nonneg_right (Real.exp_pos _).le)
-  · rw [hm]
-    have hbr : -(x / 400) = -|1 / 400 * x| := by
-      rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ 1 / 400 * x)]
-      ring
-    rw [hbr]
-    exact le_add_of_nonneg_left (Real.exp_pos _).le
 
 /-- **One-sided Chernoff/Markov bound for a `Hold` tail half-space**: if the tilt
 weight is at least `e^a` everywhere on the region `cond`, then the region's
