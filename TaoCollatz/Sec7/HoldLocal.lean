@@ -282,16 +282,262 @@ theorem hold_local_bound :
       _ = 6553600000000 / (1 + (n : ℝ))
           * Gweight (1 + n) (1 / 400 * ‖((d1, d2) : ℝ × ℝ)‖) := by rw [hnorm]
 
-/-- **Lemma 2.2(ii) for `Hold`**: the 2-D tail bound
-`P(|Hold_{[1,n]} − n(4,16)| ≥ λ) ≪ G_n(cλ)` (same norm drift note as
-`hold_local_bound`). Route: direct Chernoff — the same tilt/MGF ingredients as
-`holdSum_apply_le_chernoff` summed over the tail half-space, no center bound
-needed; alternatively sum `hold_local_bound` over the tail annuli. -/
+/-- The nonneg-deviation form of `chernoff_clip_le`, exposing the SIGN of the
+optimal tilt (`μ ≥ 0` when `dev ≥ 0`) — needed by the one-sided Chernoff tail
+bounds, where the tilt direction must match the half-space. -/
+theorem chernoff_clip_le_nonneg {n : ℕ} (hn : 1 ≤ n) {dev : ℝ} (hdev : 0 ≤ dev) :
+    ∃ mu : ℝ, 0 ≤ mu ∧ mu ≤ 1 / 200 ∧
+      1000 * (n : ℝ) * mu ^ 2 - mu * dev
+        ≤ -min (dev ^ 2 / (4000 * n)) (dev / 400) := by
+  have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hnpos : (0 : ℝ) < n := by linarith
+  have hne : (n : ℝ) ≠ 0 := hnpos.ne'
+  by_cases hc : dev ≤ 10 * n
+  · refine ⟨dev / (2000 * n), by positivity, ?_, ?_⟩
+    · rw [div_le_iff₀ (by positivity)]
+      linarith
+    · have heq : 1000 * (n : ℝ) * (dev / (2000 * n)) ^ 2 - dev / (2000 * n) * dev
+          = -(dev ^ 2 / (4000 * n)) := by
+        field_simp
+        ring
+      rw [heq, neg_le_neg_iff]
+      exact min_le_left _ _
+  · push_neg at hc
+    refine ⟨1 / 200, by norm_num, le_refl _, ?_⟩
+    refine le_trans ?_ (neg_le_neg (min_le_right (dev ^ 2 / (4000 * n)) (dev / 400)))
+    nlinarith
+
+/-- Matching the optimized Chernoff exponent to the two `Gweight` branches
+(shared by `hold_local_bound` and `hold_tail_bound`): for `n ≥ 1`, `x ≥ 0`,
+`e^{−min(x²/4000n, x/400)} ≤ G_{1+n}(x/400)`. -/
+theorem exp_neg_min_le_Gweight {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 0 ≤ x) :
+    Real.exp (-min (x ^ 2 / (4000 * n)) (x / 400)) ≤ Gweight (1 + n) (1 / 400 * x) := by
+  have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hnpos : (0 : ℝ) < n := by linarith
+  rcases min_cases (x ^ 2 / (4000 * (n : ℝ))) (x / 400) with ⟨hm, _⟩ | ⟨hm, _⟩
+  · rw [hm]
+    have hbr : Real.exp (-(x ^ 2 / (4000 * n)))
+        ≤ Real.exp (-((1 / 400 * x) ^ 2) / (1 + (n : ℝ))) := by
+      apply Real.exp_le_exp.mpr
+      rw [neg_div, neg_le_neg_iff,
+        div_le_div_iff₀ (by positivity) (by positivity)]
+      nlinarith [sq_nonneg x, mul_nonneg (sq_nonneg x) hnpos.le]
+    exact le_trans hbr (le_add_of_nonneg_right (Real.exp_pos _).le)
+  · rw [hm]
+    have hbr : -(x / 400) = -|1 / 400 * x| := by
+      rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ 1 / 400 * x)]
+      ring
+    rw [hbr]
+    exact le_add_of_nonneg_left (Real.exp_pos _).le
+
+/-- **One-sided Chernoff/Markov bound for a `Hold` tail half-space**: if the tilt
+weight is at least `e^a` everywhere on the region `cond`, then the region's
+`iidSum` mass is at most `e^{n·quad(λ) − a}` — Markov's inequality under the tilt,
+`tiltZ_iidSum` multiplicativity, and the quadratic MGF bound `tiltZ_hold_le_quad`.
+No center bound needed (this is Lemma 2.2(ii)'s engine, paper p.15). -/
+theorem holdSum_halfspace_le {l1 l2 : ℝ}
+    (h1lo : -(1 / 200) ≤ l1) (h1hi : l1 ≤ 1 / 200)
+    (h2lo : -(1 / 200) ≤ l2) (h2hi : l2 ≤ 1 / 200)
+    (n : ℕ) (cond : ℕ × ℤ → Prop) [DecidablePred cond] (a : ℝ)
+    (hcond : ∀ d : ℕ × ℤ, cond d → a ≤ l1 * d.1 + l2 * d.2) :
+    (∑' d : ℕ × ℤ, if cond d then (iidSum hold n) d else 0)
+      ≤ ENNReal.ofReal
+          (Real.exp ((n : ℝ) * (4 * l1 + 16 * l2 + 1000 * (l1 ^ 2 + l2 ^ 2)) - a)) := by
+  have h1lo' : -(1 / 50) ≤ l1 := by linarith
+  have h1hi' : l1 ≤ 1 / 50 := by linarith
+  have h2lo' : -(1 / 50) ≤ l2 := by linarith
+  have h2hi' : l2 ≤ 1 / 50 := by linarith
+  have hZ0 := tiltZ_hold_ne_zero l1 l2
+  have hZt := tiltZ_hold_ne_top h1lo' h1hi' h2lo' h2hi'
+  set u : ℝ := 4 * l1 + 16 * l2 + 1000 * (l1 ^ 2 + l2 ^ 2) with hu
+  -- Markov under the tilt
+  have hM : (∑' d : ℕ × ℤ, if cond d then (iidSum hold n) d else 0)
+      ≤ ENNReal.ofReal (Real.exp (-a)) * tiltZ hold (expW2 l1 l2) ^ n := by
+    rw [← tiltZ_iidSum hold (expW2_zero l1 l2) (expW2_add l1 l2) hZ0 hZt n, tiltZ,
+      ← ENNReal.tsum_mul_left]
+    refine ENNReal.tsum_le_tsum fun d => ?_
+    split_ifs with h
+    · have hw : ENNReal.ofReal (Real.exp a) ≤ expW2 l1 l2 d := by
+        simp only [expW2]
+        exact ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr (hcond d h))
+      calc (iidSum hold n) d
+          = ENNReal.ofReal (Real.exp (-a))
+              * (ENNReal.ofReal (Real.exp a) * (iidSum hold n) d) := by
+            rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add,
+              neg_add_cancel, Real.exp_zero, ENNReal.ofReal_one, one_mul]
+        _ ≤ ENNReal.ofReal (Real.exp (-a))
+              * ((iidSum hold n) d * expW2 l1 l2 d) := by
+            rw [mul_comm (ENNReal.ofReal (Real.exp a))]
+            gcongr
+    · exact bot_le
+  refine le_trans hM ?_
+  -- the Z-power bound
+  have hZle : tiltZ hold (expW2 l1 l2) ≤ ENNReal.ofReal (Real.exp u) :=
+    le_trans (tiltZ_hold_le_quad h1lo h1hi h2lo h2hi)
+      (ENNReal.ofReal_le_ofReal (by
+        have h := Real.add_one_le_exp u
+        rw [hu] at h ⊢
+        linarith))
+  have hBpow : tiltZ hold (expW2 l1 l2) ^ n
+      ≤ ENNReal.ofReal (Real.exp ((n : ℝ) * u)) := by
+    calc tiltZ hold (expW2 l1 l2) ^ n
+        ≤ ENNReal.ofReal (Real.exp u) ^ n := by gcongr
+      _ = ENNReal.ofReal (Real.exp u ^ n) :=
+          (ENNReal.ofReal_pow (Real.exp_pos _).le n).symm
+      _ = ENNReal.ofReal (Real.exp ((n : ℝ) * u)) := by rw [← Real.exp_nat_mul]
+  calc ENNReal.ofReal (Real.exp (-a)) * tiltZ hold (expW2 l1 l2) ^ n
+      ≤ ENNReal.ofReal (Real.exp (-a)) * ENNReal.ofReal (Real.exp ((n : ℝ) * u)) := by
+        gcongr
+    _ = ENNReal.ofReal (Real.exp ((n : ℝ) * u - a)) := by
+        rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, sub_eq_add_neg,
+          add_comm (-a)]
+
+/-- **Lemma 2.2(ii) for `Hold`** (paper p.42 / p.15): the 2-D tail bound
+`P(|Hold_{[1,n]} − n(4,16)| ≥ λ) ≪ G_n(cλ)`; witnesses `c = 1/400`, `C = 4`.
+Direct Chernoff: the sup-norm tail is covered by four sign-pattern half-spaces,
+each bounded by `holdSum_halfspace_le` with the clipped tilt of
+`chernoff_clip_le_nonneg` in the matching coordinate/direction (same norm drift
+note as `hold_local_bound`). -/
 theorem hold_tail_bound :
     ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
       (∑' d : ℕ × ℤ, if lam ≤ ‖(((d.1 : ℝ) - 4 * n, (d.2 : ℝ) - 16 * n) : ℝ × ℝ)‖
           then ((holdSum n) d).toReal else 0)
         ≤ C * Gweight (1 + n) (c * lam) := by
-  sorry
+  refine ⟨1 / 400, by norm_num, 4, by norm_num, fun n lam hlam => ?_⟩
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · -- n = 0: point mass at the origin
+    simp only [holdSum_eq_iidSum, iidSum_zero]
+    rw [tsum_eq_single (0 : ℕ × ℤ) (fun d hd => by
+      rw [PMF.pure_apply, if_neg hd, ENNReal.toReal_zero, ite_self])]
+    rw [PMF.pure_apply, if_pos rfl, ENNReal.toReal_one]
+    split_ifs with h0
+    · have hlam0 : lam = 0 := by
+        simp only [Prod.fst_zero, Prod.snd_zero] at h0
+        norm_num [Prod.norm_def] at h0
+        linarith
+      rw [hlam0]
+      rw [Gweight]
+      norm_num [Real.exp_zero]
+    · exact mul_nonneg (by norm_num) (Gweight_nonneg _ _)
+  · -- n ≥ 1: four half-space Chernoff bounds
+    have hn1 : 1 ≤ n := hn
+    have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+    obtain ⟨mu, hmu0, hmuhi, hexp⟩ := chernoff_clip_le_nonneg hn1 hlam
+    set B : ℝ := Real.exp (1000 * n * mu ^ 2 - mu * lam) with hB
+    have hmulo : -(1 / 200) ≤ mu := by linarith
+    have hmulo' : -(1 / 200) ≤ -mu := by linarith
+    have hmuhi' : -mu ≤ 1 / 200 := by linarith
+    have hz1 : -(1 / 200 : ℝ) ≤ 0 := by norm_num
+    have hz2 : (0 : ℝ) ≤ 1 / 200 := by norm_num
+    -- the four half-space ENNReal bounds
+    have hT1 := holdSum_halfspace_le hmulo hmuhi hz1 hz2 n
+      (fun d : ℕ × ℤ => lam ≤ (d.1 : ℝ) - 4 * n) (mu * (4 * n + lam))
+      (fun d hd => by
+        have h := mul_le_mul_of_nonneg_left
+          (show (4 * (n : ℝ) + lam) ≤ (d.1 : ℝ) by linarith) hmu0
+        simp only [zero_mul, add_zero]
+        linarith)
+    have hT2 := holdSum_halfspace_le hmulo' hmuhi' hz1 hz2 n
+      (fun d : ℕ × ℤ => (d.1 : ℝ) - 4 * n ≤ -lam) (-mu * (4 * n - lam))
+      (fun d hd => by
+        have h := mul_le_mul_of_nonneg_left
+          (show (d.1 : ℝ) ≤ 4 * (n : ℝ) - lam by linarith) hmu0
+        simp only [zero_mul, add_zero]
+        nlinarith)
+    have hT3 := holdSum_halfspace_le hz1 hz2 hmulo hmuhi n
+      (fun d : ℕ × ℤ => lam ≤ (d.2 : ℝ) - 16 * n) (mu * (16 * n + lam))
+      (fun d hd => by
+        have h := mul_le_mul_of_nonneg_left
+          (show (16 * (n : ℝ) + lam) ≤ (d.2 : ℝ) by linarith) hmu0
+        simp only [zero_mul, zero_add]
+        linarith)
+    have hT4 := holdSum_halfspace_le hz1 hz2 hmulo' hmuhi' n
+      (fun d : ℕ × ℤ => (d.2 : ℝ) - 16 * n ≤ -lam) (-mu * (16 * n - lam))
+      (fun d hd => by
+        have h := mul_le_mul_of_nonneg_left
+          (show (d.2 : ℝ) ≤ 16 * (n : ℝ) - lam by linarith) hmu0
+        simp only [zero_mul, zero_add]
+        nlinarith)
+    -- each exponent collapses to `1000nμ² − μ·lam`
+    have he1 : (n : ℝ) * (4 * mu + 16 * 0 + 1000 * (mu ^ 2 + 0 ^ 2))
+        - mu * (4 * n + lam) = 1000 * n * mu ^ 2 - mu * lam := by ring
+    have he2 : (n : ℝ) * (4 * -mu + 16 * 0 + 1000 * ((-mu) ^ 2 + 0 ^ 2))
+        - -mu * (4 * n - lam) = 1000 * n * mu ^ 2 - mu * lam := by ring
+    have he3 : (n : ℝ) * (4 * 0 + 16 * mu + 1000 * (0 ^ 2 + mu ^ 2))
+        - mu * (16 * n + lam) = 1000 * n * mu ^ 2 - mu * lam := by ring
+    have he4 : (n : ℝ) * (4 * 0 + 16 * -mu + 1000 * (0 ^ 2 + (-mu) ^ 2))
+        - -mu * (16 * n - lam) = 1000 * n * mu ^ 2 - mu * lam := by ring
+    rw [he1] at hT1
+    rw [he2] at hT2
+    rw [he3] at hT3
+    rw [he4] at hT4
+    -- pointwise 4-way split of the sup-norm tail indicator
+    have hsplit : ∀ d : ℕ × ℤ,
+        (if lam ≤ ‖(((d.1 : ℝ) - 4 * n, (d.2 : ℝ) - 16 * n) : ℝ × ℝ)‖
+            then (iidSum hold n) d else 0)
+          ≤ (if lam ≤ (d.1 : ℝ) - 4 * n then (iidSum hold n) d else 0)
+            + (if (d.1 : ℝ) - 4 * n ≤ -lam then (iidSum hold n) d else 0)
+            + (if lam ≤ (d.2 : ℝ) - 16 * n then (iidSum hold n) d else 0)
+            + (if (d.2 : ℝ) - 16 * n ≤ -lam then (iidSum hold n) d else 0) := by
+      intro d
+      by_cases h0 : lam ≤ ‖(((d.1 : ℝ) - 4 * n, (d.2 : ℝ) - 16 * n) : ℝ × ℝ)‖
+      · rw [if_pos h0]
+        rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs] at h0
+        rcases le_max_iff.mp h0 with h | h
+        · rcases le_abs.mp h with h' | h'
+          · exact le_of_eq (if_pos h').symm |>.trans
+              (((self_le_add_right _ _).trans (self_le_add_right _ _)).trans
+                (self_le_add_right _ _))
+          · have hc : (d.1 : ℝ) - 4 * n ≤ -lam := by linarith
+            exact le_of_eq (if_pos hc).symm |>.trans
+              (((self_le_add_left _ _).trans (self_le_add_right _ _)).trans
+                (self_le_add_right _ _))
+        · rcases le_abs.mp h with h' | h'
+          · exact le_of_eq (if_pos h').symm |>.trans
+              ((self_le_add_left _ _).trans (self_le_add_right _ _))
+          · have hc : (d.2 : ℝ) - 16 * n ≤ -lam := by linarith
+            exact le_of_eq (if_pos hc).symm |>.trans (self_le_add_left _ _)
+      · rw [if_neg h0]
+        exact bot_le
+    -- the ENNReal tail mass bound
+    have hchain : (∑' d : ℕ × ℤ,
+        if lam ≤ ‖(((d.1 : ℝ) - 4 * n, (d.2 : ℝ) - 16 * n) : ℝ × ℝ)‖
+          then (iidSum hold n) d else 0)
+        ≤ 4 * ENNReal.ofReal B := by
+      refine le_trans (ENNReal.tsum_le_tsum hsplit) ?_
+      rw [ENNReal.tsum_add, ENNReal.tsum_add, ENNReal.tsum_add]
+      calc _ ≤ ENNReal.ofReal B + ENNReal.ofReal B + ENNReal.ofReal B
+            + ENNReal.ofReal B :=
+            add_le_add (add_le_add (add_le_add hT1 hT2) hT3) hT4
+        _ = 4 * ENNReal.ofReal B := by ring
+    -- pass to `toReal`
+    have hTop : ∀ d : ℕ × ℤ,
+        (if lam ≤ ‖(((d.1 : ℝ) - 4 * n, (d.2 : ℝ) - 16 * n) : ℝ × ℝ)‖
+          then (iidSum hold n) d else 0) ≠ ∞ := fun d => by
+      split_ifs
+      · exact PMF.apply_ne_top _ _
+      · exact ENNReal.zero_ne_top
+    have hlhs : (∑' d : ℕ × ℤ,
+        if lam ≤ ‖(((d.1 : ℝ) - 4 * n, (d.2 : ℝ) - 16 * n) : ℝ × ℝ)‖
+          then ((holdSum n) d).toReal else 0)
+        = (∑' d : ℕ × ℤ,
+            if lam ≤ ‖(((d.1 : ℝ) - 4 * n, (d.2 : ℝ) - 16 * n) : ℝ × ℝ)‖
+              then (iidSum hold n) d else 0).toReal := by
+      rw [ENNReal.tsum_toReal_eq hTop]
+      refine tsum_congr fun d => ?_
+      rw [holdSum_eq_iidSum, apply_ite ENNReal.toReal, ENNReal.toReal_zero]
+    rw [hlhs]
+    have hfin : (4 : ℝ≥0∞) * ENNReal.ofReal B ≠ ∞ :=
+      ENNReal.mul_ne_top (by norm_num) ENNReal.ofReal_ne_top
+    calc (∑' d : ℕ × ℤ,
+        if lam ≤ ‖(((d.1 : ℝ) - 4 * n, (d.2 : ℝ) - 16 * n) : ℝ × ℝ)‖
+          then (iidSum hold n) d else 0).toReal
+        ≤ ((4 : ℝ≥0∞) * ENNReal.ofReal B).toReal := ENNReal.toReal_mono hfin hchain
+      _ = 4 * B := by
+          rw [hB, ENNReal.toReal_mul, ENNReal.toReal_ofReal (Real.exp_pos _).le]
+          norm_num
+      _ ≤ 4 * Gweight (1 + n) (1 / 400 * lam) := by
+          refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
+          exact le_trans (Real.exp_le_exp.mpr hexp) (exp_neg_min_le_Gweight hn1 hlam)
 
 end TaoCollatz

@@ -1,5 +1,42 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 42 (2026-07-12, seventh box session): `hold_tail_bound` PROVED — S3 2-D SIDE COMPLETE
+
+**Lemma 2.2(ii) for `Hold` is a theorem** (axiom-clean), same lap-41 engine, no
+center bound needed. In `Sec7/HoldLocal.lean`:
+- `chernoff_clip_le_nonneg` — sign-exposing clip variant (μ ≥ 0 when dev ≥ 0);
+- `exp_neg_min_le_Gweight` — factored Gweight branch matching (n ≥ 1, x ≥ 0);
+- `holdSum_halfspace_le` — one-sided Markov under the tilt: region mass ≤
+  e^{n·quad(λ) − a} when the tilt weight ≥ e^a on the region (tiltZ_iidSum +
+  tiltZ_hold_le_quad + termwise Markov);
+- `hold_tail_bound` — c = 1/400, C = 4: sup-norm tail ⊆ 4 sign-pattern
+  half-spaces (le_max_iff + le_abs), each with tilt ±μ in the matching
+  coordinate; all four exponents collapse to 1000nμ² − μ·lam; ℝ↔ℝ≥0∞ via
+  ENNReal.tsum_toReal_eq + apply_ite; n = 0 point mass separate.
+Gotchas: `zero_le _` in term position fails in ℝ≥0∞ (use `bot_le`); `set`-atoms
+must be re-folded (rw [hB]) after toReal_ofReal unfolds them; `(0:ℕ×ℤ).1` needs
+`Prod.fst_zero` simp before norm-num on the norm.
+
+**BOTH Lemma 2.2 instances for Hold done: `hold_local_bound` + `hold_tail_bound`.**
+
+**NEXT — the six d=1 instances in Prob/LocalBound.lean** (geomHalf/geomQuarter/
+pascal × local/tail; sorries at :153,:161,:169,:176,:185,:192), now mechanical
+with the same pattern:
+- tail bounds (easier, do first): 1-D `iidSum_halfspace_le` analogue of
+  `holdSum_halfspace_le` generic in a PMF ℕ with a 1-D quad MGF bound; need 1-D
+  quadratic bounds for geomHalf (mean 2), geomQuarter (mean 4), pascal (mean 4)
+  from the closed forms `tiltZ_geomHalf`/`tiltZ_pascal` (already in Mgf.lean —
+  check exact names/envelopes; validate constants numerically first).
+- local bounds: need 1-D center bound C/√(1+n) — NOTE the d=1 statements have
+  1/√(1+n) not 1/(1+n): the circle-method center bound
+  `iidSum_apply_le_center_of_decay` is d=2-specific (product of two coords).
+  Check what exists for d=1 (charFn decay in 1-D + N = ⌊√n⌋+1 gives C/√n) —
+  likely a 1-D analogue of `iidSum_apply_le_center_of_decay` must be stated
+  (same proof shape, single ZMod factor). Then the assembly is identical.
+Then Lemma 7.6/7.7 (X6) consume hold_local/tail (`fpDist_location_bound`,
+Unroll.lean:624 area) — and the X5 bridge sorries + Q_black_edge remain the
+other red nodes (X8/X10, X9, X1, C8 per operator queue).
+
 ## Lap 41 (2026-07-12, seventh box session): (F5) DONE — `hold_local_bound` PROVED
 
 **S3's Lemma 2.2(i) for `Hold` is a machine-checked theorem** (axiom-clean), in
