@@ -2,7 +2,7 @@
 
 **First-anywhere Lean 4 formalization of Tao 2019 "Almost all Collatz orbits
 attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3276 jobs) ·
-**Updated**: lap 52 · 2026-07-12 · `1c9b2c8`
+**Updated**: lap 52 · 2026-07-12 · `0ba065f`
 
 ## Where it stands
 
@@ -22,6 +22,11 @@ crux, cheap once §7 lands. 24 open `sorry`s in `src/`.
 
 ## What's happened (newest first)
 
+- **lap 52 (cont)** `0ba065f`: **encExpect_block_le PROVED** (path→fpDist block
+  bridge, the X9 crux sub-step) + **ROUTE FINDING**: the paper's Lemma 7.9 proof
+  has a gap (min(r,R)=1 branch of the p.51 conditional display); corrected chain
+  ledger gives exp(ε/p₀) — pin corrected to exp(2ε), consumer-safe. Coupling +
+  frozen-state lemmas proved. See HANDOFF-2026-07-12-f.
 - **lap 52 (2026-07-12)** `1c9b2c8`: **Lemma 7.9 (X9) PINNED, RED→YELLOW** —
   `EncState`/`encStep` encounter fold (stopping times as a left fold over
   `hold.iid T`, finite horizon uniformly in T), `many_triangles_white` (7.57) pin,
