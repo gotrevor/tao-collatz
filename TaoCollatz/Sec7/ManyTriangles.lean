@@ -98,6 +98,34 @@ theorem TriangleFamily.existsUnique_cover {n ξ : ℕ} (F : TriangleFamily n ξ)
   by_contra hne
   exact F.not_mem_two ht' ht hne hqt' hqt
 
+/-- **The covering triangle `Δ(q)`** (the `∃!` witness of `existsUnique_cover`): the
+unique family triangle containing a black-strip point `q`. Reads off the Lemma 7.9
+recursion's moving barrier `l_{Δ(q)} = coveringTriangle F q hq |>.2.1`. -/
+noncomputable def TriangleFamily.coveringTriangle {n ξ : ℕ} (F : TriangleFamily n ξ)
+    (q : ℕ × ℤ) (hq : q.1 + 1 ≤ n / 2 ∧ black n ξ q.1 q.2) : ℕ × ℤ × ℝ :=
+  (F.existsUnique_cover hq).exists.choose
+
+theorem TriangleFamily.coveringTriangle_mem {n ξ : ℕ} (F : TriangleFamily n ξ)
+    {q : ℕ × ℤ} (hq : q.1 + 1 ≤ n / 2 ∧ black n ξ q.1 q.2) :
+    F.coveringTriangle q hq ∈ F.T :=
+  (F.existsUnique_cover hq).exists.choose_spec.1
+
+theorem TriangleFamily.coveringTriangle_covers {n ξ : ℕ} (F : TriangleFamily n ξ)
+    {q : ℕ × ℤ} (hq : q.1 + 1 ≤ n / 2 ∧ black n ξ q.1 q.2) :
+    q ∈ triangle (F.coveringTriangle q hq).1 (F.coveringTriangle q hq).2.1
+      (F.coveringTriangle q hq).2.2 :=
+  (F.existsUnique_cover hq).exists.choose_spec.2
+
+/-- The covering triangle is THE one: any family triangle containing `q` equals
+`Δ(q)`. Follows from the `∃!` uniqueness; the recursion uses it to identify the
+first triangle a renewal path enters with its covering triangle. -/
+theorem TriangleFamily.eq_coveringTriangle {n ξ : ℕ} (F : TriangleFamily n ξ)
+    {q : ℕ × ℤ} (hq : q.1 + 1 ≤ n / 2 ∧ black n ξ q.1 q.2)
+    {t : ℕ × ℤ × ℝ} (ht : t ∈ F.T) (hqt : q ∈ triangle t.1 t.2.1 t.2.2) :
+    t = F.coveringTriangle q hq :=
+  (F.existsUnique_cover hq).unique ⟨ht, hqt⟩
+    ⟨F.coveringTriangle_mem hq, F.coveringTriangle_covers hq⟩
+
 /-- **Lemma 7.10 — large triangles are rarely encountered shortly after a lengthy
 crossing** (paper (7.60), pp.51–54). Starting the renewal walk at a point `(j,l)` of
 a black triangle `Δ = t₀` with budget `s = l_Δ − l` obeying `s > m/log²m`
