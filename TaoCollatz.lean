@@ -17,6 +17,7 @@ import TaoCollatz.Sec7.White
 import TaoCollatz.Sec7.Triangles
 import TaoCollatz.Sec7.Holding
 import TaoCollatz.Sec7.Unroll
+import TaoCollatz.Sec7.HoldLocal
 import TaoCollatz.Sec7.Monotone
 import TaoCollatz.Sec7.Bridge
 import TaoCollatz.Sec7.Decay
