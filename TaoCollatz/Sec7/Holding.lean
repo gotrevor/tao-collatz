@@ -283,16 +283,7 @@ theorem Q_le_one (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (hε : 0 ≤ ε)
           _ = 1 := mul_one 1
   exact fun j l => key _ j l rfl
 
-/-- **Proposition 7.1** (= Prop 1.17 restated through the (1.26) reversed form): the
-character sum over the raw valuation vector `a ~ Geom(2)ⁿ` decays polynomially,
-uniformly in `ξ` coprime to 3. Reduction chain (7.4)/(7.5) lives in grind laps. -/
-theorem key_fourier_decay (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∀ n : ℕ, 1 ≤ n → ∀ ξ : ZMod (3 ^ n), ¬ (3 ∣ ξ.val) →
-      ‖(PMF.iid geomHalf n).cexpect fun a =>
-          eC (-(ξ.val * ((∑ j ∈ Finset.range n,
-            (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre a (j + 1)).val) : ℚ)
-            / 3 ^ n)‖
-        ≤ C * (n : ℝ) ^ (-A) := by
-  sorry
+-- **Proposition 7.1** `key_fourier_decay` moved to `Sec7/Reduction.lean` (2026-07-12),
+-- where it is PROVED from the (7.4)/(7.5) pairing reduction + Prop 7.3.
 
 end TaoCollatz
