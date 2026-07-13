@@ -74,9 +74,50 @@ out-of-strip half (`fpDist_out_of_strip_le`, PROVED this lap) is also fine.
   Case-3 machinery at `P = O(1)` for Case 2 too). Costly and off-paper; last
   resort.
 
-**Recommendation**: probe (B) numerically next lap (exact-ℚ harness at the
-check-8 instances); it is the only remedy that leaves D4 and X3 intact. If (B)
-is false, (A) is forced and should be scoped by an altitude lap.
+## ADDENDUM (same lap): remedy (B) probed on paper — TRUE vertically, but a right-edge residue remains
+
+**(B) is TRUE and elementary in the vertical direction.** The doubling relation
+`2^h·θ(j, l+h) ≡ θ(j, l) (mod 1)` gives: if `(j,l)` is black and `(j,l+1)` is
+not, then `θ(j,l+1) = (θ(j,l) ± 1)/2`, so `|θ(j,l+1)| ≥ (1−ε)/2` and inductively
+`|θ(j,l+h)| ≥ (1−ε)/2^h` (nearest-integer distance halves at worst). Blackness
+needs `≤ ε`, so the column above a run top is WHITE for all
+`h ≤ log₂((1−ε)/ε) ≈ 13.28`, i.e. `h ∈ {1,…,13}` at `ε = 10⁻⁴`. Corner geometry
+upgrades this to in-span exclusion: a foreign triangle `t''` (corner `(j*,l*)`)
+containing a phase point at height `lΔ+h, h ≤ 13`, with `j*` inside Δ's
+top-edge span, also contains `(j*, lΔ+h)` (drop the `Δj·log9` term from the
+membership inequality), contradicting the white gap anchored at `(j*, lΔ) ∈ Δ`
+(whose run top is `lΔ` by `corner_eq`). So foreign capture at `h ≤ 13` forces
+`j*` — hence the phase column — RIGHT of Δ's top-edge span.
+
+**The residue: the right edge has NO horizontal analogue.** Horizontally `θ`
+multiplies by 9 per column and can wrap past `1/2` immediately, landing black
+again 2 columns right of a run edge — no fixed gap at fixed ε. And the mass
+reaching `O(1)` columns right of Δ's span is Θ(1) when `s` is small (`e.1 ≥ 1`
+always; the span margin is only `≈ 0.315·s` columns, zero for `s ≤ 3`). Tao
+(7.50) kills this side with the ε-separation as well; there is no fibre
+substitute. NOTE: Tao's (7.51) only needs `p₀ ≫ 0` (the `> 1/2` /`51/100` pin
+is formalization-internal — `encChainX` converges for any `p₀ > ~ε`, per
+DIRECTION's fallback note), but even `p₀ > 0` fails while the right-edge hole
+is open, so weakening the pin alone does NOT rescue the kernel.
+
+**Sharpened remedy menu**:
+- **(B+A-small) Hybrid**: prove the vertical white-gap lemma (above, ~1 page of
+  Lean over `θq` doubling) + shrink ε only enough to give HORIZONTAL Euclidean
+  separation `> the O(√(1+s))∧O(1) column overhang`, quantitatively
+  `sep ≈ 5–10` ⟹ `ε ≈ e^{-50}`–`e^{-100}`, AND formalize the real Lemma-7.4
+  separation at that ε (the lattice-vacuity proof dies at `sep > 1`). The
+  white-gap lemma also caps the needed overshoot control at 13 rows with the
+  CURRENT ε, keeping most numerics tame.
+- **(A) full**: as above, `sep ≈ 20–40`, no white-gap lemma needed.
+- Either way the real Lemma-7.4 separation proof (pp.39–41) is now on the
+  critical path — it was never formalized.
+
+**Recommendation**: altitude lap to rule (B+A-small) vs (A); both change D4 and
+reopen X3's separation clause. The vertical white-gap lemma is common to the
+preferred hybrid and is provable NOW against the current `epsBW` — a good
+next-lap grind target if the ruling lands hybrid. Until the ruling, grind
+X10 assembly (`triangle_encounter_le`), which is disjointness-based and
+unaffected.
 
 ## Meanwhile (this lap and until ruled)
 
