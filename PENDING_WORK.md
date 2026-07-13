@@ -1,5 +1,23 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 58 (cont-3): **X10a PROVED** — `encounter_apex_proximity` axiom-clean
+
+- The (7.63)→(7.65) confinement geometry is machine-checked (`#print axioms` =
+  trust base): outside E′, a size-≥s' encounter pins the endpoint column to the
+  triangle's apex within 2A²(1+p) and pins the (7.65) lower-tip window. The
+  "well below" case builds `jst := min (j+e.1) (t'.1 + ⌊bud/log9⌋₊)` at row l_Δ
+  in BOTH triangles, killed by `not_mem_two`; t' ≠ t₀ since the endpoint height
+  exceeds l_Δ. Constants: C₂ = 2, S₀ = 10⁸; the A²(1+p) ≤ 3s/25 chain runs
+  hbig → s' ≤ m^{0.4} → log²m ≤ m^{0.6}/0.09 (log_le_rpow_div) → m^{0.4} ≤ 12s.
+- Lean gotchas hit: `linarith` chokes on `0.09`-style OfScientific literals
+  (rewrite to fractions first); big-context `nlinarith` timeouts fixed with
+  `linarith only [...]` + explicit `mul_le_mul` product hints; a trailing
+  in-tactic `calc` greedily eats following dedented `have`s (use `exact`);
+  `∑' (a b : X),` needs one paren group per binder.
+- REMAINING for X10: **X10b `encounter_separated_sum`** (p.54 sum, plan in its
+  docstring) + the `triangle_encounter_le` glue (branches + tails, plan in
+  lap-58 cont-2 entry below).
+
 ## Lap 58 (cont-2): X10 assembly DECOMPOSED — X10a/X10b pinned
 
 - `triangle_encounter_le` decomposed per pp.52–54 into two named src sorries
