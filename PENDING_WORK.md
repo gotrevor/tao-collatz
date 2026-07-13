@@ -1,5 +1,50 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap B (2026-07-13): **constant `B` DISCHARGED 4·10⁷ → 64** (X11 localization) — axiom-clean
+
+Directive step 2 (judge pass 24 / HANDOFF-2026-07-13-e) is **DONE**. The throwaway
+transverse-localization constant `B` in `fpDist_linear_tail` is now `64`, machine-
+verified `[propext, Classical.choice, Quot.sound]` (real-analytic, **no**
+`native_decide`).
+
+**What landed** (commit `3625037`):
+- `tiltZ_hold_closed` (`Prob/Mgf.lean`): the EXACT general `Hold` MGF closed form
+  `Z(l₁,l₂) = (e^{l₁+3l₂}/4)·(1 − (3/4)e^{l₁}·Z_ne3(l₂))⁻¹` (generalizes the two
+  coordinate forms `tiltZ_hold_fst`/`tiltZ_hold_snd`). Finite up to `θ ≈ 0.213`.
+- `tiltZ_pascalNe3_le_num`, `tiltZ_hold_le_num`: numeric large-tilt bounds at
+  `(l₁,l₂)=(1,−5/16)` (i.e. `θ=1/16` on `Z=16j−5l`), giving **`Z_hold ≤ 76/100 < 1`**.
+  Uses `Real.exp_bound` (n=6/7) + `exp_one_lt_d9`; all rational bounds, big margin
+  (ratio ≈0.640, ρ≈0.736; see `tools/… mgf_check.py` scratch).
+- `holdSum_halfspace_le_of_mgf` (`Sec7/HoldLocal.lean`): Markov-under-tilt taking the
+  MGF bound as a hypothesis, so the tilt can exit the `|λ|≤1/200` box that capped the
+  old proof at `θ=1/20000` (the whole reason `B` was `4·10⁷`).
+- `fpDist_linear_tail_sharp` + `fpDist_linear_tail_le_sixteenth_sharp`
+  (`Sec7/FpLocation.lean`): threshold `64` ⟹ tail `≤ 1/16`.
+
+**NOT yet wired** into the `ManyTriangles.lean` localization box — that is Lap D
+(numeral `40000000` appears at `ManyTriangles.lean:1618,2706,2728,…`). Lap D is
+`epsBW`-gated (judge's call). Leave `fpDist_any_triangle_le` sorried until then.
+
+### NEXT — Lap C: `Y = 139`, re-prove `fpDist_height_tail` OFF X6
+`Sec7/ManyTriangles.lean:2522`. Its radius is existential today (sums X6's
+`fpDist_location_bound`, `∃`-bound `(cL,CL)`), so the box is not a number — the real
+blocker. Do **not** make X6's constants explicit. Route (judge pass 24):
+1. `fpDist_le_renewal_conv` — endpoint = a pre-passage point below the budget line
+   plus one `hold` step.
+2. **Heights strictly increase**: `Δl = 3 + Σv ≥ 3 > 0`, so the walk visits each
+   height level **at most once** ⟹ renewal mass per level `≤ 1` (no renewal theorem).
+   This is the trick that makes `Y` explicit.
+3. `Δl`'s exact MGF (ceiling `μ_c ≈ 0.064`); at `μ*≈0.0575`, tail `≤1/16` at `Y=139`.
+   The `Δl` MGF closed form is now available via the same `pascalNe3`/`geomQuarter`
+   toolbox used for `B` (`tiltZ_hold_snd`, `tiltZ_pascalNe3_le_num` pattern reusable).
+Then **box = √(⌈(5·139+64)/16⌉² + 139²) = √(48² + 139²) ≈ 147** — report to judge; the
+`epsBW` re-freeze (`10⁻⁹⁰ → 10⁻¹⁰⁰⁰`, sep≈230) is the judge's, and Lap D lands after.
+
+The `ManyTriangles.lean` split (BLUEPRINT §2) is still queued; it was deferred this
+lap because `B` lives in `FpLocation.lean` (split-independent) and the crux advance
+outranked the refactor. Do the split immediately before Lap C (which edits the big
+file) to get fast iteration.
+
 ## Lap 60 (cont): **X11b PROVED** — `deterministic_encounter_claim` axiom-clean
 
 - The (7.67) crux is machine-checked (`#print axioms` = trust base): outside E∗,
