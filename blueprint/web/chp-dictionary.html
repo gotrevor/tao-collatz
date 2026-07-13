@@ -194,6 +194,9 @@
 
     <a class="icon proof" href="chp-dictionary.html#C2">#</a>
     
+    <a class="icon proof" href="chp-dictionary.html#a0000000022"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
 </button>
@@ -233,6 +236,10 @@
           
           <li><a href="../docs/find/#doc/syr_iterate_key" class="lean_decl">syr_iterate_key</a></li>
           
+          <li><a href="../docs/find/#doc/valVec_unique" class="lean_decl">valVec_unique</a></li>
+          
+          <li><a href="../docs/find/#doc/syr_iterate_odd" class="lean_decl">syr_iterate_odd</a></li>
+          
         </ul>
     
       </div>
@@ -243,11 +250,22 @@
   </div>
   <div class="lemma_thmcontent">
   <p>   The \(n\)-step <b class="bfseries">valuation vector</b> (paper (1.8)) \(\vec a^{(n)}(N)_i = v_2\bigl(3\, \mathrm{syr}^{[i]}(N)+1\bigr)\), the integerified offset (design D2) \(\texttt{fnat}\, n\, a = \sum _{m{\lt}n} 3^{\, n-1-m}\, 2^{\, a_{[1,m]}}\), and the load-bearing <b class="bfseries">iteration identity</b>, the paper’s (1.7) multiplied through by \(2^{|a|}\) so it holds in \(\mathbb {N}\): for odd \(N\), with \(a=\vec a^{(n)}(N)\), </p>
-<div class="displaymath" id="a0000000022">
+<div class="displaymath" id="a0000000023">
   \[  2^{\, a_{[1,n]}}\cdot \mathrm{syr}^{[n]}(N) = 3^n N + \texttt{fnat}\, n\, a .  \]
 </div>
-<p> (By induction on \(n\); the step is \(2^{a_{n+1}}\mathrm{syr}(\mathrm{syr}^{[n]}N) = 3\, \mathrm{syr}^{[n]}N + 1\).) Together with Lemma&#160;2.1: the valuation vector is the <em>unique</em> tuple with all entries \(\ge 1\) making the affine quotient odd. </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 5–10 treadmill laps; risk <b class="bfseries">low</b> (90% confidence the node completes as stated).</i> </p>
+<p> (By induction on \(n\); the step is \(2^{a_{n+1}}\mathrm{syr}(\mathrm{syr}^{[n]}N) = 3\, \mathrm{syr}^{[n]}N + 1\).) Together with Lemma&#160;2.1: the valuation vector is the <em>unique</em> tuple with all entries \(\ge 1\) making the affine quotient odd. <b class="bfseries">COMPLETE (judge pass 21, 2026-07-13).</b> <span class="ttfamily">valVec_unique</span> (Lemma 2.1 as a hypothesis-guarded iff: divisibility \(\wedge \) odd quotient \(\leftrightarrow \) \(a = \texttt{valVec}\), for tuples with entries \(\ge 1\)) was proved by an external Codex session and judge-verified: statement <b class="bfseries">RATIFIED vs Lemma 2.1 p.14</b> (RATIFY-2 resolved — the iff matches the paper’s uniqueness claim; the paper’s membership half, \(\vec a^{(n)} \in (\mathbb {N}+1)^n\) itself, is an unformalized one-line companion, consumer-safe since candidate tuples carry the hypothesis by construction); proof route is the paper’s own last-entry induction; dated judge runs 2026-07-13 on <span class="ttfamily">syr_iterate_key</span>, <span class="ttfamily">valVec_unique</span>, <span class="ttfamily">syr_iterate_odd</span> all exactly \([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\). </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000022">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>Forward: induction on \(n\) peeling the last entry (the paper’s own route) — the truncated vector satisfies the \(n\)-step condition (recursion identities for <span class="ttfamily">pre</span>/<span class="ttfamily">fnat</span> under truncation), the quotient is identified with \(\mathrm{syr}^{[n]}(N)\) via the iteration identity, and the last entry is extracted as \(\nu _2(3\, \mathrm{syr}^{[n]}(N)+1)\). Backward: the iteration identity gives divisibility, and the quotient is \(\mathrm{syr}^{[n]}(N)\), odd since Syracuse iterates of odd numbers stay odd (<span class="ttfamily">syr_iterate_odd</span>). </p>
 
   </div>
 </div>

@@ -26,6 +26,8 @@ colMin_eq_syrMin_oddPart
 valVec
 fnat
 syr_iterate_key
+valVec_unique
+syr_iterate_odd
 logProb
 posInterval
 HasLogDensity
