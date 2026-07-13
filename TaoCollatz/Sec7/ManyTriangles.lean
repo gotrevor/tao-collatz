@@ -261,7 +261,7 @@ end of this file (it needs the row-sum / `hasSum` engines defined below). -/
 /- The (7.61) column tail `fpDistPlus_col_tail` is stated and PROVED at the
 end of this file (it needs the row-sum / `hasSum` engines defined below). -/
 
-/-- **Lemma 7.10 — large triangles are rarely encountered shortly after a lengthy
+/- **Lemma 7.10 — large triangles are rarely encountered shortly after a lengthy
 crossing** (paper (7.60), pp.51–54). Starting the renewal walk at a point `(j,l)` of
 a black triangle `Δ = t₀` with budget `s = l_Δ − l` obeying `s > m/log²m`
 (`m = ⌊n/2⌋ − j`), the endpoint `(j,l) + v_{[1,k+p]}` (law `fpDistPlus s p`) lands in
@@ -285,21 +285,11 @@ at fixed small `A` and `p → ∞` the endpoint sits at height `l_Δ + Θ(p)` ou
 `A²(1+p)` window and the claimed `exp(−cA²(1+p))` bound is FALSE). The pin therefore
 carries `∃ A₀ ≥ 1, ∀ A ≥ A₀`; the consumer (p.54, `E_*` union bound) instantiates at
 `A` large, so this is consumer-safe. The two (7.61) tails are pinned separately as
-`fpDistPlus_height_tail` / `fpDistPlus_col_tail` below. -/
-theorem triangle_encounter_le :
-    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
-      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
-      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
-        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
-      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
-        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
-      ∀ (p s' : ℕ), 1 ≤ s' →
-        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
-      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
-          * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
-        ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
-          + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) := by
-  sorry
+`fpDistPlus_height_tail` / `fpDistPlus_col_tail` below.
+
+The statement and PROOF now live at the END of this file (they need the two
+(7.61) tails, X10a `encounter_apex_proximity`, and X10b
+`encounter_separated_sum`, all proved below). -/
 
 /-! ### Lemma 7.9 (X9): the encounter fold and the (7.57) pin -/
 
@@ -4262,5 +4252,531 @@ theorem encounter_separated_sum :
   rw [hLHS]
   refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
   exact hTle.trans (ENNReal.ofReal_le_ofReal hnum)
+
+/-! ### Lemma 7.10 assembly: `triangle_encounter_le` (statement pinned above,
+relocated here below its ingredients) -/
+
+/-- Endpoints of the `(k+p)`-step renewal law sit strictly above the budget
+row: first passage overshoots `s`, and every `Hold` step raises the height. -/
+theorem fpDistPlus_support_snd_gt (s p : ℕ) (e : ℕ × ℤ)
+    (he : fpDistPlus s p e ≠ 0) : (s : ℤ) < e.2 := by
+  have hmem : e ∈ (fpDistPlus s p).support := by rwa [PMF.mem_support_iff]
+  rw [fpDistPlus, PMF.mem_support_bind_iff] at hmem
+  obtain ⟨f, hf, hfe⟩ := hmem
+  rw [PMF.mem_support_map_iff] at hfe
+  obtain ⟨w, hw, hwe⟩ := hfe
+  have h1 : (s : ℤ) < f.2 := fpDist_support_snd_gt s f hf
+  have h2 : 0 ≤ w.2 := by
+    rw [iidSum, PMF.mem_support_map_iff] at hw
+    obtain ⟨v, hv, hvw⟩ := hw
+    have hco : ∀ i, 3 ≤ (v i).2 := fun i =>
+      hold_support_snd_ge (v i) (PMF.iid_support_coord hold p v hv i)
+    have hsnd : w.2 = ∑ i, (v i).2 := by
+      rw [← hvw, Prod.snd_sum]
+    rw [hsnd]
+    exact Finset.sum_nonneg fun i _ => le_trans (by norm_num) (hco i)
+  have h3 : e.2 = f.2 + w.2 := by rw [← hwe]; rfl
+  omega
+
+/-- `e^{-y} ≤ 27/y³` for `y > 0` (the cube Chernoff-conversion used to turn
+`exp(-c·s^{0.2})` escape terms into `≪ 1/s'` terms on p.54). -/
+theorem exp_neg_le_cube {y : ℝ} (hy : 0 < y) : Real.exp (-y) ≤ 27 / y ^ 3 := by
+  have h1 : y / 3 ≤ Real.exp (y / 3) := by
+    have := Real.add_one_le_exp (y / 3)
+    linarith
+  have h2 : (y / 3) ^ 3 ≤ Real.exp (y / 3) ^ 3 :=
+    pow_le_pow_left₀ (by positivity) h1 3
+  have h3 : Real.exp (y / 3) ^ 3 = Real.exp y := by
+    rw [← Real.exp_nat_mul]
+    norm_num
+    ring
+  rw [h3] at h2
+  have h4 : y ^ 3 / 27 ≤ Real.exp y := by
+    have : (y / 3) ^ 3 = y ^ 3 / 27 := by ring
+    linarith [h2, this ▸ h2]
+  rw [Real.exp_neg]
+  rw [inv_eq_one_div, div_le_div_iff₀ (Real.exp_pos y) (by positivity)]
+  nlinarith [h4, pow_pos hy 3]
+
+set_option maxHeartbeats 1000000 in
+/-- The deep regime: for `m ≥ 10²⁷`, `log²m ≤ m^{0.2}` (via
+`log m ≤ 20·m^{0.05}` and `400 ≤ m^{0.1}`). -/
+theorem log_sq_le_rpow {m : ℝ} (hm : (10 : ℝ) ^ (27 : ℕ) ≤ m) :
+    Real.log m ^ 2 ≤ m ^ (0.2 : ℝ) := by
+  have hm1 : (1 : ℝ) ≤ m := le_trans (by norm_num) hm
+  have hm0 : (0 : ℝ) < m := by linarith
+  have hlog : Real.log m ≤ m ^ (0.05 : ℝ) / 0.05 :=
+    Real.log_le_rpow_div hm0.le (by norm_num)
+  have hlog0 : (0 : ℝ) ≤ Real.log m := Real.log_nonneg hm1
+  have h005 : (0 : ℝ) ≤ m ^ (0.05 : ℝ) := Real.rpow_nonneg hm0.le _
+  have hsq : Real.log m ^ 2 ≤ (m ^ (0.05 : ℝ) / 0.05) ^ 2 :=
+    pow_le_pow_left₀ hlog0 hlog 2
+  have hexp : (m ^ (0.05 : ℝ) / 0.05) ^ 2 = 400 * m ^ (0.1 : ℝ) := by
+    rw [div_pow, ← Real.rpow_natCast (m ^ (0.05 : ℝ)) 2,
+      ← Real.rpow_mul hm0.le]
+    norm_num
+    ring
+  have h400 : (400 : ℝ) ≤ m ^ (0.1 : ℝ) := by
+    have hbase : ((400 : ℝ) ^ (10 : ℕ)) ≤ m := le_trans (by norm_num) hm
+    have h1 : ((400 : ℝ) ^ (10 : ℕ)) ^ (0.1 : ℝ) ≤ m ^ (0.1 : ℝ) :=
+      Real.rpow_le_rpow (by positivity) hbase (by norm_num)
+    have h2 : ((400 : ℝ) ^ (10 : ℕ)) ^ (0.1 : ℝ) = 400 := by
+      rw [← Real.rpow_natCast (400 : ℝ) 10, ← Real.rpow_mul (by norm_num)]
+      norm_num
+    linarith
+  have hsplit : m ^ (0.1 : ℝ) * m ^ (0.1 : ℝ) = m ^ (0.2 : ℝ) := by
+    rw [← Real.rpow_add hm0]
+    norm_num
+  have h01 : (0 : ℝ) ≤ m ^ (0.1 : ℝ) := Real.rpow_nonneg hm0.le _
+  have hchain : Real.log m ^ 2 ≤ 400 * m ^ (0.1 : ℝ) := by
+    have h := hsq
+    rw [hexp] at h
+    exact h
+  have hprod : 400 * m ^ (0.1 : ℝ) ≤ m ^ (0.1 : ℝ) * m ^ (0.1 : ℝ) :=
+    mul_le_mul_of_nonneg_right h400 h01
+  linarith only [hchain, hprod, hsplit.le, hsplit.ge]
+
+set_option maxHeartbeats 2000000 in
+/-- **Lemma 7.10 (X10), the (7.60) bound — PROOF** (statement pinned near the
+top of this file; see the docstring there). Assembly: trivial branch
+`s' < 100C₂A²(1+p)` (RHS ≥ 1); shallow branch `m < M_th` (the `exp` term
+absorbs everything below the regime threshold); main branch = pointwise
+indicator split `1_{big} ≤ 1_{heightEsc} + 1_{colEsc} + 1_{proximity}`, the
+two (7.61) tails at `H = 2A²(1+p)`, `D = s^{0.6}`, X10a for the third piece,
+and X10b at `W = C₂A²(1+p)` for the separated-Σ sum. -/
+theorem triangle_encounter_le :
+    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+      ∀ (p s' : ℕ), 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+        ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+          + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) := by
+  classical
+  obtain ⟨ch, hch, Ch, hCh, hheight⟩ := fpDistPlus_height_tail
+  obtain ⟨cc, hcc, Cc, hCc, hcolT⟩ := fpDistPlus_col_tail
+  obtain ⟨C₂, hC₂, S₀a, hX10a⟩ := encounter_apex_proximity
+  obtain ⟨C₃, hC₃, S₀b, hX10b⟩ := encounter_separated_sum
+  set Mth : ℕ := max (10 ^ 27) ((S₀a + S₀b + 1) ^ 2) with hMth
+  set C : ℝ := 100 * C₂ + Real.exp (ch * (Mth : ℝ)) + Ch
+      + 432 * Cc / cc ^ 3 + C₃ * C₂ with hC
+  have hC0 : (0 : ℝ) < C := by
+    have := Real.exp_pos (ch * (Mth : ℝ))
+    have h1 : (0 : ℝ) < 432 * Cc / cc ^ 3 := by positivity
+    nlinarith [mul_pos hC₃ (lt_of_lt_of_le one_pos hC₂)]
+  refine ⟨C, hC0, ch, hch, 5, by norm_num, ?_⟩
+  intro A hA n ξ hξ F t₀ ht₀ j l hmemt₀ s hs hdeep p s' hs'1 hs'm
+  -- shared numerics
+  have hp0 : (0 : ℝ) ≤ (p : ℝ) := Nat.cast_nonneg p
+  have hAp25 : (25 : ℝ) ≤ A ^ 2 * (1 + (p : ℝ)) := by nlinarith
+  have hAp0 : (0 : ℝ) < A ^ 2 * (1 + (p : ℝ)) := by nlinarith
+  have hs'0 : (0 : ℝ) < (s' : ℝ) := by exact_mod_cast hs'1
+  have hexp_pos : (0 : ℝ) < Real.exp (-ch * A ^ 2 * (1 + (p : ℝ))) := Real.exp_pos _
+  have hLHS1 : ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+      * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+      ≤ 1 := fpDistPlus_indicator_sum_le_one s p _ _
+  -- Branch 1: s' below the working threshold — the 1/s' term is ≥ 1
+  by_cases hbr1 : (s' : ℝ) < 100 * C₂ * (A ^ 2 * (1 + (p : ℝ)))
+  · have h1 : (1 : ℝ) ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ) := by
+      rw [le_div_iff₀ hs'0]
+      have hCge : 100 * C₂ ≤ C := by
+        have := Real.exp_pos (ch * (Mth : ℝ))
+        have h2 : (0 : ℝ) < 432 * Cc / cc ^ 3 := by positivity
+        nlinarith [mul_pos hC₃ (lt_of_lt_of_le one_pos hC₂)]
+      nlinarith [hbr1, hAp0, mul_le_mul_of_nonneg_right hCge hAp0.le]
+    have h2 : (0 : ℝ) ≤ C * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ))) := by positivity
+    linarith [hLHS1]
+  push_neg at hbr1
+  -- from here on: 100·C₂·A²(1+p) ≤ s'
+  have hbigA : 100 * A ^ 2 * (1 + (p : ℝ)) ≤ (s' : ℝ) := by
+    have h1 : 100 * (A ^ 2 * (1 + (p : ℝ))) ≤ 100 * C₂ * (A ^ 2 * (1 + (p : ℝ))) := by
+      nlinarith [hAp0]
+    linarith
+  set m : ℕ := n / 2 - j with hm
+  have hm1 : 1 ≤ m := by
+    by_contra hlt
+    push_neg at hlt
+    have hm0 : m = 0 := by omega
+    have : (s' : ℝ) ≤ 0 := by
+      rw [hm0] at hs'm
+      simpa [Real.zero_rpow (by norm_num : (0.4 : ℝ) ≠ 0)] using hs'm
+    linarith
+  have hm0R : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm1
+  have hm1R : (1 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm1
+  -- Branch 2: shallow m — the exp term is ≥ 1
+  by_cases hbr2 : m < Mth
+  · have hApM : A ^ 2 * (1 + (p : ℝ)) ≤ (Mth : ℝ) := by
+      have h1 : A ^ 2 * (1 + (p : ℝ)) ≤ (s' : ℝ) / 100 := by linarith
+      have h2 : (m : ℝ) ^ (0.4 : ℝ) ≤ (m : ℝ) := by
+        calc (m : ℝ) ^ (0.4 : ℝ) ≤ (m : ℝ) ^ (1 : ℝ) :=
+            Real.rpow_le_rpow_of_exponent_le hm1R (by norm_num)
+          _ = (m : ℝ) := Real.rpow_one _
+      have h3 : (m : ℝ) ≤ (Mth : ℝ) := by
+        have : m ≤ Mth := le_of_lt hbr2
+        exact_mod_cast this
+      have h4 : (s' : ℝ) / 100 ≤ (s' : ℝ) := by linarith
+      linarith [hs'm]
+    have h1 : (1 : ℝ) ≤ C * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ))) := by
+      have hCge : Real.exp (ch * (Mth : ℝ)) ≤ C := by
+        have h2 : (0 : ℝ) < 432 * Cc / cc ^ 3 := by positivity
+        nlinarith [mul_pos hC₃ (lt_of_lt_of_le one_pos hC₂),
+          mul_pos (lt_of_lt_of_le one_pos hC₂) (by norm_num : (0:ℝ) < 100)]
+      have h2 : Real.exp (ch * (Mth : ℝ)) * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ)))
+          = Real.exp (ch * ((Mth : ℝ) - A ^ 2 * (1 + (p : ℝ)))) := by
+        rw [← Real.exp_add]
+        ring_nf
+      have h3 : (1 : ℝ) ≤ Real.exp (ch * ((Mth : ℝ) - A ^ 2 * (1 + (p : ℝ)))) := by
+        calc (1 : ℝ) = Real.exp 0 := Real.exp_zero.symm
+          _ ≤ Real.exp (ch * ((Mth : ℝ) - A ^ 2 * (1 + (p : ℝ)))) :=
+              Real.exp_le_exp.mpr (by nlinarith [hApM])
+      calc (1 : ℝ) ≤ Real.exp (ch * ((Mth : ℝ) - A ^ 2 * (1 + (p : ℝ)))) := h3
+        _ = Real.exp (ch * (Mth : ℝ)) * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ))) :=
+            h2.symm
+        _ ≤ C * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ))) :=
+            mul_le_mul_of_nonneg_right hCge hexp_pos.le
+    have h2 : (0 : ℝ) ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ) := by positivity
+    linarith [hLHS1]
+  push_neg at hbr2
+  -- MAIN BRANCH: m ≥ Mth ≥ 10²⁷ — the deep regime
+  have hM27 : (10 : ℝ) ^ (27 : ℕ) ≤ (m : ℝ) := by
+    have h1 : (10 : ℕ) ^ 27 ≤ Mth := le_max_left _ _
+    have h2 : Mth ≤ m := hbr2
+    have : (10 : ℕ) ^ 27 ≤ m := le_trans h1 h2
+    exact_mod_cast this
+  have hlogsq : Real.log (m : ℝ) ^ 2 ≤ (m : ℝ) ^ (0.2 : ℝ) := log_sq_le_rpow hM27
+  have hlogpos : (0 : ℝ) < Real.log (m : ℝ) := by
+    refine Real.log_pos ?_
+    calc (1 : ℝ) < 10 ^ (27 : ℕ) := by norm_num
+      _ ≤ (m : ℝ) := hM27
+  have hm08 : (m : ℝ) ^ (0.8 : ℝ) ≤ (m : ℝ) / Real.log (m : ℝ) ^ 2 := by
+    rw [le_div_iff₀ (pow_pos hlogpos 2)]
+    calc (m : ℝ) ^ (0.8 : ℝ) * Real.log (m : ℝ) ^ 2
+        ≤ (m : ℝ) ^ (0.8 : ℝ) * (m : ℝ) ^ (0.2 : ℝ) :=
+          mul_le_mul_of_nonneg_left hlogsq (Real.rpow_nonneg hm0R.le _)
+      _ = (m : ℝ) := by
+          rw [← Real.rpow_add hm0R]
+          norm_num
+  have hsdeep : (m : ℝ) ^ (0.8 : ℝ) < (s : ℝ) := lt_of_le_of_lt hm08 hdeep
+  have hs0 : (0 : ℝ) < (s : ℝ) := by
+    have : (0 : ℝ) < (m : ℝ) ^ (0.8 : ℝ) := Real.rpow_pos_of_pos hm0R _
+    linarith
+  have hm08ge1 : (1 : ℝ) ≤ (m : ℝ) ^ (0.8 : ℝ) := by
+    calc (1 : ℝ) = (1 : ℝ) ^ (0.8 : ℝ) := (Real.one_rpow _).symm
+      _ ≤ (m : ℝ) ^ (0.8 : ℝ) := Real.rpow_le_rpow (by norm_num) hm1R (by norm_num)
+  have hs1 : (1 : ℝ) ≤ (s : ℝ) := le_trans hm08ge1 hsdeep.le
+  -- s dominates both abstract thresholds S₀a, S₀b
+  have hk2 : ((S₀a + S₀b + 1 : ℕ) : ℝ) ^ 2 ≤ (m : ℝ) := by
+    have h1 : (S₀a + S₀b + 1) ^ 2 ≤ Mth := le_max_right _ _
+    have h2 : (S₀a + S₀b + 1) ^ 2 ≤ m := le_trans h1 hbr2
+    exact_mod_cast h2
+  have hk_le_s : ((S₀a + S₀b + 1 : ℕ) : ℝ) ≤ (s : ℝ) := by
+    set k : ℝ := ((S₀a + S₀b + 1 : ℕ) : ℝ) with hk
+    have hk1 : (1 : ℝ) ≤ k := by
+      rw [hk]
+      exact_mod_cast Nat.succ_le_succ (Nat.zero_le _)
+    have h1 : k ^ 2 ≤ (m : ℝ) := hk2
+    have h2 : (k ^ 2 : ℝ) ^ (0.8 : ℝ) ≤ (m : ℝ) ^ (0.8 : ℝ) :=
+      Real.rpow_le_rpow (by positivity) h1 (by norm_num)
+    have h3 : k ≤ (k ^ 2 : ℝ) ^ (0.8 : ℝ) := by
+      have h4 : (k ^ 2 : ℝ) ^ (0.8 : ℝ) = k ^ (1.6 : ℝ) := by
+        rw [← Real.rpow_natCast k 2, ← Real.rpow_mul (by linarith)]
+        norm_num
+      rw [h4]
+      calc k = k ^ (1 : ℝ) := (Real.rpow_one _).symm
+        _ ≤ k ^ (1.6 : ℝ) := Real.rpow_le_rpow_of_exponent_le hk1 (by norm_num)
+    linarith [hsdeep]
+  have hS₀a_le : S₀a ≤ s := by
+    have h1 : ((S₀a : ℕ) : ℝ) ≤ (s : ℝ) := by
+      have : ((S₀a : ℕ) : ℝ) ≤ ((S₀a + S₀b + 1 : ℕ) : ℝ) := by
+        exact_mod_cast Nat.le_add_right _ _ |>.trans (Nat.le_succ _)
+      linarith [hk_le_s]
+    exact_mod_cast h1
+  have hS₀b_le : S₀b ≤ s := by
+    have h1 : ((S₀b : ℕ) : ℝ) ≤ (s : ℝ) := by
+      have : ((S₀b : ℕ) : ℝ) ≤ ((S₀a + S₀b + 1 : ℕ) : ℝ) := by
+        exact_mod_cast (Nat.le_add_left _ _).trans (Nat.le_succ _)
+      linarith [hk_le_s]
+    exact_mod_cast h1
+  -- the X10b regime: s'² ≤ 1 + s
+  have hreg : (s' : ℝ) ^ 2 ≤ 1 + (s : ℝ) := by
+    have h1 : (s' : ℝ) ^ 2 ≤ ((m : ℝ) ^ (0.4 : ℝ)) ^ 2 :=
+      pow_le_pow_left₀ (Nat.cast_nonneg _) hs'm 2
+    have h2 : ((m : ℝ) ^ (0.4 : ℝ)) ^ 2 = (m : ℝ) ^ (0.8 : ℝ) := by
+      rw [← Real.rpow_natCast ((m : ℝ) ^ (0.4 : ℝ)) 2, ← Real.rpow_mul hm0R.le]
+      norm_num
+    linarith [hsdeep]
+  -- the col-tail admissibility: 10(1+p) ≤ s^{0.6}
+  have hm048 : (m : ℝ) ^ (0.4 : ℝ) ≤ (s : ℝ) ^ (0.6 : ℝ) := by
+    have h1 : (m : ℝ) ^ (0.4 : ℝ) ≤ (m : ℝ) ^ (0.48 : ℝ) :=
+      Real.rpow_le_rpow_of_exponent_le hm1R (by norm_num)
+    have h2 : (m : ℝ) ^ (0.48 : ℝ) = ((m : ℝ) ^ (0.8 : ℝ)) ^ (0.6 : ℝ) := by
+      rw [← Real.rpow_mul hm0R.le]
+      norm_num
+    have h3 : ((m : ℝ) ^ (0.8 : ℝ)) ^ (0.6 : ℝ) ≤ (s : ℝ) ^ (0.6 : ℝ) :=
+      Real.rpow_le_rpow (Real.rpow_nonneg hm0R.le _) hsdeep.le (by norm_num)
+    linarith
+  have h25A : (25 : ℝ) ≤ A ^ 2 := by
+    have := pow_le_pow_left₀ (by norm_num : (0:ℝ) ≤ 5) hA 2
+    norm_num at this
+    linarith
+  have h10p : 10 * (1 + (p : ℝ)) ≤ (s : ℝ) ^ (0.6 : ℝ) := by
+    have h1 : 25 * (1 + (p : ℝ)) ≤ A ^ 2 * (1 + (p : ℝ)) :=
+      mul_le_mul_of_nonneg_right h25A (by linarith)
+    have h2 : 100 * (A ^ 2 * (1 + (p : ℝ))) ≤ (s' : ℝ) := by
+      linarith only [hbigA]
+    have h3 : (s' : ℝ) ≤ (s : ℝ) ^ (0.6 : ℝ) := le_trans hs'm hm048
+    linarith only [h1, h2, h3, hp0]
+  -- the working window
+  set W : ℝ := C₂ * A ^ 2 * (1 + (p : ℝ)) with hWdef
+  have hW1 : (1 : ℝ) ≤ W := by
+    rw [hWdef, mul_assoc]
+    calc (1 : ℝ) = 1 * 1 := by norm_num
+      _ ≤ C₂ * (A ^ 2 * (1 + (p : ℝ))) :=
+          mul_le_mul hC₂ (by linarith only [hAp25]) (by norm_num)
+            (by linarith only [hC₂])
+  have h100W : 100 * W ≤ (s' : ℝ) := by
+    rw [hWdef]
+    calc 100 * (C₂ * A ^ 2 * (1 + (p : ℝ)))
+        = 100 * C₂ * (A ^ 2 * (1 + (p : ℝ))) := by ring
+      _ ≤ (s' : ℝ) := hbr1
+  -- the three events
+  set hEsc : Set (ℕ × ℤ) := {q : ℕ × ℤ | (s : ℝ) + 2 * A ^ 2 * (1 + (p : ℝ)) ≤ (q.2 : ℝ)}
+    with hhEsc
+  set cEsc : Set (ℕ × ℤ) := {q : ℕ × ℤ | 2 * (s : ℝ) ^ (0.6 : ℝ) ≤ |(q.1 : ℝ) - (s : ℝ) / 4|}
+    with hcEsc
+  set Ev : Set (ℕ × ℤ) := {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+      ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+      ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} with hEv
+  -- the pointwise indicator split (uses the support fact and X10a)
+  have hsplit : ∀ e : ℕ × ℤ,
+      (fpDistPlus s p e).toReal
+        * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+      ≤ (fpDistPlus s p e).toReal * Set.indicator hEsc 1 e
+        + (fpDistPlus s p e).toReal * Set.indicator cEsc 1 e
+        + (fpDistPlus s p e).toReal * Set.indicator Ev 1 (j + e.1, l + e.2) := by
+    intro e
+    set μe : ℝ := (fpDistPlus s p e).toReal with hμe
+    have hμe0 : 0 ≤ μe := ENNReal.toReal_nonneg
+    have hind_nonneg : ∀ (S : Set (ℕ × ℤ)) (q : ℕ × ℤ),
+        (0 : ℝ) ≤ Set.indicator S (1 : ℕ × ℤ → ℝ) q :=
+      fun S q => Set.indicator_nonneg (fun _ _ => zero_le_one) q
+    by_cases hz : fpDistPlus s p e = 0
+    · have hμz : μe = 0 := by rw [hμe, hz, ENNReal.toReal_zero]
+      rw [hμz]
+      simp
+    by_cases hbig : (j + e.1, l + e.2) ∈ bigTriangleSet F s'
+    swap
+    · rw [Set.indicator_of_notMem hbig, mul_zero]
+      have h2 := mul_nonneg hμe0 (hind_nonneg hEsc e)
+      have h3 := mul_nonneg hμe0 (hind_nonneg cEsc e)
+      have h4 := mul_nonneg hμe0 (hind_nonneg Ev (j + e.1, l + e.2))
+      linarith
+    by_cases hH : (s : ℝ) + 2 * A ^ 2 * (1 + (p : ℝ)) ≤ ((e.2 : ℤ) : ℝ)
+    · have h1 : e ∈ hEsc := hH
+      rw [Set.indicator_of_mem h1, Set.indicator_of_mem hbig]
+      have h2 : (0 : ℝ) ≤ μe * Set.indicator cEsc 1 e :=
+        mul_nonneg hμe0 (hind_nonneg _ _)
+      have h3 : (0 : ℝ) ≤ μe * Set.indicator Ev 1 (j + e.1, l + e.2) :=
+        mul_nonneg hμe0 (hind_nonneg _ _)
+      simp only [Pi.one_apply]
+      linarith
+    by_cases hCc : 2 * (s : ℝ) ^ (0.6 : ℝ) ≤ |((e.1 : ℕ) : ℝ) - (s : ℝ) / 4|
+    · have h1 : e ∈ cEsc := hCc
+      rw [Set.indicator_of_mem h1, Set.indicator_of_mem hbig]
+      have h2 : (0 : ℝ) ≤ μe * Set.indicator hEsc 1 e :=
+        mul_nonneg hμe0 (hind_nonneg _ _)
+      have h3 : (0 : ℝ) ≤ μe * Set.indicator Ev 1 (j + e.1, l + e.2) :=
+        mul_nonneg hμe0 (hind_nonneg _ _)
+      simp only [Pi.one_apply]
+      linarith
+    -- X10a: confinement to the proximity event
+    push_neg at hH hCc
+    have hbigmem := hbig
+    obtain ⟨t', ht', hsize, hmem'⟩ := hbig
+    have he2 : (s : ℤ) < e.2 := fpDistPlus_support_snd_gt s p e hz
+    have hprox := hX10a n ξ hξ F t₀ ht₀ j l hmemt₀ s hs hS₀a_le hdeep A
+      (by linarith : 5 ≤ A) p s' hs'm hbigA e he2 hH.le hCc.le t' ht' hsize hmem'
+    obtain ⟨hp1, hp2, hp3⟩ := hprox
+    have hmemEv : (j + e.1, l + e.2) ∈ Ev := by
+      refine ⟨t', ht', hsize, hp3, ?_⟩
+      have hcast : (((j + e.1 : ℕ)) : ℝ) = (j : ℝ) + (e.1 : ℝ) := by push_cast; ring
+      rw [show ((j + e.1, l + e.2) : ℕ × ℤ).1 = j + e.1 from rfl, hcast,
+        abs_of_nonneg (by linarith)]
+      exact hp2
+    rw [Set.indicator_of_mem hmemEv, Set.indicator_of_mem hbigmem]
+    have h2 : (0 : ℝ) ≤ μe * Set.indicator hEsc 1 e :=
+      mul_nonneg hμe0 (hind_nonneg _ _)
+    have h3 : (0 : ℝ) ≤ μe * Set.indicator cEsc 1 e :=
+      mul_nonneg hμe0 (hind_nonneg _ _)
+    simp only [Pi.one_apply]
+    linarith
+  -- summabilities (all four indicator sums are dominated by the PMF mass)
+  have hsummable : ∀ (S : Set (ℕ × ℤ)) (f : ℕ × ℤ → ℕ × ℤ),
+      Summable (fun e : ℕ × ℤ => (fpDistPlus s p e).toReal
+        * Set.indicator S (1 : ℕ × ℤ → ℝ) (f e)) := by
+    intro S f
+    have hsum : Summable (fun e : ℕ × ℤ => (fpDistPlus s p e).toReal) :=
+      ENNReal.summable_toReal
+        (by rw [(fpDistPlus s p).tsum_coe]; exact ENNReal.one_ne_top)
+    refine Summable.of_nonneg_of_le
+      (fun e => mul_nonneg ENNReal.toReal_nonneg
+        (Set.indicator_nonneg (fun _ _ => zero_le_one) _)) (fun e => ?_) hsum
+    refine mul_le_of_le_one_right ENNReal.toReal_nonneg ?_
+    by_cases h : f e ∈ S
+    · simp [Set.indicator_of_mem h]
+    · simp [Set.indicator_of_notMem h]
+  -- the three tail bounds
+  have hbound1 : ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal * Set.indicator hEsc 1 e
+      ≤ Ch * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ))) := by
+    have h1 := hheight s p (2 * A ^ 2 * (1 + (p : ℝ))) (by nlinarith)
+    refine le_trans h1 ?_
+    have h2 : ch * (A ^ 2 * (1 + (p : ℝ))) ≤ ch * (2 * A ^ 2 * (1 + (p : ℝ))) := by
+      nlinarith
+    have h3 : Real.exp (-(ch * (2 * A ^ 2 * (1 + (p : ℝ)))))
+        ≤ Real.exp (-(ch * (A ^ 2 * (1 + (p : ℝ))))) :=
+      Real.exp_le_exp.mpr (by linarith)
+    calc Ch * Real.exp (-ch * (2 * A ^ 2 * (1 + (p : ℝ))))
+        = Ch * Real.exp (-(ch * (2 * A ^ 2 * (1 + (p : ℝ))))) := by ring_nf
+      _ ≤ Ch * Real.exp (-(ch * (A ^ 2 * (1 + (p : ℝ))))) :=
+          mul_le_mul_of_nonneg_left h3 hCh.le
+      _ = Ch * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ))) := by ring_nf
+  have hbound2 : ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal * Set.indicator cEsc 1 e
+      ≤ (432 * Cc / cc ^ 3) * (A ^ 2 * (1 + (p : ℝ))) / (s' : ℝ) := by
+    have h1 := hcolT s p ((s : ℝ) ^ (0.6 : ℝ)) h10p
+    refine le_trans h1 ?_
+    -- both exponential terms are ≤ exp(−(cc/2)·s^{0.2})
+    have hs02pos : (0 : ℝ) < (s : ℝ) ^ (0.2 : ℝ) := Real.rpow_pos_of_pos hs0 _
+    have hs06pos : (0 : ℝ) < (s : ℝ) ^ (0.6 : ℝ) := Real.rpow_pos_of_pos hs0 _
+    have hterm1 : Real.exp (-cc * ((s : ℝ) ^ (0.6 : ℝ)) ^ 2 / (1 + (s : ℝ)))
+        ≤ Real.exp (-(cc / 2 * (s : ℝ) ^ (0.2 : ℝ))) := by
+      refine Real.exp_le_exp.mpr ?_
+      have h12 : ((s : ℝ) ^ (0.6 : ℝ)) ^ 2 = (s : ℝ) ^ (0.2 : ℝ) * (s : ℝ) := by
+        have ha : ((s : ℝ) ^ (0.6 : ℝ)) ^ 2 = (s : ℝ) ^ (1.2 : ℝ) := by
+          rw [← Real.rpow_natCast ((s : ℝ) ^ (0.6 : ℝ)) 2, ← Real.rpow_mul hs0.le]
+          norm_num
+        have hb : (s : ℝ) ^ (1.2 : ℝ) = (s : ℝ) ^ (0.2 : ℝ) * (s : ℝ) ^ (1 : ℝ) := by
+          rw [← Real.rpow_add hs0]
+          norm_num
+        rw [ha, hb, Real.rpow_one]
+      have h2s : 1 + (s : ℝ) ≤ 2 * (s : ℝ) := by linarith
+      have hkey : cc / 2 * (s : ℝ) ^ (0.2 : ℝ)
+          ≤ cc * ((s : ℝ) ^ (0.6 : ℝ)) ^ 2 / (1 + (s : ℝ)) := by
+        rw [h12, le_div_iff₀ (by linarith : (0 : ℝ) < 1 + (s : ℝ))]
+        calc cc / 2 * (s : ℝ) ^ (0.2 : ℝ) * (1 + (s : ℝ))
+            ≤ cc / 2 * (s : ℝ) ^ (0.2 : ℝ) * (2 * (s : ℝ)) :=
+              mul_le_mul_of_nonneg_left h2s (by positivity)
+          _ = cc * ((s : ℝ) ^ (0.2 : ℝ) * (s : ℝ)) := by ring
+      calc -cc * ((s : ℝ) ^ (0.6 : ℝ)) ^ 2 / (1 + (s : ℝ))
+          = -(cc * ((s : ℝ) ^ (0.6 : ℝ)) ^ 2 / (1 + (s : ℝ))) := by ring
+        _ ≤ -(cc / 2 * (s : ℝ) ^ (0.2 : ℝ)) := neg_le_neg hkey
+    have hterm2 : Real.exp (-cc * (s : ℝ) ^ (0.6 : ℝ))
+        ≤ Real.exp (-(cc / 2 * (s : ℝ) ^ (0.2 : ℝ))) := by
+      refine Real.exp_le_exp.mpr ?_
+      have h1' : (s : ℝ) ^ (0.2 : ℝ) ≤ (s : ℝ) ^ (0.6 : ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le hs1 (by norm_num)
+      nlinarith
+    have hcube : Real.exp (-(cc / 2 * (s : ℝ) ^ (0.2 : ℝ)))
+        ≤ 216 / (cc ^ 3 * (s : ℝ) ^ (0.6 : ℝ)) := by
+      have h1' := exp_neg_le_cube (y := cc / 2 * (s : ℝ) ^ (0.2 : ℝ)) (by positivity)
+      have h2' : (cc / 2 * (s : ℝ) ^ (0.2 : ℝ)) ^ 3
+          = cc ^ 3 / 8 * ((s : ℝ) ^ (0.2 : ℝ)) ^ 3 := by ring
+      have h3' : ((s : ℝ) ^ (0.2 : ℝ)) ^ 3 = (s : ℝ) ^ (0.6 : ℝ) := by
+        rw [← Real.rpow_natCast ((s : ℝ) ^ (0.2 : ℝ)) 3, ← Real.rpow_mul hs0.le]
+        norm_num
+      calc Real.exp (-(cc / 2 * (s : ℝ) ^ (0.2 : ℝ)))
+          ≤ 27 / (cc / 2 * (s : ℝ) ^ (0.2 : ℝ)) ^ 3 := h1'
+        _ = 27 / (cc ^ 3 / 8 * (s : ℝ) ^ (0.6 : ℝ)) := by rw [h2', h3']
+        _ = 216 / (cc ^ 3 * (s : ℝ) ^ (0.6 : ℝ)) := by
+            rw [div_eq_div_iff (by positivity) (by positivity)]
+            ring
+    have hfinal : 216 / (cc ^ 3 * (s : ℝ) ^ (0.6 : ℝ)) ≤ 216 / (cc ^ 3 * (s' : ℝ)) := by
+      refine div_le_div_of_nonneg_left (by norm_num) (by positivity) ?_
+      refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+      exact le_trans hs'm hm048
+    have hAP1 : (1 : ℝ) ≤ A ^ 2 * (1 + (p : ℝ)) := by nlinarith
+    calc Cc * (Real.exp (-cc * ((s : ℝ) ^ (0.6 : ℝ)) ^ 2 / (1 + (s : ℝ)))
+          + Real.exp (-cc * (s : ℝ) ^ (0.6 : ℝ)))
+        ≤ Cc * (216 / (cc ^ 3 * (s' : ℝ)) + 216 / (cc ^ 3 * (s' : ℝ))) := by
+          refine mul_le_mul_of_nonneg_left ?_ hCc.le
+          have := le_trans hterm1 (le_trans hcube hfinal)
+          have := le_trans hterm2 (le_trans hcube hfinal)
+          linarith [le_trans hterm1 (le_trans hcube hfinal),
+            le_trans hterm2 (le_trans hcube hfinal)]
+      _ = (432 * Cc / cc ^ 3) / (s' : ℝ) := by
+          field_simp
+          ring
+      _ ≤ (432 * Cc / cc ^ 3) * (A ^ 2 * (1 + (p : ℝ))) / (s' : ℝ) := by
+          rw [div_le_div_iff₀ hs'0 hs'0]
+          have hpos : (0 : ℝ) ≤ 432 * Cc / cc ^ 3 := by positivity
+          nlinarith [mul_le_mul_of_nonneg_left hAP1 hpos]
+  have hbound3 : ∑' e : ℕ × ℤ,
+      (fpDistPlus s p e).toReal * Set.indicator Ev 1 (j + e.1, l + e.2)
+      ≤ C₃ * C₂ * (A ^ 2 * (1 + (p : ℝ))) / (s' : ℝ) := by
+    have h1 := hX10b n ξ hξ F t₀ ht₀ j l hmemt₀ s hs hS₀b_le p s' W hW1 h100W hreg
+    refine le_trans h1 ?_
+    rw [hWdef]
+    rw [div_le_div_iff₀ hs'0 hs'0]
+    ring_nf
+    nlinarith [hC₃, hs'0]
+  -- assemble
+  calc ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+      * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+      ≤ ∑' e : ℕ × ℤ, ((fpDistPlus s p e).toReal * Set.indicator hEsc 1 e
+        + (fpDistPlus s p e).toReal * Set.indicator cEsc 1 e
+        + (fpDistPlus s p e).toReal * Set.indicator Ev 1 (j + e.1, l + e.2)) := by
+        have hsA : Summable (fun e : ℕ × ℤ =>
+            (fpDistPlus s p e).toReal * Set.indicator hEsc 1 e) :=
+          hsummable hEsc (fun q => q)
+        have hsB : Summable (fun e : ℕ × ℤ =>
+            (fpDistPlus s p e).toReal * Set.indicator cEsc 1 e) :=
+          hsummable cEsc (fun q => q)
+        have hsC : Summable (fun e : ℕ × ℤ =>
+            (fpDistPlus s p e).toReal * Set.indicator Ev 1 (j + e.1, l + e.2)) :=
+          hsummable Ev (fun e => (j + e.1, l + e.2))
+        exact Summable.tsum_le_tsum hsplit
+          (hsummable (bigTriangleSet F s') (fun e => (j + e.1, l + e.2)))
+          ((hsA.add hsB).add hsC)
+    _ = (∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal * Set.indicator hEsc 1 e)
+        + (∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal * Set.indicator cEsc 1 e)
+        + ∑' e : ℕ × ℤ,
+            (fpDistPlus s p e).toReal * Set.indicator Ev 1 (j + e.1, l + e.2) := by
+        have hsA : Summable (fun e : ℕ × ℤ =>
+            (fpDistPlus s p e).toReal * Set.indicator hEsc 1 e) :=
+          hsummable hEsc (fun q => q)
+        have hsB : Summable (fun e : ℕ × ℤ =>
+            (fpDistPlus s p e).toReal * Set.indicator cEsc 1 e) :=
+          hsummable cEsc (fun q => q)
+        have hsC : Summable (fun e : ℕ × ℤ =>
+            (fpDistPlus s p e).toReal * Set.indicator Ev 1 (j + e.1, l + e.2)) :=
+          hsummable Ev (fun e => (j + e.1, l + e.2))
+        rw [Summable.tsum_add (hsA.add hsB) hsC, Summable.tsum_add hsA hsB]
+    _ ≤ Ch * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ)))
+        + (432 * Cc / cc ^ 3) * (A ^ 2 * (1 + (p : ℝ))) / (s' : ℝ)
+        + C₃ * C₂ * (A ^ 2 * (1 + (p : ℝ))) / (s' : ℝ) :=
+        add_le_add (add_le_add hbound1 hbound2) hbound3
+    _ ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+        + C * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ))) := by
+        have h1 : Ch ≤ C := by
+          have := Real.exp_pos (ch * (Mth : ℝ))
+          have h2 : (0 : ℝ) < 432 * Cc / cc ^ 3 := by positivity
+          nlinarith [mul_pos hC₃ (lt_of_lt_of_le one_pos hC₂),
+            mul_pos (lt_of_lt_of_le one_pos hC₂) (by norm_num : (0:ℝ) < 100)]
+        have h2 : 432 * Cc / cc ^ 3 + C₃ * C₂ ≤ C := by
+          have := Real.exp_pos (ch * (Mth : ℝ))
+          nlinarith [mul_pos (lt_of_lt_of_le one_pos hC₂) (by norm_num : (0:ℝ) < 100)]
+        have h3 : (432 * Cc / cc ^ 3) * (A ^ 2 * (1 + (p : ℝ))) / (s' : ℝ)
+            + C₃ * C₂ * (A ^ 2 * (1 + (p : ℝ))) / (s' : ℝ)
+            ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ) := by
+          rw [← add_div, div_le_div_iff₀ hs'0 hs'0]
+          nlinarith [mul_le_mul_of_nonneg_right h2 hAp0.le, hs'0]
+        have h4 : Ch * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ)))
+            ≤ C * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ))) :=
+          mul_le_mul_of_nonneg_right h1 hexp_pos.le
+        linarith
 
 end TaoCollatz
