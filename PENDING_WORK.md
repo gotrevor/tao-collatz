@@ -25,7 +25,29 @@ verified `[propext, Classical.choice, Quot.sound]` (real-analytic, **no**
 (numeral `40000000` appears at `ManyTriangles.lean:1618,2706,2728,…`). Lap D is
 `epsBW`-gated (judge's call). Leave `fpDist_any_triangle_le` sorried until then.
 
-### NEXT — Lap C: `Y = 139`, re-prove `fpDist_height_tail` OFF X6
+## Lap C part 1 (2026-07-13): **renewal mass per height level `≤ 1` PROVED** — the "trick"
+
+Commit `2daf42f`, axiom-clean. `renewal_level_le_one : ∀ u, ∑_j renewalMass (j,u) ≤ 1`.
+This is the decisive sub-lemma for making `Y` explicit (judge pass 24's route step 2).
+Reduced to the 1-D height marginal `hold.map Prod.snd` (renewal process on ℤ, increments
+`≥3`), proved via the renewal equation `U = δ₀ + F⋆U` (`renewalHeight_eq`) + strong
+induction on the level (`renewalHeight_le_one`). New API in `FpLocation.lean`:
+`holdSnd_support_ge`, `pmf_map_add_apply`, `iidSum_holdSnd_apply`, `renewalHeight`
+(+`_zero_of_neg`/`_eq`/`_le_one`), `renewal_level_le_one`.
+
+**REMAINING for Lap C** (assembly, next resume):
+1. Single-step height Chernoff: `∀ T, ∑_d [d.2 ≥ T] hold d ≤ ofReal(e^{-μT})·tiltZ hold (expW2 0 μ)`
+   — Markov in the 2nd coord; reuse `tiltZ_hold_snd` closed form + a numeric bound at μ≈0.06
+   (analog of `tiltZ_hold_le_num`; `tiltZ_hold_snd_le` gives the ≤ shape but only on |μ|≤1/100 —
+   need a fresh numeric bound at μ≈0.0575, or accept a larger Y from a smaller μ inside the box).
+2. Assembly via `fpDist_le_renewal_conv`: `∑_e [s+Y≤e.2] fpDist s e ≤ ∑_p [p.2≤s] renewalMass p ·
+   (∑_d[d.2≥s+Y-p.2] hold d)`; group by level `u=p.2≤s`, apply `renewal_level_le_one`, reindex
+   `w=s-u≥0`, sum the geometric `∑_w e^{-μw}` ⟹ explicit `Y`. Target `Y≈139` (μ*≈0.0575); any
+   `Y≤~250` is fine (box dominated by Y; judge re-freezes epsBW regardless).
+3. New `fpDist_height_tail_le_sixteenth_sharp : ∀ s, ∑_e [s+Y₀≤e.2] fpDist s e ≤ 1/16` at explicit
+   numeral `Y₀`. Leave `fpDist_height_tail_le_sixteenth` (existential) in place; Lap D rewires.
+
+### NEXT (superseded framing) — Lap C: `Y = 139`, re-prove `fpDist_height_tail` OFF X6
 `Sec7/ManyTriangles.lean:2522`. Its radius is existential today (sums X6's
 `fpDist_location_bound`, `∃`-bound `(cL,CL)`), so the box is not a number — the real
 blocker. Do **not** make X6's constants explicit. Route (judge pass 24):
