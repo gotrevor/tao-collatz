@@ -1,5 +1,29 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 57: 51/100 pin LANDED · `gaussian_col_tail` PROVED · ROUTE ESCALATION on (7.50)
+
+- Judge pass-16 demand discharged (`3c95898`): `fpDist_white_exit_deep` pin is
+  now `51/100 ≤ p₀` (witness 3/4 unchanged); `many_triangles_white`'s ε₀-floor
+  `≥ 1/100 ≥ 10⁻⁴` certified by arithmetic.
+- `gaussian_col_tail` PROVED (`813c9e7`) via new `hasSum_nat_tail_exp` (ℕ-tail
+  shifted geometric): Gaussian piece dominated at rate `c²/20` using
+  `20·x₀ ≥ t` from the budget + `9⁵ ≤ 2¹⁶`; prefactor `e^{-γx₀}` pushed below
+  `1/(8D)` by a `Nat.ceil` threshold. **`fpDist_out_of_strip_le` is axiom-clean**
+  (`#print axioms` = trust base).
+- **ROUTE ESCALATION** (`ROUTE-ESCALATION-2026-07-13.md`): `F.separated` is
+  VACUOUS at `epsBW = 10⁻⁴` (sep² ≈ 0.848 < 1 = min lattice distance²; X3
+  proves the clause BY this vacuity, `Triangles.lean:1211`). The (7.50)
+  whiteness ring needs separation > overshoot-O(1), so
+  **`fpDist_any_triangle_le` is unprovable from the interface** — and so is any
+  positive white-mass pin (the fallback `c₀ > 0` dies too). White-exit kernel
+  (X9's input, X8's twin) BLOCKED pending an altitude ruling. Remedies: (A)
+  shrink ε + formalize real Lemma-7.4 separation; (B) vertical white-gap lemma
+  from the fibre structure (~13 rows at current ε; PROBE FIRST, numerics via
+  check-8 harness); (C) re-route Case 2. Recommendation: probe (B).
+- Non-blocked crux queue: X10 assembly (`triangle_encounter_le`, apex route is
+  disjointness-based, unaffected); row-tail lemma `P(overshoot ≥ H) ≤ Ce^{-cH}`
+  (needed under every remedy).
+
 ## Lap 56 (review + crux advance): white-exit kernel DECOMPOSED; reduction glue + overshoot exclusion PROVED
 
 Review: X9 `many_triangles_white` verified CLOSED modulo exactly
