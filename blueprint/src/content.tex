@@ -752,17 +752,29 @@ foreign-triangle tail \texttt{fpDist\_any\_triangle\_le} was reduced (proved
 conditional: \texttt{fpDist\_any\_triangle\_le\_of\_localization\_box}) to the
 obligation \(\mathrm{sep} > \sqrt{X^2+Y^2}\) for an explicit X6-localization box ---
 but the box proved via the \(16j - 5l\) negative-drift Chernoff has
-\(X \approx 2.6\cdot 10^6\), against \(\mathrm{sep} \approx 20.7\).  No feasible
-frozen power-of-ten \(\varepsilon\) closes that gap (it would need
-\(\sim 10^7\)-digit numerals).  The paper's constants are chosen \emph{after} the
-localization argument; our frozen D4 sits upstream.  Honest exits: (a) a much
-tighter localization (the \(4\cdot 10^7\) threshold comes from a very lossy MGF
-exponent \(-39/400000\)/step; the paper's overshoot-based O(1) localization needs a
-fresh judge read of p.48), or (b) re-open D4 as a parameter (quantifier-order
-redesign; re-values everything again).  \texttt{fpDist\_white\_exit\_deep}'s
-statement ratification REMAINS SUSPENDED on these new grounds (text untouched;
-truth at \(10^{-90}\) hinges on the same localization constants).
-\lapsrisk{4--12 (kernel only; separation done --- localization route needs tightening or a new ruling)}{high --- second altitude-class escalation: box \(\approx 2.6\cdot 10^6\) vs sep \(\approx 20.7\)}{60\% (2026-07-13 judge pass 23)}
+\(X \approx 2.6\cdot 10^6\), against \(\mathrm{sep} \approx 20.7\).
+\textbf{✅ Pass 24 (2026-07-13): escalation DOWNGRADED --- not altitude-class.}  The
+p.48 re-read settles it.  The paper's (7.50) \(O(1)\) is a distance \emph{from}
+\(\Delta\), not from the start point (the drift slope \(1/4\) is shallower than the
+edge slope \(\log 2/\log 9\), so the walk drifts \emph{along} \(\Delta\)), and it is
+explicitly \(\varepsilon\)-free --- and the committed geometry already renders exactly
+that (top-projection into \(\Delta\) via \texttt{triangle\_top\_mem\_add}, then
+\texttt{F.separated}).  The route is sound; the blocker is two throwaway constants.
+(i) \texttt{fpDist\_linear\_tail} bounds the \(16j-5l\) MGF with a quadratic penalty
+that near-cancels the \(-16\)/step drift, capping the tilt at \(1/20000\) (true ceiling
+\(0.213\)) and shipping \(B = 4\cdot 10^7\); the step law's \emph{exact} MGF
+(\texttt{geomQuarter} \(\times\) \texttt{pascalNe3}) gives \(B \approx 42\).
+(ii) \texttt{fpDist\_height\_tail}'s radius \(Y\) is \emph{existential} (it sums X6's
+envelope) --- the real blocker --- but is explicit via renewal-conv \(+\) strictly
+increasing heights (\(\Delta l \ge 3\), so each level is visited at most once: renewal
+mass \(\le 1\), no renewal theorem) \(+\) \(\Delta l\)'s exact MGF, giving \(Y = 139\).
+Box \(= \sqrt{47^2 + 139^2} \approx 147\) vs \(\mathrm{sep} \approx 20.7\): needs one
+\emph{cheap} ruling, a numeral re-freeze \(10^{-90} \to 10^{-1000}\)
+(\(\mathrm{sep} \approx 230\)).  D4-as-a-parameter is off the table; pass-23's
+``\(10^7\)-digit numeral'' was an artifact of the garbage \(B\).
+\texttt{fpDist\_white\_exit\_deep}'s ratification REMAINS SUSPENDED until both constants
+are numerals and the box inequality is proved (text untouched).
+\lapsrisk{6--14 (kernel only; separation done, route cleared --- two explicit-constant lemmas \(+\) one numeral re-freeze)}{medium --- no longer altitude-class (judge pass 24); residual risk is Lean-side constant loss, not mathematics}{75\% (2026-07-13 judge pass 24)}
 \end{lemma}
 
 \begin{lemma}[Large triangles rarely encountered; Lemma 7.10]\label{X10}

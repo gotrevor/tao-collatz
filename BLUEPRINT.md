@@ -150,7 +150,52 @@ its neighbors (X3's exact fibre identity re-rated X8), and abandoning cheap comp
 buys nothing. A completed node is the *only* estimate that can't be wrong.
 
 **⚡ Active statement demands (judge → grind laps; check here before working the
-named target).** Current items: *(none — last item retired judge pass 17)*
+named target).**
+
+**🎯 UNBLOCK THE X9 KERNEL — two explicit constants (judge pass 24, 2026-07-13).**
+The p.48 re-read cleared the second escalation: the route is right, the geometry in
+`phaseInFamily_support_imp_localization_bad` is the paper's, and the *only* thing
+between us and `fpDist_any_triangle_le` is that the localization box is built from a
+throwaway constant. Two independent, ε-free tasks — neither needs a ruling, neither
+touches any pinned statement:
+
+1. **Sharpen `fpDist_linear_tail`** (FpLocation.lean:366). It currently bounds the
+   `16j − 5l` MGF with a quadratic `1000·(λ₁²+λ₂²)` penalty, which near-cancels the
+   −16/step drift (net exponent −39/400000) and forces the tilt to `θ = 1/20000`,
+   hence the shipped threshold `B = 4·10⁷`. **The step law has an exact MGF**:
+   `k ~ geomQuarter` is `¼(¾)^{k−1}` (mean 4) and `Δl = 3 + Σ^{k−1} v` with
+   `v ~ pascalNe3` (mean 13/3) — so
+   `E[e^{θZ}] = e^{−15θ}·¼e^{16θ} / (1 − ¾ e^{16θ} φ(θ))`, `φ(θ) = E[e^{−5θv}] ≤ 1`,
+   convergent for `¾e^{16θ}φ(θ) < 1` (ceiling `θ_c ≈ 0.213`). At `θ* ≈ 0.11` the
+   threshold for tail ≤ 1/16 is **`B ≈ 42`**. Any `B ≤ 250` is enough. Keep the
+   lemma's existing shape (`e^{−θB} · M/(1−M)`) — only the MGF input changes.
+2. **Re-prove `fpDist_height_tail` (ManyTriangles.lean:2522) OFF X6, with an explicit
+   radius.** It currently sums X6's `fpDist_location_bound`, whose constants `(cL, CL)`
+   are **existential** — so `Y` is not a numeral and `√(X²+Y²) < sep` can never be
+   discharged, however good `B` is. **This is the real blocker, not `B`.** Do not make
+   X6's constants explicit (that re-opens a completed node); take the elementary route
+   instead, whose three ingredients are all in-repo:
+   (i) `fpDist_le_renewal_conv` — the endpoint is a pre-passage point below the budget
+   line plus **one** `hold` step;
+   (ii) `hold`'s height increment is `Δl = 3 + Σ v` with `v ≥ 2`, so `Δl ≥ 3 > 0`: heights
+   **strictly increase**, hence the walk visits each level **at most once** and the renewal
+   mass at any level is `≤ 1` — no renewal theorem, no local limit law;
+   (iii) `Δl` has an exact MGF (tilt ceiling `μ_c = 0.0640`).
+   Chain: `P(height ≥ s+Y) ≤ Σ_{u≥0} P(Δl ≥ Y+u) ≤ E[e^{μΔl}]·e^{−μY}/(1−e^{−μ})`.
+   At `μ* = 0.0575` this yields **`Y = 139`** for tail ≤ 1/16.
+
+Then `X = ⌈(5Y + B)/16⌉ = 47` is a numeral and the box is `√(47²+139²) ≈ 147`, and
+`fpDist_any_triangle_le` follows by feeding `exists_fpDist_localization_box` +
+`√(X²+Y²) < sep` into the already-proved `fpDist_any_triangle_le_of_localization_box`.
+
+⚠️ **The box does NOT fit at the ruled `epsBW = 10⁻⁹⁰`** (`sep = 9·ln10 ≈ 20.72`), so a
+**numeral re-freeze is required** — recommended `10⁻¹⁰⁰⁰` (`sep ≈ 230`, ~1.6× margin).
+**That is Trevor's ruling, not a worker's**: land both lemmas first (they are ε-free and
+need no ruling), report the constants you actually proved, and the judge takes the real
+box to Trevor. Do **not** change `epsBW` on your own initiative, do **not** re-open it as
+a parameter, and do **not** introduce a `Real.exp`-valued ε (the rational power of ten is
+doctrine). Numerics: `tools/tao_linear_tail.py`, `tools/tao_height_tail.py`; full analysis
+`judge/pass-24.md`.
 
 **🗂️ SPLIT `ManyTriangles.lean` (operator directive, 2026-07-13; do this FIRST
 next lap, before proof work).** The file is 3,934 lines (2× the next-largest, ⅓ of
@@ -264,7 +309,7 @@ axis: "un-pinned" vs "high-risk", not bare "red".
 | X6 | ✅ **COMPLETE (laps 46–50; judge pass 7, 2026-07-12)** — Lemma 7.7 first-passage location distribution; `fpDist_location_bound` + `renewalMass_bound` judge-verified `[propext, Classical.choice, Quot.sound]`; FpLocation.lean sorry-free | p.43 | 4 | done | — | S3, X5 |
 | X7 | `Q_m` (7.38); Prop 7.8 skeleton; **Case 1** (white point) (7.42)–(7.43) | §7.4 pp.45–46 | 2 | 4–8 | 85% | X4 |
 | X8 | **Case 2** (shallow in triangle): (7.44)–(7.51) — statements pinned + ratified (judge pass 6); endpoint step + budget PROVED; open: weight degradation + white-exit (both consume X6) | pp.46–48 | 5 | 8–16 | 75% | X3, X6, X7 |
-| X9 | **Lemma 7.9** many-triangles ⟹ many-white-points — pinned at **exp(2ε)**: the paper's exp(ε) rests on a judge-CONFIRMED proof gap (p.51 display banks white damping through k₁, true sum stops at t₁ on stopped chains — see judge/pass-09.md + KB literature-holes #5); encounter-fold encoding ratified (pass 8), re-ratified at 2ε (pass 9); head-peel + block bridge `encExpect_block_le` + coupling PROVED axiom-clean; **Y/Z induction CLOSED lap 55 (judge pass 16)** — `many_triangles_white` proved DEPTH-GATED (second deviation: encounters count only at depth ≥ g; near-edge truth challenge = literature hole #6, judge-concurred), sorryAx trail machine-checked = exactly {`fpDist_white_exit_deep`}; consumer geometry judge-verified vs pp.48–49+54–56 (pass 15: R after ε, −O(A) slack, (7.54) 0.9m split); ⚠️ kernel re-pin must certify `51/100 ≤ p₀` (ε₀-floor, pass 16) | pp.50–51 | 4 | 2–4 | 80% | X4, X8 |
+| X9 | **Lemma 7.9** many-triangles ⟹ many-white-points — pinned at **exp(2ε)**: the paper's exp(ε) rests on a judge-CONFIRMED proof gap (p.51 display banks white damping through k₁, true sum stops at t₁ on stopped chains — see judge/pass-09.md + KB literature-holes #5); encounter-fold encoding ratified (pass 8), re-ratified at 2ε (pass 9); head-peel + block bridge `encExpect_block_le` + coupling PROVED axiom-clean; **Y/Z induction CLOSED lap 55 (judge pass 16)** — `many_triangles_white` proved DEPTH-GATED (second deviation: encounters count only at depth ≥ g; near-edge truth challenge = literature hole #6, judge-concurred), sorryAx trail machine-checked = exactly {`fpDist_white_exit_deep`}; consumer geometry judge-verified vs pp.48–49+54–56 (pass 15: R after ε, −O(A) slack, (7.54) 0.9m split); ⚠️ kernel re-pin must certify `51/100 ≤ p₀` (ε₀-floor, pass 16); **pass 24: second escalation DOWNGRADED — route sound (p.48's O(1) is a distance *from* Δ and is ε-free; the committed geometry already renders it), blocker = two throwaway constants — `B` (exact step-law MGF ⟹ 42, not 4·10⁷) and `Y` (existential via X6 ⟹ explicit 139 via strictly-increasing heights); box ≈ 147 vs sep ≈ 20.7 ⟹ one cheap numeral re-freeze `10⁻⁹⁰ → 10⁻¹⁰⁰⁰`, Trevor's call. D4-as-a-parameter off the table** | pp.50–51 | 4 | 6–14 | 75% | X4, X8 |
 | X10 | **Lemma 7.10** large triangles rarely encountered ((7.60)–(7.65), separated-Σ counting) — statement pinned + ratified (judge pass 8, 2026-07-12): `triangle_encounter_le` over `fpDistPlus = fpDist ⋆ iidSum hold p` (D1 encoding, strong-Markov absorbed); (7.65) disjointness step (not_mem_two) PROVED; open: escape event E′ + separated-Σ summation | pp.51–54 | 5 | 10–20 | 70% | X3, X6, S3 |
 | X11 | **Case 3** assembly (E_*, F_*, R = ⌊A²/ε⁴⌋, deterministic claim (7.67)); **Prop 7.8 → 7.3 → 7.1 → Prop 1.17** | pp.48–49, 54–56 | 4 | 10–20 | 70% | X9, X10 |
 
