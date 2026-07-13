@@ -40,8 +40,8 @@ theorem white_cos_bound (n ξ : ℕ) (j : ℕ) (l : ℤ) (hw : white n ξ j l) :
   have hε : ((epsBW : ℚ) : ℝ) < |t| := by
     rw [ht, ← Rat.cast_abs]
     exact Rat.cast_lt.mpr hεq
-  have hεval : ((epsBW : ℚ) : ℝ) = 1 / 10 ^ 4 := by
-    rw [show epsBW = 1 / 10 ^ 4 from rfl]
+  have hεval : ((epsBW : ℚ) : ℝ) = 1 / 10 ^ 90 := by
+    rw [show epsBW = 1 / 10 ^ 90 from rfl]
     push_cast
     norm_num
   have hπ := Real.pi_gt_three

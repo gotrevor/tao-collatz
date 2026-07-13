@@ -4,9 +4,10 @@ import TaoCollatz.Sec7.ManyTriangles
 # §7.4 Case 3 of Proposition 7.8 — the X11 assembly ((7.53)–(7.67), pp.48–49, 54–55)
 
 The deep-triangle branch `m/log²m < s ≤ O(m)` of the black-edge bound
-`Q_black_edge_case3` (statement pinned in `BlackEdge.lean`; the PROOF must live
-here, downstream of `ManyTriangles.lean`, because it consumes Lemma 7.9
-(`many_triangles_white`, X9) and Lemma 7.10 (`triangle_encounter_le`, X10)).
+`Q_black_edge_case3`. This downstream module holds the checked reusable
+machinery that consumes Lemma 7.9 (`many_triangles_white`, X9) and Lemma 7.10
+(`triangle_encounter_le`, X10), followed by the sole unresolved X11 conclusion
+and its proved connection to the public Proposition 7.8 chain.
 
 Paper chain, D6-finitized:
 
@@ -22,17 +23,27 @@ Paper chain, D6-finitized:
    on its complement the weight is `≤ 10^A`, so it suffices that
    `E exp(−ε³ Σ 1_W) ≤ 10^{−A−1}`, which follows from the split at the
    white-count threshold `K = ⌈10A/ε³⌉` and (7.56).
-3. **(7.56)** `few_whites_le`: `P(Σ_{p<P} 1_W ≤ K) ≤ 10^{−A−2}`, from
-   `E∗ ∪ F∗` (the union bound `estar_union_le` over Lemma 7.10, the Markov
-   bound `fstar_markov_le` over Lemma 7.9) plus the deterministic claim (7.67)
-   `deterministic_encounter_claim`: outside `E∗`, few whites force the
-   encounter fold to reach `count ≥ R` within `P` steps, putting the path
-   inside `F∗`.
+3. **(7.56)** The reusable parts are proved here: the Markov bound
+   `fstar_markov_le` over Lemma 7.9 and the deterministic claim (7.67)
+   `deterministic_encounter_claim`. The remaining finite union and numerical
+   closure are intentionally kept inside the single authoritative X11 gate
+   `Q_black_edge_case3` at the end of this module.
 
 Throughout, the joint law is `e ~ fpDist s` (the `k` first-passage steps)
 followed by `v ~ hold.iid T` (the post-passage steps), positions
 `(j,l) + e + pathSum v p`; per-`p` marginals are `fpDistPlus s p`
 (`iid_pathSum_law`), which is exactly the law Lemma 7.10 speaks about.
+
+## X11 risk boundary
+
+This module previously duplicated the unresolved gate with three additional
+`sorry` declarations (`estar_union_le`, `few_whites_le`, and
+`Q_black_edge_case3_assembled`). None was consumed by the theorem graph: the
+downstream chain used the separate declaration in `BlackEdge.lean`. Those
+shadow interfaces made X11 look decomposed without reducing its axiom trail.
+They have been replaced by one gate after the checked reusable machinery.
+`BlackEdge.lean` now exposes parameterized, proved assembly functions, so the
+gate here is on an acyclic path to every downstream consumer.
 -/
 
 namespace TaoCollatz
@@ -391,33 +402,7 @@ theorem iid_pathSum_law :
       rw [show 1 + q = q + 1 from by omega, iidSum_succ, PMF.tsum_bind_mul]
       exact tsum_congr fun d => by rw [PMF.tsum_map_mul]
 
-/-! ### The three (7.56) ingredients -/
-
-/-- **The `E∗` union bound** (paper p.54 bottom): summing Lemma 7.10 at
-`s' = ⌈4^A(1+p)³⌉` over `0 ≤ p ≤ T` gives `P(E∗) ≤ C·A²·4^{−A}`, provided the
-largest threshold still satisfies Lemma 7.10's regime `s' ≤ m^{0.4}` (the
-consumer takes `T = O_{A,ε}(1)` fixed and then `m ≥ C_{A,ε}`). The `1/s'` terms
-sum via `Σ (1+p)^{−2} ≤ 2`; the exponential terms via a geometric series
-dominated by `e^{−cA²(1+p)} ≤ e^{−cA²}·e^{−c(1+p)+c}` and `A ≥ A₀` pushes
-`A² e^{−cA²}`-type factors below `4^{−A}` (up to the constant).
-
-OPEN (X11a): assembly of `triangle_encounter_le` (PROVED) through
-`iid_pathSum_law`; no new analytic content. -/
-theorem estar_union_le :
-    ∃ C > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
-      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
-      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
-        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
-      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
-        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
-      ∀ (T : ℕ),
-        ((4 : ℝ) ^ A * (1 + (T : ℝ)) ^ 3 ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ)) →
-      ∑ p ∈ Finset.range (T + 1),
-        ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal *
-          Set.indicator (bigTriangleSet F ⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊)
-            (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
-      ≤ C * A ^ 2 * (4 : ℝ) ^ (-A) := by
-  sorry
+/-! ### The proved (7.56) ingredients -/
 
 open scoped Classical in
 /-- **The `F∗` Markov bound** (paper p.55 top): under Lemma 7.9's conclusion
@@ -934,54 +919,17 @@ theorem deterministic_encounter_claim (n ξ : ℕ) (F : TriangleFamily n ξ)
   rw [encFoldAt_top] at hmono
   exact le_trans (key R (le_refl R)) hmono
 
-open scoped Classical in
-/-- **The (7.56) core**: over the joint law (first passage at budget `s`, then
-`T` further Hold steps), the chance that fewer than `K_A := ⌈10·A/epsBW³⌉` of
-the `T+1` post-passage positions are white-strip is `≤ 10^{−A−2}`, once
-`m ≥ Cthr(A)` (with `T = T(A)` fixed first). Split the failure event into
-`E∗` (`estar_union_le`), the fold-reaches-`R` branch (which by
-`deterministic_encounter_claim` + `encFold_banked_le` forces
-`encVal ≥ e^{εR − K − 1}`, i.e. membership in `F∗`, improbable by
-`fstar_markov_le` with `R := ⌈(K + (A+3)·log 10 + 2)/ε⌉`), and the depth
-hypothesis failure (contained in the `0.9m` column event, handled by the
-CALLER — the depth hypothesis is passed in here as a path property through
-the column bound).
+/-! ### The sole X11 gate and the checked downstream assembly -/
 
-OPEN (X11c): the join; consumes `many_triangles_white` (X9) for `hbound`.
-NOTE: the failure-probability bookkeeping keeps every event as an explicit
-indicator tsum over the joint law; no measure theory (D6). -/
-theorem few_whites_le :
-    ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A → ∃ T : ℕ, ∃ Cthr : ℕ,
-      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
-      ∀ (m : ℕ), Cthr ≤ m → m ≤ n / 2 → ∀ (l : ℤ), 1 ≤ n / 2 - m →
-      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
-      ∀ (s : ℕ), (s : ℤ) = t.2.1 - l →
-      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
-      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
-      ∑' e : ℕ × ℤ, (fpDist s e).toReal * ∑' v : Fin T → ℕ × ℤ,
-        (hold.iid T v).toReal *
-        (if ((Finset.range (T + 1)).sum (fun p =>
-              if (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)
-                  ∈ whiteStrip n ξ then 1 else 0)
-            ≤ ⌈10 * A / (epsBW : ℝ) ^ 3⌉₊)
-          ∧ ((pathSum v T).1 + e.1 : ℝ) < 0.9 * m
-          then (1 : ℝ) else 0)
-      ≤ (10 : ℝ) ^ (-A - 2) := by
-  sorry
+/-- **Case 3 of Proposition 7.8** ((7.53)–(7.67), paper pp.48–49 + Lemmas
+7.9/7.10 pp.50–54): deep triangle start, `m/log²m < s ≤ O(m)`.
 
-/-- **Case 3 of Proposition 7.8, assembled** ((7.53)–(7.67), pp.48–49, 54–55):
-same statement as `Q_black_edge_case3` (BlackEdge.lean), proved here downstream
-of Lemmas 7.9/7.10. Glue plan: `Q_le_damped_iter` at `P := T + 1`; at the end
-position apply `Q_le_Qm` (the (7.38) rearrangement); split the resulting
-weighted average into (a) the column event `j_{[1,k+P]} ≥ 0.9m` — weight
-`≤ m^A`, probability `≤ C_P e^{−cm}` (`fpDistPlus_col_tail` at
-`D ≈ 0.05m`, using `s/4 ≤ 0.79(m+2)` from the budget hypothesis) — and (b) its
-complement, where the weight is `≤ 10^A` and the damping average is
-`≤ e^{−ε³K}·10^A + 10^A·P(few whites)` `≤ 10^{−A−1}` by `few_whites_le`.
-Total `≤ m^{−A}·Qm_{m−1}` once `m ≥ Cthr`.
-
-OPEN (X11d): mechanical `ℝ≥0∞`→`ℝ` bookkeeping once X11a–c land. -/
-theorem Q_black_edge_case3_assembled (A : ℝ) (hA : 0 < A) :
+This is the sole authoritative X11 gate. Everything above it in this module is
+checked: the damped iterate (7.53), the iid marginal bridge, the Markov bound,
+and the deterministic encounter claim (7.67). The remaining proof obligation
+is the finite-union/numerical closure of (7.54)–(7.56), with the single upstream
+geometry dependency `fpDist_any_triangle_le` through `many_triangles_white`. -/
+theorem Q_black_edge_case3 (A : ℝ) (hA : 0 < A) :
     ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
       ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
@@ -991,5 +939,26 @@ theorem Q_black_edge_case3_assembled (A : ℝ) (hA : 0 < A) :
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
         ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
   sorry
+
+/-- The black-edge case split, now fed by the sole downstream X11 gate. -/
+theorem Q_black_edge (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ,
+      1 ≤ n / 2 - m → (n / 2 - m, l) ∉ whiteSet n ξ →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
+  Q_black_edge_of_case3 A hA (Q_black_edge_case3 A hA)
+
+/-- **Proposition 7.8 (Monotonicity)**, assembled from the black-edge bound. -/
+theorem prop_7_8 (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
+  prop_7_8_of_black_edge A hA (Q_black_edge A hA)
+
+/-- Paper (7.37), assembled from Proposition 7.8. -/
+theorem Q_polynomial_decay (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l
+        ≤ C * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) :=
+  Q_polynomial_decay_of_prop_7_8 A hA (prop_7_8 A hA)
 
 end TaoCollatz

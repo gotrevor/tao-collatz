@@ -1,8 +1,8 @@
 # STATUS — tao-collatz 📊
 
 **First-anywhere Lean 4 formalization of Tao 2019 "Almost all Collatz orbits
-attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3280 jobs) ·
-**Updated**: lap 56 (review) · 2026-07-12 · `cb1156b`
+ attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3281 jobs) ·
+**Updated**: lap 59 (explicit (7.50) localization) · 2026-07-13 · working tree
 
 ## Where it stands
 
@@ -13,20 +13,55 @@ under active assault. **Seven crux nodes are CLOSED and axiom-clean**: S3
 — `many_triangles_white` verified CLOSED (`#print axioms` = trust base +
 `sorryAx` via exactly ONE input, the Y-induction `encExpect_entered_le` is
 axiom-clean). X4/X7 (D6 Q-recursion, Q_m + Case 1) are also complete (files
-sorry-free). Prop 1.17 is a theorem over exactly the Prop 7.8 chain: **7 open
-crux sorries** (BlackEdge ×4, ManyTriangles ×3), plus 13 deliberate spine stubs.
+sorry-free). Prop 1.17 is a theorem over exactly the Prop 7.8 chain: **5 open
+crux sorries** (BlackEdge ×3, Case3 ×1, ManyTriangles ×1), plus 9 deliberate
+spine stubs.
 This lap the white-exit kernel `fpDist_white_exit_deep` was **PROVED from a clean
 (7.50)-geometry decomposition** — the monolithic sorry became two named analytic
-sub-sorries (`fpDist_out_of_strip_le`, `fpDist_any_triangle_le`, both `≤ 1/8`
-Gaussian tails) + the axiom-clean reduction glue + the proved overshoot-exclusion
-helper `endpoint_notMem_start_triangle`. Both sub-sorries consume X6
-`fpDist_location_bound` and are the SAME geometry shared with X8's Case-2 twin
+tails (`fpDist_out_of_strip_le`, `fpDist_any_triangle_le`, both `≤ 1/8`), and
+the first is now proved. The reduction glue and overshoot-exclusion helper
+`endpoint_notMem_start_triangle` are also proved. The remaining tail consumes X6
+`fpDist_location_bound` and is the SAME geometry shared with X8's Case-2 twin
 `fpDist_white_exit`. X10's route was re-grounded against pp.52–54: precedented
-volume, not novelty. 20 open `sorry`s in `src/` total (decomposition raised the
-count by 1 — progress, not regression).
+volume, not novelty. 14 actual proof `sorry`s remain in `TaoCollatz/` total.
 
 ## What's happened (newest first)
 
+- **lap 59 (2026-07-13, X11 LOCALIZATION DE-RISK)**: replaced the false
+  fixed-Euclidean-radius idea and the speculative packing route with the paper's
+  actual quantifier order. Proved `fpDist ≤ stepMass`; then proved an explicit
+  negative-drift Chernoff tail for `16*j-5*l` by summing every positive renewal
+  time (`-39/400000` MGF exponent/step), including the checked numerical bound
+  `P(40000000 ≤ 16*j-5*l) ≤ 1/16`. Combined X6's height tail with a chosen
+  integer `Y` (`≤1/16`) to obtain `exists_fpDist_localization_box` (`≤1/8`
+  total). Proved the parameterized deterministic bridge
+  `phaseInFamily_support_imp_localization_bad` using `9^5 < 2^16`, and closed all
+  foreign-mass bookkeeping in `fpDist_any_triangle_le_of_localization_box`.
+  **The sole residue is now a quantifier-order/configuration obligation**:
+  choose/parameterize `epsBW` after this box so Lemma 7.4 separation exceeds
+  `sqrt(X²+Y²)`. Targeted build green.
+- **lap 58 (2026-07-13, X11 HARDEST GEOMETRY)**: executed the D4 change
+  `epsBW = 10⁻⁹⁰` and fully formalized Lemma 7.4 Claim (*) Cases 1--3.
+  `black_structure` now proves genuine pairwise set separation
+  `(1/10)log(1/ε) = 9 log 10 ≈ 20.7`; the former sub-unit lattice-spacing
+  shortcut is gone and `Triangles.lean` is sorry-free. Added exact-rational
+  near-corner scale bounds, weak row/column propagation, and the checked
+  `phaseInFamily_support_imp_margin`: foreign capture forces either vertical
+  overshoot `> 14` or horizontal clearance more than 14 columns past the top
+  face. Full `lake build` green after the epsilon sweep. **Remaining X11 risk is
+  sharply isolated**: `fpDist_any_triangle_le` must exploit foreign-triangle
+  shape/packing. A crude distance-tail union bound is insufficient at separation
+  20.7 (renewal harness: distance-tail about 0.27 versus the required 0.125), so
+  do not resurrect that route without either a packing lemma or a stronger D4
+  altitude.
+- **lap 57 (2026-07-13, X11 RISK BURN-DOWN)**: collapsed X11 from four
+  unresolved interfaces to one authoritative gate, `Q_black_edge_case3`, after
+  all checked support in `Case3.lean`. Replaced the import-cycle-prone upstream
+  placeholder with locally checked parameterized assemblies in `BlackEdge.lean`; the
+  public `Q_black_edge` → Proposition 7.8 → polynomial-decay chain now consumes
+  the sole downstream gate directly. The gate owns the finite union/numerical
+  join and depends on the single upstream geometry gate
+  `fpDist_any_triangle_le`.
 - **lap 56 (2026-07-12, REVIEW + crux advance)**: verified X9 CLOSED modulo
   exactly `fpDist_white_exit_deep`; route **CONTINUE**, no trigger; Aristotle
   idle. Then **PROVED `fpDist_white_exit_deep`** from the (7.50)-geometry
@@ -83,27 +118,30 @@ count by 1 — progress, not regression).
 ## Outstanding
 
 ### Short-term (mirror PENDING_WORK top)
-- **`fpDist_white_exit_deep`** (THE mandated next move) — X9's only remaining
-  input AND X8's Case-2 twin geometry. Prove general (route: X6 location bound
-  + `fpDist_support_snd_gt` top-clear + X3 `apex_separation` slope-exclusion +
-  in-strip), then derive `fpDist_white_exit` from it (kernel merge). Decompose
-  into named sub-`sorry`s in `src/`.
-- **X10 assembly** (`triangle_encounter_le`): fpDistPlus location bound
-  (7.48)+p-steps prerequisite → escape event E′ tails → separated-Σ mass sum
-  (existing Gaussian-AP engine).
+- **`fpDist_any_triangle_le`** — the single remaining geometry input to
+  `fpDist_white_exit_deep`, shared by X9 and X8's Case-2 white-exit kernel.
+  Its probability estimate, deterministic geometry, and mass bookkeeping are
+  proved by `exists_fpDist_localization_box`,
+  `phaseInFamily_support_imp_localization_bad`, and
+  `fpDist_any_triangle_le_of_localization_box`. The unresolved part is only the
+  upstream `epsBW` quantifier order: make Lemma 7.4 separation exceed the chosen
+  localization box.
 - **X8/X11 assembly**: `Q_black_edge_case2` (mechanical once kernels land),
-  `fpDist_edgeWeight_le`, `Q_black_edge_case3` (X11 (7.53)–(7.67)).
+  `fpDist_edgeWeight_le`; X11 is now exactly the sole
+  `Q_black_edge_case3` gate, placed after its checked reusable machinery in
+  `Case3.lean` and wired into the public theorem chain.
 
 ### Long-term
-- X11 assembly inside `Q_black_edge_case3` ((7.53)–(7.56), (7.66)–(7.67)); X8
-  assembly (`Q_black_edge_case2` + `fpDist_edgeWeight_le`).
+- X11 finite-union/numerical closure inside the sole `Q_black_edge_case3` gate;
+  upstream geometry dependency `fpDist_any_triangle_le`; X8 assembly
+  (`Q_black_edge_case2` + `fpDist_edgeWeight_le`).
 - C8 pin (Prop 5.2, §5) — the last RED statement-less node; opportunistic.
 - C-spine: C5/C7/C9/C10, Sec5/Sec6, Syracuse layer, Basic/Statement scaffolding
-  (13 stub sorries, deliberately deferred).
+  (9 stub sorries, deliberately deferred).
 
 ### To completion
 Assemble §7 crux → Prop 1.17 → Prop 1.14 → C10 → C9 → C6 → Thm 1.3; discharge
-all 20 `sorry`s; `#print axioms` on `Statement` headline = trust base only.
+all 14 proof `sorry`s; `#print axioms` on `Statement` headline = trust base only.
 
 ## Axiom ledger (fidelity spine)
 

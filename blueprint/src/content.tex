@@ -530,6 +530,15 @@ Proved through the phase identities (7.12)--(7.15), the weakly-black claims (i)-
   D4 \(\varepsilon\)-shrink reopens this clause with a genuine Euclidean obligation
   (pp.39--41; \texttt{sep\_const\_sq\_le\_one} dies by design once
   \(\mathrm{sep}^2 > 1\)).  Node status unaffected.
+  \emph{Pass-23 (2026-07-13): the obligation is DISCHARGED FOR REAL.}  An external
+  Codex session executed the D4 change (\(\varepsilon = 10^{-90}\), so
+  \(\mathrm{sep} = 9\ln 10 \approx 20.7\), \(20 < \mathrm{sep} < 26\) proved) and
+  formalized Lemma 7.4's Claim~(\(*\)) Cases 1--3 as genuine Euclidean-separation
+  content; \texttt{sep\_const\_sq\_le\_one} is deleted as designed.  The statement
+  gained one \emph{additive} conjunct (every family triangle is the
+  \texttt{cornerTriple} of a black point --- the paper's own construction,
+  re-ratified) and is judge re-verified clean at the new \(\varepsilon\)
+  (2026-07-13 dated run).
 \end{proof}
 
 \section{The holding process and its finitized renewal recursion (D6)}
@@ -733,7 +742,27 @@ is kept (holds a fortiori, \(\approx 299\) rows at the new \(\varepsilon\)).  Ex
 order: the ManyTriangles split lands first, then a dedicated D4-change lap (numeral +
 mechanical repairs only), then separation, then the kernel.  Suspensions lift only via
 the post-sweep re-ratification.
-\lapsrisk{13--28 (sweep 5--10 + real separation 4--8 + kernel 4--10)}{medium --- route restored to paper-faithful; risk is now grind + the mapped \(\varepsilon\)-sweep}{70\% (2026-07-12 altitude ruling: Remedy A, \(\varepsilon = 10^{-90}\))}
+\textbf{Pass 23 (2026-07-13): D4 change + real separation EXECUTED} (external Codex
+session; split skipped --- still queued): \(\varepsilon = 10^{-90}\) landed with all
+mechanical repairs, the full \(\varepsilon\)-sweep re-ratification ran (all seven armed
+items discharged; X2/X3/X10 re-verified clean at the new \(\varepsilon\)), and Lemma
+7.4's separation is now genuine content (node~\ref{X3}).
+\textbf{⚠️ SECOND ALTITUDE-CLASS ESCALATION (pass 23): quantifier order.}  The
+foreign-triangle tail \texttt{fpDist\_any\_triangle\_le} was reduced (proved
+conditional: \texttt{fpDist\_any\_triangle\_le\_of\_localization\_box}) to the
+obligation \(\mathrm{sep} > \sqrt{X^2+Y^2}\) for an explicit X6-localization box ---
+but the box proved via the \(16j - 5l\) negative-drift Chernoff has
+\(X \approx 2.6\cdot 10^6\), against \(\mathrm{sep} \approx 20.7\).  No feasible
+frozen power-of-ten \(\varepsilon\) closes that gap (it would need
+\(\sim 10^7\)-digit numerals).  The paper's constants are chosen \emph{after} the
+localization argument; our frozen D4 sits upstream.  Honest exits: (a) a much
+tighter localization (the \(4\cdot 10^7\) threshold comes from a very lossy MGF
+exponent \(-39/400000\)/step; the paper's overshoot-based O(1) localization needs a
+fresh judge read of p.48), or (b) re-open D4 as a parameter (quantifier-order
+redesign; re-values everything again).  \texttt{fpDist\_white\_exit\_deep}'s
+statement ratification REMAINS SUSPENDED on these new grounds (text untouched;
+truth at \(10^{-90}\) hinges on the same localization constants).
+\lapsrisk{4--12 (kernel only; separation done --- localization route needs tightening or a new ruling)}{high --- second altitude-class escalation: box \(\approx 2.6\cdot 10^6\) vs sep \(\approx 20.7\)}{60\% (2026-07-13 judge pass 23)}
 \end{lemma}
 
 \begin{lemma}[Large triangles rarely encountered; Lemma 7.10]\label{X10}

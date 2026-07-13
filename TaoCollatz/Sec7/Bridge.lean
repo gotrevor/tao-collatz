@@ -1,4 +1,4 @@
-import TaoCollatz.Sec7.BlackEdge
+import TaoCollatz.Sec7.Case3
 
 /-!
 # §7.3→§7.4 seam: the (7.36) bridge and Proposition 7.3 (node X5)

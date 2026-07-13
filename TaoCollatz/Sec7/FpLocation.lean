@@ -316,6 +316,126 @@ theorem fpDist_le_renewal_conv : ∀ (s : ℕ) (e : ℕ × ℤ),
         exact tsum_congr fun q => by rw [mul_ite, mul_zero]
       · simp only [if_neg hps, tsum_zero]
 
+/-- Convolving the unrestricted renewal measure with one final `hold` step is
+exactly the positive-time renewal measure.  This is the commuted form of
+`stepMass_eq_conv`; it is the convenient orientation for first passage, where
+the pre-passage point is chosen before the final step. -/
+theorem renewalMass_conv_hold_eq_stepMass (e : ℕ × ℤ) :
+    (∑' p : ℕ × ℤ, renewalMass p *
+      ∑' d : ℕ × ℤ, (if e = p + d then hold d else 0)) = stepMass e := by
+  rw [stepMass_eq_conv]
+  calc
+    (∑' p : ℕ × ℤ, renewalMass p *
+        ∑' d : ℕ × ℤ, (if e = p + d then hold d else 0))
+        = ∑' p : ℕ × ℤ, ∑' d : ℕ × ℤ,
+            renewalMass p * (if e = p + d then hold d else 0) := by
+              refine tsum_congr fun p => ?_
+              rw [ENNReal.tsum_mul_left]
+    _ = ∑' d : ℕ × ℤ, ∑' p : ℕ × ℤ,
+          renewalMass p * (if e = p + d then hold d else 0) := ENNReal.tsum_comm
+    _ = ∑' d : ℕ × ℤ, hold d * ∑' p : ℕ × ℤ,
+          (if e = d + p then renewalMass p else 0) := by
+            refine tsum_congr fun d => ?_
+            rw [← ENNReal.tsum_mul_left]
+            refine tsum_congr fun p => ?_
+            by_cases h : e = p + d
+            · rw [if_pos h, if_pos (by simpa [add_comm] using h), mul_comm]
+            · simp only [if_neg h, if_neg (by simpa [add_comm] using h), mul_zero]
+
+/-- A first-passage endpoint is in particular a positive-time renewal endpoint.
+Dropping the restriction that the pre-passage point lies below the budget line
+turns `fpDist_le_renewal_conv` into `stepMass`. -/
+theorem fpDist_le_stepMass (s : ℕ) (e : ℕ × ℤ) : fpDist s e ≤ stepMass e := by
+  refine (fpDist_le_renewal_conv s e).trans ?_
+  rw [← renewalMass_conv_hold_eq_stepMass e]
+  refine ENNReal.tsum_le_tsum fun p => ?_
+  by_cases hp : p.2 ≤ (s : ℤ)
+  · rw [if_pos hp]
+  · rw [if_neg hp, zero_mul]
+    exact bot_le
+
+/-- **Explicit transverse tail for first passage.**  The linear form
+`16*j - 5*l` has negative drift under `Hold`.  At the tilt
+`(1/1250, -1/4000)` the quadratic MGF exponent is exactly
+`-39/400000` per step.  Since a first-passage endpoint is dominated by the
+positive-time renewal measure, summing the iid Chernoff bound over every
+possible passage time gives this fully explicit geometric tail.
+
+This is the quantitative substitute for the paper's hidden-constant `O(1)`
+localization in (7.50). -/
+theorem fpDist_linear_tail (s : ℕ) (B : ℝ) :
+    (∑' e : ℕ × ℤ,
+      if B ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ) then fpDist s e else 0)
+      ≤ ENNReal.ofReal (Real.exp (-B / 20000))
+          * ENNReal.ofReal (Real.exp (-39 / 400000 : ℝ))
+          * (1 - ENNReal.ofReal (Real.exp (-39 / 400000 : ℝ)))⁻¹ := by
+  let cond : ℕ × ℤ → Prop := fun e =>
+    B ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+  have hquad :
+      4 * (1 / 1250 : ℝ) + 16 * (-(1 / 4000 : ℝ))
+          + 1000 * ((1 / 1250 : ℝ) ^ 2 + (-(1 / 4000 : ℝ)) ^ 2)
+        = -39 / 400000 := by norm_num
+  have hchern : ∀ k : ℕ,
+      (∑' e : ℕ × ℤ, if cond e then iidSum hold (k + 1) e else 0)
+        ≤ ENNReal.ofReal
+            (Real.exp (((k + 1 : ℕ) : ℝ) * (-39 / 400000) - B / 20000)) := by
+    intro k
+    have h := holdSum_halfspace_le
+      (l1 := (1 / 1250 : ℝ)) (l2 := -(1 / 4000 : ℝ))
+      (by norm_num) (by norm_num) (by norm_num) (by norm_num)
+      (k + 1) cond (B / 20000) (fun e he => by
+        dsimp only [cond] at he
+        have hscale := div_le_div_of_nonneg_right he (by norm_num : (0 : ℝ) ≤ 20000)
+        norm_num at hscale ⊢
+        linarith)
+    rw [hquad] at h
+    exact h
+  have hgeom :
+      (∑' k : ℕ, ENNReal.ofReal
+          (Real.exp (((k + 1 : ℕ) : ℝ) * (-39 / 400000) - B / 20000)))
+        = ENNReal.ofReal (Real.exp (-B / 20000))
+            * ENNReal.ofReal (Real.exp (-39 / 400000 : ℝ))
+            * (1 - ENNReal.ofReal (Real.exp (-39 / 400000 : ℝ)))⁻¹ := by
+    have hterm : ∀ k : ℕ,
+        ENNReal.ofReal
+            (Real.exp (((k + 1 : ℕ) : ℝ) * (-39 / 400000) - B / 20000))
+          = ENNReal.ofReal (Real.exp (-B / 20000))
+              * ENNReal.ofReal (Real.exp (-39 / 400000 : ℝ)) ^ (k + 1) := by
+      intro k
+      rw [← ENNReal.ofReal_pow (Real.exp_pos _).le]
+      rw [← ENNReal.ofReal_mul (Real.exp_pos _).le]
+      congr 1
+      rw [← Real.exp_nat_mul, ← Real.exp_add]
+      push_cast
+      ring_nf
+    simp_rw [hterm]
+    rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric_add_one]
+    ac_rfl
+  calc
+    (∑' e : ℕ × ℤ, if B ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+        then fpDist s e else 0)
+        ≤ ∑' e : ℕ × ℤ, if cond e then stepMass e else 0 := by
+          refine ENNReal.tsum_le_tsum fun e => ?_
+          by_cases he : cond e
+          · rw [if_pos he, if_pos he]
+            exact fpDist_le_stepMass s e
+          · rw [if_neg he, if_neg he]
+    _ = ∑' k : ℕ, ∑' e : ℕ × ℤ,
+          if cond e then iidSum hold (k + 1) e else 0 := by
+          rw [ENNReal.tsum_comm]
+          refine tsum_congr fun e => ?_
+          by_cases he : cond e
+          · rw [if_pos he]
+            simp_rw [if_pos he]
+            exact rfl
+          · rw [if_neg he]
+            simp_rw [if_neg he]
+            exact (tsum_zero : (∑' _ : ℕ, (0 : ℝ≥0∞)) = 0).symm
+    _ ≤ ∑' k : ℕ, ENNReal.ofReal
+          (Real.exp (((k + 1 : ℕ) : ℝ) * (-39 / 400000) - B / 20000)) :=
+        ENNReal.tsum_le_tsum hchern
+    _ = _ := hgeom
+
 /-! ### Elementary summation toolkit for the renewal bound
 
 Everything below is finite and integral-free: the Gaussian arithmetic-
@@ -373,6 +493,75 @@ theorem one_sub_exp_neg_inv_le_one_add {u : ℝ} (hu : 0 < u) :
   calc (1 + 1 / u)⁻¹ = u / (u + 1) := by
         rw [one_add_div hu.ne', inv_div]
     _ ≤ 1 - Real.exp (-u) := hkey
+
+/-- A deliberately conservative numerical instance of
+`fpDist_linear_tail`.  Its large threshold is useful: it is certified solely
+from the explicit quadratic MGF box, with no dependence on the existential
+constants in `fpDist_location_bound`. -/
+theorem fpDist_linear_tail_le_sixteenth (s : ℕ) :
+    (∑' e : ℕ × ℤ,
+      if (40000000 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+        then fpDist s e else 0) ≤ (1 : ℝ≥0∞) / 16 := by
+  have h := fpDist_linear_tail s 40000000
+  refine h.trans ?_
+  have hx : (0 : ℝ) < 39 / 400000 := by norm_num
+  have hexplt : Real.exp (-(39 / 400000 : ℝ)) < 1 := by
+    rw [Real.exp_lt_one_iff]
+    norm_num
+  have hden : (0 : ℝ) < 1 - Real.exp (-(39 / 400000 : ℝ)) := by linarith
+  have hinv := one_sub_exp_neg_inv_le_one_add hx
+  have hfac : Real.exp (-(39 / 400000 : ℝ))
+      * (1 - Real.exp (-(39 / 400000 : ℝ)))⁻¹ ≤ 20000 := by
+    have he0 := (Real.exp_pos (-(39 / 400000 : ℝ))).le
+    have he1 : Real.exp (-(39 / 400000 : ℝ)) ≤ 1 := hexplt.le
+    calc Real.exp (-(39 / 400000 : ℝ))
+          * (1 - Real.exp (-(39 / 400000 : ℝ)))⁻¹
+        ≤ 1 * (1 + 1 / (39 / 400000 : ℝ)) :=
+          mul_le_mul he1 hinv (by positivity) (by positivity)
+      _ ≤ 20000 := by norm_num
+  have hdecay : Real.exp (-(2000 : ℝ)) ≤ 1 / 1000000 := by
+    calc Real.exp (-(2000 : ℝ)) ≤ 4 / (2000 : ℝ) ^ 2 :=
+          exp_neg_le_four_div_sq (by norm_num)
+      _ = 1 / 1000000 := by norm_num
+  have hreal : Real.exp (-(2000 : ℝ))
+      * (Real.exp (-(39 / 400000 : ℝ))
+        * (1 - Real.exp (-(39 / 400000 : ℝ)))⁻¹) ≤ 1 / 16 := by
+    calc Real.exp (-(2000 : ℝ))
+          * (Real.exp (-(39 / 400000 : ℝ))
+            * (1 - Real.exp (-(39 / 400000 : ℝ)))⁻¹)
+        ≤ (1 / 1000000 : ℝ) * 20000 :=
+          mul_le_mul hdecay hfac (by positivity) (by positivity)
+      _ ≤ 1 / 16 := by norm_num
+  have hrewrite :
+      ENNReal.ofReal (Real.exp (-(40000000 : ℝ) / 20000))
+          * ENNReal.ofReal (Real.exp (-39 / 400000 : ℝ))
+          * (1 - ENNReal.ofReal (Real.exp (-39 / 400000 : ℝ)))⁻¹
+        = ENNReal.ofReal
+            (Real.exp (-(2000 : ℝ))
+              * (Real.exp (-(39 / 400000 : ℝ))
+                * (1 - Real.exp (-(39 / 400000 : ℝ)))⁻¹)) := by
+    have hneg : (-39 / 400000 : ℝ) = -(39 / 400000 : ℝ) := by ring
+    have hden' : (0 : ℝ) < 1 - Real.exp (-39 / 400000 : ℝ) := by
+      rw [hneg]
+      exact hden
+    have hsub :
+        (1 : ℝ≥0∞) - ENNReal.ofReal (Real.exp (-39 / 400000 : ℝ))
+          = ENNReal.ofReal (1 - Real.exp (-39 / 400000 : ℝ)) := by
+      rw [ENNReal.ofReal_sub _ (Real.exp_pos _).le, ENNReal.ofReal_one]
+    rw [show (-(40000000 : ℝ) / 20000) = -2000 by norm_num, hsub,
+      ← ENNReal.ofReal_inv_of_pos hden']
+    rw [← ENNReal.ofReal_mul (Real.exp_pos _).le]
+    rw [← ENNReal.ofReal_mul
+      (by positivity : (0 : ℝ) ≤ Real.exp (-2000) * Real.exp (-39 / 400000))]
+    congr 1
+    rw [hneg]
+    ring
+  rw [hrewrite]
+  have hout := ENNReal.ofReal_le_ofReal hreal
+  have h16 : ENNReal.ofReal (1 / 16 : ℝ) = (1 : ℝ≥0∞) / 16 := by
+    rw [ENNReal.ofReal_div_of_pos (by norm_num : (0 : ℝ) < 16)]
+    norm_num
+  rwa [h16] at hout
 
 /-- Partial geometric sums are bounded by `(1-r)⁻¹`. -/
 theorem sum_range_geom_le {r : ℝ} (h0 : 0 ≤ r) (h1 : r < 1) (N : ℕ) :

@@ -21,12 +21,13 @@ first-passage endpoint `(j,l) + v_{[1,k]}`:
   with probability `≥ p₀ > 0` absolute; OPEN (consumes X6 + separation).
 * `budget_le_of_mem_triangle` ((7.52)) — `s·log 2 ≤ (m+2)·log 9`; PROVED.
 * `Q_black_edge_case2` ((7.46)–(7.51) assembly, `s ≤ m/log²m`); OPEN.
-* `Q_black_edge_case3` ((7.53)–(7.67), `s > m/log²m`, via Lemmas 7.9/7.10);
-  OPEN — the X9/X10/X11 subtree.
-* `Q_black_edge` — the case split; PROVED from the above.
+* `Q_black_edge_of_case3` — the case split, parameterized by the downstream
+  Case 3 bound so the X11 proof can consume Lemmas 7.9/7.10 without an import
+  cycle; its local body is checked (the separate X8 inputs remain open).
 
-`prop_7_8` and `Q_polynomial_decay` (paper (7.40), (7.37)) moved here from
-`Monotone.lean` (they consume `Q_black_edge`).
+The corresponding Proposition 7.8 and polynomial-decay assemblies are also
+parameterized here. `Case3.lean` owns the final theorem names after supplying
+the sole X11 gate.
 -/
 
 namespace TaoCollatz
@@ -42,6 +43,9 @@ structure TriangleFamily (n ξ : ℕ) : Type where
   /-- the triangle parameters (apex `(j₀, l₀)`, size `s_Δ`) -/
   T : Set (ℕ × ℤ × ℝ)
   size_nonneg : ∀ t ∈ T, 0 ≤ t.2.2
+  /-- every member is one of the canonical corner triangles from Lemma 7.4 -/
+  canonical : ∀ t ∈ T, ∃ p : ℕ × ℤ, p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2 ∧
+    t = cornerTriple n ξ p
   /-- the black strip is exactly the union of the triangles -/
   cover : {p : ℕ × ℤ | p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2}
     = ⋃ t ∈ T, triangle t.1 t.2.1 t.2.2
@@ -57,8 +61,8 @@ structure TriangleFamily (n ξ : ℕ) : Type where
 /-- `black_structure` repackaged: a `TriangleFamily` exists. -/
 theorem exists_triangleFamily (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
     Nonempty (TriangleFamily n ξ) := by
-  obtain ⟨T, h0, h1, h2, h3⟩ := black_structure n ξ hξ hn
-  exact ⟨⟨T, h0, h1, h2, h3⟩⟩
+  obtain ⟨T, h0, hcanonical, h1, h2, h3⟩ := black_structure n ξ hξ hn
+  exact ⟨⟨T, h0, hcanonical, h1, h2, h3⟩⟩
 
 /-- The white points of the strip `j ≤ ⌊n/2⌋` (renewal coordinates). Case 2's
 white-exit gain ((7.47)) only counts endpoints that are white AND still inside
@@ -274,8 +278,8 @@ theorem budget_le_of_mem_triangle {n ξ : ℕ} (F : TriangleFamily n ξ)
   have hconf := F.confined t ht _ hqmem
   -- separation constant is nonnegative
   have hsep : (0 : ℝ) ≤ (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ)) := by
-    have heps : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 4 := by
-      rw [show epsBW = 1 / 10 ^ 4 from rfl]
+    have heps : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 90 := by
+      rw [show epsBW = 1 / 10 ^ 90 from rfl]
       push_cast
       norm_num
     rw [heps]
@@ -332,41 +336,29 @@ theorem Q_black_edge_case2 (A : ℝ) (hA : 0 < A) :
         ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
   sorry
 
-/-- **Case 3 of Proposition 7.8** ((7.53)–(7.67), paper pp.48–49 + Lemmas
-7.9/7.10 pp.50–54): deep triangle start, `m/log²m < s ≤ O(m)`. The walk must
-cross the whole triangle; Lemma 7.9 (node X9, induction on the number `r` of
-triangles encountered over the (7.35) recursion) locates `≥ 10A/ε³` white
-points by time `k + P`, `P = O_{A,ε}(1)`, unless `r` is small, and Lemma 7.10
-(node X10, the separated-Σ counting (7.60)–(7.65)) makes small `r` after a
-lengthy crossing improbable: `P(Σ 1_W < 10A/ε³) ≤ 10^{-A-2}` ((7.56)). The
-depth weight is controlled by the crude `j_{[1,k+P]} < 0.9m` Chernoff split
-((7.54)–(7.55), `max(1-j/m, 1/m)^{-A} ≤ 10^A`).
-
-OPEN (nodes X9/X10/X11): the deepest remaining subtree of §7.4. -/
-theorem Q_black_edge_case3 (A : ℝ) (hA : 0 < A) :
-    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
-      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
-      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
-      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
-      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
-      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
-      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
-        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
-  sorry
-
 /-- **The (7.41) edge bound for BLACK starts** (Cases 2–3 of Proposition 7.8,
 paper (7.44)–(7.67), pp.46–49): the case split. The black phase point
 `(⌊n/2⌋-m-1, l)` lies in a triangle of the family (`cover`); its budget
 `s := l_Δ - l` is `≤ (log 9/log 2)·(m+1)` by (7.52); Case 2 handles
-`s ≤ m/log²m`, Case 3 the rest. -/
-theorem Q_black_edge (A : ℝ) (hA : 0 < A) :
+`s ≤ m/log²m`, Case 3 the rest. The Case 3 bound is an explicit argument so
+the downstream X11 module can close the assembly without a cycle. -/
+theorem Q_black_edge_of_case3 (A : ℝ) (hA : 0 < A)
+    (hcase3 :
+      ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+        ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+        ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+        ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+        (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+        (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+        Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+          ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :
     ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ,
       1 ≤ n / 2 - m → (n / 2 - m, l) ∉ whiteSet n ξ →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
         ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
   classical
   obtain ⟨C2, hC2⟩ := Q_black_edge_case2 A hA
-  obtain ⟨C3, hC3⟩ := Q_black_edge_case3 A hA
+  obtain ⟨C3, hC3⟩ := hcase3
   refine ⟨max C2 C3, fun n ξ hξ m hm hmn l h1 hnw => ?_⟩
   have hn1 : 1 ≤ n := by omega
   obtain ⟨F⟩ := exists_triangleFamily n ξ hξ hn1
@@ -400,13 +392,18 @@ theorem Q_black_edge (A : ℝ) (hA : 0 < A) :
 Proof: the `Qm m` sup splits. Interior points (`p₁ > ⌊n/2⌋ - m`) are admissible at
 depth `m-1` with the same weight, so `le_Qm` bounds them by `Q_{m-1}` directly. Edge
 points (`p₁ = ⌊n/2⌋ - m`, weight `m^A`) satisfy (7.41) `Q ≤ m^{-A}·Q_{m-1}`: white
-starts by `Q_white_case1` (Case 1, proved), black starts by `Q_black_edge`
-(Cases 2–3, the open X8/X10 kernel). -/
-theorem prop_7_8 (A : ℝ) (hA : 0 < A) :
+starts by `Q_white_case1` (Case 1, proved), black starts by the supplied
+`Q_black_edge` bound. -/
+theorem prop_7_8_of_black_edge (A : ℝ) (hA : 0 < A)
+    (hblack :
+      ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+        ∀ l : ℤ, 1 ≤ n / 2 - m → (n / 2 - m, l) ∉ whiteSet n ξ →
+        Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+          ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :
     ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
       Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
   obtain ⟨C1, hC1⟩ := Q_white_case1 A hA
-  obtain ⟨C2, hC2⟩ := Q_black_edge A hA
+  obtain ⟨C2, hC2⟩ := hblack
   refine ⟨max (max C1 C2) 1, fun n ξ hξ m hm hmn => ?_⟩
   have hmC1 : C1 ≤ m := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hm
   have hmC2 : C2 ≤ m := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hm
@@ -460,10 +457,14 @@ theorem prop_7_8 (A : ℝ) (hA : 0 < A) :
 /-- Paper (7.37), the consequence of (7.39) + Proposition 7.8 by forward induction on `m`:
 `Q(j,l) ≪_A max(⌊n/2⌋ - j, 1)^{-A}`, uniformly in `n, ξ, j, l`. This is what feeds
 (7.36) `E Q(Hold) ≪_A n^{-A}` and hence Proposition 7.3 in `Decay.lean`. -/
-theorem Q_polynomial_decay (A : ℝ) (hA : 0 < A) :
+theorem Q_polynomial_decay_of_prop_7_8 (A : ℝ) (hA : 0 < A)
+    (hmono :
+      ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+        Qm (n / 2) n ξ (epsBW : ℝ) A m
+          ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :
     ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l ≤ C * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
-  obtain ⟨C0, hC0⟩ := prop_7_8 A hA
+  obtain ⟨C0, hC0⟩ := hmono
   set Cb := max C0 1 with hCbdef
   have hCb1 : 1 ≤ Cb := le_max_right _ _
   have hCbR : (1 : ℝ) ≤ ((Cb : ℕ) : ℝ) := by exact_mod_cast hCb1

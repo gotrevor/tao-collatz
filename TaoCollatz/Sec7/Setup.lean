@@ -89,8 +89,9 @@ theorem θq_pred_l (n ξ : ℕ) (j : ℕ) (l : ℤ) :
   obtain ⟨k, hk⟩ := sfrac_scale_of 2 _ _ m hm
   exact ⟨k, by simpa only [θq, Int.cast_ofNat] using hk⟩
 
-/-- The §7 small constant `ε = 1/10⁴` (D4 candidate). -/
-def epsBW : ℚ := 1 / 10 ^ 4
+/-- The §7 small constant `ε = 10⁻⁹⁰`.  This makes Lemma 7.4's
+quantitative separation large enough for the first-passage exit argument. -/
+def epsBW : ℚ := 1 / 10 ^ 90
 
 /-- A point `(j,l)` is *black* (7.9) if its phase is within `ε` of an integer. -/
 def black (n ξ : ℕ) (j : ℕ) (l : ℤ) : Prop := |θq n ξ j l| ≤ epsBW

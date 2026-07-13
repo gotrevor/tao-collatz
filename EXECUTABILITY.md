@@ -115,6 +115,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 18](judge/pass-18.md) — 2026-07-12, lap-57 boundary: **ROUTE ESCALATION CONCURRED** ⚠️ — `F.separated` is VACUOUS at the frozen ε ((0.921)² < 1 = lattice minimum; X3 proves the clause by exactly that vacuity; p.48's whiteness step consumes real separation). NOT a paper error — the D4 numeral is too large. `fpDist_any_triangle_le` route ratification WITHDRAWN; **`fpDist_white_exit_deep` ratification SUSPENDED** pending the altitude ruling (remedy A vs hybrid B+A-small). Remedy-B vertical half **PROVED + verified** (`white_gap_above_run_top`: 13 white rows above any run top, exact-ℚ). **X10 A-quantifier bug concurred** (∀A>0 was false vs the 16/step height drift): old ratification revoked, `∃A₀ ≥ 1, ∀A ≥ A₀` re-pin + both (7.61) tail pins **RATIFIED**. Dated runs: 5 new proofs clean. `/lean-review`: ✅ CLEAN (372 added lines). D4-change ε-sweep tripwire armed.
 - [Pass 19](judge/pass-19.md) — 2026-07-12, lap-58 boundary: **BOTH (7.61) TAILS + X10a PROVED & VERIFIED** ✅ — `fpDistPlus_height_tail`/`fpDistPlus_col_tail` now ratified+proved+clean; `encounter_apex_proximity` (X10a, the (7.63)→(7.65) confinement) **ratified vs p.53** + clean; engines (`fpDist_height_tail`, `fpDist_col_dev`, `holdSum_col_tail`) clean. **X10b pinned; committed form NOT ratified** — the lap-59 regime hypothesis `(s')² ≤ 1+s` is **pre-authorized** (pin false without it for s' ≫ √s; consumer-safe via `s' ≤ m^0.4` + `s > m/log²m`). X10 badge high/70% → **medium/80%**; headline = X10b + glue. `/lean-review`: 🟡 1 flag — X10a's local `maxHeartbeats 1600000` lacks the SKELETON-SPEC-required `-- HEARTBEAT:` comment (box's to fix). Also: **statement-faithfulness audit CLOSED** (Math Inc agrees on Thm 1.3; Thm 3.1 verbatim; Series β "Korec" label fixed — see endgame section).
 - **⚖️ Altitude ruling** (2026-07-12, Trevor, post-pass-20): **Remedy A at `epsBW = 10⁻⁹⁰`** — paper-faithful route restored; execution order + judge protocol in BLUEPRINT §2 and Live judge state below. X9 badge blocked/60% → 13–28 laps/70%.
+- [Pass 23](judge/pass-23.md) — 2026-07-13, external-contribution cross-check (working tree, not a lap): **D4 CHANGE + REAL LEMMA-7.4 SEPARATION EXECUTED** ✅ + **SECOND ALTITUDE-CLASS ESCALATION** ⚠️ — **OpenAI Codex** landed `epsBW = 10⁻⁹⁰` with all mechanical repairs; the armed ε-sweep FIRED and all seven items discharged (X2/X3/X10 re-verified clean at the new ε); Lemma 7.4 Claim (*) Cases 1–3 formalized as REAL separation (pass-18 vacuity closed for good; `black_structure` gained one additive construction conjunct — re-ratified). Every pinned statement character-preserved across a BlackEdge→Case3 reorganization; old 10⁻⁴-era white-count route lemmas deleted (consistent with the pass-18 withdrawal). **New escalation**: the blocked tail was reduced to `sep > √(X²+Y²)` for an explicit localization box — but X ≈ 2.6·10⁶ vs sep ≈ 20.7 (lossy `16j−5l` Chernoff); no feasible frozen ε closes it. Exits: tighten the localization (judge p.48 re-read first — recommended) or re-open D4 as a parameter. Suspensions persist. Sorry trail: same 5 crux statements; repo 17 → 14. Split still queued (ManyTriangles now ~5,200 lines).
 - [Pass 22](judge/pass-22.md) — 2026-07-13, external-contribution cross-check (working tree, not a lap): **C5 / PROP 1.9 + LEMMA 4.1 COMPLETE** ✅ — `valuation_dist` + `valuation_tail` proved by an **OpenAI Codex** session (+1,183 lines across ValuationDist/Valuation). Pinned statements character-untouched incl. constituent `unifOddMod`; fresh faithfulness read vs Prop 1.9 p.7 + Lemma 4.1 p.22 confirms the `∀c₀ K ∃c₁ C ∀n n' X` shape. **Dated run caught a laundered hole**: `valuation_tail` initially depended on `sorryAx` via the long-parked (1.10) `PMF.abs_expect_indicator_sub_le_dTV` (Prob/Basic.lean:154) — textually sorry-free file, transitively conditional; judge proved (1.10) same pass (tsum triangle inequality + summability bookkeeping). Re-run: all 7 decls exactly the clean triple. Route note: Lemma 4.1 *derived from* Prop 1.9 + geometric tail (reverse of the paper's order; sound, non-circular). `/lean-review` (1,183 added lines): ✅ CLEAN. **Ninth verified node**; pass-21's `valVec_pos` nit resolved by codex unprompted. Repo sorries 21 → 17.
 - [Pass 21](judge/pass-21.md) — 2026-07-13, external-contribution cross-check (working tree, not a lap): **C2 / LEMMA 2.1 COMPLETE** ✅ — `valVec_unique` proved by an **OpenAI Codex** session (uncommitted; judge committed after verification). Statement untouched by the proof landing AND newly **RATIFIED vs p.14** (the node's open RATIFY-2 resolved); route = the paper's own last-entry induction; dated runs (`syr_iterate_key`, `valVec_unique`, new `syr_iterate_odd`) all clean; `/lean-review` (148 added lines): ✅ CLEAN. Eighth verified node, first of the C-series. Nit armed: the paper's membership half (valVec entries ≥ 1) has no companion lemma — one-liner if a consumer needs it.
 - [Pass 20](judge/pass-20.md) — 2026-07-12/13, lap-59 boundary: **X10 / LEMMA 7.10 COMPLETE END-TO-END** 🏆 — the campaign's highest-uncertainty node is a theorem. X10b `encounter_separated_sum` PROVED (statement survived the proof landing character-identically); glue `triangle_encounter_le` PROVED same lap, with the pinned headline relocated below its engines **character-identically** (judge-diffed across the move). Dated runs on all nine lap-59 decls (headline, X10b, both `G`-weight engines, banded/qualifying steps, three glue helpers) — all exactly the clean triple. Blueprint X10 → proof-leanok, badge dropped; §7 sorry trail now BlackEdge ×4 + ManyTriangles ×1 (⛔blocked). `/lean-review` (1,372 added lines): 🟡 2 flags — two more local `maxHeartbeats` bumps (1M on `log_sq_le_rpow`, 2M on the assembly) without `-- HEARTBEAT:` comments (nit now ×3). Treadmill stopped after this lap (Trevor-directed evening wrap); 🗂️ ManyTriangles split directive queued for the next run's first lap.
@@ -140,36 +141,42 @@ tail pins (pass 18), X9 depth-gated re-pin (pass 14). ⚠️ **SUSPENDED**:
 unchanged, but its truth at the frozen ε is no longer judge-believed).
 
 **Open riders / queued fronts**:
-- **⚖️ ALTITUDE RULING LANDED (Trevor, 2026-07-12): Remedy A at `epsBW = 10⁻⁹⁰`**
-  — resolves the pass-18 escalation (`F.separated` vacuous at 10⁻⁴: (0.921)² <
-  1 = min lattice distance²; the paper's (7.50) consumes real separation; NOT a
-  paper error). New separation = 9·ln 10 ≈ 20.7; rational power of ten keeps
-  exact-ℚ; hybrid rejected for route-risk (novel kernel argument + thin margin +
-  double-sweep tail). Execution order in BLUEPRINT §2: split → dedicated
-  D4-change lap (numeral + mechanical repairs only; `sep_const_sq_le_one` dies;
-  X3's separation clause re-opens) → real Lemma-7.4 separation (pp.46–48) →
-  kernel per p.48. Suspensions (`fpDist_white_exit_deep` ratification,
-  `fpDist_any_triangle_le` route) lift ONLY via post-sweep re-ratification.
-  ⚠️ X3 and X2 lose verified status when the D4 change lands, until judge
-  re-runs post-sweep. Unaffected: X10's apex route (disjointness-based),
-  `fpDist_out_of_strip_le`, the other verified nodes.
-- **🔔 D4-CHANGE TRIPWIRE (armed, pass 18)**: any `epsBW` change re-values every
-  `black`/`white`-dependent theorem with NO textual diff — a semantic statement
-  edit repo-wide. Judge sweep list on the ruling landing: `sep_const_sq_le_one`
-  (must die), the 13-row gap numeral (`⌊log₂((1−ε)/ε)⌋`), the deep pin's `51/100`
-  vs new p₀ numerics, the ε₀-floor vs new epsBW (easier), X2's `exp(−ε³)` gain
-  (weaker → `C_{A,ε}` inflates), (7.52)-budget + out-of-strip thresholds,
-  confinement margin. The p₀-softening tripwire is superseded while the
-  suspension lasts and re-arms verbatim on the post-remedy re-pin.
+- **⚖️ ALTITUDE RULING (Trevor, 2026-07-12): Remedy A at `epsBW = 10⁻⁹⁰` —
+  EXECUTED (pass 23, Codex)**: D4 numeral + mechanical repairs landed; ε-sweep
+  fired and discharged (all 7 items); X2/X3/X10 **re-verified clean at 10⁻⁹⁰**;
+  real Lemma-7.4 separation formalized (sep ≈ 20.7 genuine, vacuity closed;
+  `black_structure` + additive construction conjunct, re-ratified). The 🗂️
+  split (step 1) was skipped — still queued, more urgent (~5,200 lines).
+- **⚠️ SECOND ALTITUDE-CLASS ESCALATION (pass 23) — quantifier order**: the
+  blocked tail `fpDist_any_triangle_le` is now proved CONDITIONAL
+  (`fpDist_any_triangle_le_of_localization_box`) on `sep > √(X²+Y²)` for an
+  explicit X6-localization box — but X = ⌈(5Y+4·10⁷)/16⌉ ≈ 2.6·10⁶ vs
+  sep ≈ 20.7. The 4·10⁷ comes from a lossy `16j−5l` Chernoff (MGF −39/400000
+  per step); no feasible frozen power-of-ten ε closes the gap (~10⁷-digit
+  numerals). The paper picks ε AFTER its localization constants. Exits:
+  (a) tighten the localization — the paper's O(1) is overshoot-based, needs a
+  **judge re-read of p.48 BEFORE any new ruling** (recommended, looks live and
+  cheap); (b) re-open D4 as a parameter (quantifier-order redesign). Suspensions
+  persist on these new grounds: `fpDist_white_exit_deep` ratification SUSPENDED,
+  `fpDist_any_triangle_le` sorried with the obligation documented in its
+  docstring.
+- **🔔 D4-CHANGE TRIPWIRE: FIRED + DISCHARGED (pass 23)**: the `epsBW = 10⁻⁹⁰`
+  change landed and the full sweep ran clean — `sep_const_sq_le_one` deleted as
+  designed (now `twenty_lt_sep_const`/`sep_const_lt_twenty_six`), gap numeral
+  re-ran, ε₀-floor easier, X2's gain consumers existential (re-verified), strip/
+  budget thresholds and confinement re-verified. The tripwire RE-ARMS for any
+  FUTURE epsBW change (same sweep list, judge/pass-18.md). The p₀-softening
+  tripwire still re-arms verbatim on the post-remedy kernel re-pin.
 - **ε₀-floor: DISCHARGED at the statement level** (pass 17; demand pass 16): the
   kernel pin carries `51/100 ≤ p₀`, so `ε₀ = min(1/100, ·) ≥ 1/100 ≥ 10⁻⁴` by
   arithmetic. Survives the escalation as a statement property (whatever proves
   the pin post-remedy inherits the numeral); re-check p₀ numerics on a D4 change.
-- **Axiom-check queue**: cleared (pass 20 — nine lap-59 decls verified clean,
-  including the X10 headline). Prop 1.17's whole remaining sorry trail =
-  BlackEdge ×4 (`fpDist_edgeWeight_le`, `fpDist_white_exit`,
-  `Q_black_edge_case2`, `Q_black_edge_case3`) + ManyTriangles ×1
-  (`fpDist_any_triangle_le` ⛔blocked on the altitude ruling).
+- **Axiom-check queue**: cleared (pass 23 — 25-decl suite: 19 unconditional
+  clean, 6 conditional-spine sorryAx-as-expected). Prop 1.17's whole remaining
+  sorry trail = the same 5 crux statements: BlackEdge ×3 (`fpDist_edgeWeight_le`,
+  `fpDist_white_exit`, `Q_black_edge_case2`) + Case3 ×1 (`Q_black_edge_case3`,
+  relocated) + ManyTriangles ×1 (`fpDist_any_triangle_le` ⛔quantifier-order
+  escalation). Repo-wide: 14 sorries (5 crux + 9 spine stubs).
 - **X10 COMPLETE (pass 20)**: X10b's pre-authorization discharged character-exact
   (`ae0918c`, pass-19 addendum), X10b proved + verified; glue proved + verified;
   the pinned headline was relocated below its engines character-identically
