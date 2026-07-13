@@ -1,58 +1,73 @@
 # DIRECTION — tao-collatz 🧭
 
-*Altitude laps (review/reflection) are the ONLY writers of the CURRENT DIRECTIVE
-section. Grind laps READ and OBEY it; it OUTRANKS the HANDOFF. Keep it short —
-detail lives in PENDING_WORK.md.*
+*The **JUDGE** and altitude laps (review/reflection) are the only writers of the
+CURRENT DIRECTIVE section; the judge outranks a review lap. Grind laps READ and
+OBEY it; **it OUTRANKS the HANDOFF**. Keep it short — detail lives in
+PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ---
 
-## CURRENT DIRECTIVE (lap 56 review, 2026-07-12)
+## CURRENT DIRECTIVE (judge pass 24, 2026-07-13)
 
-**THE objective**: prove the **white-exit kernel** `fpDist_white_exit_deep` —
-now X9's ONLY open input (`many_triangles_white` verified closed modulo exactly
-it, `#print axioms` = trust base + `sorryAx` via that one sorry) AND the geometry
-shared by X8's Case-2 twin `fpDist_white_exit`. This is the route-decisive
-blocker: if `p₀ > 1/2` cannot be certified through X6's constants vs the
-ε=10⁻⁴ separation, the ∃C fallback re-pin is forced (a redesign), so it is
-hardest-first. Steps 1–2 of the lap-55 directive (depth gate, close
-`many_triangles_white`) are DONE.
+**THE objective**: close the X9 white-exit kernel by making **two throwaway
+constants explicit**. `fpDist_white_exit_deep` is X9's only open input, and it now
+reduces (already proved: `fpDist_any_triangle_le_of_localization_box`) to ONE
+inequality — `√(X²+Y²) < sep`, with `sep = (1/10)·ln(1/epsBW) = 9·ln10 ≈ 20.72`
+and `X = ⌈(5Y+B)/16⌉`.
 
-**Mandated next move** (in order):
-1. **`fpDist_white_exit_deep`** (THE active move). Prove it GENERAL, then DERIVE
-   X8's `fpDist_white_exit` from it (kernel merge — the Case-2 budget hypothesis
-   `s ≤ m/log²m` is used downstream ONLY for `edgeWeight`, per the docstring).
-   Route (both twins share it): Lemma 7.7 `fpDist_location_bound` (X6, PROVED)
-   concentrates the endpoint at `(j+s/4+O(√(1+s)), l_Δ+O(1))`;
-   `fpDist_support_snd_gt` clears the triangle top; (7.11) slope + X3
-   `apex_separation` exclude every other triangle → white; in-strip since
-   `s/4+O(√s) ≪ m`. Decompose into named sub-`sorry`s in `src/` (support-clears,
-   slope-excludes-others, in-strip, mass≥p₀) — that RAISES the src count and is
-   the progress. If certifying `p₀ > 1/2` through X6's constants fights, any
-   explicit `c₀ > ~ε` suffices (chain value `exp(O(ε/c₀))` consumable) — weaken
-   the pin, don't stall; but the deep variant is pinned at 1/2 for the chain cap
-   `encChainX_le_exp`, so the weakening propagates to `many_triangles_white`.
-2. **X10 assembly** (`triangle_encounter_le`): FIRST name and prove the
-   fpDistPlus location bound (Lemma 7.7 ⋆ p iid Hold steps); then E′ tails
-   (X6+S3 applications); then the separated-Σ mass sum (existing Gaussian-AP
-   engine + proved `apex_separation`).
-3. **X8/X11 assembly**: `Q_black_edge_case2` (mechanical once both kernels land),
-   then `fpDist_edgeWeight_le`, then `Q_black_edge_case3` (X11 (7.53)–(7.67)).
+**⛔→✅ THE ESCALATION GATE IS LIFTED.** Any doc telling you
+`fpDist_any_triangle_le` is "ESCALATION-GATED, do not touch"
+(`HANDOFF-2026-07-13-d.md`) or describing a live route crisis
+(`ROUTE-ESCALATION-2026-07-13.md`) is **superseded**. Judge pass 24 re-read the
+paper's p.48 localization argument: the route is sound, the committed geometry is
+faithful, and the blocker is arithmetic, not mathematics. **Do not re-litigate the
+escalation. Do not re-derive the diagnosis.**
+
+**Mandated next move** (in order — full detail in `HANDOFF-2026-07-13-e.md`):
+1. **🗂️ The queued `ManyTriangles.lean` split** (BLUEPRINT §2) — pure moves, zero
+   statement/proof edits, names verbatim. ~5,200 lines; every edit re-elaborates
+   all of it. Overdue; do it first, in a lap of its own.
+2. **`B ≈ 42`** — sharpen `fpDist_linear_tail` (`Sec7/FpLocation.lean:366`). It
+   ships `B = 4·10⁷` because it bounds the `16j−5l` MGF with a crude *quadratic*
+   penalty that near-cancels the −16/step drift, capping the tilt at `1/20000`
+   (true ceiling `0.213`). The step law has an **exact** MGF (`geomQuarter` ¼(¾)^{k−1}
+   × `pascalNe3`). Keep the lemma's `e^{−θB}·M/(1−M)` shape; only the MGF input
+   changes. Any `B ≤ 250` suffices — do not over-optimize.
+3. **`Y = 139`** — re-prove `fpDist_height_tail` (`Sec7/ManyTriangles.lean:2522`)
+   **OFF X6**. Its radius is *existential* today (it sums X6's envelope, whose
+   `(cL,CL)` are `∃`-bound), so the box is not even a number — **this is the real
+   blocker**. Do NOT make X6's constants explicit (that re-opens a completed node).
+   Use: `fpDist_le_renewal_conv` + **heights strictly increase** (`Δl = 3 + Σv ≥ 3`,
+   so each level is visited at most once ⟹ renewal mass per level `≤ 1`, no renewal
+   theorem) + `Δl`'s exact MGF.
+4. **Close the tail**: with `B`,`Y` numerals, feed `exists_fpDist_localization_box`
+   + the box inequality into `fpDist_any_triangle_le_of_localization_box`.
+
+Numerics (targets, not proofs — a Lean proof may ship lossier constants, which is
+fine): `tools/tao_linear_tail.py`, `tools/tao_height_tail.py`.
+
+**⚠️ `epsBW` IS THE JUDGE'S TO SET — NOT A WORKER'S.** The box comes out at
+`√(47²+139²) ≈ 147 > sep ≈ 20.72`, so closing step 4 needs a numeral re-freeze
+(`10⁻⁹⁰ → 10⁻¹⁰⁰⁰`). **The judge issues that, after seeing the constants you
+actually prove.** Steps 2 and 3 are entirely **ε-free** — land them, report your real
+`B` and `Y`, and STOP at the box inequality (leave `fpDist_any_triangle_le` sorried,
+numerals recorded in your handoff). Meanwhile:
+- Do **not** change `epsBW`.
+- Do **not** re-open `epsBW` as a parameter — that remedy is ruled out.
+- Do **not** introduce a `Real.exp`-valued ε; the frozen rational power of ten is doctrine.
 
 **Forbidden drift**:
-- No spine leaves (SyracRV / ValuationDist / Basic / Statement / Sec5 / Sec6 /
-  Prob stubs) — downstream, cheap later.
-- No `fpDist_edgeWeight_le` grinding before the white-exit twins land (Case-2-only,
-  not route-decisive).
-- C8 pinning is allowed as statement-work variety, at most one lap, never
-  displacing steps 1–3.
+- No spine leaves (SyracRV / ValuationDist / Basic / Statement / Sec5 / Sec6 / Prob
+  stubs) — downstream, cheap later.
+- No edits to pinned/ratified statements. An edit revokes ratification.
+- If steps 1–4 are done or blocked, work the BlackEdge crux sorries
+  (`fpDist_edgeWeight_le`, `fpDist_white_exit`, `Q_black_edge_case2`) or Case3's
+  `Q_black_edge_case3`. Do not idle on the gated tail.
 
-**Why**: the reflection's ground-truth read (pp.49–55 + the compiler) shows the
-remaining §7 risk is concentrated in (a) the X9 near-edge statement question —
-the only place a ratified pin might be *false*, hence fix-first — and (b) the
-white-exit kernel shared by X9/X8. X10, previously rated the summit, is
-precedented volume (conf ~78%): its geometric core and analytic engines are
-already proved. Closing X9 whole re-rates the entire Case-3 subtree with ground
-truth.
+**Why**: X9's kernel is the last route-decisive blocker on Prop 1.17's Case-3 chain
+(X10 is complete and axiom-clean). Pass 24 showed the remaining obstruction is two
+lossy constants — a `10⁶×` loss in `B`, and an existential `Y` — not a redesign.
+Closing it re-rates the whole Case-3 subtree with ground truth.
 
 ### Route-level triggers / abort conditions
 - **T1 (7.9 encoding)**: if the stopping-time expectation (7.57) provably CANNOT be
@@ -65,6 +80,10 @@ truth.
   finitely many inequalities, numerics-checkable first.
 
 ### Directive history
+- **judge pass 24 (2026-07-13)**: second escalation DOWNGRADED (not altitude-class);
+  gate on `fpDist_any_triangle_le` LIFTED; objective = make `B` and `Y` explicit.
+  Supersedes the lap-56 directive below (written in the ε=10⁻⁴ era, before the
+  altitude ruling froze `epsBW = 10⁻⁹⁰` and before X9/X10 closed).
 - lap 56 (2026-07-12, review): X9 `many_triangles_white` verified CLOSED modulo
   exactly `fpDist_white_exit_deep` (`#print axioms` = trust base + `sorryAx`);
   promote the shared white-exit kernel to THE active move (steps 1–2 of lap-55
