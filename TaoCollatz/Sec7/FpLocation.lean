@@ -905,6 +905,140 @@ theorem renewalMass_zero_of_snd_neg {p : ℕ × ℤ} (hp : p.2 < 0) : renewalMas
   have : (0 : ℤ) ≤ 3 * (k : ℤ) := by positivity
   omega
 
+/-! ### Renewal mass per height level is `≤ 1` (strictly-increasing heights)
+
+The height coordinate of the `Hold` renewal walk strictly increases (`+≥3` per
+step, `hold_support_snd_ge`), so along any single trajectory each height level is
+visited **at most once**.  Hence the expected number of renewal epochs at a fixed
+height level `u` — `∑_j renewalMass (j,u)` — is `≤ 1`.  This is the "trick" that
+lets the (7.50) vertical-overshoot radius `Y` be an explicit numeral instead of an
+existential (judge pass 24).  The proof reduces to the 1-D height marginal
+`hold.map Prod.snd` (a renewal process on `ℤ` with increments `≥ 3`) and the
+renewal equation `U = δ₀ + F ⋆ U`, closed by strong induction on the level. -/
+
+/-- The single-step height marginal `F = hold.map snd` is supported on `≥ 3`. -/
+theorem holdSnd_support_ge {a : ℤ} (ha : (hold.map Prod.snd) a ≠ 0) : 3 ≤ a := by
+  rw [← PMF.mem_support_iff, PMF.mem_support_map_iff] at ha
+  obtain ⟨p, hp, rfl⟩ := ha
+  exact hold_support_snd_ge p hp
+
+/-- A translation `map (a + ·)` on `ℤ` just shifts the argument. -/
+theorem pmf_map_add_apply (μ : PMF ℤ) (a u : ℤ) :
+    (μ.map (a + ·)) u = μ (u - a) := by
+  rw [PMF.map_apply]
+  refine (tsum_eq_single (u - a) (fun q hq => if_neg (fun h => ?_))).trans ?_
+  · exact hq (by have : u = a + q := h; omega)
+  · rw [if_pos (show u = a + (u - a) by ring)]
+
+/-- The height renewal density `U(u) = ∑_k F^{*k}(u)`, where `F = hold.map snd`. -/
+noncomputable def renewalHeight (u : ℤ) : ℝ≥0∞ :=
+  ∑' k : ℕ, (iidSum (hold.map Prod.snd) k) u
+
+/-- The height marginal after `k` steps equals the fiber sum of `iidSum hold k`. -/
+theorem iidSum_holdSnd_apply (k : ℕ) (u : ℤ) :
+    (iidSum (hold.map Prod.snd) k) u = ∑' j : ℕ, iidSum hold k (j, u) := by
+  rw [← iidSum_map hold Prod.snd rfl (fun _ _ => rfl) k, PMF.map_apply, ENNReal.tsum_prod']
+  refine tsum_congr fun j => ?_
+  refine (tsum_eq_single u (fun l hl => if_neg (fun h => ?_))).trans ?_
+  · exact hl h.symm
+  · rw [if_pos rfl]
+
+/-- Negative height levels carry no renewal mass. -/
+theorem renewalHeight_zero_of_neg {u : ℤ} (hu : u < 0) : renewalHeight u = 0 := by
+  show (∑' k : ℕ, (iidSum (hold.map Prod.snd) k) u) = 0
+  refine ENNReal.tsum_eq_zero.mpr fun k => ?_
+  rw [iidSum_holdSnd_apply]
+  refine ENNReal.tsum_eq_zero.mpr fun j => ?_
+  refine iidSum_hold_snd_zero k (j, u) ?_
+  have : (0 : ℤ) ≤ 3 * (k : ℤ) := by positivity
+  omega
+
+/-- **Renewal equation** for the height density: `U(u) = δ₀(u) + ∑_a F(a)·U(u-a)`. -/
+theorem renewalHeight_eq (u : ℤ) :
+    renewalHeight u
+      = (if u = 0 then 1 else 0)
+        + ∑' a : ℤ, (hold.map Prod.snd) a * renewalHeight (u - a) := by
+  have hstep : ∀ k : ℕ, (iidSum (hold.map Prod.snd) (k + 1)) u
+      = ∑' a : ℤ, (hold.map Prod.snd) a * (iidSum (hold.map Prod.snd) k) (u - a) := by
+    intro k
+    rw [iidSum_succ, PMF.bind_apply]
+    exact tsum_congr fun a => by rw [pmf_map_add_apply]
+  have htail : (∑' k : ℕ, (iidSum (hold.map Prod.snd) (k + 1)) u)
+      = ∑' a : ℤ, (hold.map Prod.snd) a * renewalHeight (u - a) := by
+    calc (∑' k : ℕ, (iidSum (hold.map Prod.snd) (k + 1)) u)
+        = ∑' k : ℕ, ∑' a : ℤ,
+            (hold.map Prod.snd) a * (iidSum (hold.map Prod.snd) k) (u - a) :=
+          tsum_congr hstep
+      _ = ∑' a : ℤ, ∑' k : ℕ,
+            (hold.map Prod.snd) a * (iidSum (hold.map Prod.snd) k) (u - a) :=
+          ENNReal.tsum_comm
+      _ = ∑' a : ℤ, (hold.map Prod.snd) a * renewalHeight (u - a) := by
+          refine tsum_congr fun a => ?_
+          rw [show renewalHeight (u - a)
+              = ∑' k : ℕ, (iidSum (hold.map Prod.snd) k) (u - a) from rfl]
+          exact ENNReal.tsum_mul_left
+  rw [show renewalHeight u = ∑' k : ℕ, (iidSum (hold.map Prod.snd) k) u from rfl,
+    tsum_eq_zero_add' ENNReal.summable, iidSum_zero, PMF.pure_apply]
+  exact congr_arg₂ (· + ·) (by congr) htail
+
+/-- **Renewal density per level is `≤ 1`.**  Strong induction on the (nonnegative)
+level: at `u=0` only the `k=0` epoch contributes; at `u≥1` the renewal equation
+folds each mass back to a strictly smaller level, and the increment law has total
+mass `1`. -/
+theorem renewalHeight_le_one (u : ℤ) : renewalHeight u ≤ 1 := by
+  rcases lt_or_ge u 0 with hu | hu
+  · rw [renewalHeight_zero_of_neg hu]; exact zero_le_one
+  obtain ⟨n, rfl⟩ : ∃ n : ℕ, u = (n : ℤ) := ⟨u.toNat, (Int.toNat_of_nonneg hu).symm⟩
+  clear hu
+  induction n using Nat.strong_induction_on with
+  | _ n IH =>
+    rw [renewalHeight_eq]
+    have hbody : ∀ a : ℤ, (hold.map Prod.snd) a * renewalHeight ((n : ℤ) - a)
+        ≤ (hold.map Prod.snd) a := by
+      intro a
+      by_cases hFa : (hold.map Prod.snd) a = 0
+      · simp [hFa]
+      · have ha3 : 3 ≤ a := holdSnd_support_ge hFa
+        have hrec : renewalHeight ((n : ℤ) - a) ≤ 1 := by
+          rcases lt_or_ge ((n : ℤ) - a) 0 with hneg | hpos
+          · rw [renewalHeight_zero_of_neg hneg]; exact zero_le_one
+          · obtain ⟨m, hm⟩ : ∃ m : ℕ, (n : ℤ) - a = (m : ℤ) :=
+              ⟨((n : ℤ) - a).toNat, (Int.toNat_of_nonneg hpos).symm⟩
+            have hmn : m < n := by omega
+            rw [hm]; exact IH m hmn
+        calc (hold.map Prod.snd) a * renewalHeight ((n : ℤ) - a)
+            ≤ (hold.map Prod.snd) a * 1 := by gcongr
+          _ = (hold.map Prod.snd) a := mul_one _
+    have hsum : (∑' a : ℤ, (hold.map Prod.snd) a * renewalHeight ((n : ℤ) - a)) ≤ 1 := by
+      calc (∑' a : ℤ, (hold.map Prod.snd) a * renewalHeight ((n : ℤ) - a))
+          ≤ ∑' a : ℤ, (hold.map Prod.snd) a := ENNReal.tsum_le_tsum hbody
+        _ = 1 := (hold.map Prod.snd).tsum_coe
+    by_cases hn0 : (n : ℤ) = 0
+    · rw [if_pos hn0]
+      have hz : (∑' a : ℤ, (hold.map Prod.snd) a * renewalHeight ((n : ℤ) - a)) = 0 := by
+        refine ENNReal.tsum_eq_zero.mpr fun a => ?_
+        by_cases hFa : (hold.map Prod.snd) a = 0
+        · rw [hFa, zero_mul]
+        · have ha3 : 3 ≤ a := holdSnd_support_ge hFa
+          rw [renewalHeight_zero_of_neg (by omega), mul_zero]
+      rw [hz, add_zero]
+    · rw [if_neg hn0, zero_add]
+      exact hsum
+
+/-- **Renewal mass per height level is `≤ 1`** (the strictly-increasing-heights
+trick).  `∑_j renewalMass (j,u) ≤ 1`, uniformly in the level `u`. -/
+theorem renewal_level_le_one (u : ℤ) :
+    (∑' j : ℕ, renewalMass (j, u)) ≤ 1 := by
+  have hrw : (∑' j : ℕ, renewalMass (j, u)) = renewalHeight u := by
+    show (∑' j : ℕ, renewalMass (j, u)) = ∑' k : ℕ, (iidSum (hold.map Prod.snd) k) u
+    calc (∑' j : ℕ, renewalMass (j, u))
+        = ∑' j : ℕ, ∑' k : ℕ, iidSum hold k (j, u) := by
+          refine tsum_congr fun j => ?_; rw [renewalMass]
+      _ = ∑' k : ℕ, ∑' j : ℕ, iidSum hold k (j, u) := ENNReal.tsum_comm
+      _ = ∑' k : ℕ, (iidSum (hold.map Prod.snd) k) u :=
+          tsum_congr fun k => (iidSum_holdSnd_apply k u).symm
+  rw [hrw]; exact renewalHeight_le_one u
+
 /-- One draw: `iidSum hold 1 = hold` pointwise. -/
 theorem iidSum_one_apply (p : ℕ × ℤ) : iidSum hold 1 p = hold p := by
   rw [show (1 : ℕ) = 0 + 1 from rfl, iidSum_succ_apply]
