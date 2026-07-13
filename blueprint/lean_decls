@@ -87,6 +87,8 @@ bigTriangleSet
 TriangleFamily.not_mem_two
 fpDistPlus_height_tail
 fpDistPlus_col_tail
+encounter_apex_proximity
+encounter_separated_sum
 charFn_decay
 key_fourier_decay
 Q_black_edge_case3

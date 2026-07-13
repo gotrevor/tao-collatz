@@ -682,7 +682,7 @@ fires the judge's \(\varepsilon\)-sweep re-ratification tripwire (pass 18 list).
 \end{lemma}
 
 \begin{lemma}[Large triangles rarely encountered; Lemma 7.10]\label{X10}
-  \lean{triangle_encounter_le, fpDistPlus, bigTriangleSet, TriangleFamily.not_mem_two, fpDistPlus_height_tail, fpDistPlus_col_tail}
+  \lean{triangle_encounter_le, fpDistPlus, bigTriangleSet, TriangleFamily.not_mem_two, fpDistPlus_height_tail, fpDistPlus_col_tail, encounter_apex_proximity, encounter_separated_sum}
   \uses{X3, X6, S3}
   \leanok
 \textbf{Risk kernel 3b.}  \textbf{Lemma 7.10} (paper (7.60)--(7.65)): after a lengthy crossing,
@@ -710,7 +710,15 @@ route pins anchored to the p.52 displays: \texttt{fpDistPlus\_height\_tail}
 (7.65) apex-interval disjointness step (\texttt{TriangleFamily.not\_mem\_two}) is already
 \emph{proved} from node~\ref{X3}'s separation --- \emph{disjointness-based, so the
 pass-18 route escalation does not touch this node}.
-\lapsrisk{10--20}{high --- risk kernel 3b, statements pinned}{70\% (2026-07-12 judge pass 18: re-pin + (7.61) tails ratified; separated-\(\Sigma\) summation still open)}
+\textbf{Lap 58 (judge pass 19):} both (7.61) tails are \textbf{PROVED} (judge-run clean),
+and the assembly is decomposed per pp.52--54: \texttt{encounter\_apex\_proximity} (X10a,
+the (7.63)\(\to\)(7.65) confinement --- \textbf{PROVED + ratified vs p.53}, judge-run
+clean) + \texttt{encounter\_separated\_sum} (X10b, the p.54 \(\Sigma\)-band sum ---
+pinned; the lap-59 regime hypothesis \((s')^2 \le 1+s\) is judge-pre-authorized as
+ratified-on-landing: without it the pin is false for \(s' \gg \sqrt{s}\), and the
+consumer's standing \(s' \le m^{0.4}\), \(s > m/\log^2 m\) supply it above an absolute
+threshold). Headline = X10b + glue.
+\lapsrisk{4--8}{medium --- X10b's \(\Sigma\)-band sum + glue; the hard confinement geometry is done}{80\% (2026-07-12 judge pass 19)}
 \end{lemma}
 
 \section{Assembly: Prop 1.17}

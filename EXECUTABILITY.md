@@ -71,9 +71,15 @@ moment, and the fallback is a Fable-assisted design series, not abandonment.
   --review-every 4 --allow-stop` (model/effort per Trevor's preference; g-i evidence:
   gates are model-agnostic).
 
-**Milestone insurance**: even a stall after Series β leaves a publishable artifact
-(first Lean proof of the Terras/Allouche/Korec-strength "a.a. orbits dip below N^θ" — itself
-unformalized anywhere, worth a lean-gallery entry).
+**Milestone insurance**: even a stall after Series β leaves a publishable artifact —
+the FIRST formalized theorem of the "a.a. orbits dip below N^θ" class (unformalized
+anywhere), worth a lean-gallery entry. ⚠️ **Label it honestly** (statement-faithfulness
+audit, 2026-07-12): what falls out of Remark 5.1 is `Syrmin(N) ≤ N^θ` a.a. in
+**logarithmic density** at the UN-optimized exponent `θ > 1/α` — Terras-type-plus. It is
+NOT Korec 1994: Korec is **natural density** (Tao p.2 says so explicitly of
+Terras/Allouche/Korec) at the optimized `θ > log3/log4 ≈ 0.7924`, and log-density-1 does
+not imply natural-density-1. Never register it against ccchallenge's Korec entry — that
+would be the Idris competitor's density-notion error in mirror image.
 
 ## 5. Session de-risk evidence (2026-07-08)
 
@@ -107,6 +113,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 16](judge/pass-16.md) — 2026-07-12, lap-55 boundary: **LEMMA 7.9 CLOSED MOD KERNEL** ✅ — `many_triangles_white` proved, Y-induction axiom-clean, sorryAx trail = exactly {`fpDist_white_exit_deep`} (machine-checked). ⚠️ **ε₀-floor LEAK caught**: exhibited ε₀ = min(1/100, (2p₁−1)/2) with p₁ from the pin's bare `1/2 < p₀` — does NOT certify ε₀ ≥ 10⁻⁴. **Kernel demand: re-pin mass to `51/100 ≤ p₀`** (pre-authorized as ratification-preserving strengthening; numerics ≈ 0.99).
 - [Pass 17](judge/pass-17.md) — 2026-07-12, lap-56 boundary + lap-57 re-pin: **MASS DEMAND SATISFIED** ✅ (`3c95898` character-exact to the pre-authorization; ε₀-floor discharged by arithmetic; steering item retired). **Kernel DERIVED** via (7.50)-geometry decomposition: `fpDist_col_le` + `fpDist_out_of_strip_le` PROVED clean; one tail left — **`fpDist_any_triangle_le`** (≤ 1/8 family-triangle mass; NEW PIN, ratified as route decomposition ~85%). `/lean-review` on the full range: ✅ CLEAN (0 registry hits over 335 added lines). When the tail lands, X9 completes end-to-end.
 - [Pass 18](judge/pass-18.md) — 2026-07-12, lap-57 boundary: **ROUTE ESCALATION CONCURRED** ⚠️ — `F.separated` is VACUOUS at the frozen ε ((0.921)² < 1 = lattice minimum; X3 proves the clause by exactly that vacuity; p.48's whiteness step consumes real separation). NOT a paper error — the D4 numeral is too large. `fpDist_any_triangle_le` route ratification WITHDRAWN; **`fpDist_white_exit_deep` ratification SUSPENDED** pending the altitude ruling (remedy A vs hybrid B+A-small). Remedy-B vertical half **PROVED + verified** (`white_gap_above_run_top`: 13 white rows above any run top, exact-ℚ). **X10 A-quantifier bug concurred** (∀A>0 was false vs the 16/step height drift): old ratification revoked, `∃A₀ ≥ 1, ∀A ≥ A₀` re-pin + both (7.61) tail pins **RATIFIED**. Dated runs: 5 new proofs clean. `/lean-review`: ✅ CLEAN (372 added lines). D4-change ε-sweep tripwire armed.
+- [Pass 19](judge/pass-19.md) — 2026-07-12, lap-58 boundary: **BOTH (7.61) TAILS + X10a PROVED & VERIFIED** ✅ — `fpDistPlus_height_tail`/`fpDistPlus_col_tail` now ratified+proved+clean; `encounter_apex_proximity` (X10a, the (7.63)→(7.65) confinement) **ratified vs p.53** + clean; engines (`fpDist_height_tail`, `fpDist_col_dev`, `holdSum_col_tail`) clean. **X10b pinned; committed form NOT ratified** — the lap-59 regime hypothesis `(s')² ≤ 1+s` is **pre-authorized** (pin false without it for s' ≫ √s; consumer-safe via `s' ≤ m^0.4` + `s > m/log²m`). X10 badge high/70% → **medium/80%**; headline = X10b + glue. `/lean-review`: 🟡 1 flag — X10a's local `maxHeartbeats 1600000` lacks the SKELETON-SPEC-required `-- HEARTBEAT:` comment (box's to fix). Also: **statement-faithfulness audit CLOSED** (Math Inc agrees on Thm 1.3; Thm 3.1 verbatim; Series β "Korec" label fixed — see endgame section).
 
 ## Live judge state 📍 (update each pass)
 
@@ -147,16 +154,21 @@ unchanged, but its truth at the frozen ε is no longer judge-believed).
   kernel pin carries `51/100 ≤ p₀`, so `ε₀ = min(1/100, ·) ≥ 1/100 ≥ 10⁻⁴` by
   arithmetic. Survives the escalation as a statement property (whatever proves
   the pin post-remedy inherits the numeral); re-check p₀ numerics on a D4 change.
-- **Axiom-check queue**: cleared (pass 18 — five new proofs verified, incl. the
-  813c9e7 `gaussian_col_tail`/`fpDist_out_of_strip_le` pair formally recorded).
+- **Axiom-check queue**: cleared (pass 19 — six lap-58 proofs verified clean).
   Prop 1.17's whole remaining sorry trail = BlackEdge ×4 (`fpDist_edgeWeight_le`,
   `fpDist_white_exit`, `Q_black_edge_case2`, `Q_black_edge_case3`) +
-  ManyTriangles ×4 (`triangle_encounter_le` X10, `fpDistPlus_height_tail`,
-  `fpDistPlus_col_tail`, `fpDist_any_triangle_le`).
+  ManyTriangles ×3 (`triangle_encounter_le` X10 headline = X10b + glue,
+  `encounter_separated_sum` X10b, `fpDist_any_triangle_le` ⛔blocked).
+- **X10b pre-authorization armed (pass 19)**: the committed lap-58 pin lacks the
+  regime hypothesis `(s')² ≤ 1+s` and is false without it (`s' ≫ √s`: the
+  centre band alone carries ≍W/√(1+s)). The in-flight lap-59 fix (statement +
+  hypothesis + docstring, seen uncommitted at pass time) is ratified-on-landing
+  via character diff; any other edit shape = full re-ratification.
 - **Box docstring nits** (box's to fix): `White.lean:11` + `Reduction.lean:12`
   stale "carries sorry" claims (pass 12); `triangle_encounter_le` DEVIATION NOTE
   says "≈ 4p mean height drift" — height mean is 16/step, 4 is the column mean
-  (pass 18).
+  (pass 18); X10a's `maxHeartbeats 1600000` needs the SKELETON-SPEC §13
+  `-- HEARTBEAT:` justification comment (pass 19).
 - **Judge recipe amendment** (pass 18): each pass diffs the event range AND
   checks `git log <range-end>..HEAD` before publishing assessments — the box
   commits concurrently, and pass 17's 85% badge went out with the escalation
@@ -191,9 +203,19 @@ The announcement is about the formalization — the Lemma 7.9 deviation stays in
 repo docs and is NOT led with or bragged about (Trevor, 2026-07-12).
 Pre-announce tripwires: `curl -s https://ccchallenge.org/api/papers/Tao2022` still
 `not_started`, and `git-safe -C ~/src/clone/tao_collatz_idris2_formalization fetch`
-for competitor movement. Also before going public: the statement-faithfulness audit
-(Math Inc bridge + Series β density wording) must be closed, and the repo needs the
-pre-public PDF-expunge sweep (committed paper PDFs → history rewrite).
+for competitor movement. Also before going public: the repo needs the pre-public
+PDF-expunge sweep (committed paper PDFs → history rewrite).
+✅ **Statement-faithfulness audit CLOSED (2026-07-12, judge)**: (1) `Statement.lean`'s
+`tao_collatz` diffed against Math Inc's independent rendering
+([math-inc/FormalQualBench](https://github.com/math-inc/FormalQualBench)
+`CollatzMapAlmostBoundedValues/Main.lean`) — **the two agree**: same log-density notion
+(their `1/log N` normalizer ⟺ our Def-1.2-exact `Σ 1/n` ratio; their
+exceptional-set-density-0 ⟺ our good-set-density-1; their `∃k, orbit < f n` ⟺ our
+`colMin N < f N` with `colMin = sInf` over the k=0-inclusive orbit); our `f : ℕ → ℝ` is
+the paper-exact form (theirs is the narrower `ℕ → ℕ`). (2) `tao_collatz_quantitative`
+verified verbatim against Theorem 3.1 p.16 — including the `∀ x ≥ 2` uniformity, which
+is Tao's own "for all x ≥ 2", and the ℙ-ratio Col_min display. (3) Series β density
+wording FIXED (§4 above): Remark 5.1 = log density, un-optimized θ — never "Korec".
 
 ## Judge loop — standing ops while the treadmill runs (2026-07-12)
 
