@@ -114,6 +114,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 17](judge/pass-17.md) — 2026-07-12, lap-56 boundary + lap-57 re-pin: **MASS DEMAND SATISFIED** ✅ (`3c95898` character-exact to the pre-authorization; ε₀-floor discharged by arithmetic; steering item retired). **Kernel DERIVED** via (7.50)-geometry decomposition: `fpDist_col_le` + `fpDist_out_of_strip_le` PROVED clean; one tail left — **`fpDist_any_triangle_le`** (≤ 1/8 family-triangle mass; NEW PIN, ratified as route decomposition ~85%). `/lean-review` on the full range: ✅ CLEAN (0 registry hits over 335 added lines). When the tail lands, X9 completes end-to-end.
 - [Pass 18](judge/pass-18.md) — 2026-07-12, lap-57 boundary: **ROUTE ESCALATION CONCURRED** ⚠️ — `F.separated` is VACUOUS at the frozen ε ((0.921)² < 1 = lattice minimum; X3 proves the clause by exactly that vacuity; p.48's whiteness step consumes real separation). NOT a paper error — the D4 numeral is too large. `fpDist_any_triangle_le` route ratification WITHDRAWN; **`fpDist_white_exit_deep` ratification SUSPENDED** pending the altitude ruling (remedy A vs hybrid B+A-small). Remedy-B vertical half **PROVED + verified** (`white_gap_above_run_top`: 13 white rows above any run top, exact-ℚ). **X10 A-quantifier bug concurred** (∀A>0 was false vs the 16/step height drift): old ratification revoked, `∃A₀ ≥ 1, ∀A ≥ A₀` re-pin + both (7.61) tail pins **RATIFIED**. Dated runs: 5 new proofs clean. `/lean-review`: ✅ CLEAN (372 added lines). D4-change ε-sweep tripwire armed.
 - [Pass 19](judge/pass-19.md) — 2026-07-12, lap-58 boundary: **BOTH (7.61) TAILS + X10a PROVED & VERIFIED** ✅ — `fpDistPlus_height_tail`/`fpDistPlus_col_tail` now ratified+proved+clean; `encounter_apex_proximity` (X10a, the (7.63)→(7.65) confinement) **ratified vs p.53** + clean; engines (`fpDist_height_tail`, `fpDist_col_dev`, `holdSum_col_tail`) clean. **X10b pinned; committed form NOT ratified** — the lap-59 regime hypothesis `(s')² ≤ 1+s` is **pre-authorized** (pin false without it for s' ≫ √s; consumer-safe via `s' ≤ m^0.4` + `s > m/log²m`). X10 badge high/70% → **medium/80%**; headline = X10b + glue. `/lean-review`: 🟡 1 flag — X10a's local `maxHeartbeats 1600000` lacks the SKELETON-SPEC-required `-- HEARTBEAT:` comment (box's to fix). Also: **statement-faithfulness audit CLOSED** (Math Inc agrees on Thm 1.3; Thm 3.1 verbatim; Series β "Korec" label fixed — see endgame section).
+- **⚖️ Altitude ruling** (2026-07-12, Trevor, post-pass-20): **Remedy A at `epsBW = 10⁻⁹⁰`** — paper-faithful route restored; execution order + judge protocol in BLUEPRINT §2 and Live judge state below. X9 badge blocked/60% → 13–28 laps/70%.
 - [Pass 20](judge/pass-20.md) — 2026-07-12/13, lap-59 boundary: **X10 / LEMMA 7.10 COMPLETE END-TO-END** 🏆 — the campaign's highest-uncertainty node is a theorem. X10b `encounter_separated_sum` PROVED (statement survived the proof landing character-identically); glue `triangle_encounter_le` PROVED same lap, with the pinned headline relocated below its engines **character-identically** (judge-diffed across the move). Dated runs on all nine lap-59 decls (headline, X10b, both `G`-weight engines, banded/qualifying steps, three glue helpers) — all exactly the clean triple. Blueprint X10 → proof-leanok, badge dropped; §7 sorry trail now BlackEdge ×4 + ManyTriangles ×1 (⛔blocked). `/lean-review` (1,372 added lines): 🟡 2 flags — two more local `maxHeartbeats` bumps (1M on `log_sq_le_rpow`, 2M on the assembly) without `-- HEARTBEAT:` comments (nit now ×3). Treadmill stopped after this lap (Trevor-directed evening wrap); 🗂️ ManyTriangles split directive queued for the next run's first lap.
 
 ## Live judge state 📍 (update each pass)
@@ -132,19 +133,19 @@ tail pins (pass 18), X9 depth-gated re-pin (pass 14). ⚠️ **SUSPENDED**:
 unchanged, but its truth at the frozen ε is no longer judge-believed).
 
 **Open riders / queued fronts**:
-- **⛔ ROUTE ESCALATION — white-exit kernel BLOCKED on the altitude ruling**
-  (pass 18, judge-concurred on all three steps): `F.separated` is vacuous at
-  `epsBW = 10⁻⁴` ((0.921)² ≈ 0.848 < 1 = min lattice distance²; X3's proof uses
-  exactly that vacuity), while the paper's (7.50) whiteness step consumes real
-  separation > O(1). NOT a paper error (the paper's regime is ε sufficiently
-  small); no literature-holes entry. Remedies: (A) shrink ε (sep ≈ 20–40,
-  ε ≈ e⁻²⁰⁰..e⁻⁴⁰⁰) + formalize real Lemma-7.4 separation; or hybrid (B+A-small):
-  vertical white gap (**PROVED**: `white_gap_above_run_top`, 13 rows, judge-run
-  clean) + smaller shrink (sep ≈ 5–10) for the horizontal residue. Consequences
-  in force: `fpDist_any_triangle_le` route ratification withdrawn,
-  `fpDist_white_exit_deep` ratification suspended, X9 badge → blocked/60%.
-  Unaffected: X10's apex route (disjointness-based), `fpDist_out_of_strip_le`,
-  all six verified-complete nodes.
+- **⚖️ ALTITUDE RULING LANDED (Trevor, 2026-07-12): Remedy A at `epsBW = 10⁻⁹⁰`**
+  — resolves the pass-18 escalation (`F.separated` vacuous at 10⁻⁴: (0.921)² <
+  1 = min lattice distance²; the paper's (7.50) consumes real separation; NOT a
+  paper error). New separation = 9·ln 10 ≈ 20.7; rational power of ten keeps
+  exact-ℚ; hybrid rejected for route-risk (novel kernel argument + thin margin +
+  double-sweep tail). Execution order in BLUEPRINT §2: split → dedicated
+  D4-change lap (numeral + mechanical repairs only; `sep_const_sq_le_one` dies;
+  X3's separation clause re-opens) → real Lemma-7.4 separation (pp.46–48) →
+  kernel per p.48. Suspensions (`fpDist_white_exit_deep` ratification,
+  `fpDist_any_triangle_le` route) lift ONLY via post-sweep re-ratification.
+  ⚠️ X3 and X2 lose verified status when the D4 change lands, until judge
+  re-runs post-sweep. Unaffected: X10's apex route (disjointness-based),
+  `fpDist_out_of_strip_le`, the other verified nodes.
 - **🔔 D4-CHANGE TRIPWIRE (armed, pass 18)**: any `epsBW` change re-values every
   `black`/`white`-dependent theorem with NO textual diff — a semantic statement
   edit repo-wide. Judge sweep list on the ruling landing: `sep_const_sq_le_one`

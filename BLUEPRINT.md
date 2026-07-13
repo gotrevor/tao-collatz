@@ -175,16 +175,43 @@ unbroken). Build green, update HANDOFF file references, then resume proof work.
 Judge verifies at the boundary via sorry census + name-based axiom runs; a
 split lap that also edits proofs forfeits the cheap verification.
 
-**ℹ️ Judge position for the altitude ruling (pass 18, informational — not a
-demand):** the route escalation is CONCURRED on all three steps (vacuity
-machine-verified at `Triangles.lean:1333`; p.48 consumption confirmed; adversarial
-families interface-legal). `fpDist_white_exit_deep`'s ratification is SUSPENDED and
-`fpDist_any_triangle_le`'s route ratification WITHDRAWN until the ruling lands —
-don't grind that tail as-routed. Cost input for the ruling: EITHER remedy changes D4
-and fires the ε-sweep re-ratification tripwire (list in EXECUTABILITY live state);
-the hybrid's vertical half (`white_gap_above_run_top`) is already proved and
-judge-verified at the current ε. The X10 `∃A₀` re-pin + both (7.61) tail pins are
-ratified — X10 assembly is safe to grind.
+**⚖️ ALTITUDE RULING (Trevor, 2026-07-12): Remedy A at `epsBW = 10⁻⁹⁰`.** The
+pass-18 escalation is resolved. Execute in this order, one concern per lap:
+
+1. **Split first** (the 🗂️ directive above — pure moves, lap of its own).
+2. **Dedicated D4-change lap**: change the D4 numeral `epsBW` from `1/10^4` to
+   `1/10^90` and make ONLY the mechanical numeral repairs needed to get the build
+   green (gap-lemma arithmetic re-runs at the new numeral — the 13-row statement
+   stays true a fortiori; `norm_num`/exact-ℚ throughout, the numeral is a rational
+   power of ten ON PURPOSE — never introduce `Real.exp`-valued ε). NO route work in
+   this lap; a mixed lap forfeits the judge's cheap sweep verification. Expect
+   `sep_const_sq_le_one` to fail — that is the point; it dies (X3's separation
+   clause re-opens as real content, park it as the next item, sorry is acceptable
+   ONLY in that one clause during this lap, documented in the handoff).
+3. **Real Lemma-7.4 separation**: formalize the paper's separation argument
+   (pp.46–48) to discharge X3's re-opened clause at sep = 9·ln 10 ≈ 20.7. The run
+   machinery (run tops, wrap-integer dichotomy, phase-halving) in Triangles.lean
+   is the toolbox. Keep `white_gap_above_run_top` — it holds a fortiori
+   (≈ 299 rows) and stays useful.
+4. **White-exit kernel as-routed per p.48** (`fpDist_any_triangle_le` →
+   `fpDist_white_exit_deep`): the paper is the map again — "at a distance O(1)
+   from Δ, hence … white by Lemma 7.4" now has real separation behind it.
+
+Judge protocol on the D4 change landing: the armed ε-sweep re-ratification list
+(EXECUTABILITY live state) runs at the first post-change boundary — including the
+p₀ `51/100` numerics direction check and confirming every consumer of X2's
+(now astronomically weaker) `exp(−ε³)` gain stays existential-C. X3 and X2 lose
+their verified status until re-run post-change. The `fpDist_white_exit_deep`
+suspension and `fpDist_any_triangle_le` withdrawal lift ONLY via post-sweep
+re-ratification; the p₀-softening tripwire re-arms on the re-pin (pass 18).
+
+*(History: the pass-18 informational position, kept for the record — escalation
+CONCURRED on all three steps: vacuity machine-verified at `Triangles.lean:1333`;
+p.48 consumption confirmed; adversarial families interface-legal. Ruling
+tradeoffs: hybrid B+A-small was rejected for route-risk — it makes the kernel a
+novel argument ratified without a PDF, with a thin sep 5–10 margin against an
+unextracted O(1) and a double-sweep tail; Remedy A's overshoot is nearly free
+while any undershoot pays the full sweep twice.)*
 
 - ~~`fpDist_white_exit_deep`: pin the mass at `51/100 ≤ p₀`~~ **RETIRED
   (satisfied lap 57 `3c95898`, re-ratified judge pass 17)** — the ε₀-floor is

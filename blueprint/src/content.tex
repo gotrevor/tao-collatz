@@ -678,7 +678,18 @@ current \(\varepsilon\), exact-\(\mathbb{Q}\)) plus a smaller shrink for the
 horizontal residue.  This node's own statement (\texttt{many\_triangles\_white})
 remains ratified; its proof is closed modulo the suspended kernel.  Any D4 change
 fires the judge's \(\varepsilon\)-sweep re-ratification tripwire (pass 18 list).
-\lapsrisk{blocked (altitude ruling) + 4--10}{high --- kernel blocked on the \(\varepsilon\)-separation ruling; vertical half proved, right edge open}{60\% as-routed (2026-07-12 judge pass 18)}
+\textbf{ALTITUDE RULING (Trevor, 2026-07-12): Remedy A at \(\varepsilon = 10^{-90}\).}
+The D4 numeral shrinks to \(10^{-90}\) --- a rational power of ten (exact-\(\mathbb{Q}\)
+machinery preserved; never a transcendental like \(e^{-200}\)) giving separation
+\(\tfrac{1}{10}\log 10^{90} = 9\ln 10 \approx 20.7\), comfortably above any plausible
+p.48 \(O(1)\).  The kernel route follows p.48 verbatim (paper-faithful ratification);
+the real Lemma-7.4 separation becomes content to formalize (node~\ref{X3}'s separation
+clause re-opens --- \texttt{sep\_const\_sq\_le\_one} must die); the vertical gap lemma
+is kept (holds a fortiori, \(\approx 299\) rows at the new \(\varepsilon\)).  Execution
+order: the ManyTriangles split lands first, then a dedicated D4-change lap (numeral +
+mechanical repairs only), then separation, then the kernel.  Suspensions lift only via
+the post-sweep re-ratification.
+\lapsrisk{13--28 (sweep 5--10 + real separation 4--8 + kernel 4--10)}{medium-high --- route restored to paper-faithful; risk is now grind + the mapped \(\varepsilon\)-sweep}{70\% (2026-07-12 altitude ruling: Remedy A, \(\varepsilon = 10^{-90}\))}
 \end{lemma}
 
 \begin{lemma}[Large triangles rarely encountered; Lemma 7.10]\label{X10}
