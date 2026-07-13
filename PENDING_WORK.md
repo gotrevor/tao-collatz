@@ -1,5 +1,30 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 58: `fpDistPlus_height_tail` PROVED (X10's (7.61) height tail, axiom-clean)
+
+- The 4-step lap-57 plan executed in full, all axiom-clean (`#print axioms` =
+  trust base, 2026-07-13): (i) **`sum_range_Gweight_le`** — Gweight row-sum
+  engine `∑_{j<N} Gweight(t, c(j−μ)) ≤ K√t`, uniform in real centre μ and N
+  (double-cover to `⌊μ⌋` + `sum_abs_int_le` + `sum_range_exp_neg_sq_le` +
+  geometric); (ii) **`fpDist_height_tail`** — `P(f.2 ≥ s+y) ≤ Ce^{−cy}` in
+  ℝ≥0∞ form (X6 envelope: `e^{−c(l−s)}` donates `e^{−(c/2)y}`, row engine
+  cancels the `1/√(1+s)`); (iii) **`holdSum_height_tail`** — p-step Chernoff at
+  tilt `(0, 1/1000)`, `≤ e^{17p/1000 − y/1000}`; (iv) **glue** — pointwise
+  `1_{s+H≤f.2+w.2} ≤ 1_{s+H/2≤f.2} + 1_{H/2≤w.2}` after PMF.bind/map expansion,
+  all in ℝ≥0∞ (no summability side conditions — this was the right call, zero
+  Fubini pain), final constants `c = min(cB/2, 1/6250)`, `C = CB+1`.
+- The statement moved from its lap-57 pin site (line ~274) to the end of the
+  file (needs the engines); a pointer comment remains. Statement UNCHANGED —
+  the lap-57 judge-ratification queue item still covers it.
+- NEXT: **`fpDistPlus_col_tail`** — same skeleton, column direction: pointwise
+  split `1_{2D≤|(f+w).1−s/4|} ≤ 1_{D≤|f.1−s/4|} + 1_{D≤w.1}`; the fp column
+  piece from `fpDist_col_le` (Gweight ≤ e^{−cD²'ish} + e^{−cD} needs the
+  Gweight-tail bound at distance D, giving BOTH terms of the pinned RHS) and
+  the w-piece from `holdSum_halfspace_le` at `(1/1000, 0)` (col mean 4/step,
+  margin `10(1+p) ≤ D` gives exponent `5p/1000 − D/1000 ≤ −D/2000`). Then the
+  (7.65) Σ-separated sum (`apex_separation` + Gaussian-AP engine), then the
+  `triangle_encounter_le` assembly.
+
 ## Lap 57: 51/100 pin LANDED · `gaussian_col_tail` PROVED · ROUTE ESCALATION on (7.50)
 
 - Judge pass-16 demand discharged (`3c95898`): `fpDist_white_exit_deep` pin is
