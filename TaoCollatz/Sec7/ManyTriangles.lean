@@ -3033,4 +3033,76 @@ theorem fpDistPlus_col_tail :
         rw [← ENNReal.ofReal_add (by positivity) (Real.exp_pos _).le]
         exact ENNReal.ofReal_le_ofReal hreal
 
+
+/-! ### The X10 assembly decomposition (lap 58): confinement + separated sum
+
+`triangle_encounter_le` (7.60) = trivial branch + E′ tails (PROVED above) +
+the two named obligations below, following pp.52–54 exactly. -/
+
+/-- **X10a — apex confinement** (paper p.53, (7.63)→(7.65)): outside the escape
+event `E′`, a big-triangle encounter pins the endpoint to the triangle's apex.
+Given the deep-triangle setup, an endpoint `(j+e.1, l+e.2)` with controlled
+height overshoot (`e.2 ≤ s + 2A²(1+p)`, the ¬height-escape) and controlled
+column deviation (`|e.1 − s/4| ≤ 2s^{0.6}`, the ¬column-escape), lying in a
+family triangle `t'` of size `≥ s' ≥ 100A²(1+p)`:
+
+* **(7.65)**: the lower tip of `t'` is within `C₂A²(1+p)` of `l_Δ` — the
+  "well below" case is killed by constructing an integer point `(j', l_Δ)` in
+  BOTH `t'` and `Δ = t₀` ((7.64) keeps `j' − j ≈ s/4` within `Δ`'s slope budget
+  `s_Δ ≥ s·log 2` since `¼log 9 < log 2`, at the cost of an `S₀`-threshold in
+  `s` absorbing the `O(s^{0.6}) + O(A²(1+p))` slack), contradicting
+  `TriangleFamily.not_mem_two` (`t' ≠ t₀` because the endpoint height `> l_Δ`
+  exceeds `Δ`'s ceiling);
+* **apex proximity**: `(7.11)` for `t'` then confines the column,
+  `0 ≤ j + e.1 − j_{t'} ≤ C₂A²(1+p)`.
+
+The `s`-threshold `S₀` is absolute; the glue absorbs `s < S₀` into the
+`C·exp(−cA²(1+p))` term (bounded `s` bounds `m`, `s'`, `A`, `p` on the
+nontrivial branch). OPEN (node X10, statement pinned lap 58). -/
+theorem encounter_apex_proximity :
+    ∃ C₂ ≥ (1 : ℝ), ∃ S₀ : ℕ, ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S₀ ≤ s →
+        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+      ∀ (A : ℝ), 5 ≤ A → ∀ (p s' : ℕ),
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+        100 * A ^ 2 * (1 + (p : ℝ)) ≤ (s' : ℝ) →
+      ∀ e : ℕ × ℤ, (s : ℤ) < e.2 →
+        (e.2 : ℝ) ≤ (s : ℝ) + 2 * A ^ 2 * (1 + (p : ℝ)) →
+        |(e.1 : ℝ) - (s : ℝ) / 4| ≤ 2 * (s : ℝ) ^ (0.6 : ℝ) →
+      ∀ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2 →
+        ((j + e.1, l + e.2) : ℕ × ℤ) ∈ triangle t'.1 t'.2.1 t'.2.2 →
+      (t'.1 : ℝ) ≤ (j : ℝ) + e.1
+        ∧ (j : ℝ) + e.1 - t'.1 ≤ C₂ * A ^ 2 * (1 + (p : ℝ))
+        ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)|
+            ≤ C₂ * A ^ 2 * (1 + (p : ℝ)) := by
+  sorry
+
+/-- **X10b — the Σ-separated sum** (paper p.54): the probability that the
+`(k+p)`-step endpoint lands within `W` (in column) of the apex of ANY family
+triangle of size `≥ s'` obeying the (7.65) window `|l_{Δ'} − s_{Δ'}/log 2 − l_Δ| ≤ W`
+is `≪ W/s'`. Route: two distinct qualifying triangles have apex columns
+separated by `≫ s'` — the p.54 interval argument builds the witness row
+`l_* = l_Δ + ⌊s'/2⌋` for `apex_separation` (PROVED), whose integer-disjointness
+(Lemma 7.4 = `TriangleFamily.not_mem_two`) forces the gap `(s'/2 − W)log 2/log 9`;
+with `100W ≤ s'` that is `≥ s'/10`. Each apex then owns a `2W+1`-column band, the
+bands are `≥ s'/10`-spaced, and summing the `fpDistPlus` column marginal
+(`fpDist_col_le` ⋆ `p` Hold steps — the row engine `sum_range_Gweight_le` is
+uniform in the centre, so the `Hold` drift shifts cost nothing) over an
+`s'/10`-spaced family of bands gives `≪ (2W+1)/(s'/10) ≪ W/s'`.
+OPEN (node X10, statement pinned lap 58). -/
+theorem encounter_separated_sum :
+    ∃ C₃ > (0 : ℝ), ∃ S₀ : ℕ, ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S₀ ≤ s →
+      ∀ (p s' : ℕ) (W : ℝ), 1 ≤ W → 100 * W ≤ (s' : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+              ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+              ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} 1 (j + e.1, l + e.2)
+        ≤ C₃ * W / (s' : ℝ) := by
+  sorry
+
 end TaoCollatz

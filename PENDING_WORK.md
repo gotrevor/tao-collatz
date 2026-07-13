@@ -1,5 +1,33 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 58 (cont-2): X10 assembly DECOMPOSED — X10a/X10b pinned
+
+- `triangle_encounter_le` decomposed per pp.52–54 into two named src sorries
+  (NEEDS JUDGE RATIFICATION next pass):
+  - **`encounter_apex_proximity`** (X10a, p.53): outside E′, membership in a
+    size-`≥s'` triangle t' forces (7.65) (|lower tip − l_Δ| ≤ C₂A²(1+p)) and
+    apex proximity (0 ≤ j+e.1 − j_{t'} ≤ C₂A²(1+p)). Proof plan: the "well
+    below" case builds an integer point (j', l_Δ) ∈ t' ∩ t₀ — (7.64) keeps
+    j'−j ≈ s/4 inside t₀'s slope budget s_Δ ≥ s·log2 (¼log9 < log2, with an
+    S₀-threshold in s absorbing O(s^{0.6})+O(A²(1+p)) slack; verified on paper:
+    0.144s budget needs s^{0.6} ≤ s/40 i.e. s ≥ ~7.3e4) — contradicting
+    not_mem_two (t' ≠ t₀ since endpoint height > l_Δ). Then (7.11) for t'
+    confines the column.
+  - **`encounter_separated_sum`** (X10b, p.54): P(endpoint column within W of a
+    qualifying apex) ≤ C₃W/s'. Plan: p.54 interval argument at row
+    l_* = l_Δ + ⌊s'/2⌋ feeds apex_separation (PROVED) → apexes ≫s'-separated;
+    2W+1-bands at s'/10 spacing; fpDistPlus column marginal = fpDist_col_le ⋆
+    Hold (row engine is centre-uniform so drift is free).
+- **Glue TODO** (mechanical but long): trivial branch s' < 100A²(1+p) (RHS ≥ 1
+  via C ≥ 100²); small-s branch s < S₀ (bounded s bounds m ≤ ~S₀log²S₀, s',
+  A²(1+p) ≤ s'/100 → absorb into C·e^{−cA²(1+p)}); main branch pointwise
+  indicator split 1_{bigTriangleSet} ≤ 1_{heightEsc} + 1_{colEsc} + 1_{proximity}
+  (X10a supplies the third), tails at H = 2A²(1+p) (margin needs A ≥ 5) and
+  D = s^{0.6} (margin 10(1+p) ≤ s^{0.6} from 1+p ≤ s'/(100·25) ≤ m^{0.4}/2500 and
+  log^{1.2}m ≤ 6^{1.2}·m^{0.2} via Real.log_le_rpow_div); then
+  e^{−c·s^{0.2}}-type terms ≤ CA²(1+p)/s' via e^{−y} ≤ 6/y³ + s' ≤ m^{0.4}.
+  Also needs small support lemma fpDistPlus_support_snd_gt (hold heights ≥ 3).
+
 ## Lap 58 (cont): BOTH (7.61) tails PROVED — `fpDistPlus_col_tail` lands
 
 - **`fpDistPlus_col_tail` PROVED axiom-clean** (2026-07-13): `fpDist_col_dev`
