@@ -3935,6 +3935,332 @@ theorem encounter_separated_sum :
               ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
               ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} 1 (j + e.1, l + e.2)
         ≤ C₃ * W / (s' : ℝ) := by
-  sorry
+  classical
+  obtain ⟨cB, hcB, C', hC', hcol⟩ := fpDist_col_le
+  obtain ⟨K, hK, hband⟩ := banded_Gweight_tsum_le hcB
+  refine ⟨12 * C' + 120 * C' * K, by positivity, 0,
+    fun n ξ hξ F t₀ ht₀ j l hmemt₀ s hs _ p s' W hW hWs hreg => ?_⟩
+  set Event : Set (ℕ × ℤ) := {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+      ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+      ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} with hEvent
+  -- basic numerics
+  have hs'100 : (100 : ℝ) ≤ (s' : ℝ) := le_trans (by linarith) hWs
+  have hs'0 : (0 : ℝ) < (s' : ℝ) := by linarith
+  have hsq1 : (1 : ℝ) ≤ 1 + (s : ℝ) := by
+    have : (0 : ℝ) ≤ (s : ℕ) := Nat.cast_nonneg _
+    linarith
+  have hsqpos : (0 : ℝ) < Real.sqrt (1 + (s : ℝ)) :=
+    Real.sqrt_pos.mpr (by linarith)
+  have hs'sqrt : (s' : ℝ) ≤ Real.sqrt (1 + (s : ℝ)) := by
+    rw [show (s' : ℝ) = Real.sqrt ((s' : ℝ) ^ 2) from (Real.sqrt_sq hs'0.le).symm]
+    exact Real.sqrt_le_sqrt hreg
+  -- the s'/10 separation constant and its floor bound
+  set D : ℝ := (s' : ℝ) / 10 with hD
+  have hD2 : (2 : ℝ) ≤ D := by rw [hD]; linarith
+  have hfl40 : (s' : ℝ) / 40 ≤ (⌊D / 2⌋₊ : ℝ) := by
+    have h1 : D / 2 - 1 < (⌊D / 2⌋₊ : ℝ) := Nat.sub_one_lt_floor _
+    rw [hD] at h1
+    linarith
+  have hfl0 : (0 : ℝ) < (⌊D / 2⌋₊ : ℝ) := by linarith
+  -- the per-column envelope, ℝ≥0∞ form
+  set G : ℕ → ℝ≥0∞ := fun x => ENNReal.ofReal (C' *
+      (Gweight (1 + (s : ℝ)) (cB * ((x : ℝ) - (s : ℝ) / 4))
+        / Real.sqrt (1 + (s : ℝ)))) with hG
+  have hcolE : ∀ x : ℕ, ∑' y : ℤ, fpDist s (x, y) ≤ G x := by
+    intro x
+    have hne : ∑' y : ℤ, fpDist s (x, y) ≠ ⊤ := by
+      refine ne_top_of_le_ne_top (b := 1) ENNReal.one_ne_top ?_
+      calc ∑' y : ℤ, fpDist s (x, y)
+          ≤ ∑' e : ℕ × ℤ, fpDist s e :=
+            ENNReal.tsum_comp_le_tsum_of_injective
+              (fun a b hab => (Prod.mk.injEq _ _ _ _).mp hab |>.2 ▸ by
+                cases hab; rfl) _
+        _ = 1 := (fpDist s).tsum_coe
+    rw [← ENNReal.ofReal_toReal hne]
+    refine ENNReal.ofReal_le_ofReal ?_
+    rw [ENNReal.tsum_toReal_eq (fun y => PMF.apply_ne_top _ _)]
+    exact hcol s x
+  -- the T ∈ ℝ≥0∞ reformulation of the LHS
+  set T : ℝ≥0∞ :=
+    ∑' e : ℕ × ℤ, (if (j + e.1, l + e.2) ∈ Event then fpDistPlus s p e else 0)
+    with hT
+  have hLHS : ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+      * Set.indicator Event 1 (j + e.1, l + e.2) = T.toReal := by
+    rw [hT, ENNReal.tsum_toReal_eq (fun e => by
+      split_ifs
+      exacts [PMF.apply_ne_top _ _, ENNReal.zero_ne_top])]
+    refine tsum_congr fun e => ?_
+    by_cases he : (j + e.1, l + e.2) ∈ Event
+    · rw [if_pos he, Set.indicator_apply, if_pos he, Pi.one_apply, mul_one]
+    · rw [if_neg he, Set.indicator_apply, if_neg he, mul_zero, ENNReal.toReal_zero]
+  -- expand the convolution (the fpDistPlus_col_tail glue pattern)
+  have hexp : T = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+      (if (j + (f + w).1, l + (f + w).2) ∈ Event
+        then fpDist s f * iidSum hold p w else 0) := by
+    rw [hT]
+    have h1 : ∀ e : ℕ × ℤ,
+        (if (j + e.1, l + e.2) ∈ Event then fpDistPlus s p e else 0)
+        = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ), (if e = f + w then
+            (if (j + e.1, l + e.2) ∈ Event
+              then fpDist s f * iidSum hold p w else 0)
+          else 0) := by
+      intro e
+      by_cases he : (j + e.1, l + e.2) ∈ Event
+      · rw [if_pos he, fpDistPlus, PMF.bind_apply]
+        refine tsum_congr fun f => ?_
+        rw [PMF.map_apply, ← ENNReal.tsum_mul_left]
+        refine tsum_congr fun w => ?_
+        by_cases hew : e = f + w
+        · rw [if_pos hew, if_pos hew, if_pos he]
+        · rw [if_neg hew, if_neg hew, mul_zero]
+      · rw [if_neg he]
+        have hz : ∀ f w : ℕ × ℤ, (if e = f + w then
+            (if (j + e.1, l + e.2) ∈ Event
+              then fpDist s f * iidSum hold p w else 0)
+          else 0) = 0 := by
+          intro f w
+          rw [if_neg he]
+          exact ite_self 0
+        symm
+        simp only [hz, tsum_zero]
+    calc ∑' e : ℕ × ℤ,
+        (if (j + e.1, l + e.2) ∈ Event then fpDistPlus s p e else 0)
+        = ∑' (e : ℕ × ℤ) (f : ℕ × ℤ) (w : ℕ × ℤ), (if e = f + w then
+            (if (j + e.1, l + e.2) ∈ Event
+              then fpDist s f * iidSum hold p w else 0)
+          else 0) := tsum_congr h1
+      _ = ∑' (f : ℕ × ℤ) (e : ℕ × ℤ) (w : ℕ × ℤ), (if e = f + w then
+            (if (j + e.1, l + e.2) ∈ Event
+              then fpDist s f * iidSum hold p w else 0)
+          else 0) := ENNReal.tsum_comm
+      _ = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ) (e : ℕ × ℤ), (if e = f + w then
+            (if (j + e.1, l + e.2) ∈ Event
+              then fpDist s f * iidSum hold p w else 0)
+          else 0) := tsum_congr fun f => ENNReal.tsum_comm
+      _ = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+            (if (j + (f + w).1, l + (f + w).2) ∈ Event
+              then fpDist s f * iidSum hold p w else 0) := by
+          refine tsum_congr fun f => tsum_congr fun w => ?_
+          rw [tsum_eq_single (f + w) (fun e he => if_neg he), if_pos rfl]
+  -- per Hold displacement w: the first-passage column mass over the band union
+  have hinner : ∀ w : ℕ × ℤ,
+      ∑' f : ℕ × ℤ, (if (j + (f + w).1, l + (f + w).2) ∈ Event
+          then fpDist s f * iidSum hold p w else 0)
+      ≤ iidSum hold p w * ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+          * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) := by
+    intro w
+    -- membership depends on the column only
+    have hmem_iff : ∀ f : ℕ × ℤ, ((j + (f + w).1, l + (f + w).2) ∈ Event
+        ↔ (∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+            ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+            ∧ |((j + f.1 + w.1 : ℕ) : ℝ) - (t'.1 : ℝ)| ≤ W)) := by
+      intro f
+      rw [hEvent]
+      constructor
+      · rintro ⟨t', ht', h1, h2, h3⟩
+        exact ⟨t', ht', h1, h2, by
+          simpa [Prod.fst_add, Nat.add_assoc] using h3⟩
+      · rintro ⟨t', ht', h1, h2, h3⟩
+        exact ⟨t', ht', h1, h2, by
+          simpa [Prod.fst_add, Nat.add_assoc] using h3⟩
+    -- the qualifying-apex set, shifted by j + w.1
+    set S : Set ℤ := {σ : ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+        ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+        ∧ (t'.1 : ℤ) - (j : ℤ) - (w.1 : ℤ) = σ} with hS
+    have hSsep : ∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)| := by
+      rintro σ ⟨t', ht', h1, h2, hσ⟩ σ' ⟨t'', ht'', h1', h2', hσ'⟩ hne
+      have hcolne : t'.1 ≠ t''.1 := by
+        intro hcc
+        apply hne
+        omega
+      have htne : t' ≠ t'' := fun hcc => hcolne (by rw [hcc])
+      have := qualifying_apex_separated F t₀.2.1 s' W hW hWs
+        t' ht' t'' ht'' htne h1 h2 h1' h2'
+      have hval : (σ : ℝ) - (σ' : ℝ) = (t'.1 : ℝ) - (t''.1 : ℝ) := by
+        have h4 : ((σ - σ' : ℤ) : ℝ) = (((t'.1 : ℤ) - (t''.1 : ℤ) : ℤ) : ℝ) := by
+          congr 1
+          omega
+        push_cast at h4
+        linarith
+      rw [hD, hval]
+      linarith
+    -- the column condition puts the (integer) column in the W-band union of S
+    have hcond_mem : ∀ x : ℕ,
+        (∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+            ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+            ∧ |((j + x + w.1 : ℕ) : ℝ) - (t'.1 : ℝ)| ≤ W) →
+        ((x : ℤ) ∈ {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W}) := by
+      rintro x ⟨t', ht', h1, h2, h3⟩
+      refine ⟨(t'.1 : ℤ) - (j : ℤ) - (w.1 : ℤ), ⟨t', ht', h1, h2, rfl⟩, ?_⟩
+      have hcast : ((x : ℤ) : ℝ) - (((t'.1 : ℤ) - (j : ℤ) - (w.1 : ℤ) : ℤ) : ℝ)
+          = ((j + x + w.1 : ℕ) : ℝ) - (t'.1 : ℝ) := by
+        push_cast
+        ring
+      rw [hcast]
+      exact h3
+    -- pull the iid factor out and marginalise the first-passage law column-wise
+    have hsum1 : ∑' f : ℕ × ℤ, (if (j + (f + w).1, l + (f + w).2) ∈ Event
+        then fpDist s f * iidSum hold p w else 0)
+        = iidSum hold p w * ∑' f : ℕ × ℤ,
+            (if (j + (f + w).1, l + (f + w).2) ∈ Event then fpDist s f else 0) := by
+      rw [← ENNReal.tsum_mul_left]
+      refine tsum_congr fun f => ?_
+      split_ifs
+      · ring
+      · rw [mul_zero]
+    rw [hsum1]
+    refine mul_le_mul_of_nonneg_left ?_ zero_le
+    -- column marginal
+    have hsum2 : ∑' f : ℕ × ℤ,
+        (if (j + (f + w).1, l + (f + w).2) ∈ Event then fpDist s f else 0)
+        ≤ ∑' x : ℕ, (if (x : ℤ) ∈ {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W}
+            then G x else 0) := by
+      rw [ENNReal.tsum_prod']
+      refine ENNReal.tsum_le_tsum fun x => ?_
+      by_cases hx : (∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+          ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+          ∧ |((j + x + w.1 : ℕ) : ℝ) - (t'.1 : ℝ)| ≤ W)
+      · rw [if_pos (hcond_mem x hx)]
+        calc ∑' y : ℤ, (if (j + ((x, y) + w).1, l + ((x, y) + w).2) ∈ Event
+              then fpDist s (x, y) else 0)
+            ≤ ∑' y : ℤ, fpDist s (x, y) :=
+              ENNReal.tsum_le_tsum fun y => by
+                split_ifs
+                exacts [le_rfl, zero_le]
+          _ ≤ G x := hcolE x
+      · have hz : ∀ y : ℤ, (if (j + ((x, y) + w).1, l + ((x, y) + w).2) ∈ Event
+            then fpDist s (x, y) else 0) = 0 := by
+          intro y
+          rw [if_neg (fun hc => hx ((hmem_iff (x, y)).mp hc))]
+        rw [tsum_congr hz, tsum_zero]
+        exact zero_le
+    refine hsum2.trans ?_
+    -- indicator → subtype over the band union, then the banded engine
+    have hsub : ∑' x : ℕ, (if (x : ℤ) ∈ {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W}
+        then G x else 0)
+        ≤ ∑' u : {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W},
+            ENNReal.ofReal (C' / Real.sqrt (1 + (s : ℝ)))
+              * ENNReal.ofReal (Gweight (1 + (s : ℝ))
+                  (cB * (((u : ℤ) : ℝ) - (s : ℝ) / 4))) := by
+      set A : Set ℕ := {x : ℕ | (x : ℤ) ∈ {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W}}
+        with hA
+      have hstep : ∑' x : ℕ, (if (x : ℤ) ∈ {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W}
+          then G x else 0) = ∑' a : A, G a.1 := by
+        rw [tsum_subtype A G]
+        exact tsum_congr fun x => by
+          rw [Set.indicator_apply]
+          exact if_congr Iff.rfl rfl rfl
+      rw [hstep]
+      set φ : A → {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W} :=
+        fun a => ⟨(a.1 : ℤ), a.2⟩ with hφ
+      have hφinj : Function.Injective φ := by
+        intro a b hab
+        have : (a.1 : ℤ) = (b.1 : ℤ) := congrArg Subtype.val hab
+        exact Subtype.ext (by exact_mod_cast this)
+      have hval : ∀ a : A, G a.1
+          = ENNReal.ofReal (C' / Real.sqrt (1 + (s : ℝ)))
+            * ENNReal.ofReal (Gweight (1 + (s : ℝ))
+                (cB * ((((φ a) : ℤ) : ℝ) - (s : ℝ) / 4))) := by
+        intro a
+        rw [hG, ← ENNReal.ofReal_mul (by positivity)]
+        congr 1
+        have : (((φ a) : ℤ) : ℝ) = ((a.1 : ℕ) : ℝ) := by
+          simp [hφ]
+        rw [this]
+        ring
+      calc ∑' a : A, G a.1
+          = ∑' a : A, (ENNReal.ofReal (C' / Real.sqrt (1 + (s : ℝ)))
+              * ENNReal.ofReal (Gweight (1 + (s : ℝ))
+                  (cB * ((((φ a) : ℤ) : ℝ) - (s : ℝ) / 4)))) := tsum_congr hval
+        _ ≤ _ := ENNReal.tsum_comp_le_tsum_of_injective hφinj _
+    refine hsub.trans ?_
+    rw [ENNReal.tsum_mul_left]
+    calc ENNReal.ofReal (C' / Real.sqrt (1 + (s : ℝ)))
+        * ∑' u : {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W},
+            ENNReal.ofReal (Gweight (1 + (s : ℝ)) (cB * (((u : ℤ) : ℝ) - (s : ℝ) / 4)))
+        ≤ ENNReal.ofReal (C' / Real.sqrt (1 + (s : ℝ)))
+          * ENNReal.ofReal ((2 * W + 1)
+              * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ))) := by
+          refine mul_le_mul_of_nonneg_left ?_ zero_le
+          exact hband (1 + (s : ℝ)) hsq1 ((s : ℝ) / 4) D hD2 W hW S hSsep
+      _ = ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+          * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) := by
+          rw [← ENNReal.ofReal_mul (by positivity)]
+  -- sum over the Hold displacement: total iid mass is 1
+  have hTle : T ≤ ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+      * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) := by
+    rw [hexp, ENNReal.tsum_comm]
+    calc ∑' (w : ℕ × ℤ) (f : ℕ × ℤ),
+        (if (j + (f + w).1, l + (f + w).2) ∈ Event
+          then fpDist s f * iidSum hold p w else 0)
+        ≤ ∑' w : ℕ × ℤ, iidSum hold p w
+            * ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+              * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) :=
+          ENNReal.tsum_le_tsum hinner
+      _ = (∑' w : ℕ × ℤ, iidSum hold p w)
+            * ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+              * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) :=
+          ENNReal.tsum_mul_right
+      _ = ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+            * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) := by
+          rw [(iidSum hold p).tsum_coe, one_mul]
+  -- final numeric bookkeeping
+  have hnum : (C' / Real.sqrt (1 + (s : ℝ)))
+      * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))
+      ≤ (12 * C' + 120 * C' * K) * W / (s' : ℝ) := by
+    have h2W : 2 * W + 1 ≤ 3 * W := by linarith
+    have hinv : 1 / Real.sqrt (1 + (s : ℝ)) ≤ 1 / (s' : ℝ) :=
+      one_div_le_one_div_of_le hs'0 hs'sqrt
+    have hfli : K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)
+        ≤ 40 * K * Real.sqrt (1 + (s : ℝ)) / (s' : ℝ) := by
+      rw [div_le_div_iff₀ hfl0 hs'0]
+      have := mul_le_mul_of_nonneg_left hfl40
+        (by positivity : (0 : ℝ) ≤ 40 * (K * Real.sqrt (1 + (s : ℝ))))
+      nlinarith [hfl40, mul_nonneg hK.le hsqpos.le]
+    -- expand: LHS ≤ (C'/√)·3W·4 + (C'/√)·3W·(40K√/s')
+    have hsqinv : C' / Real.sqrt (1 + (s : ℝ)) ≤ C' / (s' : ℝ) := by
+      rw [div_le_div_iff₀ hsqpos hs'0]
+      nlinarith [hs'sqrt, hC'.le]
+    have hterm1 : (C' / Real.sqrt (1 + (s : ℝ))) * ((2 * W + 1) * 4)
+        ≤ 12 * C' * W / (s' : ℝ) := by
+      have h1 : (C' / Real.sqrt (1 + (s : ℝ))) * ((2 * W + 1) * 4)
+          ≤ (C' / (s' : ℝ)) * (3 * W * 4) := by
+        refine mul_le_mul hsqinv (by linarith) (by positivity) (by positivity)
+      calc (C' / Real.sqrt (1 + (s : ℝ))) * ((2 * W + 1) * 4)
+          ≤ (C' / (s' : ℝ)) * (3 * W * 4) := h1
+        _ = 12 * C' * W / (s' : ℝ) := by ring
+    have hterm2 : (C' / Real.sqrt (1 + (s : ℝ)))
+        * ((2 * W + 1) * (K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))
+        ≤ 120 * C' * K * W / (s' : ℝ) := by
+      have h1 : (2 * W + 1) * (K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ))
+          ≤ 3 * W * (40 * K * Real.sqrt (1 + (s : ℝ)) / (s' : ℝ)) := by
+        refine mul_le_mul h2W hfli (by positivity) (by positivity)
+      have h2 : (C' / Real.sqrt (1 + (s : ℝ)))
+          * (3 * W * (40 * K * Real.sqrt (1 + (s : ℝ)) / (s' : ℝ)))
+          = 120 * C' * K * W / (s' : ℝ)
+            * (Real.sqrt (1 + (s : ℝ)) / Real.sqrt (1 + (s : ℝ))) := by
+        field_simp
+        ring
+      calc (C' / Real.sqrt (1 + (s : ℝ)))
+          * ((2 * W + 1) * (K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))
+          ≤ (C' / Real.sqrt (1 + (s : ℝ)))
+            * (3 * W * (40 * K * Real.sqrt (1 + (s : ℝ)) / (s' : ℝ))) :=
+            mul_le_mul_of_nonneg_left h1 (by positivity)
+        _ = 120 * C' * K * W / (s' : ℝ)
+            * (Real.sqrt (1 + (s : ℝ)) / Real.sqrt (1 + (s : ℝ))) := h2
+        _ = 120 * C' * K * W / (s' : ℝ) := by
+            rw [div_self hsqpos.ne', mul_one]
+    calc (C' / Real.sqrt (1 + (s : ℝ)))
+        * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))
+        = (C' / Real.sqrt (1 + (s : ℝ))) * ((2 * W + 1) * 4)
+          + (C' / Real.sqrt (1 + (s : ℝ)))
+            * ((2 * W + 1) * (K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ))) := by
+          ring
+      _ ≤ 12 * C' * W / (s' : ℝ) + 120 * C' * K * W / (s' : ℝ) :=
+          add_le_add hterm1 hterm2
+      _ = (12 * C' + 120 * C' * K) * W / (s' : ℝ) := by ring
+  rw [hLHS]
+  refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
+  exact hTle.trans (ENNReal.ofReal_le_ofReal hnum)
 
 end TaoCollatz
