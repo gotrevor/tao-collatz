@@ -258,23 +258,8 @@ theorem apex_separation {n ξ : ℕ} (F : TriangleFamily n ξ) {t' t'' : ℕ × 
 /- The (7.61) height tail `fpDistPlus_height_tail` is stated and PROVED at the
 end of this file (it needs the row-sum / `hasSum` engines defined below). -/
 
-/-- **The (7.61) column tail of the `(k+p)`-step endpoint** (p.52, displays 5–7):
-`P(|j_{[1,k+p]} − s/4| ≥ 2D) ≪ exp(−cD²/(1+s)) + exp(−cD)` once `D` clears the
-`p`-step column drift (`j`-components are iid `Geom(4)`, mean `4/3`; the margin
-`10(1+p) ≤ D` dominates). The paper instantiates `D = s^{0.6}`, giving
-`exp(−cs^{0.2}) + exp(−cs^{0.6})`; the general-`D` form is what the X6 envelope
-(`fpDist_col_le`: Gaussian of width `√(1+s)` centred at `s/4`) plus the
-`Geom(4)`-sum Chernoff actually prove, and the consumer does the `s^{0.6}`
-arithmetic at the (7.61) assembly site.
-
-OPEN (node X10, statement pinned lap 57). -/
-theorem fpDistPlus_col_tail :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s p : ℕ, ∀ D : ℝ,
-      10 * (1 + (p : ℝ)) ≤ D →
-      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
-          * Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 e
-        ≤ C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D)) := by
-  sorry
+/- The (7.61) column tail `fpDistPlus_col_tail` is stated and PROVED at the
+end of this file (it needs the row-sum / `hasSum` engines defined below). -/
 
 /-- **Lemma 7.10 — large triangles are rarely encountered shortly after a lengthy
 crossing** (paper (7.60), pp.51–54). Starting the renewal walk at a point `(j,l)` of
@@ -2831,5 +2816,221 @@ theorem holdSum_col_tail (p : ℕ) (y : ℝ) :
   refine le_trans h (le_of_eq ?_)
   congr 1
   norm_num
+
+/-- **The (7.61) column tail of the `(k+p)`-step endpoint** (p.52, displays 5–7):
+`P(|j_{[1,k+p]} − s/4| ≥ 2D) ≪ exp(−cD²/(1+s)) + exp(−cD)` once `D` clears the
+`p`-step column drift (`j`-components are iid `Geom(4)`, mean `4/3`; the margin
+`10(1+p) ≤ D` dominates). The paper instantiates `D = s^{0.6}`, giving
+`exp(−cs^{0.2}) + exp(−cs^{0.6})`; the general-`D` form is what the X6 envelope
+(`fpDist_col_le`: Gaussian of width `√(1+s)` centred at `s/4`) plus the
+`Geom(4)`-sum Chernoff actually prove, and the consumer does the `s^{0.6}`
+arithmetic at the (7.61) assembly site.
+
+PROVED (lap 58; statement pinned lap 57): glue as in `fpDistPlus_height_tail` —
+pointwise `1_{2D ≤ |f.1+w.1−s/4|} ≤ 1_{D ≤ |f.1−s/4|} + 1_{D ≤ w.1}` in ℝ≥0∞;
+the pieces are `fpDist_col_dev` and `holdSum_col_tail` at `y = D`. -/
+theorem fpDistPlus_col_tail :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s p : ℕ, ∀ D : ℝ,
+      10 * (1 + (p : ℝ)) ≤ D →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 e
+        ≤ C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D)) := by
+  classical
+  obtain ⟨cd, hcd, Cd, hCd, hfp⟩ := fpDist_col_dev
+  set cst : ℝ := min cd (1 / 2000) with hcst
+  have hcst0 : 0 < cst := lt_min hcd (by norm_num)
+  refine ⟨cst, hcst0, Cd + 1, by positivity, fun s p D hD => ?_⟩
+  have hp0 : (0 : ℝ) ≤ (p : ℝ) := Nat.cast_nonneg p
+  have hD0 : (0 : ℝ) < D := lt_of_lt_of_le (by positivity) hD
+  set T : ℝ≥0∞ :=
+    ∑' e : ℕ × ℤ, (if 2 * D ≤ |(e.1 : ℝ) - (s : ℝ) / 4| then fpDistPlus s p e else 0)
+    with hT
+  -- (1) the real LHS is `T.toReal`
+  have hLHS : ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+      * Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 e
+      = T.toReal := by
+    rw [hT, ENNReal.tsum_toReal_eq (fun e => by
+      split_ifs
+      exacts [PMF.apply_ne_top _ _, ENNReal.zero_ne_top])]
+    refine tsum_congr fun e => ?_
+    by_cases he : 2 * D ≤ |(e.1 : ℝ) - (s : ℝ) / 4|
+    · rw [if_pos he, Set.indicator_apply,
+        if_pos (show e ∈ {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} from he),
+        Pi.one_apply, mul_one]
+    · rw [if_neg he, Set.indicator_apply,
+        if_neg (show e ∉ {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} from he),
+        mul_zero, ENNReal.toReal_zero]
+  -- (2) expand the convolution
+  have hexp : T = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+      (if 2 * D ≤ |((f + w).1 : ℝ) - (s : ℝ) / 4|
+        then fpDist s f * iidSum hold p w else 0) := by
+    rw [hT]
+    have h1 : ∀ e : ℕ × ℤ,
+        (if 2 * D ≤ |(e.1 : ℝ) - (s : ℝ) / 4| then fpDistPlus s p e else 0)
+        = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ), (if e = f + w then
+            (if 2 * D ≤ |(e.1 : ℝ) - (s : ℝ) / 4|
+              then fpDist s f * iidSum hold p w else 0)
+          else 0) := by
+      intro e
+      by_cases he : 2 * D ≤ |(e.1 : ℝ) - (s : ℝ) / 4|
+      · rw [if_pos he, fpDistPlus, PMF.bind_apply]
+        refine tsum_congr fun f => ?_
+        rw [PMF.map_apply, ← ENNReal.tsum_mul_left]
+        refine tsum_congr fun w => ?_
+        by_cases hew : e = f + w
+        · rw [if_pos hew, if_pos hew, if_pos he]
+        · rw [if_neg hew, if_neg hew, mul_zero]
+      · rw [if_neg he]
+        have hz : ∀ f w : ℕ × ℤ, (if e = f + w then
+            (if 2 * D ≤ |(e.1 : ℝ) - (s : ℝ) / 4|
+              then fpDist s f * iidSum hold p w else 0)
+          else 0) = 0 := by
+          intro f w
+          rw [if_neg he]
+          exact ite_self 0
+        symm
+        simp only [hz, tsum_zero]
+    calc ∑' e : ℕ × ℤ,
+        (if 2 * D ≤ |(e.1 : ℝ) - (s : ℝ) / 4| then fpDistPlus s p e else 0)
+        = ∑' (e : ℕ × ℤ) (f : ℕ × ℤ) (w : ℕ × ℤ), (if e = f + w then
+            (if 2 * D ≤ |(e.1 : ℝ) - (s : ℝ) / 4|
+              then fpDist s f * iidSum hold p w else 0)
+          else 0) := tsum_congr h1
+      _ = ∑' (f : ℕ × ℤ) (e : ℕ × ℤ) (w : ℕ × ℤ), (if e = f + w then
+            (if 2 * D ≤ |(e.1 : ℝ) - (s : ℝ) / 4|
+              then fpDist s f * iidSum hold p w else 0)
+          else 0) := ENNReal.tsum_comm
+      _ = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ) (e : ℕ × ℤ), (if e = f + w then
+            (if 2 * D ≤ |(e.1 : ℝ) - (s : ℝ) / 4|
+              then fpDist s f * iidSum hold p w else 0)
+          else 0) := tsum_congr fun f => ENNReal.tsum_comm
+      _ = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+            (if 2 * D ≤ |((f + w).1 : ℝ) - (s : ℝ) / 4|
+              then fpDist s f * iidSum hold p w else 0) := by
+          refine tsum_congr fun f => tsum_congr fun w => ?_
+          rw [tsum_eq_single (f + w) (fun e he => if_neg he), if_pos rfl]
+  -- (3) pointwise split of the tail event
+  have hsplit : ∀ f w : ℕ × ℤ,
+      (if 2 * D ≤ |((f + w).1 : ℝ) - (s : ℝ) / 4|
+        then fpDist s f * iidSum hold p w else 0)
+      ≤ (if D ≤ |(f.1 : ℝ) - (s : ℝ) / 4| then fpDist s f * iidSum hold p w else 0)
+        + (if D ≤ (w.1 : ℝ) then fpDist s f * iidSum hold p w else 0) := by
+    intro f w
+    by_cases hfw : 2 * D ≤ |((f + w).1 : ℝ) - (s : ℝ) / 4|
+    · rw [if_pos hfw]
+      have hcast : ((f + w).1 : ℝ) = (f.1 : ℝ) + (w.1 : ℝ) := by
+        rw [Prod.fst_add]
+        push_cast
+        ring
+      by_cases h1 : D ≤ |(f.1 : ℝ) - (s : ℝ) / 4|
+      · rw [if_pos h1]
+        exact le_self_add
+      · have h2 : D ≤ (w.1 : ℝ) := by
+          rw [hcast] at hfw
+          push_neg at h1
+          have htri : |(f.1 : ℝ) + (w.1 : ℝ) - (s : ℝ) / 4|
+              ≤ |(f.1 : ℝ) - (s : ℝ) / 4| + (w.1 : ℝ) := by
+            have h3 : (f.1 : ℝ) + (w.1 : ℝ) - (s : ℝ) / 4
+                = ((f.1 : ℝ) - (s : ℝ) / 4) + (w.1 : ℝ) := by ring
+            rw [h3]
+            calc |((f.1 : ℝ) - (s : ℝ) / 4) + (w.1 : ℝ)|
+                ≤ |(f.1 : ℝ) - (s : ℝ) / 4| + |(w.1 : ℝ)| := abs_add_le _ _
+              _ = |(f.1 : ℝ) - (s : ℝ) / 4| + (w.1 : ℝ) := by
+                  rw [Nat.abs_cast]
+          linarith
+        rw [if_pos h2]
+        exact le_add_self
+    · rw [if_neg hfw]
+      exact zero_le'
+  -- (4) the two marginal tails
+  have hfirst : ∀ f : ℕ × ℤ,
+      ∑' w : ℕ × ℤ,
+        (if D ≤ |(f.1 : ℝ) - (s : ℝ) / 4| then fpDist s f * iidSum hold p w else 0)
+      = (if D ≤ |(f.1 : ℝ) - (s : ℝ) / 4| then fpDist s f else 0) := by
+    intro f
+    by_cases h1 : D ≤ |(f.1 : ℝ) - (s : ℝ) / 4|
+    · simp only [if_pos h1]
+      rw [ENNReal.tsum_mul_left, (iidSum hold p).tsum_coe, mul_one]
+    · simp only [if_neg h1, tsum_zero]
+  have hsecond : ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+      (if D ≤ (w.1 : ℝ) then fpDist s f * iidSum hold p w else 0)
+      = ∑' w : ℕ × ℤ, (if D ≤ (w.1 : ℝ) then iidSum hold p w else 0) := by
+    have h1 : ∀ f w : ℕ × ℤ,
+        (if D ≤ (w.1 : ℝ) then fpDist s f * iidSum hold p w else 0)
+        = fpDist s f * (if D ≤ (w.1 : ℝ) then iidSum hold p w else 0) := by
+      intro f w
+      rw [mul_ite, mul_zero]
+    calc ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+        (if D ≤ (w.1 : ℝ) then fpDist s f * iidSum hold p w else 0)
+        = ∑' f : ℕ × ℤ, fpDist s f
+            * ∑' w : ℕ × ℤ, (if D ≤ (w.1 : ℝ) then iidSum hold p w else 0) := by
+          refine tsum_congr fun f => ?_
+          simp only [h1]
+          exact ENNReal.tsum_mul_left
+      _ = (∑' f : ℕ × ℤ, fpDist s f)
+            * ∑' w : ℕ × ℤ, (if D ≤ (w.1 : ℝ) then iidSum hold p w else 0) :=
+          ENNReal.tsum_mul_right
+      _ = ∑' w : ℕ × ℤ, (if D ≤ (w.1 : ℝ) then iidSum hold p w else 0) := by
+          rw [(fpDist s).tsum_coe, one_mul]
+  have hTle : T ≤ ENNReal.ofReal
+        (Cd * (Real.exp (-cd * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cd * D)))
+      + ENNReal.ofReal (Real.exp ((p : ℝ) * (5 / 1000) - D / 1000)) := by
+    rw [hexp]
+    calc ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+        (if 2 * D ≤ |((f + w).1 : ℝ) - (s : ℝ) / 4|
+          then fpDist s f * iidSum hold p w else 0)
+        ≤ ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+            ((if D ≤ |(f.1 : ℝ) - (s : ℝ) / 4|
+                then fpDist s f * iidSum hold p w else 0)
+              + (if D ≤ (w.1 : ℝ) then fpDist s f * iidSum hold p w else 0)) :=
+          ENNReal.tsum_le_tsum fun f => ENNReal.tsum_le_tsum (hsplit f)
+      _ = (∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+            (if D ≤ |(f.1 : ℝ) - (s : ℝ) / 4|
+              then fpDist s f * iidSum hold p w else 0))
+          + ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+            (if D ≤ (w.1 : ℝ) then fpDist s f * iidSum hold p w else 0) := by
+          rw [← ENNReal.tsum_add]
+          exact tsum_congr fun f => ENNReal.tsum_add
+      _ = (∑' f : ℕ × ℤ, (if D ≤ |(f.1 : ℝ) - (s : ℝ) / 4| then fpDist s f else 0))
+          + ∑' w : ℕ × ℤ, (if D ≤ (w.1 : ℝ) then iidSum hold p w else 0) := by
+          rw [hsecond, tsum_congr hfirst]
+      _ ≤ ENNReal.ofReal
+            (Cd * (Real.exp (-cd * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cd * D)))
+          + ENNReal.ofReal (Real.exp ((p : ℝ) * (5 / 1000) - D / 1000)) :=
+          add_le_add (hfp s D hD0.le) (holdSum_col_tail p D)
+  -- (5) real arithmetic
+  have hreal : Cd * (Real.exp (-cd * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cd * D))
+      + Real.exp ((p : ℝ) * (5 / 1000) - D / 1000)
+      ≤ (Cd + 1) * (Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cst * D)) := by
+    have hcm1 : cst ≤ cd := min_le_left _ _
+    have hcm2 : cst ≤ 1 / 2000 := min_le_right _ _
+    have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
+    have h1 : Real.exp (-cd * D ^ 2 / (1 + (s : ℝ)))
+        ≤ Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) := by
+      apply Real.exp_le_exp.mpr
+      apply div_le_div_of_nonneg_right ?_ h1s.le
+      nlinarith [sq_nonneg D, mul_le_mul_of_nonneg_right hcm1 (sq_nonneg D)]
+    have h2 : Real.exp (-cd * D) ≤ Real.exp (-cst * D) := by
+      apply Real.exp_le_exp.mpr
+      nlinarith [mul_le_mul_of_nonneg_right hcm1 hD0.le]
+    have h3 : Real.exp ((p : ℝ) * (5 / 1000) - D / 1000) ≤ Real.exp (-cst * D) := by
+      apply Real.exp_le_exp.mpr
+      nlinarith [mul_le_mul_of_nonneg_right hcm2 hD0.le]
+    have he1 : (0 : ℝ) ≤ Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) := (Real.exp_pos _).le
+    have he2 : (0 : ℝ) ≤ Real.exp (-cst * D) := (Real.exp_pos _).le
+    calc Cd * (Real.exp (-cd * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cd * D))
+        + Real.exp ((p : ℝ) * (5 / 1000) - D / 1000)
+        ≤ Cd * (Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cst * D))
+          + Real.exp (-cst * D) :=
+          add_le_add (mul_le_mul_of_nonneg_left (add_le_add h1 h2) hCd.le) h3
+      _ ≤ (Cd + 1) * (Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cst * D)) := by
+          nlinarith
+  rw [hLHS]
+  refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
+  calc T ≤ _ := hTle
+    _ ≤ ENNReal.ofReal ((Cd + 1)
+          * (Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cst * D))) := by
+        rw [← ENNReal.ofReal_add (by positivity) (Real.exp_pos _).le]
+        exact ENNReal.ofReal_le_ofReal hreal
 
 end TaoCollatz

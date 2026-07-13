@@ -1,5 +1,22 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 58 (cont): BOTH (7.61) tails PROVED — `fpDistPlus_col_tail` lands
+
+- **`fpDistPlus_col_tail` PROVED axiom-clean** (2026-07-13): `fpDist_col_dev`
+  (`P(|f.1−s/4| ≥ D) ≤ C(e^{−cD²/(1+s)} + e^{−cD})`, by exponent-halving on the
+  Gweight tail — each piece donates a prefactor at `|x| ≥ cD`, leaving a
+  rate-`c/2` Gweight the row engine sums) + `holdSum_col_tail` (Chernoff at
+  tilt `(1/1000, 0)`, `e^{5p/1000 − y/1000}`) + the same ℝ≥0∞ convolution glue
+  (split `1_{2D ≤ |f.1+w.1−s/4|} ≤ 1_{D ≤ |f.1−s/4|} + 1_{D ≤ w.1}`).
+- X10's remaining work is now ONLY the `triangle_encounter_le` assembly:
+  (a) the (7.60) trivial branch `s' < C·A²(1+p)` via
+  `fpDistPlus_indicator_sum_le_one`; (b) outside the escape event `E′` (the two
+  proved tails at `H = 2A²(1+p)`, `D = s^{0.6}`-ish), the endpoint is confined
+  to a window meeting only (7.63)–(7.65)-separated triangles; (c) the
+  Σ-separated Gaussian sum via `apex_separation` + the row engine. (b) is the
+  next hard sub-step: the confinement/geometry argument (pp.53–54) relating the
+  window to `bigTriangleSet` membership.
+
 ## Lap 58: `fpDistPlus_height_tail` PROVED (X10's (7.61) height tail, axiom-clean)
 
 - The 4-step lap-57 plan executed in full, all axiom-clean (`#print axioms` =
