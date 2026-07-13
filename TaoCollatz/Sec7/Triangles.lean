@@ -56,6 +56,108 @@ theorem θq_pred_l_exact (n ξ : ℕ) (j : ℕ) (l : ℤ) (h : |θq n ξ j l| < 
   have hk0 : k = 0 := Int.abs_lt_one_iff.mp (by exact_mod_cast hk1)
   rw [hk, hk0]; push_cast; ring
 
+/-- **Phase lower bound above a column run top** (consequence of (7.14); supports
+remedy (B) of `ROUTE-ESCALATION-2026-07-13.md`). If `(j,l)` is black and
+`(j,l+1)` is white, the (7.14) doubling `θ(j,l) = 2·θ(j,l+1) + k` forces
+`k ≠ 0` (else `(j,l+1)` were black at `ε/2`), so `|θ(j,l+1)| ≥ (1-ε)/2`; each
+further step up at worst halves the phase (`|θ(j,l+h)| ≥ |θ(j,l+h-1)|/2`,
+since `|θ| ≤ 1/2` makes the nearest integer `0` or `≥ 1` away). Hence
+`|θ(j,l+h)| ≥ (1-ε)/2^h` — the column above a run top stays FAR from
+integrality, not merely white. Exact ℚ arithmetic throughout. -/
+theorem theta_run_top_lower {n ξ : ℕ} {j : ℕ} {l : ℤ}
+    (hb : black n ξ j l) (hw : white n ξ j (l + 1)) :
+    ∀ h : ℕ, 1 ≤ h → (1 - epsBW) / 2 ^ h ≤ |θq n ξ j (l + h)| := by
+  intro h h1
+  induction h with
+  | zero => omega
+  | succ m ih =>
+    by_cases hm : 1 ≤ m
+    · -- step: `|θ(l+m+1)| ≥ |θ(l+m)|/2`
+      have IH := ih hm
+      obtain ⟨k, hk⟩ := θq_pred_l n ξ j (l + ((m + 1 : ℕ) : ℤ))
+      have hcast : l + ((m + 1 : ℕ) : ℤ) - 1 = l + (m : ℤ) := by push_cast; ring
+      rw [hcast] at hk
+      have hhalf := θq_abs_le_half n ξ j (l + (m : ℤ))
+      have habs : |θq n ξ j (l + (m : ℤ))|
+          ≤ 2 * |θq n ξ j (l + ((m + 1 : ℕ) : ℤ))| := by
+        by_cases hk0 : k = 0
+        · rw [hk0] at hk
+          push_cast at hk
+          rw [hk, add_zero, abs_mul]
+          norm_num
+        · have hk1 : (1 : ℚ) ≤ |(k : ℚ)| := by
+            have : 1 ≤ |k| := Int.one_le_abs hk0
+            exact_mod_cast this
+          have h2θ : |2 * θq n ξ j (l + ((m + 1 : ℕ) : ℤ))|
+              = |θq n ξ j (l + (m : ℤ)) - k| := by
+            rw [show (2 : ℚ) * θq n ξ j (l + ((m + 1 : ℕ) : ℤ))
+                = θq n ξ j (l + (m : ℤ)) - k from by linarith [hk]]
+          have hlow : |(k : ℚ)| - |θq n ξ j (l + (m : ℤ))|
+              ≤ |θq n ξ j (l + (m : ℤ)) - k| := by
+            calc |(k : ℚ)| - |θq n ξ j (l + (m : ℤ))|
+                ≤ |(k : ℚ) - θq n ξ j (l + (m : ℤ))| := abs_sub_abs_le_abs_sub _ _
+              _ = |θq n ξ j (l + (m : ℤ)) - k| := abs_sub_comm _ _
+          have := abs_mul (2 : ℚ) (θq n ξ j (l + ((m + 1 : ℕ) : ℤ)))
+          rw [h2θ] at this
+          rw [show |(2 : ℚ)| = 2 from by norm_num] at this
+          linarith
+      calc (1 - epsBW) / 2 ^ (m + 1)
+          = ((1 - epsBW) / 2 ^ m) / 2 := by ring
+        _ ≤ |θq n ξ j (l + (m : ℤ))| / 2 := by linarith
+        _ ≤ |θq n ξ j (l + ((m + 1 : ℕ) : ℤ))| := by linarith
+    · -- base `h = 1`: the wrap integer is forced nonzero
+      have hm0 : m = 0 := by omega
+      subst hm0
+      obtain ⟨k, hk⟩ := θq_pred_l n ξ j (l + 1)
+      rw [show l + 1 - 1 = l from by ring] at hk
+      have hεb : |θq n ξ j l| ≤ epsBW := hb
+      by_cases hk0 : k = 0
+      · exfalso
+        apply hw
+        rw [hk0] at hk
+        push_cast at hk
+        rw [add_zero] at hk
+        have : |θq n ξ j l| = 2 * |θq n ξ j (l + 1)| := by
+          rw [hk, abs_mul]; norm_num
+        show |θq n ξ j (l + 1)| ≤ epsBW
+        unfold epsBW at *
+        linarith
+      · have hk1 : (1 : ℚ) ≤ |(k : ℚ)| := by
+          have : 1 ≤ |k| := Int.one_le_abs hk0
+          exact_mod_cast this
+        have h2θ : |2 * θq n ξ j (l + 1)| = |θq n ξ j l - k| := by
+          rw [show (2 : ℚ) * θq n ξ j (l + 1) = θq n ξ j l - k from by linarith [hk]]
+        have hlow : |(k : ℚ)| - |θq n ξ j l| ≤ |θq n ξ j l - k| := by
+          calc |(k : ℚ)| - |θq n ξ j l| ≤ |(k : ℚ) - θq n ξ j l| :=
+              abs_sub_abs_le_abs_sub _ _
+            _ = |θq n ξ j l - k| := abs_sub_comm _ _
+        have habs2 := abs_mul (2 : ℚ) (θq n ξ j (l + 1))
+        rw [h2θ, show |(2 : ℚ)| = 2 from by norm_num] at habs2
+        have hgoalcast : l + ((0 + 1 : ℕ) : ℤ) = l + 1 := by push_cast; ring
+        rw [hgoalcast]
+        have : (1 : ℚ) - epsBW ≤ 2 * |θq n ξ j (l + 1)| := by linarith
+        linarith [this]
+
+/-- **The vertical white gap** (remedy (B), `ROUTE-ESCALATION-2026-07-13.md`):
+above the top of a black column run, the next `13` lattice heights are WHITE at
+`ε = 10⁻⁴` — because `(1-ε)/2^13 = 9999/81920000 > 8192/81920000 = ε` while
+`(1-ε)/2^14 < ε`. This is the fibre-structure substitute for the vertical half
+of the Euclidean separation that Tao's (7.50)→(7.51) whiteness step consumes
+(the formalized `F.separated` is vacuous at `ε = 10⁻⁴`, see X3's proof). -/
+theorem white_gap_above_run_top {n ξ : ℕ} {j : ℕ} {l : ℤ}
+    (hb : black n ξ j l) (hw : white n ξ j (l + 1)) {h : ℕ}
+    (h1 : 1 ≤ h) (h13 : h ≤ 13) :
+    white n ξ j (l + h) := by
+  intro hbl
+  have hge := theta_run_top_lower hb hw h h1
+  have h2 : (2 : ℚ) ^ h ≤ 2 ^ 13 := by
+    apply pow_le_pow_right₀ (by norm_num) h13
+  have hd : (1 - epsBW) / 2 ^ 13 ≤ (1 - epsBW) / 2 ^ h :=
+    div_le_div_of_nonneg_left (by rw [epsBW]; norm_num) (by positivity) h2
+  have hnum : (epsBW : ℚ) < (1 - epsBW) / 2 ^ 13 := by rw [epsBW]; norm_num
+  have hble : |θq n ξ j (l + h)| ≤ epsBW := hbl
+  linarith
+
 /-- A point is *weakly black* (paper p.38) if `|θ(j,l)| ≤ 1/100`. -/
 def weaklyBlack (n ξ : ℕ) (j : ℕ) (l : ℤ) : Prop := |θq n ξ j l| ≤ 1 / 100
 
