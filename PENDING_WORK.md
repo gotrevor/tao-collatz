@@ -1,5 +1,28 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 60 (cont): **X11b PROVED** — `deterministic_encounter_claim` axiom-clean
+
+- The (7.67) crux is machine-checked (`#print axioms` = trust base): outside E∗,
+  ≤K whites and g-deep positions force fold count ≥ R within
+  `encWindowIter A K R` steps. Engine: `encFoldAt` stopped-state machinery;
+  `encFoldAt_barrier_le` (barrier ≤ height + 2·4^A(1+p)³ via covering-triangle
+  top, (7.11) extent `triangle_top_le`, `Real.log_two_gt_d9`);
+  `encFoldAt_count_step` (window step: flat count freezes barrier
+  (`encStep_barrier_of_count_eq`), heights (+3/step, `pathSum_snd_ge`) clear the
+  envelope after ⌈4^A(1+p)³⌉+1 steps, pigeonhole vs hfew finds a black position
+  (`black_of_notMem_whiteStrip`), encounter fires).
+- **X11 remaining (in attack order)**: `estar_union_le` (X11a — assembly of
+  proved `triangle_encounter_le` through `iid_pathSum_law`; the 1/s' terms sum
+  via Σ(1+p)⁻² ≤ 2, exp terms geometric); `few_whites_le` (X11c join);
+  `Q_black_edge_case3_assembled` (X11d bookkeeping).
+- Gotchas: `rw [encStep] at h ⊢; split at h` leaves the goal's dite unreduced —
+  `rename_i hq; rw [dif_neg hq]` for the else-branch; un-beta-reduced
+  `(fun i => …) a` blocks omega — `simp only [] at h` or `show` first; a `set`
+  doesn't fold NEW terms (coveringTriangle proofs) — bridge with
+  `have h' : … := h` (proof irrelevance makes it defeq); triangle_top_le needs
+  its implicit `q` given explicitly when the expected type mentions only `q.2`.
+
+
 ## Lap 60: **X11 DECOMPOSED** — `Sec7/Case3.lean` created; (7.53) master iterate PROVED
 
 - **Architecture**: `Q_black_edge_case3`'s proof must consume X9/X10 (which live in
