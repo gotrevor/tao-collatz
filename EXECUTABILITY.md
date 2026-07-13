@@ -114,13 +114,16 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 17](judge/pass-17.md) — 2026-07-12, lap-56 boundary + lap-57 re-pin: **MASS DEMAND SATISFIED** ✅ (`3c95898` character-exact to the pre-authorization; ε₀-floor discharged by arithmetic; steering item retired). **Kernel DERIVED** via (7.50)-geometry decomposition: `fpDist_col_le` + `fpDist_out_of_strip_le` PROVED clean; one tail left — **`fpDist_any_triangle_le`** (≤ 1/8 family-triangle mass; NEW PIN, ratified as route decomposition ~85%). `/lean-review` on the full range: ✅ CLEAN (0 registry hits over 335 added lines). When the tail lands, X9 completes end-to-end.
 - [Pass 18](judge/pass-18.md) — 2026-07-12, lap-57 boundary: **ROUTE ESCALATION CONCURRED** ⚠️ — `F.separated` is VACUOUS at the frozen ε ((0.921)² < 1 = lattice minimum; X3 proves the clause by exactly that vacuity; p.48's whiteness step consumes real separation). NOT a paper error — the D4 numeral is too large. `fpDist_any_triangle_le` route ratification WITHDRAWN; **`fpDist_white_exit_deep` ratification SUSPENDED** pending the altitude ruling (remedy A vs hybrid B+A-small). Remedy-B vertical half **PROVED + verified** (`white_gap_above_run_top`: 13 white rows above any run top, exact-ℚ). **X10 A-quantifier bug concurred** (∀A>0 was false vs the 16/step height drift): old ratification revoked, `∃A₀ ≥ 1, ∀A ≥ A₀` re-pin + both (7.61) tail pins **RATIFIED**. Dated runs: 5 new proofs clean. `/lean-review`: ✅ CLEAN (372 added lines). D4-change ε-sweep tripwire armed.
 - [Pass 19](judge/pass-19.md) — 2026-07-12, lap-58 boundary: **BOTH (7.61) TAILS + X10a PROVED & VERIFIED** ✅ — `fpDistPlus_height_tail`/`fpDistPlus_col_tail` now ratified+proved+clean; `encounter_apex_proximity` (X10a, the (7.63)→(7.65) confinement) **ratified vs p.53** + clean; engines (`fpDist_height_tail`, `fpDist_col_dev`, `holdSum_col_tail`) clean. **X10b pinned; committed form NOT ratified** — the lap-59 regime hypothesis `(s')² ≤ 1+s` is **pre-authorized** (pin false without it for s' ≫ √s; consumer-safe via `s' ≤ m^0.4` + `s > m/log²m`). X10 badge high/70% → **medium/80%**; headline = X10b + glue. `/lean-review`: 🟡 1 flag — X10a's local `maxHeartbeats 1600000` lacks the SKELETON-SPEC-required `-- HEARTBEAT:` comment (box's to fix). Also: **statement-faithfulness audit CLOSED** (Math Inc agrees on Thm 1.3; Thm 3.1 verbatim; Series β "Korec" label fixed — see endgame section).
+- [Pass 20](judge/pass-20.md) — 2026-07-12/13, lap-59 boundary: **X10 / LEMMA 7.10 COMPLETE END-TO-END** 🏆 — the campaign's highest-uncertainty node is a theorem. X10b `encounter_separated_sum` PROVED (statement survived the proof landing character-identically); glue `triangle_encounter_le` PROVED same lap, with the pinned headline relocated below its engines **character-identically** (judge-diffed across the move). Dated runs on all nine lap-59 decls (headline, X10b, both `G`-weight engines, banded/qualifying steps, three glue helpers) — all exactly the clean triple. Blueprint X10 → proof-leanok, badge dropped; §7 sorry trail now BlackEdge ×4 + ManyTriangles ×1 (⛔blocked). `/lean-review` (1,372 added lines): 🟡 2 flags — two more local `maxHeartbeats` bumps (1M on `log_sq_le_rpow`, 2M on the assembly) without `-- HEARTBEAT:` comments (nit now ×3). Treadmill stopped after this lap (Trevor-directed evening wrap); 🗂️ ManyTriangles split directive queued for the next run's first lap.
 
 ## Live judge state 📍 (update each pass)
 
 **Verified complete** (dated judge-run `#print axioms`, all exactly
 `[propext, Classical.choice, Quot.sound]`): **X3** (2026-07-10), **S3** (pass 5),
 **X6** (pass 7), **X1** (pass 11), **X5** (pass 12 — Lemma 7.6, 15 decls),
-**X2** (pass 12 — both halves; damping consumer closed with it).
+**X2** (pass 12 — both halves; damping consumer closed with it),
+**X10** (pass 20 — Lemma 7.10 end-to-end: headline `triangle_encounter_le` +
+the full engine chain, the first of the two pinnacle kernels).
 
 **Statements pinned + ratified**: every ledger node except **C8** (no pinned Lean
 statement yet — the last un-pinned node). Latest: X10 `∃A₀` re-pin + the two (7.61)
@@ -154,21 +157,28 @@ unchanged, but its truth at the frozen ε is no longer judge-believed).
   kernel pin carries `51/100 ≤ p₀`, so `ε₀ = min(1/100, ·) ≥ 1/100 ≥ 10⁻⁴` by
   arithmetic. Survives the escalation as a statement property (whatever proves
   the pin post-remedy inherits the numeral); re-check p₀ numerics on a D4 change.
-- **Axiom-check queue**: cleared (pass 19 — six lap-58 proofs verified clean).
-  Prop 1.17's whole remaining sorry trail = BlackEdge ×4 (`fpDist_edgeWeight_le`,
-  `fpDist_white_exit`, `Q_black_edge_case2`, `Q_black_edge_case3`) +
-  ManyTriangles ×3 (`triangle_encounter_le` X10 headline = X10b + glue,
-  `encounter_separated_sum` X10b, `fpDist_any_triangle_le` ⛔blocked).
-- **X10b pre-authorization DISCHARGED (pass 19 addendum)**: `ae0918c` landed the fix character-exact — X10b statement RATIFIED. (History: the committed lap-58 pin lacked the
-  regime hypothesis and was false without it —
-  centre band alone carries ≍W/√(1+s)). The in-flight lap-59 fix (statement +
-  hypothesis + docstring, seen uncommitted at pass time) is ratified-on-landing
-  via character diff; any other edit shape = full re-ratification.
+- **Axiom-check queue**: cleared (pass 20 — nine lap-59 decls verified clean,
+  including the X10 headline). Prop 1.17's whole remaining sorry trail =
+  BlackEdge ×4 (`fpDist_edgeWeight_le`, `fpDist_white_exit`,
+  `Q_black_edge_case2`, `Q_black_edge_case3`) + ManyTriangles ×1
+  (`fpDist_any_triangle_le` ⛔blocked on the altitude ruling).
+- **X10 COMPLETE (pass 20)**: X10b's pre-authorization discharged character-exact
+  (`ae0918c`, pass-19 addendum), X10b proved + verified; glue proved + verified;
+  the pinned headline was relocated below its engines character-identically
+  (judge-diffed). Blueprint node → proof-leanok. X10's completion means the
+  Case-3 chain to Prop 1.17 now waits only on the white-exit kernel (X9,
+  ⛔altitude ruling) and BlackEdge assembly.
 - **Box docstring nits** (box's to fix): `White.lean:11` + `Reduction.lean:12`
   stale "carries sorry" claims (pass 12); `triangle_encounter_le` DEVIATION NOTE
   says "≈ 4p mean height drift" — height mean is 16/step, 4 is the column mean
-  (pass 18); X10a's `maxHeartbeats 1600000` needs the SKELETON-SPEC §13
-  `-- HEARTBEAT:` justification comment (pass 19).
+  (pass 18); `-- HEARTBEAT:` justification comments missing on all three local
+  bumps (X10a 1.6M pass 19; `log_sq_le_rpow` 1M + assembly 2M pass 20 — the 2M
+  on the completed assembly is also a mathlib-bump brittleness ledger item).
+- **🗂️ Split directive queued (steering `12515c4`)**: ManyTriangles.lean
+  (now 4,782 lines) splits into 4 dependency-ordered files on the NEXT
+  treadmill run's first lap — pure moves, names verbatim, thin re-export shim;
+  judge verifies via sorry census + name-based axiom runs. Treadmill stopped
+  2026-07-12 evening after lap 59 (`stop --after-lap`, Trevor-directed).
 - **Judge recipe amendment** (pass 18): each pass diffs the event range AND
   checks `git log <range-end>..HEAD` before publishing assessments — the box
   commits concurrently, and pass 17's 85% badge went out with the escalation
