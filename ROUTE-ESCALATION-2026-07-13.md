@@ -1,5 +1,13 @@
 # ROUTE ESCALATION — 2026-07-13 (lap 57): the ε=10⁻⁴ separation is VACUOUS; (7.50) whiteness unprovable as routed
 
+> ✅ **CLOSED — HISTORICAL. Do not act on this document.** Both escalations it
+> spawned are resolved: (1) the ε=10⁻⁴ vacuity was fixed by Trevor's altitude ruling
+> (Remedy A, `epsBW = 10⁻⁹⁰`) and the real Lemma-7.4 separation landed in pass 23;
+> (2) the follow-on "quantifier order" escalation was **downgraded by judge pass 24**
+> — not altitude-class; the route is sound and the blocker was two throwaway constants.
+> Current marching orders: **`HANDOFF-2026-07-13-e.md`** + **BLUEPRINT §2**. Kept for
+> the record only.
+
 **Trigger**: T2-class (DIRECTION.md route-level triggers), but firing on the
 **(7.50)/(7.51) white-exit ring** (Case 2 of Prop 7.8, p.48), not just (7.65).
 Found while attacking `fpDist_any_triangle_le` (the last sorry under
