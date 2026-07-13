@@ -23,6 +23,24 @@
 - Non-blocked crux queue: X10 assembly (`triangle_encounter_le`, apex route is
   disjointness-based, unaffected); row-tail lemma `P(overshoot ≥ H) ≤ Ce^{-cH}`
   (needed under every remedy).
+- Lap-57 cont (X10 statement design, commits `854f0f5`+): `triangle_encounter_le`
+  re-pinned `∃A₀ ≥ 1, ∀A ≥ A₀` (the ratified `∀A>0` was FALSE — height drift
+  `16p` outside the `A²(1+p)` window at small `A`; needs judge re-ratification).
+  Two (7.61) tails pinned: `fpDistPlus_height_tail` (margin `50(1+p) ≤ H` —
+  NB height mean is 16/step, first-pinned `10(1+p)` was below drift, corrected),
+  `fpDistPlus_col_tail` (margin `10(1+p) ≤ D`, col mean 4/step, fine).
+- **Proof plan for `fpDistPlus_height_tail`** (next): (1) missing engine
+  `tsum_Gweight_row_le`: `∃K, ∀t ≥ 1, ∀μ, ∑'_{j:ℕ} Gweight(t, c(j−μ)) ≤ K√t` —
+  double-cover to integer offsets (tsum analogue of `sum_abs_int_le`, reduce
+  real centre μ to `⌊μ⌋` at cost `f(max(m−1,0))`), then `sum_range_exp_neg_sq_le`
+  (uniform in N ⟹ tsum bound `3+2√t/c`) + geometric. (2) fp row tail
+  `P(f.2 ≥ s+y) ≤ Ce^{-cy}`: sum `fpDist_location_bound` — `l`-tail geometric
+  (`hasSum_nat_tail_exp`-style ≥ s+y version), `j`-sum by the new engine. (3)
+  `p`-step tail via `holdSum_halfspace_le` (`l1=0, l2=1/1000`, cond `y ≤ d.2`,
+  `Classical.decPred`; exponent `17p/1000 − y/1000`). (4) glue: PMF.bind Fubini
+  in ℝ≥0∞, pointwise `1_{s+H ≤ (f+w).2} ≤ 1_{f.2 ≥ s+H/2} + 1_{w.2 ≥ H/2}`.
+  Same skeleton then gives `fpDistPlus_col_tail` (Gweight column deviation +
+  `l1=1/1000` halfspace).
 
 ## Lap 56 (review + crux advance): white-exit kernel DECOMPOSED; reduction glue + overshoot exclusion PROVED
 

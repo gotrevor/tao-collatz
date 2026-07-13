@@ -258,18 +258,22 @@ theorem apex_separation {n ξ : ℕ} (F : TriangleFamily n ξ) {t' t'' : ℕ × 
 /-- **The (7.61) height tail of the `(k+p)`-step endpoint** (p.52, first two
 displays): `P(l + l_{[1,k+p]} ≥ l_Δ + H) ≪ exp(−cH)` once `H` clears the mean
 height drift of the walk (first-passage overshoot `O(1)` + `p` further `Hold`
-steps of mean height `≈ 4.33`; the margin `10(1+p) ≤ H` dominates both).
+steps of mean height `16` — the drift coefficient of `tiltZ_hold_le_quad`; the
+margin `50(1+p) ≤ H` dominates both with Chernoff room at tilt `1/1000`).
 Route: split the endpoint as `fpDist s ⋆ iidSum hold p`; the `fpDist` overshoot
 has the `e^{-c(l-s)}` row tail of X6 (`fpDist_location_bound` summed in `j` —
 the `fpDist_col_le` companion collapsed the other way), and the `p`-step height
-sum has an exponential Chernoff tail past its mean (`Mgf` engine / Lemma 2.2 =
-S3). Consumed by (7.61) at `H = 2A²(1+p)`, where `A ≥ A₀` makes
-`10(1+p) ≤ H` automatic.
+sum has an exponential Chernoff tail past its mean (`holdSum_halfspace_le` at
+`l2 = 1/1000`: exponent `p·17/1000 − (H/2)/1000 ≤ −H/6250` under the margin).
+Consumed by (7.61) at `H = 2A²(1+p)`, where `A ≥ A₀ ≥ 5` makes
+`50(1+p) ≤ H` automatic.
 
-OPEN (node X10, statement pinned lap 57). -/
+OPEN (node X10, statement pinned lap 57; margin corrected same lap — the
+height mean is `16/step`, so the earlier `10(1+p)` margin sat below the drift
+and the statement was false as first pinned). -/
 theorem fpDistPlus_height_tail :
     ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s p : ℕ, ∀ H : ℝ,
-      10 * (1 + (p : ℝ)) ≤ H →
+      50 * (1 + (p : ℝ)) ≤ H →
       ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
           * Set.indicator {q : ℕ × ℤ | (s : ℝ) + H ≤ (q.2 : ℝ)} 1 e
         ≤ C * Real.exp (-c * H) := by
