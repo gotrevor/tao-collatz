@@ -152,6 +152,29 @@ buys nothing. A completed node is the *only* estimate that can't be wrong.
 **⚡ Active statement demands (judge → grind laps; check here before working the
 named target).** Current items: *(none — last item retired judge pass 17)*
 
+**🗂️ SPLIT `ManyTriangles.lean` (operator directive, 2026-07-13; do this FIRST
+next lap, before proof work).** The file is 3,934 lines (2× the next-largest, ⅓ of
+Sec7) and every edit-iteration re-elaborates all of it, including the
+1.6M-heartbeat X10a decl. Split into four dependency-ordered files, **pure moves
+only — zero statement/proof edits in the same lap, keep every decl name
+verbatim** (the blueprint `\lean{}` bindings + judge axiom runs are name-based
+and must be unaffected):
+1. `Sec7/FpPlus.lean` — `fpDistPlus` def/basics + the (7.61) tails + their
+   engines (`fpDist_height_tail`, `fpDist_col_dev`, `holdSum_col_tail`,
+   `hasSum_nat_tail_exp`, `tsum_int_Gweight_le`, …).
+2. `Sec7/Encounter.lean` (X10) — `bigTriangleSet`, `apex_gap`/`apex_separation`,
+   `encounter_apex_proximity`, `encounter_separated_sum`,
+   `triangle_encounter_le`. Imports FpPlus.
+3. `Sec7/WhiteExit.lean` (X9 kernel) — `fpDist_col_le`, `gaussian_col_tail`,
+   `outStripSet`/`phaseInFamily` glue, `fpDist_out_of_strip_le`,
+   `fpDist_any_triangle_le`, `fpDist_white_exit_deep`. Imports FpPlus.
+4. `Sec7/EncounterFold.lean` (X9 fold) — `EncState` … `many_triangles_white`.
+   Imports WhiteExit.
+Keep a thin `ManyTriangles.lean` that just imports all four (downstream imports
+unbroken). Build green, update HANDOFF file references, then resume proof work.
+Judge verifies at the boundary via sorry census + name-based axiom runs; a
+split lap that also edits proofs forfeits the cheap verification.
+
 **ℹ️ Judge position for the altitude ruling (pass 18, informational — not a
 demand):** the route escalation is CONCURRED on all three steps (vacuity
 machine-verified at `Triangles.lean:1333`; p.48 consumption confirmed; adversarial
