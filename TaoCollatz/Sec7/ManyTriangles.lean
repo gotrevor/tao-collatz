@@ -2628,4 +2628,208 @@ theorem fpDistPlus_height_tail :
         rw [← ENNReal.ofReal_add (by positivity) (Real.exp_pos _).le]
         exact ENNReal.ofReal_le_ofReal hreal
 
+/-- **First-passage column deviation** (the (7.61) column analogue of
+`fpDist_height_tail`, ℝ≥0∞ form): `P(|f.1 − s/4| ≥ D) ≤ C(e^{−cD²/(1+s)} + e^{−cD})`
+for the first-passage endpoint `f ~ fpDist s`. The X6 envelope's column factor
+`Gweight(1+s, c(j−s/4))` donates the tail prefactor by exponent-halving —
+`e^{−x²/t} ≤ e^{−(cD)²/(2t)}·e^{−(x/2)²/t}` and `e^{−|x|} ≤ e^{−cD/2}·e^{−|x/2|}`
+on `|x| ≥ cD` — leaving a `Gweight` at rate `c/2` which the row engine sums to
+`K√(1+s)`; the height factor sums geometrically. Both RHS shapes (Gaussian in
+`D²/(1+s)` and exponential in `D`) come from the two `Gweight` pieces. -/
+theorem fpDist_col_dev :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s : ℕ, ∀ D : ℝ, 0 ≤ D →
+      ∑' e : ℕ × ℤ, (if D ≤ |(e.1 : ℝ) - (s : ℝ) / 4| then fpDist s e else 0)
+        ≤ ENNReal.ofReal
+            (C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D))) := by
+  obtain ⟨cL, hcL, CL, hCL, hbd⟩ := fpDist_location_bound
+  obtain ⟨K, hK, hrow⟩ := sum_range_Gweight_le (by positivity : (0:ℝ) < cL / 2)
+  have he1 : Real.exp (-cL) < 1 := by rw [Real.exp_lt_one_iff]; linarith
+  have hgd : (0 : ℝ) < 1 - Real.exp (-cL) := by linarith [Real.exp_pos (-cL)]
+  set geo : ℝ := Real.exp (-cL) / (1 - Real.exp (-cL)) with hgeo
+  have hgeo0 : 0 < geo := div_pos (Real.exp_pos _) hgd
+  set cc : ℝ := min (cL ^ 2 / 2) (cL / 2) with hcc
+  have hcc0 : 0 < cc := lt_min (by positivity) (by positivity)
+  refine ⟨cc, hcc0, CL * K * geo, by positivity, fun s D hD => ?_⟩
+  have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
+  have hsq : (0 : ℝ) < Real.sqrt (1 + (s : ℝ)) := Real.sqrt_pos.mpr h1s
+  set t : ℝ := 1 + (s : ℝ) with ht
+  set pref : ℝ := Real.exp (-(cL * D) ^ 2 / (2 * t)) + Real.exp (-(cL * D) / 2)
+    with hpref
+  have hpref0 : 0 < pref := by positivity
+  set A : ℕ → ℝ := fun j =>
+    CL * Gweight t (cL / 2 * ((j : ℝ) - (s : ℝ) / 4)) / Real.sqrt t with hA
+  set B : ℤ → ℝ :=
+    fun l => if (s : ℤ) < l then Real.exp (-cL * ((l : ℝ) - (s : ℝ))) else 0 with hB
+  have hAnn : ∀ j, 0 ≤ A j := fun j =>
+    div_nonneg (mul_nonneg hCL.le (Gweight_nonneg _ _)) hsq.le
+  have hBnn : ∀ l, 0 ≤ B l := by
+    intro l
+    rw [hB]
+    dsimp only
+    split_ifs
+    exacts [(Real.exp_pos _).le, le_rfl]
+  -- the Gweight tail-splitting inequality
+  have hGw : ∀ x : ℝ, cL * D ≤ |x| → Gweight t x ≤ pref * Gweight t (x / 2) := by
+    intro x hx
+    have ht0 : (0 : ℝ) < t := h1s
+    have hx2 : (cL * D) ^ 2 ≤ x ^ 2 := by
+      have h0 : 0 ≤ cL * D := by positivity
+      nlinarith [abs_nonneg x, sq_abs x]
+    have hg1 : Real.exp (-x ^ 2 / t)
+        ≤ Real.exp (-(cL * D) ^ 2 / (2 * t)) * Real.exp (-(x / 2) ^ 2 / t) := by
+      rw [← Real.exp_add]
+      apply Real.exp_le_exp.mpr
+      rw [div_add_div _ _ (by positivity : (2:ℝ) * t ≠ 0) (by positivity : t ≠ 0)]
+      rw [div_le_div_iff₀ (by positivity) (by positivity)]
+      nlinarith [mul_nonneg (sub_nonneg.mpr hx2) (mul_pos ht0 ht0).le,
+        sq_nonneg x, mul_pos ht0 ht0]
+    have hg2 : Real.exp (-|x|)
+        ≤ Real.exp (-(cL * D) / 2) * Real.exp (-|x / 2|) := by
+      rw [← Real.exp_add]
+      apply Real.exp_le_exp.mpr
+      rw [abs_div]
+      have : |(2 : ℝ)| = 2 := by norm_num
+      rw [this]
+      linarith
+    have hGnn1 : (0:ℝ) ≤ Real.exp (-(x / 2) ^ 2 / t) := (Real.exp_pos _).le
+    have hGnn2 : (0:ℝ) ≤ Real.exp (-|x / 2|) := (Real.exp_pos _).le
+    have hp1 : Real.exp (-(cL * D) ^ 2 / (2 * t)) ≤ pref := by
+      rw [hpref]
+      linarith [Real.exp_pos (-(cL * D) / 2)]
+    have hp2 : Real.exp (-(cL * D) / 2) ≤ pref := by
+      rw [hpref]
+      linarith [Real.exp_pos (-(cL * D) ^ 2 / (2 * t))]
+    unfold Gweight
+    calc Real.exp (-x ^ 2 / t) + Real.exp (-|x|)
+        ≤ Real.exp (-(cL * D) ^ 2 / (2 * t)) * Real.exp (-(x / 2) ^ 2 / t)
+          + Real.exp (-(cL * D) / 2) * Real.exp (-|x / 2|) := add_le_add hg1 hg2
+      _ ≤ pref * Real.exp (-(x / 2) ^ 2 / t) + pref * Real.exp (-|x / 2|) :=
+          add_le_add (mul_le_mul_of_nonneg_right hp1 hGnn1)
+            (mul_le_mul_of_nonneg_right hp2 hGnn2)
+      _ = pref * (Real.exp (-(x / 2) ^ 2 / t) + Real.exp (-|x / 2|)) := by ring
+  -- pointwise domination
+  have hpt : ∀ e : ℕ × ℤ, (if D ≤ |(e.1 : ℝ) - (s : ℝ) / 4| then fpDist s e else 0)
+      ≤ ENNReal.ofReal pref * (ENNReal.ofReal (A e.1) * ENNReal.ofReal (B e.2)) := by
+    intro e
+    obtain ⟨j, l⟩ := e
+    by_cases hDj : D ≤ |(j : ℝ) - (s : ℝ) / 4|
+    · rw [if_pos hDj]
+      by_cases hsl : (s : ℤ) < l
+      · have hxD : cL * D ≤ |cL * ((j : ℝ) - (s : ℝ) / 4)| := by
+          rw [abs_mul, abs_of_pos hcL]
+          exact mul_le_mul_of_nonneg_left hDj hcL.le
+        have hGle := hGw (cL * ((j : ℝ) - (s : ℝ) / 4)) hxD
+        have hhalf : cL * ((j : ℝ) - (s : ℝ) / 4) / 2
+            = cL / 2 * ((j : ℝ) - (s : ℝ) / 4) := by ring
+        rw [hhalf] at hGle
+        have hfac : (0 : ℝ) ≤ CL * (Real.exp (-cL * ((l : ℝ) - (s : ℝ))) / Real.sqrt t) :=
+          mul_nonneg hCL.le (div_nonneg (Real.exp_pos _).le hsq.le)
+        have hRe : (fpDist s (j, l)).toReal ≤ pref * (A j * B l) := by
+          rw [hA, hB]
+          dsimp only
+          rw [if_pos hsl]
+          calc (fpDist s (j, l)).toReal
+              ≤ CL * (Real.exp (-cL * ((l : ℝ) - (s : ℝ))) / Real.sqrt t)
+                  * Gweight t (cL * ((j : ℝ) - (s : ℝ) / 4)) := hbd s j l
+            _ ≤ CL * (Real.exp (-cL * ((l : ℝ) - (s : ℝ))) / Real.sqrt t)
+                  * (pref * Gweight t (cL / 2 * ((j : ℝ) - (s : ℝ) / 4))) :=
+                mul_le_mul_of_nonneg_left hGle hfac
+            _ = pref * (CL * Gweight t (cL / 2 * ((j : ℝ) - (s : ℝ) / 4)) / Real.sqrt t
+                  * Real.exp (-cL * ((l : ℝ) - (s : ℝ)))) := by ring
+        calc fpDist s (j, l)
+            = ENNReal.ofReal ((fpDist s (j, l)).toReal) :=
+              (ENNReal.ofReal_toReal (PMF.apply_ne_top _ _)).symm
+          _ ≤ ENNReal.ofReal (pref * (A j * B l)) := ENNReal.ofReal_le_ofReal hRe
+          _ = ENNReal.ofReal pref * (ENNReal.ofReal (A j) * ENNReal.ofReal (B l)) := by
+              rw [ENNReal.ofReal_mul hpref0.le, ENNReal.ofReal_mul (hAnn j)]
+      · have h0 : fpDist s (j, l) = 0 := by
+          by_contra h
+          exact hsl (fpDist_support_snd_gt s (j, l) (by rwa [PMF.mem_support_iff]))
+        rw [h0]
+        exact zero_le'
+    · rw [if_neg hDj]
+      exact zero_le'
+  -- factor and bound
+  have hfact : ∑' e : ℕ × ℤ, (ENNReal.ofReal (A e.1) * ENNReal.ofReal (B e.2))
+      = (∑' j : ℕ, ENNReal.ofReal (A j)) * (∑' l : ℤ, ENNReal.ofReal (B l)) := by
+    rw [ENNReal.tsum_prod']
+    simp_rw [ENNReal.tsum_mul_left]
+    rw [ENNReal.tsum_mul_right]
+  have hAle : (∑' j : ℕ, ENNReal.ofReal (A j)) ≤ ENNReal.ofReal (CL * K) := by
+    rw [ENNReal.tsum_eq_iSup_sum]
+    refine iSup_le fun F => ?_
+    set M : ℕ := F.sup id + 1 with hM
+    have hFsub : F ⊆ Finset.range M := fun j hj =>
+      Finset.mem_range.mpr (Nat.lt_succ_of_le (Finset.le_sup (f := id) hj))
+    have hreal : ∑ j ∈ Finset.range M, A j ≤ CL * K := by
+      have hrw := hrow t (by rw [ht]; linarith [Nat.cast_nonneg (α := ℝ) s])
+        ((s : ℝ) / 4) M
+      calc ∑ j ∈ Finset.range M, A j
+          = CL / Real.sqrt t
+            * ∑ j ∈ Finset.range M, Gweight t (cL / 2 * ((j : ℝ) - (s : ℝ) / 4)) := by
+            rw [Finset.mul_sum]
+            exact Finset.sum_congr rfl fun j _ => by rw [hA]; ring
+        _ ≤ CL / Real.sqrt t * (K * Real.sqrt t) :=
+            mul_le_mul_of_nonneg_left hrw (by positivity)
+        _ = CL * K := by field_simp
+    calc ∑ j ∈ F, ENNReal.ofReal (A j)
+        ≤ ∑ j ∈ Finset.range M, ENNReal.ofReal (A j) :=
+          Finset.sum_le_sum_of_subset hFsub
+      _ = ENNReal.ofReal (∑ j ∈ Finset.range M, A j) :=
+          (ENNReal.ofReal_sum_of_nonneg fun j _ => hAnn j).symm
+      _ ≤ ENNReal.ofReal (CL * K) := ENNReal.ofReal_le_ofReal hreal
+  have hBsum := hasSum_int_shift_exp hcL s
+  have hBle : (∑' l : ℤ, ENNReal.ofReal (B l)) = ENNReal.ofReal geo := by
+    rw [← ENNReal.ofReal_tsum_of_nonneg hBnn hBsum.summable, hBsum.tsum_eq]
+  -- assemble, then compare prefactors in ℝ
+  have hprefle : pref ≤ Real.exp (-cc * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cc * D) := by
+    have h1 : Real.exp (-(cL * D) ^ 2 / (2 * t)) ≤ Real.exp (-cc * D ^ 2 / (1 + (s : ℝ))) := by
+      apply Real.exp_le_exp.mpr
+      rw [ht, div_le_div_iff₀ (by positivity) (by positivity)]
+      have hcc1 : cc ≤ cL ^ 2 / 2 := min_le_left _ _
+      nlinarith [sq_nonneg D, sq_nonneg (cL * D), Nat.cast_nonneg (α := ℝ) s,
+        mul_le_mul_of_nonneg_right hcc1 (sq_nonneg D)]
+    have h2 : Real.exp (-(cL * D) / 2) ≤ Real.exp (-cc * D) := by
+      apply Real.exp_le_exp.mpr
+      have hcc2 : cc ≤ cL / 2 := min_le_right _ _
+      nlinarith [mul_le_mul_of_nonneg_right hcc2 hD]
+    rw [hpref]
+    exact add_le_add h1 h2
+  calc ∑' e : ℕ × ℤ, (if D ≤ |(e.1 : ℝ) - (s : ℝ) / 4| then fpDist s e else 0)
+      ≤ ∑' e : ℕ × ℤ, ENNReal.ofReal pref
+          * (ENNReal.ofReal (A e.1) * ENNReal.ofReal (B e.2)) :=
+        ENNReal.tsum_le_tsum hpt
+    _ = ENNReal.ofReal pref
+          * ((∑' j : ℕ, ENNReal.ofReal (A j)) * (∑' l : ℤ, ENNReal.ofReal (B l))) := by
+        rw [ENNReal.tsum_mul_left, hfact]
+    _ ≤ ENNReal.ofReal pref * (ENNReal.ofReal (CL * K) * ENNReal.ofReal geo) := by
+        exact mul_le_mul_left' (mul_le_mul' hAle (le_of_eq hBle)) _
+    _ = ENNReal.ofReal (CL * K * geo * pref) := by
+        rw [← ENNReal.ofReal_mul (by positivity : (0:ℝ) ≤ CL * K),
+          ← ENNReal.ofReal_mul hpref0.le]
+        congr 1
+        ring
+    _ ≤ ENNReal.ofReal (CL * K * geo
+          * (Real.exp (-cc * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cc * D))) := by
+        exact ENNReal.ofReal_le_ofReal
+          (mul_le_mul_of_nonneg_left hprefle (by positivity))
+
+/-- **`p`-step column tail**: the `Hold` walk's column sum exceeds `y` with
+probability `≤ e^{5p/1000 − y/1000}` — Markov under the tilt `(1/1000, 0)`
+(`holdSum_halfspace_le`), quadratic MGF budget `p·(4/1000 + 1000/10⁶) = 5p/1000`.
+Past the mean-column drift `4p` this is exponentially small. -/
+theorem holdSum_col_tail (p : ℕ) (y : ℝ) :
+    ∑' d : ℕ × ℤ, (if y ≤ (d.1 : ℝ) then (iidSum hold p) d else 0)
+      ≤ ENNReal.ofReal (Real.exp ((p : ℝ) * (5 / 1000) - y / 1000)) := by
+  classical
+  have h := holdSum_halfspace_le (l1 := 1 / 1000) (l2 := 0)
+    (by norm_num) (by norm_num) (by norm_num) (by norm_num) p
+    (fun d => y ≤ (d.1 : ℝ)) (y / 1000)
+    (fun d hd => by
+      have : y / 1000 ≤ (d.1 : ℝ) / 1000 := by linarith
+      linarith)
+  refine le_trans h (le_of_eq ?_)
+  congr 1
+  norm_num
+
 end TaoCollatz
