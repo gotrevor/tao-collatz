@@ -255,6 +255,44 @@ theorem apex_separation {n ξ : ℕ} (F : TriangleFamily n ξ) {t' t'' : ℕ × 
   rw [hgoal]
   linarith [hgap, h765']
 
+/-- **The (7.61) height tail of the `(k+p)`-step endpoint** (p.52, first two
+displays): `P(l + l_{[1,k+p]} ≥ l_Δ + H) ≪ exp(−cH)` once `H` clears the mean
+height drift of the walk (first-passage overshoot `O(1)` + `p` further `Hold`
+steps of mean height `≈ 4.33`; the margin `10(1+p) ≤ H` dominates both).
+Route: split the endpoint as `fpDist s ⋆ iidSum hold p`; the `fpDist` overshoot
+has the `e^{-c(l-s)}` row tail of X6 (`fpDist_location_bound` summed in `j` —
+the `fpDist_col_le` companion collapsed the other way), and the `p`-step height
+sum has an exponential Chernoff tail past its mean (`Mgf` engine / Lemma 2.2 =
+S3). Consumed by (7.61) at `H = 2A²(1+p)`, where `A ≥ A₀` makes
+`10(1+p) ≤ H` automatic.
+
+OPEN (node X10, statement pinned lap 57). -/
+theorem fpDistPlus_height_tail :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s p : ℕ, ∀ H : ℝ,
+      10 * (1 + (p : ℝ)) ≤ H →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | (s : ℝ) + H ≤ (q.2 : ℝ)} 1 e
+        ≤ C * Real.exp (-c * H) := by
+  sorry
+
+/-- **The (7.61) column tail of the `(k+p)`-step endpoint** (p.52, displays 5–7):
+`P(|j_{[1,k+p]} − s/4| ≥ 2D) ≪ exp(−cD²/(1+s)) + exp(−cD)` once `D` clears the
+`p`-step column drift (`j`-components are iid `Geom(4)`, mean `4/3`; the margin
+`10(1+p) ≤ D` dominates). The paper instantiates `D = s^{0.6}`, giving
+`exp(−cs^{0.2}) + exp(−cs^{0.6})`; the general-`D` form is what the X6 envelope
+(`fpDist_col_le`: Gaussian of width `√(1+s)` centred at `s/4`) plus the
+`Geom(4)`-sum Chernoff actually prove, and the consumer does the `s^{0.6}`
+arithmetic at the (7.61) assembly site.
+
+OPEN (node X10, statement pinned lap 57). -/
+theorem fpDistPlus_col_tail :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s p : ℕ, ∀ D : ℝ,
+      10 * (1 + (p : ℝ)) ≤ D →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 e
+        ≤ C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D)) := by
+  sorry
+
 /-- **Lemma 7.10 — large triangles are rarely encountered shortly after a lengthy
 crossing** (paper (7.60), pp.51–54). Starting the renewal walk at a point `(j,l)` of
 a black triangle `Δ = t₀` with budget `s = l_Δ − l` obeying `s > m/log²m`
@@ -269,9 +307,19 @@ for all `1 ≤ s' ≤ m^{0.4}`, constants uniform in `n, ξ`. The `A²(1+p)/s'` 
 
 OPEN (node X10): the campaign's single highest-uncertainty node. Route in the module
 docstring / `PENDING_WORK.md`; all inputs (`fpDist_location_bound` = X6, Lemma 2.2 =
-S3, `F.separated` = X3) are theorems. -/
+S3, `F.separated` = X3) are theorems.
+
+DEVIATION NOTE (lap 57, statement fix — needs re-ratification): the paper takes `A`
+"sufficiently large" (its proof starts "we can assume `s' ≥ CA²(1+p)` for a large
+constant C, since the claim is trivial otherwise", and the (7.61) height threshold
+`2A²(1+p)` must clear the `≈ 4p` mean height drift of the `p` extra `Hold` steps —
+at fixed small `A` and `p → ∞` the endpoint sits at height `l_Δ + Θ(p)` outside the
+`A²(1+p)` window and the claimed `exp(−cA²(1+p))` bound is FALSE). The pin therefore
+carries `∃ A₀ ≥ 1, ∀ A ≥ A₀`; the consumer (p.54, `E_*` union bound) instantiates at
+`A` large, so this is consumer-safe. The two (7.61) tails are pinned separately as
+`fpDistPlus_height_tail` / `fpDistPlus_col_tail` below. -/
 theorem triangle_encounter_le :
-    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∀ (A : ℝ), 0 < A →
+    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
         (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
