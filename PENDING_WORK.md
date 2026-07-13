@@ -1,5 +1,46 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 60: **X11 DECOMPOSED** — `Sec7/Case3.lean` created; (7.53) master iterate PROVED
+
+- **Architecture**: `Q_black_edge_case3`'s proof must consume X9/X10 (which live in
+  ManyTriangles, importing BlackEdge), so the assembly lives in NEW `Sec7/Case3.lean`
+  downstream; `Q_black_edge_case3_assembled` pins the identical statement. When it
+  closes, relocate `Q_black_edge`/`prop_7_8` there and delete BlackEdge's sorry.
+- PROVED axiom-clean (`#print axioms` = trust base):
+  - `Q_le_walk_damped` / `Q_le_damped_iter` — the (7.53) iterate of (7.35) through
+    the first passage + P Hold steps, RETAINING the accumulated white damping (the
+    correct indicator is `whiteStrip` = W ∩ strip: the boundary emits no factor).
+  - `iid_pathSum_law` — prefix marginal of `hold.iid T` at `p ≤ T` = `iidSum hold p`;
+    composed with `fpDist s` gives `fpDistPlus s p`, the exact law X10 bounds.
+  - `fstar_markov_le` — p.55 Markov over the encounter fold (consumes X9's
+    conclusion as hypothesis `hbound`; `∑ iid·encVal = encExpect` is rfl).
+  - `pathSum` API (`_cons`, `_head`, `_succ_of_lt`, `_of_ge`) + fold invariants
+    (`encFold_pos`, `encFold_count_le`, `encFold_banked_le`, `encFold_cumWhite`).
+- PINNED (4 sorries; **judge ratification requested**, paper anchors in docstrings):
+  - `estar_union_le` (X11a, p.54 bottom): Σ_{p≤T} X10 at s'=⌈4^A(1+p)³⌉ ≤ C·A²·4^{−A};
+    assembly of `triangle_encounter_le` through `iid_pathSum_law` + Σ(1+p)^{−2} ≤ 2 +
+    geometric; no new analysis.
+  - `deterministic_encounter_claim` (X11b, p.55 — **THE crux next lap**): outside E∗,
+    ≤K whites and staying g-deep force the fold count ≥ R within P₀(A,ε,R,K) steps.
+    Plan (docstring): induct on encounter times p_i; barrier after encounter i is the
+    top of a `<4^A(1+p_i)³` triangle → cleared in ≤⌈2·4^A(1+p_i)³/3⌉ steps (heights
+    ≥3/step, (7.11) extent ≤ s_Δ/log2); then a black point occurs within K+2 steps
+    (white/black complementarity at phase point, deep-in-strip); encStep triggers at
+    the first one. P₀ = R-fold iterate of p ↦ p+⌈2·4^A(1+p)³⌉+K+2.
+  - `few_whites_le` (X11c, (7.56)): the join; K = ⌈10A/epsBW³⌉ whites among T+1
+    positions + col<0.9m event; R := ⌈(K+(A+3)log10+2)/ε⌉ makes fold-reaches-R ⊆ F∗
+    via `encFold_banked_le`; NB the fold counts whites at offsets p+1 while the
+    master iterate counts p — off-by-one absorbed by K+1.
+  - `Q_black_edge_case3_assembled` (X11d): mechanical ℝ≥0∞→ℝ bookkeeping;
+    `Q_le_damped_iter` + `Q_le_Qm` + col tail (`fpDistPlus_col_tail` at D≈0.05m,
+    s/4 ≤ 0.79(m+2) from (7.52)) + `few_whites_le` (weights ≤ m^A / 10^A).
+- Gotchas: `open scoped Classical in` goes BEFORE the docstring; `rw [tsum_congr ...]`
+  underdetermined — use term-level `(tsum_congr ...).trans`; rewriting a numeral `1`
+  that also occurs as `Fin (T+1)` index breaks motives — prove a `pathSum_head`
+  lemma without `Fin.cons` in the statement; `PMF.pure_apply` if-condition is
+  `d = 0` (use `if_neg hd`, not `Ne.symm`).
+
+
 ## Lap 59: **X10b PROVED** — `encounter_separated_sum` axiom-clean (+ statement fix)
 
 - **STATEMENT FIX (needs judge re-ratification)**: added regime hypothesis
