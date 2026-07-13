@@ -474,6 +474,406 @@ theorem fstar_markov_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε :
         rw [hEE]
         gcongr
 
+/-! ### Machinery for the deterministic claim (7.67) -/
+
+/-- The first coordinate of any `hold`-atom is at least `1` (support form of
+`hold_zero_of_fst_zero`): the walk's column strictly advances every step. -/
+theorem hold_support_fst_ge (d : ℕ × ℤ) (hd : d ∈ hold.support) : 1 ≤ d.1 := by
+  by_contra h
+  exact (PMF.mem_support_iff _ _).mp hd (hold_zero_of_fst_zero (by omega))
+
+/-- The fold state after the first `p` steps of the walk `v` (the paper's
+stopped state at time `p`). -/
+noncomputable def encFoldAt {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
+    (q₀ : ℕ × ℤ) {T : ℕ} (v : Fin T → ℕ × ℤ) (p : ℕ) : EncState :=
+  ((List.ofFn v).take p).foldl (encStep F R g) (encInit q₀.1 q₀.2)
+
+theorem encFoldAt_zero {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
+    (q₀ : ℕ × ℤ) {T : ℕ} (v : Fin T → ℕ × ℤ) :
+    encFoldAt F R g q₀ v 0 = encInit q₀.1 q₀.2 := rfl
+
+/-- Stepping the stopped state: one more `encStep` at the `p`-th walk step. -/
+theorem encFoldAt_succ {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
+    (q₀ : ℕ × ℤ) {T : ℕ} (v : Fin T → ℕ × ℤ) {p : ℕ} (hp : p < T) :
+    encFoldAt F R g q₀ v (p + 1)
+      = encStep F R g (encFoldAt F R g q₀ v p) (v ⟨p, hp⟩) := by
+  rw [encFoldAt, encFoldAt, List.take_succ,
+    List.getElem?_eq_getElem (by simpa using hp)]
+  simp [List.foldl_append]
+
+/-- At the horizon, the stopped state is the full fold. -/
+theorem encFoldAt_top {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
+    (q₀ : ℕ × ℤ) {T : ℕ} (v : Fin T → ℕ × ℤ) :
+    encFoldAt F R g q₀ v T
+      = (List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2) := by
+  rw [encFoldAt, List.take_of_length_le (by simp)]
+
+/-- The stopped state's position is the start plus the partial sum. -/
+theorem encFoldAt_pos {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
+    (q₀ : ℕ × ℤ) {T : ℕ} (v : Fin T → ℕ × ℤ) (p : ℕ) :
+    (encFoldAt F R g q₀ v p).pos = q₀ + pathSum v p := by
+  rw [encFoldAt, encFold_pos, pathSum]
+  show (q₀.1, q₀.2) + _ = _
+  rfl
+
+/-- The stopped count is monotone in time. -/
+theorem encFoldAt_count_mono {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
+    (q₀ : ℕ × ℤ) {T : ℕ} (v : Fin T → ℕ × ℤ) {p p' : ℕ} (h : p ≤ p') (hp' : p' ≤ T) :
+    (encFoldAt F R g q₀ v p).count ≤ (encFoldAt F R g q₀ v p').count := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  clear h
+  induction k with
+  | zero => simp
+  | succ k IH =>
+    rw [show p + (k + 1) = (p + k) + 1 from rfl,
+      encFoldAt_succ F R g q₀ v (show p + k < T by omega)]
+    exact le_trans (IH (by omega)) (encStep_count_le F R g _ _)
+
+/-- If a step does not change the count, it does not change the barrier
+(the barrier only moves at encounters). -/
+theorem encStep_barrier_of_count_eq {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
+    (σ : EncState) (d : ℕ × ℤ)
+    (h : (encStep F R g σ d).count = σ.count) :
+    (encStep F R g σ d).barrier = σ.barrier := by
+  rw [encStep] at h ⊢
+  split at h
+  · exfalso
+    dsimp only at h
+    omega
+  · rename_i hq
+    rw [dif_neg hq]
+
+/-- If the count is flat over a time window, the barrier is flat too. -/
+theorem encFoldAt_barrier_of_count_eq {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
+    (q₀ : ℕ × ℤ) {T : ℕ} (v : Fin T → ℕ × ℤ) {p p' : ℕ} (h : p ≤ p') (hp' : p' ≤ T)
+    (hcnt : (encFoldAt F R g q₀ v p').count = (encFoldAt F R g q₀ v p).count) :
+    (encFoldAt F R g q₀ v p').barrier = (encFoldAt F R g q₀ v p).barrier := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  clear h
+  induction k with
+  | zero => rfl
+  | succ k IH =>
+    have hpk : p + k < T := by omega
+    have hmono1 := encFoldAt_count_mono F R g q₀ v (show p ≤ p + k by omega)
+      (show p + k ≤ T by omega)
+    have hstep := encStep_count_le F R g (encFoldAt F R g q₀ v (p + k)) (v ⟨p + k, hpk⟩)
+    rw [show p + (k + 1) = (p + k) + 1 from rfl, encFoldAt_succ F R g q₀ v hpk] at hcnt ⊢
+    have hflat : (encStep F R g (encFoldAt F R g q₀ v (p + k)) (v ⟨p + k, hpk⟩)).count
+        = (encFoldAt F R g q₀ v (p + k)).count := by omega
+    rw [encStep_barrier_of_count_eq F R g _ _ hflat]
+    exact IH (by omega) (by omega : (encFoldAt F R g q₀ v (p + k)).count
+      = (encFoldAt F R g q₀ v p).count)
+
+/-- On-support walks advance the column by at least one per step. -/
+theorem pathSum_fst_ge {T : ℕ} (v : Fin T → ℕ × ℤ) (hv : ∀ i, v i ∈ hold.support) :
+    ∀ (p k : ℕ), p + k ≤ T → (pathSum v p).1 + k ≤ (pathSum v (p + k)).1 := by
+  intro p k
+  induction k with
+  | zero => intro _; simp
+  | succ k IH =>
+    intro hk
+    have hpk : p + k < T := by omega
+    rw [show p + (k + 1) = (p + k) + 1 from rfl, pathSum_succ_of_lt v hpk]
+    have h1 := hold_support_fst_ge _ (hv ⟨p + k, hpk⟩)
+    have h2 := IH (by omega)
+    show (pathSum v p).1 + (k + 1) ≤ (pathSum v (p + k)).1 + (v ⟨p + k, hpk⟩).1
+    omega
+
+/-- On-support walks gain at least `3` height per step. -/
+theorem pathSum_snd_ge {T : ℕ} (v : Fin T → ℕ × ℤ) (hv : ∀ i, v i ∈ hold.support) :
+    ∀ (p k : ℕ), p + k ≤ T → (pathSum v p).2 + 3 * k ≤ (pathSum v (p + k)).2 := by
+  intro p k
+  induction k with
+  | zero => intro _; simp
+  | succ k IH =>
+    intro hk
+    have hpk : p + k < T := by omega
+    rw [show p + (k + 1) = (p + k) + 1 from rfl, pathSum_succ_of_lt v hpk]
+    have h1 := hold_support_snd_ge _ (hv ⟨p + k, hpk⟩)
+    have h2 := IH (by omega)
+    show (pathSum v p).2 + 3 * ((k : ℤ) + 1) ≤ (pathSum v (p + k)).2 + (v ⟨p + k, hpk⟩).2
+    push_cast at h2 ⊢
+    linarith
+
+/-- An in-strip position (`1 ≤ q₁ ≤ n/2`) outside the white strip is black at
+its phase point (`white = ¬ black` complementarity). -/
+theorem black_of_notMem_whiteStrip {n ξ : ℕ} {q : ℕ × ℤ} (h1 : 1 ≤ q.1)
+    (h2 : q.1 ≤ n / 2) (h : q ∉ whiteStrip n ξ) : black n ξ (q.1 - 1) q.2 := by
+  by_contra hb
+  exact h ⟨h2, h1, hb⟩
+
+/-- The (7.11) height extent of a triangle: any member sits within `s/log 2`
+of the top (drop the nonnegative column term of the defining inequality). -/
+theorem triangle_top_le {j₀ : ℕ} {l₀ : ℤ} {s : ℝ} {q : ℕ × ℤ}
+    (hq : q ∈ triangle j₀ l₀ s) : ((l₀ - q.2 : ℤ) : ℝ) * Real.log 2 ≤ s := by
+  obtain ⟨hj, hl, hlin⟩ := hq
+  have hj' : (j₀ : ℝ) ≤ (q.1 : ℝ) := by exact_mod_cast hj
+  have hcol : (0 : ℝ) ≤ ((q.1 : ℝ) - j₀) * Real.log 9 :=
+    mul_nonneg (by linarith) (Real.log_nonneg (by norm_num))
+  push_cast
+  linarith
+
+open scoped Classical in
+/-- **The barrier envelope**: along a path satisfying the depth and small-size
+hypotheses, the fold's barrier never exceeds the current height by more than
+`2·4^A(1+p)³` — the barrier is either the vacuous start height or the top of a
+small triangle containing a recent position ((7.11) extent + `log 2 > 1/2`). -/
+theorem encFoldAt_barrier_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
+    (q₀ : ℕ × ℤ) {T : ℕ} (v : Fin T → ℕ × ℤ) (hv : ∀ i, v i ∈ hold.support)
+    (A : ℝ) (hA : 0 ≤ A)
+    (hsmall : ∀ p, p ≤ T → ∀ t ∈ F.T,
+      ((q₀ + pathSum v p).1 - 1, (q₀ + pathSum v p).2) ∈ triangle t.1 t.2.1 t.2.2 →
+      t.2.2 < (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3) :
+    ∀ p, p ≤ T →
+      (((encFoldAt F R g q₀ v p).barrier : ℝ))
+        ≤ ((q₀.2 + (pathSum v p).2 : ℤ) : ℝ) + 2 * (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 := by
+  have h4A : (1 : ℝ) ≤ (4 : ℝ) ^ A := Real.one_le_rpow (by norm_num) hA
+  intro p
+  induction p with
+  | zero =>
+    intro _
+    have hb : (encFoldAt F R g q₀ v 0).barrier = q₀.2 := rfl
+    have hz : (pathSum v 0).2 = 0 := by simp
+    rw [hb, hz]
+    push_cast
+    nlinarith
+  | succ p IH =>
+    intro hp1
+    have hp : p ≤ T := by omega
+    have hplt : p < T := by omega
+    rw [encFoldAt_succ F R g q₀ v hplt]
+    -- height grows, and the (1+p)³ envelope grows
+    have hgrow : ((q₀.2 + (pathSum v p).2 : ℤ) : ℝ) + 2 * (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3
+        ≤ ((q₀.2 + (pathSum v (p + 1)).2 : ℤ) : ℝ)
+          + 2 * (4 : ℝ) ^ A * (1 + ((p + 1 : ℕ) : ℝ)) ^ 3 := by
+      have hht := pathSum_snd_ge v hv p 1 (by omega)
+      have hp0 : (0 : ℝ) ≤ (p : ℝ) := Nat.cast_nonneg p
+      have hcube : (1 + (p : ℝ)) ^ 3 ≤ (1 + ((p + 1 : ℕ) : ℝ)) ^ 3 := by
+        push_cast
+        nlinarith
+      have h2A : (0 : ℝ) ≤ 2 * (4 : ℝ) ^ A := by linarith
+      have := mul_le_mul_of_nonneg_left hcube h2A
+      have hht' : ((pathSum v p).2 : ℝ) + 3 ≤ ((pathSum v (p + 1)).2 : ℝ) := by
+        exact_mod_cast hht
+      have hhtR : ((q₀.2 + (pathSum v p).2 : ℤ) : ℝ)
+          ≤ ((q₀.2 + (pathSum v (p + 1)).2 : ℤ) : ℝ) := by
+        push_cast
+        linarith
+      calc ((q₀.2 + (pathSum v p).2 : ℤ) : ℝ) + 2 * (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3
+          ≤ ((q₀.2 + (pathSum v (p + 1)).2 : ℤ) : ℝ)
+            + 2 * (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 := by linarith
+        _ ≤ _ := by linarith [this]
+    rw [encStep]
+    split
+    case isTrue hcond =>
+      -- encounter: the new barrier is the covering triangle's top
+      dsimp only
+      set q : ℕ × ℤ := (encFoldAt F R g q₀ v p).pos + v ⟨p, hplt⟩ with hq
+      have hqpos : q = q₀ + pathSum v (p + 1) := by
+        rw [hq, encFoldAt_pos, pathSum_succ_of_lt v hplt, add_assoc]
+      set t := F.coveringTriangle (q.1 - 1, q.2)
+        ⟨show q.1 - 1 + 1 ≤ n / 2 by omega, hcond.2.2.1⟩ with ht
+      have htmem := F.coveringTriangle_mem
+        (q := (q.1 - 1, q.2)) ⟨show q.1 - 1 + 1 ≤ n / 2 by omega, hcond.2.2.1⟩
+      have htcov := F.coveringTriangle_covers
+        (q := (q.1 - 1, q.2)) ⟨show q.1 - 1 + 1 ≤ n / 2 by omega, hcond.2.2.1⟩
+      have htcov' : ((q.1 - 1, q.2) : ℕ × ℤ) ∈ triangle t.1 t.2.1 t.2.2 := htcov
+      have hsize : t.2.2 < (4 : ℝ) ^ A * (1 + ((p : ℝ) + 1)) ^ 3 := by
+        have := hsmall (p + 1) hp1 t htmem (by rw [← hqpos]; exact htcov')
+        push_cast at this ⊢
+        linarith
+      -- (7.11) extent: t.2.1 - q.2 ≤ t.2.2 / log 2 ≤ 2 t.2.2
+      have hext : ((t.2.1 - q.2 : ℤ) : ℝ) * Real.log 2 ≤ t.2.2 :=
+        triangle_top_le (q := (q.1 - 1, q.2)) htcov'
+      have hlog2 : (1 / 2 : ℝ) < Real.log 2 := by
+        have := Real.log_two_gt_d9
+        linarith
+      have htop : ((t.2.1 : ℤ) : ℝ) ≤ (q.2 : ℝ) + 2 * t.2.2 := by
+        rcases le_or_gt t.2.1 q.2 with hle | hgt
+        · have h0 : (0 : ℝ) ≤ t.2.2 := F.size_nonneg t htmem
+          have : ((t.2.1 : ℤ) : ℝ) ≤ ((q.2 : ℤ) : ℝ) := by exact_mod_cast hle
+          push_cast at this ⊢
+          linarith
+        · have hpos : (0 : ℝ) < ((t.2.1 - q.2 : ℤ) : ℝ) := by
+            have : (0 : ℤ) < t.2.1 - q.2 := by omega
+            exact_mod_cast this
+          have hkey := mul_lt_mul_of_pos_left hlog2 hpos
+          push_cast at hext hpos hkey ⊢
+          nlinarith
+      have hq2 : (q.2 : ℝ) = ((q₀.2 + (pathSum v (p + 1)).2 : ℤ) : ℝ) := by
+        rw [hqpos]
+        simp only [Prod.snd_add]
+      have h4Ap : (0 : ℝ) ≤ (4 : ℝ) ^ A * (1 + ((p : ℝ) + 1)) ^ 3 := by positivity
+      calc ((t.2.1 : ℤ) : ℝ) ≤ (q.2 : ℝ) + 2 * t.2.2 := htop
+        _ ≤ (q.2 : ℝ) + 2 * ((4 : ℝ) ^ A * (1 + ((p : ℝ) + 1)) ^ 3) := by linarith
+        _ = ((q₀.2 + (pathSum v (p + 1)).2 : ℤ) : ℝ)
+            + 2 * (4 : ℝ) ^ A * (1 + ((p : ℝ) + 1)) ^ 3 := by rw [hq2]; ring
+        _ ≤ _ := by
+            push_cast
+            linarith
+    case isFalse hcond =>
+      -- no encounter: barrier unchanged, envelope grows
+      exact le_trans (IH hp) hgrow
+
+open scoped Classical in
+/-- **The (7.67) window step**: from any time `p` with room for one window
+`W(p) = ⌈4^A(1+p)³⌉ + K + 2`, the fold's count strictly increases by the end of
+the window — after `⌈4^A(1+p)³⌉ + 1` steps the height has cleared the barrier
+envelope (heights rise ≥ 3/step), and among the following `K+1` positions at
+least one is black (few whites), triggering an encounter. -/
+theorem encFoldAt_count_step {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
+    (q₀ : ℕ × ℤ) (hq₀ : 1 ≤ q₀.1) {T : ℕ} (v : Fin T → ℕ × ℤ)
+    (hv : ∀ i, v i ∈ hold.support) (A : ℝ) (hA : 0 ≤ A) (K : ℕ)
+    (hdepth : ∀ p, p ≤ T → (q₀ + pathSum v p).1 + g ≤ n / 2)
+    (hsmall : ∀ p, p ≤ T → ∀ t ∈ F.T,
+      ((q₀ + pathSum v p).1 - 1, (q₀ + pathSum v p).2) ∈ triangle t.1 t.2.1 t.2.2 →
+      t.2.2 < (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3)
+    (hfew : (Finset.range T).sum
+      (fun p => if q₀ + pathSum v (p + 1) ∈ whiteStrip n ξ then 1 else 0) ≤ K)
+    {p : ℕ} (hp : p + (⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ + K + 2) ≤ T) :
+    (encFoldAt F R g q₀ v p).count + 1
+      ≤ (encFoldAt F R g q₀ v (p + (⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ + K + 2))).count := by
+  set D : ℕ := ⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ with hD
+  set W : ℕ := D + K + 2 with hW
+  by_contra hcon
+  push_neg at hcon
+  -- the count is flat on the whole window
+  have hflat : ∀ r, p ≤ r → r ≤ p + W →
+      (encFoldAt F R g q₀ v r).count = (encFoldAt F R g q₀ v p).count := by
+    intro r h1 h2
+    have hmono1 := encFoldAt_count_mono F R g q₀ v h1 (by omega)
+    have hmono2 := encFoldAt_count_mono F R g q₀ v h2 (by omega)
+    omega
+  -- hence the barrier is frozen at its time-p value
+  have hbar : ∀ r, p ≤ r → r ≤ p + W →
+      (encFoldAt F R g q₀ v r).barrier = (encFoldAt F R g q₀ v p).barrier := by
+    intro r h1 h2
+    exact encFoldAt_barrier_of_count_eq F R g q₀ v h1 (by omega) (hflat r h1 h2)
+  -- the barrier envelope at time p
+  have henv := encFoldAt_barrier_le F R g q₀ v hv A hA hsmall p (by omega)
+  -- heights beyond p + D clear the barrier
+  have hclear : ∀ r, p + D + 1 ≤ r → r ≤ p + W →
+      (encFoldAt F R g q₀ v p).barrier < (q₀ + pathSum v r).2 := by
+    intro r h1 h2
+    have hht := pathSum_snd_ge v hv p (r - p) (by omega)
+    rw [show p + (r - p) = r from by omega] at hht
+    have hDge : ((4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3) ≤ (D : ℝ) :=
+      Nat.le_ceil _
+    have h4Apos : (0 : ℝ) ≤ (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 := by positivity
+    -- real comparison, then descend to ℤ
+    have hstrict : (((encFoldAt F R g q₀ v p).barrier : ℤ) : ℝ)
+        < (((q₀ + pathSum v r).2 : ℤ) : ℝ) := by
+      have hrp : (D : ℝ) + 1 ≤ ((r - p : ℕ) : ℝ) := by
+        have : D + 1 ≤ r - p := by omega
+        exact_mod_cast this
+      have hht' : ((pathSum v p).2 : ℝ) + 3 * ((r - p : ℕ) : ℝ)
+          ≤ ((pathSum v r).2 : ℝ) := by exact_mod_cast hht
+      have hh2 : ((q₀.2 + (pathSum v p).2 : ℤ) : ℝ) + 3 * ((r - p : ℕ) : ℝ)
+          ≤ (((q₀ + pathSum v r).2 : ℤ) : ℝ) := by
+        have hr2 : (q₀ + pathSum v r).2 = q₀.2 + (pathSum v r).2 := rfl
+        rw [hr2]
+        push_cast
+        linarith
+      calc (((encFoldAt F R g q₀ v p).barrier : ℤ) : ℝ)
+          ≤ ((q₀.2 + (pathSum v p).2 : ℤ) : ℝ)
+            + 2 * (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 := henv
+        _ < ((q₀.2 + (pathSum v p).2 : ℤ) : ℝ) + 3 * ((D : ℝ) + 1) := by nlinarith
+        _ ≤ ((q₀.2 + (pathSum v p).2 : ℤ) : ℝ) + 3 * ((r - p : ℕ) : ℝ) := by linarith
+        _ ≤ _ := hh2
+    exact_mod_cast hstrict
+  -- among the K+1 window positions p+D+1 .. p+D+K+1 one is non-white
+  have hpigeon : ∃ r, p + D + 1 ≤ r ∧ r ≤ p + D + K + 1 ∧
+      q₀ + pathSum v r ∉ whiteStrip n ξ := by
+    by_contra hall
+    push_neg at hall
+    -- all K+1 positions white ⇒ the total white count exceeds K
+    have hone : ∀ i ∈ Finset.range (K + 1),
+        (if q₀ + pathSum v (p + D + i + 1) ∈ whiteStrip n ξ then 1 else 0) = 1 := by
+      intro i hi
+      simp only [Finset.mem_range] at hi
+      exact if_pos (hall (p + D + i + 1) (by omega) (by omega))
+    have hsub : (Finset.range (K + 1)).sum
+        (fun i => if q₀ + pathSum v (p + D + i + 1) ∈ whiteStrip n ξ then 1 else 0)
+        = K + 1 := by
+      rw [Finset.sum_congr rfl hone, Finset.sum_const, smul_eq_mul, mul_one,
+        Finset.card_range]
+    have hinj : (Finset.range (K + 1)).sum
+        (fun i => if q₀ + pathSum v (p + D + i + 1) ∈ whiteStrip n ξ then 1 else 0)
+        ≤ (Finset.range T).sum
+          (fun r => if q₀ + pathSum v (r + 1) ∈ whiteStrip n ξ then 1 else 0) := by
+      have hmap : (Finset.range (K + 1)).sum
+          (fun i => if q₀ + pathSum v (p + D + i + 1) ∈ whiteStrip n ξ then 1 else 0)
+          = ((Finset.range (K + 1)).image (fun i => p + D + i)).sum
+            (fun r => if q₀ + pathSum v (r + 1) ∈ whiteStrip n ξ then 1 else 0) := by
+        rw [Finset.sum_image (by intro a _ b _ h; simp only [] at h; omega)]
+      rw [hmap]
+      refine Finset.sum_le_sum_of_subset_of_nonneg ?_ (fun _ _ _ => by positivity)
+      intro r hr
+      simp only [Finset.mem_image, Finset.mem_range] at hr ⊢
+      obtain ⟨i, hi, rfl⟩ := hr
+      show p + D + i < T
+      omega
+    omega
+  obtain ⟨r, hr1, hr2, hrblack⟩ := hpigeon
+  -- position r is deep, in-strip, black, above the frozen barrier: encounter
+  have hr0 : 1 ≤ r := by omega
+  have hrT : r ≤ T := by omega
+  have hcol : 1 ≤ (q₀ + pathSum v r).1 := by
+    show 1 ≤ q₀.1 + (pathSum v r).1
+    omega
+  have hdeep := hdepth r hrT
+  have hblack : black n ξ ((q₀ + pathSum v r).1 - 1) (q₀ + pathSum v r).2 :=
+    black_of_notMem_whiteStrip hcol (by omega) hrblack
+  have hbarrier : (encFoldAt F R g q₀ v (r - 1)).barrier < (q₀ + pathSum v r).2 := by
+    rw [hbar (r - 1) (by omega) (by omega)]
+    exact hclear r (by omega) (by omega)
+  -- the encounter fires at step r
+  have hrstep : r - 1 < T := by omega
+  have hposr : (encFoldAt F R g q₀ v (r - 1)).pos + v ⟨r - 1, hrstep⟩
+      = q₀ + pathSum v r := by
+    rw [encFoldAt_pos, add_assoc]
+    congr 1
+    rw [← pathSum_succ_of_lt v hrstep]
+    congr 1
+    omega
+  have hcount : (encFoldAt F R g q₀ v r).count
+      = (encFoldAt F R g q₀ v (r - 1)).count + 1 := by
+    have hstep : encFoldAt F R g q₀ v r
+        = encStep F R g (encFoldAt F R g q₀ v (r - 1)) (v ⟨r - 1, hrstep⟩) := by
+      rw [← encFoldAt_succ F R g q₀ v hrstep]
+      congr 1
+      omega
+    rw [hstep, encStep]
+    rw [dif_pos (by
+      rw [hposr]
+      exact ⟨hcol, hdeep, hblack, hbarrier⟩)]
+  have hflat1 := hflat (r - 1) (by omega) (by omega)
+  have hflat2 := hflat r (by omega) (by omega)
+  omega
+
+/-- The (7.67) window-length iterate: `encWindowIter A K i` is an upper bound on
+the time needed for the fold's count to reach `i` — each window costs
+`⌈4^A(1+p)³⌉ + K + 2` steps starting from its own left endpoint `p`. This is the
+paper's `P = O_{A,ε,R}(1)` horizon threshold. -/
+noncomputable def encWindowIter (A : ℝ) (K : ℕ) : ℕ → ℕ
+  | 0 => 0
+  | i + 1 => encWindowIter A K i
+      + (⌈(4 : ℝ) ^ A * (1 + (encWindowIter A K i : ℝ)) ^ 3⌉₊ + K + 2)
+
+theorem encWindowIter_succ (A : ℝ) (K i : ℕ) :
+    encWindowIter A K (i + 1) = encWindowIter A K i
+      + (⌈(4 : ℝ) ^ A * (1 + (encWindowIter A K i : ℝ)) ^ 3⌉₊ + K + 2) := rfl
+
+theorem encWindowIter_mono (A : ℝ) (K : ℕ) {i j : ℕ} (h : i ≤ j) :
+    encWindowIter A K i ≤ encWindowIter A K j := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  clear h
+  induction k with
+  | zero => simp
+  | succ k IH =>
+    rw [show i + (k + 1) = (i + k) + 1 from rfl, encWindowIter_succ]
+    omega
+
 open scoped Classical in
 /-- **The deterministic claim (7.67)** (paper p.55): a path that (i) stays deep
 in the strip, (ii) never meets a `≥ 4^A(1+p)³`-sized triangle at any time
@@ -513,7 +913,26 @@ theorem deterministic_encounter_claim (n ξ : ℕ) (F : TriangleFamily n ξ)
       ((Finset.range T).sum
         (fun p => if q₀ + pathSum v (p + 1) ∈ whiteStrip n ξ then 1 else 0) ≤ K) →
       R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count := by
-  sorry
+  classical
+  refine ⟨encWindowIter A K R, ?_⟩
+  intro T hT q₀ hq₀ v hv hdepth hsmall hfew
+  -- the iterated window bound reaches count i by time encWindowIter A K i
+  have key : ∀ i, i ≤ R → i ≤ (encFoldAt F R g q₀ v (encWindowIter A K i)).count := by
+    intro i
+    induction i with
+    | zero => intro _; exact Nat.zero_le _
+    | succ i IH =>
+      intro hiR
+      have hle : encWindowIter A K (i + 1) ≤ T :=
+        le_trans (encWindowIter_mono A K hiR) hT
+      have hstep := encFoldAt_count_step (F := F) (R := R) (g := g) q₀ hq₀ v hv A
+        (by linarith) K hdepth hsmall hfew
+        (p := encWindowIter A K i) (by rw [← encWindowIter_succ]; exact hle)
+      rw [← encWindowIter_succ] at hstep
+      exact le_trans (Nat.succ_le_succ (IH (by omega))) hstep
+  have hmono := encFoldAt_count_mono F R g q₀ v hT (le_refl T)
+  rw [encFoldAt_top] at hmono
+  exact le_trans (key R (le_refl R)) hmono
 
 open scoped Classical in
 /-- **The (7.56) core**: over the joint law (first passage at budget `s`, then
