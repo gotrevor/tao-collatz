@@ -3681,6 +3681,224 @@ theorem separated_Gweight_tsum_le {c : ℝ} (hc : 0 < c) :
     _ = ENNReal.ofReal (4 + K * Real.sqrt t / (h : ℝ)) := by
         rw [← ENNReal.ofReal_add (by norm_num) (by positivity)]
 
+/-- **Banded `Gweight` sum engine** (X10b step (iii), lap 59): the envelope
+summed over the UNION of width-`W` bands around a `D`-separated set `S` of
+integer columns is `≤ (2W+1)·(4 + K√t/⌊D/2⌋)`. Injection: a banded column `x`
+remembers its apex `σ(x)` and offset `x − σ(x) ∈ [−⌊W⌋, ⌊W⌋]`; for each fixed
+offset `r`, the shifted set is still `D`-separated and
+`separated_Gweight_tsum_le` (centre `μ − r`) pays for it. -/
+theorem banded_Gweight_tsum_le {c : ℝ} (hc : 0 < c) :
+    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D → ∀ W : ℝ, 1 ≤ W →
+      ∀ S : Set ℤ, (∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)|) →
+      ∑' x : {x : ℤ | ∃ σ ∈ S, |(x : ℝ) - (σ : ℝ)| ≤ W},
+          ENNReal.ofReal (Gweight t (c * (((x : ℤ) : ℝ) - μ)))
+        ≤ ENNReal.ofReal ((2 * W + 1)
+            * (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ))) := by
+  classical
+  obtain ⟨K, hK, hsep_engine⟩ := separated_Gweight_tsum_le hc
+  refine ⟨K, hK, fun t ht μ D hD W hW S hsep => ?_⟩
+  have ht0 : (0 : ℝ) < t := lt_of_lt_of_le one_pos ht
+  have hh1 : 1 ≤ ⌊D / 2⌋₊ := Nat.le_floor (by linarith)
+  have hh0R : (0 : ℝ) < (⌊D / 2⌋₊ : ℝ) := by exact_mod_cast hh1
+  set N : ℕ := ⌊W⌋₊ with hN
+  have hNle : (N : ℝ) ≤ W := Nat.floor_le (by linarith)
+  set U : Set ℤ := {x : ℤ | ∃ σ ∈ S, |(x : ℝ) - (σ : ℝ)| ≤ W} with hU
+  set g : ℤ → ℝ≥0∞ :=
+    fun y => ENNReal.ofReal (Gweight t (c * ((y : ℝ) - μ))) with hg
+  set I : Finset ℤ := Finset.Icc (-(N : ℤ)) (N : ℤ) with hI
+  -- the offset of a banded column from its (chosen) apex lies in `I`
+  have hoff : ∀ x : U, ∃ σ ∈ S, x.1 - σ ∈ I := by
+    rintro ⟨x, σ, hσS, hσx⟩
+    refine ⟨σ, hσS, ?_⟩
+    show x - σ ∈ I
+    rw [hI, Finset.mem_Icc]
+    have h1 : |(x : ℝ) - (σ : ℝ)| ≤ W := hσx
+    have h2 : ((x - σ : ℤ) : ℝ) ≤ W := by
+      push_cast
+      exact le_trans (le_abs_self _) h1
+    have h3 : ((σ - x : ℤ) : ℝ) ≤ W := by
+      push_cast
+      rw [abs_sub_comm] at h1
+      exact le_trans (le_abs_self _) h1
+    have hcast : (N : ℤ) = ⌊W⌋ := by
+      rw [hN]
+      exact Int.natCast_floor_eq_floor (by linarith)
+    have h4 : x - σ ≤ (N : ℤ) := by rw [hcast]; exact Int.le_floor.mpr h2
+    have h5 : σ - x ≤ (N : ℤ) := by rw [hcast]; exact Int.le_floor.mpr h3
+    omega
+  -- injection into apex × offset
+  set ψ : U → S × I := fun x =>
+    ⟨⟨(hoff x).choose, (hoff x).choose_spec.1⟩,
+      ⟨x.1 - (hoff x).choose, (hoff x).choose_spec.2⟩⟩ with hψ
+  have hψinj : Function.Injective ψ := by
+    intro x y hxy
+    have h1 : (ψ x).1.1 = (ψ y).1.1 := by rw [hxy]
+    have h2 : (ψ x).2.1 = (ψ y).2.1 := by rw [hxy]
+    simp only [hψ] at h1 h2
+    exact Subtype.ext (by omega)
+  have hval : ∀ x : U, g x.1 = g ((ψ x).1.1 + (ψ x).2.1) := by
+    intro x
+    simp only [hψ]
+    congr 1
+    omega
+  calc ∑' x : U, g x.1
+      = ∑' x : U, g ((ψ x).1.1 + (ψ x).2.1) := tsum_congr hval
+    _ ≤ ∑' q : S × I, g (q.1.1 + q.2.1) :=
+        ENNReal.tsum_comp_le_tsum_of_injective hψinj
+          (fun q : S × I => g (q.1.1 + q.2.1))
+    _ = ∑' r : I, ∑' σ : S, g (σ.1 + r.1) := by
+        rw [ENNReal.tsum_prod', ENNReal.tsum_comm]
+    _ ≤ ∑' _ : I, ENNReal.ofReal (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ)) := by
+        refine ENNReal.tsum_le_tsum fun r => ?_
+        have hcongr : ∀ σ : S, g (σ.1 + r.1)
+            = ENNReal.ofReal (Gweight t (c * ((σ.1 : ℝ) - (μ - (r.1 : ℝ))))) := by
+          intro σ
+          simp only [hg]
+          congr 2
+          push_cast
+          ring
+        rw [tsum_congr hcongr]
+        exact hsep_engine t ht (μ - (r.1 : ℝ)) D hD S hsep
+    _ = (I.card : ℝ≥0∞) * ENNReal.ofReal (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ)) := by
+        rw [tsum_fintype]
+        simp [Finset.sum_const, nsmul_eq_mul]
+    _ ≤ ENNReal.ofReal ((2 * W + 1)
+          * (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ))) := by
+        have hcard : I.card = 2 * N + 1 := by
+          rw [hI, Int.card_Icc]
+          omega
+        have hcardle : (I.card : ℝ) ≤ 2 * W + 1 := by
+          rw [hcard]
+          push_cast
+          linarith
+        rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (by positivity)]
+        exact ENNReal.ofReal_le_ofReal
+          (mul_le_mul_of_nonneg_right hcardle (by positivity))
+
+/-- **The qualifying apexes are `s'/10`-separated** (X10b step (iv), p.54):
+two DISTINCT family triangles of size `≥ s'` whose lower tips both lie within
+`W` of the reference height `l_Δ` (the (7.65) window) have apex columns
+`≥ s'/10` apart. The witness row `l_* = l_Δ + ⌊s'/2⌋` lies at the apex column
+of each (window + size put the apex above `l_*` and the lower tip below it),
+so `apex_separation` (= Lemma 7.4 disjointness via `not_mem_two`) forces the
+gap `(⌊s'/2⌋ − W)·log 2 / log 9 ≥ s'/10` under `100W ≤ s'`. In particular the
+apex columns are distinct. -/
+theorem qualifying_apex_separated {n ξ : ℕ} (F : TriangleFamily n ξ)
+    (lΔ : ℤ) (s' : ℕ) (W : ℝ) (hW : 1 ≤ W) (hWs : 100 * W ≤ (s' : ℝ)) :
+    ∀ t' ∈ F.T, ∀ t'' ∈ F.T, t' ≠ t'' →
+      (s' : ℝ) ≤ t'.2.2 → |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (lΔ : ℝ)| ≤ W →
+      (s' : ℝ) ≤ t''.2.2 → |(t''.2.1 : ℝ) - t''.2.2 / Real.log 2 - (lΔ : ℝ)| ≤ W →
+      (s' : ℝ) / 10 ≤ |(t'.1 : ℝ) - (t''.1 : ℝ)| := by
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog2lo : (0.6931471803 : ℝ) < Real.log 2 := Real.log_two_gt_d9
+  have hlog2hi : Real.log 2 < 0.6931471808 := Real.log_two_lt_d9
+  have hlog9hi : Real.log 9 < 2.4 := by
+    have h32 : Real.log (3 / 2) ≤ 3 / 2 - 1 :=
+      Real.log_le_sub_one_of_pos (by norm_num)
+    have h3 : Real.log 3 = Real.log 2 + Real.log (3 / 2) := by
+      rw [← Real.log_mul (by norm_num) (by norm_num)]
+      norm_num
+    have h9 : Real.log 9 = 2 * Real.log 3 := by
+      rw [show (9 : ℝ) = 3 ^ 2 by norm_num, Real.log_pow]
+      push_cast
+      ring
+    rw [h9, h3]
+    linarith
+  have hlog9pos : (0 : ℝ) < Real.log 9 := Real.log_pos (by norm_num)
+  -- the asymmetric core: apex_separation at the witness row
+  have core : ∀ t' ∈ F.T, ∀ t'' ∈ F.T, t' ≠ t'' → t'.1 ≤ t''.1 →
+      (s' : ℝ) ≤ t'.2.2 → |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (lΔ : ℝ)| ≤ W →
+      (s' : ℝ) ≤ t''.2.2 → |(t''.2.1 : ℝ) - t''.2.2 / Real.log 2 - (lΔ : ℝ)| ≤ W →
+      (s' : ℝ) / 10 ≤ (t''.1 : ℝ) - (t'.1 : ℝ) := by
+    intro t' ht' t'' ht'' hne hj hs' hw' hs'' hw''
+    have hs'100 : (100 : ℝ) ≤ (s' : ℝ) := le_trans (by linarith) hWs
+    have hfl_le : ((s' / 2 : ℕ) : ℝ) ≤ (s' : ℝ) / 2 := by
+      have := Nat.cast_div_le (m := s') (n := 2) (α := ℝ)
+      push_cast at this
+      linarith
+    have hfl_ge : (s' : ℝ) / 2 - 1 ≤ ((s' / 2 : ℕ) : ℝ) := by
+      have h1 : s' / 2 + s' / 2 + 1 ≥ s' := by omega
+      have h2 : (s' : ℝ) ≤ ((s' / 2 : ℕ) : ℝ) + ((s' / 2 : ℕ) : ℝ) + 1 := by
+        exact_mod_cast h1
+      linarith
+    -- the witness row `l_* = l_Δ + ⌊s'/2⌋` sits below both apexes …
+    have htip : ∀ u : ℕ × ℤ × ℝ, (s' : ℝ) ≤ u.2.2 →
+        |(u.2.1 : ℝ) - u.2.2 / Real.log 2 - (lΔ : ℝ)| ≤ W →
+        (lΔ : ℤ) + ((s' / 2 : ℕ) : ℤ) ≤ u.2.1 := by
+      intro u hsu hwu
+      have h1 : (lΔ : ℝ) + u.2.2 / Real.log 2 - W ≤ (u.2.1 : ℝ) := by
+        have := (abs_le.mp hwu).1
+        linarith
+      have h2 : (s' : ℝ) / Real.log 2 ≤ u.2.2 / Real.log 2 := by gcongr
+      have h3 : (s' : ℝ) * 1.4 ≤ (s' : ℝ) / Real.log 2 := by
+        rw [le_div_iff₀ hlog2]
+        nlinarith [Nat.cast_nonneg (α := ℝ) s', hlog2hi]
+      have h4 : ((lΔ : ℝ) + ((s' / 2 : ℕ) : ℝ)) ≤ (u.2.1 : ℝ) := by
+        nlinarith [hfl_le]
+      have h5 : ((lΔ + ((s' / 2 : ℕ) : ℤ) : ℤ) : ℝ) ≤ (u.2.1 : ℝ) := by
+        rw [Int.cast_add, Int.cast_natCast]
+        linarith
+      exact_mod_cast h5
+    -- … and at t''’s apex column it lies INSIDE t''
+    have hWfl : W ≤ ((s' / 2 : ℕ) : ℝ) := by linarith [hfl_ge]
+    have hmem'' : ((t''.1, lΔ + ((s' / 2 : ℕ) : ℤ)) : ℕ × ℤ)
+        ∈ triangle t''.1 t''.2.1 t''.2.2 := by
+      refine ⟨le_refl _, htip t'' hs'' hw'', ?_⟩
+      have hup : (t''.2.1 : ℝ) ≤ (lΔ : ℝ) + t''.2.2 / Real.log 2 + W := by
+        have := (abs_le.mp hw'').2
+        linarith
+      have hdiff : (t''.2.1 : ℝ) - ((lΔ : ℝ) + ((s' / 2 : ℕ) : ℝ))
+          ≤ t''.2.2 / Real.log 2 := by linarith
+      have hkey : ((t''.2.1 : ℝ) - ((lΔ : ℝ) + ((s' / 2 : ℕ) : ℝ))) * Real.log 2
+          ≤ t''.2.2 := by
+        calc ((t''.2.1 : ℝ) - ((lΔ : ℝ) + ((s' / 2 : ℕ) : ℝ))) * Real.log 2
+            ≤ (t''.2.2 / Real.log 2) * Real.log 2 :=
+              mul_le_mul_of_nonneg_right hdiff hlog2.le
+          _ = t''.2.2 := div_mul_cancel₀ _ hlog2.ne'
+      show ((t''.1 : ℝ) - (t''.1 : ℝ)) * Real.log 9
+          + ((t''.2.1 : ℝ) - ((lΔ + ((s' / 2 : ℕ) : ℤ) : ℤ) : ℝ)) * Real.log 2
+          ≤ t''.2.2
+      rw [Int.cast_add, Int.cast_natCast]
+      have hzero : ((t''.1 : ℝ) - (t''.1 : ℝ)) * Real.log 9 = 0 := by ring
+      linarith [hkey, hzero]
+    -- Lemma 7.4 disjointness at the witness row forces the gap
+    have h765 : (t'.2.1 : ℝ) - ((lΔ : ℤ) : ℝ) ≤ t'.2.2 / Real.log 2 + W := by
+      have := (abs_le.mp hw').2
+      push_cast
+      linarith
+    have hgap := apex_separation F ht' ht'' hne hj
+      (lZ := lΔ) (δ := W) (s' := s') h765 (htip t' hs' hw') hmem''
+    -- numeric extraction: (⌊s'/2⌋ − W)·log 2 ≥ 0.33·s' and (s'/10)·log 9 ≤ 0.24·s'
+    have hs'0 : (0 : ℝ) ≤ (s' : ℝ) := Nat.cast_nonneg _
+    have hcoef : 0.48 * (s' : ℝ) ≤ ((s' / 2 : ℕ) : ℝ) - W := by
+      linarith [hfl_ge]
+    have hB : (s' : ℝ) * 0.33 ≤ (((s' / 2 : ℕ) : ℝ) - W) * Real.log 2 := by
+      have h1 : (0.48 * (s' : ℝ)) * 0.6931471803
+          ≤ (((s' / 2 : ℕ) : ℝ) - W) * Real.log 2 :=
+        mul_le_mul hcoef hlog2lo.le (by norm_num) (by linarith)
+      nlinarith
+    have hA : (s' : ℝ) / 10 * Real.log 9 ≤ (s' : ℝ) * 0.24 := by
+      have h1 : (s' : ℝ) / 10 * Real.log 9 ≤ (s' : ℝ) / 10 * 2.4 :=
+        mul_le_mul_of_nonneg_left hlog9hi.le (by positivity)
+      linarith
+    have hfinal : (s' : ℝ) / 10 * Real.log 9 ≤ ((t''.1 : ℝ) - (t'.1 : ℝ)) * Real.log 9 := by
+      have := hgap
+      nlinarith
+    have := le_of_mul_le_mul_right
+      (by linarith [hfinal] :
+        (s' : ℝ) / 10 * Real.log 9 ≤ ((t''.1 : ℝ) - (t'.1 : ℝ)) * Real.log 9)
+      hlog9pos
+    linarith
+  -- symmetrize
+  intro t' ht' t'' ht'' hne hs' hw' hs'' hw''
+  rcases le_total t'.1 t''.1 with hj | hj
+  · have h := core t' ht' t'' ht'' hne hj hs' hw' hs'' hw''
+    rw [abs_sub_comm, abs_of_nonneg (by linarith)]
+    linarith
+  · have h := core t'' ht'' t' ht' (Ne.symm hne) hj hs'' hw'' hs' hw'
+    rw [abs_of_nonneg (by linarith)]
+    linarith
+
 /-- **X10b — the Σ-separated sum** (paper p.54): the probability that the
 `(k+p)`-step endpoint lands within `W` (in column) of the apex of ANY family
 triangle of size `≥ s'` obeying the (7.65) window `|l_{Δ'} − s_{Δ'}/log 2 − l_Δ| ≤ W`
