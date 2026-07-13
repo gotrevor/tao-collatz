@@ -24,6 +24,7 @@ import TaoCollatz.Sec7.FpLocation
 import TaoCollatz.Sec7.Monotone
 import TaoCollatz.Sec7.BlackEdge
 import TaoCollatz.Sec7.ManyTriangles
+import TaoCollatz.Sec7.Case3
 import TaoCollatz.Sec7.Bridge
 import TaoCollatz.Sec7.Reduction
 import TaoCollatz.Sec7.HoldBasics
