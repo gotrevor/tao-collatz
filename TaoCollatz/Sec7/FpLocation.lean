@@ -563,6 +563,105 @@ theorem fpDist_linear_tail_le_sixteenth (s : ℕ) :
     norm_num
   rwa [h16] at hout
 
+/-- **Sharpened transverse tail for first passage** (the `B ≈ 64` version).  Same
+Chernoff-over-renewal-times argument as `fpDist_linear_tail`, but tilted at the
+*exact*-MGF-admissible `θ = 1/16` (tilt `(1,-5/16)` on `Z = 16j - 5l`) rather than
+the quadratic box's `θ = 1/20000`.  The per-step MGF is bounded by the closed form
+`tiltZ_hold_le_num` (`≤ 76/100 < 1`), so the geometric renewal sum converges and the
+threshold that gives a `≤ 1/16` tail collapses from `4·10⁷` to `64`.  This removes the
+`~10⁶` slack in the (7.50) localization box (node X11, constant `B`). -/
+theorem fpDist_linear_tail_sharp (s : ℕ) (B : ℝ) :
+    (∑' e : ℕ × ℤ,
+      if B ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ) then fpDist s e else 0)
+      ≤ ENNReal.ofReal (Real.exp (-(B / 16)))
+          * ENNReal.ofReal (76 / 100)
+          * (1 - ENNReal.ofReal (76 / 100))⁻¹ := by
+  let cond : ℕ × ℤ → Prop := fun e => B ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+  have hchern : ∀ k : ℕ,
+      (∑' e : ℕ × ℤ, if cond e then iidSum hold (k + 1) e else 0)
+        ≤ ENNReal.ofReal (Real.exp (-(B / 16)))
+            * ENNReal.ofReal (76 / 100) ^ (k + 1) := by
+    intro k
+    exact holdSum_halfspace_le_of_mgf (l1 := 1) (l2 := -5 / 16) (M := 76 / 100)
+      tiltZ_hold_le_num (k + 1) cond (B / 16)
+      (fun e he => by
+        dsimp only [cond] at he
+        push_cast
+        linarith)
+  have hgeom :
+      (∑' k : ℕ, ENNReal.ofReal (Real.exp (-(B / 16)))
+          * ENNReal.ofReal (76 / 100) ^ (k + 1))
+        = ENNReal.ofReal (Real.exp (-(B / 16)))
+            * ENNReal.ofReal (76 / 100)
+            * (1 - ENNReal.ofReal (76 / 100))⁻¹ := by
+    rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric_add_one]
+    ac_rfl
+  calc
+    (∑' e : ℕ × ℤ, if B ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+        then fpDist s e else 0)
+        ≤ ∑' e : ℕ × ℤ, if cond e then stepMass e else 0 := by
+          refine ENNReal.tsum_le_tsum fun e => ?_
+          by_cases he : cond e
+          · rw [if_pos he, if_pos he]
+            exact fpDist_le_stepMass s e
+          · rw [if_neg he, if_neg he]
+    _ = ∑' k : ℕ, ∑' e : ℕ × ℤ,
+          if cond e then iidSum hold (k + 1) e else 0 := by
+          rw [ENNReal.tsum_comm]
+          refine tsum_congr fun e => ?_
+          by_cases he : cond e
+          · rw [if_pos he]
+            simp_rw [if_pos he]
+            exact rfl
+          · rw [if_neg he]
+            simp_rw [if_neg he]
+            exact (tsum_zero : (∑' _ : ℕ, (0 : ℝ≥0∞)) = 0).symm
+    _ ≤ ∑' k : ℕ, ENNReal.ofReal (Real.exp (-(B / 16)))
+          * ENNReal.ofReal (76 / 100) ^ (k + 1) :=
+        ENNReal.tsum_le_tsum hchern
+    _ = _ := hgeom
+
+/-- A sharp numerical instance of `fpDist_linear_tail_sharp` at `B = 64`: the
+first-passage transverse tail past `16j - 5l = 64` has mass `≤ 1/16`.  This is the
+`4·10⁷ → 64` replacement for `fpDist_linear_tail_le_sixteenth`; it is certified from
+the exact closed-form `Hold` MGF (`tiltZ_hold_le_num`), still with no dependence on
+the existential constants of `fpDist_location_bound`. -/
+theorem fpDist_linear_tail_le_sixteenth_sharp (s : ℕ) :
+    (∑' e : ℕ × ℤ,
+      if (64 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+        then fpDist s e else 0) ≤ (1 : ℝ≥0∞) / 16 := by
+  refine (fpDist_linear_tail_sharp s 64).trans ?_
+  have h4 : (2.7182818283 : ℝ) ^ 4 ≤ Real.exp 4 := by
+    have he : Real.exp 4 = Real.exp 1 ^ 4 := by rw [← Real.exp_nat_mul]; norm_num
+    rw [he]
+    exact pow_le_pow_left₀ (by norm_num) (le_of_lt Real.exp_one_gt_d9) 4
+  have h5 : (1000 / 19 : ℝ) ≤ Real.exp 4 := le_trans (by norm_num) h4
+  have he4 : Real.exp (-(64 / 16 : ℝ)) ≤ 19 / 1000 := by
+    rw [show (-(64 / 16 : ℝ)) = -(4 : ℝ) from by norm_num, Real.exp_neg]
+    calc (Real.exp 4)⁻¹ ≤ ((1000 / 19 : ℝ))⁻¹ := inv_anti₀ (by norm_num) h5
+      _ = 19 / 1000 := by norm_num
+  have hreal : Real.exp (-(64 / 16 : ℝ)) * (76 / 100) * (1 - 76 / 100)⁻¹ ≤ 1 / 16 := by
+    rw [show ((1 : ℝ) - 76 / 100)⁻¹ = 100 / 24 from by norm_num]
+    nlinarith [he4, (Real.exp_pos (-(64 / 16 : ℝ))).le]
+  have hrewrite :
+      ENNReal.ofReal (Real.exp (-(64 / 16 : ℝ))) * ENNReal.ofReal (76 / 100)
+          * (1 - ENNReal.ofReal (76 / 100))⁻¹
+        = ENNReal.ofReal
+            (Real.exp (-(64 / 16 : ℝ)) * (76 / 100) * (1 - 76 / 100)⁻¹) := by
+    have hsub : (1 : ℝ≥0∞) - ENNReal.ofReal (76 / 100)
+        = ENNReal.ofReal (1 - 76 / 100) := by
+      rw [show (1 : ℝ≥0∞) = ENNReal.ofReal 1 from ENNReal.ofReal_one.symm,
+        ← ENNReal.ofReal_sub 1 (by norm_num)]
+    rw [hsub, ← ENNReal.ofReal_inv_of_pos (by norm_num),
+      ← ENNReal.ofReal_mul (Real.exp_pos _).le,
+      ← ENNReal.ofReal_mul (by positivity)]
+  rw [hrewrite]
+  have hout := ENNReal.ofReal_le_ofReal hreal
+  have h16 : ENNReal.ofReal (1 / 16 : ℝ) = (1 : ℝ≥0∞) / 16 := by
+    rw [ENNReal.ofReal_div_of_pos (by norm_num : (0 : ℝ) < 16)]
+    norm_num
+  rwa [h16] at hout
+
 /-- Partial geometric sums are bounded by `(1-r)⁻¹`. -/
 theorem sum_range_geom_le {r : ℝ} (h0 : 0 ≤ r) (h1 : r < 1) (N : ℕ) :
     ∑ m ∈ Finset.range N, r ^ m ≤ (1 - r)⁻¹ := by

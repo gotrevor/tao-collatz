@@ -301,6 +301,44 @@ theorem holdSum_halfspace_le {l1 l2 : ℝ}
         rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, sub_eq_add_neg,
           add_comm (-a)]
 
+/-- **Large-tilt half-space Chernoff bound.**  Same Markov-under-tilt argument as
+`holdSum_halfspace_le`, but taking the `Hold` MGF bound `Z ≤ e^M` (here a NUMERIC
+`ofReal M`) as a hypothesis instead of the quadratic box `tiltZ_hold_le_quad` —
+this lets the tilt live *outside* the `|λ| ≤ 1/200` box (the exact closed-form MGF
+`tiltZ_hold_le_num` is finite up to `θ ≈ 0.213`).  Finiteness of the partition
+function comes from the bound itself.  The `4·10⁷ → 64` sharpening of the (7.50)
+localization runs through this lemma. -/
+theorem holdSum_halfspace_le_of_mgf {l1 l2 M : ℝ}
+    (hZle : tiltZ hold (expW2 l1 l2) ≤ ENNReal.ofReal M)
+    (n : ℕ) (cond : ℕ × ℤ → Prop) [DecidablePred cond] (a : ℝ)
+    (hcond : ∀ d : ℕ × ℤ, cond d → a ≤ l1 * d.1 + l2 * d.2) :
+    (∑' d : ℕ × ℤ, if cond d then (iidSum hold n) d else 0)
+      ≤ ENNReal.ofReal (Real.exp (-a)) * ENNReal.ofReal M ^ n := by
+  have hZ0 := tiltZ_hold_ne_zero l1 l2
+  have hZt : tiltZ hold (expW2 l1 l2) ≠ ∞ :=
+    ne_top_of_le_ne_top ENNReal.ofReal_ne_top hZle
+  have hM : (∑' d : ℕ × ℤ, if cond d then (iidSum hold n) d else 0)
+      ≤ ENNReal.ofReal (Real.exp (-a)) * tiltZ hold (expW2 l1 l2) ^ n := by
+    rw [← tiltZ_iidSum hold (expW2_zero l1 l2) (expW2_add l1 l2) hZ0 hZt n, tiltZ,
+      ← ENNReal.tsum_mul_left]
+    refine ENNReal.tsum_le_tsum fun d => ?_
+    split_ifs with h
+    · have hw : ENNReal.ofReal (Real.exp a) ≤ expW2 l1 l2 d := by
+        simp only [expW2]
+        exact ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr (hcond d h))
+      calc (iidSum hold n) d
+          = ENNReal.ofReal (Real.exp (-a))
+              * (ENNReal.ofReal (Real.exp a) * (iidSum hold n) d) := by
+            rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add,
+              neg_add_cancel, Real.exp_zero, ENNReal.ofReal_one, one_mul]
+        _ ≤ ENNReal.ofReal (Real.exp (-a))
+              * ((iidSum hold n) d * expW2 l1 l2 d) := by
+            rw [mul_comm (ENNReal.ofReal (Real.exp a))]
+            gcongr
+    · exact bot_le
+  refine le_trans hM ?_
+  gcongr
+
 /-- **Lemma 2.2(ii) for `Hold`** (paper p.42 / p.15): the 2-D tail bound
 `P(|Hold_{[1,n]} − n(4,16)| ≥ λ) ≪ G_n(cλ)`; witnesses `c = 1/400`, `C = 4`.
 Direct Chernoff: the sup-norm tail is covered by four sign-pattern half-spaces,

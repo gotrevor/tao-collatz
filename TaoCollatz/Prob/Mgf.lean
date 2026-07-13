@@ -1,5 +1,6 @@
 import TaoCollatz.Prob.Tilt
 import TaoCollatz.Sec7.Holding
+import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # Moment generating functions of the d=1 renewal laws (node S3, step (F2))
@@ -876,5 +877,196 @@ theorem tiltZ_hold_le_quad {l1 l2 : ℝ}
           sq_nonneg (l1 * l2), mul_nonneg (mul_nonneg hb1 hb2) (sq_nonneg l2),
           mul_nonneg (mul_nonneg hb3 hb4) (sq_nonneg l1)]
     _ = ENNReal.ofReal Q ^ 2 := ENNReal.ofReal_pow hQ0 2
+
+/-! ### Exact `Hold` MGF closed form and a large-tilt numeric bound (node X11, `B`)
+
+The tail-localization constant `B` of `fpDist_linear_tail` was `4·10⁷` only because
+the shipped bound clamps the tilt at `θ = 1/20000` (the `holdSum_halfspace_le` box).
+The *exact* `Hold` MGF has a closed form (`tiltZ_hold_closed`, generalizing the two
+coordinate forms `tiltZ_hold_fst`/`tiltZ_hold_snd`), finite up to `θ ≈ 0.213`. At the
+tilt `(l1,l2) = (1, -5/16)` — i.e. `θ = 1/16` on `Z = 16j - 5l` — the MGF is
+`< 0.76 < 1`, which is what lets the geometric renewal sum converge with `B ≈ 64`
+instead of `4·10⁷`. -/
+
+/-- **Exact `Hold` MGF closed form** (general tilt). Conditioning on the `Geom(4)`
+draw `k` and summing the resulting geometric series in `ℝ≥0∞`:
+`Z(l₁,l₂) = (e^{l₁+3l₂}/4)·(1 - (3/4)·e^{l₁}·Z_{ne3}(l₂))⁻¹`. Valid whenever
+`Z_{ne3}(l₂)` is finite (both sides are `∞` past the convergence strip). -/
+theorem tiltZ_hold_closed {l1 l2 : ℝ}
+    (hZt : tiltZ pascalNe3 (expW l2) ≠ ∞) :
+    tiltZ hold (expW2 l1 l2)
+      = ENNReal.ofReal (Real.exp (l1 + 3 * l2) / 4)
+          * (1 - ENNReal.ofReal (3 * Real.exp l1 / 4)
+              * tiltZ pascalNe3 (expW l2))⁻¹ := by
+  have hZ0 := tiltZ_pascalNe3_ne_zero l2
+  rw [tiltZ_hold_factor l1 l2 hZ0 hZt]
+  have hterm : ∀ k : ℕ, geomQuarter k
+        * (ENNReal.ofReal (Real.exp (l1 * k + 3 * l2))
+          * (tiltZ pascalNe3 (expW l2)) ^ (k - 1))
+      = if k = 0 then 0
+        else ENNReal.ofReal (Real.exp (l1 + 3 * l2) / 4)
+          * (ENNReal.ofReal (3 * Real.exp l1 / 4)
+              * tiltZ pascalNe3 (expW l2)) ^ (k - 1) := by
+    intro k
+    match k with
+    | 0 =>
+      rw [show geomQuarter 0 = 0 from rfl, zero_mul]
+      simp
+    | (j + 1) =>
+      rw [if_neg (Nat.succ_ne_zero j), Nat.add_sub_cancel,
+        show geomQuarter (j + 1) = 4⁻¹ * (3 * 4⁻¹) ^ j from by
+          rw [show geomQuarter (j + 1)
+              = if (j + 1) = 0 then 0 else 4⁻¹ * (3 * 4⁻¹) ^ ((j + 1) - 1) from rfl,
+            if_neg (by omega), Nat.add_sub_cancel]]
+      have hsplit : ENNReal.ofReal (Real.exp (l1 * (j + 1 : ℕ) + 3 * l2))
+          = ENNReal.ofReal (Real.exp (l1 + 3 * l2))
+            * ENNReal.ofReal (Real.exp l1) ^ j := by
+        rw [← ENNReal.ofReal_pow (Real.exp_pos _).le,
+          ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_nat_mul, ← Real.exp_add]
+        congr 2
+        push_cast
+        ring
+      rw [hsplit]
+      have hnum : (4⁻¹ : ℝ≥0∞) * ENNReal.ofReal (Real.exp (l1 + 3 * l2))
+          = ENNReal.ofReal (Real.exp (l1 + 3 * l2) / 4) := by
+        rw [show (4⁻¹ : ℝ≥0∞) = ENNReal.ofReal (1 / 4) from by
+            rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_one,
+              ENNReal.ofReal_ofNat, one_div],
+          ← ENNReal.ofReal_mul (by norm_num)]
+        congr 1
+        ring
+      have hrat : ((3 : ℝ≥0∞) * 4⁻¹) * ENNReal.ofReal (Real.exp l1)
+          = ENNReal.ofReal (3 * Real.exp l1 / 4) := by
+        rw [show ((3 : ℝ≥0∞) * 4⁻¹) = ENNReal.ofReal (3 / 4) from by
+            rw [show (4⁻¹ : ℝ≥0∞) = ENNReal.ofReal (1 / 4) from by
+                rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_one,
+                  ENNReal.ofReal_ofNat, one_div],
+              show ((3 : ℝ≥0∞)) = ENNReal.ofReal 3 from (ENNReal.ofReal_ofNat 3).symm,
+              ← ENNReal.ofReal_mul (by norm_num)]
+            norm_num,
+          ← ENNReal.ofReal_mul (by norm_num)]
+        congr 1
+        ring
+      calc (4⁻¹ : ℝ≥0∞) * (3 * 4⁻¹) ^ j
+            * (ENNReal.ofReal (Real.exp (l1 + 3 * l2))
+                * ENNReal.ofReal (Real.exp l1) ^ j
+                * (tiltZ pascalNe3 (expW l2)) ^ j)
+          = (4⁻¹ * ENNReal.ofReal (Real.exp (l1 + 3 * l2)))
+            * (((3 * 4⁻¹) * ENNReal.ofReal (Real.exp l1))
+                * tiltZ pascalNe3 (expW l2)) ^ j := by
+            rw [mul_pow, mul_pow]
+            ring
+        _ = ENNReal.ofReal (Real.exp (l1 + 3 * l2) / 4)
+            * (ENNReal.ofReal (3 * Real.exp l1 / 4)
+                * tiltZ pascalNe3 (expW l2)) ^ j := by
+            rw [hnum, hrat]
+  rw [tsum_congr hterm, tsum_ite_zero_eq_succ
+    (fun k => ENNReal.ofReal (Real.exp (l1 + 3 * l2) / 4)
+      * (ENNReal.ofReal (3 * Real.exp l1 / 4)
+          * tiltZ pascalNe3 (expW l2)) ^ (k - 1))]
+  simp only [Nat.add_sub_cancel]
+  rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric]
+
+/-- **Large-tilt numeric bound on the `pascalNe3` MGF** at `λ = -5/16`:
+`Z_{ne3}(-5/16) ≤ 314/1000`. Atom-split of `tiltZ_pascalNe3_add`, with the
+`Geom(2)` factor bounded through the exact `e^{-5/16} ≤ 0.7318` and the removed
+`b=3` atom bounded below through `e^{-15/16} ≥ 0.3915` (both from
+`Real.exp_bound`). Feeds the large-tilt `Hold` MGF bound `tiltZ_hold_le_num`. -/
+theorem tiltZ_pascalNe3_le_num :
+    tiltZ pascalNe3 (expW (-5 / 16)) ≤ ENNReal.ofReal (314 / 1000) := by
+  have hlam_up : Real.exp (-5 / 16) ≤ 7318 / 10000 := by
+    have h := Real.exp_bound (x := -5 / 16)
+      (by rw [abs_le]; constructor <;> norm_num) (n := 6) (by norm_num)
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+    norm_num [Nat.factorial] at h
+    rw [abs_le] at h; nlinarith [h.1, h.2]
+  have h3lam_lo : (3915 / 10000 : ℝ) ≤ Real.exp (-15 / 16) := by
+    have h := Real.exp_bound (x := -15 / 16)
+      (by rw [abs_le]; constructor <;> norm_num) (n := 7) (by norm_num)
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+    norm_num [Nat.factorial] at h
+    rw [abs_le] at h; nlinarith [h.1, h.2]
+  have hexp2 : Real.exp (-5 / 16) < 2 := by nlinarith [Real.exp_pos (-5 / 16 : ℝ)]
+  -- `Geom(2)` factor: closed form ≤ ofReal((3659/10000)/(1-3659/10000))
+  have hgh : tiltZ geomHalf (expW (-5 / 16))
+      ≤ ENNReal.ofReal ((3659 / 10000) / (1 - 3659 / 10000)) := by
+    rw [tiltZ_geomHalf]
+    exact geom_closed_le (by positivity) (by linarith) (by norm_num)
+  have hZp : tiltZ pascal (expW (-5 / 16))
+      ≤ ENNReal.ofReal (((3659 / 10000) / (1 - 3659 / 10000)) ^ 2) := by
+    rw [tiltZ_pascal hexp2, ENNReal.ofReal_pow (by norm_num)]
+    exact pow_le_pow_left' hgh 2
+  -- removed `b=3` atom, bounded below
+  have he3 : ENNReal.ofReal ((1 / 3) * (3915 / 10000)) ≤ 3⁻¹ * expW (-5 / 16) 3 := by
+    rw [expW, show ((3 : ℝ≥0∞))⁻¹ = ENNReal.ofReal (1 / 3) from by
+        rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_one,
+          ENNReal.ofReal_ofNat, one_div],
+      ← ENNReal.ofReal_mul (by norm_num)]
+    apply ENNReal.ofReal_le_ofReal
+    have harg : (-5 / 16 : ℝ) * (3 : ℕ) = -15 / 16 := by push_cast; ring
+    rw [harg]
+    nlinarith [h3lam_lo]
+  have hfin : (3 : ℝ≥0∞)⁻¹ * expW (-5 / 16) 3 ≠ ∞ :=
+    ENNReal.mul_ne_top (by finiteness) ENNReal.ofReal_ne_top
+  have hmain : tiltZ pascalNe3 (expW (-5 / 16)) + 3⁻¹ * expW (-5 / 16) 3
+      ≤ ENNReal.ofReal (314 / 1000) + 3⁻¹ * expW (-5 / 16) 3 := by
+    rw [tiltZ_pascalNe3_add (-5 / 16)]
+    calc (4 / 3 : ℝ≥0∞) * tiltZ pascal (expW (-5 / 16))
+        ≤ (4 / 3 : ℝ≥0∞) * ENNReal.ofReal (((3659 / 10000) / (1 - 3659 / 10000)) ^ 2) := by
+          gcongr
+      _ = ENNReal.ofReal ((4 / 3) * (((3659 / 10000) / (1 - 3659 / 10000)) ^ 2)) := by
+          rw [show (4 / 3 : ℝ≥0∞) = ENNReal.ofReal (4 / 3) from by
+              rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_ofNat,
+                ENNReal.ofReal_ofNat],
+            ← ENNReal.ofReal_mul (by norm_num)]
+      _ ≤ ENNReal.ofReal (314 / 1000) + ENNReal.ofReal ((1 / 3) * (3915 / 10000)) := by
+          rw [← ENNReal.ofReal_add (by norm_num) (by norm_num)]
+          exact ENNReal.ofReal_le_ofReal (by norm_num)
+      _ ≤ ENNReal.ofReal (314 / 1000) + 3⁻¹ * expW (-5 / 16) 3 := by gcongr
+  exact (ENNReal.add_le_add_iff_right hfin).mp hmain
+
+/-- **Large-tilt numeric bound on the `Hold` MGF** at the tilt `(l₁,l₂)=(1,-5/16)`
+(i.e. `θ = 1/16` on `Z = 16j - 5l`): `Z_hold ≤ 76/100 < 1`.  Via the exact closed
+form `tiltZ_hold_closed`, with `e^1 ≤ 2.7182818286` (`exp_one_lt_d9`),
+`e^{1/16} ≤ 1.0645` (`Real.exp_bound`), and the pascalNe3 bound
+`tiltZ_pascalNe3_le_num`; the geometric-series ratio is `≈ 0.640 < 1`.  This is the
+quantitative heart of the sharpened localization constant `B ≈ 64` (vs `4·10⁷`). -/
+theorem tiltZ_hold_le_num :
+    tiltZ hold (expW2 1 (-5 / 16)) ≤ ENNReal.ofReal (76 / 100) := by
+  have hZt : tiltZ pascalNe3 (expW (-5 / 16)) ≠ ∞ :=
+    ne_top_of_le_ne_top ENNReal.ofReal_ne_top tiltZ_pascalNe3_le_num
+  rw [tiltZ_hold_closed hZt]
+  have hnum_up : Real.exp (1 + 3 * (-5 / 16)) ≤ 10645 / 10000 := by
+    have harg : (1 + 3 * (-5 / 16) : ℝ) = 1 / 16 := by norm_num
+    rw [harg]
+    have h := Real.exp_bound (x := 1 / 16)
+      (by rw [abs_le]; constructor <;> norm_num) (n := 6) (by norm_num)
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+    norm_num [Nat.factorial] at h
+    rw [abs_le] at h; nlinarith [h.1, h.2]
+  have he1_up : Real.exp 1 ≤ 2.7182818286 := le_of_lt Real.exp_one_lt_d9
+  set rval : ℝ := (3 * 2.7182818286 / 4) * (314 / 1000) with hrval
+  have hrval1 : rval < 1 := by rw [hrval]; norm_num
+  have hS : ENNReal.ofReal (3 * Real.exp 1 / 4) * tiltZ pascalNe3 (expW (-5 / 16))
+      ≤ ENNReal.ofReal rval := by
+    have h1 : ENNReal.ofReal (3 * Real.exp 1 / 4)
+        ≤ ENNReal.ofReal (3 * 2.7182818286 / 4) := ENNReal.ofReal_le_ofReal (by linarith)
+    calc ENNReal.ofReal (3 * Real.exp 1 / 4) * tiltZ pascalNe3 (expW (-5 / 16))
+        ≤ ENNReal.ofReal (3 * 2.7182818286 / 4) * ENNReal.ofReal (314 / 1000) :=
+          mul_le_mul' h1 tiltZ_pascalNe3_le_num
+      _ = ENNReal.ofReal rval := by
+          rw [← ENNReal.ofReal_mul (by norm_num), hrval]
+  calc ENNReal.ofReal (Real.exp (1 + 3 * (-5 / 16)) / 4)
+        * (1 - ENNReal.ofReal (3 * Real.exp 1 / 4)
+            * tiltZ pascalNe3 (expW (-5 / 16)))⁻¹
+      ≤ ENNReal.ofReal (Real.exp (1 + 3 * (-5 / 16)) / 4)
+          * (1 - ENNReal.ofReal rval)⁻¹ := by
+        gcongr
+    _ ≤ ENNReal.ofReal ((10645 / 10000 / 4) / (1 - rval)) := by
+        exact frac_closed_le (a := Real.exp (1 + 3 * (-5 / 16)) / 4)
+          (a' := 10645 / 10000 / 4) (r := rval) (r' := rval)
+          (by positivity) (by linarith) (le_of_lt (by rw [hrval]; positivity))
+          le_rfl hrval1
+    _ ≤ ENNReal.ofReal (76 / 100) := ENNReal.ofReal_le_ofReal (by rw [hrval]; norm_num)
 
 end TaoCollatz
