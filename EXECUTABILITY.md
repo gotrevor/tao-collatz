@@ -159,8 +159,8 @@ unchanged, but its truth at the frozen ε is no longer judge-believed).
   `fpDist_white_exit`, `Q_black_edge_case2`, `Q_black_edge_case3`) +
   ManyTriangles ×3 (`triangle_encounter_le` X10 headline = X10b + glue,
   `encounter_separated_sum` X10b, `fpDist_any_triangle_le` ⛔blocked).
-- **X10b pre-authorization armed (pass 19)**: the committed lap-58 pin lacks the
-  regime hypothesis `(s')² ≤ 1+s` and is false without it (`s' ≫ √s`: the
+- **X10b pre-authorization DISCHARGED (pass 19 addendum)**: `ae0918c` landed the fix character-exact — X10b statement RATIFIED. (History: the committed lap-58 pin lacked the
+  regime hypothesis and was false without it —
   centre band alone carries ≍W/√(1+s)). The in-flight lap-59 fix (statement +
   hypothesis + docstring, seen uncommitted at pass time) is ratified-on-landing
   via character diff; any other edit shape = full re-ratification.

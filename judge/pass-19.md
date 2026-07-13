@@ -79,3 +79,12 @@ KB): `tao_collatz` agrees with Math Inc's independent FormalQualBench rendering
 uniformity — Tao's own wording); Series β's "Korec-strength" label corrected
 (Remark 5.1 = log density, un-optimized `θ > 1/α`; Korec = natural density +
 optimized θ — never claim ccchallenge's Korec entry).
+
+## ADDENDUM (same night, ~00:50 EDT Jul 13): X10b re-pin LANDED — pre-authorization DISCHARGED ✅
+
+`ae0918c` commits the fix character-exact to the pre-authorized shape: the
+lap-58 statement + exactly the one hypothesis line `((s' : ℝ)) ^ 2 ≤ 1 + (s : ℝ)`
+(verified against the full committed decl). **X10b `encounter_separated_sum` is
+RATIFIED** (p.54 argument in its honest regime; consumer-safety verified in the
+main pass). The commit also proves two separated-sum engines
+(`tsum_int_Gweight_le` + sibling) — dated runs at the lap-59 boundary.
