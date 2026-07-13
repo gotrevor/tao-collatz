@@ -3388,6 +3388,299 @@ theorem encounter_apex_proximity :
     · linarith only [hlow, hAp25]
     · linarith only [hup]
 
+/-- **ℤ-row `Gweight` engine** (X10b step (i), lap 59): the X6 envelope summed
+over ALL integer columns is `≤ K·√t`, uniformly in the real centre `μ`. Fold
+the negative axis onto ℕ (`Gweight` is even) and pay with
+`sum_range_Gweight_le` once per side. Stated in `ℝ≥0∞` (no summability side
+conditions), matching the (7.61)-tail glue pattern. -/
+theorem tsum_int_Gweight_le {c : ℝ} (hc : 0 < c) :
+    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ,
+      ∑' y : ℤ, ENNReal.ofReal (Gweight t (c * ((y : ℝ) - μ)))
+        ≤ ENNReal.ofReal (K * Real.sqrt t) := by
+  obtain ⟨K, hK, hrow⟩ := sum_range_Gweight_le hc
+  refine ⟨2 * K, by linarith, fun t ht μ => ?_⟩
+  have ht0 : (0 : ℝ) < t := lt_of_lt_of_le one_pos ht
+  set g : ℤ → ℝ≥0∞ := fun y => ENNReal.ofReal (Gweight t (c * ((y : ℝ) - μ)))
+    with hg
+  -- fold ℤ onto ℕ ⊕ ℕ via `n ↦ n` / `n ↦ -1 - n`
+  set i : ℕ ⊕ ℕ → ℤ := Sum.elim (fun n => (n : ℤ)) (fun n => -1 - (n : ℤ)) with hi
+  have hisurj : Function.Surjective i := by
+    intro y
+    rcases le_or_gt 0 y with hy | hy
+    · exact ⟨Sum.inl y.toNat, by simp [hi, Int.toNat_of_nonneg hy]⟩
+    · refine ⟨Sum.inr (-1 - y).toNat, ?_⟩
+      have h1 : (0 : ℤ) ≤ -1 - y := by omega
+      simp only [hi, Sum.elim_inr, Int.toNat_of_nonneg h1]
+      omega
+  have hsplit : ∑' y : ℤ, g y ≤ ∑' x : ℕ ⊕ ℕ, g (i x) :=
+    ENNReal.tsum_le_tsum_comp_of_surjective hisurj g
+  have hsum : ∑' x : ℕ ⊕ ℕ, g (i x)
+      = (∑' n : ℕ, g (i (Sum.inl n))) + ∑' n : ℕ, g (i (Sum.inr n)) :=
+    Summable.tsum_sum ENNReal.summable ENNReal.summable
+  -- one-sided ℕ engine, uniform in the centre
+  have hside : ∀ ν : ℝ, ∑' n : ℕ, ENNReal.ofReal (Gweight t (c * ((n : ℝ) - ν)))
+      ≤ ENNReal.ofReal (K * Real.sqrt t) := by
+    intro ν
+    refine ENNReal.tsum_le_of_sum_range_le fun N => ?_
+    rw [← ENNReal.ofReal_sum_of_nonneg (fun n _ => Gweight_nonneg _ _)]
+    exact ENNReal.ofReal_le_ofReal (hrow t ht ν N)
+  have hl : ∑' n : ℕ, g (i (Sum.inl n)) ≤ ENNReal.ofReal (K * Real.sqrt t) := by
+    simpa [hg, hi] using hside μ
+  have hr : ∑' n : ℕ, g (i (Sum.inr n)) ≤ ENNReal.ofReal (K * Real.sqrt t) := by
+    have hev : ∀ n : ℕ, g (i (Sum.inr n))
+        = ENNReal.ofReal (Gweight t (c * ((n : ℝ) - (-1 - μ)))) := by
+      intro n
+      simp only [hg, hi, Sum.elim_inr]
+      congr 1
+      rw [← Gweight_abs t (c * (((-1 - (n : ℤ) : ℤ) : ℝ) - μ)),
+        ← Gweight_abs t (c * ((n : ℝ) - (-1 - μ)))]
+      congr 1
+      push_cast
+      rw [show c * (-1 - (n : ℝ) - μ) = -(c * ((n : ℝ) - (-1 - μ))) by ring,
+        abs_neg]
+    rw [tsum_congr hev]
+    exact hside (-1 - μ)
+  calc ∑' y : ℤ, g y ≤ _ := hsplit
+    _ = _ := hsum
+    _ ≤ ENNReal.ofReal (K * Real.sqrt t) + ENNReal.ofReal (K * Real.sqrt t) :=
+        add_le_add hl hr
+    _ = ENNReal.ofReal (2 * K * Real.sqrt t) := by
+        rw [← ENNReal.ofReal_add (by positivity) (by positivity)]; ring_nf
+    _ = ENNReal.ofReal (2 * K * Real.sqrt t) := rfl
+
+/-- **Separated-set `Gweight` engine** (X10b step (ii), p.54, lap 59): the X6
+envelope summed over a `D`-separated set `S` of integer columns is
+`≤ 4 + K·√t/⌊D/2⌋`, uniformly in the real centre `μ`. At most one element of
+`S` sits within `D` of the centre on each side (each worth `Gweight ≤ 2` —
+the `4`); every farther element dominates the block of `⌊D/2⌋` integer
+columns between it and the centre (`Gweight` is even and antitone in
+`|·−μ|`), the blocks are pairwise disjoint, and `tsum_int_Gweight_le` pays
+for all of them at once. This is the p.54 "summing and using the `≫ s'`-
+separated nature of `Σ`" step. -/
+theorem separated_Gweight_tsum_le {c : ℝ} (hc : 0 < c) :
+    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D →
+      ∀ S : Set ℤ, (∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)|) →
+      ∑' σ : S, ENNReal.ofReal (Gweight t (c * (((σ : ℤ) : ℝ) - μ)))
+        ≤ ENNReal.ofReal (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ)) := by
+  obtain ⟨K, hK, hrowZ⟩ := tsum_int_Gweight_le hc
+  refine ⟨K, hK, fun t ht μ D hD S hsep => ?_⟩
+  have ht0 : (0 : ℝ) < t := lt_of_lt_of_le one_pos ht
+  set h : ℕ := ⌊D / 2⌋₊ with hhdef
+  have hh1 : 1 ≤ h := Nat.le_floor (by linarith)
+  have hhle : (h : ℝ) ≤ D / 2 := Nat.floor_le (by linarith)
+  have hh0R : (0 : ℝ) < (h : ℝ) := by exact_mod_cast hh1
+  set g : ℤ → ℝ≥0∞ :=
+    fun y => ENNReal.ofReal (Gweight t (c * ((y : ℝ) - μ))) with hg
+  -- the envelope never exceeds 2
+  have hgle2 : ∀ y : ℤ, g y ≤ ENNReal.ofReal 2 := by
+    intro y
+    refine ENNReal.ofReal_le_ofReal ?_
+    rw [Gweight]
+    have e1 : Real.exp (-(c * ((y : ℝ) - μ)) ^ 2 / t) ≤ 1 := by
+      rw [Real.exp_le_one_iff]
+      exact div_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr (sq_nonneg _)) ht0.le
+    have e2 : Real.exp (-|c * ((y : ℝ) - μ)|) ≤ 1 := by
+      rw [Real.exp_le_one_iff]
+      exact neg_nonpos.mpr (abs_nonneg _)
+    linarith
+  -- the argument-normalised form: Gweight at `c·(y−μ)` equals Gweight at `c·|y−μ|`
+  have habs : ∀ y : ℤ, Gweight t (c * ((y : ℝ) - μ))
+      = Gweight t (c * |(y : ℝ) - μ|) := by
+    intro y
+    rw [← Gweight_abs t (c * ((y : ℝ) - μ)), abs_mul, abs_of_pos hc]
+  -- split into near (< D from centre) and far (≥ D)
+  set near : Set ℤ := {σ ∈ S | |(σ : ℝ) - μ| < D} with hnear
+  set far : Set ℤ := {σ ∈ S | D ≤ |(σ : ℝ) - μ|} with hfar
+  have hcover : S ⊆ near ∪ far := by
+    intro σ hσ
+    rcases lt_or_ge (|(σ : ℝ) - μ|) D with h' | h'
+    · exact Or.inl ⟨hσ, h'⟩
+    · exact Or.inr ⟨hσ, h'⟩
+  have hsplit : ∑' σ : S, g σ ≤ (∑' σ : near, g σ) + ∑' σ : far, g σ :=
+    le_trans (ENNReal.tsum_mono_subtype g hcover) (ENNReal.tsum_union_le g near far)
+  -- NEAR: at most one element on each side of the centre
+  have hnear_le : ∑' σ : near, g σ ≤ ENNReal.ofReal 4 := by
+    set ι : near → Bool := fun σ => decide ((σ.1 : ℝ) < μ) with hι
+    have hιinj : Function.Injective ι := by
+      intro σ σ' heq
+      by_contra hne
+      have hne' : σ.1 ≠ σ'.1 := fun h' => hne (Subtype.ext h')
+      have hd := hsep σ.1 σ.2.1 σ'.1 σ'.2.1 hne'
+      have h1 := abs_lt.mp σ.2.2
+      have h2 := abs_lt.mp σ'.2.2
+      simp only [hι, decide_eq_decide] at heq
+      have hlt : |(σ.1 : ℝ) - σ'.1| < D := by
+        rcases lt_or_ge ((σ.1 : ℝ)) μ with hs | hs
+        · have hs' : ((σ'.1 : ℝ)) < μ := heq.mp hs
+          rw [abs_lt]
+          constructor <;> linarith [h1.1, h1.2, h2.1, h2.2]
+        · have hs' : μ ≤ (σ'.1 : ℝ) := by
+            by_contra hcon
+            push_neg at hcon
+            exact absurd (heq.mpr hcon) (not_lt.mpr hs)
+          rw [abs_lt]
+          constructor <;> linarith [h1.1, h1.2, h2.1, h2.2]
+      linarith
+    have hle : ∀ σ : near, g σ.1 ≤ (fun _ : Bool => ENNReal.ofReal 2) (ι σ) :=
+      fun σ => hgle2 σ.1
+    have h1 : ∑' σ : near, g σ ≤ ∑' _ : Bool, ENNReal.ofReal 2 :=
+      ENNReal.summable.tsum_le_tsum_of_inj ι hιinj (fun _ _ => zero_le) hle
+        ENNReal.summable
+    calc ∑' σ : near, g σ ≤ ∑' _ : Bool, ENNReal.ofReal 2 := h1
+      _ = ENNReal.ofReal 2 + ENNReal.ofReal 2 := by
+          rw [tsum_fintype]
+          simp [two_mul]
+      _ = ENNReal.ofReal 4 := by
+          rw [← ENNReal.ofReal_add (by norm_num) (by norm_num)]
+          norm_num
+  -- FAR: each element donates a disjoint block of `h` columns toward the centre
+  have hfar_le : ∑' σ : far, g σ ≤ ENNReal.ofReal (K * Real.sqrt t) / (h : ℝ≥0∞) := by
+    have hne0 : (h : ℝ≥0∞) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+    rw [ENNReal.le_div_iff_mul_le (Or.inl hne0) (Or.inl (ENNReal.natCast_ne_top h))]
+    -- (∑' far g) * h = ∑' over far × Fin h
+    have hmul : (∑' σ : far, g σ) * (h : ℝ≥0∞)
+        = ∑' p : far × Fin h, g p.1.1 := by
+      rw [ENNReal.tsum_mul_right.symm]
+      rw [ENNReal.tsum_prod']
+      congr 1
+      funext σ
+      rw [tsum_fintype]
+      simp [Finset.sum_const, nsmul_eq_mul, mul_comm]
+    rw [hmul]
+    -- the block map
+    set e : far × Fin h → ℤ := fun p =>
+      if (p.1.1 : ℝ) < μ then p.1.1 + (p.2.1 + 1) else p.1.1 - (p.2.1 + 1) with he
+    -- block elements stay strictly on their side, at distance ≥ D/2 …
+    have hside : ∀ p : far × Fin h,
+        (((p.1.1 : ℝ) < μ → (e p : ℝ) ≤ μ - D / 2 ∧ (p.1.1 : ℝ) < (e p : ℝ))
+          ∧ (μ ≤ (p.1.1 : ℝ) → μ + D / 2 ≤ (e p : ℝ) ∧ (e p : ℝ) < (p.1.1 : ℝ))) := by
+      intro p
+      have hk1 : (1 : ℝ) ≤ (p.2.1 : ℝ) + 1 := by
+        have : (0 : ℝ) ≤ (p.2.1 : ℝ) := Nat.cast_nonneg _
+        linarith
+      have hkh : (p.2.1 : ℝ) + 1 ≤ (h : ℝ) := by
+        have : p.2.1 + 1 ≤ h := p.2.2
+        exact_mod_cast this
+      have hdist := p.1.2.2
+      constructor
+      · intro hlt
+        have habs' : μ - (p.1.1 : ℝ) ≥ D := by
+          have := p.1.2.2
+          rw [abs_sub_comm] at this
+          rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ μ - p.1.1)] at this
+          linarith
+        have hee : (e p : ℝ) = (p.1.1 : ℝ) + ((p.2.1 : ℝ) + 1) := by
+          simp only [he, if_pos hlt]
+          push_cast
+          ring
+        rw [hee]
+        constructor <;> linarith
+      · intro hge
+        have habs' : (p.1.1 : ℝ) - μ ≥ D := by
+          have := p.1.2.2
+          rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ (p.1.1 : ℝ) - μ)] at this
+          linarith
+        have hee : (e p : ℝ) = (p.1.1 : ℝ) - ((p.2.1 : ℝ) + 1) := by
+          simp only [he, if_neg (not_lt.mpr hge)]
+          push_cast
+          ring
+        rw [hee]
+        constructor <;> linarith
+    -- … so the envelope at the block element dominates
+    have hdom : ∀ p : far × Fin h, g p.1.1 ≤ g (e p) := by
+      intro p
+      refine ENNReal.ofReal_le_ofReal ?_
+      rw [habs p.1.1, habs (e p)]
+      refine Gweight_anti ht0 (by positivity) ?_
+      refine mul_le_mul_of_nonneg_left ?_ hc.le
+      rcases lt_or_ge ((p.1.1 : ℝ)) μ with hlt | hge
+      · obtain ⟨h1, h2⟩ := (hside p).1 hlt
+        rw [abs_of_nonpos (by linarith : (e p : ℝ) - μ ≤ 0),
+          abs_of_nonpos (by linarith : (p.1.1 : ℝ) - μ ≤ 0)]
+        linarith
+      · obtain ⟨h1, h2⟩ := (hside p).2 hge
+        rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ (e p : ℝ) - μ),
+          abs_of_nonneg (by linarith : (0:ℝ) ≤ (p.1.1 : ℝ) - μ)]
+        linarith
+    -- … and the blocks are pairwise disjoint
+    have heinj : Function.Injective e := by
+      intro p q heq
+      have hpq : (e p : ℝ) = (e q : ℝ) := by exact_mod_cast congrArg Int.cast heq
+      rcases lt_or_ge ((p.1.1 : ℝ)) μ with hp | hp <;>
+        rcases lt_or_ge ((q.1.1 : ℝ)) μ with hq | hq
+      · -- both left: same block ⇒ same σ (separation kills σ ≠ σ'), then same k
+        have hep : e p = p.1.1 + (p.2.1 + 1) := by simp only [he, if_pos hp]
+        have heq' : e q = q.1.1 + (q.2.1 + 1) := by simp only [he, if_pos hq]
+        by_cases hσ : p.1.1 = q.1.1
+        · have hk : (p.2.1 : ℤ) = q.2.1 := by
+            rw [hep, heq', hσ] at heq; omega
+          have : p.2 = q.2 := Fin.ext (by exact_mod_cast hk)
+          exact Prod.ext (Subtype.ext hσ) this
+        · exfalso
+          have hd := hsep p.1.1 p.1.2.1 q.1.1 q.1.2.1 hσ
+          have : |(p.1.1 : ℝ) - q.1.1| < D := by
+            have h1 : (p.2.1 : ℝ) + 1 ≤ (h : ℝ) := by exact_mod_cast p.2.2
+            have h2 : (q.2.1 : ℝ) + 1 ≤ (h : ℝ) := by exact_mod_cast q.2.2
+            have hpq' : (p.1.1 : ℝ) + ((p.2.1 : ℝ) + 1)
+                = (q.1.1 : ℝ) + ((q.2.1 : ℝ) + 1) := by
+              rw [hep] at heq
+              rw [heq'] at heq
+              exact_mod_cast congrArg Int.cast heq
+            rw [abs_lt]
+            constructor <;> nlinarith [Nat.cast_nonneg (α := ℝ) p.2.1,
+              Nat.cast_nonneg (α := ℝ) q.2.1]
+          linarith
+      · -- left/right: block values on strict opposite sides of μ
+        exfalso
+        obtain ⟨h1, _⟩ := (hside p).1 hp
+        obtain ⟨h3, _⟩ := (hside q).2 hq
+        rw [hpq] at h1
+        linarith
+      · exfalso
+        obtain ⟨h1, _⟩ := (hside p).2 hp
+        obtain ⟨h3, _⟩ := (hside q).1 hq
+        rw [← hpq] at h3
+        linarith
+      · -- both right
+        have hep : e p = p.1.1 - (p.2.1 + 1) := by
+          simp only [he, if_neg (not_lt.mpr hp)]
+        have heq' : e q = q.1.1 - (q.2.1 + 1) := by
+          simp only [he, if_neg (not_lt.mpr hq)]
+        by_cases hσ : p.1.1 = q.1.1
+        · have hk : (p.2.1 : ℤ) = q.2.1 := by
+            rw [hep, heq', hσ] at heq; omega
+          have : p.2 = q.2 := Fin.ext (by exact_mod_cast hk)
+          exact Prod.ext (Subtype.ext hσ) this
+        · exfalso
+          have hd := hsep p.1.1 p.1.2.1 q.1.1 q.1.2.1 hσ
+          have : |(p.1.1 : ℝ) - q.1.1| < D := by
+            have h1 : (p.2.1 : ℝ) + 1 ≤ (h : ℝ) := by exact_mod_cast p.2.2
+            have h2 : (q.2.1 : ℝ) + 1 ≤ (h : ℝ) := by exact_mod_cast q.2.2
+            have hpq' : (p.1.1 : ℝ) - ((p.2.1 : ℝ) + 1)
+                = (q.1.1 : ℝ) - ((q.2.1 : ℝ) + 1) := by
+              rw [hep] at heq
+              rw [heq'] at heq
+              exact_mod_cast congrArg Int.cast heq
+            rw [abs_lt]
+            constructor <;> nlinarith [Nat.cast_nonneg (α := ℝ) p.2.1,
+              Nat.cast_nonneg (α := ℝ) q.2.1]
+          linarith
+    calc ∑' p : far × Fin h, g p.1.1
+        ≤ ∑' p : far × Fin h, g (e p) := ENNReal.tsum_le_tsum hdom
+      _ ≤ ∑' y : ℤ, g y := ENNReal.tsum_comp_le_tsum_of_injective heinj g
+      _ ≤ ENNReal.ofReal (K * Real.sqrt t) := hrowZ t ht μ
+  -- assemble
+  have hdiv : ENNReal.ofReal (K * Real.sqrt t) / (h : ℝ≥0∞)
+      = ENNReal.ofReal (K * Real.sqrt t / (h : ℝ)) := by
+    rw [ENNReal.ofReal_div_of_pos hh0R, ENNReal.ofReal_natCast]
+  calc ∑' σ : S, g σ ≤ (∑' σ : near, g σ) + ∑' σ : far, g σ := hsplit
+    _ ≤ ENNReal.ofReal 4 + ENNReal.ofReal (K * Real.sqrt t) / (h : ℝ≥0∞) :=
+        add_le_add hnear_le hfar_le
+    _ = ENNReal.ofReal 4 + ENNReal.ofReal (K * Real.sqrt t / (h : ℝ)) := by
+        rw [hdiv]
+    _ = ENNReal.ofReal (4 + K * Real.sqrt t / (h : ℝ)) := by
+        rw [← ENNReal.ofReal_add (by norm_num) (by positivity)]
+
 /-- **X10b — the Σ-separated sum** (paper p.54): the probability that the
 `(k+p)`-step endpoint lands within `W` (in column) of the apex of ANY family
 triangle of size `≥ s'` obeying the (7.65) window `|l_{Δ'} − s_{Δ'}/log 2 − l_Δ| ≤ W`
@@ -3400,13 +3693,25 @@ bands are `≥ s'/10`-spaced, and summing the `fpDistPlus` column marginal
 (`fpDist_col_le` ⋆ `p` Hold steps — the row engine `sum_range_Gweight_le` is
 uniform in the centre, so the `Hold` drift shifts cost nothing) over an
 `s'/10`-spaced family of bands gives `≪ (2W+1)/(s'/10) ≪ W/s'`.
-OPEN (node X10, statement pinned lap 58). -/
+
+STATEMENT FIX (lap 59, needs re-ratification): added the regime hypothesis
+`(s')² ≤ 1 + s`. The paper's p.54 sum argument needs it — the band nearest the
+Gaussian centre alone carries column mass `≍ W/√(1+s)` (density `1/√(1+s)`
+times `2W+1` columns), which is `≤ C₃W/s'` ONLY when `s' ≲ √s`; for
+`s' ≫ √(1+s)` a single qualifying triangle near the mean column falsifies the
+pinned bound. The paper gets this regime for free from its standing hypotheses
+`s' ≤ m^{0.4}` and `s ≥ m/log²m` (p.52: `s'² ≤ m^{0.8} ≤ m/log²m ≤ s` once
+`log²m ≤ m^{0.2}`, i.e. `m` beyond a threshold absorbed into `S₀`); the
+consumer `triangle_encounter_le` carries exactly those hypotheses, so the fix
+is consumer-safe.
+OPEN (node X10, statement pinned lap 58, regime hypothesis added lap 59). -/
 theorem encounter_separated_sum :
     ∃ C₃ > (0 : ℝ), ∃ S₀ : ℕ, ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
         (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
       ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S₀ ≤ s →
       ∀ (p s' : ℕ) (W : ℝ), 1 ≤ W → 100 * W ≤ (s' : ℝ) →
+      ((s' : ℝ)) ^ 2 ≤ 1 + (s : ℝ) →
       ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
           * Set.indicator {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
               ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
