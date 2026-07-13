@@ -145,6 +145,37 @@ private theorem fnat_succ_initVec {n : ℕ} (a : Fin (n + 1) → ℕ) :
   rw [h1, pow_succ]
   ring
 
+/-- The integerified affine offset is odd for every nonempty positive valuation vector. -/
+theorem fnat_mod_two_of_pos {n : ℕ} (a : Fin n → ℕ) (ha : ∀ i, 1 ≤ a i) :
+    fnat n a % 2 = if n = 0 then 0 else 1 := by
+  induction n with
+  | zero => simp [fnat]
+  | succ n ih =>
+      rw [fnat_succ_initVec]
+      have hb : ∀ i, 1 ≤ initVec a i := fun i => ha i.castSucc
+      have hpre : n ≤ pre (initVec a) n := by
+        unfold pre
+        calc
+          n = ∑ _i ∈ Finset.range n, 1 := by simp
+          _ ≤ ∑ i ∈ Finset.range n,
+              if h : i < n then initVec a ⟨i, h⟩ else 0 := by
+            apply Finset.sum_le_sum
+            intro i hi
+            rw [Finset.mem_range] at hi
+            rw [dif_pos hi]
+            exact hb ⟨i, hi⟩
+      rw [if_neg (by omega), Nat.add_mod, Nat.mul_mod, ih (initVec a) hb]
+      by_cases hn : n = 0
+      · subst n
+        simp [pre]
+      · rw [if_neg hn]
+        have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hn
+        have hpow : 2 ^ pre (initVec a) n % 2 = 0 := by
+          obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le (le_trans hn1 hpre)
+          rw [hk, pow_add]
+          norm_num
+        rw [hpow]
+
 private theorem padicValNat_two_eq_of_mul_odd {x k q : ℕ} (h : 2 ^ k * q = x)
     (hq : q % 2 = 1) : padicValNat 2 x = k := by
   have hx : x ≠ 0 := by

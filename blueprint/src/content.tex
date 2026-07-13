@@ -300,7 +300,7 @@ Lemma~1.12 (Euler's theorem plus a geometric-series normalization
 \end{definition}
 
 \begin{proposition}[Valuation \(\approx\) geometric; Prop 1.9 and the §4 tail bound]\label{C5}
-  \lean{valuation_dist}
+  \lean{valuation_dist, valuation_tail, unifOddMod, valVec_pos}
   \uses{C2, S2}
   \leanok
 \textbf{Proposition 1.9.}  There are \(c_1,C>0\) such that for all \(n,n'\) and every law
@@ -313,8 +313,33 @@ modulo \(2^{n'}\), provided \((2+c_0)n\le n'\),
 I.e.\ the Syracuse valuation vector of an equidistributed-mod-\(2^{n'}\) input is
 exponentially close to \(n\) independent geometric variables.  Includes the §4 tail bound
 Lemma~4.1 controlling \(\mathbb{P}(a_{[1,n]}\ge n')\).
-\lapsrisk{10--18}{medium}{80\%}
+\textbf{COMPLETE (judge pass 22, 2026-07-13).}  \texttt{valuation\_dist} (Prop 1.9) and
+\texttt{valuation\_tail} (Lemma 4.1) proved by an external Codex session and
+judge-verified: pinned statements character-untouched (constituent
+\texttt{unifOddMod} body unchanged; statements re-read vs Prop 1.9 p.7 / Lemma 4.1
+p.22 --- the \(\forall c_0,K\,\exists c_1,C\) quantifier structure matches the paper's
+``constants may depend on \(c_0\)'' exactly).  The tail proof consumed the
+long-parked (1.10) hole \texttt{PMF.abs\_expect\_indicator\_sub\_le\_dTV}
+(Prob/Basic), caught by the dated axiom run and discharged by the judge same pass.
+Dated runs 2026-07-13 on both headliners + \texttt{valVec\_pos},
+\texttt{fnat\_mod\_two\_of\_pos}, \texttt{unifOddMod\_map\_valVec\_apply},
+\texttt{truncated\_val\_dTV\_le}, \texttt{PMF.dTV\_map\_le} --- all exactly
+\([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\).
 \end{proposition}
+\begin{proof}
+  \leanok
+  Route (paper §4, with one sound reordering): the event
+  \(\vec a^{(n)}(N) = \vec a\) is classified as a single residue of \(N\) modulo
+  \(2^{a_{[1,n]}+1}\) (via Lemma 2.1, node~\ref{C2}); pushing the
+  equidistribution hypothesis through the truncation \(2^{n'} \to 2^{|a|+1}\)
+  (data processing, \texttt{PMF.dTV\_map\_le}) matches the truncated valuation
+  law with \(\mathrm{Geom}(2)^{\otimes n}\) exactly below level \(n'\); the
+  overflow \(|a| \ge n'\) is controlled on the geometric side by the S2 tail
+  engine.  Lemma 4.1 is then \emph{derived} from Prop 1.9 plus the geometric
+  tail (reverse of the paper's order --- sound and non-circular, since
+  \(\mathbb{P}_P(E) \le \mathbb{P}_Q(E) + d_{\mathrm{TV}}(P,Q)\) via the
+  now-proved (1.10)).
+\end{proof}
 
 
 \chapter{First passage, stabilization, and the main theorem}\label{chp:mainthm}

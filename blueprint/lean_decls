@@ -36,6 +36,9 @@ AlmostAllOdd
 syracZ
 syracZ_map_cast
 valuation_dist
+valuation_tail
+unifOddMod
+valVec_pos
 tao_collatz
 tao_collatz_quantitative
 passes

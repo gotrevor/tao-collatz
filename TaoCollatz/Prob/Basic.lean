@@ -153,6 +153,40 @@ theorem dTV_nonneg (p q : PMF α) : 0 ≤ dTV p q :=
 under `p` and `q` is controlled by their total variation. -/
 theorem abs_expect_indicator_sub_le_dTV (p q : PMF α) (E : Set α) :
     |p.expect (Set.indicator E 1) - q.expect (Set.indicator E 1)| ≤ p.dTV q := by
-  sorry
+  have hp : Summable fun a => (p a).toReal :=
+    ENNReal.summable_toReal (by rw [p.tsum_coe]; exact ENNReal.one_ne_top)
+  have hq : Summable fun a => (q a).toReal :=
+    ENNReal.summable_toReal (by rw [q.tsum_coe]; exact ENNReal.one_ne_top)
+  have hnn : ∀ (r : PMF α) (a : α), 0 ≤ (r a).toReal * Set.indicator E 1 a := fun r a =>
+    mul_nonneg ENNReal.toReal_nonneg (Set.indicator_nonneg (fun _ _ => zero_le_one) a)
+  have hle : ∀ (r : PMF α) (a : α), (r a).toReal * Set.indicator E 1 a ≤ (r a).toReal := by
+    intro r a
+    by_cases h : a ∈ E
+    · simp [Set.indicator_of_mem h]
+    · simp [Set.indicator_of_notMem h, ENNReal.toReal_nonneg]
+  have hpE : Summable fun a => (p a).toReal * Set.indicator E 1 a :=
+    Summable.of_nonneg_of_le (hnn p) (hle p) hp
+  have hqE : Summable fun a => (q a).toReal * Set.indicator E 1 a :=
+    Summable.of_nonneg_of_le (hnn q) (hle q) hq
+  have hkey : ∀ a,
+      |(p a).toReal * Set.indicator E 1 a - (q a).toReal * Set.indicator E 1 a|
+        ≤ |(p a).toReal - (q a).toReal| := by
+    intro a
+    rw [← sub_mul, abs_mul]
+    refine mul_le_of_le_one_right (abs_nonneg _) ?_
+    by_cases h : a ∈ E
+    · simp [Set.indicator_of_mem h]
+    · simp [Set.indicator_of_notMem h]
+  unfold expect dTV
+  rw [← hpE.tsum_sub hqE]
+  calc |∑' a, ((p a).toReal * Set.indicator E 1 a - (q a).toReal * Set.indicator E 1 a)|
+      ≤ ∑' a, |(p a).toReal * Set.indicator E 1 a - (q a).toReal * Set.indicator E 1 a| := by
+        have h := norm_tsum_le_tsum_norm
+          (f := fun a => (p a).toReal * Set.indicator E 1 a
+            - (q a).toReal * Set.indicator E 1 a)
+          (by simpa only [Real.norm_eq_abs] using (hpE.sub hqE).abs)
+        simpa only [Real.norm_eq_abs] using h
+    _ ≤ ∑' a, |(p a).toReal - (q a).toReal| :=
+        ((hpE.sub hqE).abs).tsum_le_tsum hkey ((hp.sub hq).abs)
 
 end PMF

@@ -208,6 +208,9 @@
 
     <a class="icon proof" href="chp-syracuse.html#C5">#</a>
     
+    <a class="icon proof" href="chp-syracuse.html#a0000000025"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
 </button>
@@ -245,6 +248,12 @@
           
           <li><a href="../docs/find/#doc/valuation_dist" class="lean_decl">valuation_dist</a></li>
           
+          <li><a href="../docs/find/#doc/valuation_tail" class="lean_decl">valuation_tail</a></li>
+          
+          <li><a href="../docs/find/#doc/unifOddMod" class="lean_decl">unifOddMod</a></li>
+          
+          <li><a href="../docs/find/#doc/valVec_pos" class="lean_decl">valVec_pos</a></li>
+          
         </ul>
     
       </div>
@@ -255,11 +264,22 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   <b class="bfseries">Proposition 1.9.</b> There are \(c_1,C{\gt}0\) such that for all \(n,n'\) and every law \(X\) supported on odd numbers that is \(\ll 2^{-n'}\)-close in total variation to uniform modulo \(2^{n'}\), provided \((2+c_0)n\le n'\), </p>
-<div class="displaymath" id="a0000000025">
+<div class="displaymath" id="a0000000026">
   \[  d_{\mathrm{TV}}\! \bigl(X_*\vec a^{(n)},\  \mathrm{Geom}(2)^{\otimes n}\bigr) \le C\, 2^{-c_1 n}.  \]
 </div>
-<p> I.e. the Syracuse valuation vector of an equidistributed-mod-\(2^{n'}\) input is exponentially close to \(n\) independent geometric variables. Includes the §4 tail bound Lemma&#160;4.1 controlling \(\mathbb {P}(a_{[1,n]}\ge n')\). </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 10–18 treadmill laps; risk <b class="bfseries">medium</b> (80% confidence the node completes as stated).</i> </p>
+<p> I.e. the Syracuse valuation vector of an equidistributed-mod-\(2^{n'}\) input is exponentially close to \(n\) independent geometric variables. Includes the §4 tail bound Lemma&#160;4.1 controlling \(\mathbb {P}(a_{[1,n]}\ge n')\). <b class="bfseries">COMPLETE (judge pass 22, 2026-07-13).</b> <span class="ttfamily">valuation_dist</span> (Prop 1.9) and <span class="ttfamily">valuation_tail</span> (Lemma 4.1) proved by an external Codex session and judge-verified: pinned statements character-untouched (constituent <span class="ttfamily">unifOddMod</span> body unchanged; statements re-read vs Prop 1.9 p.7 / Lemma 4.1 p.22 — the \(\forall c_0,K\, \exists c_1,C\) quantifier structure matches the paper’s “constants may depend on \(c_0\)” exactly). The tail proof consumed the long-parked (1.10) hole <span class="ttfamily">PMF.abs_expect_indicator_sub_le_dTV</span> (Prob/Basic), caught by the dated axiom run and discharged by the judge same pass. Dated runs 2026-07-13 on both headliners + <span class="ttfamily">valVec_pos</span>, <span class="ttfamily">fnat_mod_two_of_pos</span>, <span class="ttfamily">unifOddMod_map_valVec_apply</span>, <span class="ttfamily">truncated_val_dTV_le</span>, <span class="ttfamily">PMF.dTV_map_le</span> — all exactly \([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\). </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000025">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>Route (paper §4, with one sound reordering): the event \(\vec a^{(n)}(N) = \vec a\) is classified as a single residue of \(N\) modulo \(2^{a_{[1,n]}+1}\) (via Lemma 2.1, node&#160;<a href="chp-dictionary.html#C2">3.2</a>); pushing the equidistribution hypothesis through the truncation \(2^{n'} \to 2^{|a|+1}\) (data processing, <span class="ttfamily">PMF.dTV_map_le</span>) matches the truncated valuation law with \(\mathrm{Geom}(2)^{\otimes n}\) exactly below level \(n'\); the overflow \(|a| \ge n'\) is controlled on the geometric side by the S2 tail engine. Lemma 4.1 is then <em>derived</em> from Prop 1.9 plus the geometric tail (reverse of the paper’s order — sound and non-circular, since \(\mathbb {P}_P(E) \le \mathbb {P}_Q(E) + d_{\mathrm{TV}}(P,Q)\) via the now-proved (1.10)). </p>
 
   </div>
 </div>
