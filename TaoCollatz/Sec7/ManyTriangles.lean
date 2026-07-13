@@ -2149,4 +2149,159 @@ theorem many_triangles_white :
         mul_le_mul_of_nonneg_left hXe (Real.exp_pos _).le
     _ = Real.exp (2 * ε) := by rw [← Real.exp_add]; ring_nf
 
+/-! ### The (7.61) endpoint tails (X10, p.52): the `tsum_Gweight_row` engine,
+the first-passage height tail, and the `p`-step Chernoff tail -/
+
+/-- **`Gweight` row-sum engine** (step (i) of the (7.61) tail plan, lap 57/58):
+the X6 envelope `Gweight t (c(j − μ))` summed along a row of natural columns is
+`≤ K·√t`, uniformly in the (real) centre `μ` and the row length `N`. Double
+cover: reduce the real centre to the integer `⌊μ⌋` at the cost of one unit
+shift (the `max (u−1) 0` inside the dominators), fold the two sides of the
+centre onto ℕ offsets (`sum_abs_int_le`), then `sum_range_exp_neg_sq_le`
+(Gaussian piece, `≍ √t/c` unit terms) + `sum_range_geom_le` (exponential
+piece). Uniformity in `N` is what turns into the `tsum` bound downstream. -/
+theorem sum_range_Gweight_le {c : ℝ} (hc : 0 < c) :
+    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ N : ℕ,
+      ∑ j ∈ Finset.range N, Gweight t (c * ((j : ℝ) - μ)) ≤ K * Real.sqrt t := by
+  have he1 : Real.exp (-c) < 1 := by rw [Real.exp_lt_one_iff]; linarith
+  have hd : (0 : ℝ) < 1 - Real.exp (-c) := by linarith [Real.exp_pos (-c)]
+  refine ⟨10 + 2 / (1 - Real.exp (-c)) + 4 / c, by positivity, fun t ht μ N => ?_⟩
+  have ht0 : (0 : ℝ) < t := lt_of_lt_of_le one_pos ht
+  set β : ℝ := c ^ 2 / t with hβdef
+  have hβ0 : 0 < β := by positivity
+  set w : ℤ := ⌊μ⌋ with hw
+  set J : ℕ := max N (w.toNat + 1) with hJ
+  have hwJ : w.toNat < J := lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_right _ _)
+  set F1 : ℝ → ℝ := fun u => Real.exp (-β * max (u - 1) 0 ^ 2) with hF1
+  set F2 : ℝ → ℝ := fun u => Real.exp (-(c * max (u - 1) 0)) with hF2
+  have hF1nn : ∀ u, 0 ≤ F1 u := fun u => (Real.exp_pos _).le
+  have hF2nn : ∀ u, 0 ≤ F2 u := fun u => (Real.exp_pos _).le
+  have hmax0 : ∀ u : ℝ, 0 ≤ max (u - 1) 0 := fun u => le_max_right _ _
+  have hmaxmono : ∀ ⦃u v : ℝ⦄, u ≤ v → max (u - 1) 0 ≤ max (v - 1) 0 :=
+    fun u v h => max_le_max (by linarith) le_rfl
+  have hF1anti : ∀ ⦃u v : ℝ⦄, 0 ≤ u → u ≤ v → F1 v ≤ F1 u := by
+    intro u v _ huv
+    apply Real.exp_le_exp.mpr
+    have h := hmaxmono huv
+    have h0 : 0 ≤ max (u - 1) 0 := hmax0 u
+    have hsq : max (u - 1) 0 ^ 2 ≤ max (v - 1) 0 ^ 2 := by nlinarith
+    nlinarith
+  have hF2anti : ∀ ⦃u v : ℝ⦄, 0 ≤ u → u ≤ v → F2 v ≤ F2 u := by
+    intro u v _ huv
+    apply Real.exp_le_exp.mpr
+    have h := hmaxmono huv
+    nlinarith
+  -- pointwise domination through the integer centre
+  have hpt : ∀ j : ℕ, Gweight t (c * ((j : ℝ) - μ))
+      ≤ F1 |(w : ℝ) - j| + F2 |(w : ℝ) - j| := by
+    intro j
+    have hwμ : |μ - (w : ℝ)| ≤ 1 := by
+      rw [abs_of_nonneg (by linarith [Int.floor_le μ] : (0 : ℝ) ≤ μ - w)]
+      linarith [Int.lt_floor_add_one μ]
+    have hkey : max (|(w : ℝ) - j| - 1) 0 ≤ |(j : ℝ) - μ| := by
+      have h1 : |(w : ℝ) - j| ≤ |(j : ℝ) - μ| + |μ - w| := by
+        calc |(w : ℝ) - j| = |(j : ℝ) - w| := abs_sub_comm _ _
+          _ ≤ |(j : ℝ) - μ| + |μ - w| := abs_sub_le _ _ _
+      exact max_le (by linarith) (abs_nonneg _)
+    have habs0 : (0 : ℝ) ≤ |(j : ℝ) - μ| := abs_nonneg _
+    unfold Gweight
+    have h1 : Real.exp (-(c * ((j : ℝ) - μ)) ^ 2 / t) ≤ F1 |(w : ℝ) - j| := by
+      have he : -(c * ((j : ℝ) - μ)) ^ 2 / t = -β * |(j : ℝ) - μ| ^ 2 := by
+        rw [hβdef, sq_abs]
+        ring
+      rw [he, hF1]
+      apply Real.exp_le_exp.mpr
+      have hsq : max (|(w : ℝ) - j| - 1) 0 ^ 2 ≤ |(j : ℝ) - μ| ^ 2 := by
+        nlinarith [hmax0 |(w : ℝ) - j|]
+      nlinarith
+    have h2 : Real.exp (-|c * ((j : ℝ) - μ)|) ≤ F2 |(w : ℝ) - j| := by
+      rw [abs_mul, abs_of_pos hc, hF2]
+      apply Real.exp_le_exp.mpr
+      have := mul_le_mul_of_nonneg_left hkey hc.le
+      linarith
+    exact add_le_add h1 h2
+  -- fold onto ℕ offsets
+  have hcov1 := sum_abs_int_le hF1nn hF1anti w J hwJ
+  have hcov2 := sum_abs_int_le hF2nn hF2anti w J hwJ
+  -- the two shifted tail sums
+  have hJex : ∃ J', J = J' + 1 := ⟨J - 1, by omega⟩
+  obtain ⟨J', hJ'⟩ := hJex
+  have hshift1 : ∑ m ∈ Finset.range J, F1 (m : ℝ) ≤ 4 + 2 * Real.sqrt t / c := by
+    rw [hJ', Finset.sum_range_succ' (fun m : ℕ => F1 (m : ℝ)) J']
+    have hst : 0 < Real.sqrt t := Real.sqrt_pos.mpr ht0
+    have hzero : F1 ((0 : ℕ) : ℝ) = 1 := by
+      rw [hF1]
+      norm_num
+    have hterm : ∀ i : ℕ, F1 ((i + 1 : ℕ) : ℝ) = Real.exp (-β * (i : ℝ) ^ 2) := by
+      intro i
+      rw [hF1]
+      congr 2
+      push_cast
+      rw [show ((i : ℝ) + 1 - 1) = (i : ℝ) by ring, max_eq_left (Nat.cast_nonneg i)]
+    have hsum := sum_range_exp_neg_sq_le hβ0 J'
+    have hsqrtβ : Real.sqrt β = c / Real.sqrt t := by
+      rw [hβdef, Real.sqrt_div (sq_nonneg c), Real.sqrt_sq hc.le]
+    have h2β : 2 / Real.sqrt β = 2 * Real.sqrt t / c := by
+      rw [hsqrtβ]
+      field_simp
+    calc (∑ i ∈ Finset.range J', F1 ((i + 1 : ℕ) : ℝ)) + F1 ((0 : ℕ) : ℝ)
+        = (∑ i ∈ Finset.range J', Real.exp (-β * (i : ℝ) ^ 2)) + 1 := by
+          rw [hzero, Finset.sum_congr rfl fun i _ => hterm i]
+      _ ≤ (3 + 2 / Real.sqrt β) + 1 := by linarith
+      _ = 4 + 2 * Real.sqrt t / c := by rw [h2β]; ring
+  have hshift2 : ∑ m ∈ Finset.range J, F2 (m : ℝ) ≤ 1 + (1 - Real.exp (-c))⁻¹ := by
+    rw [hJ', Finset.sum_range_succ' (fun m : ℕ => F2 (m : ℝ)) J']
+    have hzero : F2 ((0 : ℕ) : ℝ) = 1 := by
+      rw [hF2]
+      norm_num
+    have hterm : ∀ i : ℕ, F2 ((i + 1 : ℕ) : ℝ) = Real.exp (-c) ^ i := by
+      intro i
+      rw [hF2, ← Real.exp_nat_mul]
+      congr 1
+      push_cast
+      rw [show ((i : ℝ) + 1 - 1) = (i : ℝ) by ring, max_eq_left (Nat.cast_nonneg i)]
+      ring
+    have hsum := sum_range_geom_le (Real.exp_pos (-c)).le he1 J'
+    calc (∑ i ∈ Finset.range J', F2 ((i + 1 : ℕ) : ℝ)) + F2 ((0 : ℕ) : ℝ)
+        = (∑ i ∈ Finset.range J', Real.exp (-c) ^ i) + 1 := by
+          rw [hzero, Finset.sum_congr rfl fun i _ => hterm i]
+      _ ≤ (1 - Real.exp (-c))⁻¹ + 1 := by linarith
+      _ = 1 + (1 - Real.exp (-c))⁻¹ := by ring
+  -- assemble
+  have h1t : 1 ≤ Real.sqrt t := by
+    rw [show (1 : ℝ) = Real.sqrt 1 by simp]
+    exact Real.sqrt_le_sqrt ht
+  have hchain : ∑ j ∈ Finset.range N, Gweight t (c * ((j : ℝ) - μ))
+      ≤ 2 * (4 + 2 * Real.sqrt t / c) + 2 * (1 + (1 - Real.exp (-c))⁻¹) := by
+    calc ∑ j ∈ Finset.range N, Gweight t (c * ((j : ℝ) - μ))
+        ≤ ∑ j ∈ Finset.range N, (F1 |(w : ℝ) - j| + F2 |(w : ℝ) - j|) :=
+          Finset.sum_le_sum fun j _ => hpt j
+      _ ≤ ∑ j ∈ Finset.range J, (F1 |(w : ℝ) - j| + F2 |(w : ℝ) - j|) :=
+          Finset.sum_le_sum_of_subset_of_nonneg
+            (fun x hx => Finset.mem_range.mpr
+              (lt_of_lt_of_le (Finset.mem_range.mp hx) (le_max_left _ _)))
+            (fun j _ _ => add_nonneg (hF1nn _) (hF2nn _))
+      _ = (∑ j ∈ Finset.range J, F1 |(w : ℝ) - j|)
+          + ∑ j ∈ Finset.range J, F2 |(w : ℝ) - j| := Finset.sum_add_distrib
+      _ ≤ 2 * (∑ m ∈ Finset.range J, F1 (m : ℝ))
+          + 2 * (∑ m ∈ Finset.range J, F2 (m : ℝ)) := add_le_add hcov1 hcov2
+      _ ≤ 2 * (4 + 2 * Real.sqrt t / c) + 2 * (1 + (1 - Real.exp (-c))⁻¹) := by
+          have h1 := hshift1
+          have h2 := hshift2
+          linarith
+  refine hchain.trans ?_
+  have hcinv : (0 : ℝ) ≤ (1 - Real.exp (-c))⁻¹ := by positivity
+  have hexpand : (10 + 2 / (1 - Real.exp (-c)) + 4 / c) * Real.sqrt t
+      = 10 * Real.sqrt t + 2 * (1 - Real.exp (-c))⁻¹ * Real.sqrt t
+        + 4 / c * Real.sqrt t := by
+    rw [div_eq_mul_inv (2 : ℝ), div_eq_mul_inv (4 : ℝ)]
+    ring
+  rw [hexpand]
+  have ha : 2 * (4 + 2 * Real.sqrt t / c) = 8 + 4 / c * Real.sqrt t := by ring
+  have hb : (10 : ℝ) ≤ 10 * Real.sqrt t := by linarith
+  have hd2 : 2 * (1 - Real.exp (-c))⁻¹ ≤ 2 * (1 - Real.exp (-c))⁻¹ * Real.sqrt t := by
+    nlinarith
+  rw [ha]
+  linarith
+
 end TaoCollatz
