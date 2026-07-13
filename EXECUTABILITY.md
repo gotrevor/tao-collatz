@@ -106,6 +106,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 15](judge/pass-15.md) — 2026-07-12, consumer pages pp.48–49 + 54–56 read (Trevor-prompted): **BOTH X9 RIDERS DISCHARGED** ✅ — R := ⌊A²/ε⁴⌋ explicit on p.55 (after ε; the −O(A) Markov slack absorbs exp(2ε) or any absolute constant); (7.54)'s 0.9m split + (7.67)'s in-window iteration keep every counted encounter deep (gate-safe). Residual: **X9's proof must exhibit ε₀ ≥ epsBW = 10⁻⁴** (consumer instantiates at the fixed dichotomy ε). Bonus: X10's ∀A-uniform form confirmed at its p.54 union-bound site. All of §7 now judge-read; §5 (C8) is the only unread front.
 - [Pass 16](judge/pass-16.md) — 2026-07-12, lap-55 boundary: **LEMMA 7.9 CLOSED MOD KERNEL** ✅ — `many_triangles_white` proved, Y-induction axiom-clean, sorryAx trail = exactly {`fpDist_white_exit_deep`} (machine-checked). ⚠️ **ε₀-floor LEAK caught**: exhibited ε₀ = min(1/100, (2p₁−1)/2) with p₁ from the pin's bare `1/2 < p₀` — does NOT certify ε₀ ≥ 10⁻⁴. **Kernel demand: re-pin mass to `51/100 ≤ p₀`** (pre-authorized as ratification-preserving strengthening; numerics ≈ 0.99).
 - [Pass 17](judge/pass-17.md) — 2026-07-12, lap-56 boundary + lap-57 re-pin: **MASS DEMAND SATISFIED** ✅ (`3c95898` character-exact to the pre-authorization; ε₀-floor discharged by arithmetic; steering item retired). **Kernel DERIVED** via (7.50)-geometry decomposition: `fpDist_col_le` + `fpDist_out_of_strip_le` PROVED clean; one tail left — **`fpDist_any_triangle_le`** (≤ 1/8 family-triangle mass; NEW PIN, ratified as route decomposition ~85%). `/lean-review` on the full range: ✅ CLEAN (0 registry hits over 335 added lines). When the tail lands, X9 completes end-to-end.
+- [Pass 18](judge/pass-18.md) — 2026-07-12, lap-57 boundary: **ROUTE ESCALATION CONCURRED** ⚠️ — `F.separated` is VACUOUS at the frozen ε ((0.921)² < 1 = lattice minimum; X3 proves the clause by exactly that vacuity; p.48's whiteness step consumes real separation). NOT a paper error — the D4 numeral is too large. `fpDist_any_triangle_le` route ratification WITHDRAWN; **`fpDist_white_exit_deep` ratification SUSPENDED** pending the altitude ruling (remedy A vs hybrid B+A-small). Remedy-B vertical half **PROVED + verified** (`white_gap_above_run_top`: 13 white rows above any run top, exact-ℚ). **X10 A-quantifier bug concurred** (∀A>0 was false vs the 16/step height drift): old ratification revoked, `∃A₀ ≥ 1, ∀A ≥ A₀` re-pin + both (7.61) tail pins **RATIFIED**. Dated runs: 5 new proofs clean. `/lean-review`: ✅ CLEAN (372 added lines). D4-change ε-sweep tripwire armed.
 
 ## Live judge state 📍 (update each pass)
 
@@ -115,49 +116,69 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 **X2** (pass 12 — both halves; damping consumer closed with it).
 
 **Statements pinned + ratified**: every ledger node except **C8** (no pinned Lean
-statement yet — the last un-pinned node). Latest: X9 depth-gated re-pin (pass 14;
-two documented deviations: exp(2ε) + gated count), `fpDist_white_exit_deep`
-(pass 12, unchanged through the re-pin).
+statement yet — the last un-pinned node). Latest: X10 `∃A₀` re-pin + the two (7.61)
+tail pins (pass 18), X9 depth-gated re-pin (pass 14). ⚠️ **SUSPENDED**:
+`fpDist_white_exit_deep` (pass 18 — see the escalation bullet; the pin's text is
+unchanged, but its truth at the frozen ε is no longer judge-believed).
 
 **Open riders / queued fronts**:
-- **ε₀-floor → KERNEL MASS DEMAND** (pass 16, checked and found leaking): X9's
-  landed proof exhibits `ε₀ = min(1/100, (2p₁−1)/2)`, so the floor obligation
-  transfers to the kernel: `fpDist_white_exit_deep`'s `1/2 < p₀` must become an
-  explicit rational with margin — **`51/100 ≤ p₀` demanded** (gives ε₀ ≥ 1/100;
-  numerics ≈ 0.99 so free for the proof). Pre-authorized shape: this exact
-  strengthening is ratification-preserving (character diff + numeral arithmetic
-  on landing); any other edit shape = full re-ratification. The kernel is the
-  box's declared next target — right moment to bake the numeral in.
-- **p₀ > 1/2 certification burden — now EMBODIED** (pass 12): the burden lives in
-  the pinned `fpDist_white_exit_deep` (demands `1/2 < p₀`; ratified as a documented
-  deviation from the paper's `≫ 1`). The box must certify it there (Monte Carlo
-  ≈ 0.99, harness check 9); X8's Case-2 twin stays `∃p₀ > 0` and needs no retrofit.
-- **Axiom-check queue**: cleared (pass 12). Prop 1.17's whole remaining trail =
-  the Prop 7.8 chain: BlackEdge ×4 (`fpDist_edgeWeight_le`, `fpDist_white_exit`,
-  `Q_black_edge_case2`, `Q_black_edge_case3`) + ManyTriangles ×3
-  (`triangle_encounter_le` X10, `fpDist_white_exit_deep`, `many_triangles_white` X9).
-- **Box docstring nits** (pass 12, box's to fix): `White.lean:11` + `Reduction.lean:12`
-  still describe their (now proved) cruxes as carrying `sorry`.
-- **X9 re-pin: RESOLVED pass 14; consumer checks JUDGE-VERIFIED pass 15**
-  (pp.48–49 + 54–56 read: (7.54)'s 0.9m split and (7.67)'s in-window iteration
-  keep every counted encounter at depth ≥ 0.1m ≥ g once `C_{A,ε} ≥ 10g`). The
-  deep pin's `p₀ > 1/2` was NOT softened — the p₀-softening tripwire stays
-  armed in case it appears later.
-- **Paper-gap ledger, entry 2**: literature hole #6 (near-edge overreach in the
-  all-starts Lemma 7.9, judge-concurred pass 13) — same document-don't-announce
-  handling as #5; KB entry updated.
+- **⛔ ROUTE ESCALATION — white-exit kernel BLOCKED on the altitude ruling**
+  (pass 18, judge-concurred on all three steps): `F.separated` is vacuous at
+  `epsBW = 10⁻⁴` ((0.921)² ≈ 0.848 < 1 = min lattice distance²; X3's proof uses
+  exactly that vacuity), while the paper's (7.50) whiteness step consumes real
+  separation > O(1). NOT a paper error (the paper's regime is ε sufficiently
+  small); no literature-holes entry. Remedies: (A) shrink ε (sep ≈ 20–40,
+  ε ≈ e⁻²⁰⁰..e⁻⁴⁰⁰) + formalize real Lemma-7.4 separation; or hybrid (B+A-small):
+  vertical white gap (**PROVED**: `white_gap_above_run_top`, 13 rows, judge-run
+  clean) + smaller shrink (sep ≈ 5–10) for the horizontal residue. Consequences
+  in force: `fpDist_any_triangle_le` route ratification withdrawn,
+  `fpDist_white_exit_deep` ratification suspended, X9 badge → blocked/60%.
+  Unaffected: X10's apex route (disjointness-based), `fpDist_out_of_strip_le`,
+  all six verified-complete nodes.
+- **🔔 D4-CHANGE TRIPWIRE (armed, pass 18)**: any `epsBW` change re-values every
+  `black`/`white`-dependent theorem with NO textual diff — a semantic statement
+  edit repo-wide. Judge sweep list on the ruling landing: `sep_const_sq_le_one`
+  (must die), the 13-row gap numeral (`⌊log₂((1−ε)/ε)⌋`), the deep pin's `51/100`
+  vs new p₀ numerics, the ε₀-floor vs new epsBW (easier), X2's `exp(−ε³)` gain
+  (weaker → `C_{A,ε}` inflates), (7.52)-budget + out-of-strip thresholds,
+  confinement margin. The p₀-softening tripwire is superseded while the
+  suspension lasts and re-arms verbatim on the post-remedy re-pin.
+- **ε₀-floor: DISCHARGED at the statement level** (pass 17; demand pass 16): the
+  kernel pin carries `51/100 ≤ p₀`, so `ε₀ = min(1/100, ·) ≥ 1/100 ≥ 10⁻⁴` by
+  arithmetic. Survives the escalation as a statement property (whatever proves
+  the pin post-remedy inherits the numeral); re-check p₀ numerics on a D4 change.
+- **Axiom-check queue**: cleared (pass 18 — five new proofs verified, incl. the
+  813c9e7 `gaussian_col_tail`/`fpDist_out_of_strip_le` pair formally recorded).
+  Prop 1.17's whole remaining sorry trail = BlackEdge ×4 (`fpDist_edgeWeight_le`,
+  `fpDist_white_exit`, `Q_black_edge_case2`, `Q_black_edge_case3`) +
+  ManyTriangles ×4 (`triangle_encounter_le` X10, `fpDistPlus_height_tail`,
+  `fpDistPlus_col_tail`, `fpDist_any_triangle_le`).
+- **Box docstring nits** (box's to fix): `White.lean:11` + `Reduction.lean:12`
+  stale "carries sorry" claims (pass 12); `triangle_encounter_le` DEVIATION NOTE
+  says "≈ 4p mean height drift" — height mean is 16/step, 4 is the column mean
+  (pass 18).
+- **Judge recipe amendment** (pass 18): each pass diffs the event range AND
+  checks `git log <range-end>..HEAD` before publishing assessments — the box
+  commits concurrently, and pass 17's 85% badge went out with the escalation
+  already in-tree.
+- **X9 consumer checks: JUDGE-VERIFIED pass 15** (pp.48–49 + 54–56 read: (7.54)'s
+  0.9m split and (7.67)'s in-window iteration keep every counted encounter at
+  depth ≥ 0.1m ≥ g once `C_{A,ε} ≥ 10g`); X10's p.54 consumption is at a single
+  large A — safe for the `∃A₀` re-pin (pass 18).
+- **Paper-gap ledger** (both document-don't-announce, per Trevor 2026-07-12):
+  entry #5 = Lemma 7.9 p.51 conditioning display (pass 9, ~90%); entry #6 =
+  near-edge overreach in all-starts Lemma 7.9 (pass 13). KB
+  `formalization-literature-holes.md`. No public post leads with these; author
+  note is Trevor's call only. (The pass-18 escalation is NOT entry material —
+  formalization-internal.)
 - **Unread paper fronts**: §5 first-passage (C8) only. All of §7 (pp.33–56) is
-  judge-read: pp.41–43 pass 12, pp.48–49 + 54–56 pass 15.
+  judge-read: pp.41–43 pass 12, pp.48–49 + 54–56 pass 15, pp.48 + 51–52
+  re-read pass 18.
 - **Trust-surface notes**: `fpDist` / `fpDistPlus` encode stopped-walk laws at the
   design level (strong Markov absorbed — D1, ratified passes 2 & 8);
   `fpDist_white_exit` (X8) and `fpDist_white_exit_deep` (X9 input) are the two
-  load-bearing white-exit kernels — same geometry, different budget regimes.
-- **Paper-gap ledger**: Lemma 7.9 p.51 conditioning display (pass 9, confirmed ~90%) —
-  KB `formalization-literature-holes.md` entry #5. **Per Trevor (2026-07-12): NOT
-  announcement material.** It stays documented in-repo (docstring + judge log +
-  README-level docs) because reproducers need it; no public post leads with it, and an
-  author note is Trevor's call only — "little benefit bragging about finding someone
-  else's error, especially a trivially patchable one."
+  load-bearing white-exit kernels — same geometry, different budget regimes, and
+  the kernel-merge plan derives the X8 twin from the deep one post-remedy.
 
 ## Endgame — announcement plan (on full discharge) 📣
 

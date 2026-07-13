@@ -480,6 +480,12 @@ Proved through the phase identities (7.12)--(7.15), the weakly-black claims (i)-
   at \(\varepsilon = 10^{-4}\) the separation conjunct reduces to lattice disjointness).
   Judge-verified \texttt{\#print axioms}: \texttt{[propext, Classical.choice, Quot.sound]}
   (2026-07-10, host \texttt{lake env lean}).
+  \emph{Pass-18 note (route escalation):} that lattice reduction means the separation
+  clause carries no content beyond disjointness at the frozen \(\varepsilon\) --- sound
+  for THIS statement, but the (7.50) white-exit ring consumes real separation, so any
+  D4 \(\varepsilon\)-shrink reopens this clause with a genuine Euclidean obligation
+  (pp.39--41; \texttt{sep\_const\_sq\_le\_one} dies by design once
+  \(\mathrm{sep}^2 > 1\)).  Node status unaffected.
 \end{proof}
 
 \section{The holding process and its finitized renewal recursion (D6)}
@@ -651,14 +657,32 @@ pre-authorization), so \(\varepsilon_0 \ge 1/100 \ge 10^{-4}\) is provable by ar
 56)}: whiteness = in-strip \(\wedge\) outside-every-triangle, giving
 \(P \ge 1 - P(\text{out of strip}) - P(\text{in a family triangle})\);
 \texttt{fpDist\_col\_le} and \texttt{fpDist\_out\_of\_strip\_le} are PROVED (judge-run
-clean); the sole remaining tail is \texttt{fpDist\_any\_triangle\_le} (family-triangle
-mass \(\le 1/8\) --- the quantitative (7.50)/(7.51) exclusion step, ratified as a route
-decomposition).
-\lapsrisk{1--3}{low --- one tail: the 1/8 family-triangle mass bound (X6+S3 machinery, same as its proved siblings)}{85\% (2026-07-12 judge pass 17)}
+clean); the remaining tail is \texttt{fpDist\_any\_triangle\_le} (family-triangle mass
+\(\le 1/8\)).
+\textbf{ROUTE ESCALATION (lap 57, judge pass 18 CONCURRED):} the formalized
+\texttt{F.separated} is \emph{vacuous} at the frozen \(\varepsilon = 10^{-4}\):
+\((\tfrac{1}{10}\log 10^4)^2 \approx 0.848 < 1 \le\) any nonzero lattice
+distance\(^2\), and node~\ref{X3} proves the clause by exactly that vacuity --- while
+the paper's (7.50) whiteness step consumes real separation \(> O(1)\) (``at a distance
+\(O(1)\) from \(\Delta\), hence \dots white by Lemma 7.4'', constants independent of
+\(\varepsilon\)).  Sound in the paper's \(\varepsilon\)-sufficiently-small regime,
+unprovable at our D4 numeral --- \emph{not} a paper error.  Consequences: the pass-17
+route ratification of \texttt{fpDist\_any\_triangle\_le} is \textbf{WITHDRAWN}
+(adversarial singleton-tiling families are interface-legal; no positive white-mass
+bound follows from the interface), and the \texttt{fpDist\_white\_exit\_deep}
+statement ratification is \textbf{SUSPENDED} pending the altitude ruling: remedy (A)
+shrink \(\varepsilon\) + formalize the real Lemma-7.4 separation, or hybrid
+(B+A-small) --- the vertical white gap \texttt{white\_gap\_above\_run\_top}
+(\textbf{PROVED} lap 57, judge-run clean: 13 white rows above any run top at the
+current \(\varepsilon\), exact-\(\mathbb{Q}\)) plus a smaller shrink for the
+horizontal residue.  This node's own statement (\texttt{many\_triangles\_white})
+remains ratified; its proof is closed modulo the suspended kernel.  Any D4 change
+fires the judge's \(\varepsilon\)-sweep re-ratification tripwire (pass 18 list).
+\lapsrisk{blocked (altitude ruling) + 4--10}{high --- kernel blocked on the \(\varepsilon\)-separation ruling; vertical half proved, right edge open}{60\% as-routed (2026-07-12 judge pass 18)}
 \end{lemma}
 
 \begin{lemma}[Large triangles rarely encountered; Lemma 7.10]\label{X10}
-  \lean{triangle_encounter_le, fpDistPlus, bigTriangleSet, TriangleFamily.not_mem_two}
+  \lean{triangle_encounter_le, fpDistPlus, bigTriangleSet, TriangleFamily.not_mem_two, fpDistPlus_height_tail, fpDistPlus_col_tail}
   \uses{X3, X6, S3}
   \leanok
 \textbf{Risk kernel 3b.}  \textbf{Lemma 7.10} (paper (7.60)--(7.65)): after a lengthy crossing,
@@ -669,11 +693,24 @@ paper pp.51--54)}: \texttt{triangle\_encounter\_le} states \(\mathbb{P}(E_{p,s'}
 C A^2(1+p)/s' + C e^{-cA^2(1+p)}\) over the endpoint law \(\texttt{fpDistPlus}\;s\;p =
 \texttt{fpDist}\;s \star \texttt{iidSum hold}\;p\) --- the D1 encoding of
 \(v_{[1,\mathbf{k}+p]}\); the strong-Markov identification is absorbed into the encoding, with
-the same trust status as \texttt{fpDist} itself.  Quantifying \(\forall A>0\) with uniform
-\(C,c\) strengthens the paper's fixed-\(A\) form, which the p.54 union bound requires.  The
+the same trust status as \texttt{fpDist} itself.
+\textbf{A-quantifier fix (lap 57, judge pass 18):} the earlier \(\forall A>0\) pin was
+\emph{false} --- the (7.61) height display needs \(A^2\) to clear the per-step height
+mean \(16\) (\texttt{hold\_mean\_snd}); at fixed small \(A\) and \(p\to\infty\) the
+endpoint sits at height \(l_\Delta + \Theta(p)\) outside the \(A^2(1+p)\) window.  The
+paper's \(A\) is a standing large parameter.  Old ratification REVOKED; the re-pin
+\(\exists A_0 \ge 1,\ \forall A \ge A_0\) (with \(C, c, A_0\) uniform in \(n,\xi,F\))
+is \textbf{RATIFIED vs pp.51--52}, consumer-safe (the p.54 union bound instantiates at
+one large \(A\); pass-15 read).  The (7.61) tails are pinned separately and ratified as
+route pins anchored to the p.52 displays: \texttt{fpDistPlus\_height\_tail}
+(\(\le C e^{-cH}\) under margin \(50(1+p) > 16/\text{step}\) drift; the first
+\(10(1+p)\) pin was below the drift and self-caught same lap) and
+\texttt{fpDistPlus\_col\_tail} (Gaussian width \(\sqrt{1+s}\) + Chernoff under margin
+\(10(1+p) > 4/\text{step}\); the \(s^{0.6}\) arithmetic is the assembly site's).  The
 (7.65) apex-interval disjointness step (\texttt{TriangleFamily.not\_mem\_two}) is already
-\emph{proved} from node~\ref{X3}'s separation.
-\lapsrisk{10--20}{high --- risk kernel 3b, statement pinned}{70\% (2026-07-12 judge: statement ratified vs pp.51--54; separated-\(\Sigma\) summation still open)}
+\emph{proved} from node~\ref{X3}'s separation --- \emph{disjointness-based, so the
+pass-18 route escalation does not touch this node}.
+\lapsrisk{10--20}{high --- risk kernel 3b, statements pinned}{70\% (2026-07-12 judge pass 18: re-pin + (7.61) tails ratified; separated-\(\Sigma\) summation still open)}
 \end{lemma}
 
 \section{Assembly: Prop 1.17}
@@ -699,7 +736,8 @@ vs pp.48--49 and consumed by the proved \texttt{Q\_black\_edge} split.
 \emph{Consumer checks pre-cleared (judge pass 15, pp.48--49 + 54--56 read)}: the (7.54)
 0.9m split, the \(R := \lfloor A^2/\varepsilon^4\rfloor\)-after-\(\varepsilon\) choice,
 the \(-O(A)\) Markov slack absorbing X9's \(e^{2\varepsilon}\), the depth of every
-(7.67) encounter, and X10's \(\forall A\)-uniform consumption at the p.54 union bound.
+(7.67) encounter, and X10's consumption at a single large \(A\) at the p.54 union bound
+(safe for the \(\exists A_0\) re-pin, judge pass 18).
 What remains at ratification time is pinning this node's own statements
 (\(E_*, F_*\), (7.66)/(7.67), the assembly chain) when they land.
 \lapsrisk{10--20}{high --- assembly volume; consumer geometry pre-cleared}{75\% (2026-07-12 judge pass 15)}

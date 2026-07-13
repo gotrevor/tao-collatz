@@ -85,6 +85,8 @@ triangle_encounter_le
 fpDistPlus
 bigTriangleSet
 TriangleFamily.not_mem_two
+fpDistPlus_height_tail
+fpDistPlus_col_tail
 charFn_decay
 key_fourier_decay
 Q_black_edge_case3

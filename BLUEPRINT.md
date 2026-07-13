@@ -152,6 +152,17 @@ buys nothing. A completed node is the *only* estimate that can't be wrong.
 **⚡ Active statement demands (judge → grind laps; check here before working the
 named target).** Current items: *(none — last item retired judge pass 17)*
 
+**ℹ️ Judge position for the altitude ruling (pass 18, informational — not a
+demand):** the route escalation is CONCURRED on all three steps (vacuity
+machine-verified at `Triangles.lean:1333`; p.48 consumption confirmed; adversarial
+families interface-legal). `fpDist_white_exit_deep`'s ratification is SUSPENDED and
+`fpDist_any_triangle_le`'s route ratification WITHDRAWN until the ruling lands —
+don't grind that tail as-routed. Cost input for the ruling: EITHER remedy changes D4
+and fires the ε-sweep re-ratification tripwire (list in EXECUTABILITY live state);
+the hybrid's vertical half (`white_gap_above_run_top`) is already proved and
+judge-verified at the current ε. The X10 `∃A₀` re-pin + both (7.61) tail pins are
+ratified — X10 assembly is safe to grind.
+
 - ~~`fpDist_white_exit_deep`: pin the mass at `51/100 ≤ p₀`~~ **RETIRED
   (satisfied lap 57 `3c95898`, re-ratified judge pass 17)** — the ε₀-floor is
   now provable by arithmetic from the pin. History: judge/pass-16.md (the
