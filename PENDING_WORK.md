@@ -1,5 +1,32 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap 59: **X10b PROVED** — `encounter_separated_sum` axiom-clean (+ statement fix)
+
+- **STATEMENT FIX (needs judge re-ratification)**: added regime hypothesis
+  `(s')² ≤ 1+s` to X10b. Pinned form was FALSE for `s' ≫ √s` (nearest band
+  alone carries ~W/√(1+s)). Paper regime from `s' ≤ m^0.4`, `s ≥ m/log²m`;
+  consumer `triangle_encounter_le` carries exactly those hypotheses (glue must
+  derive `s'² ≤ 1+s`, threshold `log²m ≤ m^0.2` absorbed into its S₀).
+- Proved chain (all `#print axioms` = trust base):
+  `tsum_int_Gweight_le` (ℤ-row engine) → `separated_Gweight_tsum_le`
+  (D-separated set ≤ 4 + K√t/⌊D/2⌋; ≤2 near elements via side-of-μ Bool
+  injection, far elements donate disjoint ⌊D/2⌋-blocks toward the centre) →
+  `banded_Gweight_tsum_le` (band union ≤ (2W+1)(…); apex+offset injection) →
+  `qualifying_apex_separated` (witness row l_Δ+⌊s'/2⌋ + apex_separation ⇒
+  apex columns ≥ s'/10 apart; log2 ∈ (0.6931471803, 0.6931471808), log9 < 2.4)
+  → `encounter_separated_sum` (fpDistPlus convolution glue, C₃ = 12C'+120C'K).
+- **X10 remaining: ONLY the `triangle_encounter_le` glue** (plan in lap-58
+  cont-2 entry): trivial branch s' < 100·A²(1+p) via
+  fpDistPlus_indicator_sum_le_one; small-s branch s < S₀; main branch
+  pointwise indicator split 1_{bigTriangleSet} ≤ 1_{heightEsc}+1_{colEsc}+
+  1_{proximity} (X10a) with tails at H = 2A²(1+p), D = s^0.6, then X10b at
+  W = 2A²(1+p) (must check 100W ≤ s' and s'² ≤ 1+s in context, plus
+  fpDistPlus_support_snd_gt).
+- Lean gotchas: `div_le_div_iff` → `div_le_div_iff₀`; ℝ≥0∞ `zero_le` now has
+  implicit arg (no `zero_le _`); `le_or_lt` → `le_or_gt`;
+  `Int.natCast_floor_eq_floor` bridges ⌊·⌋₊ and ⌊·⌋; after `rintro` on a
+  subtype element insert `show` to avoid `↑⟨x,⋯⟩` blocking omega.
+
 ## Lap 58 (cont-3): **X10a PROVED** — `encounter_apex_proximity` axiom-clean
 
 - The (7.63)→(7.65) confinement geometry is machine-checked (`#print axioms` =
