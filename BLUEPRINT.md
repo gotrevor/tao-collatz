@@ -132,9 +132,33 @@ TaoCollatz/
 
 ## 2. Node ledger
 
-Legend: **Difficulty** 1–5 (5 = summit). **Laps** = estimated Opus-treadmill laps
+> 🤖 **Proof status is GENERATED, not written here → [`blueprint/LEDGER.md`](blueprint/LEDGER.md).**
+> Regenerate with `tools/blueprint_audit.py --write-ledger`; CI gates on it.
+>
+> **Why this section no longer carries a status column.** This repo accumulated *four*
+> hand-maintained ledgers — this one, the `\leanok` flags in `blueprint/src/content.tex`,
+> "Live judge state" in `EXECUTABILITY.md`, and the axiom table in `STATUS.md`. They drift
+> independently, and a stale ledger is strictly worse than none: it launders a worker's
+> claim into a reviewer-facing fact. This section went 104 commits without an update while
+> §7 was being *closed*, and nobody noticed until a reader asked.
+>
+> The registry is now `blueprint/src/content.tex` (`\label` + `\lean{…}` + `\leanok`), and
+> the ledger is derived from it by asking the **kernel**. `tools/blueprint_audit.py` gates on
+> **FALSE-GREEN** (a `\leanok` proof whose declarations are not axiom-clean — the failure that
+> lies to a reviewer) and reports **DRIFT**, **MISSED-FLIP**, and **SEAMS**.
+>
+> 🕳️ **SEAMS are the finding worth internalizing.** *The sorry census counts only the holes
+> someone has written down.* A node that owes a proof but has no Lean theorem behind it
+> contributes **zero sorries while being unfinished** — so "6 sorries left" is not the distance
+> to done. Today: **C7** (defs only) and **C8** (nothing at all) are seams. Any statement of
+> remaining work must read **"N sorries + M seams"**, never N alone.
+
+Below: the durable design of each node — difficulty, dependencies, paper anchors, route
+notes. **Difficulty** 1–5 (5 = summit). **Laps** = estimated Opus-treadmill laps
 (g-i lap conventions). **Conf** = confidence the node completes as stated without
 statement surgery. Depends lists node ids. Paper anchors in parens.
+*Proof status in these tables is historical narrative — the kernel's verdict is in
+[`LEDGER.md`](blueprint/LEDGER.md).*
 
 **Campaign steering rule (Trevor, 2026-07-10): de-risk breadth-first.** The expedition
 verdict is binary (full-discharge-or-abandon), so laps buy the most when they reduce the

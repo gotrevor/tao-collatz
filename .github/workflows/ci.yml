@@ -18,3 +18,27 @@ jobs:
       - uses: actions/checkout@v4
       # elan + `lake exe cache get` (prebuilt Mathlib oleans) + `lake build`.
       - uses: leanprover/lean-action@v1
+
+      # The blueprint's node ledger is DERIVED, never hand-maintained. This gate fails on a
+      # FALSE GREEN: a node whose proof is marked \leanok while the kernel says one of its
+      # declarations is not axiom-clean. That is the only blueprint defect that actively lies
+      # to a reviewer, so it is the only one that blocks. (DRIFT / MISSED-FLIP / SEAMS are
+      # reported for the judge, not gated — they understate rather than overstate.)
+      #
+      # Runs AFTER lean-action, so the build cache is warm and `lake env lean` is cheap.
+      - name: Blueprint audit (no false greens)
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
+          ./tools/blueprint_audit.py
+
+      # A generated ledger that is not regenerated is just a stale ledger with extra steps.
+      - name: Ledger is current
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          ./tools/blueprint_audit.py --write-ledger >/dev/null
+          if ! git diff --quiet -- blueprint/LEDGER.md; then
+            echo "::error::blueprint/LEDGER.md is stale — run tools/blueprint_audit.py --write-ledger"
+            git diff -- blueprint/LEDGER.md
+            exit 1
+          fi
