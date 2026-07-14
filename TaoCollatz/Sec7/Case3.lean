@@ -1210,7 +1210,101 @@ theorem estar_union_le :
             (sum_geom_pow_le (Real.exp (-c * A ^ 2)) (le_of_lt (Real.exp_pos _)) hr T) hC.le
       _ = 2 * C * Real.exp (-c * A ^ 2) := by ring
 
-/-! ### The sole X11 gate and the checked downstream assembly -/
+/-! ### X11c ingredients — the reaches-`R` / few-white → F∗ join -/
+
+/-- **The `encVal` lower bound on the reaches-`R` few-white event** (paper (7.57)):
+if the fold reaches `R` encounters (`R ≤ count`) with few whites (`cumWhite ≤ K`),
+then the (7.57) integrand `encVal ε R = exp(−banked + ε·min(count,R))` is
+`≥ exp(−K + ε·R)`, since `banked ≤ cumWhite ≤ K` (`encFold_banked_le`, banking freezes
+a past white count) and `min(count,R) = R`. This is the containment `{reaches R} ∩
+{few white} ⊆ F∗ = {encVal ≥ e^{−K+εR}}` that `fstar_markov` bounds. -/
+theorem encVal_ge_of_reaches {n ξ : ℕ} (F : TriangleFamily n ξ) (R g K : ℕ) (ε : ℝ)
+    (q₀ : ℕ × ℤ) (L : List (ℕ × ℤ))
+    (hreach : R ≤ (L.foldl (encStep F R g) (encInit q₀.1 q₀.2)).count)
+    (hwhite : (L.foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K) :
+    Real.exp (-(K : ℝ) + ε * R)
+      ≤ encVal ε R (L.foldl (encStep F R g) (encInit q₀.1 q₀.2)) := by
+  set σ := L.foldl (encStep F R g) (encInit q₀.1 q₀.2) with hσ
+  rw [encVal]
+  apply Real.exp_le_exp.mpr
+  have hbank : σ.banked ≤ σ.cumWhite := by
+    rw [hσ]; exact encFold_banked_le F R g L (encInit q₀.1 q₀.2) (by simp [encInit])
+  have hbk : (σ.banked : ℝ) ≤ (K : ℝ) := by exact_mod_cast le_trans hbank hwhite
+  have hmin : min σ.count R = R := min_eq_right hreach
+  rw [hmin]
+  push_cast
+  linarith [hbk]
+
+open scoped Classical in
+/-- **The reaches-`R` few-white mass bound** (paper (7.56), the Markov join):
+the joint-walk mass of the event {fold reaches `R` encounters ∧ ≤ `K` whites} is
+`≤ e^{2ε}/e^{−K+εR}`. Since that event is contained in `F∗ = {encVal ≥ e^{−K+εR}}`
+(`encVal_ge_of_reaches`), the bound is `fstar_markov` at `lam = e^{−K+εR}`. The X11d
+choice `R := ⌈(K+(A+3)log10+2)/ε⌉` makes the RHS `≤ 10^{−A−1}`. -/
+theorem reaches_fewWhite_mass_le :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
+      ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
+              ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K
+            then (1 : ℝ) else 0)
+          ≤ Real.exp (2 * ε) / Real.exp (-(K : ℝ) + ε * R) := by
+  obtain ⟨ε₀, hε₀pos, hε₀le, g, hmark⟩ := fstar_markov
+  refine ⟨ε₀, hε₀pos, hε₀le, g, ?_⟩
+  intro ε hεpos hεle n ξ hξ F R hR T q₀ K
+  have hlam : (0 : ℝ) < Real.exp (-(K : ℝ) + ε * R) := Real.exp_pos _
+  have hsum : Summable (fun v : Fin T → ℕ × ℤ => (hold.iid T v).toReal) :=
+    ENNReal.summable_toReal (by rw [(hold.iid T).tsum_coe]; exact ENNReal.one_ne_top)
+  -- termwise: {reaches R ∧ few white} indicator ≤ {lam ≤ encVal} indicator
+  have hle : ∀ v : Fin T → ℕ × ℤ,
+      (hold.iid T v).toReal *
+        (if R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
+            ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K
+          then (1 : ℝ) else 0)
+        ≤ (hold.iid T v).toReal *
+          (if Real.exp (-(K : ℝ) + ε * R)
+              ≤ encVal ε R ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2))
+            then (1 : ℝ) else 0) := by
+    intro v
+    apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+    by_cases hev : R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
+        ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K
+    · rw [if_pos hev]
+      split_ifs with henc
+      · exact le_refl 1
+      · exact absurd (encVal_ge_of_reaches F R g K ε q₀ (List.ofFn v) hev.1 hev.2) henc
+    · rw [if_neg hev]; positivity
+  -- both series dominated by the PMF mass, hence summable
+  have hbound : ∀ v : Fin T → ℕ × ℤ,
+      (hold.iid T v).toReal *
+        (if Real.exp (-(K : ℝ) + ε * R)
+            ≤ encVal ε R ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2))
+          then (1 : ℝ) else 0) ≤ (hold.iid T v).toReal := by
+    intro v
+    calc (hold.iid T v).toReal * (if Real.exp (-(K : ℝ) + ε * R)
+            ≤ encVal ε R ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2))
+          then (1 : ℝ) else 0)
+        ≤ (hold.iid T v).toReal * 1 := by
+          apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+          split_ifs <;> norm_num
+      _ = (hold.iid T v).toReal := mul_one _
+  have hsumR : Summable (fun v : Fin T → ℕ × ℤ => (hold.iid T v).toReal *
+      (if Real.exp (-(K : ℝ) + ε * R)
+          ≤ encVal ε R ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2))
+        then (1 : ℝ) else 0)) :=
+    Summable.of_nonneg_of_le
+      (fun v => mul_nonneg ENNReal.toReal_nonneg (by positivity)) hbound hsum
+  have hsumL : Summable (fun v : Fin T → ℕ × ℤ => (hold.iid T v).toReal *
+      (if R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
+          ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K
+        then (1 : ℝ) else 0)) :=
+    Summable.of_nonneg_of_le
+      (fun v => mul_nonneg ENNReal.toReal_nonneg (by positivity))
+      (fun v => le_trans (hle v) (hbound v)) hsum
+  exact le_trans (Summable.tsum_le_tsum hle hsumL hsumR)
+    (hmark ε hεpos hεle n ξ hξ F R hR T q₀ (Real.exp (-(K : ℝ) + ε * R)) hlam)
 
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
