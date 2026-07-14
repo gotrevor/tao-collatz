@@ -426,6 +426,80 @@ theorem fpDist_walk_eq_fpDistPlus (s : ℕ) {T p : ℕ} (hp : p ≤ T) (g : ℕ 
   congr 1
   simpa only [] using iid_pathSum_law T p hp (fun d => g (e + d))
 
+/-- **The per-`p` big-triangle walk mass bound** (paper (7.54)–(7.55), one term of
+the E∗ union): the chance the `T`-step walk's position at time `p` (`p ≤ T`, started
+at `(j,l)` after the first passage `e`) lands in a size-`≥ s'` triangle is bounded by
+Lemma 7.10 (`triangle_encounter_le`, X10) at that `s'`, provided `s'` fits the X10
+regime `1 ≤ s' ≤ (n/2−j)^{0.4}`. Composes `fpDist_walk_eq_fpDistPlus` (walk →
+`fpDistPlus` marginal) with X10; the `ℝ≥0∞` walk sum is pushed to `ℝ` in one step via
+`PMF.toReal_tsum_mul_ofReal`. This is the summand of the X11a `estar_union_le` union
+bound. -/
+theorem bigTriangle_walk_le :
+    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+      ∀ (T p s' : ℕ), p ≤ T → 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+        (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+          Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
+            (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal
+          ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+            + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) := by
+  obtain ⟨C, hC, c, hc, A₀, hA₀, hX10⟩ := triangle_encounter_le
+  refine ⟨C, hC, c, hc, A₀, hA₀, ?_⟩
+  intro A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep T p s' hpT hs'1 hs'm
+  have hind_eq : ∀ y : ℕ × ℤ,
+      Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞) y
+        = ENNReal.ofReal (Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) y) := by
+    intro y
+    by_cases h : y ∈ bigTriangleSet F s'
+    · rw [Set.indicator_of_mem h, Set.indicator_of_mem h]; simp
+    · rw [Set.indicator_of_notMem h, Set.indicator_of_notMem h]; simp
+  have hpos : ∀ (e : ℕ × ℤ) (v : Fin T → ℕ × ℤ),
+      ((j + e.1 + (pathSum v p).1 : ℕ), (l + e.2 + (pathSum v p).2 : ℤ))
+        = ((j : ℕ), (l : ℤ)) + (e + pathSum v p) := by
+    intro e v; ext <;> simp [add_assoc]
+  -- convert the ℝ≥0∞ walk sum to `fpDistPlus` marginal form
+  have hwalk : (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+        Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
+          (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+      = ∑' x : ℕ × ℤ, fpDistPlus s p x *
+          Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞) (((j : ℕ), (l : ℤ)) + x) := by
+    have hconv : (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+          Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
+            (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+        = ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+            Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
+              (((j : ℕ), (l : ℤ)) + (e + pathSum v p)) := by
+      refine tsum_congr fun e => ?_
+      congr 1
+      refine tsum_congr fun v => ?_
+      congr 1
+      exact congrArg _ (hpos e v)
+    rw [hconv]
+    exact fpDist_walk_eq_fpDistPlus s hpT
+      (fun x : ℕ × ℤ => Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
+        (((j : ℕ), (l : ℤ)) + x))
+  have hstep : ∑' x : ℕ × ℤ, fpDistPlus s p x *
+        Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞) (((j : ℕ), (l : ℤ)) + x)
+      = ∑' x : ℕ × ℤ, fpDistPlus s p x *
+          ENNReal.ofReal
+            (Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (((j : ℕ), (l : ℤ)) + x)) :=
+    tsum_congr fun x => by rw [hind_eq]
+  have heq : (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+        Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
+          (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal
+      = ∑' x : ℕ × ℤ, (fpDistPlus s p x).toReal
+          * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (((j : ℕ), (l : ℤ)) + x) := by
+    rw [hwalk, hstep]
+    exact PMF.toReal_tsum_mul_ofReal (fpDistPlus s p)
+      (fun x => Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (((j : ℕ), (l : ℤ)) + x))
+      (fun x => Set.indicator_nonneg (fun _ _ => zero_le_one) _)
+  rw [heq]
+  exact hX10 A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep p s' hs'1 hs'm
+
 /-! ### The proved (7.56) ingredients -/
 
 open scoped Classical in

@@ -1,5 +1,42 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box cont12 (2026-07-14): **`bigTriangle_walk_le` PROVED (axiom-clean)** — per-`p` big-triangle walk bound; X11a approach VALIDATED
+
+Third grounded X11 sub-lemma (`Case3.lean`, axiom-clean). This is the ROUTE-DECISIVE probe: it
+confirms `fpDist_walk_eq_fpDistPlus` (the 7.54 bridge) actually composes with
+`triangle_encounter_le` (X10) to bound one E∗-union term. Statement: for `p ≤ T`, `1 ≤ s' ≤
+(n/2−j)^{0.4}`, in the X10 deep regime,
+`(∑_e fpDist s e · ∑_v (hold.iid T v)·1_{bigTriangleSet F s'}(j+e.1+(pathSum v p).1, …)).toReal
+  ≤ C·A²(1+p)/s' + C·exp(−c·A²(1+p))`.
+Proof: reassociate the position to Prod-add form (`ext <;> simp [add_assoc]`), apply the bridge
+(walk → `fpDistPlus s p` marginal), push `ℝ≥0∞`→`ℝ` in one step by rewriting the indicator as
+`ENNReal.ofReal` of the ℝ indicator + `PMF.toReal_tsum_mul_ofReal`, then `triangle_encounter_le`.
+Reuses the same C, c, A₀ as X10. **The X11a assembly is now "just" summation over `p`.**
+
+**X11 (`Q_black_edge_case3`, `Case3.lean`) — three proved bridges READY, remaining assembly:**
+- **X11a `estar_union_le`** (p.54): sum `bigTriangle_walk_le` (NOW ✓) over `p ∈ range(T+1)` at
+  `s'=⌈4^A(1+p)³⌉`. Needs: (a) the convergent series `Σ_p (1+p)^{-2} ≤ 2` (telescoping:
+  `1/(k+1)² ≤ 1/k−1/(k+1)`) for the `1/s'` terms — since `s' ≥ 4^A(1+p)³` gives
+  `A²(1+p)/s' ≤ A²·4^{-A}(1+p)^{-2}`; (b) the geometric `Σ_p exp(−c·A²(1+p))` ≤ `exp(−cA²)/(1−…)`,
+  then the comparison `exp(−cA²) ≤ (const)·A²·4^{-A}` for `A ≥ A₀` (since `cA² ≥ A·ln4 − 2lnA`).
+  Net E∗-mass `≤ C'·A²·4^{-A}`. Regime OK: horizon `T = encWindowIter A K R = O_{A,ε,R}(1)`, so
+  `s'=⌈4^A(1+p)³⌉ = O(1) ≤ m^{0.4}` for `m ≥ C_{A,ε}`. **Next target.**
+- **X11c `few_whites_le`** (7.56 join): `fstar_markov` (✓) + `deterministic_encounter_claim` (✓);
+  `K=⌈10A/epsBW³⌉`, `R:=⌈(K+(A+3)log10+2)/ε⌉`, {reaches R} ⊆ F∗ via `encFold_banked_le`.
+- **X11d body** = `Q_black_edge_case3`: `Q_le_damped_iter` + (7.54) col split (`fpDistPlus_col_tail`,
+  `budget_le_of_mem_triangle`) + few-white damping (weights ≤ m^A/10^A) + X11a + X11c. NB the E∗
+  event uses the PHASE point `((pos p).1−1, …)` (per `deterministic_encounter_claim` cond (ii))
+  while `bigTriangle_walk_le` bounds the POSITION — X11d must bridge the −1 shift, and reconcile
+  `bigTriangleSet ⌈4^A(1+p)³⌉` (ceil) vs the claim's strict `t.2.2 < 4^A(1+p)³`.
+
+**Proved X11 machinery (all axiom-clean):** `Q_le_walk_damped`, `Q_le_damped_iter` (7.53),
+`iid_pathSum_law`, **`fpDist_walk_eq_fpDistPlus`** (7.54 bridge), **`bigTriangle_walk_le`** (per-p
+E∗ term), **`fstar_markov`** (7.56 Markov), `deterministic_encounter_claim` (7.67),
+`triangle_encounter_le` (X10), `fpDistPlus_col_tail`, `encFold_banked_le`, `many_triangles_white`.
+
+**NEXT: `estar_union_le` (X11a)** — prove `Σ_p (1+p)^{-2} ≤ 2` (telescoping) + the exp-geometric
+comparison, sum `bigTriangle_walk_le` over `p ∈ range(T+1)`.
+
 ## Lap D-box cont11 (2026-07-14): **`fpDist_walk_eq_fpDistPlus` PROVED (axiom-clean)** — the (7.53)→(7.54) walk→fpDistPlus bridge for X11
 
 Second grounded X11 sub-lemma landed (`Case3.lean`, axiom-clean). Building on `iid_pathSum_law`,
