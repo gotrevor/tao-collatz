@@ -266,6 +266,71 @@ theorem map_res_apply_toReal {lo hi : ℝ} (h : (logWindow lo hi).Nonempty) {n' 
     refine Finset.sum_congr rfl fun M _ => ?_
     rw [ENNReal.toReal_inv, ENNReal.toReal_natCast]
 
+/-- Casting an odd `N` to `ZMod (2^{n'})` (`n' ≥ 1`) preserves the low bit. -/
+theorem cast_val_odd {n' : ℕ} (hn' : 0 < n') {N : ℕ} (hN : N % 2 = 1) :
+    ((N : ZMod (2 ^ n')).val) % 2 = 1 := by
+  rw [ZMod.val_natCast, Nat.mod_mod_of_dvd N (dvd_pow_self 2 hn'.ne')]; exact hN
+
+/-- **Partition identity**: summing the class masses over the odd residues recovers the total window
+mass `D`.  Every window element is odd, so its reduction lands in an odd residue class, and the odd
+residues partition the window (`Finset.sum_fiberwise_of_maps_to`). -/
+theorem windowMass_eq_sum_classMass {lo hi : ℝ} {n' : ℕ} (hn' : 0 < n') :
+    windowMass lo hi
+      = ∑ r ∈ Finset.univ.filter (fun r : ZMod (2 ^ n') => r.val % 2 = 1),
+          classMass lo hi n' r := by
+  classical
+  haveI : NeZero (2 ^ n') := ⟨by positivity⟩
+  unfold windowMass classMass
+  refine (Finset.sum_fiberwise_of_maps_to (fun N hN => ?_) _).symm
+  rw [Finset.mem_filter]
+  refine ⟨Finset.mem_univ _, cast_val_odd hn' ?_⟩
+  simp only [logWindow, Finset.mem_filter] at hN
+  exact hN.2.1
+
+/-- **The dTV even/odd split** — assembles the integral-test reduction.  Given a per-class deviation
+bound `|S_r − t| ≤ ε` uniform over the odd residues (this is what `intTest_class_dev` supplies via the
+integral test), the total-variation distance of the reduced log-uniform window from `unifOddMod`
+telescopes to `2 ε · 2^{n'−1} / D`.  Even residues carry no mass on either side, so the sum collapses
+to the odd residues, where `l1_normalize_telescope` finishes. -/
+theorem intTest_dTV_le {lo hi : ℝ} (hhi : 1 ≤ hi) (hne : (logWindow lo hi).Nonempty)
+    {n' : ℕ} (hn' : 0 < n') {t ε : ℝ} (hDpos : 0 < windowMass lo hi)
+    (hdev : ∀ r : ZMod (2 ^ n'), r.val % 2 = 1 → |classMass lo hi n' r - t| ≤ ε) :
+    PMF.dTV ((logUnifOdd lo hi).map fun N => (N : ZMod (2 ^ n'))) (unifOddMod n')
+      ≤ 2 * ε * ((2 ^ (n' - 1) : ℕ) : ℝ) / windowMass lo hi := by
+  classical
+  haveI : NeZero (2 ^ n') := ⟨by positivity⟩
+  set O : Finset (ZMod (2 ^ n')) := Finset.univ.filter (fun r => r.val % 2 = 1) with hOdef
+  have hcard : O.card = 2 ^ (n' - 1) := card_odd_zmod_two_pow n' hn'
+  -- the uniform mass on an odd residue in `ℝ`
+  have hu : ((2 ^ (n' - 1) : ℝ≥0∞)⁻¹).toReal = (O.card : ℝ)⁻¹ := by
+    rw [hcard, ENNReal.toReal_inv, ENNReal.toReal_pow]
+    norm_num
+  -- Step 1: dTV collapses to the odd residues
+  have hdtv : PMF.dTV ((logUnifOdd lo hi).map fun N => (N : ZMod (2 ^ n'))) (unifOddMod n')
+      = ∑ r ∈ O, |classMass lo hi n' r / windowMass lo hi - (O.card : ℝ)⁻¹| := by
+    unfold PMF.dTV
+    rw [tsum_fintype,
+      ← Finset.sum_filter_add_sum_filter_not Finset.univ (fun r : ZMod (2 ^ n') => r.val % 2 = 1),
+      ← hOdef]
+    have heven : ∑ r ∈ Finset.univ.filter (fun r : ZMod (2 ^ n') => ¬ r.val % 2 = 1),
+        |(((logUnifOdd lo hi).map fun N => (N : ZMod (2 ^ n'))) r).toReal
+          - (unifOddMod n' r).toReal| = 0 := by
+      refine Finset.sum_eq_zero fun r hr => ?_
+      rw [Finset.mem_filter] at hr
+      have hre : r.val % 2 = 0 := by omega
+      rw [logUnifOdd_map_even_zero hhi hn' r hre, unifOddMod_apply_of_pos n' hn' r, if_neg (by omega)]
+      simp
+    rw [heven, add_zero]
+    refine Finset.sum_congr rfl fun r hr => ?_
+    rw [Finset.mem_filter] at hr
+    rw [map_res_apply_toReal hne r, unifOddMod_apply_of_pos n' hn' r, if_pos hr.2, hu]
+  rw [hdtv]
+  calc ∑ r ∈ O, |classMass lo hi n' r / windowMass lo hi - (O.card : ℝ)⁻¹|
+      ≤ 2 * ε * (O.card : ℝ) / windowMass lo hi :=
+        l1_normalize_telescope O (classMass lo hi n') (windowMass lo hi) t ε hDpos
+          (windowMass_eq_sum_classMass hn') (fun r hr => hdev r ((Finset.mem_filter.mp hr).2))
+    _ = 2 * ε * ((2 ^ (n' - 1) : ℕ) : ℝ) / windowMass lo hi := by rw [hcard]
+
 /-- **The integral-test error estimate** — the analytic heart of C7, and the ONE remaining new brick.
 For the log-uniform odd window `N_y ∈ [y, y^α]`, the total-variation distance of its reduction mod
 `2^{3n₀}` from the uniform law on odd residues is `≪ 2^{3n₀}/y` (the raw integral-test error, before the
