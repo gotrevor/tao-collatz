@@ -1,5 +1,42 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-10 (2026-07-14, brick b step 3): **`cond_char_factor` PROVED — the conditional char factorization**
+
+Build green 3285, `#print axioms cond_char_factor = norm_stdAddChar = [propext, Classical.choice,
+Quot.sound]`. Landed in `Sec6/MixingFromDecay.lean` (commit `595b408`). This is the assembly the
+previous lap set up: it fuses `char_offset_split` (pointwise additive→multiplicative split) with
+`cexpect_iid_append` (iid block independence) into the head×tail expectation split, for a fixed cut
+`n=j+p` and fixed tail-valuation level `l`:
+```
+E_a[ stdAddChar(-(X(a)·ξ)) · 1_{pre(tail a)=l} ]
+  = E_vh[ stdAddChar(-((3^p·(Fnat_j(vh)·2⁻ᵖʳᵉ⁽ᵛʰ,ʲ⁾)·2⁻ˡ)·ξ)) ]           -- pure HEAD block
+  · E_vt[ stdAddChar(-((Fnat_p(vt)·2⁻ᵖʳᵉ⁽ᵛᵗ,ᵖ⁾)·ξ)) · 1_{pre(vt)=l} ]     -- pure TAIL block (w/ indicator)
+```
+Proof: `set` the two block observables `f`(head-only), `g`(tail-only, carries indicator); norm
+bounds via new helper `norm_stdAddChar` (`stdAddChar_apply`+`Circle.norm_coe`, needs `[NeZero N]`);
+`rw [← PMF.cexpect_iid_append]`; then `congrArg (cexpect _)` + `funext a` reduces to the pointwise
+identity, split on `pre(tail a)=l`: on the event `char_offset_split` + `pre_castAdd a (le_refl j)`
+(head val `pre a j`↔`pre vh j`) + `h` (freeze `2⁻ᵖʳᵉ⁽ᵗᵃⁱˡ⁾`→`2⁻ˡ`) + `ring`; off the event both
+sides vanish via the indicator (`simp [if_neg]`). Gotcha banked: don't `set N := 3^(j+p)` — it
+rewrites `ZMod (3^(j+p))` to `ZMod N` and then `rw [char_offset_split]` (stated with `3^(j+p)`)
+fails to match syntactically; keep `3^(j+p)` explicit in `f`/`g`.
+
+**→ NEXT (brick b, remaining) — the tail factor ⟹ `charFn_decay`, then the §6 conditioning assembly**:
+1. **Tail factor = level-`p` Syracuse char sum.** The pure-tail expectation
+   `E_vt[stdAddChar(-((Fnat_p(vt)·2⁻ᵖʳᵉ⁽ᵛᵗ,ᵖ⁾)·ξ))·1_{pre(vt)=l}]` — drop/bound the indicator (`≤1`)
+   or handle it in the union over `l` — is, via `syracZ_eq_rev_fnat` (which is exactly the pushforward
+   of `iid geomHalf p` under `vt ↦ Fnat_p(vt)·2⁻ᵖʳᵉ⁽ᵛᵗ,ᵖ⁾`), a level-`p` Syracuse character sum. But
+   `Fnat_p(vt)` here lives in `ZMod (3^(j+p))`, whereas `syracZ p : PMF (ZMod (3^p))`; need a
+   `syracZ_map_cast`-style reindex tying the char at level `3^(j+p)` (for high `ξ = 3^j·2^l·ξ'`,
+   `3∤ξ'`) to the level-`p` char at `ξ'`. Then `charFn_decay` (Prop 1.17, PROVED) bounds it `≤ Cₐ·p⁻ᴬ`.
+   The head factor has norm `≤1` (`cexpect_norm_le` + `norm_stdAddChar`).
+2. **Bridge `𝓕(densC g_l) ξ ↔ cexpect`.** Show the conditioned density's DFT equals (a scalar times)
+   this `E_a[stdAddChar(-(X·ξ))·1_{pre(tail)=l}]` — finite-∑-over-`ZMod` ↔ tsum-over-`a` swap with
+   `g_l(Y)=E_a[1_{X=Y ∧ pre(tail)=l}]`. Then `osc_le_sqrt_highfreq` (general `c`, PROVED) on `g_l`.
+3. **Conditioning events + reassembly** (stopping time `k`, events E/Eₖ/Bₖ/Cₖ,ₗ, union over `k,l`,
+   triangle ineq; paper (6.2)–(6.10)). Decompose into named `sorry`s in `Sec6/MixingFromDecay.lean`.
+   Full 7-step plan: fruit-8.
+
 ## Lap fruit-9 (2026-07-14, review + brick d): **§7 confirmed CLOSED; C10 bridge GENERALIZED to arbitrary `c`**
 
 **Review-lap finding**: `#print axioms` confirms the entire §7 crux is axiom-clean — `prop_7_8`,
