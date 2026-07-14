@@ -1,5 +1,45 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box cont5 (2026-07-14): **`fpDist_fst_tail_le` PROVED (axiom-clean)** — the fixed-tilt fp tail, the hardest X8 input
+
+The genuinely-new large-deviation input of the (7.48) tail is now a machine-checked
+theorem: `∑_e fpDist(s,e)·1_{m<4e₁} ≤ δ·m^{−A}` for `m ≥ Cthr`, `s ≤ m/log²m`.
+`#print axioms = [propext, Classical.choice, Quot.sound]` (both it and the refactored
+`fpDist_fst_mgf_le` verified clean). Full build green (3281 jobs).
+
+**What landed (`BlackEdge.lean`, all axiom-clean):**
+- **`fpDist_fst_mgf_general`** (NEW reusable engine): the Fubini + `gaussExp_col_tail`
+  envelope core for ANY admissible tilt `0≤θ≤½min(c,c²/20)`, cutoff `K≥25`, budget
+  `s·log2≤(K+2)log9`. Returns `Summable ∧ Z_fp(θ) ≤ exp(θK) + gaussExp_RHS`. Both the
+  vanishing-tilt MGF and the fixed-tilt tail specialize it. `fpDist_fst_mgf_le` refactored
+  onto it (was ~110-line spine → 4-line specialize; still clean).
+- **`log_le_eps_mul_of_large`** (NEW helper): `∀ε>0 ∃N ∀m≥N, log m ≤ εm` (via `log m≤2√m`,
+  `√m≥2/ε`). The polynomial-vs-exponential closeout: `exp(−ρm)·m^A → 0`.
+- **`fpDist_fst_tail_le`** (the target): fixed `θ₀=½min(c,c²/20)`, cutoff `K=⌊m/log²m⌋+25`.
+  Pointwise Chernoff `1_{m<4e₁} ≤ exp(θ₀(e₁−m/4))` ⟹ `T ≤ exp(−θ₀m/4)·Z_fp(θ₀)`;
+  `fpDist_fst_mgf_general` ⟹ `Z_fp(θ₀) ≤ exp(θ₀K)+gaussExp_RHS ≤ B·exp(θ₀K)` (each
+  gaussExp exp-term ≤1 since K+1−s/4≥0, `exp(θ₀s/4)≤exp(θ₀K)` since s/4≤K,
+  `B=1+C'(1/d₂+1/d₁)`); `K≤m/8` (m≥400, log²m≥16) ⟹ `K−m/4≤−m/8`; close with
+  `B·exp(−θ₀m/8) ≤ δ·m^{−A}` via `log_le_eps_mul_of_large`+`exp_neg_mul_le_of_large`.
+  HEARTBEAT 2M (nested `Real.exp` atoms make isDefEq/nlinarith costly).
+
+**NEXT — hardest-first, in order:**
+1. **`hold_fst_tail_le`** (`BlackEdge.lean`, sorried): `∑_d hold·1_{m<4d₁} ≤ δ·m^{−A}`.
+   The hold half of the (7.48) tail — should be a CLEANER twin of the fp tail: `hold` is
+   a genuine PMF with a geometric first coordinate, so a fixed-tilt Chernoff
+   `1_{m<4d₁} ≤ exp(θ(d₁−m/4))` gives `≤ exp(−θm/4)·Z_hold(θ)` with `Z_hold(θ)` a
+   CONSTANT MGF (no s-dependence, no gaussExp) — use `tiltZ_hold_fst_le`/`hold_fst_mgf_le_real`
+   at a FIXED θ≤1/100 (NB `hold_fst_mgf_le_real` gives `≤1+4θ+32θ²`, a constant), then
+   `exp(−θm/4)·(1+4θ+32θ²) ≤ δm^{−A}` via the same `log_le_eps_mul`+`exp_neg_mul` closeout.
+   Much shorter than the fp tail (no Fubini/envelope). Reuse the fp-tail closeout block verbatim.
+2. **`fpDist_edgeWeight_le`** (the (7.48) glue): now ALL FOUR inputs proved
+   (`fpDist_fst_mgf_le` ✓, `hold_fst_mgf_le_real` ✓, `fpDist_fst_tail_le` ✓, `hold_fst_tail_le` ←1).
+   Double-`tsum` glue: `edgeWeight_summand_le` summed over d then e; MGF term
+   `m^{−A}·Z_fp(2A/m)·Z_hold(2A/m) ≤ (1+δ/2)m^{−A}`; tail `1_{m<2(e₁+d₁)} ≤ 1_{4e₁>m}+1_{4d₁>m}`
+   ⟹ `(δ/2)m^{−A}` from the two tail lemmas; pick δ-splits `(1+δ/2)+(δ/2)=1+δ`.
+3. **`fpDist_white_exit`** (Case-2 twin of `fpDist_white_exit_deep`, now a theorem — derive from it).
+4. **`Q_black_edge_case2`** (X8 Case-2 assembly), then `Q_black_edge_case3` (X11d, `Case3.lean`).
+
 ## Lap D-box cont4 (2026-07-14): **`fpDist_edgeWeight_le` decomposed + ℝ hold-MGF bridge PROVED** — corrected the tail route
 
 Attacked the next X8 sorry `fpDist_edgeWeight_le` (the (7.48) weight degradation). Two
