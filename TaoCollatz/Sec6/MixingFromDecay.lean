@@ -1145,6 +1145,39 @@ theorem tailDens_renyi_le (j p l : ℕ) (M : ℝ) (hM : ∀ Y, tailDens j p l Y 
     _ ≤ M * 1 := mul_le_mul_of_nonneg_left (tailDens_sum_le_one j p l) hM0
     _ = M := mul_one M
 
+/-- **Corollary 6.3 wrapper** (C10, obligation 3): the mod-`3^{j+p}` injectivity of the Syracuse
+offset that `tailDens`'s single-point mass rests on, reduced to the **window bound** `fnat < 3^{j+p}`.
+Given two positive-coordinate tuples of equal total valuation `l` whose offsets agree in
+`ZMod (3^{j+p})`, and whose `fnat` values are both `< 3^{j+p}` (Tao's (6.14)→(6.15): the sub-Gaussian
+window (6.12) forces the offset naturals below the modulus), the tuples are equal. Proof: cancel the
+unit `(2⁻¹)^l` to get `fnat vt ≡ fnat vt' mod 3^{j+p}`; the two bounds upgrade the congruence to
+natural equality (`Nat.mod_eq_of_lt`); then `fnat_inj_fixed_val` (Lemma 6.2) at valuation `l` closes.
+The `< 3^{j+p}` bound is the sole remaining analytic content of the tail collision count — everything
+else is now machine-checked. -/
+theorem fnat_offset_zmod_inj {j p l : ℕ} (vt vt' : Fin p → ℕ)
+    (hpos : ∀ i, 1 ≤ vt i) (hpos' : ∀ i, 1 ≤ vt' i)
+    (hl : pre vt p = l) (hl' : pre vt' p = l)
+    (hb : fnat p vt < 3 ^ (j + p)) (hb' : fnat p vt' < 3 ^ (j + p))
+    (hoff : (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p
+          = (fnat p vt' : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt' p) :
+    vt = vt' := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  rw [hl, hl'] at hoff
+  have hunit : (2 : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ = 1 := by
+    apply ZMod.mul_inv_of_unit
+    rw [show (2 : ZMod (3 ^ (j + p))) = ((2 : ℕ) : ZMod (3 ^ (j + p))) from by norm_cast,
+      ZMod.isUnit_iff_coprime]
+    exact Nat.Coprime.pow_right _ (by decide)
+  have hinv2 : (2 : ZMod (3 ^ (j + p)))⁻¹ * 2 = 1 := by rw [mul_comm]; exact hunit
+  have hcast : (fnat p vt : ZMod (3 ^ (j + p))) = (fnat p vt' : ZMod (3 ^ (j + p))) := by
+    have h := congrArg (· * (2 : ZMod (3 ^ (j + p))) ^ l) hoff
+    simp only [mul_assoc, ← mul_pow, hinv2, one_pow, mul_one] at h
+    exact h
+  have hnat : fnat p vt = fnat p vt' := by
+    have := (ZMod.natCast_eq_natCast_iff' _ _ _).mp hcast
+    rwa [Nat.mod_eq_of_lt hb, Nat.mod_eq_of_lt hb'] at this
+  exact fnat_inj_fixed_val p vt vt' hpos hpos' (by rw [hl, hl']) hnat
+
 /-- **Brick (b), the tail/indicator-factor `≤ 1` bound** (C10): the tail character factor from
 `cond_char_factor` — which carries the conditioning indicator `1_{pre vt = l}` — is a character
 expectation of a norm-`≤1` observable, so `‖tail factor‖ ≤ 1` (`cexpect_norm_le`). This is the
