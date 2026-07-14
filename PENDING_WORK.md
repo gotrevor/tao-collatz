@@ -1,5 +1,38 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-22 (2026-07-15, obligation-1): **`osc_le_two_mul_l1` (+ `fiber_card`) — the error-term tool**
+
+Build green 3285, both `#print axioms`-clean. Commit `819723e`. New lemmas (`Sec6/MixingFromDecay.lean`,
+after `osc_eq_sum_norm_devC`):
+- **`osc_le_two_mul_l1`**: `osc m n hmn c ≤ 2·∑_Y |c Y|` — the `L¹`-contraction of oscillation, the
+  mechanism turning "small total mass" into "small osc". Proof: `devC = densC − condAvgC`, triangle,
+  and the conditional average is an `L¹`-contraction (`∑‖condAvgC‖ ≤ ∑|c|`) via a `fiber_card`
+  double-count.
+- **`fiber_card`**: the `3ᵐ`-scale `castHom` fiber has exactly `3^{n-m}` points (reused
+  `fiber_char_reindex`'s injective `t ↦ Y+t·3ᵐ` reindexing).
+
+**This is the tool that bounds the bad-event error `osc(syracZ − ∑ condDens) ≤ 2·P(Ē)` and the
+finite-`l`-window truncation tail** — obligation 1's error/remainder term. Combined with fruit-19's
+marginalization it makes the truncation rigorous: `syracZ = ∑_{l<L} condDens l + R_L`, `∑_Y R_L =
+P(pre(tail) ≥ L)`, so `osc(R_L) ≤ 2·P(pre(tail) ≥ L)`.
+
+### → Where C10 stands now — the three obligations, and what's left of each:
+- **Obl 1 (event scaffold / gate)**: marginalization ✓ (fruit-19), error-term tool ✓ (this lap). STILL
+  NEEDS: (i) the stopping time `k` + events `E`/`Eₖ`/`Bₖ`/`Cₖ,ₗ` as `DecidablePred`s on `Fin n → ℕ`;
+  (ii) the density decomposition `syracZ = ∑_{k,l} condDens^E_{k,l} + error` with a *windowed*
+  condDens carrying the `E∧Bₖ` indicator; (iii) `P(Ē) ≪ n^{-A-1}` (the sub-Gaussian tail — reuses §7).
+- **Obl 2 (`hunif` uniform head decay)**: unchanged — per-ξ valuation bookkeeping feeding `condDens_osc_le`.
+- **Obl 3 (tail single-point mass M)**: Lemma 6.2 ✓ (fruit-20), Cor 6.3 mod-3ⁿ wrapper ✓ (fruit-21).
+  STILL NEEDS: the window bound `fnat p vt < 3^{j+p}` (Tao (6.14)→(6.15), the √/log/Young estimate) —
+  couples to obl-1's event `E`, since it's only true on the sub-Gaussian window.
+
+### → NEXT (hardest-first): the interlock is now clearly the EVENT `E`/window (6.2)/(6.12).
+Both obl-1(iii) and obl-3 need the sub-Gaussian window/event. Recommended next brick: **define the
+window predicate `W n vt` (6.12) as a `DecidablePred`, and prove the geometric-sum bound `W ⟹ fnat p
+vt < 3^{j+p}`** (obl-3's last gap) — self-contained arithmetic given `W`. This unblocks obl-3 fully
+(feeds `fnat_offset_zmod_inj` → windowed `tailDens Y ≤ 2^{-l}` → `M`). The `P(Ē)` probability tail is
+the separate obl-1(iii) piece. All osc/Plancherel/factorization/injectivity machinery is now banked.
+
 ## Lap fruit-21 (2026-07-15, obligation-3): **`fnat_offset_zmod_inj` — Cor 6.3 wrapper (mod-3ⁿ injectivity)**
 
 Build green 3285, `#print axioms fnat_offset_zmod_inj = [propext, Classical.choice, Quot.sound]`.
