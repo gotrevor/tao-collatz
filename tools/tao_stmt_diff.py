@@ -52,10 +52,18 @@ PINNED_NAMES = [
     # §7 exports feeding §6 — Prop 7.1 + Prop 1.17. `charFn_decay` is C10's analytic INPUT,
     # so it is now upstream of live work: a lap that finds C10 hard could "adjust" it.
     "key_fourier_decay", "charFn_decay",
-    # 🔴 THE OPEN CRUX STATEMENTS (watched, NOT yet ratified) — C10 (Prop 1.14, §6) and
-    # C9 (Prop 1.11, §5). These carry the repo's two live `sorry`s. A lap weakening one of
-    # these to close its own sorry is the single highest-value silent failure available.
+    # C10 (Prop 1.14, §6) — 🏆 COMPLETE + axiom-clean (verified 2026-07-14, HEAD 49b32c7).
+    # C9 (Prop 1.11, §5) — still open. Both stay watched: a finished pin is exactly what a
+    # later lap is tempted to "adjust" when something downstream will not close.
     "fine_scale_mixing", "stabilization",
+    # 🔴 THE LIVE FRONTIER — §5. Watched the moment they were pinned (ratify ⟹ watch; and when
+    # the frontier moves, MOVE THE GUARD WITH IT — pass 27's lesson, which the judge promptly
+    # re-broke by pinning C7 and not adding it here for four hours).
+    #   C7 (1.19), judge-pinned + ratified vs p.20. Stated character-identically to the FIRST
+    #     CONJUNCT of `stabilization` — so if either drifts, the differ must catch it.
+    #   C8 (Prop 5.2 / (5.8)), worker-pinned. WATCHED, *not* ratified — the judge still owes it
+    #     a reading against pp.22–25. Watching an un-ratified statement is how we see it move.
+    "first_passage_nonescape", "first_passage_approx",
     # The reduction floor — paper (1.2) Collatz->Syracuse + the Lemma 1.12/(1.21)/(1.22)
     # Syracuse-RV identities (all PROVED pass 27). The whole reduction rests on these.
     "colMin_eq_syrMin_oddPart",
@@ -77,6 +85,7 @@ SEARCH_FILES = [
     # the live frontier (pass 27) — §6/§5 + the reduction floor
     "TaoCollatz/Sec6/MixingFromDecay.lean",
     "TaoCollatz/Sec5/FirstPassage.lean",
+    "TaoCollatz/Sec5/ApproxFormula.lean",
     "TaoCollatz/Basic/Collatz.lean",
     "TaoCollatz/Syracuse/SyracRV.lean",
     "TaoCollatz/Statement.lean",
