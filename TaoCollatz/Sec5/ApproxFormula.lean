@@ -35,11 +35,7 @@ open scoped ENNReal
 
 namespace TaoCollatz
 
-/-- Paper (5.1): `n₀ := ⌊log x / (10 log 2)⌋`, so `2^{n₀} ≍ x^{0.1}`. -/
-noncomputable def nZero (x : ℝ) : ℕ := ⌊Real.log x / (10 * Real.log 2)⌋₊
-
-/-- Paper (5.2): `m₀ := ⌊(α−1)/100 · log x⌋` — the fixed number of backward steps. -/
-noncomputable def mZero (x : ℝ) : ℕ := ⌊(alpha - 1) / 100 * Real.log x⌋₊
+-- `nZero` (5.1) and `mZero` (5.2) live in `Sec5.FirstPassage` (shared with node C7).
 
 /-- Paper (5.11): the good-tuple set `𝒜⁽ⁿ'⁾ ⊂ (ℕ+1)ⁿ'` — tuples `(a₁,…,a_{n'})` with every
 `aᵢ ≥ 1` whose every prefix sum stays within `log^{0.6} x` of the mean `2n`:
