@@ -1040,6 +1040,59 @@ theorem deterministic_encounter_claim (n ξ : ℕ) (F : TriangleFamily n ξ)
   rw [encFoldAt_top] at hmono
   exact le_trans (key R (le_refl R)) hmono
 
+/-! ### X11a analytic helpers — the two convergent series behind the E∗ union -/
+
+/-- **Telescoping bound** `Σ_{p<T+1} 1/(1+p)² ≤ 2` — the convergent series that
+tames the `1/s'` first-passage terms in the X11a E∗ union (since
+`s' = ⌈4^A(1+p)³⌉ ≥ 4^A(1+p)³` makes `A²(1+p)/s' ≤ A²·4^{-A}(1+p)^{-2}`). Proved
+by the sharper `≤ 2 − 1/(T+1)` induction with the step `1/(k+2)² ≤ 1/(k+1)−1/(k+2)`. -/
+theorem sum_inv_sq_le_two (T : ℕ) :
+    (Finset.range (T + 1)).sum (fun p => 1 / (1 + (p : ℝ)) ^ 2) ≤ 2 := by
+  have h : ∀ N : ℕ, (Finset.range (N + 1)).sum (fun p => 1 / (1 + (p : ℝ)) ^ 2)
+      ≤ 2 - 1 / ((N : ℝ) + 1) := by
+    intro N
+    induction N with
+    | zero => norm_num
+    | succ k IH =>
+      have hk1 : (0 : ℝ) < (k : ℝ) + 1 := by positivity
+      have hk2 : (0 : ℝ) < (k : ℝ) + 2 := by positivity
+      have hcast1 : ((k + 1 : ℕ) : ℝ) = (k : ℝ) + 1 := by push_cast; ring
+      rw [Finset.sum_range_succ, hcast1]
+      have hterm : (1 : ℝ) / (1 + ((k : ℝ) + 1)) ^ 2 = 1 / ((k : ℝ) + 2) ^ 2 := by ring_nf
+      have hrhs : (2 : ℝ) - 1 / (((k : ℝ) + 1) + 1) = 2 - 1 / ((k : ℝ) + 2) := by ring_nf
+      rw [hterm, hrhs]
+      have hkey : 1 / ((k : ℝ) + 2) ^ 2 + 1 / ((k : ℝ) + 2) ≤ 1 / ((k : ℝ) + 1) := by
+        rw [div_add_div _ _ (by positivity) (ne_of_gt hk2), div_le_div_iff₀ (by positivity) hk1]
+        nlinarith [hk1, hk2]
+      linarith [IH, hkey]
+  have hbound := h T
+  have : (0 : ℝ) ≤ 1 / ((T : ℝ) + 1) := by positivity
+  linarith [hbound, this]
+
+/-- **Geometric bound** `Σ_{p<T+1} r^{1+p} ≤ 2r` for `0 ≤ r ≤ 1/2` — the geometric
+series that tames the `exp(−c·A²(1+p))` renewal-tail terms in the X11a E∗ union
+(with `r = exp(−c·A²) ≤ 1/2` for `A ≥ A₀`). Partial sum `≤` the geometric tsum. -/
+theorem sum_geom_pow_le (r : ℝ) (hr0 : 0 ≤ r) (hr : r ≤ 1 / 2) (T : ℕ) :
+    (Finset.range (T + 1)).sum (fun p => r ^ (1 + p)) ≤ 2 * r := by
+  have hr1 : r < 1 := by linarith
+  have h1r : (0 : ℝ) < 1 - r := by linarith
+  have hsum : Summable (fun p : ℕ => r ^ p) := summable_geometric_of_lt_one hr0 hr1
+  have hpartial : (Finset.range (T + 1)).sum (fun p => r ^ p) ≤ (1 - r)⁻¹ := by
+    rw [← tsum_geometric_of_lt_one hr0 hr1]
+    exact hsum.sum_le_tsum _ (fun i _ => by positivity)
+  have hfactor : (Finset.range (T + 1)).sum (fun p => r ^ (1 + p))
+      = r * (Finset.range (T + 1)).sum (fun p => r ^ p) := by
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl (fun p _ => by rw [pow_add, pow_one])
+  have hinvpos : (0 : ℝ) < (1 - r)⁻¹ := inv_pos.mpr h1r
+  have hcancel : (1 - r) * (1 - r)⁻¹ = 1 := mul_inv_cancel₀ (ne_of_gt h1r)
+  have hinv : (1 - r)⁻¹ ≤ 2 := by nlinarith [hcancel, h1r, hinvpos, hr]
+  rw [hfactor]
+  calc r * (Finset.range (T + 1)).sum (fun p => r ^ p)
+      ≤ r * (1 - r)⁻¹ := by gcongr
+    _ ≤ r * 2 := by gcongr
+    _ = 2 * r := by ring
+
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
 /-- **Case 3 of Proposition 7.8** ((7.53)–(7.67), paper pp.48–49 + Lemmas
