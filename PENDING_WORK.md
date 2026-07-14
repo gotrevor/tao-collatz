@@ -30,9 +30,19 @@ note `ĉ_n(ξ) = (syracZ n).cexpect (Y ↦ eC(-(ξ.val·Y.val)/3ⁿ))`, EXACTLY 
    (Constant chase: choose the Prop-1.17 exponent `A` large enough to beat the ≤ n frequency
    scales; each scale contributes `≲ m^{-2A}`, ∑ over j<n-m scales is `≲ n·m^{-2A} ≤ m^{1-2A}`.)
 
-**NEXT lap**: state the two sub-lemmas (step-1 CS/Parseval bridge `osc_le_sqrt_highfreq`, step-2/3
-decay `highfreq_l2_le`) in `Sec6/MixingFromDecay.lean` as `sorry`s, prove `fine_scale_mixing`
-from them, then discharge each. The Parseval brick + charFn_decay + syracZ_map_cast are all in hand.
+**DONE this lap (build green, decomposition landed)**: `Sec6/MixingFromDecay.lean` now proves
+`fine_scale_mixing` from two named sub-lemmas (`highfreq_l2_le` applied at exponent `2A`, so the
+`√` restores `m^{-A}`); added `densC` (ℂ density) and `highFreq m n` (the `¬3^{n-m}∣ξ.val` modes):
+- `osc_le_sqrt_highfreq` [sorry] — step 1: `osc ≤ √(∑_{highFreq} ‖𝓕(densC n) ξ‖²)` (CS + Parseval).
+- `highfreq_l2_le` [sorry] — steps 2–3: `∑_{highFreq} ‖𝓕(densC n) ξ‖² ≤ C·m^{-A}` (∀A), from
+  `charFn_decay` via `syracZ_map_cast` projection + per-level Parseval count.
+
+**NEXT lap**: discharge the two Sec6 sub-lemmas. `osc_le_sqrt_highfreq` needs (a) the identity
+"3ᵐ-conditional-average = low-freq inverse-DFT" (relate `osc`'s castHom-fiber average to
+`∑_{low ξ} 𝓕(densC)(ξ)e(ξ·/3ⁿ)`), then (b) `∑_Y|dev| ≤ √(3ⁿ)·√(∑_Y|dev|²)` (Finset Cauchy–Schwarz,
+`Finset.inner_mul_le_norm_mul_norm` or `Finset.sum_div_pow_mul_...`), then (c) `ZMod.dft_parseval`.
+`highfreq_l2_le` needs the cexpect↔dft bridge (`𝓕(densC n) ξ` vs `(syracZ n).cexpect (eC …)`; sign),
+the `syracZ_map_cast` reduction of `ĉ_n(3ʲη)=ĉ_{n-j}(η)`, then `charFn_decay` + a geometric sum.
 
 ## Lap fruit-6 (2026-07-14): **Lemma 1.12 `syracZ_recursion` PROVED — ALL of SyracRV closed**
 
