@@ -2,22 +2,36 @@ import TaoCollatz.Fourier.ZMod3
 import TaoCollatz.Fourier.Parseval
 import TaoCollatz.Syracuse.SyracRV
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Algebra.Order.Chebyshev
 
 /-!
 # §6: fine-scale mixing from character decay (node C10) — Prop 1.14
 
 Paper anchor: Tao 2019 §6, Proposition 1.14 (deduced from Prop 1.17 via Plancherel).
 
-`fine_scale_mixing` (Prop 1.14) is decomposed along the paper's Plancherel route into two
-sub-lemmas (both `sorry`, the genuine §6 analytic content):
+`fine_scale_mixing` (Prop 1.14) is decomposed along the paper's Plancherel route.
 
-* `osc_le_sqrt_highfreq` — **Cauchy–Schwarz + Parseval bridge**: the `3ᵐ`-scale oscillation
-  is bounded by the `√` of the high-frequency `L²` Fourier mass. Uses `ZMod.dft_parseval`.
-* `highfreq_l2_le` — **decay of the high-frequency mass**: bounded by `C·m^{-A}` for every `A`,
-  from Prop 1.17 (`charFn_decay`, PROVED) via the `syracZ_map_cast` projection reduction.
+## Cauchy–Schwarz + Parseval bridge (`osc_le_sqrt_highfreq`)
 
-The reduction of `fine_scale_mixing` to these two IS proved here (invoking the second at the
-doubled exponent `2A`, so the `√` restores the target `m^{-A}`). Route: `PENDING_WORK` fruit-7.
+Write `N := 3ⁿ`, `c := densC n` the (real) density as a `ℂ`-valued function, and
+`devC Y := c Y − avg(Y)` where `avg(Y)` is the `3ᵐ`-scale conditional average (the mean of `c`
+over the `castHom`-fiber of `Y`). The proof splits into four machine-checked steps:
+
+* `osc_eq_sum_norm_devC` — `osc = ∑_Y ‖devC Y‖` (the `L¹` deviation; **proved**, a cast).
+* Cauchy–Schwarz `sq_sum_le_card_mul_sum_sq` — `(∑ ‖devC‖)² ≤ N·∑ ‖devC‖²` (**proved inline**).
+* `sum_norm_sq_devC_eq` — `∑_Y ‖devC Y‖² = N⁻¹·∑_{highFreq} ‖𝓕c(ξ)‖²` (**Parseval**, from the
+  inversion identity below; `sorry`).
+* `devC_eq_highfreq_invDFT` — `devC Y = N⁻¹ ∑_{ξ∈highFreq} 𝓕c(ξ)·e(ξ·Y)` (the genuine crux: the
+  `3ᵐ`-conditional average is the low-frequency projection, so the deviation is the high-frequency
+  inverse DFT; reduces to the coset character sum `coset_char_sum`; `sorry`).
+
+Then `osc = ∑‖devC‖ = √((∑‖devC‖)²) ≤ √(N·∑‖devC‖²) = √(N·N⁻¹·H) = √H`, i.e. `osc_le_sqrt_highfreq`.
+
+## High-frequency decay (`highfreq_l2_le`)
+
+`∑_{highFreq} ‖𝓕c(ξ)‖² ≤ C·m^{-A}` from Prop 1.17 (`charFn_decay`) via `syracZ_map_cast`; `sorry`.
+
+Route: `PENDING_WORK` fruit-8.
 -/
 
 open scoped BigOperators
@@ -33,15 +47,84 @@ killed by the `3ᵐ`-scale conditional average in `osc`. -/
 noncomputable def highFreq (m n : ℕ) : Finset (ZMod (3 ^ n)) :=
   Finset.univ.filter (fun ξ : ZMod (3 ^ n) => ¬ (3 ^ (n - m) ∣ ξ.val))
 
+/-- The low frequencies at scale `(n, m)`: `{ξ : 3^{n-m} ∣ ξ.val}`, complementary to `highFreq`.
+These are the modes constant on `3ᵐ`-cosets; the `3ᵐ`-conditional average is the projection here. -/
+noncomputable def lowFreq (m n : ℕ) : Finset (ZMod (3 ^ n)) :=
+  Finset.univ.filter (fun ξ : ZMod (3 ^ n) => (3 ^ (n - m) ∣ ξ.val))
+
+/-- The `3ᵐ`-scale fiber of `Y`: the `castHom`-preimage class `{Y' : π Y' = π Y}`. -/
+noncomputable def fiber (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) : Finset (ZMod (3 ^ n)) :=
+  Finset.univ.filter (fun Y' : ZMod (3 ^ n) =>
+    ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y'
+      = ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y)
+
+/-- The complex `3ᵐ`-scale conditional average of the density at `Y`. -/
+noncomputable def condAvgC (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) : ℂ :=
+  (3 : ℂ) ^ ((m : ℤ) - (n : ℤ)) * ∑ Y' ∈ fiber m n hmn Y, densC n Y'
+
+/-- The complex deviation of the density from its `3ᵐ`-scale conditional average. -/
+noncomputable def devC (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) : ℂ :=
+  densC n Y - condAvgC m n hmn Y
+
+/-- The oscillation functional equals the `L¹` norm of the (complex) deviation. A cast:
+the density and its average are real, so each summand's `|·|` is the `ℂ`-norm of `devC`. -/
+theorem osc_eq_sum_norm_devC (m n : ℕ) (hmn : m ≤ n) :
+    osc m n hmn (fun Y => (syracZ n Y).toReal) = ∑ Y, ‖devC m n hmn Y‖ := by
+  rw [osc]
+  refine Finset.sum_congr rfl (fun Y _ => ?_)
+  simp only [devC, condAvgC, densC]
+  have hcast : ((syracZ n Y).toReal : ℂ)
+        - (3 : ℂ) ^ ((m : ℤ) - (n : ℤ))
+            * ∑ Y' ∈ fiber m n hmn Y, ((syracZ n Y').toReal : ℂ)
+      = (((syracZ n Y).toReal
+          - (3 : ℝ) ^ ((m : ℤ) - (n : ℤ))
+              * ∑ Y' ∈ fiber m n hmn Y, (syracZ n Y').toReal : ℝ) : ℂ) := by
+    push_cast
+    ring
+  rw [hcast, Complex.norm_real, Real.norm_eq_abs, fiber]
+
+/-- **The Fourier-inversion crux** (Remark 1.18): the `3ᵐ`-scale deviation is the high-frequency
+inverse DFT. The conditional average is the projection onto the low frequencies
+`{ξ : 3^{n-m} ∣ ξ.val}` (those `ξ` constant on `3ᵐ`-cosets, by the coset character sum
+`coset_char_sum`), so `devC Y = c Y − avg(Y) = N⁻¹ ∑_{ξ∈highFreq} 𝓕c(ξ)·e(ξ·Y)`. -/
+theorem devC_eq_highfreq_invDFT (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) :
+    devC m n hmn Y
+      = (3 ^ n : ℂ)⁻¹ * ∑ ξ ∈ highFreq m n,
+          ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y) := by
+  sorry
+
+/-- **Parseval `L²` identity for the deviation**: `∑_Y ‖devC Y‖² = N⁻¹·∑_{highFreq} ‖𝓕c(ξ)‖²`.
+From `devC_eq_highfreq_invDFT` (`devC = 𝓕⁻ g`, `g` the high-frequency restriction of `𝓕c`) and
+`ZMod.dft_parseval`. -/
+theorem sum_norm_sq_devC_eq (m n : ℕ) (hmn : m ≤ n) :
+    ∑ Y, ‖devC m n hmn Y‖ ^ 2
+      = (3 ^ n : ℝ)⁻¹ * ∑ ξ ∈ highFreq m n, ‖ZMod.dft (densC n) ξ‖ ^ 2 := by
+  sorry
+
 /-- **§6 Cauchy–Schwarz + Parseval bridge** (Remark 1.18 route): the `3ᵐ`-scale oscillation of
-the Syracuse density is at most the `√` of its high-frequency `L²` Fourier mass. The `3ᵐ`-scale
-conditional average is the projection onto the low frequencies `{ξ : 3^{n-m} ∣ ξ.val}`, so the
-deviation is the inverse-DFT over `highFreq`; Cauchy–Schwarz + `ZMod.dft_parseval` gives the
-bound. (Genuine §6 content; route in `PENDING_WORK` fruit-7.) -/
+the Syracuse density is at most the `√` of its high-frequency `L²` Fourier mass. Proved from
+`osc_eq_sum_norm_devC`, the Cauchy–Schwarz inequality `sq_sum_le_card_mul_sum_sq`, and the
+Parseval `L²` identity `sum_norm_sq_devC_eq`. -/
 theorem osc_le_sqrt_highfreq (m n : ℕ) (hmn : m ≤ n) :
     osc m n hmn (fun Y => (syracZ n Y).toReal)
       ≤ Real.sqrt (∑ ξ ∈ highFreq m n, ‖ZMod.dft (densC n) ξ‖ ^ 2) := by
-  sorry
+  rw [osc_eq_sum_norm_devC]
+  set D := ∑ Y, ‖devC m n hmn Y‖ with hD
+  set H := ∑ ξ ∈ highFreq m n, ‖ZMod.dft (densC n) ξ‖ ^ 2 with hH
+  have hN : (3 ^ n : ℝ) ≠ 0 := by positivity
+  have hcard : ((Finset.univ : Finset (ZMod (3 ^ n))).card : ℝ) = (3 ^ n : ℝ) := by
+    rw [Finset.card_univ, ZMod.card]; push_cast; ring
+  have hcs : D ^ 2 ≤ (3 ^ n : ℝ) * ∑ Y, ‖devC m n hmn Y‖ ^ 2 := by
+    have := sq_sum_le_card_mul_sum_sq (s := (Finset.univ : Finset (ZMod (3 ^ n))))
+      (f := fun Y => ‖devC m n hmn Y‖)
+    rwa [hcard] at this
+  have key : D ^ 2 ≤ H := by
+    calc D ^ 2 ≤ (3 ^ n : ℝ) * ∑ Y, ‖devC m n hmn Y‖ ^ 2 := hcs
+      _ = (3 ^ n : ℝ) * ((3 ^ n : ℝ)⁻¹ * H) := by rw [sum_norm_sq_devC_eq]
+      _ = H := by field_simp
+  have hnn : 0 ≤ D := Finset.sum_nonneg (fun _ _ => norm_nonneg _)
+  calc D = Real.sqrt (D ^ 2) := (Real.sqrt_sq hnn).symm
+    _ ≤ Real.sqrt H := Real.sqrt_le_sqrt key
 
 /-- **§6 high-frequency decay**: the high-frequency `L²` Fourier mass of the Syracuse density
 decays faster than any polynomial in `m`. For `ξ = 3ʲ·η` (`η` coprime to 3, `j < n - m`) the
