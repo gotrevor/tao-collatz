@@ -282,8 +282,9 @@ def report(nodes: list[Node]) -> int:
         seam_labels = {n.label for n in seams}
         done = lambda lab: (m := by_label.get(lab)) is not None and not m.is_seam  # noqa: E731
 
-        print("🕳️  SEAMS — nodes claiming NO theorem (zero sorries, still unfinished):")
-        print("     the sorry census cannot see these. This is the distance-to-done gap.")
+        print("🟠 ORANGE NODES — statement not written in Lean (zero sorries, still unfinished):")
+        print("     the sorry census CANNOT see these. Report work as 'N sorries + M orange'.")
+        print("     The fix is not a report, it is a PIN: write the statement with `sorry`.")
         for n in seams:
             what = ", ".join(f"{d} ({n.kinds[d]})" for d in n.decls) or "— nothing claimed —"
             print(f"   {n.label:<5} {what}")
@@ -326,7 +327,7 @@ def report(nodes: list[Node]) -> int:
         print()
 
     proved = [n for n in nodes if n.proof_ok and n.all_clean]
-    print(f"📊 {len(proved)} nodes proved + axiom-clean · {len(seams)} seams · "
+    print(f"📊 {len(proved)} nodes proved + axiom-clean · {len(seams)} orange · "
           f"{len(drift)} drift · {len(false_green) + len(false_stmt)} false-green "
           f"({len(false_green)} proof, {len(false_stmt)} statement)")
 

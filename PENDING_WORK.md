@@ -1,3 +1,18 @@
+# ✅ LAP (2026-07-14 1958): C10 one sorry from done — g1 + g2 proved, only g3 (suffix marginal) left
+
+`prob_not_globalGood_le` is assembled and proved **modulo a single sorry** `g3_mass_le`. The marginal
+law, (6.3) union bound, `caThr_nonneg_large`, shared tail machinery, and TWO of the three per-event
+tails (`g1_mass_le` total-mass deficit, `g2_mass_le` coordinate overshoot) are all proved axiom-clean.
+
+**→ NEXT: `g3_mass_le`.** ONE new brick: the **suffix marginal** `(geomHalf.iid n).map (sufSum · r) =
+iidSum geomHalf r` (last-r-block; reflect `iid_map_castLE` via `Fin.natAdd`, or `cexpect_iid_append`
+with trivial head). Then the tail arithmetic MIRRORS g1 but is CLEANER: the Gaussian term is polynomial
+via `√(r log n)` (no `log ≤ εn` threshold needed), exp term via `+log n`. Full spec + the exact
+constants (`C²/320000 ≥ A+3`, `r/(1+r) ≥ 1/2`): `HANDOFF-2026-07-14-1958.md`. When g3 lands, **C10 is
+COMPLETE** — verify `#print axioms`, then objective 2 = pin C8.
+
+---
+
 # ✅ LAP (2026-07-14 1941): (6.3) union bound + MARGINAL LAW proved — C10 tail reduced to 3 pure sorries
 
 `prob_not_globalGood_le` is now **fully assembled** (union decomposition → `tsum_le_tsum` → split →

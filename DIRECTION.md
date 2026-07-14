@@ -7,7 +7,11 @@ PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ---
 
-## CURRENT DIRECTIVE (JUDGE PASS 29, 2026-07-14, HEAD `7ff033b`) — **the campaign is C10 → C7 → C8 → C9, in that order**
+## CURRENT DIRECTIVE (JUDGE PASS 29, 2026-07-14) — **C10 → C8 (pin) → C7 (prove) → C8 (close) → C9**
+
+🗺️ **`blueprint_rules.md` is BINDING — read it.** One node, one claim; pinning = writing the Lean
+statement with `sorry`; green border = *the statement exists*, never *finished*; **never set a
+`\leanok` yourself**. Report work as **"N sorries + M orange nodes"** (today: **7 + 1**).
 
 *Supersedes the pass-27 objective and the pass-28 correction block below (both FULFILLED — see
 "What pass 29 verified"). The hard rails below are LIVE; the rails in the superseded blocks still
@@ -17,8 +21,8 @@ bind wherever they are not restated here.*
 
 Two facts set it, and the second one is the subtle one:
 
-**1. Both C7 and C8 are SEAMS** — zero theorems, zero sorries, invisible to the census.
-`./tools/blueprint_audit.py` prints them, with their blocking order:
+**1. C8 is ORANGE** — its statement is not in Lean, so it is invisible to the sorry census.
+`./tools/blueprint_audit.py` prints it, with what it blocks:
 
 ```
 C8   — nothing claimed —
@@ -90,7 +94,7 @@ Two demands follow, and they are binding:
 - **Never document `condWindow` as EQUAL to the paper's `Eₖ`.** It is an enlargement. Say so, in the
   docstring, every time.
 - **Every event definition that claims to be a partition owes a PROVED disjointness lemma next to
-  it.** An unproved partition claim is a **seam wearing a definition's clothes** — zero sorries, and
+  it.** An unproved partition claim is a **hole wearing a definition's clothes** — zero sorries, and
   load-bearing. (This rail exists because the reversed-coordinate bug in `stopEvent` compiled green:
   the old definition removed `a₁` instead of `a_{k+1}` and did **not** produce a stopping-time
   partition. See pass 29 §4. `mainPieceEvent_cut_unique` is what the fix looks like when it can't regress.)
@@ -100,8 +104,10 @@ Two demands follow, and they are binding:
 ### 🥈 OBJECTIVE 2 — C8 (Prop 5.2, §5 pp.22–25): **PIN + ROUTE + PROBE it. Do NOT try to close it.**
 
 **C8 is the risk on the board** (diff 4, 15–30 laps, **75%** — the lowest confidence of anything
-left) and **there is no Lean behind it at all**: zero theorems, zero sorries, invisible to the census.
-It has been ordered pinned since pass 27 and never has been. **De-risk it before you feed it.**
+left) and it is the repo's **one remaining ORANGE node**: no Lean behind it at all, so the sorry
+census cannot see it. It has been ordered pinned since pass 27 and never has been.
+**De-risk it before you feed it.** ⚠️ **PIN = write the statements with `sorry` so they compile** —
+naming them is not pinning (`blueprint_rules.md`).
 
 - **Scope**: Prop 5.2 approximate formula **(5.8)**; the events `𝒜^{(n')}` **(5.11)**, `E'` **(5.10)**,
   `I_y` **(5.9)**; the `B_{n,y}` equivalence chain.
