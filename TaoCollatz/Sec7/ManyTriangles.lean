@@ -3387,7 +3387,7 @@ theorem encounter_apex_proximity :
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
         (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
       ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S₀ ≤ s →
-        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
       ∀ (A : ℝ), 5 ≤ A → ∀ (p s' : ℕ),
         (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
         100 * A ^ 2 * (1 + (p : ℝ)) ≤ (s' : ℝ) →
@@ -3477,50 +3477,12 @@ theorem encounter_apex_proximity :
       nlinarith
     have hmR2 : (2 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm2
     have hm0 : (0 : ℝ) < (m : ℝ) := by linarith
-    have hlogm : Real.log m ≤ (m : ℝ) ^ (0.3 : ℝ) / 0.3 :=
-      Real.log_le_rpow_div (Nat.cast_nonneg m) (by norm_num)
-    have hlogm0 : (0 : ℝ) ≤ Real.log m := Real.log_nonneg (by linarith)
-    have h06 : ((m : ℝ) ^ (0.3 : ℝ)) ^ (2 : ℕ) = (m : ℝ) ^ (0.6 : ℝ) := by
-      rw [← Real.rpow_natCast ((m : ℝ) ^ (0.3 : ℝ)) 2,
-        ← Real.rpow_mul (Nat.cast_nonneg m)]
-      norm_num
-    have hm03nn : (0 : ℝ) ≤ (m : ℝ) ^ (0.3 : ℝ) := Real.rpow_nonneg hm0.le _
-    have hsq : Real.log m ^ 2 ≤ (m : ℝ) ^ (0.6 : ℝ) / 0.09 := by
-      have h1 : Real.log m ^ 2 ≤ ((m : ℝ) ^ (0.3 : ℝ) / 0.3) ^ 2 :=
-        pow_le_pow_left₀ hlogm0 hlogm 2
-      have h2 : ((m : ℝ) ^ (0.3 : ℝ) / 0.3) ^ 2
-          = ((m : ℝ) ^ (0.3 : ℝ)) ^ (2 : ℕ) / 0.09 := by
-        rw [div_pow]
-        norm_num
-      rw [h2, h06] at h1
-      exact h1
-    have hlogm2 : (0 : ℝ) < Real.log m := Real.log_pos (by linarith)
-    have hdeep' : (m : ℝ) < (s : ℝ) * Real.log m ^ 2 := by
-      have hd := hdeep
-      rw [div_lt_iff₀ (pow_pos hlogm2 2)] at hd
-      linarith
-    have hm06pos : (0 : ℝ) < (m : ℝ) ^ (0.6 : ℝ) := Real.rpow_pos_of_pos hm0 _
-    have hmsplit : (m : ℝ) ^ (0.4 : ℝ) * (m : ℝ) ^ (0.6 : ℝ) = (m : ℝ) := by
-      rw [← Real.rpow_add hm0]
-      norm_num
+    -- weakened deep hyp `m^0.8 < s` suffices: `m^0.4 ≤ m^0.8 < s ≤ 12s`.
     have hm04 : (m : ℝ) ^ (0.4 : ℝ) ≤ 12 * (s : ℝ) := by
-      have h1 : (m : ℝ) ^ (0.4 : ℝ) * (m : ℝ) ^ (0.6 : ℝ)
-          < (s : ℝ) * ((m : ℝ) ^ (0.6 : ℝ) / 0.09) := by
-        rw [hmsplit]
-        calc (m : ℝ) < (s : ℝ) * Real.log m ^ 2 := hdeep'
-          _ ≤ (s : ℝ) * ((m : ℝ) ^ (0.6 : ℝ) / 0.09) :=
-              mul_le_mul_of_nonneg_left hsq hs0.le
-      have h2 : (s : ℝ) * ((m : ℝ) ^ (0.6 : ℝ) / 0.09)
-          = ((s : ℝ) / 0.09) * (m : ℝ) ^ (0.6 : ℝ) := by ring
-      rw [h2] at h1
-      have h3 : (m : ℝ) ^ (0.4 : ℝ) < (s : ℝ) / 0.09 :=
-        lt_of_mul_lt_mul_right h1 hm06pos.le
-      have h4 : (s : ℝ) / 0.09 ≤ 12 * s := by
-        rw [show (0.09 : ℝ) = 9 / 100 by norm_num]
-        rw [div_div_eq_mul_div]
-        rw [div_le_iff₀ (by norm_num : (0:ℝ) < 9)]
-        linarith only [hs0]
-      linarith only [h3, h4]
+      have h04le08 : (m : ℝ) ^ (0.4 : ℝ) ≤ (m : ℝ) ^ (0.8 : ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le (by linarith) (by norm_num)
+      have hlt : (m : ℝ) ^ (0.4 : ℝ) < (s : ℝ) := lt_of_le_of_lt h04le08 hdeep
+      linarith only [hlt, hs0]
     have hchain : 100 * (A ^ 2 * (1 + (p : ℝ))) ≤ 12 * (s : ℝ) := by
       calc 100 * (A ^ 2 * (1 + (p : ℝ))) = 100 * A ^ 2 * (1 + (p : ℝ)) := by ring
         _ ≤ (s' : ℝ) := hbig
@@ -4682,7 +4644,7 @@ theorem triangle_encounter_le :
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
         (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
       ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
-        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
       ∀ (p s' : ℕ), 1 ≤ s' →
         (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
       ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
@@ -4780,20 +4742,7 @@ theorem triangle_encounter_le :
     have h2 : Mth ≤ m := hbr2
     have : (10 : ℕ) ^ 27 ≤ m := le_trans h1 h2
     exact_mod_cast this
-  have hlogsq : Real.log (m : ℝ) ^ 2 ≤ (m : ℝ) ^ (0.2 : ℝ) := log_sq_le_rpow hM27
-  have hlogpos : (0 : ℝ) < Real.log (m : ℝ) := by
-    refine Real.log_pos ?_
-    calc (1 : ℝ) < 10 ^ (27 : ℕ) := by norm_num
-      _ ≤ (m : ℝ) := hM27
-  have hm08 : (m : ℝ) ^ (0.8 : ℝ) ≤ (m : ℝ) / Real.log (m : ℝ) ^ 2 := by
-    rw [le_div_iff₀ (pow_pos hlogpos 2)]
-    calc (m : ℝ) ^ (0.8 : ℝ) * Real.log (m : ℝ) ^ 2
-        ≤ (m : ℝ) ^ (0.8 : ℝ) * (m : ℝ) ^ (0.2 : ℝ) :=
-          mul_le_mul_of_nonneg_left hlogsq (Real.rpow_nonneg hm0R.le _)
-      _ = (m : ℝ) := by
-          rw [← Real.rpow_add hm0R]
-          norm_num
-  have hsdeep : (m : ℝ) ^ (0.8 : ℝ) < (s : ℝ) := lt_of_le_of_lt hm08 hdeep
+  have hsdeep : (m : ℝ) ^ (0.8 : ℝ) < (s : ℝ) := hdeep
   have hs0 : (0 : ℝ) < (s : ℝ) := by
     have : (0 : ℝ) < (m : ℝ) ^ (0.8 : ℝ) := Real.rpow_pos_of_pos hm0R _
     linarith

@@ -469,7 +469,7 @@ theorem bigTriangle_walk_le :
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
       ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
-        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
       ∀ (T p s' : ℕ), p ≤ T → 1 ≤ s' →
         (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
         (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
@@ -1155,7 +1155,7 @@ theorem estar_union_le :
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
       ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
-        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
       ∀ (T : ℕ),
         (∀ p, p ≤ T →
           ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ)) →
