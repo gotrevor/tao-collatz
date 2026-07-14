@@ -15,18 +15,43 @@ REPO = "/Users/gotrevor/src/tao-collatz"
 REV_OLD = sys.argv[1] if len(sys.argv) > 1 else "7803117^"
 REV_NEW = sys.argv[2] if len(sys.argv) > 2 else "7803117"
 
-PINNED = {
-    "TaoCollatz/Sec7/Triangles.lean": ["black_structure", "white_gap_above_run_top"],
-    "TaoCollatz/Sec7/ManyTriangles.lean": [
-        "fpDist_white_exit_deep", "fpDist_any_triangle_le", "fpDist_out_of_strip_le",
-        "fpDist_any_triangle_le_of_localization_box", "triangle_encounter_le",
-    ],
-    "TaoCollatz/Sec7/BlackEdge.lean": [
-        "fpDist_edgeWeight_le", "fpDist_white_exit", "Q_black_edge_case2",
-    ],
-    "TaoCollatz/Sec7/White.lean": [],
-    "TaoCollatz/Sec7/Setup.lean": ["black", "epsBW"],
-}
+# Every ratified pin. A statement edit to ANY of these revokes its ratification.
+#
+# Pass 26 lesson: this list WAS the erosion check's blind spot. `encounter_apex_proximity`
+# (X10a, ratified pass 19) had its hypothesis rewritten by `61f8e80` and the differ said
+# nothing, because the name was simply absent here. `triangle_encounter_le` was caught only
+# because it happened to be listed. A pin that is not in this dict is NOT being watched.
+# When the judge ratifies a statement, ADD IT HERE IN THE SAME PASS.
+#
+# Names are searched across ALL files listed below (pins get relocated — `fpDist_white_exit`
+# and `Q_black_edge_case2` moved BlackEdge -> BlackEdgeQ in pass 26), so a move is reported
+# as a move, not as a deletion.
+PINNED_NAMES = [
+    # Setup / geometry
+    "black", "epsBW", "black_structure", "white_gap_above_run_top",
+    # X9 — Lemma 7.9 (COMPLETE, pass 25)
+    "fpDist_white_exit_deep", "fpDist_any_triangle_le", "fpDist_out_of_strip_le",
+    "fpDist_any_triangle_le_of_localization_box", "many_triangles_white",
+    # X10 — Lemma 7.10 (p.51: hypothesis is `s > m/log^2 m`) + X10a (p.53)
+    "triangle_encounter_le", "encounter_apex_proximity",
+    # X8 / Case-2 (COMPLETE, pass 26) — relocated to BlackEdgeQ.lean
+    "fpDist_edgeWeight_le", "fpDist_white_exit", "Q_black_edge_case2",
+    # X11 / Case-3 + the §7 spine above it (frozen)
+    "Q_black_edge_case3", "Q_black_edge", "prop_7_8",
+    # The trusted base — the two headline theorems
+    "tao_collatz", "tao_collatz_quantitative",
+]
+
+SEARCH_FILES = [
+    "TaoCollatz/Sec7/Setup.lean",
+    "TaoCollatz/Sec7/Triangles.lean",
+    "TaoCollatz/Sec7/White.lean",
+    "TaoCollatz/Sec7/ManyTriangles.lean",
+    "TaoCollatz/Sec7/BlackEdge.lean",
+    "TaoCollatz/Sec7/BlackEdgeQ.lean",
+    "TaoCollatz/Sec7/Case3.lean",
+    "TaoCollatz/Statement.lean",
+]
 
 
 def show(rev: str, path: str) -> str:
@@ -49,28 +74,44 @@ def statement(src: str, name: str) -> str | None:
     return tail[: e.end()]
 
 
-bad, missing, ok = [], [], []
-for path, names in PINNED.items():
-    old_src, new_src = show(REV_OLD, path), show(REV_NEW, path)
-    for n in names:
-        a, b = statement(old_src, n), statement(new_src, n)
-        if a is None or b is None:
-            missing.append(f"{n} ({path}) old={'✓' if a else '✗'} new={'✓' if b else '✗'}")
-        elif a != b:
-            bad.append((n, path, a, b))
-        else:
-            ok.append(n)
+def locate(rev: str, name: str):
+    """Find a pinned statement anywhere in SEARCH_FILES (pins get relocated)."""
+    for path in SEARCH_FILES:
+        s = statement(show(rev, path), name)
+        if s is not None:
+            return path, s
+    return None, None
 
-print(f"✅ character-identical ({len(ok)}): {', '.join(ok)}")
+
+bad, moved, missing, ok = [], [], [], []
+for n in PINNED_NAMES:
+    pa, a = locate(REV_OLD, n)
+    pb, b = locate(REV_NEW, n)
+    if a is None or b is None:
+        missing.append(f"{n}  old={pa or '✗'}  new={pb or '✗'}")
+    elif a != b:
+        bad.append((n, pa, pb, a, b))
+    else:
+        ok.append(n)
+        if pa != pb:
+            moved.append(f"{n}: {pa} -> {pb}")
+
+print(f"✅ character-identical ({len(ok)}/{len(PINNED_NAMES)}): {', '.join(ok)}")
+if moved:
+    print(f"\n↔  relocated but character-identical ({len(moved)}) — ratification SURVIVES:")
+    for m in moved:
+        print(f"   {m}")
 if missing:
-    print(f"\n⚠️  not found ({len(missing)}):")
+    print(f"\n⚠️  NOT FOUND ({len(missing)}) — a pin vanished; investigate:")
     for m in missing:
         print(f"   {m}")
 if bad:
     print(f"\n🚨 STATEMENT CHANGED — RATIFICATION REVOKED ({len(bad)}):")
-    for n, path, a, b in bad:
-        print(f"\n--- {n}  ({path})")
-        print("OLD:", a[:600])
-        print("NEW:", b[:600])
+    for n, pa, pb, a, b in bad:
+        print(f"\n--- {n}   ({pa} -> {pb})")
+        print("OLD:", a[:700])
+        print("NEW:", b[:700])
     sys.exit(1)
-print("\nNo pinned statement changed. Ratifications survive the D4 numeral change.")
+if missing:
+    sys.exit(1)
+print("\nNo pinned statement changed. All ratifications survive this range.")

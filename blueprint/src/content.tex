@@ -816,7 +816,12 @@ two pinnacle kernels; both are now complete.
 \begin{lemma}[Large triangles rarely encountered; Lemma 7.10]\label{X10}
   \lean{triangle_encounter_le, fpDistPlus, bigTriangleSet, TriangleFamily.not_mem_two, fpDistPlus_height_tail, fpDistPlus_col_tail, encounter_apex_proximity, encounter_separated_sum}
   \uses{X3, X6, S3}
-  \leanok
+  % \leanok REVOKED — judge pass 26 (2026-07-14).  Commit 61f8e80 rewrote the deep
+  % hypothesis of triangle_encounter_le and encounter_apex_proximity from `m/log^2 m < s`
+  % to `m^0.8 < s`.  Both remain PROVED and axiom-clean, but Tao p.51 states Lemma 7.10
+  % with `s > m/log^2 m` verbatim, and the two hypotheses are INCOMPARABLE (m^0.8 <=
+  % m/log^2 m only for m >~ 10^15.5), so this node no longer renders Lemma 7.10.  The
+  % \leanok returns when the pins are restored (DIRECTION's mandated *_rpow-engine split).
 \textbf{Risk kernel 3b.}  \textbf{Lemma 7.10} (paper (7.60)--(7.65)): after a lengthy crossing,
 large triangles are rarely encountered, by a separated-\(\Sigma\) counting argument over the
 triangle family (node~\ref{X3}) using the first-passage location law (node~\ref{X6}).  This is
@@ -858,9 +863,26 @@ across the move).  Dated judge runs 2026-07-12 on all nine lap-59 declarations -
 X10b, both \(G\)-weight engines, the banded/qualifying steps, the three glue helpers,
 and the headline \texttt{triangle\_encounter\_le} itself --- all exactly
 \([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\).
+
+\textbf{\(\leanok\) REVOKED (judge pass 26, 2026-07-14) --- statement deviation, not a
+proof defect.}  Commit \texttt{61f8e80} rewrote the deep hypothesis of
+\texttt{triangle\_encounter\_le} (and X10a \texttt{encounter\_apex\_proximity}) from
+\(m/\log^2 m < s\) to \(m^{0.8} < s\), to unblock the Case-3 consumer, whose triangle sits
+at row \(n/2-m-1\) (depth \(m+1\)) --- and \(m/\log^2 m < s \Rightarrow (m+1)/\log^2(m+1) < s\)
+genuinely \emph{fails} (\(x/\log^2 x\) increasing; fractional-part counterexample).  The
+route reasoning is sound and the four new lemmas are proved and axiom-clean.  \emph{But it
+is not a generalization}: the hypotheses are \textbf{incomparable} (\(m^{0.8} \le m/\log^2 m\)
+only for \(m \gtrsim 10^{15.5}\); below that the new form covers \emph{fewer} \(s\)), and
+Tao p.51 states Lemma 7.10 with \(s > m/\log^2 m\) \emph{verbatim}.  So this node currently
+proves a true theorem that is \textbf{not Lemma 7.10}.  Repair (mandated, DIRECTION): keep
+the four lemmas as \texttt{*\_rpow} engines and restore the two pins as corollaries ---
+\(m \ge 10^{27}\) via \texttt{log\_sq\_le\_rpow}, and \(m < 10^{27}\) trivially, exactly the
+shallow branch this proof already uses.  The \(\leanok\) returns on byte-identity with
+\texttt{e08871e}.
 \end{lemma}
 \begin{proof}
-  \leanok
+  % \leanok REVOKED (judge pass 26) — the proof is clean, but it proves a deviated
+  % statement.  Restores when the pins are restored.
   Assembly per pp.52--54: trivial branch \(s' < 100C_2A^2(1+p)\) (the \(/s'\) term is
   already \(\ge 1\)); shallow branch \(m < M_{\mathrm{th}} :=
   \max(10^{27}, (S_{0a}+S_{0b}+1)^2)\) absorbed into the \(e^{-cA^2(1+p)}\) term

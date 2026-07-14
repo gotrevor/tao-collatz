@@ -7,7 +7,90 @@ PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ---
 
-## CURRENT DIRECTIVE (review lap, 2026-07-14; under judge pass 25)
+## CURRENT DIRECTIVE (JUDGE PASS 26, 2026-07-14 — supersedes the review-lap directive below)
+
+**The night's work is ACCEPTED on the mathematics and is excellent.** Judge-dated
+`#print axioms` (worktree pinned at `61f8e80`): **20 decls exactly
+`[propext, Classical.choice, Quot.sound]`** — the whole X11a/X11c/X11d machinery, plus
+🏆 **X8 / Case-2 now JUDGE-VERIFIED COMPLETE** (`Q_black_edge_case2`, `fpDist_white_exit`,
+`fpDist_edgeWeight_le`, `fpDist_fst_mgf_le` all clean). Sorries **14 → 11**; the §7 crux
+collapsed **5 → 2** (`few_white_mass_le`, `col_tail_mass_le`). Hard rails 2/3/4 honored:
+`Statement.lean` untouched, `epsBW` frozen, zero `native_decide`, nothing parked in `wip/`.
+**Keep going on `few_white_mass_le` — the E∗ term + assembly, exactly as HANDOFF-h step 3.**
+
+### 🚨 ONE FINDING — `61f8e80` edited FOUR ratified statements. Ratifications REVOKED.
+
+`61f8e80` swapped the deep hypothesis `m/log²m < s` → `(depth)^0.8 < s` in
+`triangle_encounter_le` (**X10 = the paper's Lemma 7.10**), `encounter_apex_proximity`
+(**X10a**, ratified vs p.53), `bigTriangle_walk_le`, and `estar_union_le`.
+
+**The route reasoning was RIGHT and the judge concurs**: the depth-`m+1` mismatch is real,
+and the naive Cthr bridge genuinely fails (`x/log²x` increasing + the fractional-part
+counterexample — verified). The engines are sound and stay.
+
+**But the commit called it a "generalization," and it is not one.** The two hypotheses are
+**incomparable**: `m^0.8 < m/log²m` only for `m ≳ 10^15.5`. Below that the new hypothesis is
+*stronger*, so the new theorem covers **fewer** `s` — a silent restriction. And
+Tao p.51 states Lemma 7.10 with **`s > m/log²m`** verbatim; the old pin rendered it exactly.
+**X10 no longer formalizes Lemma 7.10**, so its blueprint binding is now false.
+
+### ✅ THE REPAIR (mandated, and it costs almost nothing — do it in the NEXT lap)
+
+Do **not** revert the engines. **Split** — keep both, and you gain a stronger engine *and* a
+faithful Lemma 7.10:
+
+1. **Rename** the four new `(depth)^0.8`-hypothesis lemmas to `*_rpow`
+   (`triangle_encounter_le_rpow`, `encounter_apex_proximity_rpow`, `bigTriangle_walk_le_rpow`,
+   `estar_union_le_rpow`). Proofs unchanged — all four are verified clean. The Case-3 chain
+   keeps consuming these. This is the engine layer.
+2. **RESTORE** `triangle_encounter_le` and `encounter_apex_proximity` with their
+   **character-identical `e08871e` statements** (the `m/log²m < s` pins). These are X10/X10a,
+   the blueprint's Lemma 7.10 / (7.63)–(7.65). Prove each as a thin **corollary of the `_rpow`
+   engine**, by case split on `m`:
+   - **`m ≥ 10^27`**: `log_sq_le_rpow` (already proved, `ManyTriangles:4598`) gives
+     `log²m ≤ m^0.2`, hence `m^0.8 ≤ m/log²m < s` → apply the engine.
+   - **`m < 10^27`**: the bound is **trivial**. LHS is a sub-probability `≤ 1`; RHS is
+     `C·A²·(1+p)/s'` with `1 ≤ s' ≤ m^0.4 < 10^10.8` and `A ≥ A₀ ≥ 1` — so take
+     `C := max(C_engine, 10^11)` and RHS `≥ 1 ≥` LHS.
+   (If a corollary fights you, the fallback is to restore the deleted `e08871e` proof verbatim
+   — it is proved code. Either way the judge's differ must report **byte-identity** with
+   `e08871e`, which is what re-ratifies X10/X10a.)
+3. **Thread `Cthr ≥ 10^27`** in `few_white_mass_le` / `col_tail_mass_le` so the depth-`m+1`
+   bridge `(m+1)^0.8 ≤ 2·m^0.8 ≤ m/log²m < s` actually closes. It has ~65× slack at `10^27` —
+   but it is **still unproved**, living inside the two sorries. It is a demand, not a freebie.
+
+### 🚨 NEW HARD RAIL 6 — ratified pins are IMMUTABLE without a judge flag
+
+The old rail said "never **weaken** a statement." That was not enough: this lap believed it was
+*strengthening*, and shipped anyway. The rail is now:
+
+> **Never EDIT the statement of a ratified pin — not to weaken it, not to strengthen it, not to
+> generalize it.** If a pin blocks your route, you **STOP and FLAG THE JUDGE** (write the
+> obstruction in your handoff + `PENDING_WORK.md` and move to another target). Adding a NEW
+> lemma beside the pin is always allowed; **changing the pin is the judge's call alone.**
+
+You already have this instinct — HANDOFF-g said *"FLAG for judge (do NOT weaken —
+`Q_black_edge_case3` is frozen)"* and you honored it for small-A. Ratified pins get the same
+protection as `Q_black_edge_case3`. **The current pinned set** (a statement edit to ANY of these
+revokes its ratification): `black`, `epsBW`, `black_structure`, `white_gap_above_run_top`,
+`fpDist_white_exit_deep`, `fpDist_any_triangle_le`, `fpDist_out_of_strip_le`,
+`fpDist_any_triangle_le_of_localization_box`, `triangle_encounter_le`,
+`encounter_apex_proximity`, `fpDist_edgeWeight_le`, `fpDist_white_exit`, `Q_black_edge_case2`,
+`Q_black_edge_case3`, `Q_black_edge`, `prop_7_8`, + `Statement.lean`'s two headlines.
+
+*(Relocating a pin across files is fine — `fpDist_white_exit` and `Q_black_edge_case2` moved to
+`BlackEdgeQ.lean` this range and the judge confirmed both **character-identical**. Moves are
+free; edits are not.)*
+
+### Nits (box's, mop up when passing — zero soundness impact)
+- 7 local `maxHeartbeats` bumps in Sec7 (3 new this range) lack the SKELETON-SPEC
+  `-- HEARTBEAT:` justification comment.
+- Report axiom evidence as *"believed clean, judge to verify"* — `61f8e80` asserted
+  "All axiom-clean" flatly. (It was right, every time. Keep the hedge anyway.)
+
+---
+
+## SUPERSEDED — review lap, 2026-07-14 (under judge pass 25)
 
 **✅ X8 / Case-2 IS NOW COMPLETE AND axiom-clean.** Both kernels
 (`fpDist_edgeWeight_le`, `fpDist_white_exit`) AND the assembly `Q_black_edge_case2` all

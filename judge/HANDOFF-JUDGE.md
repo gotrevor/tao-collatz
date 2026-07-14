@@ -27,7 +27,7 @@ sees that).
 2. **`EXECUTABILITY.md` → "Live judge state"** — verified ledger, suspensions,
    tripwires, escalations. Refresh every pass.
 3. **`EXECUTABILITY.md` → "Campaign log"** — index of `judge/pass-NN.md`.
-   **Next pass number: 26.**
+   **Next pass number: 27.**
 4. **`DIRECTION.md` → CURRENT DIRECTIVE** — **the judge writes this; it OUTRANKS the
    HANDOFF and every grind lap re-reads it each lap.** This is the live steering
    channel: edit it mid-run to redirect the next lap.
@@ -43,10 +43,30 @@ sees that).
 - `tools/tao_linear_tail.py`, `tools/tao_height_tail.py` — the pass-24 numerics
   (exact step-law MGFs; optimize the tilt and print the localization box).
 
-## Where things stand (post-pass-25, 2026-07-13 evening)
+## Where things stand (post-pass-26, 2026-07-14 morning)
 
-- **ELEVEN verified nodes** (dated runs): S3, X1, X2, X3, X5, X6, **X9**, X10, C2, C5
-  (+ X4/X7 files sorry-free). 🏆 **BOTH pinnacle kernels (X9, X10) are COMPLETE.**
+- **TWELVE verified nodes** (dated runs): S3, X1, X2, X3, X5, X6, **X8** (new, pass 26),
+  X9, X10*, C2, C5 (+ X4/X7 files sorry-free). 🏆 Both pinnacle kernels (X9, X10) are proved.
+- 🚨 **X10 + X10a ratifications are REVOKED (pass 26)** — `61f8e80` rewrote their deep
+  hypothesis `m/log²m < s` → `m^0.8 < s`. Still **proved and axiom-clean**, but Tao p.51
+  states Lemma 7.10 with `s > m/log²m` verbatim and the hypotheses are **incomparable**
+  (`m^0.8 ≤ m/log²m` only for `m ≳ 10^15.5`), so X10 no longer *is* Lemma 7.10. Blueprint
+  `\leanok` is down. **The repair is mandated in DIRECTION** (keep the four new lemmas as
+  `*_rpow` engines; restore the two pins as corollaries — `m ≥ 10^27` via `log_sq_le_rpow`,
+  `m < 10^27` trivial). **Check whether the box did it; re-ratify on byte-identity with
+  `e08871e` (the differ reports it).** This is the ONE open obligation outside the sorries.
+- **§7 now hinges on exactly TWO sorries**: `few_white_mass_le` (7.56) + `col_tail_mass_le`
+  (both `Case3.lean`). Repo total 11 (2 crux + 2 headline stubs + 7 spine).
+- 🔒 **HARD RAIL 6 (new)**: *never EDIT a ratified pin — not to weaken, not to strengthen,
+  not to generalize; flag the judge.* The 19-name pinned set is listed inline in DIRECTION
+  and enforced by `tools/tao_stmt_diff.py` (which now takes revs as argv and searches
+  across files, so a relocation reports as a move). **Ratify a statement ⟹ add it to that
+  list in the same pass** — pass 26's near-miss was X10a's rewrite going unreported because
+  its name simply wasn't in the dict.
+- 🧰 **Judge a LIVE treadmill from a pinned worktree.** The box bind-mounts the repo and
+  commits `git add -A` (it swept pass-25's docs into its own commit). Use
+  `lean-create-worktree tao-collatz ~/src/tao-collatz-judgeNN --start-point <range-end>`
+  (CoW `.lake`, builds in ~2 min) and run every `#print axioms` there.
 - **Passes 24–25 closed the campaign's longest-running block.** The "second
   altitude-class escalation" (pass 23) was **downgraded, not escalated**: a p.48
   re-read showed the paper's O(1) localization is a distance *from Δ* (the walk

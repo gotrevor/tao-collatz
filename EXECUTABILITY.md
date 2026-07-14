@@ -117,6 +117,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - **⚖️ Altitude ruling** (2026-07-12, Trevor, post-pass-20): **Remedy A at `epsBW = 10⁻⁹⁰`** — paper-faithful route restored; execution order + judge protocol in BLUEPRINT §2 and Live judge state below. X9 badge blocked/60% → 13–28 laps/70%.
 - [Pass 23](judge/pass-23.md) — 2026-07-13, external-contribution cross-check (working tree, not a lap): **D4 CHANGE + REAL LEMMA-7.4 SEPARATION EXECUTED** ✅ + **SECOND ALTITUDE-CLASS ESCALATION** ⚠️ — **OpenAI Codex** landed `epsBW = 10⁻⁹⁰` with all mechanical repairs; the armed ε-sweep FIRED and all seven items discharged (X2/X3/X10 re-verified clean at the new ε); Lemma 7.4 Claim (*) Cases 1–3 formalized as REAL separation (pass-18 vacuity closed for good; `black_structure` gained one additive construction conjunct — re-ratified). Every pinned statement character-preserved across a BlackEdge→Case3 reorganization; old 10⁻⁴-era white-count route lemmas deleted (consistent with the pass-18 withdrawal). **New escalation**: the blocked tail was reduced to `sep > √(X²+Y²)` for an explicit localization box — but X ≈ 2.6·10⁶ vs sep ≈ 20.7 (lossy `16j−5l` Chernoff); no feasible frozen ε closes it. Exits: tighten the localization (judge p.48 re-read first — recommended) or re-open D4 as a parameter. Suspensions persist. Sorry trail: same 5 crux statements; repo 17 → 14. Split still queued (ManyTriangles now ~5,200 lines).
 - [Pass 25](judge/pass-25.md) — 2026-07-13, lap boundary (treadmill laps 1–3, opus medium→high, 16 commits): 🏆 **X9 / LEMMA 7.9 COMPLETE** — the second pinnacle kernel is a theorem; **both are now done**. The tail blocked since pass 18 and escalated at pass 23, `fpDist_any_triangle_le`, is **PROVED axiom-clean**, and with it `fpDist_white_exit_deep` + `many_triangles_white`; `ManyTriangles.lean` has **zero sorries**. Pass-24's two constants landed inside the judge's envelope: `B` = **64** (exact `Hold` MGF, tilt freed 1/20000 → 1/16, **no `native_decide`**), `Y` = **150** (`renewal_level_le_one`, X6 left existential). Box `√(51²+150²) ≈ 158.4` < `sep ≈ 230.26` at the pre-authorized `epsBW = 10⁻¹⁰⁰⁰`. The D4 lap was dedicated and **all 12 pinned statements byte-identical** across it. 🔔 **ε-sweep FIRED + DISCHARGED** (X3/X2/X10 + 2 consumers re-verified clean at the new ε — ledger survives a 910-OOM drop; tripwire RE-ARMS). 🔓 **Zero open suspensions** for the first time since pass 13. Remaining trail = Case-2/Case-3 assembly (5 crux, all in BlackEdge/Case3).
+- [Pass 26](judge/pass-26.md) — 2026-07-14, **overnight boundary, judged mid-run** (laps 4–8, 47 commits, `e08871e..61f8e80`; run in a worktree pinned at `61f8e80` because the box was still live in the shared tree): 🏆 **X8 / CASE-2 COMPLETE** — the twelfth verified node (`Q_black_edge_case2`, `fpDist_white_exit`, `fpDist_edgeWeight_le`, `fpDist_fst_mgf_le` all clean; the review lap's "judge to ratify" is now ratified). **20 decls axiom-clean**; the §7 crux collapsed **5 → 2** (`few_white_mass_le` (7.56) + `col_tail_mass_le`); sorries **14 → 11**, all by *proving*. X9 re-verified clean under the change below. Hard rails 2/3/4 honored (`Statement.lean` untouched, `epsBW` frozen, zero `native_decide`, nothing parked in `wip/`); `fpDist_white_exit` + `Q_black_edge_case2` relocated to a new `BlackEdgeQ.lean` **character-identically**. 🚨 **BUT `61f8e80` EDITED FOUR RATIFIED STATEMENTS** — it swapped the deep hypothesis `m/log²m < s` → `m^0.8 < s` in `triangle_encounter_le` (**X10 = Lemma 7.10**), `encounter_apex_proximity` (**X10a**), `bigTriangle_walk_le`, `estar_union_le`. **The route reasoning is RIGHT and concurred**: the frozen `Q_black_edge_case3` sits at depth `m+1`, and `m/log²m < s ⟹ (m+1)/log²(m+1) < s` genuinely FAILS (`x/log²x` increasing; fractional-part counterexample — judge-verified). **But it is not the "generalization" the commit claims**: the hypotheses are *incomparable* (`m^0.8 ≤ m/log²m` only for `m ≳ 10^15.5`; below that the new form covers **fewer** `s` — a silent restriction that compiles green), and **Tao p.51 states Lemma 7.10 with `s > m/log²m` verbatim**, so X10 no longer formalizes it. ⚖️ **X10 + X10a ratifications REVOKED** (blueprint `\leanok` down). **Repair mandated — split, don't revert**: keep the four proved lemmas as `*_rpow` engines, restore the two pins at their `e08871e` statements as corollaries (`m ≥ 10^27` via `log_sq_le_rpow`; `m < 10^27` trivial since LHS ≤ 1 ≤ `C·A²(1+p)/s'` for `C ≥ 10^11`), and thread `Cthr ≥ 10^27` so the depth-`m+1` bridge actually closes (still unproved, inside the two sorries). 🔧 **Two system fixes**: the differ's PINNED list **was the blind spot** (X10a's rewrite went unreported — it wasn't in the dict; X10 was caught by luck) → rewritten to 19 names, cross-file (moves ≠ deletions), argv revs; and **new HARD RAIL 6**: *never EDIT a ratified pin — not to weaken, not to strengthen, not to generalize; flag the judge.*
 - [Pass 24](judge/pass-24.md) — 2026-07-13, judge homework (p.48 localization re-read; no worker output): **SECOND ESCALATION DOWNGRADED — NOT altitude-class** ✅. The paper's (7.50) O(1) is a distance **from Δ**, not from the start (drift slope 1/4 < edge slope log2/log9, so the walk drifts *along* Δ), and is explicitly ε-free; Codex's geometry already renders exactly that (top-projection into Δ + `F.separated`) — the route is sound. The entire blocker is **one lossy constant**: `fpDist_linear_tail` replaces the step law's exact MGF (`geomQuarter` × `pascalNe3`, mean (4,16), drift −16/step) with a quadratic bound that near-cancels the drift and caps the tilt at 1/20000 (true ceiling 0.213), shipping `B = 4·10⁷` where the honest optimum is **B ≈ 42** (~10⁶×; and 4·10⁷ is 167× above even its own bound's need). The *real* blocker is the other constant: `fpDist_height_tail`'s `Y` is **existential** (it sums X6's envelope), so the box is not a number at all — fixed without re-opening X6 by renewal-conv + **strictly increasing heights** (`Δl ≥ 3` ⟹ each level visited at most once ⟹ renewal mass per level ≤ 1) + `Δl`'s exact MGF ⟹ **`Y = 139`**. Box `= √(47²+139²) ≈ 147` **vs sep ≈ 20.72 — does not fit**, so ⚖️ **one cheap ruling is needed**: numeral re-freeze `10⁻⁹⁰ → 10⁻¹⁰⁰⁰` (sep ≈ 230; 1000-digit rational, `norm_num`-trivial; fires the armed ε-sweep, all 7 items monotone-good at smaller ε). Pass-23's "no feasible ε" (11-million-digit numeral) was an artifact of the garbage `B` — off by four orders of magnitude in the exponent. **D4-as-a-parameter is OFF the table.** Both lemmas are ε-free: land them first, then pick `d` from the constants actually proved. Two worker tasks issued (BLUEPRINT §2); numerics in `tools/tao_linear_tail.py` + `tools/tao_height_tail.py`.
 - [Pass 22](judge/pass-22.md) — 2026-07-13, external-contribution cross-check (working tree, not a lap): **C5 / PROP 1.9 + LEMMA 4.1 COMPLETE** ✅ — `valuation_dist` + `valuation_tail` proved by an **OpenAI Codex** session (+1,183 lines across ValuationDist/Valuation). Pinned statements character-untouched incl. constituent `unifOddMod`; fresh faithfulness read vs Prop 1.9 p.7 + Lemma 4.1 p.22 confirms the `∀c₀ K ∃c₁ C ∀n n' X` shape. **Dated run caught a laundered hole**: `valuation_tail` initially depended on `sorryAx` via the long-parked (1.10) `PMF.abs_expect_indicator_sub_le_dTV` (Prob/Basic.lean:154) — textually sorry-free file, transitively conditional; judge proved (1.10) same pass (tsum triangle inequality + summability bookkeeping). Re-run: all 7 decls exactly the clean triple. Route note: Lemma 4.1 *derived from* Prop 1.9 + geometric tail (reverse of the paper's order; sound, non-circular). `/lean-review` (1,183 added lines): ✅ CLEAN. **Ninth verified node**; pass-21's `valVec_pos` nit resolved by codex unprompted. Repo sorries 21 → 17.
 - [Pass 21](judge/pass-21.md) — 2026-07-13, external-contribution cross-check (working tree, not a lap): **C2 / LEMMA 2.1 COMPLETE** ✅ — `valVec_unique` proved by an **OpenAI Codex** session (uncommitted; judge committed after verification). Statement untouched by the proof landing AND newly **RATIFIED vs p.14** (the node's open RATIFY-2 resolved); route = the paper's own last-entry induction; dated runs (`syr_iterate_key`, `valVec_unique`, new `syr_iterate_odd`) all clean; `/lean-review` (148 added lines): ✅ CLEAN. Eighth verified node, first of the C-series. Nit armed: the paper's membership half (valVec entries ≥ 1) has no companion lemma — one-liner if a consumer needs it.
@@ -138,16 +139,51 @@ consumed),
 🏆 **X9** (pass 25, 2026-07-13 — **Lemma 7.9 end-to-end**: `many_triangles_white` +
 the kernel `fpDist_white_exit_deep` + the long-blocked tail `fpDist_any_triangle_le`,
 all clean; `ManyTriangles.lean` now has ZERO sorries. **The second pinnacle kernel —
-both are now complete.**).
+both are now complete.**),
+🏆 **X8** (pass 26, 2026-07-14 — **Case-2 end-to-end**: `Q_black_edge_case2` +
+`fpDist_white_exit` + `fpDist_edgeWeight_le` + `fpDist_fst_mgf_le`, all clean. The
+twelfth verified node; the last Case-2 obligation).
 
 **Statements pinned + ratified**: every ledger node except **C8** (no pinned Lean
 statement yet — the last un-pinned node). Latest: X10 `∃A₀` re-pin + the two (7.61)
-tail pins (pass 18), X9 depth-gated re-pin (pass 14). 🔓 **ZERO OPEN SUSPENSIONS**
-(first time since pass 13): `fpDist_white_exit_deep`'s suspension (pass 18, re-grounded
-pass 23) is **lifted by proof** — it is now a theorem, axiom-clean (pass 25). A proof
-settles truth; nothing is left to believe.
+tail pins (pass 18), X9 depth-gated re-pin (pass 14). 🔓 **ZERO OPEN SUSPENSIONS**:
+`fpDist_white_exit_deep`'s suspension (pass 18, re-grounded pass 23) is **lifted by
+proof** — it is now a theorem, axiom-clean (pass 25). A proof settles truth; nothing is
+left to believe.
+
+⚠️ **TWO RATIFICATIONS REVOKED (pass 26) — X10 `triangle_encounter_le` + X10a
+`encounter_apex_proximity`.** `61f8e80` rewrote their deep hypothesis
+`m/log²m < s` → `m^0.8 < s`. Both are still **proved and axiom-clean** — the mathematics
+is not in doubt — but **Tao p.51 states Lemma 7.10 with `s > m/log²m` verbatim**, and the
+two hypotheses are *incomparable* (`m^0.8 ≤ m/log²m` only for `m ≳ 10^15.5`; below that the
+new form covers **fewer** `s`). So X10 no longer formalizes Lemma 7.10 and its blueprint
+binding is false. **This is a repair task, not a suspension.** Fix mandated in DIRECTION:
+keep the four new lemmas as `*_rpow` engines, restore the two pins at their `e08871e`
+statements as corollaries (`m ≥ 10^27` via `log_sq_le_rpow`; `m < 10^27` trivial, LHS ≤ 1 ≤
+RHS for `C ≥ 10^11`), and thread `Cthr ≥ 10^27` so the depth-`m+1` bridge closes. Full
+analysis: `judge/pass-26.md` §2.
 
 **Open riders / queued fronts**:
+- **🚨 X10/X10a REPAIR (pass 26) — the one open obligation outside the two sorries.**
+  See above + DIRECTION's mandated 3-step repair. Until it lands, X10 is
+  COMPLETE-but-UNRATIFIED (the only node in that state) and the blueprint's Lemma 7.10
+  binding must stay un-`\leanok`'d.
+- **🔒 HARD RAIL 6 (new, pass 26)**: *never EDIT a ratified pin — not to weaken, not to
+  strengthen, not to generalize.* The old rail said only "never weaken", and lap 8
+  sincerely believed it was *strengthening* (its commit says "generalize"), so it shipped
+  a statement edit to four ratified lemmas without a flag. Adding a lemma beside a pin is
+  always allowed; changing a pin is the judge's call. The 19-name pinned set is listed
+  inline in DIRECTION and enforced by `tools/tao_stmt_diff.py`.
+- **🔧 The differ WAS the blind spot (pass 26)**: `encounter_apex_proximity`'s rewrite went
+  **unreported** because the name wasn't in the tool's PINNED dict; `triangle_encounter_le`
+  was caught only because it happened to be listed. Rewritten: 19 pinned names (incl. X10a,
+  the frozen Case-3 spine, and `Statement.lean`'s two headlines), searched **across all
+  files** so relocations report as moves, revs via argv. **Ratify a statement ⟹ add it to
+  that list in the same pass.**
+- **Judging a live treadmill (pass 26)**: the box bind-mounts the repo and commits with
+  `git add -A` — it swept pass-25's docs into its own commit `19ea98d`. Judge from a
+  worktree pinned at the range end (`lean-create-worktree`, CoW `.lake`), never from the
+  shared tree the box is editing.
 - **⚖️ ALTITUDE RULING (Trevor, 2026-07-12): Remedy A at `epsBW = 10⁻⁹⁰` —
   EXECUTED (pass 23, Codex)**: D4 numeral + mechanical repairs landed; ε-sweep
   fired and discharged (all 7 items); X2/X3/X10 **re-verified clean at 10⁻⁹⁰**;
