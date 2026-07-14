@@ -992,6 +992,96 @@ theorem tail_factor_l2_eq (j p l : ℕ) :
   simp_rw [hnorm]
   push_cast; ring
 
+/-- **General collision-entropy reduction** (C10, the Rényi-2 skeleton): for a sub-density
+`0 ≤ d Y ≤ M`, the collision entropy is `∑_Y (d Y)² ≤ M·∑_Y d Y`. Pointwise `(d Y)² = d Y·d Y ≤
+M·d Y`. This reduces the tail Rényi count `∑(tailDens)²` to the single-point mass bound
+`sup_Y tailDens Y ≤ M` (the genuine Syracuse near-uniformity / offset-injectivity content of Lemma
+6.2), since `∑ tailDens ≤ 1` (`tailDens_sum_le_one`). -/
+theorem sum_sq_le_max_mul_sum {N : ℕ} [NeZero N] (d : ZMod N → ℝ) (M : ℝ)
+    (h0 : ∀ Y, 0 ≤ d Y) (hM : ∀ Y, d Y ≤ M) :
+    ∑ Y, (d Y) ^ 2 ≤ M * ∑ Y, d Y := by
+  rw [Finset.mul_sum]
+  refine Finset.sum_le_sum (fun Y _ => ?_)
+  rw [sq]
+  exact mul_le_mul_of_nonneg_right (hM Y) (h0 Y)
+
+/-- The tail sub-density is nonnegative (a `tsum` of nonneg terms). -/
+theorem tailDens_nonneg (j p l : ℕ) (Y : ZMod (3 ^ (j + p))) : 0 ≤ tailDens j p l Y := by
+  refine tsum_nonneg (fun vt => ?_)
+  exact mul_nonneg ENNReal.toReal_nonneg (by split <;> norm_num)
+
+/-- The tail sub-density total mass is `≤ 1` (it is `P(pre = l) ≤ 1`): swap the finite `∑_Y` into the
+`tsum`, collapse `∑_Y 1_{offset = Y ∧ pre = l} = 1_{pre = l} ≤ 1`, and use `∑' (iid) = 1`. -/
+theorem tailDens_sum_le_one (j p l : ℕ) : ∑ Y, tailDens j p l Y ≤ 1 := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have hbase : Summable (fun vt : Fin p → ℕ => ((geomHalf.iid p) vt).toReal) :=
+    ENNReal.summable_toReal (by rw [(geomHalf.iid p).tsum_coe]; exact ENNReal.one_ne_top)
+  have hone : ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal = 1 := by
+    rw [← ENNReal.tsum_toReal_eq (fun vt => (geomHalf.iid p).apply_ne_top vt),
+      (geomHalf.iid p).tsum_coe]; rfl
+  have hsum : ∀ Y : ZMod (3 ^ (j + p)), Summable (fun vt : Fin p → ℕ =>
+      ((geomHalf.iid p) vt).toReal
+        * (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+              ∧ pre vt p = l then (1 : ℝ) else 0)) := by
+    intro Y
+    refine Summable.of_nonneg_of_le (fun vt => mul_nonneg ENNReal.toReal_nonneg (by split <;> norm_num))
+      (fun vt => ?_) hbase
+    calc ((geomHalf.iid p) vt).toReal
+          * (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+                ∧ pre vt p = l then (1 : ℝ) else 0)
+        ≤ ((geomHalf.iid p) vt).toReal * 1 :=
+          mul_le_mul_of_nonneg_left (by split <;> norm_num) ENNReal.toReal_nonneg
+      _ = ((geomHalf.iid p) vt).toReal := mul_one _
+  have hcollapse : ∀ vt : Fin p → ℕ,
+      ∑ Y : ZMod (3 ^ (j + p)),
+        (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+            ∧ pre vt p = l then (1 : ℝ) else 0)
+        = (if pre vt p = l then (1 : ℝ) else 0) := by
+    intro vt
+    by_cases h : pre vt p = l
+    · simp only [h, and_true, Finset.sum_ite_eq, Finset.mem_univ, if_true]
+    · simp [h]
+  calc ∑ Y, tailDens j p l Y
+      = ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal
+          * ∑ Y : ZMod (3 ^ (j + p)),
+            (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+                ∧ pre vt p = l then (1 : ℝ) else 0) := by
+        simp only [tailDens]
+        rw [← Summable.tsum_finsetSum (fun Y _ => hsum Y)]
+        refine tsum_congr (fun vt => ?_)
+        rw [Finset.mul_sum]
+    _ = ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal * (if pre vt p = l then (1 : ℝ) else 0) := by
+        refine tsum_congr (fun vt => ?_); rw [hcollapse vt]
+    _ ≤ ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal := by
+        have hle : ∀ vt : Fin p → ℕ,
+            ((geomHalf.iid p) vt).toReal * (if pre vt p = l then (1 : ℝ) else 0)
+              ≤ ((geomHalf.iid p) vt).toReal := by
+          intro vt
+          calc ((geomHalf.iid p) vt).toReal * (if pre vt p = l then (1 : ℝ) else 0)
+              ≤ ((geomHalf.iid p) vt).toReal * 1 :=
+                mul_le_mul_of_nonneg_left (by split <;> norm_num) ENNReal.toReal_nonneg
+            _ = ((geomHalf.iid p) vt).toReal := mul_one _
+        refine Summable.tsum_le_tsum hle ?_ hbase
+        exact Summable.of_nonneg_of_le
+          (fun vt => mul_nonneg ENNReal.toReal_nonneg (by split <;> norm_num)) hle hbase
+    _ = 1 := hone
+
+/-- **The tail Rényi count reduces to the single-point mass bound** (C10, obligation 3 skeleton).
+Given a uniform bound `tailDens Y ≤ M` (the Syracuse near-uniformity / offset-injectivity of Lemma
+6.2, the one genuinely-remaining input), the tail collision entropy is `∑_Y (tailDens)² ≤ M`. Immediate
+from `sum_sq_le_max_mul_sum` + `tailDens_sum_le_one` (`∑ tailDens ≤ 1`) + `M ≥ 0`. So the whole tail
+`ℓ²`-mass in `condDens_osc_le`'s `√` collapses to `M`, and the remaining analytic content of the
+Rényi block is exactly `sup_Y tailDens Y ≤ M ≈ 3⁻ᵖ`. -/
+theorem tailDens_renyi_le (j p l : ℕ) (M : ℝ) (hM : ∀ Y, tailDens j p l Y ≤ M) :
+    ∑ Y, (tailDens j p l Y) ^ 2 ≤ M := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have hM0 : 0 ≤ M := le_trans (tailDens_nonneg j p l 0) (hM 0)
+  calc ∑ Y, (tailDens j p l Y) ^ 2
+      ≤ M * ∑ Y, tailDens j p l Y :=
+        sum_sq_le_max_mul_sum _ M (tailDens_nonneg j p l) hM
+    _ ≤ M * 1 := mul_le_mul_of_nonneg_left (tailDens_sum_le_one j p l) hM0
+    _ = M := mul_one M
+
 /-- **Brick (b), the tail/indicator-factor `≤ 1` bound** (C10): the tail character factor from
 `cond_char_factor` — which carries the conditioning indicator `1_{pre vt = l}` — is a character
 expectation of a norm-`≤1` observable, so `‖tail factor‖ ≤ 1` (`cexpect_norm_le`). This is the
