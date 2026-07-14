@@ -1,5 +1,36 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-6 (2026-07-14): **Lemma 1.12 `syracZ_recursion` PROVED — ALL of SyracRV closed**
+
+The last SyracRV stub is done; `Syracuse/SyracRV.lean` is now **sorry-free & axiom-clean**
+(`#print axioms syracZ_recursion = [propext, Classical.choice, Quot.sound]`, full build 3282).
+The genuine ZMod number-theory crux (the fiber lemma) fell. New machinery, all reusable:
+
+1. **`cast_Ghat`** — truncation `castHom_{3ⁿ⁺¹→3ⁿ}(Ĝ w) = Gₙ w` (the `k=n` case of the
+   `syracZ_map_cast` truncation, with `w` used directly — no `castLE`, no vanishing tail).
+2. **`three_mul_eq_iff`** — `3·A = 3·B ↔ (A mod 3ⁿ) = (B mod 3ⁿ)` in `ZMod 3ⁿ⁺¹`. The
+   `3·ZMod 3ⁿ⁺¹ ≅ ZMod 3ⁿ` iso, proved via `∀C, 3·C=0 ↔ castHom C = 0` (both sides ⟺
+   `3ⁿ ∣ C.val`, using `natCast_eq_zero_iff` + `Nat.mul_dvd_mul_iff_left`; `sub` to lift to A,B).
+3. **`syracZ_fiber`** (the crux, ~90 lines) — for fixed head `a₀` and target `x`,
+   `∑' w, (iid n) w · [Gₙ₊₁(cons a₀ w)=x] = if (2^{a₀}x.val)%3=1 then syracZ n arg else 0`.
+   Route: `syracZ_offset_peel` head-peel ⟹ cond ⟺ `(m:ZMod 3ⁿ⁺¹)=1+3Ĝ(w)` (m=2^{a₀}x.val,
+   via unit `2^{a₀}`); reduce mod 3 (castHom to `ZMod 3`) ⟹ guard `m%3=1`; then `m=3q+1`,
+   cancel the `1`, `three_mul_eq_iff` + `cast_Ghat` ⟹ `arg = Gₙ(w)`; `PMF.map_apply` on both.
+4. **Assembly** — `PMF.map_apply` → product form → `PMF.tsum_iid_succ_mul` peels `a₀` →
+   `syracZ_fiber` collapses the tail → `geom_fold_geomHalf` folds the `a₀`-sum. Periodicity
+   `f(a+P)=f(a)`, P=2·3ⁿ: guard via `2^P≡1 (mod 3)` (`Nat.ModEq`); value via `two_pow_period`
+   (`2^{2·3ⁿ}=1 mod 3ⁿ⁺¹`) ⟹ `(m_{a+P}:ZMod 3ⁿ⁺¹)=(m_a:_)` ⟹ same arg by `three_mul_eq_iff`.
+
+### Remaining non-headline sorries (whole repo):
+- `Sec5/FirstPassage.lean:81` `stabilization` (Prop 1.11) — HEROIC analytic (multi-lap; narrow only).
+- `Sec6/MixingFromDecay.lean:19` `fine_scale_mixing` — HEROIC analytic §6 (multi-lap; narrow only).
+- `Statement.lean:22,28` — the two headlines (discharge only when the whole chain lands; DO NOT TOUCH).
+
+**NEXT**: with §7 done and all of SyracRV closed, the remaining spine work is the two HEROIC
+analytic §5/§6 stubs (`stabilization`, `fine_scale_mixing`) — narrow only — plus any objective-3
+fruit the judge lists (ManyTriangles split, Pin C8). Attack `stabilization` (Prop 1.11) next:
+decompose the first-passage stabilization into named sub-lemmas before attempting the analytic core.
+
 ## Lap fruit-5 (2026-07-14): **Lemma 1.12 — FIVE cores PROVED, one hard fiber lemma left**
 
 Sustained narrowing of `syracZ_recursion` (`Syracuse/SyracRV.lean`, the last SyracRV stub).

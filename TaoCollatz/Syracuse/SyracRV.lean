@@ -8,9 +8,10 @@ import Mathlib.Data.ZMod.Basic
 Paper anchors: Tao 2019 (1.21), (1.22), (1.26), Lemma 1.12.
 
 `syracZ n` is the law of the reduced Syracuse offset mod `3ⁿ`, in the **(1.26)
-reversed** form (footnote 6; validated by the numeric harness, check 3/5). Statements:
-the projection compatibility (1.22), the Lemma 1.12 recursion, and the (1.21) bridge
-to `fnat`, all carry `sorry`.
+reversed** form (footnote 6; validated by the numeric harness, check 3/5). All three
+statements are now proved (axiom-clean): the projection compatibility (1.22)
+`syracZ_map_cast`, the Lemma 1.12 recursion `syracZ_recursion`, and the (1.21) bridge
+to `fnat` `syracZ_eq_rev_fnat`.
 -/
 
 open scoped ENNReal
@@ -283,6 +284,176 @@ private theorem two_pow_period (n : ℕ) : (2 : ZMod (3 ^ (n + 1))) ^ (2 * 3 ^ n
   rw [sub_eq_zero] at h
   exact h
 
+/-- Truncation of the level-`n` offset formula computed in `ZMod 3ⁿ⁺¹` down to `ZMod 3ⁿ`:
+`castHom (Ĝ w) = Gₙ w`. (The `k = n` case of `syracZ_map_cast`'s truncation, with `w` used
+directly — no `castLE` reindex, no vanishing tail.) -/
+private theorem cast_Ghat (n : ℕ) (w : Fin n → ℕ) :
+    (ZMod.castHom (pow_dvd_pow 3 (Nat.le_succ n)) (ZMod (3 ^ n)))
+        (∑ j ∈ Finset.range n,
+          (3 : ZMod (3 ^ (n + 1))) ^ j * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre w (j + 1))
+      = ∑ j ∈ Finset.range n,
+          (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre w (j + 1) := by
+  set φ := ZMod.castHom (pow_dvd_pow 3 (Nat.le_succ n)) (ZMod (3 ^ n)) with hφ
+  have hunit : ∀ r : ℕ, (2 : ZMod (3 ^ r)) * (2 : ZMod (3 ^ r))⁻¹ = 1 := by
+    intro r
+    apply ZMod.mul_inv_of_unit
+    rw [show (2 : ZMod (3 ^ r)) = ((2 : ℕ) : ZMod (3 ^ r)) from by norm_cast,
+      ZMod.isUnit_iff_coprime]
+    exact Nat.Coprime.pow_right r (by decide)
+  have hphi3 : φ (3 : ZMod (3 ^ (n + 1))) = (3 : ZMod (3 ^ n)) := map_ofNat φ 3
+  have hphi2 : φ ((2 : ZMod (3 ^ (n + 1)))⁻¹) = (2 : ZMod (3 ^ n))⁻¹ := by
+    have h1 : (2 : ZMod (3 ^ n)) * φ ((2 : ZMod (3 ^ (n + 1)))⁻¹) = 1 := by
+      rw [show (2 : ZMod (3 ^ n)) = φ 2 from (map_ofNat φ 2).symm, ← map_mul, hunit (n + 1),
+        map_one]
+    calc φ ((2 : ZMod (3 ^ (n + 1)))⁻¹)
+        = 1 * φ ((2 : ZMod (3 ^ (n + 1)))⁻¹) := (one_mul _).symm
+      _ = ((2 : ZMod (3 ^ n))⁻¹ * 2) * φ ((2 : ZMod (3 ^ (n + 1)))⁻¹) := by
+          rw [mul_comm ((2 : ZMod (3 ^ n))⁻¹) 2, hunit n]
+      _ = (2 : ZMod (3 ^ n))⁻¹ * ((2 : ZMod (3 ^ n)) * φ ((2 : ZMod (3 ^ (n + 1)))⁻¹)) := by ring
+      _ = (2 : ZMod (3 ^ n))⁻¹ := by rw [h1, mul_one]
+  rw [map_sum]
+  apply Finset.sum_congr rfl
+  intro j _
+  rw [map_mul, map_pow, map_pow, hphi3, hphi2]
+
+/-- The kernel of `×3` on `ZMod 3ⁿ⁺¹` is the kernel of the reduction to `ZMod 3ⁿ`:
+`3·A = 3·B ↔ (A mod 3ⁿ) = (B mod 3ⁿ)`. (The `3·ZMod 3ⁿ⁺¹ ≅ ZMod 3ⁿ` iso, in the form the
+divide-by-3 step of Lemma 1.12 consumes.) -/
+private theorem three_mul_eq_iff (n : ℕ) (A B : ZMod (3 ^ (n + 1))) :
+    3 * A = 3 * B ↔
+      (ZMod.castHom (pow_dvd_pow 3 (Nat.le_succ n)) (ZMod (3 ^ n))) A
+        = (ZMod.castHom (pow_dvd_pow 3 (Nat.le_succ n)) (ZMod (3 ^ n))) B := by
+  haveI : NeZero (3 ^ (n + 1)) := ⟨by positivity⟩
+  set φ := ZMod.castHom (pow_dvd_pow 3 (Nat.le_succ n)) (ZMod (3 ^ n)) with hφ
+  have key : ∀ C : ZMod (3 ^ (n + 1)), 3 * C = 0 ↔ φ C = 0 := by
+    intro C
+    have hφC : φ C = ((C.val : ℕ) : ZMod (3 ^ n)) := by
+      rw [hφ, ZMod.castHom_apply, ← ZMod.natCast_val]
+    have h3C : (3 : ZMod (3 ^ (n + 1))) * C = ((3 * C.val : ℕ) : ZMod (3 ^ (n + 1))) := by
+      rw [Nat.cast_mul, Nat.cast_ofNat, ZMod.natCast_rightInverse C]
+    rw [h3C, ZMod.natCast_eq_zero_iff, hφC, ZMod.natCast_eq_zero_iff]
+    generalize C.val = v
+    rw [pow_succ']
+    exact Nat.mul_dvd_mul_iff_left (by norm_num : 0 < 3)
+  constructor
+  · intro h
+    have h0 : (3 : ZMod (3 ^ (n + 1))) * (A - B) = 0 := by rw [mul_sub, h, sub_self]
+    have h1 := (key (A - B)).mp h0
+    rwa [map_sub, sub_eq_zero] at h1
+  · intro h
+    have h0 : φ (A - B) = 0 := by rw [map_sub, h, sub_self]
+    have h1 := (key (A - B)).mpr h0
+    rwa [mul_sub, sub_eq_zero] at h1
+
+/-- **The ZMod fiber lemma (crux of Lemma 1.12).** For fixed head coordinate `a₀` and target
+`x`, the tail-mass of `{w : Gₙ₊₁(cons a₀ w) = x}` under `Geom(2)ⁿ` is the divide-by-3 guard
+times the level-`n` point mass. Everything but the geometric `a₀`-fold. -/
+private theorem syracZ_fiber (n : ℕ) (a0 : ℕ) (x : ZMod (3 ^ (n + 1))) :
+    (∑' w : Fin n → ℕ, (geomHalf.iid n) w *
+        (if x = ∑ j ∈ Finset.range (n + 1),
+            (3 : ZMod (3 ^ (n + 1))) ^ j
+              * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre (Fin.cons a0 w) (j + 1)
+          then 1 else 0))
+      = (if (2 ^ a0 * x.val) % 3 = 1
+          then (syracZ n) (((2 ^ a0 * x.val - 1) / 3 : ℕ) : ZMod (3 ^ n))
+          else 0) := by
+  haveI : NeZero (3 ^ (n + 1)) := ⟨by positivity⟩
+  set φ := ZMod.castHom (pow_dvd_pow 3 (Nat.le_succ n)) (ZMod (3 ^ n)) with hφ
+  -- `2` (hence `2^{a₀}`) is a unit mod `3ⁿ⁺¹`.
+  have hunit : (2 : ZMod (3 ^ (n + 1))) * (2 : ZMod (3 ^ (n + 1)))⁻¹ = 1 := by
+    apply ZMod.mul_inv_of_unit
+    rw [show (2 : ZMod (3 ^ (n + 1))) = ((2 : ℕ) : ZMod (3 ^ (n + 1))) from by norm_cast,
+      ZMod.isUnit_iff_coprime]
+    exact Nat.Coprime.pow_right (n + 1) (by decide)
+  have hpow1 : (2 : ZMod (3 ^ (n + 1))) ^ a0 * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ a0 = 1 := by
+    rw [← mul_pow, hunit, one_pow]
+  have hpow2 : (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ a0 * (2 : ZMod (3 ^ (n + 1))) ^ a0 = 1 := by
+    rw [mul_comm]; exact hpow1
+  -- `2^{a₀}·x = (m : ZMod 3ⁿ⁺¹)` where `m = 2^{a₀}·x.val`.
+  set m : ℕ := 2 ^ a0 * x.val with hm
+  have hmcast : (2 : ZMod (3 ^ (n + 1))) ^ a0 * x = ((m : ℕ) : ZMod (3 ^ (n + 1))) := by
+    rw [hm, Nat.cast_mul, Nat.cast_pow, Nat.cast_ofNat, ZMod.natCast_rightInverse x]
+  -- Pointwise: `x = Gₙ₊₁(cons a₀ w) ↔ (m%3=1 ∧ (m-1)/3 = Gₙ(w))`.
+  have hequiv : ∀ w : Fin n → ℕ,
+      (x = ∑ j ∈ Finset.range (n + 1),
+          (3 : ZMod (3 ^ (n + 1))) ^ j
+            * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre (Fin.cons a0 w) (j + 1))
+        ↔ (m % 3 = 1 ∧
+            (((m - 1) / 3 : ℕ) : ZMod (3 ^ n))
+              = ∑ j ∈ Finset.range n,
+                  (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre w (j + 1)) := by
+    intro w
+    -- Head-peel and simplify `(cons a₀ w) 0 = a₀`, `tail (cons a₀ w) = w`.
+    rw [syracZ_offset_peel (Fin.cons a0 w), Fin.cons_zero, Fin.tail_cons]
+    set Ghat : ZMod (3 ^ (n + 1)) :=
+      ∑ j ∈ Finset.range n,
+        (3 : ZMod (3 ^ (n + 1))) ^ j * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre w (j + 1) with hGhat
+    -- Multiply through by the unit `2^{a₀}`: `x = 2⁻ᵃ⁰(1+3Ĝ) ↔ 2^{a₀}x = 1+3Ĝ ↔ (m:_) = 1+3Ĝ`.
+    have hstep1 : (x = (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ a0 * (1 + 3 * Ghat))
+        ↔ ((m : ℕ) : ZMod (3 ^ (n + 1))) = 1 + 3 * Ghat := by
+      rw [← hmcast]
+      constructor
+      · intro h; rw [h, ← mul_assoc, hpow1, one_mul]
+      · intro h; rw [← h, ← mul_assoc, hpow2, one_mul]
+    rw [hstep1]
+    constructor
+    · -- Forward: reduce mod 3 for the guard, then divide by 3 for the value.
+      intro heq
+      have hg : m % 3 = 1 := by
+        have hψ := congrArg (ZMod.castHom (pow_dvd_pow 3 (by omega : 1 ≤ n + 1)) (ZMod 3)) heq
+        rw [map_natCast, map_add, map_one, map_mul] at hψ
+        rw [show (ZMod.castHom (pow_dvd_pow 3 (by omega : 1 ≤ n + 1)) (ZMod 3))
+              (3 : ZMod (3 ^ (n + 1))) = 0 from by
+            rw [map_ofNat]; decide, zero_mul, add_zero] at hψ
+        rw [show (1 : ZMod 3) = ((1 : ℕ) : ZMod 3) from by norm_cast,
+          ZMod.natCast_eq_natCast_iff'] at hψ
+        omega
+      refine ⟨hg, ?_⟩
+      have hcast_m : ((m : ℕ) : ZMod (3 ^ (n + 1)))
+          = 1 + 3 * (((m - 1) / 3 : ℕ) : ZMod (3 ^ (n + 1))) := by
+        have hmq : m = 3 * ((m - 1) / 3) + 1 := by omega
+        conv_lhs => rw [hmq]
+        push_cast; ring
+      rw [hcast_m, add_right_inj] at heq
+      have h3 := (three_mul_eq_iff n (((m - 1) / 3 : ℕ) : ZMod (3 ^ (n + 1))) Ghat).mp heq
+      rw [map_natCast, hGhat, cast_Ghat] at h3
+      exact h3
+    · -- Backward: assemble from guard + value.
+      rintro ⟨hg, hval⟩
+      have hcast_m : ((m : ℕ) : ZMod (3 ^ (n + 1)))
+          = 1 + 3 * (((m - 1) / 3 : ℕ) : ZMod (3 ^ (n + 1))) := by
+        have hmq : m = 3 * ((m - 1) / 3) + 1 := by omega
+        conv_lhs => rw [hmq]
+        push_cast; ring
+      rw [hcast_m, add_right_inj]
+      apply (three_mul_eq_iff n (((m - 1) / 3 : ℕ) : ZMod (3 ^ (n + 1))) Ghat).mpr
+      rw [map_natCast, hGhat, cast_Ghat]
+      exact hval
+  -- Turn the pointwise equivalence into the tsum identity.
+  by_cases hg : m % 3 = 1
+  · rw [if_pos hg, syracZ, PMF.map_apply]
+    apply tsum_congr
+    intro w
+    have hiff : (x = ∑ j ∈ Finset.range (n + 1),
+          (3 : ZMod (3 ^ (n + 1))) ^ j
+            * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre (Fin.cons a0 w) (j + 1))
+        ↔ (((m - 1) / 3 : ℕ) : ZMod (3 ^ n))
+            = ∑ j ∈ Finset.range n,
+                (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre w (j + 1) := by
+      rw [hequiv w]; simp only [hg, true_and]
+    by_cases hc : (((m - 1) / 3 : ℕ) : ZMod (3 ^ n))
+        = ∑ j ∈ Finset.range n, (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre w (j + 1)
+    · rw [if_pos (hiff.mpr hc), if_pos hc, mul_one]
+    · rw [if_neg (fun h => hc (hiff.mp h)), if_neg hc, mul_zero]
+  · rw [if_neg hg]
+    rw [ENNReal.tsum_eq_zero.mpr]
+    intro w
+    have hfalse : ¬ (x = ∑ j ∈ Finset.range (n + 1),
+        (3 : ZMod (3 ^ (n + 1))) ^ j
+          * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre (Fin.cons a0 w) (j + 1)) := by
+      rw [hequiv w]; simp only [hg, false_and, not_false_iff]
+    rw [if_neg hfalse, mul_zero]
+
 -- RATIFY-DRIFT: the "divide by 3" step of Lemma 1.12 is spelled in ℕ
 -- (`(2^a · x.val - 1) / 3`, exact under the guard `(2^a · x.val) % 3 = 1`) rather than
 -- with `(3 : ZMod (3^(n+1)))⁻¹`, because 3 is a zero-divisor there and `ZMod.inv` is
@@ -299,20 +470,86 @@ theorem syracZ_recursion (n : ℕ) (x : ZMod (3 ^ (n + 1))) :
             (if (2 ^ a * x.val) % 3 = 1
               then 2⁻¹ ^ a * (syracZ n) (((2 ^ a * x.val - 1) / 3 : ℕ) : ZMod (3 ^ n))
               else 0) := by
-  -- DECOMPOSITION (algebraic core PROVED: `syracZ_offset_peel`, `pre_succ_tail`).
-  -- Remaining route (probabilistic, multi-lap):
-  --  (1) `syracZ (n+1) x = ∑' a₀:ℕ, geomHalf a₀ * (mass over tail w of {Gₙ₊₁(cons a₀ w) = x})`
-  --      via `PMF.map_apply` + `iid_apply_eq_prod` / `tsum_iid_succ_mul`.
-  --  (2) `syracZ_offset_peel`: `Gₙ₊₁(cons a₀ w) = 2⁻ᵃ⁰·(1 + 3·Ĝ(w))`, so `Gₙ₊₁ = x`
-  --      ⟺ `1 + 3·Ĝ(w) = 2^{a₀}·x` in `ZMod 3ⁿ⁺¹` ⟺ [`2^{a₀}·x.val ≡ 1 (mod 3)` AND
-  --      `Ĝ(w) = (2^{a₀}·x.val − 1)/3`]. The guard is exactly the `if` condition.
-  --  (3) reduce `Ĝ(w) mod 3ⁿ = Gₙ(w)` (the `syracZ_map_cast`/`castHom` truncation, already
-  --      built), so the tail-mass = `syracZ n (((2^{a₀}x.val−1)/3 : ℕ) : ZMod 3ⁿ)`.
-  --  (4) FOLD the `a₀`-sum: `a₀ ↦ (2^{a₀}x.val−1)/3 mod 3ⁿ` is periodic with period
-  --      `2·3ⁿ` (= multiplicative order of 2 mod 3ⁿ⁺¹), giving `∑_{a₀≥1} = (1−2^{−2·3ⁿ})⁻¹
-  --      · ∑_{a₀=1}^{2·3ⁿ}` — the normalization. Needs `orderOf (2 : ZMod 3ⁿ⁺¹) = 2·3ⁿ`
-  --      + a geometric-tail resummation over the residue.
-  sorry
+  set P : ℕ := 2 * 3 ^ n with hPdef
+  have hPpos : 0 < P := by rw [hPdef]; positivity
+  -- The `a₀`-summand (guard + level-`n` point mass).
+  set f : ℕ → ℝ≥0∞ := fun a0 =>
+    if (2 ^ a0 * x.val) % 3 = 1
+      then (syracZ n) (((2 ^ a0 * x.val - 1) / 3 : ℕ) : ZMod (3 ^ n)) else 0 with hf
+  -- Step 1–3: reduce `syracZ (n+1) x` to `∑' a₀, geomHalf a₀ · f a₀` (peel + fiber lemma).
+  have hmain : (syracZ (n + 1)) x = ∑' a0 : ℕ, geomHalf a0 * f a0 := by
+    have h1 : (syracZ (n + 1)) x
+        = ∑' v : Fin (n + 1) → ℕ, (geomHalf.iid (n + 1)) v *
+            (if x = ∑ j ∈ Finset.range (n + 1),
+                (3 : ZMod (3 ^ (n + 1))) ^ j * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre v (j + 1)
+              then 1 else 0) := by
+      rw [syracZ, PMF.map_apply]
+      apply tsum_congr
+      intro v
+      by_cases hc : x = ∑ j ∈ Finset.range (n + 1),
+          (3 : ZMod (3 ^ (n + 1))) ^ j * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre v (j + 1)
+      · rw [if_pos hc, if_pos hc, mul_one]
+      · rw [if_neg hc, if_neg hc, mul_zero]
+    rw [h1, PMF.tsum_iid_succ_mul geomHalf n
+      (fun v => if x = ∑ j ∈ Finset.range (n + 1),
+          (3 : ZMod (3 ^ (n + 1))) ^ j * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre v (j + 1)
+        then 1 else 0)]
+    apply tsum_congr
+    intro a0
+    congr 1
+    simp only [hf]
+    exact syracZ_fiber n a0 x
+  -- Step 4: fold the `a₀`-sum using `P`-periodicity of `f`.
+  have hper : ∀ a, f (a + P) = f a := by
+    intro a
+    simp only [hf]
+    -- The mod-3 guard is `P`-periodic (`2^P ≡ 1 mod 3`).
+    have h2P : (2 : ℕ) ^ P ≡ 1 [MOD 3] := by
+      calc (2 : ℕ) ^ P = (2 ^ 2) ^ (3 ^ n) := by rw [hPdef, pow_mul]
+        _ ≡ 1 ^ (3 ^ n) [MOD 3] := Nat.ModEq.pow _ (by decide)
+        _ = 1 := one_pow _
+    have hg_eq : (2 ^ (a + P) * x.val) % 3 = (2 ^ a * x.val) % 3 := by
+      have : (2 ^ (a + P) * x.val) ≡ (2 ^ a * x.val) [MOD 3] := by
+        rw [pow_add]
+        calc 2 ^ a * 2 ^ P * x.val
+            ≡ 2 ^ a * 1 * x.val [MOD 3] := ((h2P.mul_left _).mul_right _)
+          _ = 2 ^ a * x.val := by rw [mul_one]
+      exact this
+    by_cases hga : (2 ^ a * x.val) % 3 = 1
+    · have hgaP : (2 ^ (a + P) * x.val) % 3 = 1 := by rw [hg_eq]; exact hga
+      rw [if_pos hga, if_pos hgaP]
+      congr 1
+      -- arg equality: `(2^{a+P}x.val−1)/3 ≡ (2^{a}x.val−1)/3 (mod 3ⁿ)`.
+      haveI : NeZero (3 ^ (n + 1)) := ⟨by positivity⟩
+      have hAB : ((2 ^ (a + P) * x.val : ℕ) : ZMod (3 ^ (n + 1)))
+          = ((2 ^ a * x.val : ℕ) : ZMod (3 ^ (n + 1))) := by
+        have hsplit : ((2 ^ (a + P) * x.val : ℕ) : ZMod (3 ^ (n + 1)))
+            = (2 : ZMod (3 ^ (n + 1))) ^ P * ((2 ^ a * x.val : ℕ) : ZMod (3 ^ (n + 1))) := by
+          push_cast; rw [pow_add (2 : ZMod (3 ^ (n + 1))) a P]; ring
+        rw [hsplit, show (2 : ZMod (3 ^ (n + 1))) ^ P = 1 from by
+          rw [hPdef]; exact two_pow_period n, one_mul]
+      have hBq : ((2 ^ (a + P) * x.val : ℕ) : ZMod (3 ^ (n + 1)))
+          = 1 + 3 * (((2 ^ (a + P) * x.val - 1) / 3 : ℕ) : ZMod (3 ^ (n + 1))) := by
+        have hq : 2 ^ (a + P) * x.val = 3 * ((2 ^ (a + P) * x.val - 1) / 3) + 1 := by omega
+        conv_lhs => rw [hq]
+        push_cast; ring
+      have hAq : ((2 ^ a * x.val : ℕ) : ZMod (3 ^ (n + 1)))
+          = 1 + 3 * (((2 ^ a * x.val - 1) / 3 : ℕ) : ZMod (3 ^ (n + 1))) := by
+        have hq : 2 ^ a * x.val = 3 * ((2 ^ a * x.val - 1) / 3) + 1 := by omega
+        conv_lhs => rw [hq]
+        push_cast; ring
+      rw [hBq, hAq, add_right_inj] at hAB
+      have h3 := (three_mul_eq_iff n _ _).mp hAB
+      rw [map_natCast, map_natCast] at h3
+      exact h3
+    · have hgaP : ¬ (2 ^ (a + P) * x.val) % 3 = 1 := by rw [hg_eq]; exact hga
+      rw [if_neg hga, if_neg hgaP]
+  rw [hmain, geom_fold_geomHalf hPpos f hper]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro a _
+  simp only [hf]
+  rw [mul_ite, mul_zero]
 
 /-- Reversal splits a prefix sum: the first `m` reversed coordinates plus the first
 `n - m` forward coordinates cover the whole vector. (Exchangeability's ℕ backbone.) -/
