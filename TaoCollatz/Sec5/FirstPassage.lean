@@ -950,19 +950,164 @@ theorem integral_test_logUnif :
   have hxn : x₀n ≤ x := le_trans (le_max_right _ _) hx
   exact le_trans (herr x hxe y hy) (mul_le_mul_of_nonneg_left (hnum x hxn y hy) hK.le)
 
+/-- **Lower-tail (underflow) analogue of `geomHalf_overflow_le_Gweight`.**  For the iid `Geom(2)`
+vector, the mass on `{∑ ≤ 2n − λ}` is `≤ C·G_{1+n}(c·λ)`, because `∑ ≤ 2n − λ ⟹ |∑ − 2n| ≥ λ`.
+This is what turns the two-sided `geomHalf_tail_bound` into a bound on the LOWER tail of the
+valuation sum. -/
+theorem geomHalf_underflow_le_Gweight (c C : ℝ)
+    (htail : ∀ (n : Nat) (lam : ℝ), 0 ≤ lam →
+      (∑' L : Nat, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0) ≤
+        C * Gweight (1 + n) (c * lam))
+    (n : Nat) (lam : ℝ) (hlam : 0 ≤ lam) :
+    (∑' a : Fin n → Nat, if (pre a n : ℝ) ≤ 2 * n - lam then ((geomHalf.iid n) a).toReal else 0) ≤
+      C * Gweight (1 + n) (c * lam) := by
+  have hbridge :
+      (∑' a : Fin n → Nat, if (pre a n : ℝ) ≤ 2 * n - lam then ((geomHalf.iid n) a).toReal else 0)
+        = (∑' L : Nat, if (L : ℝ) ≤ 2 * n - lam then ((iidSum geomHalf n) L).toReal else 0) := by
+    let E : Set Nat := {L | (L : ℝ) ≤ 2 * n - lam}
+    have hmap := PMF.expect_map_of_nonneg (geomHalf.iid n) (fun a => ∑ i, a i)
+      (Set.indicator E 1) (fun L => Set.indicator_nonneg (fun _ _ => zero_le_one) L)
+    rw [show (geomHalf.iid n).map (fun a => ∑ i, a i) = iidSum geomHalf n from rfl] at hmap
+    unfold PMF.expect at hmap
+    simpa only [Function.comp_apply, E, Set.indicator, Set.mem_setOf_eq, Pi.one_apply,
+      mul_ite, mul_one, mul_zero, pre_eq_fin_sum] using hmap.symm
+  rw [hbridge]
+  have hdom : ∀ L : Nat,
+      (if (L : ℝ) ≤ 2 * n - lam then ((iidSum geomHalf n) L).toReal else 0) ≤
+        if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0 := by
+    intro L
+    by_cases hL : (L : ℝ) ≤ 2 * n - lam
+    · have hdev : lam ≤ |(L : ℝ) - 2 * n| := le_abs.mpr (Or.inr (by linarith))
+      rw [if_pos hL, if_pos hdev]
+    · rw [if_neg hL]; positivity
+  have hsum : Summable fun L : Nat =>
+      if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0 :=
+    Summable.of_nonneg_of_le (fun L => by split <;> positivity)
+      (fun L => by split <;> simp [ENNReal.toReal_nonneg])
+      (ENNReal.summable_toReal (iidSum geomHalf n).tsum_coe_ne_top)
+  exact le_trans ((Summable.of_nonneg_of_le (fun L => by split <;> positivity) hdom hsum).tsum_le_tsum
+    hdom hsum) (htail n lam hlam)
+
+/-- **(5.1) conversion**: geometric decay `2^{-c·n₀}` (with `n₀ = nZero x ≍ log x/(10 log 2)`) is
+`≤ x^{-c/20}` for `x ≥ 2^20`.  Turns a `2^{-c n₀}` bound into an `x^{-c'}` bound. -/
+theorem two_rpow_neg_nZero_le {c : ℝ} (hc : 0 < c) :
+    ∃ c' x₀ : ℝ, 0 < c' ∧ ∀ x : ℝ, x₀ ≤ x →
+      (2 : ℝ) ^ (-c * (nZero x : ℝ)) ≤ x ^ (-c') := by
+  refine ⟨c / 20, (2 : ℝ) ^ (20 : ℕ), by positivity, fun x hx => ?_⟩
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hx0 : (0 : ℝ) < x := lt_of_lt_of_le (by positivity) hx
+  have hxlog : (20 : ℝ) * Real.log 2 ≤ Real.log x := by
+    have h := Real.log_le_log (by positivity) hx
+    rwa [Real.log_pow] at h
+  have hfloor : Real.log x / (10 * Real.log 2) < (nZero x : ℝ) + 1 := by
+    unfold nZero; exact Nat.lt_floor_add_one _
+  have hν : Real.log x - 10 * Real.log 2 < (nZero x : ℝ) * (10 * Real.log 2) := by
+    rw [div_lt_iff₀ (by positivity)] at hfloor; nlinarith [hfloor]
+  rw [Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 2), Real.rpow_def_of_pos hx0]
+  apply Real.exp_le_exp.mpr
+  nlinarith [hν, hxlog, hc, hlog2, mul_pos hc hlog2]
+
+/-- **Paper (5.5)** in `2^{-c n₀}` form — the probabilistic lower tail.  Feed `integral_test_logUnif`
+into `valuation_dist` (5.4), then bound `ℙ(∑ valVec ≤ 1.9 n₀) = ℙ(deviation ≥ 0.1 n₀)` on the
+`Geom(2)^{n₀}` side by `geomHalf_underflow_le_Gweight`, and control the difference by the dTV. -/
+theorem valSum_lower_geom :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
+          ≤ C * (2 : ℝ) ^ (-c * (nZero x : ℝ)) := by
+  obtain ⟨K, hK, x₀e, herr⟩ := integral_test_logUnif
+  obtain ⟨cd, Cd, hcd, hCd, hdist⟩ := valuation_dist 1 K (by norm_num) hK
+  obtain ⟨ct, hct, Ct, hCt, htail⟩ := geomHalf_tail_bound
+  set d : ℝ := ct * 0.1 with hddef
+  have hd : 0 < d := by rw [hddef]; positivity
+  set cg : ℝ := finalDecay d / Real.log 2 with hcgdef
+  have hcg : 0 < cg := div_pos (finalDecay_pos hd) (Real.log_pos one_lt_two)
+  set c : ℝ := min cd cg with hcdef
+  have hc : 0 < c := lt_min hcd hcg
+  refine ⟨c, Cd + 2 * Ct, max x₀e 1, hc, by positivity, fun x hx y hy => ?_⟩
+  have hxe : x₀e ≤ x := le_trans (le_max_left _ _) hx
+  have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
+  have hy1 : (1 : ℝ) ≤ y := by
+    rcases hy with h | h <;> rw [h] <;>
+      · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
+        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha <;> positivity)
+  have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
+    rw [show (1 : ℝ) = (1 : ℝ) ^ alpha from (Real.one_rpow _).symm]
+    exact Real.rpow_le_rpow (by norm_num) hy1 (by unfold alpha; positivity)
+  have hodd : ∀ N ∈ (logUnifOdd y (y ^ alpha)).support, N % 2 = 1 :=
+    fun N hN => (logUnifOdd_support_le hyα1 hN).1
+  have hsize : (2 + 1) * (nZero x : ℝ) ≤ ((3 * nZero x : ℕ) : ℝ) :=
+    le_of_eq (by push_cast; ring)
+  have hmod : PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
+      (unifOddMod (3 * nZero x)) ≤ K * (2 : ℝ) ^ (-((3 * nZero x : ℕ) : ℝ)) := by
+    rw [show ((3 * nZero x : ℕ) : ℝ) = 3 * (nZero x : ℝ) by push_cast; ring]
+    exact herr x hxe y hy
+  have hdistPQ := hdist (nZero x) (3 * nZero x) (logUnifOdd y (y ^ alpha)) hsize hodd hmod
+  set P : PMF (Fin (nZero x) → ℕ) := (logUnifOdd y (y ^ alpha)).map fun N => valVec N (nZero x)
+    with hPdef
+  set Q : PMF (Fin (nZero x) → ℕ) := geomHalf.iid (nZero x) with hQdef
+  set E : Set (Fin (nZero x) → ℕ) := {a | (pre a (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} with hEdef
+  have htarget : (logUnifOdd y (y ^ alpha)).expect
+      (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
+      = P.expect (Set.indicator E 1) := by
+    rw [hPdef, PMF.expect_map_of_nonneg (logUnifOdd y (y ^ alpha)) (fun N => valVec N (nZero x))
+      (Set.indicator E 1) (fun a => Set.indicator_nonneg (fun _ _ => zero_le_one) a)]
+    unfold PMF.expect
+    apply tsum_congr; intro N
+    congr 1
+    simp only [Function.comp_apply, Set.indicator_apply, Set.mem_setOf_eq, hEdef,
+      pre_valVec (le_refl (nZero x)), Pi.one_apply]
+  have hQside : Q.expect (Set.indicator E 1)
+      ≤ Ct * Gweight (1 + nZero x) (ct * (0.1 * (nZero x : ℝ))) := by
+    have key := geomHalf_underflow_le_Gweight ct Ct htail (nZero x) (0.1 * (nZero x : ℝ)) (by positivity)
+    rw [show (2 : ℝ) * (nZero x : ℝ) - 0.1 * (nZero x : ℝ) = 1.9 * (nZero x : ℝ) from by ring] at key
+    refine le_trans (le_of_eq ?_) key
+    rw [hQdef, hEdef]
+    unfold PMF.expect
+    apply tsum_congr; intro a
+    simp only [Set.indicator_apply, Set.mem_setOf_eq, Pi.one_apply, mul_ite, mul_one, mul_zero]
+  have hevent := PMF.abs_expect_indicator_sub_le_dTV P Q E
+  have hXevent : P.expect (Set.indicator E 1) ≤ Q.expect (Set.indicator E 1) + P.dTV Q := by
+    have := le_abs_self (P.expect (Set.indicator E 1) - Q.expect (Set.indicator E 1))
+    linarith [hevent, this]
+  have hGdecay : Gweight (1 + nZero x) (ct * (0.1 * (nZero x : ℝ)))
+      ≤ 2 * (2 : ℝ) ^ (-cg * (nZero x : ℝ)) := by
+    rw [show ct * (0.1 * (nZero x : ℝ)) = d * (nZero x : ℝ) from by rw [hddef]; ring]
+    refine le_trans (Gweight_linear_le d hd (nZero x)) ?_
+    rw [hcgdef]
+    have hexp := exp_linearDecay_le_two_rpow d (nZero x)
+    linarith [hexp]
+  have hcgmono : (2 : ℝ) ^ (-cg * (nZero x : ℝ)) ≤ (2 : ℝ) ^ (-c * (nZero x : ℝ)) :=
+    two_rpow_decay_mono (min_le_right cd cg) (nZero x)
+  have hcdmono : (2 : ℝ) ^ (-cd * (nZero x : ℝ)) ≤ (2 : ℝ) ^ (-c * (nZero x : ℝ)) :=
+    two_rpow_decay_mono (min_le_left cd cg) (nZero x)
+  rw [htarget]
+  calc P.expect (Set.indicator E 1)
+      ≤ Q.expect (Set.indicator E 1) + P.dTV Q := hXevent
+    _ ≤ Ct * Gweight (1 + nZero x) (ct * (0.1 * (nZero x : ℝ)))
+          + Cd * (2 : ℝ) ^ (-cd * (nZero x : ℝ)) := add_le_add hQside hdistPQ
+    _ ≤ Ct * (2 * (2 : ℝ) ^ (-cg * (nZero x : ℝ))) + Cd * (2 : ℝ) ^ (-cd * (nZero x : ℝ)) := by
+        gcongr
+    _ ≤ Ct * (2 * (2 : ℝ) ^ (-c * (nZero x : ℝ))) + Cd * (2 : ℝ) ^ (-c * (nZero x : ℝ)) := by
+        gcongr
+    _ = (Cd + 2 * Ct) * (2 : ℝ) ^ (-c * (nZero x : ℝ)) := by ring
+
 /-- **Paper (5.5)** — the lower-tail bound: the total valuation `|ā^{(n₀)}(N_y)| = valSum N_y n₀`
-falls at or below `1.9 n₀` with probability `≪ x^{-c}`.  This is the LOWER-tail analogue of
-`valuation_tail` (Lemma 4.1, which bounds the UPPER tail `≥ n'`).  Proof (owed): feed
-`integral_test_logUnif` into `valuation_dist` for (5.4) `dTV(valVec N_y n₀, Geom(2)^{n₀}) ≪ 2^{-c n₀}`,
-then `geomHalf_tail_bound` (two-sided) bounds `ℙ(|Geom(2)^{n₀}| ≤ 1.9 n₀) = ℙ(deviation ≥ 0.1 n₀)`;
-convert `2^{-c n₀} ≪ x^{-c}` via `n₀ ≍ log x / (10 log 2)` (5.1). -/
+falls at or below `1.9 n₀` with probability `≪ x^{-c}`.  Assembled from `valSum_lower_geom`
+(the probabilistic `2^{-c n₀}` bound) and `two_rpow_neg_nZero_le` (the `n₀ ≍ log x` conversion). -/
 theorem valSum_lower_tail :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
           ≤ C * x ^ (-c) := by
-  sorry
+  obtain ⟨c, C, x₀g, hc, hC, hgeom⟩ := valSum_lower_geom
+  obtain ⟨c', x₀c, hc', hconv⟩ := two_rpow_neg_nZero_le hc
+  refine ⟨c', C, max x₀g x₀c, hc', hC, fun x hx y hy => ?_⟩
+  have hxg : x₀g ≤ x := le_trans (le_max_left _ _) hx
+  have hxc : x₀c ≤ x := le_trans (le_max_right _ _) hx
+  exact le_trans (hgeom x hxg y hy) (mul_le_mul_of_nonneg_left (hconv x hxc) hC.le)
 
 /-- **Sub-linear powers are eventually dominated.**  For `0 ≤ θ < 1` and `ε > 0`, `x^θ ≤ ε·x` for
 all large `x`.  (Take `x₀ = max 1 ((1/ε)^{1/(1-θ)}`).)  The workhorse for the `O(x^{0.99}) ≤ x`
