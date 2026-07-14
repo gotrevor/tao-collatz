@@ -1,5 +1,51 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap review+X11a (2026-07-14): **`estar_union_le` (X11a) PROVED (axiom-clean)** — the E∗ union mass bound; + 2 series helpers
+
+Review lap confirmed direction sound (recent laps drove the X11 crux, not side-leaves;
+`#print axioms` re-run confirms `prop_7_8` carries `sorryAx` solely via
+`Q_black_edge_case3`). STATUS.md + DIRECTION.md refreshed. Then **landed X11a**:
+
+**`estar_union_le`** (`Case3.lean`, axiom-clean): sums the per-`p` `bigTriangle_walk_le`
+over `p ∈ range(T+1)` at `s' = ⌈4^A(1+p)³⌉₊`. Result:
+`Σ_p (walk mass in bigTriangleSet).toReal ≤ 2C·A²·4^{-A} + 2C·exp(-c·A²)` (`C',c,A₀`
+existential, `C'=2C` from X10's `bigTriangle_walk_le`, `A₀ = max A₀_X10 √(log2/c)`).
+Two axiom-clean series helpers proved en route:
+- **`sum_inv_sq_le_two`**: `Σ_{p<T+1} 1/(1+p)² ≤ 2` (telescoping induction `≤ 2−1/(T+1)`,
+  step `1/(k+2)²+1/(k+2) ≤ 1/(k+1)` via `div_le_div_iff₀`+`nlinarith`).
+- **`sum_geom_pow_le`**: `Σ_{p<T+1} r^{1+p} ≤ 2r` for `0≤r≤1/2` (partial ≤ geometric
+  tsum `(1-r)⁻¹` via `Summable.sum_le_tsum`+`tsum_geometric_of_lt_one`, then `(1-r)⁻¹≤2`).
+Assembly: per-`p` `hbig` from X10; `Finset.sum_add_distrib` split; poly branch bounds
+`A²(1+p)/s' ≤ A²·4^{-A}·(1/(1+p)²)` termwise (`Nat.le_ceil`, `gcongr`, `Real.rpow_neg`);
+exp branch rewrites `exp(-cA²(1+p)) = exp(-cA²)^(1+p)` (`Real.exp_nat_mul`) then geometric.
+The `r=exp(-cA²)≤1/2` threshold uses `A ≥ √(log2/c)` ⟹ `c·A²≥log2`.
+
+**X11 (`Q_black_edge_case3`, `Case3.lean`) — X11a NOW ✓; remaining X11c + X11d:**
+- **X11c `few_whites_le`** (NEXT): the (7.56) join. `fstar_markov` (✓, gives F∗-mass
+  `≤ e^{2ε}/lam` with fixed gate `g`) + `deterministic_encounter_claim` (✓, being OUTSIDE
+  E∗ i.e. cond (ii) forces the fold to reach count R). Plan: `K=⌈10A/epsBW³⌉`,
+  `R:=⌈(K+(A+3)log10+2)/ε⌉` so {fold reaches R} ⊆ {encVal ≥ lam=e^{-K+εR}} = F∗ via
+  `encFold_banked_le` (`Case3.lean:132`) + `encVal` def (`ManyTriangles.lean:360`); then
+  `fstar_markov` at that `lam` bounds the reaches-R mass; on the complement of E∗ ∪ {reaches R},
+  the deterministic claim gives a contradiction ⟹ few whites (≤ K). **Study first:**
+  `encVal`/`encInit` defs, `encFold_banked_le`/`encFold_cumWhite` (`Case3.lean:132,156`),
+  how `deterministic_encounter_claim`'s conds (i)/(ii)/(iii) wire to the fold count.
+- **X11d body** = `Q_black_edge_case3`: `Q_le_damped_iter` (7.53) + (7.54) col split
+  (`fpDistPlus_col_tail`, `budget_le_of_mem_triangle`) + few-white damping (weights ≤ m^A/10^A)
+  + X11a (✓) + X11c. **⚠ two reconciliations:** the E∗ event uses the PHASE point
+  `((pos p).1−1,…)` (per claim cond (ii)) while `bigTriangle_walk_le`/`estar_union_le` bound the
+  POSITION (−1 shift); and `bigTriangleSet ⌈4^A(1+p)³⌉` (ceil) vs the claim's strict
+  `t.2.2 < 4^A(1+p)³`. X11d must bridge both.
+
+**Proved X11 machinery (all axiom-clean):** `Q_le_walk_damped`, `Q_le_damped_iter`,
+`iid_pathSum_law`, `fpDist_walk_eq_fpDistPlus`, `bigTriangle_walk_le`, **`estar_union_le`**
+(new), `sum_inv_sq_le_two`+`sum_geom_pow_le` (new helpers), `fstar_markov`,
+`deterministic_encounter_claim`, `triangle_encounter_le` (X10), `fpDistPlus_col_tail`,
+`encFold_banked_le`, `encFold_cumWhite`, `many_triangles_white` (X9).
+
+**NEXT: `few_whites_le` (X11c).** Study `encVal`/`encFold_banked_le`; state the few-white
+event bound joining `fstar_markov` + `deterministic_encounter_claim` + `estar_union_le`.
+
 ## Lap D-box cont12 (2026-07-14): **`bigTriangle_walk_le` PROVED (axiom-clean)** — per-`p` big-triangle walk bound; X11a approach VALIDATED
 
 Third grounded X11 sub-lemma (`Case3.lean`, axiom-clean). This is the ROUTE-DECISIVE probe: it
