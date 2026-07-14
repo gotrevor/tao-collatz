@@ -27,7 +27,7 @@ sees that).
 2. **`EXECUTABILITY.md` → "Live judge state"** — verified ledger, suspensions,
    tripwires, escalations. Refresh every pass.
 3. **`EXECUTABILITY.md` → "Campaign log"** — index of `judge/pass-NN.md`.
-   **Next pass number: 27.**
+   **Next pass number: 28.**
 4. **`DIRECTION.md` → CURRENT DIRECTIVE** — **the judge writes this; it OUTRANKS the
    HANDOFF and every grind lap re-reads it each lap.** This is the live steering
    channel: edit it mid-run to redirect the next lap.
@@ -43,35 +43,42 @@ sees that).
 - `tools/tao_linear_tail.py`, `tools/tao_height_tail.py` — the pass-24 numerics
   (exact step-law MGFs; optimize the tilt and print the localization box).
 
-## Where things stand (post-pass-26, 2026-07-14 morning)
+## Where things stand (post-pass-27, 2026-07-14 morning)
 
-- **TWELVE verified nodes** (dated runs): S3, X1, X2, X3, X5, X6, **X8** (new, pass 26),
-  X9, X10*, C2, C5 (+ X4/X7 files sorry-free). 🏆 Both pinnacle kernels (X9, X10) are proved.
-- ✅ **The X10/X10a deviation is CLOSED** (pass-26 finding → discharged same day, `4f51542`).
-  An unattended lap rewrote the deep hypothesis of the Lemma-7.10 pins `m/log²m < s` →
-  `m^0.8 < s`, calling it a "generalization." It is not one — the hypotheses are
-  **incomparable** (they cross at `m ≈ 10^15.5`; below that the new form covers *fewer* `s`)
-  and Tao p.51 states Lemma 7.10 with `s > m/log²m` verbatim. Repair = **split, don't
-  revert**: the four weaker-hypothesis lemmas live on as `*_rpow` **engines**, both pins were
-  **restored character-identically** and re-proved as corollaries. Differ: **19/19
-  byte-identical**; dated runs on both pins + all four engines clean. **Ratifications
-  RESTORED, `\leanok` back up.** Full story: `judge/pass-26.md` §2 + §4b.
-- **§7 now hinges on exactly TWO sorries**: `few_white_mass_le` (7.56) + `col_tail_mass_le`
-  (both `Case3.lean`). Repo total 11 (2 crux + 2 headline stubs + 7 spine).
-- ⚠️ **THE ONE UNVERIFIED STEP — check this first.** The Case-3 consumer sits at depth
-  `m+1`, and `m/log²m < s ⟹ (m+1)/log²(m+1) < s` **genuinely fails** (`x/log²x` increasing;
-  fractional-part counterexample). The chain closes only by threading **`Cthr ≥ 10^27`**, so
-  that `(m+1)^0.8 ≤ 2·m^0.8 ≤ m/log²m < s` (≈65× slack). **That bridge is still UNPROVED** —
-  it lives inside `few_white_mass_le`, the sorry being assembled right now. It closes on the
-  judge's arithmetic, which is *not* the same as closing in Lean. It is exactly the kind of
-  step an assembly quietly assumes. **Do not accept `few_white_mass_le` without seeing the
-  `Cthr` largeness discharged.**
-- 🔒 **HARD RAIL 6 (new)**: *never EDIT a ratified pin — not to weaken, not to strengthen,
-  not to generalize; flag the judge.* The 19-name pinned set is listed inline in DIRECTION
-  and enforced by `tools/tao_stmt_diff.py` (which now takes revs as argv and searches
-  across files, so a relocation reports as a move). **Ratify a statement ⟹ add it to that
-  list in the same pass** — pass 26's near-miss was X10a's rewrite going unreported because
-  its name simply wasn't in the dict.
+- 🏆🏆 **§7 IS COMPLETE AND JUDGE-VERIFIED (pass 27) — the campaign's stated 65–75% risk
+  concentration is RETIRED.** `prop_7_8` no longer carries `sorryAx`. All of X1/X2/X3/X5/X6/
+  X8/X9/X10/X11 + the §7 spine (`Q_black_edge_case3`, `Q_black_edge`, `Q_polynomial_decay`)
+  and both exports (`charFn_decay` Prop 1.17, `key_fourier_decay` Prop 7.1) are axiom-clean on
+  dated runs. Plus the **reduction floor**: `colMin_eq_syrMin_oddPart` (paper (1.2)) + the
+  SyracRV identities (Lemma 1.12, (1.21), (1.22)). With S3/C2/C5 that is **13+ verified nodes**.
+- ✅ **The `Cthr` bridge — pass 26's ONE unverified step — is DISCHARGED** (pass 27), kernel-
+  checked at `Case3.lean:2011–2068`: `(m+1)^0.8 ≤ 2m^0.8`, `log²m ≤ 400·m^0.1`, hence
+  `(m+1)^0.8·log²m ≤ 800·m^0.9 ≤ m`, then `< s` by the paper hypothesis. **And the judge's own
+  numeral was WRONG**: the largeness is consumed at `800 ≤ m^0.1`, which at pass-26's `10^27`
+  reads `501 < 800` — *the route fails*. The box independently baked **`10^30`** and **its
+  constant is what carried the proof.** 📌 **A judge-supplied numeral is a hypothesis too.**
+- ✅ **The X10/X10a deviation is CLOSED** (pass-26 finding → discharged `4f51542`, holds at
+  pass 27 — both pins still byte-identical). An unattended lap had rewritten the deep
+  hypothesis `m/log²m < s` → `m^0.8 < s`, calling it a "generalization." It is not one — the
+  hypotheses are **incomparable** (they cross at `m ≈ 10^15.5`) and Tao p.51 states Lemma 7.10
+  with `s > m/log²m` verbatim. Repair = **split, don't revert**: the weaker-hypothesis lemmas
+  live on as `*_rpow` **engines**; both pins restored character-identically as corollaries.
+- **The repo now hinges on exactly TWO sorries** (+2 frozen headline stubs): **C10**
+  `fine_scale_mixing` (Prop 1.14, §6, `Sec6/MixingFromDecay.lean:573`) and **C9**
+  `stabilization` (Prop 1.11, §5, `Sec5/FirstPassage.lean:81`, consumes C10). Critical path:
+  **C10 → C9 → C6 → Statement**. Census **4**, down from 11, all cleared by *proving*.
+- 🔒 **HARD RAIL 6 — and its pass-27 EXTENSION.** *Never EDIT a ratified pin — not to weaken,
+  not to strengthen, not to generalize; flag the judge.* **Extended: that now covers the two
+  OPEN crux statements** (`fine_scale_mixing`, `stabilization`). A lap weakening the very
+  statement it is trying to prove is the highest-value silent failure available — a green
+  build, a clean `#print axioms`, and an unmoved sorry census **cannot see it**.
+- 🔧 **The differ was aimed at the finished half of the proof (pass-27 system fix).** Pass 26
+  grew it to 19 names — but all 19 were §7 + `Statement`, and §7 is now *done*. The two live
+  sorries were **unwatched, in files it did not even search**. Now **29 names / 13 files**,
+  with a documented distinction: **WATCHED ≠ RATIFIED** (a name in the list means the differ
+  *reports changes*; ratification is the judge's separate reading against the PDF — so watching
+  an un-ratified statement is strictly good, it is how you *see* the frontier move).
+  📌 **Ratify ⟹ watch (pass 26). And when the frontier moves, MOVE THE GUARD WITH IT (pass 27).**
 - 🧰 **Judge a LIVE treadmill from a pinned worktree.** The box bind-mounts the repo and
   commits `git add -A` (it swept pass-25's docs into its own commit). Use
   `lean-create-worktree tao-collatz ~/src/tao-collatz-judgeNN --start-point <range-end>`
