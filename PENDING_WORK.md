@@ -37,9 +37,28 @@ the sharp `≤1+δ` follows from `∑_e fpDist·exp(θe.1) = 1 + ∑_e fpDist·(
 constant is harmless because `j > K` sits super-exponentially deep in the `s/4`-centred Gaussian
 (`θj − c²j²/(1+s) → −∞`). Reuses the `Gweight` toolbox (`sum_sqrt_exp_le`,
 `sum_range_exp_neg_sq_le`, `conv_Gweight_exp`) + the `l`-geometric `∑_{l>s} e^{−c(l−s)}`.
-**This is the crux's hardest-first target — attack it next** (the tail Gweight×exp half-line
-sum is the meat; the bulk is a few lines once summability from X6 is in hand). NB the mass-1
-reduction's summability entangles bulk and tail, so it's proved as one unit, not split.
+**This is the crux's hardest-first target — attack it next.**
+
+**SHARP ASSEMBLY PLAN for `fpDist_fst_mgf_le`** (now that `fpDist_col_le` is upstream in
+`FpLocation`, visible to BlackEdge — commit `21b0e0c`):
+1. **Fubini 2D→1D**: `∑'_{(j,l)} fpDist(s,(j,l))·exp(θj) = ∑'_j exp(θj)·M(j)` where
+   `M(j) := ∑'_l fpDist(s,(j,l)).toReal` (via `tsum_prod'` + `tsum_mul_left`, `exp(θj)`
+   constant in `l`). Then `M(j) ≤ C'·Gweight(1+s,c(j−s/4))/√(1+s)` by `fpDist_col_le`.
+   Note `∑'_j M(j) = ` total `fpDist` mass `≤ 1` (`fpDist_tsum_toReal`).
+2. **Split at `K = ⌊m·log(1+δ/2)/(2A)⌋`** (so `θK = (2A/m)K ≤ log(1+δ/2)`, `θ=2A/m`):
+   • **Bulk `j ≤ K`** is a FINITE range sum: `∑_{j≤K} exp(θj)·M(j) ≤ exp(θK)·∑_{j≤K} M(j)
+     ≤ exp(θK)·1 ≤ 1+δ/2`. (Only needs mass ≤ 1 — no envelope, no infinite summability.)
+   • **Tail `j > K`**: `∑'_{j>K} exp(θj)·C'·Gweight(1+s,c(j−s/4))/√(1+s) ≤ δ/2` — THE meat.
+3. **Tail lemma = adapt `gaussian_col_tail`** (currently `ManyTriangles.lean:1827`, uses
+   `hasSum_nat_tail_exp` at `:1804`) with the extra `exp(θj)` factor: fold it into each
+   geometric — `exp(θj)·exp(−c(j−s/4)) = exp(−(c−θ)(j−a))` (`a=(cs/4)/(c−θ)`, needs `θ<c`
+   i.e. `m>2A/c`); `exp(θj)·exp(−c²(j−s/4)²/(1+s))` dominated via `x²/t ≥ (x₀/t)x` with the
+   tail start `x₀=c(K−s/4)` big enough that the effective rate `c²x₀/(1+s) − θ > 0` (since
+   `1+s ≤ m`, `x₀=Θ(m)`, `θ=2A/m→0`). Both → geometric via `hasSum_nat_tail_exp`.
+   **To place the tail lemma upstream** (BlackEdge/FpLocation), also move `hasSum_nat_tail_exp`
+   up (mathlib-only proof) — same pure-move pattern as `fpDist_col_le`.
+   NB the 2D summability of step 1 comes for free once the tail (step 2) is summable + bulk
+   is finite; assemble summability as `finite ∪ tail`.
 
 **NEXT for `fpDist_edgeWeight_le` (three remaining pieces, all now routed through the pointwise bound)**:
 1. **MGF factor** `Z_{fp,fst}(2A/m)·Z_{hold,fst}(2A/m) ≤ 1 + δ/2` for `m ≥ C`. `Z_{hold,fst}(θ)`
