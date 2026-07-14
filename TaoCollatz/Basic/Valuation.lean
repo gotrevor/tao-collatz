@@ -99,6 +99,56 @@ theorem syr_iterate_key (N n : ℕ) (_hN : N % 2 = 1) :
   rw [pre_valVec (le_refl n), fnat_valVec]
   exact key_aux N n
 
+/-- `valSum` is monotone in the length (all terms are nonnegative). -/
+theorem valSum_mono (N : ℕ) {m n : ℕ} (h : m ≤ n) : valSum N m ≤ valSum N n := by
+  unfold valSum
+  exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_mono h)
+    (fun i _ _ => Nat.zero_le _)
+
+/-- Geometric-sum bound in ℕ: `∑_{j<n} 3^j ≤ 3^n`. -/
+theorem geom_three_le (n : ℕ) : (∑ j ∈ Finset.range n, 3 ^ j) ≤ 3 ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Finset.sum_range_succ, pow_succ]
+    calc (∑ j ∈ Finset.range n, 3 ^ j) + 3 ^ n ≤ 3 ^ n + 3 ^ n := Nat.add_le_add_right ih _
+      _ ≤ 3 ^ n * 3 := by omega
+
+/-- Reflected geometric-sum bound: `∑_{m<n} 3^{n-1-m} ≤ 3^n` (the `fnat` head coefficients). -/
+theorem sum_three_pow_reflect_le (n : ℕ) :
+    (∑ m ∈ Finset.range n, 3 ^ (n - 1 - m)) ≤ 3 ^ n := by
+  rw [Finset.sum_range_reflect (fun j => 3 ^ j) n]
+  exact geom_three_le n
+
+/-- **`fnat` upper bound via the top valuation.** Since every prefix sum `valSum N m ≤ valSum N n`
+(for `m ≤ n`) and `∑_{m<n} 3^{n-1-m} ≤ 3^n`:
+`fnat n (valVec N n) ≤ 2^{valSum N n} · 3^n`. -/
+theorem fnat_valVec_le (N n : ℕ) : fnat n (valVec N n) ≤ 2 ^ valSum N n * 3 ^ n := by
+  rw [fnat_valVec]
+  calc (∑ m ∈ Finset.range n, 3 ^ (n - 1 - m) * 2 ^ valSum N m)
+      ≤ ∑ m ∈ Finset.range n, 3 ^ (n - 1 - m) * 2 ^ valSum N n := by
+        apply Finset.sum_le_sum
+        intro m hm
+        rw [Finset.mem_range] at hm
+        gcongr
+        · norm_num
+        · exact valSum_mono N hm.le
+    _ = 2 ^ valSum N n * ∑ m ∈ Finset.range n, 3 ^ (n - 1 - m) := by
+        rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun m _ => by ring
+    _ ≤ 2 ^ valSum N n * 3 ^ n := by
+        exact Nat.mul_le_mul_left _ (sum_three_pow_reflect_le n)
+
+/-- **The descent bound** (the ℕ core of the (1.5)/(1.7) descent, node C7 step 4).  For odd `N`:
+`2^{valSum N n} · Syr^{n}(N) ≤ 3^n·N + 2^{valSum N n}·3^n`.  Dividing by `2^{valSum N n}` gives
+`Syr^{n}(N) ≤ 3^n·N / 2^{valSum N n} + 3^n`, the `O(3^n)` descent estimate. -/
+theorem syr_descent_bound (N n : ℕ) (hN : N % 2 = 1) :
+    2 ^ valSum N n * syr^[n] N ≤ 3 ^ n * N + 2 ^ valSum N n * 3 ^ n := by
+  have hp : pre (valVec N n) n = valSum N n := pre_valVec (le_refl n)
+  have hkey := syr_iterate_key N n hN
+  rw [hp] at hkey
+  rw [hkey]
+  exact Nat.add_le_add_left (fnat_valVec_le N n) _
+
 /-- The affine map `Aff_a(N) = (3^n·N + Fnat n a) / 2^(a_{[1,n]})` (paper (1.3),
 guarded by the divisibility). -/
 noncomputable def Aff (N n : ℕ) (a : Fin n → ℕ) : ℕ :=
