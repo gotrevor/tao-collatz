@@ -1,5 +1,37 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-12 (2026-07-14, brick b tail-reindex): **`stdAddChar_eq_eC` + `stdAddChar_pow3_descent` PROVED**
+
+Build green 3285, both `#print axioms`-clean. Landed in `Sec6/MixingFromDecay.lean` (commits
+`d442d30`, `29f733e`). These crack the two arithmetic pieces of the tail-factor ⟹ `charFn_decay`
+reindex — the last genuine novelty of C10:
+- **`stdAddChar_eq_eC`**: `ZMod.stdAddChar (j : ZMod (3ⁿ)) = eC (j.val/3ⁿ)`. The seam between
+  mathlib's `stdAddChar` (the language of `cond_char_factor`) and the §7 phase `eC` (the language of
+  `charFn_decay`, Prop 1.17). Proof: `stdAddChar_apply`+`toCircle_apply`+`eC` def + `push_cast`/`ring_nf`.
+- **`stdAddChar_pow3_descent`**: `stdAddChar_{3^(j+p)}(3ʲ·w) = stdAddChar_{3^p}(castHom w)`. Multiplying
+  the character argument by `3ʲ` drops the modulus `3^(j+p)→3^p`. Proof: lift `w` to `w.val=m`, fold
+  LHS into `natCast(3ʲ·m)`, push both through `ZMod.stdAddChar_coe` to `exp`, cancel `3ʲ/3^(j+p)=1/3^p`
+  (`pow_add`+`field_simp`). This is the arithmetic that, for a high frequency `ξ = 3ʲ·2ˡ·ξ'`, turns the
+  tail char `stdAddChar_{3^(j+p)}(-(Term2·ξ)) = stdAddChar_{3^(j+p)}(3ʲ·(-(Term2·2ˡξ'))) →` a level-`p`
+  char at `castHom Term2` and `castHom(2ˡξ')`.
+
+**→ NEXT (assemble the tail-factor bound; then §6 conditioning)**:
+1. **Tail char = level-`p` Syracuse char** (glue, mechanical now): for `ξ = 3ʲ·ζ`, rewrite the tail
+   factor char via `stdAddChar_pow3_descent` (arg `Term2·ξ = 3ʲ·(Term2·ζ)`) into
+   `stdAddChar_{3^p}(castHom(Term2·ζ)) = stdAddChar_{3^p}(castHom Term2 · castHom ζ)` (`map_mul`);
+   `castHom Term2 = castHom(Fnat_p(vt)·2⁻ᴹ)` is the level-`p` Syracuse offset (`syracZ_eq_rev_fnat`
+   pushforward). Then `cexpect_map` sends `(iid p).cexpect(…∘offset)` to `(syracZ p).cexpect(…)`, and
+   `stdAddChar_eq_eC` rewrites `stdAddChar_{3^p}` to `eC` — matching `charFn_decay`'s exact form
+   `‖(syracZ p).cexpect (eC(-(ξ''.val·Y.val)/3^p))‖ ≤ Cₐ·p⁻ᴬ` (need `3∤(castHom ζ).val`).
+2. **Indicator + head handling**: the tail factor also carries `1_{pre(vt)=l}`; either bound it via a
+   sum over `l`, or move the conditioning to the head per Tao (recheck orientation: the block carrying
+   the indicator should be the ≤1-bounded one, the *other* block gets `charFn_decay` — the `3^p`-scaled
+   block descends to a char sum, so verify which block the `3ʲ` extraction lands on for the actual §6 `ξ`
+   range). Head factor: `‖·‖≤1` (`cexpect_norm_le`+`norm_stdAddChar`).
+3. **osc bound + conditioning events** (stopping time `k`, E/Eₖ/Bₖ/Cₖ,ₗ, union over `k,l`, triangle);
+   `osc_le_sqrt_highfreq` on `condDens`, `∑_{highFreq}‖𝓕(densC condDens)ξ‖²` via
+   `dft_condDens_eq_cond_char`+`cond_char_factor` (‖head‖≤1, ‖tail‖≤charFn). Full 7-step plan: fruit-8.
+
 ## Lap fruit-11 (2026-07-14, brick b DFT bridge): **`dft_cond_density` + `condDens` bridge PROVED — 𝓕↔cexpect**
 
 Build green 3285, `#print axioms dft_cond_density = dft_condDens_eq_cond_char = [propext,
