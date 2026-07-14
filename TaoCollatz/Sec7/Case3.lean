@@ -2083,6 +2083,26 @@ theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
 
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
+/-- **(7.54) bad-column tail** (paper: the `j_end ≥ 0.9m` contribution). The mass that the
+`P`-step walk after first passage advances past `0.9m` is `O(e^{−cm})` (Lemma 7.7 + Lemma 2.2:
+first passage `≥ 0.8m` and the extra `P` Geom(4) steps `≥ 0.1m` each have mass `e^{−cm}`),
+absorbed here into `≤ m^{−A}/2` for `m ≥ Cthr`. Bridged to `fpDistPlus_col_tail` via
+`fpDist_walk_eq_fpDistPlus`; the deviation scale uses `budget_le_of_mem_triangle`
+(`s·log2 ≤ (m+2)log9`). Stated for any horizon `P ≥ 1` (`Cthr` absorbs the `P`-dependence).
+Placed above `few_white_mass_le` so the (7.56) assembly can consume its bad-column term. -/
+theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) := by
+  sorry
+
 /-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first
 passage encounters at most `K := ⌈(A+3)·log10/ε³⌉` whites with probability `≤ 10^{−(A+2)}`.
 This is where the proved X11c machinery plugs in: `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
@@ -2108,7 +2128,174 @@ theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
               ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
             then (1 : ℝ) else 0))
         ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) := by
-  sorry
+  classical
+  -- the three proved terms of the pointwise split (7.56): E∗, reach-R, bad-column.
+  obtain ⟨A', hA'1, Cthr_e, hestar⟩ := few_white_estar_mass_le A hA
+  obtain ⟨ε₀, hε₀pos, g, hreach⟩ := few_white_reach_mass_le A
+  have hlog10 : (0 : ℝ) < Real.log 10 := Real.log_pos (by norm_num)
+  -- the goal threshold `K`, the horizon `R`, `P`, all functions of `A` (chosen before `∀ n ξ`).
+  set K : ℕ := ⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ with hKdef
+  set R : ℕ := ⌈(((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / ε₀⌉₊ with hRdef
+  have hRnum_pos : (0 : ℝ) < ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 := by
+    have : (0 : ℝ) < (A + 5) * Real.log 10 := mul_pos (by linarith) hlog10
+    have hKnn : (0 : ℝ) ≤ (K : ℝ) := Nat.cast_nonneg K
+    linarith
+  have hR1 : 1 ≤ R := by
+    rw [hRdef]; exact Nat.ceil_pos.mpr (div_pos hRnum_pos hε₀pos)
+  set P : ℕ := encWindowIter A' (K + 1) R with hPdef
+  have hP1 : 1 ≤ P := by
+    rw [hPdef]
+    have h1 : (1 : ℕ) ≤ encWindowIter A' (K + 1) 1 := by
+      rw [encWindowIter_succ]
+      have : encWindowIter A' (K + 1) 0 = 0 := rfl
+      omega
+    exact le_trans h1 (encWindowIter_mono A' (K + 1) hR1)
+  have hPeq : encWindowIter A' (K + 1) R ≤ P := le_of_eq hPdef.symm
+  obtain ⟨Cthr_c, hcol⟩ := col_tail_mass_le A hA P hP1
+  set B : ℝ := (4 : ℝ) ^ A' * (1 + (P : ℝ)) ^ 3 with hBdef
+  have hBnn : (0 : ℝ) ≤ B := by rw [hBdef]; positivity
+  refine ⟨P, hP1, max (max Cthr_e Cthr_c) (max (10 * g) (max ⌈B ^ (2.5 : ℝ)⌉₊
+    ⌈10 * (500 : ℝ) ^ (1 / A)⌉₊)), ?_⟩
+  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  -- extract the five threshold facts from `Cthr ≤ m`.
+  have hmCe : Cthr_e ≤ m := by omega
+  have hmCc : Cthr_c ≤ m := by omega
+  have hm10g : 10 * g ≤ m := by omega
+  have hmreg : ⌈B ^ (2.5 : ℝ)⌉₊ ≤ m := by omega
+  have hmnum : ⌈10 * (500 : ℝ) ^ (1 / A)⌉₊ ≤ m := by omega
+  -- the shared gate bound `g ≤ 0.1 m`.
+  have hg : (g : ℝ) ≤ (1 / 10 : ℝ) * (m : ℝ) := by
+    have : (10 * g : ℕ) ≤ (m : ℕ) := hm10g
+    have hcast : (10 : ℝ) * (g : ℝ) ≤ (m : ℝ) := by exact_mod_cast this
+    linarith
+  -- the reach-`R` R-bound hypothesis.
+  have hRbound : ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ ε₀ * (R : ℝ) := by
+    have hce : (((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / ε₀ ≤ (R : ℝ) := by
+      rw [hRdef]; exact Nat.le_ceil _
+    rw [div_le_iff₀ hε₀pos] at hce; linarith
+  -- the E∗ regularity hyp `⌊4^{A'}(1+p)³⌋₊ ≤ (m+1)^0.4` for all `p ≤ P`.
+  have hreg : ∀ p, p ≤ P →
+      ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ) := by
+    intro p hp
+    have hpP : (p : ℝ) ≤ (P : ℝ) := by exact_mod_cast hp
+    have hfloor : ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+        ≤ (4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3 := Nat.floor_le (by positivity)
+    have hmono : (4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3 ≤ B := by
+      rw [hBdef]
+      have hcube : (1 + (p : ℝ)) ^ 3 ≤ (1 + (P : ℝ)) ^ 3 := by gcongr
+      exact mul_le_mul_of_nonneg_left hcube (by positivity)
+    have hBle : B ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ) := by
+      have h1 : B ^ (2.5 : ℝ) ≤ ((m + 1 : ℕ) : ℝ) := by
+        have hce : B ^ (2.5 : ℝ) ≤ ((⌈B ^ (2.5 : ℝ)⌉₊ : ℕ) : ℝ) := Nat.le_ceil _
+        have hcm : ((⌈B ^ (2.5 : ℝ)⌉₊ : ℕ) : ℝ) ≤ (m : ℝ) := by exact_mod_cast hmreg
+        push_cast; linarith
+      calc B = (B ^ (2.5 : ℝ)) ^ (0.4 : ℝ) := by
+            rw [← Real.rpow_mul hBnn, show (2.5 : ℝ) * (0.4 : ℝ) = 1 by norm_num, Real.rpow_one]
+        _ ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ) := Real.rpow_le_rpow (by positivity) h1 (by norm_num)
+    linarith
+  -- the bad-column numeric: `m^{-A}/2 ≤ 10^{-A-3}` for `m ≥ ⌈10·500^{1/A}⌉₊`.
+  have hcolnum : (m : ℝ) ^ (-A) / 2 ≤ (10 : ℝ) ^ (-A - 3) := by
+    have hm0 : 0 < m := lt_of_lt_of_le
+      (Nat.ceil_pos.mpr (show (0 : ℝ) < 10 * (500 : ℝ) ^ (1 / A) by positivity)) hmnum
+    have hmpos : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm0
+    have hm10ge : (500 : ℝ) ^ (1 / A) ≤ (m : ℝ) / 10 := by
+      have hc : ((⌈10 * (500 : ℝ) ^ (1 / A)⌉₊ : ℕ) : ℝ) ≤ (m : ℝ) := by exact_mod_cast hmnum
+      have hce : 10 * (500 : ℝ) ^ (1 / A) ≤ ((⌈10 * (500 : ℝ) ^ (1 / A)⌉₊ : ℕ) : ℝ) := Nat.le_ceil _
+      linarith
+    have hpow : (500 : ℝ) ≤ ((m : ℝ) / 10) ^ A := by
+      have heq : (500 : ℝ) = ((500 : ℝ) ^ (1 / A)) ^ A := by
+        rw [← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 500), one_div,
+          inv_mul_cancel₀ (ne_of_gt hA), Real.rpow_one]
+      rw [heq]
+      exact Real.rpow_le_rpow (by positivity) hm10ge hA.le
+    have hkey : ((m : ℝ) / 10) ^ (-A) ≤ 1 / 500 := by
+      rw [Real.rpow_neg (show (0 : ℝ) ≤ (m : ℝ) / 10 by positivity)]
+      have h := one_div_le_one_div_of_le (by norm_num : (0 : ℝ) < 500) hpow
+      rwa [one_div] at h
+    have hmm : (10 : ℝ) * ((m : ℝ) / 10) = (m : ℝ) := by ring
+    have hm_eq : (10 : ℝ) ^ (-A) * ((m : ℝ) / 10) ^ (-A) = (m : ℝ) ^ (-A) := by
+      rw [← Real.mul_rpow (by norm_num) (by positivity), hmm]
+    have h10 : (0 : ℝ) ≤ (10 : ℝ) ^ (-A) := Real.rpow_nonneg (by norm_num) _
+    have e2 : (10 : ℝ) ^ (-A - 3) = (10 : ℝ) ^ (-A) * (10 : ℝ) ^ (-3 : ℝ) := by
+      rw [← Real.rpow_add (by norm_num), show (-A : ℝ) + (-3 : ℝ) = -A - 3 by ring]
+    have e3 : (10 : ℝ) ^ (-3 : ℝ) = 1 / 1000 := by
+      rw [show (-3 : ℝ) = ((-3 : ℤ) : ℝ) by norm_num, Real.rpow_intCast]; norm_num
+    have hstep : (10 : ℝ) ^ (-A) * ((m : ℝ) / 10) ^ (-A)
+        ≤ (10 : ℝ) ^ (-A) * (1 / 500) := mul_le_mul_of_nonneg_left hkey h10
+    rw [hm_eq] at hstep
+    rw [e2, e3]; linarith
+  -- abbreviate the three pointwise terms of the split.
+  set I1 : (ℕ × ℤ) → (Fin P → ℕ × ℤ) → ℝ≥0∞ := fun e v =>
+    ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
+          (encInit (n / 2 - m + e.1) (l + e.2))).count
+        ∧ ((List.ofFn v).foldl (encStep F R g)
+          (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+      then (1 : ℝ) else 0) with hI1
+  set I2 : (ℕ × ℤ) → (Fin P → ℕ × ℤ) → ℝ≥0∞ := fun e v =>
+    ∑ p ∈ Finset.range (P + 1),
+      Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+        (1 : ℕ × ℤ → ℝ≥0∞)
+        (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2) with hI2
+  set I3 : (ℕ × ℤ) → (Fin P → ℕ × ℤ) → ℝ≥0∞ := fun e v =>
+    ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+      then (1 : ℝ) else 0) with hI3
+  -- the pointwise split, integrated (v∉support ⟹ hold.iid = 0).
+  have hle : (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+        ENNReal.ofReal (if (∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+            ≤ (K : ℝ) then (1 : ℝ) else 0))
+      ≤ ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ,
+          hold.iid P v * (I1 e v + I2 e v + I3 e v) := by
+    refine ENNReal.tsum_le_tsum fun e => mul_le_mul_left' ?_ _
+    refine ENNReal.tsum_le_tsum fun v => ?_
+    by_cases hv0 : hold.iid P v = 0
+    · simp [hv0]
+    · have hvsupp : v ∈ (hold.iid P).support := by rw [PMF.mem_support_iff]; exact hv0
+      have hvcoord : ∀ i, v i ∈ hold.support := PMF.iid_support_coord hold P v hvsupp
+      exact mul_le_mul_left'
+        (few_white_pointwise_split F m hmn hpos l g R K A' hA'1 P hPeq hg e v hvcoord) _
+  -- linearity: split the integral into the three terms.
+  have key : (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ,
+        hold.iid P v * (I1 e v + I2 e v + I3 e v))
+      = (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v * I1 e v)
+      + (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v * I2 e v)
+      + (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v * I3 e v) := by
+    have inner : ∀ e : ℕ × ℤ, (∑' v : Fin P → ℕ × ℤ, hold.iid P v * (I1 e v + I2 e v + I3 e v))
+        = (∑' v : Fin P → ℕ × ℤ, hold.iid P v * I1 e v)
+        + (∑' v : Fin P → ℕ × ℤ, hold.iid P v * I2 e v)
+        + (∑' v : Fin P → ℕ × ℤ, hold.iid P v * I3 e v) := by
+      intro e
+      rw [tsum_congr fun v => by rw [mul_add, mul_add], ENNReal.tsum_add, ENNReal.tsum_add]
+    rw [tsum_congr fun e => by rw [inner e, mul_add, mul_add], ENNReal.tsum_add, ENNReal.tsum_add]
+  refine le_trans hle ?_
+  rw [key]
+  -- the three terms, each `≤ 10^{−A−3}`.
+  have hEle : (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v * I2 e v)
+      ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := hestar n ξ hξ F m hmCe hmn l hpos t ht hmem s hs hs1 P hreg
+  have hRle : (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v * I1 e v)
+      ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := hreach n ξ hξ F m l R hR1 K P hRbound s
+  have hCle : (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v * I3 e v)
+      ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) :=
+    le_trans (hcol n ξ hξ F m hmCc hmn l hpos t ht hmem s hs hs1 hs2)
+      (ENNReal.ofReal_le_ofReal hcolnum)
+  have hnum3 : (10 : ℝ) ^ (-A - 3) + (10 : ℝ) ^ (-A - 3) + (10 : ℝ) ^ (-A - 3)
+      ≤ (10 : ℝ) ^ (-A - 2) := by
+    have e1 : (10 : ℝ) ^ (-A - 3) = (10 : ℝ) ^ (-A - 2) * (10 : ℝ) ^ (-1 : ℝ) := by
+      rw [← Real.rpow_add (by norm_num)]; congr 1; ring
+    have h1 : (10 : ℝ) ^ (-1 : ℝ) = 1 / 10 := by
+      rw [Real.rpow_neg (by norm_num), Real.rpow_one]; norm_num
+    have hb : (0 : ℝ) ≤ (10 : ℝ) ^ (-A - 2) := Real.rpow_nonneg (by norm_num) _
+    rw [e1, h1]; nlinarith [hb]
+  calc (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v * I1 e v)
+        + (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v * I2 e v)
+        + (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v * I3 e v)
+      ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) + ENNReal.ofReal ((10 : ℝ) ^ (-A - 3))
+          + ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := add_le_add (add_le_add hRle hEle) hCle
+    _ = ENNReal.ofReal ((10 : ℝ) ^ (-A - 3) + (10 : ℝ) ^ (-A - 3) + (10 : ℝ) ^ (-A - 3)) := by
+        rw [← ENNReal.ofReal_add (by positivity) (by positivity),
+          ← ENNReal.ofReal_add (by positivity) (by positivity)]
+    _ ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) := ENNReal.ofReal_le_ofReal hnum3
 
 /-- **(7.55) — the pure damping expectation.** After the (7.54) column split it suffices to
 bound `E[exp(−ε³Nw)] ≤ 10^{−A−1}`. Proved here from `few_white_mass_le` (7.56) by the paper's
@@ -2237,25 +2424,6 @@ theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
     _ = ENNReal.ofReal ((10 : ℝ) ^ (-A - 2) + (10 : ℝ) ^ (-A - 3)) :=
         (ENNReal.ofReal_add (Real.rpow_nonneg (by norm_num) _) (Real.rpow_nonneg (by norm_num) _)).symm
     _ ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) := ENNReal.ofReal_le_ofReal hnum
-
-/-- **(7.54) bad-column tail** (paper: the `j_end ≥ 0.9m` contribution). The mass that the
-`P`-step walk after first passage advances past `0.9m` is `O(e^{−cm})` (Lemma 7.7 + Lemma 2.2:
-first passage `≥ 0.8m` and the extra `P` Geom(4) steps `≥ 0.1m` each have mass `e^{−cm}`),
-absorbed here into `≤ m^{−A}/2` for `m ≥ Cthr`. Bridged to `fpDistPlus_col_tail` via
-`fpDist_walk_eq_fpDistPlus`; the deviation scale uses `budget_le_of_mem_triangle`
-(`s·log2 ≤ (m+2)log9`). Stated for any horizon `P ≥ 1` (`Cthr` absorbs the `P`-dependence). -/
-theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
-    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
-      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
-      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
-      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
-      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
-      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
-      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
-          ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
-            then (1 : ℝ) else 0))
-        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) := by
-  sorry
 
 /-- **X11d crux (post-(7.54)) — the damping × column mass estimate.** Once the end
 value `Q(end)` has been peeled by (7.54) (`Q_le_Qm`: `Q(end) ≤ max(n/2−j_end,1)^{−A}·Q_{m−1}`)

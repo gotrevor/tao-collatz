@@ -1,5 +1,38 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap X11d-assembly (2026-07-14): **🏆 (7.56) CRUX `few_white_mass_le` ASSEMBLED — §7 crux now hinges on ONE leaf**
+
+The deepest leaf `few_white_mass_le` (7.56) is now **kernel-checked assembly** from its three proved
+component terms + the pointwise split. `lake build` green (3282 jobs). Case3 sorries **2 → 1**
+(only `col_tail_mass_le` remains). `#print axioms few_white_mass_le` = `[propext, sorryAx,
+Classical.choice, Quot.sound]` — the `sorryAx` is SOLELY via `col_tail_mass_le` (no new sorry
+introduced by the assembly).
+
+### What landed
+- **Moved `col_tail_mass_le` above `few_white_mass_le`** (it doesn't depend on few_white) so the
+  assembly can consume its bad-column term.
+- **Assembly recipe executed** exactly as decomp-6 §NEXT: `A' = 2A+A₀` (from estar), `K = ⌈(A+3)log10/ε³⌉`
+  (the goal threshold), `R = ⌈((K+1)+(A+5)log10+2)/ε₀⌉`, `P = encWindowIter A' (K+1) R`,
+  `Cthr = max(Cthr_e, Cthr_c, 10g, ⌈B^2.5⌉, ⌈10·500^{1/A}⌉)` where `B := 4^{A'}(1+P)³`.
+- **Pointwise split** `few_white_pointwise_split` applied inside `Σe fpDist Σv hold·` with per-v support
+  casing (v∉support ⟹ hold.iid=0), then tsum-linearity → three terms: reach (`few_white_reach_mass_le`,
+  ≤10^{−A−3}), E∗ (`few_white_estar_mass_le`, ≤10^{−A−3}), bad-column (`col_tail_mass_le` ≤ m^{−A}/2,
+  bridged to ≤10^{−A−3} via the numeric `m^{−A}/2 ≤ 10^{−A−3}` for m ≥ ⌈10·500^{1/A}⌉). Sum
+  `3·10^{−A−3} ≤ 10^{−A−2}`. ✓
+- **Cthr threading**: the deep bridge lives inside `few_white_estar_mass_le` (bakes Cthr=10^30);
+  the `hreg` discharge (⌊4^{A'}(1+p)³⌋ ≤ (m+1)^0.4) closes via `Cthr ≥ ⌈B^2.5⌉` (B = 4^{A'}(1+P)³ a
+  fixed constant, (m+1)^0.4 ≥ B^{2.5·0.4}=B); `hg: g ≤ 0.1m` via `Cthr ≥ 10g`.
+
+### NEXT — the SOLE remaining §7 leaf: `col_tail_mass_le` (Case3.lean:~2093), the (7.54) bad-column tail
+`Σe fpDist Σv hold·1_{0.9m ≤ e.1+(pathSum v P).1} ≤ m^{−A}/2` for m ≥ Cthr. Standard Gaussian tail:
+bridge walk→marginal via `fpDist_walk_eq_fpDistPlus`, then `fpDistPlus_col_tail` (deviation D≍m via
+`budget_le_of_mem_triangle`: s·log2≤(m+2)log9, so s=O(m) and advancing past 0.9m is a large deviation),
+then `exp(−cm) ≤ m^{−A}/2` via `exp_neg_mul_le_of_large`/`log_le_eps_mul_of_large` (both `BlackEdge.lean`).
+⚠ The col event is `0.9m ≤ e.1+(pathSum v P).1` (walk displacement); under the marginal law this is
+`fpDistPlus s P`'s first coord — align with `fpDistPlus_col_tail`'s deviation form. When it lands,
+`few_white_mass_le → damping_expectation_le → … → Q_black_edge_case3 → prop_7_8` all go axiom-clean and
+**§7 monotonicity is DONE**.
+
 ## Lap X11d-repair (2026-07-14): **JUDGE PASS 26 REPAIR DONE — `_rpow` engines split out, Lemma 7.10/X10a pins RESTORED byte-identical (`4f51542`, green 3282 jobs)**
 
 Executed the judge-mandated repair of `61f8e80` (which had edited four ratified pins). Now HARD RAIL 6
