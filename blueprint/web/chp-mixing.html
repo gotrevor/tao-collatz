@@ -135,6 +135,9 @@
 
     <a class="icon proof" href="chp-mixing.html#C10">#</a>
     
+    <a class="icon proof" href="chp-mixing.html#a0000000030"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
 </button>
@@ -153,6 +156,8 @@
           <li><a href="chp-support.html#S2">Definition 2.2</a></li>
           
           <li><a href="chp-support.html#S4">Definition 2.4</a></li>
+          
+          <li><a href="chp-crux.html#X11">Proposition 7.11</a></li>
           
           <li><a href="chp-crux.html#X11">Proposition 7.11</a></li>
           
@@ -186,11 +191,23 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   <b class="bfseries">Proposition 1.14</b>: the Syracuse law is asymptotically equidistributed at fine scales, </p>
-<div class="displaymath" id="a0000000030">
+<div class="displaymath" id="a0000000031">
   \[  \forall A{\gt}0,\  \exists C{\gt}0,\  \forall \,  1\le m\le n:\quad \mathrm{Osc}_{m,n}\bigl(Y\mapsto (\texttt{syracZ}\, n)(Y)\bigr) \le C\, m^{-A}.  \]
 </div>
 <p> Deduced from the <b class="bfseries">character-sum decay</b> Prop&#160;1.17 (node&#160;<a href="chp-crux.html#X11">7.11</a>, the head of the §7 crux “X-chain”) by Plancherel on \(\mathbb {Z}/3^n\mathbb {Z}\). The §6 machinery around it: Lemma&#160;6.2 (\(F_n\) injective), Cor&#160;6.3 (\(3\)-adic separation of the offsets), the event \(E\) (6.2), the stopping time \(k\), and the Plancherel step. </p>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 15–30 treadmill laps; risk <b class="bfseries">medium</b> (75% confidence the node completes as stated).</i> </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">done</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000030">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p> 🏆 <b class="bfseries">COMPLETE and judge-verified</b> (2026-07-14, HEAD <span class="ttfamily">49b32c7</span>): <span class="ttfamily">#print axioms fine_scale_mixing</span> \(= [\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\), no <span class="ttfamily">sorryAx</span>. The node collapsed to a single tail estimate via two machine-checked identities — <span class="ttfamily">mainHigh_eq_restrictedDensity</span> (<span class="ttfamily">mainHigh</span> <em>is</em> the Syracuse pushforward restricted to <span class="ttfamily">mainEvent</span>) and <span class="ttfamily">sum_abs_syracZ_sub_mainHigh_eq</span> (\(\sum _Y|\texttt{syracZ}-\texttt{mainHigh}| = \mathbb {P}(\neg \texttt{mainEvent})\), an <em>equality</em>) — after which \(\texttt{globalGood} \subseteq \texttt{mainEvent}\) and the (6.3) union bound over the three deviation tails (\(g_1,g_2,g_3\)) closed <span class="ttfamily">error_l1_high_bound</span>, itself axiom-clean. <span class="ttfamily">hbudget</span> discharged from the tight window (<span class="ttfamily">lRange_hbudget</span>); the \(A'\)-absorption at \(C_A=30\) <em>shown</em>, not asserted (<span class="ttfamily">osc_mainHigh_bound</span>). </p>
 
   </div>
 </div>

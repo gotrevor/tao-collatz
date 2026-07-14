@@ -408,6 +408,59 @@ genuinely-analytic brick remaining in C7.  For the log-uniform odd window `[y, y
 `L = ∫_y^{y^α} dt/t`).  Owed: comparison of `∑_{N≡r} 1/N` to `∫ dt/t` per arithmetic progression via
 `AntitoneOn.sum_le_integral` / `AntitoneOn.integral_le_sum` on `t ↦ 1/t` + `integral_inv`; the
 discretization and endpoint-alignment errors are each `≤ 1/y`, so the per-class error is `O(1/y)`. -/
+/-- **Window arithmetic** — for `x ≥ 2^2000` and `y ∈ {x^α, x^{α²}}`, the modulus `M = 2^{3n₀}`
+satisfies `M ≤ y` and the interval `[y, y^α]` has room to spare: `2y ≤ y^α` (so `y^α − y ≥ y ≥ M`).
+The one analytic input to the three C7 counting lemmas: `2^{3n₀} ≍ x^{0.3}` is dwarfed by
+`y ≍ x^{1.001}`. -/
+theorem window_arith {x : ℝ} (hx : (2:ℝ) ^ (2000:ℝ) ≤ x) {y : ℝ}
+    (hy : y = x ^ alpha ∨ y = x ^ alpha ^ 2) :
+    ((2 ^ (3 * nZero x) : ℕ) : ℝ) ≤ y ∧ 2 * y ≤ y ^ alpha := by
+  have hlog2 : (0:ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have h1le2000 : (1:ℝ) ≤ (2:ℝ) ^ (2000:ℝ) := by
+    rw [show (1:ℝ) = (2:ℝ) ^ (0:ℝ) from (Real.rpow_zero 2).symm]
+    exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (by norm_num)
+  have hx1 : (1:ℝ) ≤ x := le_trans h1le2000 hx
+  have hx0 : (0:ℝ) < x := lt_of_lt_of_le one_pos hx1
+  have hxbig : (2:ℝ) ^ (1000:ℝ) ≤ x := by
+    refine le_trans ?_ hx
+    exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (by norm_num)
+  have hyx : x ≤ y := by
+    rcases hy with h | h <;> rw [h] <;>
+      · nth_rewrite 1 [show x = x ^ (1:ℝ) from (Real.rpow_one x).symm]
+        exact Real.rpow_le_rpow_of_exponent_le hx1 (by unfold alpha; norm_num)
+  have hy1 : (1:ℝ) ≤ y := le_trans hx1 hyx
+  have hy0 : (0:ℝ) < y := lt_of_lt_of_le one_pos hy1
+  have hybig : (2:ℝ) ^ (1000:ℝ) ≤ y := le_trans hxbig hyx
+  constructor
+  · refine le_trans ?_ hyx
+    have hcast : ((2 ^ (3 * nZero x) : ℕ) : ℝ) = (2:ℝ) ^ (3 * nZero x) := by push_cast; ring
+    rw [hcast]
+    have hMr0 : (0:ℝ) < (2:ℝ) ^ (3 * nZero x) := by positivity
+    rw [← Real.log_le_log_iff hMr0 hx0, Real.log_pow]
+    have hlogx0 : (0:ℝ) ≤ Real.log x := Real.log_nonneg hx1
+    have hfloor : (nZero x : ℝ) ≤ Real.log x / (10 * Real.log 2) := by
+      unfold nZero; exact Nat.floor_le (by positivity)
+    have hk : ((3 * nZero x : ℕ) : ℝ) = 3 * (nZero x : ℝ) := by push_cast; ring
+    rw [hk]
+    have hstep : 3 * (nZero x : ℝ) * Real.log 2 ≤ 3 * (Real.log x / (10 * Real.log 2)) * Real.log 2 := by
+      apply mul_le_mul_of_nonneg_right _ hlog2.le; linarith [hfloor]
+    calc 3 * (nZero x : ℝ) * Real.log 2
+        ≤ 3 * (Real.log x / (10 * Real.log 2)) * Real.log 2 := hstep
+      _ = 3 / 10 * Real.log x := by field_simp
+      _ ≤ Real.log x := by linarith [hlogx0]
+  · have hsplit : y ^ alpha = y * y ^ (alpha - 1) := by
+      have h := Real.rpow_add hy0 1 (alpha - 1)
+      rw [Real.rpow_one, show (1:ℝ) + (alpha - 1) = alpha by ring] at h
+      exact h
+    have hge2 : (2:ℝ) ≤ y ^ (alpha - 1) := by
+      have := Real.rpow_le_rpow (by positivity) hybig (by unfold alpha; norm_num : (0:ℝ) ≤ alpha - 1)
+      refine le_trans ?_ this
+      rw [← Real.rpow_mul (by norm_num : (0:ℝ) ≤ 2)]
+      rw [show (1000:ℝ) * (alpha - 1) = 1 by unfold alpha; norm_num, Real.rpow_one]
+    calc 2 * y = y * 2 := by ring
+      _ ≤ y * y ^ (alpha - 1) := by apply mul_le_mul_of_nonneg_left hge2 hy0.le
+      _ = y ^ alpha := hsplit.symm
+
 /-- **AP-reindexing bridge** (the ONE remaining hole under `intTest_class_dev`).  For large `x` and an
 odd residue `r`, the class `{N ∈ [y, y^α] : N ≡ r (mod 2^{3n₀})}` is an arithmetic progression: its
 first element `a ∈ [y, y+M)` (`M = 2^{3n₀}`), it has `count ≥ 1` terms `a, a+M, …, a+M(count−1)`, and
@@ -428,7 +481,158 @@ theorem classMass_ap_form :
           y ^ alpha < (a : ℝ) + ((2 ^ (3 * nZero x) : ℕ) : ℝ) * (count : ℝ) ∧
           (a : ℝ) + ((2 ^ (3 * nZero x) : ℕ) : ℝ) * (count : ℝ) ≤ y ^ alpha
             + ((2 ^ (3 * nZero x) : ℕ) : ℝ) := by
-  sorry
+  obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
+  refine ⟨max x₀z ((2:ℝ) ^ (2000:ℝ)), fun x hx y hy => ?_⟩
+  have hxz : x₀z ≤ x := le_trans (le_max_left _ _) hx
+  have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_max_right _ _) hx
+  have hnz : 0 < nZero x := hzpos x hxz
+  have hyset : y = x ^ alpha ∨ y = x ^ alpha ^ 2 := by
+    simpa [Set.mem_insert_iff] using hy
+  obtain ⟨hMy, h2y⟩ := window_arith hx2000 hyset
+  set n' : ℕ := 3 * nZero x with hn'def
+  intro r hr
+  have hn'pos : 0 < n' := by omega
+  have hMpos : 0 < 2 ^ n' := by positivity
+  have hM2 : 2 ≤ 2 ^ n' := by
+    calc 2 = 2 ^ 1 := (pow_one 2).symm
+      _ ≤ 2 ^ n' := Nat.pow_le_pow_right (by norm_num) hn'pos
+  haveI : NeZero (2 ^ n') := ⟨by positivity⟩
+  have hMdvd2 : 2 ∣ 2 ^ n' := dvd_pow_self 2 hn'pos.ne'
+  -- reals
+  have hy2 : (2:ℝ) ≤ y := le_trans (by exact_mod_cast hM2) hMy
+  have hy0 : (0:ℝ) < y := by linarith
+  have hyα0 : (0:ℝ) ≤ y ^ alpha := by linarith [h2y]
+  -- interval endpoints
+  set ylo : ℕ := ⌈y⌉₊ with hylodef
+  set yhi : ℕ := ⌊y ^ alpha⌋₊ with hyhidef
+  have hylo_ge : y ≤ (ylo : ℝ) := Nat.le_ceil y
+  have hylo_lt : (ylo : ℝ) < y + 1 := Nat.ceil_lt_add_one hy0.le
+  have hyhi_le : (yhi : ℝ) ≤ y ^ alpha := Nat.floor_le hyα0
+  have hyhi_lt : y ^ alpha < (yhi : ℝ) + 1 := Nat.lt_floor_add_one _
+  have hM_ylo : 2 ^ n' ≤ ylo := by exact_mod_cast le_trans hMy hylo_ge
+  -- residue
+  set ρ : ℕ := r.val with hρdef
+  have hρlt : ρ < 2 ^ n' := ZMod.val_lt r
+  have hρodd : ρ % 2 = 1 := by rw [hρdef]; exact hr
+  -- ZMod ↔ mod bridge
+  have hZbridge : ∀ N : ℕ, ((N : ZMod (2 ^ n')) = r) ↔ N % (2 ^ n') = ρ := by
+    intro N
+    rw [show r = ((ρ : ℕ) : ZMod (2 ^ n')) from (ZMod.natCast_zmod_val r).symm,
+      ZMod.natCast_eq_natCast_iff', Nat.mod_eq_of_lt hρlt]
+  -- least class element ≥ ylo (the AP start `a`)
+  have hex : ∃ N, ylo ≤ N ∧ N % (2 ^ n') = ρ := by
+    refine ⟨ρ + 2 ^ n' * ylo, ?_, ?_⟩
+    · exact le_trans (Nat.le_mul_of_pos_left ylo hMpos) (Nat.le_add_left _ _)
+    · rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hρlt]
+  set a : ℕ := Nat.find hex with hadef
+  obtain ⟨haylo, hamod⟩ : ylo ≤ a ∧ a % (2 ^ n') = ρ := Nat.find_spec hex
+  have ha_lt : a < ylo + 2 ^ n' := by
+    by_contra hcon
+    push_neg at hcon
+    have hle : 2 ^ n' ≤ a := by omega
+    have hre : a - 2 ^ n' + 2 ^ n' = a := Nat.sub_add_cancel hle
+    have h2 : (a - 2 ^ n') % (2 ^ n') = ρ := by
+      rw [← Nat.add_mod_right (a - 2 ^ n') (2 ^ n'), hre]; exact hamod
+    exact Nat.find_min hex (show a - 2 ^ n' < a by omega) ⟨by omega, h2⟩
+  -- `a < y + M` (real)
+  have haR : (a : ℝ) < y + (2 ^ n' : ℕ) := by
+    have h1 : (a : ℝ) + 1 ≤ (ylo : ℝ) + (2 ^ n' : ℕ) := by exact_mod_cast ha_lt
+    push_cast at h1 ⊢
+    push_cast at hylo_lt
+    linarith
+  have haleyα : (a : ℝ) < y ^ alpha := by
+    have hle : ((2 ^ n' : ℕ) : ℝ) ≤ y := hMy
+    push_cast at haR hle
+    nlinarith [h2y]
+  have ha_yhi : a ≤ yhi := by rw [hyhidef]; exact Nat.le_floor haleyα.le
+  -- the AP length `count`
+  set count : ℕ := (yhi - a) / (2 ^ n') + 1 with hcountdef
+  have hcount1 : 1 ≤ count := Nat.le_add_left 1 _
+  have hinj : ∀ i ∈ Finset.range count, ∀ j ∈ Finset.range count,
+      a + 2 ^ n' * i = a + 2 ^ n' * j → i = j := by
+    intro i _ j _ h
+    exact Nat.eq_of_mul_eq_mul_left hMpos (Nat.add_left_cancel h)
+  -- the class finset IS the arithmetic progression `{a + M·i : i < count}`
+  have hFeq : (logWindow y (y ^ alpha)).filter (fun N : ℕ => (N : ZMod (2 ^ n')) = r)
+      = (Finset.range count).image (fun i => a + 2 ^ n' * i) := by
+    ext N
+    simp only [Finset.mem_filter, Finset.mem_image, Finset.mem_range, logWindow,
+      Nat.lt_add_one_iff, hZbridge]
+    constructor
+    · rintro ⟨⟨_, hNodd, hNy, hNyα⟩, hNmod⟩
+      have hNylo : ylo ≤ N := by rw [hylodef]; exact Nat.ceil_le.mpr hNy
+      have hNyhi : N ≤ yhi := by rw [hyhidef]; exact Nat.le_floor hNyα
+      have haN : a ≤ N := Nat.find_min' hex ⟨hNylo, hNmod⟩
+      have hdvd : 2 ^ n' ∣ N - a := (Nat.modEq_iff_dvd' haN).mp (by
+        show a % (2 ^ n') = N % (2 ^ n'); rw [hamod, hNmod])
+      refine ⟨(N - a) / (2 ^ n'), ?_, ?_⟩
+      · have : (N - a) / (2 ^ n') ≤ (yhi - a) / (2 ^ n') :=
+          Nat.div_le_div_right (Nat.sub_le_sub_right hNyhi a)
+        omega
+      · rw [Nat.mul_div_cancel' hdvd]; omega
+    · rintro ⟨i, hi, rfl⟩
+      have hmod : (a + 2 ^ n' * i) % (2 ^ n') = ρ := by
+        rw [Nat.add_mul_mod_self_left]; exact hamod
+      have hle_yhi : a + 2 ^ n' * i ≤ yhi := by
+        have hile : i ≤ (yhi - a) / (2 ^ n') := by omega
+        have hmul : 2 ^ n' * i ≤ yhi - a := by
+          calc 2 ^ n' * i ≤ 2 ^ n' * ((yhi - a) / (2 ^ n')) := Nat.mul_le_mul_left _ hile
+            _ = (yhi - a) / (2 ^ n') * (2 ^ n') := by ring
+            _ ≤ yhi - a := Nat.div_mul_le_self _ _
+        omega
+      refine ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
+      · have h1 : a + 2 ^ n' * i ≤ ⌊y ^ alpha⌋₊ := hle_yhi
+        have h2 : ⌊y ^ alpha⌋₊ ≤ ⌈y ^ alpha⌉₊ := Nat.floor_le_ceil _
+        omega
+      · have hmodeq : (a + 2 ^ n' * i) ≡ ρ [MOD 2 ^ n'] := by
+          show (a + 2 ^ n' * i) % (2 ^ n') = ρ % (2 ^ n')
+          rw [hmod, Nat.mod_eq_of_lt hρlt]
+        have hmod2 := hmodeq.of_dvd hMdvd2
+        show (a + 2 ^ n' * i) % 2 = 1
+        have h2 : (a + 2 ^ n' * i) % 2 = ρ % 2 := hmod2
+        rw [h2, hρodd]
+      · have hya : y ≤ (a : ℝ) := le_trans hylo_ge (by exact_mod_cast haylo)
+        push_cast
+        have h2 : (0:ℝ) ≤ (2:ℝ) ^ n' * (i : ℝ) := by positivity
+        linarith [hya, h2]
+      · have hle2 : (a + 2 ^ n' * i : ℕ) ≤ yhi := hle_yhi
+        have hcast : ((a + 2 ^ n' * i : ℕ) : ℝ) ≤ (yhi : ℝ) := by exact_mod_cast hle2
+        linarith [hyhi_le, hcast]
+      · rw [hmod]
+  -- the two `count`-endpoint bounds (nat, then cast)
+  have hcount_upper : yhi < a + 2 ^ n' * count := by
+    have hkey : yhi - a < 2 ^ n' * count := by
+      have hdm := Nat.div_add_mod (yhi - a) (2 ^ n')
+      have hmlt := Nat.mod_lt (yhi - a) hMpos
+      have hexp : 2 ^ n' * count = 2 ^ n' * ((yhi - a) / (2 ^ n')) + 2 ^ n' := by
+        rw [hcountdef]; ring
+      omega
+    omega
+  have hcount_lower : a + 2 ^ n' * count ≤ yhi + 2 ^ n' := by
+    have hmul : 2 ^ n' * ((yhi - a) / (2 ^ n')) ≤ yhi - a := by
+      calc 2 ^ n' * ((yhi - a) / (2 ^ n')) = (yhi - a) / (2 ^ n') * (2 ^ n') := by ring
+        _ ≤ yhi - a := Nat.div_mul_le_self _ _
+    have hexp : 2 ^ n' * count = 2 ^ n' * ((yhi - a) / (2 ^ n')) + 2 ^ n' := by rw [hcountdef]; ring
+    omega
+  -- assemble the witness
+  refine ⟨a, count, hcount1, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [classMass, hFeq, Finset.sum_image hinj]
+    apply Finset.sum_congr rfl
+    intro i _; push_cast; ring_nf
+  · exact le_trans hylo_ge (by exact_mod_cast haylo)
+  · have hMcast : ((2 ^ n' : ℕ) : ℝ) = (2:ℝ) ^ n' := by push_cast; ring
+    rw [hMcast]; rw [hMcast] at haR; exact haR
+  · have hnat : yhi + 1 ≤ a + 2 ^ n' * count := hcount_upper
+    have hcast : ((a + 2 ^ n' * count : ℕ) : ℝ) = (a : ℝ) + ((2 ^ n' : ℕ) : ℝ) * (count : ℝ) := by
+      push_cast; ring
+    have hge : (yhi : ℝ) + 1 ≤ (a : ℝ) + ((2 ^ n' : ℕ) : ℝ) * (count : ℝ) := by
+      rw [← hcast]; exact_mod_cast hnat
+    linarith [hyhi_lt]
+  · have hcast : ((a + 2 ^ n' * count : ℕ) : ℝ) = (a : ℝ) + ((2 ^ n' : ℕ) : ℝ) * (count : ℝ) := by
+      push_cast; ring
+    have hle3 : (a : ℝ) + ((2 ^ n' : ℕ) : ℝ) * (count : ℝ) ≤ (yhi : ℝ) + ((2 ^ n' : ℕ) : ℝ) := by
+      rw [← hcast]; push_cast; exact_mod_cast hcount_lower
+    linarith [hyhi_le]
 
 theorem intTest_class_dev :
     ∃ c : ℝ, 0 < c ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),

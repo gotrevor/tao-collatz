@@ -44,6 +44,11 @@ tao_collatz_quantitative
 passes
 passTime
 passLoc
+logWindow
+logUnifOdd
+alpha
+first_passage_nonescape
+first_passage_approx
 stabilization
 fine_scale_mixing
 fCond

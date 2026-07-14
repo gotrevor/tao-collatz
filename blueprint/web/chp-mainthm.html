@@ -151,11 +151,11 @@
           
           <li><a href="chp-dictionary.html#C3">Definition 3.3</a></li>
           
-          <li><a href="chp-mainthm.html#C7">Lemma 5.2</a></li>
+          <li><a href="chp-mainthm.html#C7">Lemma 5.3</a></li>
           
-          <li><a href="chp-mainthm.html#C8">Proposition 5.3</a></li>
+          <li><a href="chp-mainthm.html#C8">Proposition 5.4</a></li>
           
-          <li><a href="chp-mainthm.html#C9">Proposition 5.4</a></li>
+          <li><a href="chp-mainthm.html#C9">Proposition 5.5</a></li>
           
         </ul>
     
@@ -192,18 +192,93 @@
 <div class="displaymath" id="a0000000027">
   \[  \mathrm{logProb}_{[1,x]}\bigl(\{ N : \mathrm{Colmin}(N)\le N_0\} \bigr) \; \ge \;  1 - C/(\log N_0)^{c}.  \]
 </div>
-<p> Thm&#160;3.1 is obtained from the stabilization estimate Prop&#160;1.11 (node&#160;<a href="chp-mainthm.html#C9">5.4</a>) by iterating over dyadic scales (§3). </p>
+<p> Thm&#160;3.1 is obtained from the stabilization estimate Prop&#160;1.11 (node&#160;<a href="chp-mainthm.html#C9">5.5</a>) by iterating over dyadic scales (§3). </p>
 <p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 8–15 treadmill laps; risk <b class="bfseries">low</b> (85% confidence the node completes as stated).</i> </p>
 
   </div>
 </div>
 <h1 id="a0000000011">5.2 First passage (§5)</h1>
+<div class="definition_thmwrapper theorem-style-definition" id="C7d">
+  <div class="definition_thmheading">
+    <span class="definition_thmcaption">
+    Definition
+    </span>
+    <span class="definition_thmlabel">5.2</span>
+    <span class="definition_thmtitle">First-passage data and the log-uniform window</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C7d">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-dictionary.html#C1">Definition 3.1</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/passes" class="lean_decl">passes</a></li>
+          
+          <li><a href="../docs/find/#doc/passTime" class="lean_decl">passTime</a></li>
+          
+          <li><a href="../docs/find/#doc/passLoc" class="lean_decl">passLoc</a></li>
+          
+          <li><a href="../docs/find/#doc/logWindow" class="lean_decl">logWindow</a></li>
+          
+          <li><a href="../docs/find/#doc/logUnifOdd" class="lean_decl">logUnifOdd</a></li>
+          
+          <li><a href="../docs/find/#doc/alpha" class="lean_decl">alpha</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="definition_thmcontent">
+  <p>   The first-passage data: \(\mathrm{passes}(x,N)\) (\(=T_x(N){\lt}\infty \), the orbit reaches \(\le x\)), the passage time \(\mathrm{passTime}\), and the passage location \(\mathrm{Pass}_x = \mathrm{passLoc}\) (with the convention \(\mathrm{Syr}^\infty := 1\)); plus the log-uniform law \(\mathbf{N}_y \equiv \mathbf{Log}(2\mathbb {N}+1 \cap [y,y^\alpha ])\) (\(\mathrm{logWindow}\), \(\mathrm{logUnifOdd}\)) and the exponent \(\alpha = 1.001\) (paper (1.18)). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">low</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
 <div class="lemma_thmwrapper theorem-style-definition" id="C7">
   <div class="lemma_thmheading">
     <span class="lemma_thmcaption">
     Lemma
     </span>
-    <span class="lemma_thmlabel">5.2</span>
+    <span class="lemma_thmlabel">5.3</span>
     <span class="lemma_thmtitle">First-passage non-escape; (1.19)</span>
     <div class="thm_header_extras">
 
@@ -231,6 +306,8 @@
           
           <li><a href="chp-support.html#S2">Definition 2.2</a></li>
           
+          <li><a href="chp-mainthm.html#C7d">Definition 5.2</a></li>
+          
         </ul>
     
       </div>
@@ -249,11 +326,7 @@
         
         <ul class="uses">
           
-          <li><a href="../docs/find/#doc/passes" class="lean_decl">passes</a></li>
-          
-          <li><a href="../docs/find/#doc/passTime" class="lean_decl">passTime</a></li>
-          
-          <li><a href="../docs/find/#doc/passLoc" class="lean_decl">passLoc</a></li>
+          <li><a href="../docs/find/#doc/first_passage_nonescape" class="lean_decl">first_passage_nonescape</a></li>
           
         </ul>
     
@@ -264,11 +337,12 @@
         </div>
   </div>
   <div class="lemma_thmcontent">
-  <p>   The first-passage data: \(\mathrm{passes}(x,N)\) (\(=T_x(N){\lt}\infty \), the orbit reaches \(\le x\)), the passage time \(\mathrm{passTime}\), and the passage location \(\mathrm{Pass}_x = \mathrm{passLoc}\) (with the convention \(\mathrm{Syr}^\infty := 1\)). Estimate (paper (1.19)): the probability that a log-uniformly chosen odd \(N_y\) in a window around \(y\) <em>never</em> descends to \(\le x\) is small, </p>
+  <p>   Paper (1.19): a log-uniformly chosen odd \(N_y\) in the window \([y,y^\alpha ]\) fails ever to descend to \(\le x\) only with small probability, </p>
 <div class="displaymath" id="a0000000028">
   \[  \mathbb {P}\bigl(T_x(N_y)=\infty \bigr) \ll x^{-c}.  \]
 </div>
-<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 5–10 treadmill laps; risk <b class="bfseries">low</b> (85% confidence the node completes as stated).</i> </p>
+<p> Tao’s route (§5 pp.20–21) runs entirely over proved machinery except for one new brick: the <b class="bfseries">integral test</b> \(d_{\mathrm{TV}}(\mathbf{N}_y \bmod 2^{n'}, \mathrm{Unif}) \ll 2^{-n'}\), which is exactly the hypothesis Proposition&#160;1.9 (node C5) takes. Given it, Prop&#160;1.9 supplies (5.4), Lemma&#160;2.2 (node S3, two-sided) supplies the lower-tail bound (5.5) \(\mathbb {P}(|\vec a^{(n_0)}(\mathbf{N}_y)| \le 1.9 n_0) \ll x^{-c}\), and an explicit descent computation gives \(\mathrm{Syr}^{n_0}(\mathbf{N}_y) = O(x^{0.99}) \le x\) on the complement, with \(n_0 := \lfloor \log x / (10\log 2)\rfloor \) (5.1). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 10–18 treadmill laps; risk <b class="bfseries">medium</b> (75% confidence the node completes as stated).</i> </p>
 
   </div>
 </div>
@@ -277,7 +351,7 @@
     <span class="proposition_thmcaption">
     Proposition
     </span>
-    <span class="proposition_thmlabel">5.3</span>
+    <span class="proposition_thmlabel">5.4</span>
     <span class="proposition_thmtitle">Approximate first-passage formula; Prop 5.2</span>
     <div class="thm_header_extras">
 
@@ -303,7 +377,7 @@
           
           <li><a href="chp-syracuse.html#C5">Proposition 4.2</a></li>
           
-          <li><a href="chp-mainthm.html#C7">Lemma 5.2</a></li>
+          <li><a href="chp-mainthm.html#C7">Lemma 5.3</a></li>
           
         </ul>
     
@@ -312,10 +386,29 @@
 
     
     
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/first_passage_approx" class="lean_decl">first_passage_approx</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
         </div>
   </div>
   <div class="proposition_thmcontent">
-  <p>  <b class="bfseries">Proposition 5.2</b>, the approximate formula (paper (5.8)) for the law of the first-passage location, built from the bookkeeping events \(\mathcal{A}^{(n')}\) (5.11), \(E'\) (5.10), and \(I_y\) (5.9), through the \(B_{n,y}\) equivalence chain relating the passage location to the affine images of the input window. This is where the Prop&#160;1.9 geometric approximation is fed into the concrete window statistics. </p>
+  <p>   <b class="bfseries">Proposition 5.2</b>, the approximate formula (paper (5.8)) for the law of the first-passage location, built from the bookkeeping events \(\mathcal{A}^{(n')}\) (5.11), \(E'\) (5.10), and \(I_y\) (5.9), through the \(B_{n,y}\) equivalence chain relating the passage location to the affine images of the input window. This is where the Prop&#160;1.9 geometric approximation is fed into the concrete window statistics. </p>
 <p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 15–30 treadmill laps; risk <b class="bfseries">medium</b> (75% confidence the node completes as stated).</i> </p>
 
   </div>
@@ -325,7 +418,7 @@
     <span class="proposition_thmcaption">
     Proposition
     </span>
-    <span class="proposition_thmlabel">5.4</span>
+    <span class="proposition_thmlabel">5.5</span>
     <span class="proposition_thmtitle">Stabilization across scales; Prop 1.11</span>
     <div class="thm_header_extras">
 
@@ -349,7 +442,7 @@
         
         <ul class="uses">
           
-          <li><a href="chp-mainthm.html#C8">Proposition 5.3</a></li>
+          <li><a href="chp-mainthm.html#C8">Proposition 5.4</a></li>
           
           <li><a href="chp-mixing.html#C10">Proposition 6.1</a></li>
           
