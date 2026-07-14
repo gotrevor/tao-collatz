@@ -1295,6 +1295,81 @@ theorem tailDens_renyi_le (j p l : ℕ) (M : ℝ) (hM : ∀ Y, tailDens j p l Y 
     _ ≤ M * 1 := mul_le_mul_of_nonneg_left (tailDens_sum_le_one j p l) hM0
     _ = M := mul_one M
 
+/-- The **windowed** tail sub-density total mass is `≤ 1` (it is `P(pre = l ∧ W) ≤ 1`): the exact
+mirror of `tailDens_sum_le_one` carrying the extra conditioning conjunct `W vt`. Swap the finite `∑_Y`
+into the `tsum`, collapse `∑_Y 1_{offset = Y ∧ pre = l ∧ W} = 1_{pre = l ∧ W} ≤ 1`, and use
+`∑' (iid) = 1`. -/
+theorem tailDensW_sum_le_one (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W] :
+    ∑ Y, tailDensW j p l W Y ≤ 1 := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have hbase : Summable (fun vt : Fin p → ℕ => ((geomHalf.iid p) vt).toReal) :=
+    ENNReal.summable_toReal (by rw [(geomHalf.iid p).tsum_coe]; exact ENNReal.one_ne_top)
+  have hone : ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal = 1 := by
+    rw [← ENNReal.tsum_toReal_eq (fun vt => (geomHalf.iid p).apply_ne_top vt),
+      (geomHalf.iid p).tsum_coe]; rfl
+  have hsum : ∀ Y : ZMod (3 ^ (j + p)), Summable (fun vt : Fin p → ℕ =>
+      ((geomHalf.iid p) vt).toReal
+        * (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+              ∧ pre vt p = l ∧ W vt then (1 : ℝ) else 0)) := by
+    intro Y
+    refine Summable.of_nonneg_of_le (fun vt => mul_nonneg ENNReal.toReal_nonneg (by split <;> norm_num))
+      (fun vt => ?_) hbase
+    calc ((geomHalf.iid p) vt).toReal
+          * (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+                ∧ pre vt p = l ∧ W vt then (1 : ℝ) else 0)
+        ≤ ((geomHalf.iid p) vt).toReal * 1 :=
+          mul_le_mul_of_nonneg_left (by split <;> norm_num) ENNReal.toReal_nonneg
+      _ = ((geomHalf.iid p) vt).toReal := mul_one _
+  have hcollapse : ∀ vt : Fin p → ℕ,
+      ∑ Y : ZMod (3 ^ (j + p)),
+        (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+            ∧ pre vt p = l ∧ W vt then (1 : ℝ) else 0)
+        = (if pre vt p = l ∧ W vt then (1 : ℝ) else 0) := by
+    intro vt
+    by_cases h : pre vt p = l ∧ W vt
+    · simp only [h, and_true, Finset.sum_ite_eq, Finset.mem_univ, if_true]
+    · simp only [h, and_false, if_false, Finset.sum_const_zero]
+  calc ∑ Y, tailDensW j p l W Y
+      = ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal
+          * ∑ Y : ZMod (3 ^ (j + p)),
+            (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+                ∧ pre vt p = l ∧ W vt then (1 : ℝ) else 0) := by
+        simp only [tailDensW]
+        rw [← Summable.tsum_finsetSum (fun Y _ => hsum Y)]
+        refine tsum_congr (fun vt => ?_)
+        rw [Finset.mul_sum]
+    _ = ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal
+          * (if pre vt p = l ∧ W vt then (1 : ℝ) else 0) := by
+        refine tsum_congr (fun vt => ?_); rw [hcollapse vt]
+    _ ≤ ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal := by
+        have hle : ∀ vt : Fin p → ℕ,
+            ((geomHalf.iid p) vt).toReal * (if pre vt p = l ∧ W vt then (1 : ℝ) else 0)
+              ≤ ((geomHalf.iid p) vt).toReal := by
+          intro vt
+          calc ((geomHalf.iid p) vt).toReal * (if pre vt p = l ∧ W vt then (1 : ℝ) else 0)
+              ≤ ((geomHalf.iid p) vt).toReal * 1 :=
+                mul_le_mul_of_nonneg_left (by split <;> norm_num) ENNReal.toReal_nonneg
+            _ = ((geomHalf.iid p) vt).toReal := mul_one _
+        refine Summable.tsum_le_tsum hle ?_ hbase
+        exact Summable.of_nonneg_of_le
+          (fun vt => mul_nonneg ENNReal.toReal_nonneg (by split <;> norm_num)) hle hbase
+    _ = 1 := hone
+
+/-- **The windowed tail Rényi count reduces to the single-point mass bound** (C10, obligation 3):
+given `tailDensW Y ≤ M` (from `tailDensW_le_single_mass`, `M = 2⁻ˡ`), the windowed tail collision
+entropy is `∑_Y (tailDensW)² ≤ M`. Mirror of `tailDens_renyi_le`; `sum_sq_le_max_mul_sum` +
+`tailDensW_sum_le_one`. This is the exact quantity the windowed osc `√` consumes. -/
+theorem tailDensW_renyi_le (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W] (M : ℝ)
+    (hM : ∀ Y, tailDensW j p l W Y ≤ M) :
+    ∑ Y, (tailDensW j p l W Y) ^ 2 ≤ M := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have hM0 : 0 ≤ M := le_trans (tailDensW_nonneg j p l W 0) (hM 0)
+  calc ∑ Y, (tailDensW j p l W Y) ^ 2
+      ≤ M * ∑ Y, tailDensW j p l W Y :=
+        sum_sq_le_max_mul_sum _ M (tailDensW_nonneg j p l W) hM
+    _ ≤ M * 1 := mul_le_mul_of_nonneg_left (tailDensW_sum_le_one j p l W) hM0
+    _ = M := mul_one M
+
 /-- `∑_{m<p} 2ᵐ < 2ᵖ` (the geometric partial sum `= 2ᵖ−1`). -/
 theorem sum_two_pow_lt (p : ℕ) : ∑ m ∈ Finset.range p, 2 ^ m < 2 ^ p := by
   induction p with
