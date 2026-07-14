@@ -46,15 +46,31 @@ escalation. Do not re-derive the diagnosis.**
 Numerics (targets, not proofs — a Lean proof may ship lossier constants, which is
 fine): `tools/tao_linear_tail.py`, `tools/tao_height_tail.py`.
 
-**⚠️ `epsBW` IS THE JUDGE'S TO SET — NOT A WORKER'S.** The box comes out at
-`√(47²+139²) ≈ 147 > sep ≈ 20.72`, so closing step 4 needs a numeral re-freeze
-(`10⁻⁹⁰ → 10⁻¹⁰⁰⁰`). **The judge issues that, after seeing the constants you
-actually prove.** Steps 2 and 3 are entirely **ε-free** — land them, report your real
-`B` and `Y`, and STOP at the box inequality (leave `fpDist_any_triangle_le` sorried,
-numerals recorded in your handoff). Meanwhile:
-- Do **not** change `epsBW`.
+**⚖️ `epsBW` RULING — PRE-AUTHORIZED (judge, 2026-07-13 20:15, after `B = 64` landed).**
+`epsBW` is the judge's constant, never a worker's. To keep you from stalling at the Lap-D
+gate, the judge issues it now, **conditionally**:
+
+> **`epsBW : ℚ := 1 / 10 ^ 1000`** (`sep = 100·ln 10 ≈ 230.26`) is authorized **iff** the
+> constants you have actually PROVED satisfy **`B ≤ 250` and `Y ≤ 200`**. That envelope
+> keeps the box `≤ √(79² + 200²) ≈ 215 < 230`, so the inequality closes with margin.
+
+If your proved constants land inside that envelope, execute the change. If **either**
+constant lands outside it, **STOP** — do not pick your own numeral, do not "just make ε
+smaller." Report the real numbers and the judge re-issues.
+
+Execution rules for the D4-change lap (same doctrine as the first ε ruling):
+- **A dedicated lap.** Change the numeral and make ONLY the mechanical numeral repairs
+  needed to get the build green. **No route work in that lap** — a mixed lap forfeits the
+  judge's cheap sweep verification.
+- The judge re-runs the **ε-sweep re-ratification** at the boundary (all seven armed items;
+  each was verified monotone-good at smaller ε in pass 23). Expect nothing to break — but
+  the sweep is not optional, and `#print axioms` re-runs on X2/X3/X10 are the judge's, not
+  yours to claim.
 - Do **not** re-open `epsBW` as a parameter — that remedy is ruled out.
 - Do **not** introduce a `Real.exp`-valued ε; the frozen rational power of ten is doctrine.
+- ⚠️ Downstream note (not your problem now, but do not "helpfully" fix it): Case 3's
+  `10A/ε³` and `R = ⌊A²/ε⁴⌋` inflate with the exponent. They are **existential** in every pin
+  we hold, so this costs nothing. Leave them existential.
 
 **Forbidden drift**:
 - No spine leaves (SyracRV / ValuationDist / Basic / Statement / Sec5 / Sec6 / Prob
