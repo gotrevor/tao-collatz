@@ -2,27 +2,42 @@
 
 **First-anywhere Lean 4 formalization of Tao 2019 "Almost all Collatz orbits
  attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3285 jobs) ·
-**Updated**: deep reflection lap · 2026-07-14 · `f96a728`
+**Updated**: review lap · 2026-07-15 · `4eabb35`
 
 ## Where it stands
 
 **🏆 §7 (the campaign's stated 65–75% risk concentration) is CLOSED and
 axiom-clean**; all of SyracRV, S3, X1–X11 done and clean. **The content spine
 has EXACTLY TWO open heroic sorries** (+ 2 frozen headline stubs): C10
-`fine_scale_mixing` (Prop 1.14, §6, `MixingFromDecay.lean:1459`) and C9
+`fine_scale_mixing` (Prop 1.14, §6, `MixingFromDecay.lean:1711`) and C9
 `stabilization` (Prop 1.11, §5, `FirstPassage.lean:81`, consumes C10). The crux
-is **C10** on the critical path `C10 → C9 → C6 → Statement`. Seventeen C10
-support bricks are banked axiom-clean (Plancherel chain, osc calculus, Lemma
-6.2 + mod-3ⁿ wrapper, marginalization, head-factor reindex onto `charFn_decay`).
-The 2026-07-14 deep reflection **refuted the recorded obligation-3 endgame**
-(the "window ⟹ per-prefix" implication is false in-regime) and re-aimed it at
-the suffix-form window kernel with the tight stopping-rule l-window — the
-paper's own (6.8) display is too lossy (hole #3, JUDGE-FLAGged); margins now
-verified numerically (0.4805 vs 0.693 per C_A²·log n, closes for C_A ≥ 10).
-**4 real proof `sorry`s remain total** (2 headline + C10 + C9).
+is **C10** on the critical path `C10 → C9 → C6 → Statement`. **Obligation 3's
+analytic content — the route-decisive piece — is now DONE and axiom-clean**: the
+reflection's corrected window kernel `fnat_lt_of_suffix_window` (the one place §6
+runs on critical constants; T3 de-risked at lap 1 of 6) + mod-3ⁿ injectivity
+`fnat_offset_zmod_inj` + the collision bound `tailDensW_le_single_mass`
+(`tailDensW Y ≤ 2⁻ˡ`), all re-verified `[propext, choice, Quot.sound]` this lap.
+Twenty-odd C10 support bricks banked clean (Plancherel chain, osc calculus,
+Lemma 6.2 + mod-3ⁿ wrapper, marginalization, head-factor reindex onto
+`charFn_decay`, suffix window). The frontier has moved from "the window kernel"
+to **the assembly** — finish the windowed obl-3 plumbing, then decompose
+`fine_scale_mixing` into named obl-0/1/2/3 sub-sorries defining the events (obl
+1). **4 real proof `sorry`s remain total** (2 headline + C10 + C9).
 
 ## What's happened (newest first)
 
+- **review lap (2026-07-15, `4eabb35`)**: route CONTINUE, no trigger fired;
+  **T3 DE-RISKED**. Verified obl-3's analytic content DONE + axiom-clean
+  (`fnat_lt_of_suffix_window`, `tailDensW_le_single_mass`, `fnat_offset_zmod_inj`,
+  `condDens_osc_le` all trust-base only at HEAD `4eabb35`). Frontier advanced from
+  the window kernel to the ASSEMBLY; DIRECTIVE re-aimed to finish the windowed
+  obl-3 plumbing then decompose `fine_scale_mixing` into named sub-sorries (obl 1
+  events). Ledger re-run clean; 4 live sorries confirmed.
+- **grind laps fruit-24/25 (2026-07-14/15)**: the reflection's re-aimed obl-3
+  kernel `fnat_lt_of_suffix_window` (ε=1/5 Young, explicit `C≥10`/`n≥n₀`) landed
+  green + axiom-clean, then `tailDensW` + `tailDensW_le_single_mass` (windowed
+  single-point mass `≤ 2⁻ˡ` via `fnat_offset_zmod_inj` + `geomHalf_iid_apply_pos`).
+  The chain kernel → injectivity → single-point mass is machine-checked end-to-end.
 - **deep reflection (2026-07-14, `f96a728`)**: route CONTINUE (no trigger
   fired; T3/T4 registered). **Caught a false summit**: fruit-23's "one
   remaining analytic implication" for obligation 3 is unprovable — the
@@ -93,14 +108,6 @@ verified numerically (0.4805 vs 0.693 per C_A²·log n, closes for C_A ≥ 10).
   20.7 (renewal harness: distance-tail about 0.27 versus the required 0.125), so
   do not resurrect that route without either a packing lemma or a stronger D4
   altitude.
-- **lap 57 (2026-07-13, X11 RISK BURN-DOWN)**: collapsed X11 from four
-  unresolved interfaces to one authoritative gate, `Q_black_edge_case3`, after
-  all checked support in `Case3.lean`. Replaced the import-cycle-prone upstream
-  placeholder with locally checked parameterized assemblies in `BlackEdge.lean`; the
-  public `Q_black_edge` → Proposition 7.8 → polynomial-decay chain now consumes
-  the sole downstream gate directly. The gate owns the finite union/numerical
-  join and depends on the single upstream geometry gate
-  `fpDist_any_triangle_le`.
 - **earlier (laps 36–56, 2026-07-12)**: X9/X10/X11 pins + kernels (laps 51–56,
   incl. the lap-55 deep reflection's X9 near-edge finding and the 7.9
   exp(ε)→exp(2ε) correction); X1/X2/X5/X6 closed; S3 fully green (laps 36–45,
@@ -109,14 +116,16 @@ verified numerically (0.4805 vs 0.693 per C_A²·log n, closes for C_A ≥ 10).
 
 ## Outstanding
 
-### Short-term (mirror PENDING_WORK top — Reflection 2026-07-14)
-- **`fnat_lt_of_suffix_window`** (START HERE, route-decisive): the corrected
-  obligation-3 kernel — tight l-window + suffix (6.12) bounds ⟹
-  `fnat p vt < 3^(j+p)`; ε=1/4 Young, explicit `C_A ≥ 10`, `n ≥ n₀`. Spec in
-  PENDING_WORK Reflection section. Do NOT attempt the refuted per-prefix form.
-- Then: windowed-indicator generalization of `condDens`/`tailDens` (serves
-  obligations 1+3) → windowed `tailDens ≤ 2^{-l}` (obl 3 CLOSED) → event
-  scaffold + `P(Ē)` (obl 1) → `hunif` (obl 2) → regime telescope (obl 0).
+### Short-term (mirror PENDING_WORK top — review lap 2026-07-15)
+- **Finish the windowed obl-3 plumbing** (START HERE; on-path, mirrors existing
+  non-windowed lemmas): `tailDensW_sum_le_one` → windowed Rényi
+  `∑ (tailDensW)² ≤ 2⁻ˡ` → windowed `tail_factor_dft_eq`/`_l2_eq` → a windowed
+  `condDens`/`condDens_osc_le` analogue, so the single-point mass feeds the osc √.
+- **THEN the assembly (obl 1, the hardest open piece)**: decompose
+  `fine_scale_mixing` (`MixingFromDecay.lean:1711`) into named obl-0/1/2/3
+  sub-sorries; define events `E`/`Eₖ`/`Bₖ`/`Cₖ,ₗ` as tail `DecidablePred`s;
+  discharge the window kernel's `hbudget`/`hsuf` from `Bₖ`/`Eₖ`; then `P(Ē)`
+  (obl 1 tail), `hunif` (obl 2), regime telescope (obl 0), final wire.
 
 ### Long-term
 - After C10 lands: attack C9 `stabilization` (Prop 1.11, §5) — consumes C10 —
@@ -139,7 +148,7 @@ trust-base only):
 | headline / node | paper claim | `#print axioms` shows | status |
 |---|---|---|---|
 | `Statement` Thm 1.3 / Thm 3.1 | Thm 1.3 (uncond.) | `sorry` (spine not assembled) | 🔜 stub — discharges when C10/C9/C6 land |
-| C10 `fine_scale_mixing` (Prop 1.14) | §6 fine-scale mixing | trust base + `sorryAx` | 🟡 **current crux** — 17 bricks banked clean; obligations 0–3 scoped, obl-3 kernel re-aimed (suffix window, tight l-bound) by 07-14 reflection |
+| C10 `fine_scale_mixing` (Prop 1.14) | §6 fine-scale mixing | trust base + `sorryAx` | 🟡 **current crux** — 20+ bricks banked clean; **obl-3 analytic content DONE + axiom-clean** (suffix window kernel + injectivity + single-point mass `≤ 2⁻ˡ`); remaining = windowed plumbing + assembly (obl 0/1/2 events) |
 | C9 `stabilization` (Prop 1.11) | §5 first-passage stab. | trust base + `sorryAx` | 🟡 downstream of C10; narrow only |
 | `charFn_decay` (Prop 1.17) | key char-sum decay | `[propext, choice, Quot.sound]` | 🟢 done, clean (C10's analytic input) |
 | `key_fourier_decay` (Prop 7.1) | (7.1) Fourier decay | `[propext, choice, Quot.sound]` | 🟢 done, clean |
@@ -154,8 +163,8 @@ cited. Remaining work is `sorry`-discharge (C10 crux + C9 + 2 headline), not
 axiom-discharge.
 
 ## Pointers
-DIRECTION.md (binding directive; reflection course-correction 2026-07-14) ·
-BLUEPRINT.md (frozen node ledger §2) · newest `HANDOFF-2026-07-15-1600.md` (reflection; real date 07-14) ·
-PENDING_WORK.md (Reflection 2026-07-14 top: obl-3 spec + triggers) ·
+DIRECTION.md (binding directive; review-lap update 2026-07-15 on top) ·
+BLUEPRINT.md (frozen node ledger §2) · newest `HANDOFF-2026-07-15-1800.md` (review lap) ·
+PENDING_WORK.md (review-lap 2026-07-15 top: windowed plumbing + assembly plan) ·
 papers/literature-review.md (source synthesis; Cor 6.3 hole #3) ·
 paper `papers/tao-2019-almost-all-orbits.pdf`.

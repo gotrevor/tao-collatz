@@ -9,6 +9,38 @@ PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ## CURRENT DIRECTIVE (JUDGE PASS 27, 2026-07-14 — §7 RATIFIED COMPLETE; the objective is C10)
 
+### 🔎 REVIEW-LAP UPDATE (2026-07-15, HEAD `4eabb35`) — route CONTINUE, frontier advanced to the ASSEMBLY
+
+*(Refines — does not override — the judge pass-27 objective and the reflection block below. Both stand.)*
+
+**Route CONTINUE; no trigger fired.** **T3 is DE-RISKED**: the reflection's route-decisive kernel
+`fnat_lt_of_suffix_window` (the ONE place §6 runs on critical constants) landed machine-checked +
+axiom-clean at lap 1 of the ~6-lap T3 window, and so did the collision bound `tailDensW_le_single_mass`
+(`tailDensW Y ≤ 2⁻ˡ`). Fresh review-lap `#print axioms` (HEAD `4eabb35`): `fnat_lt_of_suffix_window`,
+`tailDensW_le_single_mass`, `fnat_offset_zmod_inj`, `condDens_osc_le` all `[propext, choice, Quot.sound]`.
+**Obligation 3's analytic content is DONE** — the constant risk that dominated C10 is retired.
+
+**The frontier has therefore moved from "the window kernel" (done) to "the ASSEMBLY."** Hardest-first,
+the mandated next moves, IN ORDER:
+1. **Finish the windowed obl-3 plumbing** (small, on-path, completes obl 3 into a consumable bound):
+   `tailDensW_sum_le_one` → windowed Rényi `∑ (tailDensW)² ≤ 2⁻ˡ` → windowed `tail_factor_dft_eq`/
+   `_l2_eq` → a windowed `condDens`/`condDens_osc_le` analogue, so the single-point mass actually feeds
+   the osc √. Mirror the existing non-windowed lemmas (extra `∧ W vt` conjunct); zero novelty.
+2. **THEN attack the assembly = obligation 1** (now the hardest, most route-uncertain open piece):
+   **decompose `fine_scale_mixing` (`MixingFromDecay.lean:1711`) into named obl-0/1/2/3 sub-`sorry`s in
+   `src/`** — define the events `E`/`Eₖ`/`Bₖ`/`Cₖ,ₗ` as tail-measurable `DecidablePred`s (`Classical.dec`),
+   state the (6.1)–(6.10) decomposition + triangle-inequality skeleton, and discharge the window kernel's
+   `hbudget`/`hsuf` hypotheses FROM `Bₖ`/`Eₖ`. Raising the src sorry count this way is PROGRESS — it turns
+   the one opaque crux into attackable named pieces and surfaces assembly gaps early (the reflection found
+   obl-0 missing on paper; do it in Lean now).
+3. Then `P(Ē) ≤ n^{-A-1}` (obl 1 tail), `hunif` head decay (obl 2), regime telescope (obl 0), final wire.
+
+**Forbidden drift (this update):** do NOT keep banking isolated obl-3 lemmas without wiring them toward
+`fine_scale_mixing` — the analytic content is done; the value now is in the assembly. Do NOT retreat to
+C9. Do NOT touch watched statements (`fine_scale_mixing`/`stabilization`) or any ratified pin.
+
+---
+
 **⚖️ The review lap's C10 retarget below is RATIFIED.** The judge has now verified it
 independently (pass 27, worktree pinned at `8505bd4`, dated axiom runs): §7 is complete, the
 `Cthr` bridge is genuinely discharged in Lean, the statement differ reports **28/29
@@ -128,6 +160,11 @@ analytic assembly over machinery that is *already proved*. Driving C10 → C9 �
 wiring is the last mile. No route trigger has fired; route = CONTINUE.
 
 ### Directive history (this section's entries; full campaign history below under SUPERSEDED)
+- **review lap (2026-07-15, `4eabb35`)**: route CONTINUE, no trigger fired; **T3 DE-RISKED** — the
+  reflection's route-decisive window kernel `fnat_lt_of_suffix_window` + the collision bound
+  `tailDensW_le_single_mass` landed machine-checked/axiom-clean (obl-3 analytic content DONE). Frontier
+  advanced from "window kernel" to "the ASSEMBLY": next = finish windowed obl-3 plumbing, THEN decompose
+  `fine_scale_mixing` into named obl-0/1/2/3 sub-sorries defining the events (obl 1). Ledger re-run clean.
 - **deep reflection (2026-07-14, `f96a728`)**: route CONTINUE; obligation-3 attack line
   REFUTED (per-prefix hypothesis false at m=0 in-regime) and re-aimed at the suffix-form
   window kernel with the TIGHT l-window (paper's (6.8) shown too lossy — JUDGE-FLAG); obligation

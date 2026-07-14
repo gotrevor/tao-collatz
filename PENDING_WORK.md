@@ -1,5 +1,35 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Review lap (2026-07-15, HEAD `4eabb35`): route CONTINUE; frontier → the ASSEMBLY
+
+**Inventory (verified this lap)**: build 🟢 (3285 jobs); 4 live `sorry`s (2 `Statement.lean`
+headlines + C10 `fine_scale_mixing:1711` + C9 `stabilization:81`); 0 cited axioms. Fresh
+`#print axioms` at HEAD `4eabb35`: `fnat_lt_of_suffix_window`, `tailDensW_le_single_mass`,
+`fnat_offset_zmod_inj`, `condDens_osc_le` = `[propext, Classical.choice, Quot.sound]`.
+
+**Verdict**: direction SOUND, no re-aim needed. **T3 DE-RISKED** (window kernel landed at lap 1
+of 6). Obl-3 analytic content DONE. The route-decisive *constant* risk is retired; the frontier
+is now the **assembly**. No repetition/leaf-drift (recent laps all hit C10; the fruit-22/23 false
+summit was correctly diagnosed + re-aimed, then the corrected kernel landed).
+
+**Mandated next moves (hardest-first, in order)** — mirrors DIRECTION.md review-lap update:
+1. **Windowed obl-3 plumbing** (immediate, on-path, mirrors the existing non-windowed lemmas at
+   `MixingFromDecay.lean` — extra `∧ W vt` conjunct):
+   - `tailDensW_sum_le_one` (mirror `tailDens_sum_le_one:1187`; the collapse
+     `∑_Y 1_{off=Y ∧ pre=l ∧ W} = 1_{pre=l ∧ W} ≤ 1`).
+   - windowed Rényi `∑ (tailDensW)² ≤ 2⁻ˡ` (mirror `tailDens_renyi_le:1288`; `sum_sq_le_max_mul_sum`
+     — already generic — + `tailDensW_sum_le_one` + `tailDensW_nonneg` + `tailDensW_le_single_mass`).
+   - windowed `tail_factor_dft_eq`/`tail_factor_l2_eq` (predicate `pre vt p = l ∧ W vt`; one-liners
+     off the general `dft_cond_density`), then a windowed `condDens`/`condDens_osc_le` analogue so
+     the single-point mass actually feeds the osc √.
+2. **THEN the assembly = obligation 1** (the hardest, most route-uncertain open piece): decompose
+   `fine_scale_mixing:1711` into named obl-0/1/2/3 sub-`sorry`s in `src/`; define events
+   `E`/`Eₖ`/`Bₖ`/`Cₖ,ₗ` as tail-measurable `DecidablePred`s (`Classical.dec`); state the (6.1)–(6.10)
+   decomposition + triangle skeleton; discharge the window kernel's `hbudget`/`hsuf` from `Bₖ`/`Eₖ`
+   (numeric: `0.693(C²−2C) > 0.6006C²+…`, `C ≥ 23`). Raising the src count here is PROGRESS.
+3. `P(Ē) ≤ n^{-A-1}` (obl 1 tail, reuses §7 sub-Gaussian), `hunif` (obl 2), regime telescope (obl 0),
+   final wire.
+
 ## Lap fruit-25 (2026-07-14, same session): **windowed single-point mass PROVED — `tailDensW ≤ 2⁻ˡ`**
 
 Build green 3285, all `#print axioms`-clean (believed clean, judge to verify). New
