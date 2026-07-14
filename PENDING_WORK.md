@@ -1,5 +1,52 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box (2026-07-14): **`fpDist_any_triangle_le` PROVED — X9 white-exit kernel CLOSED** — axiom-clean
+
+Commit `94444b9`. The last route-decisive blocker on the X9 white-exit kernel is discharged.
+`fpDist_any_triangle_le` and `fpDist_white_exit_deep` are both machine-verified
+`[propext, Classical.choice, Quot.sound]` (no `sorryAx`). Full build green (3281 jobs).
+
+**What landed** (wiring the sharp explicit constants `B = 64`, `Y = 150` into the box):
+- `40000000` (old throwaway `B`) → `64` throughout the box lemmas
+  (`phaseInFamily_support_imp_localization_bad`, `exists_fpDist_localization_box`,
+  `fpDist_any_triangle_le_of_localization_box`). The constant is *symbolic* there — it
+  cancels in the facewidth `nlinarith` step (`5Y+B ≤ 16X` and `16e₁−5e₂ < B` give
+  `16(e₁−X) < 5s` independent of `B`), so no geometry changed.
+- `fpDist_localization_le_eighth`: existential `∃ Y` → **numeral** `∀ s` at `Y = 150`,
+  now assembled from the sharp leaves `fpDist_height_tail_le_sixteenth_sharp` +
+  `fpDist_linear_tail_le_sixteenth_sharp` (both off X6). `exists_fpDist_localization_box`
+  now returns the explicit `X = 51, Y = 150`.
+- `sep_const_gt_two_hundred` (`Triangles.lean`): `sep = (1/10)·log(10^1000) = 100·log 10 > 200`
+  via `log 10 > 3·log 2 > 2.07` (`2^30 < 10^10` + `Real.log_two_gt_d9`).
+- `fpDist_any_triangle_le`: `refine ⟨0, …⟩`; feed `X = 51, Y = 150`,
+  `hsepXY : 51²+150² = 25101 < 200² < sep²`, and the numeral `hloc` into
+  `fpDist_any_triangle_le_of_localization_box`. **Moved the three box lemmas above their
+  consumer** (they were defined ~600 lines below — forward-reference fix).
+
+**MILESTONE**: `fpDist_white_exit_deep` (X9's only open external input) is now a THEOREM.
+X9's kernel — the last route-decisive blocker on Prop 1.17's Case-3 chain — is CLOSED with
+ground truth. Both throwaway constants explicit and both tails sharp; the arithmetic
+obstruction the whole judge-pass-24 directive targeted is fully cleared and consumed.
+
+**NEXT — the Case-2 twin `fpDist_white_exit` + `Q_black_edge_case2` (X8), and `Q_black_edge_case3_assembled` (X11d)**:
+The remaining Sec7 sorries are in `BlackEdge.lean` and `Case3.lean`.
+- ⚠️ **Architecture note**: `fpDist_white_exit` (BlackEdge, Case-2 twin) has the SAME
+  whiteness conclusion as `fpDist_white_exit_deep` + the extra unused `s ≤ m/log²m` hyp,
+  so morally it "follows by citing `fpDist_white_exit_deep`". BUT `BlackEdge.lean` is
+  UPSTREAM of `ManyTriangles.lean` (ManyTriangles imports BlackEdge), so it cannot cite
+  the now-proved kernel directly. Options: (a) relocate the shared white-exit
+  decomposition (`fpDist_out_of_strip_le` + the box machinery + `fpDist_any_triangle_le`)
+  into an upstream module both import, then derive both twins from it; (b) prove
+  `fpDist_white_exit`/`Q_black_edge_case2` downstream (à la `Case3.lean`) and pin the
+  BlackEdge statements. Decide next lap — this is a genuine module-layering call, not just
+  a mechanical port.
+- The non-architecture X8 leaf `fpDist_edgeWeight_le` (the (7.48) weight degradation) is
+  genuinely off-X6 and non-gated; concavity core `one_sub_rpow_neg_le_exp` already landed
+  (see Lap C part 2b below for the MGF + tail decomposition plan).
+- `Q_black_edge_case3_assembled` (X11d, `Case3.lean`): mechanical ℝ≥0∞→ℝ bookkeeping
+  (plan in the Lap 60 entry below).
+
+
 ## Lap D-eps (2026-07-14): **`epsBW` re-frozen `10⁻⁹⁰ → 10⁻¹⁰⁰⁰`** (judge pre-authorized) — DEDICATED lap
 
 The judge's pre-authorized ε-ruling (DIRECTION.md) fires: proved constants `B = 64 ≤ 250`,
