@@ -1253,6 +1253,45 @@ theorem tailDens_renyi_le (j p l : ℕ) (M : ℝ) (hM : ∀ Y, tailDens j p l Y 
     _ ≤ M * 1 := mul_le_mul_of_nonneg_left (tailDens_sum_le_one j p l) hM0
     _ = M := mul_one M
 
+/-- `∑_{m<p} 2ᵐ < 2ᵖ` (the geometric partial sum `= 2ᵖ−1`). -/
+theorem sum_two_pow_lt (p : ℕ) : ∑ m ∈ Finset.range p, 2 ^ m < 2 ^ p := by
+  induction p with
+  | zero => simp
+  | succ p ih => rw [Finset.sum_range_succ, pow_succ]; omega
+
+/-- **The window bound `fnat p vt < 3^{j+p}` from a per-prefix ℕ hypothesis** (C10, obligation 3;
+Tao (6.14)→(6.15), the pure-algebra half). This ISOLATES the geometric-sum content of Corollary 6.3
+from its analytic input: given, for each prefix `m`, `3^{p-1-m}·2^{a_{[1,m]}+(p-m)} < 3^{j+p}` — the
+statement that the prefix valuation `a_{[1,m]}` is not too large, which the **sub-Gaussian window
+(6.12)** delivers (via `a_{[1,m]} ≥ 2m − Cₐ√(m log n) − log n` and Young's inequality) — the offset
+`fnat p vt` stays below the modulus `3^{j+p}`. Proof: multiply by `2ᵖ`, split `2ᵖ = 2ᵐ·2^{p-m}` per
+term, apply the hypothesis, and sum the geometric `∑2ᵐ < 2ᵖ`. This is exactly the `< 3ⁿ` bound that
+`fnat_offset_zmod_inj` (below) consumes to turn Lemma 6.2 into mod-`3ⁿ` offset injectivity; what
+remains of obligation 3 is the single analytic implication **window (6.12) ⟹ this per-prefix
+hypothesis** (the √/log/Young estimate). -/
+theorem fnat_lt_of_prefix_bound {j p : ℕ} (vt : Fin p → ℕ)
+    (H : ∀ m, m < p → 3 ^ (p - 1 - m) * 2 ^ (pre vt m + (p - m)) < 3 ^ (j + p)) :
+    fnat p vt < 3 ^ (j + p) := by
+  rcases Nat.eq_zero_or_pos p with hp | hp
+  · subst hp; simp only [fnat, Finset.range_zero, Finset.sum_empty]; positivity
+  have hmul : 2 ^ p * fnat p vt < 2 ^ p * 3 ^ (j + p) := by
+    calc 2 ^ p * fnat p vt
+        = ∑ m ∈ Finset.range p, 2 ^ m * (3 ^ (p - 1 - m) * 2 ^ (pre vt m + (p - m))) := by
+          rw [fnat, Finset.mul_sum]
+          refine Finset.sum_congr rfl (fun m hm => ?_)
+          rw [Finset.mem_range] at hm
+          have h2p : 2 ^ p = 2 ^ m * 2 ^ (p - m) := by
+            rw [← pow_add, Nat.add_sub_cancel' (le_of_lt hm)]
+          rw [pow_add, h2p]; ring
+      _ < ∑ m ∈ Finset.range p, 2 ^ m * 3 ^ (j + p) := by
+          refine Finset.sum_lt_sum_of_nonempty ?_ (fun m hm => ?_)
+          · exact Finset.nonempty_range_iff.mpr hp.ne'
+          · rw [Finset.mem_range] at hm
+            exact mul_lt_mul_of_pos_left (H m hm) (by positivity)
+      _ = (∑ m ∈ Finset.range p, 2 ^ m) * 3 ^ (j + p) := by rw [Finset.sum_mul]
+      _ < 2 ^ p * 3 ^ (j + p) := mul_lt_mul_of_pos_right (sum_two_pow_lt p) (by positivity)
+  exact Nat.lt_of_mul_lt_mul_left hmul
+
 /-- **Corollary 6.3 wrapper** (C10, obligation 3): the mod-`3^{j+p}` injectivity of the Syracuse
 offset that `tailDens`'s single-point mass rests on, reduced to the **window bound** `fnat < 3^{j+p}`.
 Given two positive-coordinate tuples of equal total valuation `l` whose offsets agree in
