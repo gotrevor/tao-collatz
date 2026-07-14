@@ -2151,55 +2151,79 @@ noncomputable def lRange (C : ℝ) (n : ℕ) : Finset ℕ :=
   Finset.Icc ⌈(n : ℝ) * Real.log 3 / Real.log 2 - C ^ 2 * Real.log n⌉₊
              ⌊(n : ℝ) * Real.log 3 / Real.log 2 - (C ^ 2 - 2 * C) * Real.log n⌋₊
 
-/-- `C_A`, the §6 conditioning constant. Fixed at `30 ≥ 23` (judge pass 28: `hbudget` needs `C_A ≥ 23`
-at the proved kernel's `ε = 1/5`; `30` leaves margin for the downstream `A′`-absorption check). -/
-noncomputable def caConst : ℝ := 30
+/-- `C_A`, the §6 conditioning constant. Tao chooses this after fixing the target exponent `A`;
+that dependence is essential for the exceptional-event estimate (6.3). The explicit choice is
+deliberately generous and always exceeds the tight-window budget threshold `30`. -/
+noncomputable def caConst (A : ℝ) : ℝ := 1000 * (max A 0 + 3)
+
+theorem caConst_ge_thirty (A : ℝ) : 30 ≤ caConst A := by
+  unfold caConst
+  have : 0 ≤ max A 0 := le_max_right _ _
+  nlinarith
+
+/-- The explicit conditioning constant has enough linear-in-`A` room for the `c = 1/400`
+exponential tail supplied by `geomHalf_tail_bound`, including the quadratic union bound in (6.3). -/
+theorem caConst_tail_exponent (A : ℝ) : A + 3 ≤ caConst A / 400 := by
+  unfold caConst
+  have hAmax : A ≤ max A 0 := le_max_left _ _
+  have hmax0 : 0 ≤ max A 0 := le_max_right _ _
+  nlinarith
 
 /-- **The high-regime main density** (Tao (6.9)): the `(k,l)`-sum of the cast conditioned densities
-at `C_A = caConst`, threshold `caThr`, valuation range `lRange`. -/
-noncomputable def mainHigh (n : ℕ) : ZMod (3 ^ n) → ℝ :=
-  mainDensity n caConst (caThr caConst n) (fun _ => lRange caConst n)
+at the `A`-dependent constant `C_A`, threshold `caThr`, and tight valuation range `lRange`. -/
+noncomputable def mainHigh (A : ℝ) (n : ℕ) : ZMod (3 ^ n) → ℝ :=
+  mainDensity n (caConst A) (caThr (caConst A) n) (fun _ => lRange (caConst A) n)
 
-/-- **Discharge of `hbudget` from the tight (6.8) window** (C10, obl-1; judge pass 28 tripwire #1):
-for every valuation `l` in the tight window `lRange caConst n`, given the window is non-degenerate
-(`hwin`, i.e. `hi ≥ 0`; supplied by the caller's `n₀` via the standard `n/log n → ∞` threshold), the
-AM-GM budget inequality that `condDensWB_osc_le` consumes holds at `C_A = caConst = 30`. The `l·log2`
-term is bounded by the window's upper endpoint `n·log₂3 − (C_A²−2C_A)·log n`, leaving a strictly
-negative `log n` coefficient `L(1125L−810) < 0` (`L = log 2 < 0.72`) — exactly where the judge's
-`C_A ≥ 23` threshold bites (the (6.8) ½-window would give a *positive* coefficient, closing for no C). -/
-theorem lRange_hbudget (n : ℕ) (hn : 2 ≤ n) (l : ℕ) (hl : l ∈ lRange caConst n)
-    (hwin : (caConst ^ 2 - 2 * caConst) * Real.log (n:ℝ) ≤ (n:ℝ) * Real.log 3 / Real.log 2) :
+/-- **Discharge of `hbudget` from the tight valuation window**, uniformly for `C ≥ 30`.
+The remaining logarithmic coefficient is
+`C log 2 * (3 + C * (5/4 * log 2 - 1))`, uniformly negative in this range. -/
+theorem lRange_hbudget_of_ge_thirty (C : ℝ) (hC : 30 ≤ C)
+    (n : ℕ) (hn : 2 ≤ n) (l : ℕ) (hl : l ∈ lRange C n)
+    (hwin : (C ^ 2 - 2 * C) * Real.log (n:ℝ) ≤ (n:ℝ) * Real.log 3 / Real.log 2) :
     (l : ℝ) * Real.log 2
-      + (caConst * Real.log 2 + 5 / 4 * (caConst * Real.log 2) ^ 2) * Real.log (n : ℝ)
+      + (C * Real.log 2 + 5 / 4 * (C * Real.log 2) ^ 2) * Real.log (n : ℝ)
       + Real.log 4 < (n : ℝ) * Real.log 3 := by
-  have hCA : caConst = 30 := rfl
   set L := Real.log 2 with hL
   have hLlo : (0.6931471803 : ℝ) < L := Real.log_two_gt_d9
   have hLhi : L < (0.6931471808 : ℝ) := Real.log_two_lt_d9
   have hLpos : 0 < L := by linarith
+  have hCpos : 0 < C := lt_of_lt_of_le (by norm_num) hC
   have hlog4 : Real.log 4 = 2 * L := by
     rw [show (4:ℝ) = 2^2 by norm_num, Real.log_pow]; push_cast; ring
   have hn2 : (2:ℝ) ≤ (n:ℝ) := by exact_mod_cast hn
   have hlogn_pos : 0 < Real.log (n:ℝ) := Real.log_pos (by linarith)
   have hlogn_ge : L ≤ Real.log (n:ℝ) := Real.log_le_log (by norm_num) hn2
-  set coeff := caConst * L + 5 / 4 * (caConst * L) ^ 2 - (caConst ^ 2 - 2 * caConst) * L with hcoeff
-  have hcoeff_val : coeff = L * (1125 * L - 810) := by rw [hcoeff, hCA]; ring
-  have hcoeff_neg : coeff < 0 := by rw [hcoeff_val]; nlinarith [hLlo, hLhi, hLpos]
+  set coeff := C * L + 5 / 4 * (C * L) ^ 2 - (C ^ 2 - 2 * C) * L with hcoeff
+  have hcoeff_val : coeff = C * L * (3 + C * (5 / 4 * L - 1)) := by rw [hcoeff]; ring
+  have hslope : 5 / 4 * L - 1 < -(13 / 100 : ℝ) := by nlinarith [hLhi]
+  have hfactor : 3 + C * (5 / 4 * L - 1) < -(9 / 10 : ℝ) := by
+    have hmul := mul_lt_mul_of_pos_left hslope hCpos
+    have hneg : C * (-(13 / 100 : ℝ)) ≤ 30 * (-(13 / 100 : ℝ)) := by nlinarith
+    nlinarith
+  have hCL : 0 < C * L := mul_pos hCpos hLpos
+  have hCL20 : 20 < C * L := by
+    have hbase : 20 < 30 * L := by nlinarith [hLlo]
+    exact lt_of_lt_of_le hbase (mul_le_mul_of_nonneg_right hC hLpos.le)
+  have hcoeff_lt : coeff < -2 := by
+    rw [hcoeff_val]
+    have hmul := mul_lt_mul_of_pos_left hfactor hCL
+    nlinarith [mul_pos (sub_pos.mpr hCL20) (by norm_num : (0 : ℝ) < 9 / 10)]
+  have hcoeff_neg : coeff < 0 := lt_trans hcoeff_lt (by norm_num)
   -- the window upper bound
   have hupper : (l : ℝ) * L
-      ≤ (n:ℝ) * Real.log 3 - (caConst ^ 2 - 2 * caConst) * L * Real.log (n:ℝ) := by
+      ≤ (n:ℝ) * Real.log 3 - (C ^ 2 - 2 * C) * L * Real.log (n:ℝ) := by
     rw [lRange, Finset.mem_Icc] at hl
     have hlb : l ≤ ⌊(n : ℝ) * Real.log 3 / Real.log 2
-        - (caConst ^ 2 - 2 * caConst) * Real.log (n:ℝ)⌋₊ := hl.2
+        - (C ^ 2 - 2 * C) * Real.log (n:ℝ)⌋₊ := hl.2
     set hival := (n : ℝ) * Real.log 3 / Real.log 2
-        - (caConst ^ 2 - 2 * caConst) * Real.log (n:ℝ) with hhi
+        - (C ^ 2 - 2 * C) * Real.log (n:ℝ) with hhi
     have hival_nonneg : 0 ≤ hival := by rw [hhi, ← hL]; linarith [hwin]
     have hlle : (l : ℝ) ≤ hival := le_trans (Nat.cast_le.mpr hlb) (Nat.floor_le hival_nonneg)
     have hmul : (l:ℝ) * L ≤ hival * L := mul_le_mul_of_nonneg_right hlle (le_of_lt hLpos)
     rw [hhi, ← hL] at hmul
     calc (l:ℝ) * L
-        ≤ ((n : ℝ) * Real.log 3 / L - (caConst ^ 2 - 2 * caConst) * Real.log (n:ℝ)) * L := hmul
-      _ = (n:ℝ) * Real.log 3 - (caConst ^ 2 - 2 * caConst) * L * Real.log (n:ℝ) := by field_simp
+        ≤ ((n : ℝ) * Real.log 3 / L - (C ^ 2 - 2 * C) * Real.log (n:ℝ)) * L := hmul
+      _ = (n:ℝ) * Real.log 3 - (C ^ 2 - 2 * C) * L * Real.log (n:ℝ) := by field_simp
   have key : coeff * Real.log (n:ℝ) + Real.log 4 < 0 := by
     rw [hlog4]
     have h1 : coeff * Real.log (n:ℝ) ≤ coeff * L :=
@@ -2207,10 +2231,21 @@ theorem lRange_hbudget (n : ℕ) (hn : 2 ≤ n) (l : ℕ) (hl : l ∈ lRange caC
     rw [hcoeff_val] at h1
     nlinarith [h1, hLlo, hLhi, hLpos]
   have hexpand : (l : ℝ) * L
-      + (caConst * L + 5 / 4 * (caConst * L) ^ 2) * Real.log (n:ℝ) + Real.log 4
+      + (C * L + 5 / 4 * (C * L) ^ 2) * Real.log (n:ℝ) + Real.log 4
       ≤ (n:ℝ) * Real.log 3 + (coeff * Real.log (n:ℝ) + Real.log 4) := by
     rw [hcoeff]; nlinarith [hupper]
   linarith [hexpand, key]
+
+/-- The tight-window budget at the paper's `A`-dependent conditioning constant. -/
+theorem lRange_hbudget (A : ℝ) (n : ℕ) (hn : 2 ≤ n) (l : ℕ)
+    (hl : l ∈ lRange (caConst A) n)
+    (hwin : ((caConst A) ^ 2 - 2 * caConst A) * Real.log (n:ℝ)
+      ≤ (n:ℝ) * Real.log 3 / Real.log 2) :
+    (l : ℝ) * Real.log 2
+      + (caConst A * Real.log 2 + 5 / 4 * (caConst A * Real.log 2) ^ 2) * Real.log (n : ℝ)
+      + Real.log 4 < (n : ℝ) * Real.log 3 := by
+  apply lRange_hbudget_of_ge_thirty (caConst A) _ n hn l hl hwin
+  exact caConst_ge_thirty A
 
 /-- **The pointwise main/error split combiner** (C10 obl-1 skeleton, fully proved): splitting the
 syracZ density as `main + (syracZ − main)`, its oscillation is bounded by `osc(main)` plus twice the
@@ -2229,10 +2264,10 @@ theorem osc_syracZ_split_le (m n : ℕ) (hmn : m ≤ n) (main : ZMod (3 ^ n) →
 the high regime. This is (6.10)+(6.11) [per-conditioning osc `≤ D·√(3ⁿ2⁻ˡ)`, obl-3 DONE] summed over
 the `(k,l)` partition via `osc_mainDensity_le` [k-sum cast, DONE] with `D = C_A·q⁻ᴬ` [obl 2, `hunif`
 from `head_factor_norm_le_charFn`], then the geometric `l`-sum `∑ √(2⁻ˡ)` + `k`-count + the constant
-chase absorbing `n^{O(C_A²)}` into `A′` (judge pass 28: SHOW the absorption at `C_A = 30`). -/
+chase absorbing `n^{O(C_A²)}` into a larger characteristic-function exponent `A′`. -/
 theorem osc_mainHigh_bound (A : ℝ) (hA : 0 < A) :
     ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, ∀ hmn : m ≤ n, n₀ ≤ n → 9 * n ≤ 10 * m →
-      osc m n hmn (mainHigh n) ≤ C * (m : ℝ) ^ (-A) := by
+      osc m n hmn (mainHigh A n) ≤ C * (m : ℝ) ^ (-A) := by
   sorry
 
 /-- **Obligation 1 (error term)**: the `L¹` mass of `syracZ − mainHigh` is polynomially small. This
@@ -2240,8 +2275,8 @@ is Tao (6.3), `P(Ē) ≤ n^{-A-1}`, plus the (6.4) event enlargements `E → E�
 partition the good event, so the difference is the mass on the bad event, controlled by the §7/S3
 sub-Gaussian tails (Lemma 2.2 + union bound). -/
 theorem error_l1_high_bound (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, n₀ ≤ n → 9 * n ≤ 10 * m →
-      2 * ∑ Y, |(syracZ n Y).toReal - mainHigh n Y| ≤ C * (m : ℝ) ^ (-A) := by
+    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, m ≤ n → n₀ ≤ n → 9 * n ≤ 10 * m →
+      2 * ∑ Y, |(syracZ n Y).toReal - mainHigh A n Y| ≤ C * (m : ℝ) ^ (-A) := by
   sorry
 
 /-- **(6.2)–(6.10): the §6 conditioning core** (C10, obligations 1+2+3), in the high regime
@@ -2262,9 +2297,9 @@ theorem osc_syracZ_high_regime (A : ℝ) (hA : 0 < A) :
   have hn1 : n1 ≤ n := le_trans (le_max_left _ _) hn0
   have hn2 : n2 ≤ n := le_trans (le_max_right _ _) hn0
   have hmpow : (0 : ℝ) ≤ (m : ℝ) ^ (-A) := Real.rpow_nonneg (by positivity) _
-  have hcomb := osc_syracZ_split_le m n hmn (mainHigh n) (max Cm Ce * (m : ℝ) ^ (-A))
+  have hcomb := osc_syracZ_split_le m n hmn (mainHigh A n) (max Cm Ce * (m : ℝ) ^ (-A))
     (le_trans (hmain n m hmn hn1 hreg) (by gcongr; exact le_max_left _ _))
-    (le_trans (herr n m hn2 hreg) (by gcongr; exact le_max_right _ _))
+    (le_trans (herr n m hmn hn2 hreg) (by gcongr; exact le_max_right _ _))
   calc osc m n hmn (fun Y => ((syracZ n) Y).toReal)
       ≤ max Cm Ce * (m : ℝ) ^ (-A) + max Cm Ce * (m : ℝ) ^ (-A) := hcomb
     _ = 2 * max Cm Ce * (m : ℝ) ^ (-A) := by ring
