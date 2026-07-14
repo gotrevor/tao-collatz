@@ -38,6 +38,12 @@ regress: it converts invisible work into a visible, attackable hole.
 **A green border means "the statement is in Lean," never "this is finished."** The *fill* is the
 proof.
 
+*(There is a fourth, transient state: **pinned but not yet ratified** — the worker has written the
+Lean statement with `sorry`, and the judge has not yet read it against the paper. Leave the node
+`\notready`, so it stays **orange** until ratification. That **understates** progress, which is the
+safe direction, and it costs nothing: the statement is already in the census, so no work is hidden.
+The judge clears it by reading the statement and setting the `\leanok`.)*
+
 ## The consequence that matters
 
 **An orange node is the ONLY work the sorry census cannot see.** So:
