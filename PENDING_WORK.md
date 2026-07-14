@@ -39,6 +39,23 @@ constant is harmless because `j > K` sits super-exponentially deep in the `s/4`-
 `sum_range_exp_neg_sq_le`, `conv_Gweight_exp`) + the `l`-geometric `∑_{l>s} e^{−c(l−s)}`.
 **This is the crux's hardest-first target — attack it next.**
 
+**✅ TAIL LEMMA PROVED** (commit `0a26b44`): `gaussExp_col_tail` (`FpLocation.lean`, axiom-clean)
+— the Gaussian×growing-exp column tail `∑_{j>m} e^{θj}·C'·Gweight(1+s,c(j−s/4))/√(1+s) ≤
+C'·e^{θs/4}·(shifted-geometric in γ₂−θ and c−θ)`, for `0≤θ≤½min(c,c²/20)`, `m≥25`, budget.
+This is the analytic meat. Enablers `fpDist_col_le`, `hasSum_int_shift_exp`, `hasSum_nat_tail_exp`
+all now upstream in `FpLocation`, visible to BlackEdge.
+
+**REMAINING for `fpDist_fst_mgf_le` = pure ASSEMBLY** (no new analysis):
+1. **Fubini 2D→1D**: `∑'_{(j,l)} fpDist·e^{θj} = ∑'_j e^{θj}·M(j)`, `M(j)=∑'_l fpDist(s,(j,l)).toReal
+   ≤ fpDist_col_le`. Total `∑'_j M(j) ≤ 1`.
+2. **Split at `K`** (`θ=2A/m`, `K` with `θK ≤ log(1+δ/2)`): finite bulk `∑_{j≤K} e^{θj}M(j) ≤
+   e^{θK}·1 ≤ 1+δ/2`; tail `∑_{j>K} e^{θj}·(fpDist_col_le envelope) ≤ gaussExp_col_tail`'s RHS.
+3. **Numerics**: pick `Cthr` (≥25, ≥ enough that `θ=2A/m ≤ ½min(c,c²/20)` and gaussExp RHS → ≤ δ/2).
+   `e^{θs/4} ≤ e^{A/(2log²m)}` bounded; the shifted geometrics `e^{−(rate)·Θ(m)} → 0`.
+   Then `1+δ/2 + δ/2 = 1+δ`. Also need the budget `s·log2 ≤ (m+2)·log9` — derive from
+   `s ≤ m/log²m` (the (7.52) hypothesis) since `log²m ≥ ...` gives it with room.
+Then glue `fpDist_edgeWeight_le` from `edgeWeight_summand_le` + `fpDist_fst_mgf_le` + hold MGF + tail.
+
 **SHARP ASSEMBLY PLAN for `fpDist_fst_mgf_le`** (now that `fpDist_col_le` is upstream in
 `FpLocation`, visible to BlackEdge — commit `21b0e0c`):
 1. **Fubini 2D→1D**: `∑'_{(j,l)} fpDist(s,(j,l))·exp(θj) = ∑'_j exp(θj)·M(j)` where
