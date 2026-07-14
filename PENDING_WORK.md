@@ -1,6 +1,43 @@
 # PENDING WORK (kept current per lap; newest on top)
 
-## Lap review+X11a (2026-07-14): **`estar_union_le` (X11a) PROVED (axiom-clean)** — the E∗ union mass bound; + 2 series helpers
+## Lap review+X11a+X11c-Markov (2026-07-14): **X11a `estar_union_le` + X11c Markov/F∗ side PROVED (axiom-clean)**
+
+**This lap landed 7 axiom-clean lemmas** (review housekeeping + X11a + the entire X11c
+Markov/F∗ side). Remaining X11: the E∗↔deterministic-claim join (X11c geometry side) + the
+X11d body `Q_black_edge_case3`.
+
+**X11c Markov/F∗ side — COMPLETE (all axiom-clean, `Case3.lean`):**
+- **`encVal_ge_of_reaches`**: `{R ≤ count ∧ cumWhite ≤ K} → encVal ε R ≥ e^{−K+εR}`
+  (banked ≤ cumWhite via `encFold_banked_le`; `min(count,R)=R`). The F∗ containment.
+- **`reaches_fewWhite_mass_le`**: joint-walk mass of {reach R ∧ few white}
+  `≤ e^{2ε}/e^{−K+εR}` — `fstar_markov` at `lam=e^{−K+εR}` through the containment.
+  (Summability idiom copied from `encExpect_le`: `ENNReal.summable_toReal` +
+  `Summable.of_nonneg_of_le` + `Summable.tsum_le_tsum`.)
+- **`fewWhite_num_closure`**: `e^{2ε}/e^{−K+εR} ≤ 10^{−(A+1)}` when `εR ≥ K+(A+3)log10+2`
+  (i.e. `R:=⌈(K+(A+3)log10+2)/ε⌉`); `e^a/e^b=e^{a−b}`, `10^x=e^{x log10}`, slack `2ε−2≤0`.
+- **`reaches_fewWhite_mass_le_ten`** (capstone): mass of {reach R ∧ few white} `≤ 10^{−(A+1)}`.
+
+**REMAINING for X11 (two pieces):**
+1. **X11c geometry join** (NEXT): use `deterministic_encounter_claim` (✓) contrapositive —
+   on {depth (i)} ∩ {outside E∗ (ii)}, ¬reach R ⟹ ¬few-white (>K whites). So
+   {depth}∩{outside E∗} ⊆ {reach R} ∪ {many white}. Combined with
+   `reaches_fewWhite_mass_le_ten` (reach-R mass ≤ 10^{−(A+1)}) and `estar_union_le`
+   (E∗ mass ≤ 2C·A²·4^{−A}+2C·exp(−cA²)), bound the damping expectation. **⚠ reconcile:**
+   the deterministic claim's cond (ii) is the PHASE point `((pos p).1−1,…)` and strict
+   `t.2.2 < 4^A(1+p)³`, while `estar_union_le` bounds the POSITION in `bigTriangleSet ⌈…⌉`
+   (ceil). Bridge the −1 shift and ceil-vs-strict (`⌈x⌉ ≥ x`, and `t.2.2 < x ≤ ⌈x⌉`... note
+   direction: need `¬(t.2.2 < 4^A(1+p)³)` ⟺ big triangle; align with `s'≤t.2.2` in `bigTriangleSet`).
+2. **X11d body** = `Q_black_edge_case3`: `Q_le_damped_iter` (7.53) + (7.54) col split
+   (`fpDistPlus_col_tail`, `budget_le_of_mem_triangle`) + few-white damping (weights ≤ m^A/10^A)
+   + the X11c damping bound. **First move:** map the exact structure of `Q_black_edge_case3`'s
+   goal onto the walk expectation; identify how the damping factor `exp(−ε³Σ1_W)` and the
+   (7.54) `max(1−j/m,1/m)^{−A}` weight are consumed.
+
+**NEXT: the X11c geometry join** — state the damping-expectation bound joining
+`deterministic_encounter_claim` + `estar_union_le` + `reaches_fewWhite_mass_le_ten`,
+handling the phase −1 shift and ceil-vs-strict reconciliation.
+
+### (prior sub-note) Lap review+X11a: `estar_union_le` PROVED
 
 Review lap confirmed direction sound (recent laps drove the X11 crux, not side-leaves;
 `#print axioms` re-run confirms `prop_7_8` carries `sorryAx` solely via
