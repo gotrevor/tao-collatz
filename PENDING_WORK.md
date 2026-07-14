@@ -1,5 +1,38 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-8 (2026-07-15): **C10 Cauchy–Schwarz bridge `osc_le_sqrt_highfreq` FULLY PROVED, axiom-clean**
+
+The entire Plancherel/Cauchy–Schwarz half of C10 (`fine_scale_mixing`) is now sorry-free and
+`#print axioms osc_le_sqrt_highfreq = [propext, Classical.choice, Quot.sound]`. Everything landed
+this lap in `Sec6/MixingFromDecay.lean` (7 green commits). New machinery (all reusable):
+
+- `osc_eq_sum_norm_devC` — `osc = ∑_Y ‖devC Y‖` (cast of the real deviation to ℂ-norm).
+- `sum_norm_sq_devC_eq` — Parseval `L²`: `∑‖devC‖² = N⁻¹∑_{highFreq}‖𝓕(densC)ξ‖²`, via `devC = 𝓕⁻ g`
+  (`g` = high-freq restriction of `𝓕(densC)`) + `ZMod.dft_parseval` (`LinearEquiv.apply_symm_apply`).
+- `densC_inversion` — `densC Y = N⁻¹∑_ξ 𝓕(densC)ξ·e(ξ·Y)` (`LinearEquiv.symm_apply_apply` + `invDFT_apply`).
+- `devC_eq_highfreq_invDFT` — deviation = high-freq inverse DFT (inversion − low projection; filter split).
+- `condAvgC_eq_lowSum` — the `3ᵐ`-conditional average IS the low-freq projection (inversion into fiber
+  average → sum swap → `coset_char_sum` → `3^{m-n}·3^{n-m}=1`).
+- `coset_char_sum` (the number-theoretic heart) — `∑_{fiber} e(ξY') = [ξ∈low]·3^{n-m}·e(ξY)`, via
+  `fiber_char_reindex` + character split `e(ξ(Y+t·3ᵐ))=e(ξY)·rᵗ` + `geom_sum_root_of_pow_eq_one`
+  (`r^{3^{n-m}}=1`) + low criterion `r=1 ⟺ 3^{n-m}∣ξ.val`.
+- `fiber_char_reindex` (pure combinatorics) — fiber `= image (t↦Y+t·3ᵐ) (range 3^{n-m})`, injective
+  (`Nat.ModEq.mul_right_cancel'`) + surjective (`t=(Y'-Y).val/3ᵐ`, `castHom(Y'-Y)=0 ⟹ 3ᵐ∣val`).
+- `geom_sum_root_of_pow_eq_one` — `r^K=1 ⟹ ∑_{j<K} rʲ = if r=1 then K else 0` (reusable brick).
+
+**Gotchas banked**: (1) rewriting `3^n` when it's ALSO a `ZMod (3^n)` modulus → "motive not type
+correct"; extract a pure-ℕ helper `∀ v, 3^n∣v*3^m ↔ 3^{n-m}∣v` so `3^n` isn't tied to a type.
+(2) `ZMod.castHom_apply` takes ONLY the element (`castHom h R i = cast i`), not `h`/`R` explicitly.
+(3) `Complex.norm_real` (not `Complex.norm_ofReal`) + `Real.norm_eq_abs`. (4) `Finset.sum_ite_mem_eq`
+(additive of `prod_ite_mem_eq`) for `∑ if i∈s then f else 0 = ∑_{i∈s} f`.
+
+**NEXT (sole remaining C10 sorry)**: `highfreq_l2_le` — `∑_{highFreq m n}‖𝓕(densC n)ξ‖² ≤ C·m^{-A}`
+(∀A>0). This is the DECAY side: for `ξ=3ʲη` (`η` coprime to 3, `j<n-m`), `syracZ_map_cast` projects
+`ĉ_n(3ʲη)=ĉ_{n-j}(η)` to level `n-j≥m+1`, where Prop 1.17 `charFn_decay` (PROVED, axiom-clean) bounds
+`|ĉ_{n-j}(η)|≤C·(n-j)^{-A}≤C·m^{-A}`; per-level Parseval bounds the mode count, geometric sum over
+`j<n-m` scales. Need the `𝓕(densC n) ξ` ↔ `(syracZ n).cexpect (Y↦eC(-(ξ.val·Y.val)/3ⁿ))` sign bridge.
+Then C10 is DONE and only C9 (`stabilization`, §5) + headlines remain.
+
 ## Lap fruit-7 (2026-07-14): **Parseval on `ZMod N` PROVED (S4 brick) + full C10 route mapped**
 
 With §7 done and all of SyracRV closed, the two remaining spine sorries are the HEROIC
