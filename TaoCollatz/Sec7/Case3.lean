@@ -1413,6 +1413,39 @@ theorem bigTriangle_of_encounter {n ξ : ℕ} (F : TriangleFamily n ξ) (A : ℝ
 
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
+/-- **X11d crux (post-(7.54)) — the damping × column mass estimate.** Once the end
+value `Q(end)` has been peeled by (7.54) (`Q_le_Qm`: `Q(end) ≤ max(n/2−j_end,1)^{−A}·Q_{m−1}`)
+and the constant `Q_{m−1}` factored out, what remains is this pure first-passage ⊗ Hold-walk
+mass bound: the damping factor `exp(−ε³·Nw)` times the column weight `max(n/2−j_end,1)^{−A}`,
+integrated against `fpDist s ⊗ hold.iid P`, is `≤ m^{−A}`.
+
+The remaining obligation is the (7.55)–(7.67) numerical closure:
+- **damping split by white count** `K=⌈10A/ε³⌉`: on `{Nw>K}` the exp factor is `≤ e^{−10A}`;
+- **few-white geometry** `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
+  (`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`), the two
+  masses bounded by `reaches_fewWhite_mass_le_ten` and `estar_union_le ∘ bigTriangle_of_encounter`
+  (latter at the `j−1` phase shift), with `R=⌈(K+(A+3)log10+2)/ε⌉`;
+- the column weight `max(n/2−j_end,1)^{−A} ≤ 10^A` off the bad column `j_end ≥ 0.9m` whose
+  mass is `O(e^{−cm})` (`fpDistPlus_col_tail`, `budget_le_of_mem_triangle`).
+
+Horizon `P = deterministic_encounter_or_bigTriangle`'s `P₀`; `Cthr` large enough for the
+regime plumbing (⌊4^A(1+p)³⌋ ≤ m^{0.4} for p≤P, X10 deep hyp at `j−1`). -/
+theorem damping_column_mass_le (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∃ P : ℕ, 1 ≤ P ∧ ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A)))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A)) := by
+  sorry
+
 /-- **X11d crux — the damped-walk expectation bound** (paper (7.54)–(7.67)).
 This is the pure integral estimate that remains once `Q_le_damped_iter` (7.53) has
 converted `Q` at the black edge into a first-passage ⊗ Hold-walk expectation. It states:
@@ -1447,7 +1480,115 @@ theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
             Q (n / 2) (whiteSet n ξ) (epsBW : ℝ)
               (n / 2 - m + e.1 + (pathSum v P).1) (l + e.2 + (pathSum v P).2)))
         ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) := by
-  sorry
+  obtain ⟨Cthr, P, hP1, hmass⟩ := damping_column_mass_le A hA
+  refine ⟨Cthr, P, ?_⟩
+  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  have hQM0 : (0 : ℝ) ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := Qm_nonneg _ _ _ _ _ _
+  -- (7.54) pointwise: peel `Q(end) ≤ max(n/2−j_end,1)^{−A}·Q_{m−1}` and factor `Q_{m−1}` out.
+  have step1 :
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            Q (n / 2) (whiteSet n ξ) (epsBW : ℝ)
+              (n / 2 - m + e.1 + (pathSum v P).1) (l + e.2 + (pathSum v P).2)))
+        ≤ ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+            (ENNReal.ofReal (Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) *
+              ENNReal.ofReal (
+                Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+                  Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                    (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+                ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A))) := by
+    refine ENNReal.tsum_le_tsum fun e => mul_le_mul_left' ?_ _
+    refine ENNReal.tsum_le_tsum fun v => ?_
+    by_cases hv0 : hold.iid P v = 0
+    · simp [hv0]
+    · refine mul_le_mul_left' ?_ _
+      rw [← ENNReal.ofReal_mul hQM0]
+      refine ENNReal.ofReal_le_ofReal ?_
+      have hvsupp : v ∈ (hold.iid P).support := by
+        rw [PMF.mem_support_iff]; exact hv0
+      have hvcoord : ∀ i, v i ∈ hold.support := PMF.iid_support_coord hold P v hvsupp
+      have hadv : P ≤ (pathSum v P).1 := by
+        have h := pathSum_fst_ge v hvcoord 0 P (by omega)
+        simpa [pathSum_zero] using h
+      have h1 : 1 ≤ n / 2 - m + e.1 + (pathSum v P).1 := by omega
+      have h2 : n / 2 - (m - 1) ≤ n / 2 - m + e.1 + (pathSum v P).1 := by omega
+      have hQle := Q_le_Qm (n / 2) n ξ (epsBW : ℝ) A hA.le hε0 (m - 1)
+        (l := l + e.2 + (pathSum v P).2) h1 h2
+      have hEXP0 : (0 : ℝ) ≤ Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+          Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+            (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) := (Real.exp_pos _).le
+      calc Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            Q (n / 2) (whiteSet n ξ) (epsBW : ℝ)
+              (n / 2 - m + e.1 + (pathSum v P).1) (l + e.2 + (pathSum v P).2)
+          ≤ Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            (((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A) *
+              Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :=
+            mul_le_mul_of_nonneg_left hQle hEXP0
+        _ = Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) *
+            (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+              ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A)) := by ring
+  -- factor the constant `ofReal Q_{m−1}` out of the double sum
+  have inner_eq : ∀ e : ℕ × ℤ,
+      (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+        (ENNReal.ofReal (Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) *
+          ENNReal.ofReal (
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A))))
+        = ENNReal.ofReal (Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) *
+          ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+            ENNReal.ofReal (
+              Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+              ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A)) := by
+    intro e
+    rw [← ENNReal.tsum_mul_left]
+    exact tsum_congr fun v => by rw [mul_left_comm]
+  have outer_eq :
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+        (ENNReal.ofReal (Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) *
+          ENNReal.ofReal (
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A))))
+        = ENNReal.ofReal (Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) *
+          ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+            ENNReal.ofReal (
+              Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+              ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A)) := by
+    simp only [inner_eq]
+    rw [← ENNReal.tsum_mul_left]
+    exact tsum_congr fun e => by rw [mul_left_comm]
+  refine le_trans step1 ?_
+  rw [outer_eq]
+  calc ENNReal.ofReal (Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) *
+        ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A))
+      ≤ ENNReal.ofReal (Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) * ENNReal.ofReal ((m : ℝ) ^ (-A)) :=
+        mul_le_mul_left' (hmass n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2) _
+    _ = ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) := by
+        rw [← ENNReal.ofReal_mul hQM0]; congr 1; ring
 
 /-- **Case 3 of Proposition 7.8** ((7.53)–(7.67), paper pp.48–49 + Lemmas
 7.9/7.10 pp.50–54): deep triangle start, `m/log²m < s ≤ O(m)`.

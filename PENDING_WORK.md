@@ -1,5 +1,39 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap X11d-decomp-2 (2026-07-14): **(7.54) COLUMN PEEL PROVED — crux narrowed to `damping_column_mass_le`**
+
+`damped_iter_expectation_le` is now **kernel-checked assembly** from ONE deeper sub-lemma.
+Proved this lap: the (7.54) end-value peel `Q(end) ≤ max(n/2−j_end,1)^{−A}·Q_{m−1}`
+(`Q_le_Qm`, applied per-path with support casing: off-support `hold.iid=0`, on-support the
+walk advances ≥ P ≥ 1 steps via `pathSum_fst_ge`+`PMF.iid_support_coord` so the
+`n/2−(m−1) ≤ j_end` hyp holds) + factoring the constant `ofReal Q_{m−1}` out of the
+double tsum (`ENNReal.tsum_mul_left` + `mul_left_comm`) + `ofReal_mul` bookkeeping.
+
+**SOLE remaining §7 sorry is now `damping_column_mass_le`** (`Case3.lean:1433`): the pure
+mass estimate
+`Σ_e fpDist s e · Σ_v hold.iid P v · ofReal(exp(−ε³·Nw)·max(n/2−j_end,1)^{−A}) ≤ ofReal(m^{−A})`.
+No `Q`, no `Qm` — just first-passage ⊗ Hold-walk masses. This is the (7.55)–(7.67) numerics.
+
+### NEXT — attack `damping_column_mass_le` (all ingredients proved & axiom-clean):
+1. **damping split by white count** `K=⌈10A/ε³⌉`: on `{Nw>K}` the exp factor ≤ `e^{−10A}`;
+   the column weight `max(n/2−j_end,1)^{−A} ≤ (n/2−m)^{−A}·(…)`... actually weight ≤ 1 when
+   j_end ≤ n/2−1 (max ≥1). Cleanest first probe: bound `max(..)^{−A} ≤ 1` (since max ≥ 1 and
+   −A<0), reducing to `Σ_e fpDist Σ_v hold·ofReal(exp(−ε³Nw)) ≤ m^{−A}` — the **pure damping
+   expectation** ≤ m^{−A}. THAT is the (7.55)–(7.56) heart; but note weight≤1 alone is too
+   lossy (loses the m^{−A}); the m^{−A} MUST come from the column weight, not damping. So the
+   real split keeps the column weight and uses `Nw` damping only to kill the E∗/reach-R mass.
+2. **few-white geometry** `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
+   (`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`); masses
+   `reaches_fewWhite_mass_le_ten` (≤10^{−(A+1)}) + `estar_union_le ∘ bigTriangle_of_encounter`
+   (at `j−1` phase shift). `R=⌈(K+(A+3)log10+2)/ε⌉`.
+3. **column tail**: bad column `j_end ≥ 0.9m` has mass `O(e^{−cm})` (`fpDistPlus_col_tail` at
+   dev≍m via `budget_le_of_mem_triangle`: `s·log2 ≤ (m+2)log9`); on complement weight ≤ 10^A.
+   The `m^{−A}` target = column weight `(0.1m)^{−A}·10^A`-ish tightened; reconcile constants.
+**⚠ The m^{−A} bookkeeping is the subtle part** — study the paper's (7.54)–(7.56) exact
+constant chase (pp.48–49) before coding; the current `damping_column_mass_le` statement bakes
+in the column weight so the m^{−A} is available. `P` = `deterministic_encounter_or_bigTriangle`
+`P₀`; `Cthr` for regime plumbing (⌊4^A(1+p)³⌋≤m^{0.4}; X10 deep hyp at j−1).
+
 ## Lap X11d-decomp-1 (2026-07-14): **X11d ENTRY REDUCTION (7.53) PROVED — crux isolated as `damped_iter_expectation_le`**
 
 `Q_black_edge_case3` no longer has a raw `sorry`: it is now **kernel-checked assembly**
