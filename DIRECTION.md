@@ -7,7 +7,124 @@ PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ---
 
-## CURRENT DIRECTIVE (JUDGE PASS 27, 2026-07-14 — §7 RATIFIED COMPLETE; the objective is C10)
+## CURRENT DIRECTIVE (JUDGE PASS 29, 2026-07-14, HEAD `7ff033b`) — **the campaign is C10 → C8 → C9, in that order**
+
+*Supersedes the pass-27 objective and the pass-28 correction block below (both FULFILLED — see
+"What pass 29 verified"). The hard rails below are LIVE; the rails in the superseded blocks still
+bind wherever they are not restated here.*
+
+### 🎯 THREE OBJECTIVES, IN STRICT ORDER. Finish one before starting the next.
+
+The order is **forced by the dependency graph**, not a preference: **C9 consumes BOTH C10 and C8**,
+and **C8 is a SEAM — no Lean theorem exists behind it at all.** Doing C9 first means proving Prop
+1.11 against an unpinned §5, which is how you discover at assembly time that the thing you cited does
+not say what you needed.
+
+---
+
+### 🥇 OBJECTIVE 1 — close C10: `error_l1_high_bound` (`Sec6/MixingError.lean:359`)
+
+**This is the last mathematical content in C10. Everything else in the node is PROVED and
+axiom-clean** (judge-verified `#print axioms` @ `7ff033b`, pass 29).
+
+Two machine-checked identities have collapsed C10 to a single tail estimate:
+
+- `mainHigh_eq_restrictedDensity` ✅ — `mainHigh` **is** the Syracuse pushforward restricted to `mainEvent`.
+- `sum_abs_syracZ_sub_mainHigh_eq` ✅ — `∑_Y |syracZ − mainHigh| **=** P(¬mainEvent)`. An **equality**.
+
+So the remaining sorry is exactly: **`P(¬mainEvent) ≤ (C/2)·m^{-A}`**. It is a probability bound.
+There is no structural work left, no novel kernel, no constant risk (`hbudget` is discharged and the
+`A′`-absorption is *shown* — both former tripwires are retired).
+
+**The route (hardest-first):**
+
+1. **Define the global good deviation event** — Tao (6.2) — as a tail-measurable `DecidablePred`.
+2. **Prove `globalGood ⊆ mainEvent` EXPLICITLY.** ⚠️ **This inclusion IS the content of the node.**
+   It must produce: the existence of the stopping cut `k`, membership in `condWindow`, and the tight
+   `lRange` bound. **Do not gesture at it, do not `sorry` past it into the tail bound** — if you
+   prove the tail bound first and the inclusion second, you will discover the inclusion is where all
+   the work was.
+3. **Bound the complement** — `geomHalf_tail_bound` (PROVED, `Prob/LocalInstances.lean:540`) + a
+   union bound over the interval/coordinate pairs. Pay for the union out of the **spare `A+3`
+   exponent in `caConst`**, which is there precisely for this.
+4. **Convert `n` → `m`** using `0.9n ≤ m ≤ n` (the regime hypothesis `9*n ≤ 10*m`), then apply
+   `sum_abs_syracZ_sub_mainHigh_eq`.
+
+**⚖️ Standing ruling (pass 29) — read this before you touch an event definition.**
+`condWindow` is an **ENLARGEMENT** of Tao's `Eₖ`: it keeps only the suffix inequalities the
+injectivity kernel actually consumes. **This is safe and it works in our favour** — a bigger good
+event means a smaller complement, so step 3 gets *easier*. The events are **internal**: they appear
+nowhere in the pinned statement, so a wrong event choice **cannot make the theorem false — it can
+only make `error_l1_high_bound` unprovable.** *It costs provability, never soundness.*
+Two demands follow, and they are binding:
+- **Never document `condWindow` as EQUAL to the paper's `Eₖ`.** It is an enlargement. Say so, in the
+  docstring, every time.
+- **Every event definition that claims to be a partition owes a PROVED disjointness lemma next to
+  it.** An unproved partition claim is a **seam wearing a definition's clothes** — zero sorries, and
+  load-bearing. (This rail exists because the reversed-coordinate bug in `stopEvent` compiled green:
+  the old definition removed `a₁` instead of `a_{k+1}` and did **not** produce a stopping-time
+  partition. See pass 29 §4. `mainPieceEvent_cut_unique` is what the fix looks like when it can't regress.)
+
+---
+
+### 🥈 OBJECTIVE 2 — C8 (Prop 5.2, §5 pp.22–25): **it is a SEAM. Build it, then pin it.**
+
+**There is no Lean behind C8 at all** — zero sorries, zero theorems, and the census cannot see it.
+It has been ordered pinned since pass 27 and has not been. It **blocks C9**.
+
+- **Scope**: Prop 5.2 approximate formula **(5.8)**; the events `𝒜^{(n')}` **(5.11)**, `E'` **(5.10)**,
+  `I_y` **(5.9)**; the `B_{n,y}` equivalence chain.
+- **Statements are copy-not-compose**: render each verbatim against its numbered display in the PDF
+  (pp.22–25), then freeze. Mark each with a `RATIFY-C8` comment.
+- 🔒 **Never set `\leanok` yourself. Ratification is the judge's.** A new pin is a **claim, not a
+  fact** — say in your handoff that you have pinned it and what you pinned it against.
+- Decompose freely into named sub-`sorry`s as you build. **Raising the sorry count this way is
+  PROGRESS** — it converts an invisible seam into visible, attackable holes. A seam is strictly worse
+  than a sorry: a sorry is honest about what it owes.
+
+---
+
+### 🥉 OBJECTIVE 3 — C9 `stabilization` (Prop 1.11, `Sec5/FirstPassage.lean:81`)
+
+Lemma 5.3 (`c_n(X) ≪ 1`), (5.18)–(5.21), and the Prop 1.11 assembly (which applies Prop 1.14 at
+scale `m₀`). It consumes **C10 and C8**. Start it when they are done, not before.
+
+---
+
+### 🚧 Forbidden drift
+
+- **Do NOT start C8 or C9 while C10's single sorry is open.** C10 is one tail bound from complete and
+  it is upstream of both. Finish it.
+- **Do NOT touch the two `Statement.lean` headline sorries** (hard rail 2). They discharge when the
+  whole chain C10 → C9 → C6 lands, and not one minute before.
+- **Do NOT edit `fine_scale_mixing` or `stabilization`** — the two open crux statements are WATCHED
+  (hard rail 6, extended). Decomposing *below* them is always allowed; moving the goalposts is not.
+- **Do NOT edit any ratified §7 pin.** §7 is complete, frozen and clean. Leave it alone.
+- **Do NOT re-derive the constants.** `caConst = 30` (`C_A ≥ 23`), the **tight** window (never the
+  paper's (6.8) — it provably cannot close for ANY `C`), `epsBW = 1/10^1000`. All three are judge
+  rulings backed by machine-checked lemmas. If one seems wrong: **`JUDGE-FLAG:`**, do not adjust.
+
+### 🕳️ Seam discipline — state remaining work as **"N sorries + M seams."**
+Baseline today: **4 sorries + 2 seams** (C10 `error_l1_high_bound`, C9 `stabilization`, 2 headline
+stubs; seams **C7** = defs only, **C8** = nothing at all). *The sorry census counts only the holes
+someone wrote down.* Never report "4 sorries" alone — it understates the distance to done.
+
+### ✅ What pass 29 verified (so you don't re-open it)
+`lRange_hbudget` ✅ clean · `osc_mainHigh_bound` ✅ clean (**the `A′`-absorption at `C_A = 30` is
+SHOWN, not asserted** — head decay at the shifted exponent `A' = A + C_A²·log2`) ·
+`mainHigh_eq_restrictedDensity` ✅ · `sum_abs_syracZ_sub_mainHigh_eq` ✅ ·
+`tailDensW_condWindowB_le` ✅ · **statement erosion 29/29 character-identical across 70 commits** ·
+`blueprint_audit` → 13 nodes proved, 0 drift, 0 false-green.
+**Both of pass 28's tripwires are discharged.** The C10 sorry is an honest decomposition, not a
+relocated hole — the kernel says so, and *the census was right to be distrusted*.
+
+---
+
+## SUPERSEDED — JUDGE PASS 27 + 28 (2026-07-14; §7 RATIFIED COMPLETE; objective was C10)
+
+*Both FULFILLED. Kept for the rails and the reasoning; the objectives are retired. `hbudget` is
+discharged (`lRange_hbudget`), the `A′`-absorption is shown (`osc_mainHigh_bound`), and the C10
+frontier has moved past everything ordered here — see the pass-29 directive above.*
 
 ### 🔎 REVIEW-LAP UPDATE (2026-07-15, HEAD `4eabb35`) — route CONTINUE, frontier advanced to the ASSEMBLY
 

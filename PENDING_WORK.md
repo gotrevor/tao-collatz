@@ -1,3 +1,29 @@
+# 🧭 JUDGE PASS 29 (2026-07-14, HEAD `7ff033b`) — read `DIRECTION.md` first; it outranks this file
+
+**The campaign is `C10 → C8 → C9`, in that order.** Both pass-28 tripwires are DISCHARGED
+(`lRange_hbudget` clean; the `A′`-absorption at `C_A = 30` is **shown** by `osc_mainHigh_bound`, not
+asserted). **C10 is one tail bound from done**: `mainHigh_eq_restrictedDensity` and
+`sum_abs_syracZ_sub_mainHigh_eq` are axiom-clean, so `error_l1_high_bound`
+(`Sec6/MixingError.lean:359`) is exactly **`P(¬mainEvent) ≤ (C/2)·m^{-A}`**. Nothing structural
+remains in C10.
+
+**⚖️ Ruling — `condWindow` is an ENLARGEMENT of Tao's `Eₖ`, and that is SAFE.** The events are
+*internal* (absent from the pinned statement `fine_scale_mixing`), so a wrong event choice **cannot
+make the theorem false — only `error_l1_high_bound` unprovable.** *It costs provability, never
+soundness.* A bigger good event means a smaller complement, so the remaining tail bound gets
+**easier**. Two binding demands: **never document `condWindow` as EQUAL to the paper's `Eₖ`**, and
+**PROVE `globalGood ⊆ mainEvent` explicitly** — that inclusion IS the content; everything below it is
+already proved.
+
+**🐛 New rail, bought by a real bug.** The tail block is stored **reversed** `(a_{k+1},…,a₁)`, so
+Tao's `a[1,k]` is `pre vt p − pre vt 1`, **not** `pre vt (p−1)`. The old `stopEvent` removed `a₁`
+instead of `a_{k+1}` and **did not produce the stopping-time partition it claimed** — and it compiled
+green. Fixed + now *proved* disjoint (`mainPieceEvent_cut_unique`). **⟹ Every event definition that
+claims to be a partition owes a PROVED disjointness lemma beside it. An unproved partition claim is a
+seam wearing a definition's clothes.** Full record: `judge/pass-29.md`.
+
+---
+
 ## UPDATE (same lap, HEAD `8a6b7be`): **`hbudget` DISCHARGED from the tight window** — `lRange_hbudget`
 
 The judge's single load-bearing undischarged number (pass 28 tripwire #1) is machine-checked at
