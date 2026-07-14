@@ -1,5 +1,29 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-9 (2026-07-14, review + brick d): **§7 confirmed CLOSED; C10 bridge GENERALIZED to arbitrary `c`**
+
+**Review-lap finding**: `#print axioms` confirms the entire §7 crux is axiom-clean — `prop_7_8`,
+`Q_black_edge`, `Q_polynomial_decay`, `charFn_decay` (Prop 1.17), `key_fourier_decay` (Prop 7.1)
+all `[propext, Classical.choice, Quot.sound]`. Only 4 live sorries remain (2 frozen headlines +
+C10 `fine_scale_mixing` + C9 `stabilization`). DIRECTION.md CURRENT DIRECTIVE + STATUS.md were
+stale (§7-era); both rewritten to point at C10. No trigger fired; route = CONTINUE.
+
+**Brick (d) DONE** (build green 3285, axiom-clean): generalized the whole CS/Parseval bridge in
+`Sec6/MixingFromDecay.lean` from the raw `syracZ` density to an **arbitrary real
+`c : ZMod (3^n) → ℝ`**. `densC n` → `densC n c := fun Y => (c Y : ℂ)`; threaded `c` through
+`condAvgC`, `devC`, `osc_eq_sum_norm_devC`, `densC_inversion`, `condAvgC_eq_lowSum`,
+`devC_eq_highfreq_invDFT`, `sum_norm_sq_devC_eq`, `osc_le_sqrt_highfreq`. The character lemmas
+(`coset_char_sum`, `fiber_char_reindex`, `geom_sum_root_of_pow_eq_one`, `fiber/high/lowFreq`) were
+already density-independent — untouched. `#print axioms osc_le_sqrt_highfreq = [propext, choice,
+Quot.sound]`. So the bridge `osc m n hmn c ≤ √(∑_{highFreq} ‖𝓕(densC n c)ξ‖²)` now holds for ANY
+real density — ready to apply to the conditioned `g`.
+
+**→ NEXT = brick (a)**: the independent `F`-split of `Xₙ` on `Cₖ,ₗ` as a Lean identity
+((1.5)/(1.26)). This is the route-decisive step — it's where the char-sum factorization (and hence
+the whole conditioning route) either closes or fails. See fruit-8 below for the full 7-step plan and
+the `pre`/`fnat` machinery in `Basic/`,`Syracuse/`. After (a): brick (b) independence⟹factorization,
+then the conditioning events + `charFn_decay` on the 2nd factor + triangle reassembly.
+
 ## Lap fruit-8 (2026-07-15): **C10 Cauchy–Schwarz bridge `osc_le_sqrt_highfreq` FULLY PROVED, axiom-clean**
 
 The entire Plancherel/Cauchy–Schwarz half of C10 (`fine_scale_mixing`) is now sorry-free and
