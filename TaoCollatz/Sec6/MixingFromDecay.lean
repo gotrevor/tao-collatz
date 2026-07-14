@@ -388,6 +388,55 @@ theorem char_offset_split {j p : ℕ} (a : Fin (j + p) → ℕ) (ξ : ZMod (3 ^ 
               * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre (fun i => a (Fin.natAdd j i)) p) * ξ)) := by
   rw [syracZ_offset_split, add_mul, neg_add, AddChar.map_add_eq_mul]
 
+/-- The standard additive character has unit norm (it lands on the unit circle). -/
+theorem norm_stdAddChar {N : ℕ} [NeZero N] (x : ZMod N) : ‖ZMod.stdAddChar x‖ = 1 := by
+  rw [ZMod.stdAddChar_apply]; exact Circle.norm_coe _
+
+/-- **Brick (b), step 3 — the conditional character factorization** (C10). Fix the cut
+`n = j + p` and the level `l`. Conditioning the character sum on the tail-valuation event
+`{pre(tail) = l}` makes the split character factor into a **pure head expectation** times a
+**pure tail expectation** (the tail carrying the indicator). This is `char_offset_split`
+(pointwise additive→multiplicative split) fed through `cexpect_iid_append` (iid block
+independence): on `{pre(tail) = l}` the residual coupling `2⁻ᵖʳᵉ⁽ᵗᵃⁱˡ⁾` in the head factor is
+frozen to the constant `2⁻ˡ`, so the head factor becomes head-coordinate-only and the two blocks
+separate. The tail expectation is a level-`p` Syracuse character sum (ready for `charFn_decay`);
+the head expectation has norm `≤ 1`. -/
+theorem cond_char_factor {j p : ℕ} (ξ : ZMod (3 ^ (j + p))) (l : ℕ) :
+    (geomHalf.iid (j + p)).cexpect
+        (fun a => ZMod.stdAddChar (-(((fnat (j + p) a : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p)) * ξ))
+          * (if pre (fun i => a (Fin.natAdd j i)) p = l then 1 else 0))
+      = (geomHalf.iid j).cexpect
+            (fun vh => ZMod.stdAddChar (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+                  * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+                  * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))
+        * (geomHalf.iid p).cexpect
+            (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+                  * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+              * (if pre vt p = l then 1 else 0)) := by
+  -- head-block observable (pure function of the first `j` coordinates)
+  set f : (Fin j → ℕ) → ℂ := fun vh => ZMod.stdAddChar (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+      * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)) with hf
+  -- tail-block observable (pure function of the last `p` coordinates), carrying the indicator
+  set g : (Fin p → ℕ) → ℂ := fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+      * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ)) * (if pre vt p = l then 1 else 0) with hg
+  have hfb : ∀ vh, ‖f vh‖ ≤ 1 := fun vh => le_of_eq (norm_stdAddChar _)
+  have hgb : ∀ vt, ‖g vt‖ ≤ 1 := fun vt => by
+    simp only [hg]
+    by_cases h : pre vt p = l
+    · rw [if_pos h, mul_one]; exact le_of_eq (norm_stdAddChar _)
+    · rw [if_neg h, mul_zero, norm_zero]; exact zero_le_one
+  rw [← PMF.cexpect_iid_append geomHalf j p f g hfb hgb]
+  refine congrArg (PMF.cexpect (geomHalf.iid (j + p))) ?_
+  funext a
+  simp only [hf, hg]
+  by_cases h : pre (fun i => a (Fin.natAdd j i)) p = l
+  · -- on the event: the split character factors and the frozen tail-valuation `l` matches
+    rw [char_offset_split a ξ, pre_castAdd a (le_refl j), h, if_pos rfl]
+    ring
+  · -- off the event: both sides vanish through the indicator
+    simp only [if_neg h, mul_zero]
+
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
 
