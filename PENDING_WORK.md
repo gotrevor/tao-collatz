@@ -66,17 +66,29 @@ on his 2nd term with `l` the head valuation; `syracZ`'s `a∘rev` convention swa
 condition on the tail valuation `M`. Math identical, just which block is "head".) **This is why
 conditioning is mandatory, not bookkeeping — and it says exactly WHICH valuation to condition on.**
 
-**→ NEXT (brick b — the conditional-expectation factorization, now unambiguous)**:
-1. **Block-independence for iid conditioned on the tail valuation.** Prove a `PMF.iid` lemma:
-   splitting `Fin (j+p)→ℕ` as head×tail (`Fin.append`/`Fin.addCases`; cf. `iid_map_castLE`), the
-   expectation of `f(head)·g(tail)·1_{pre(tail)=l}` factors as `E_head[f]·E_tail[g·1_{pre(tail)=l}]`.
-   (Head fully independent of the tail-conditioning + tail factor.)
-2. **Apply** with `f(head)=stdAddChar(-(3^p·Fnat_j(head)·2⁻ᴸ·2⁻ˡ·ξ))`,
-   `g(tail)=stdAddChar(-(Fnat_p(tail)·2⁻ᴹ·ξ))`. Sum over `l` reassembles the full char sum.
-3. **Tail factor = level-`p` Syracuse char sum** ⟹ `charFn_decay` (Prop 1.17, PROVED) via a
-   `syracZ_map_cast`-style reindex of `stdAddChar(-(Fnat_p(tail)·2⁻ᴹ·ξ))` at level `3^p`.
-4. **Conditioning events + reassembly** (stopping time k, E/Eₖ/Bₖ/Cₖ,ₗ, union over k,l, triangle
-   ineq; paper (6.2)–(6.10)). Decompose into named `sorry`s in `Sec6/MixingFromDecay.lean` as built.
+**Brick (b) step 2 (the ENGINE) DONE** (build green, axiom-clean): `cexpect_iid_append` in
+`Prob/Basic.lean` — the D1 product-form block-independence lemma:
+```
+(iid (j+q)).cexpect (fun v => f(v∘castAdd) · g(v∘natAdd)) = (iid j).cexpect f · (iid q).cexpect g
+```
+for bounded `f,g` (`‖·‖≤1`). Proof: `iid_apply_eq_prod` + `Fin.prod_univ_add` give the mass
+factorization `iid(j+q)(append vh vt) = iid_j(vh)·iid_q(vt)`; reindex the tsum via `Fin.appendEquiv`;
+factor via `tsum_mul_tsum_of_summable_norm` (summability from the new `summable_iid_norm_le_one`).
+**This IS the head×tail separation** — with `g` carrying a `1_{pre(tail)=l}` indicator it delivers the
+conditional factorization. The reusable engine of the §6 char-sum factorization.
+
+**→ NEXT (brick b — assemble the conditional character factorization)**:
+1. **Combine `char_offset_split` + `cexpect_iid_append`**: write `𝓕(densC g_l) ξ =
+   E_a[stdAddChar(-(X·ξ))·1_{pre(tail)=l}]`, factor pointwise via `char_offset_split`, then apply
+   `cexpect_iid_append` with `f`=head char (`stdAddChar(-(3^p·Fnat_j(head)·2⁻ᴸ·2⁻ˡ·ξ))`, head-only on
+   `{M=l}`) and `g`=tail char × `1_{pre(tail)=l}`. Both char factors have norm 1, indicator ≤1 — the
+   `‖·‖≤1` hyps hold. Sum over `l` reassembles the full char sum.
+2. **Tail factor = level-`p` Syracuse char sum** ⟹ `charFn_decay` (Prop 1.17, PROVED) via a
+   `syracZ_map_cast`-style reindex at level `3^p` (`syracZ_eq_rev_fnat` connects `Fnat_p·2⁻ᵖʳᵉ` to
+   `syracZ p`; then `charFn_decay` bounds `(syracZ p).cexpect(eC …)`).
+3. **Conditioning events + reassembly** (stopping time k, E/Eₖ/Bₖ/Cₖ,ₗ, union over k,l, triangle
+   ineq; paper (6.2)–(6.10)). Bridge `𝓕(densC g) ↔ cexpect` (finite-∑ over ZMod ↔ tsum-over-`a` swap:
+   `g(Y)=E_a[1_{X=Y∧ev}]`). Decompose into named `sorry`s in `Sec6/MixingFromDecay.lean` as built.
    Full 7-step plan: fruit-8.
 
 ## Lap fruit-8 (2026-07-15): **C10 Cauchy–Schwarz bridge `osc_le_sqrt_highfreq` FULLY PROVED, axiom-clean**

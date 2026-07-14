@@ -1,6 +1,10 @@
 import Mathlib.Probability.ProbabilityMassFunction.Constructions
 import Mathlib.Data.Complex.Basic
 import Mathlib.Data.Fin.Tuple.Basic
+import Mathlib.Analysis.Complex.Norm
+import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
 # PMF calculus: total variation, expectations, iid vectors (node S1)
@@ -225,5 +229,52 @@ theorem iid_apply_eq_prod (p : PMF α) (n : Nat) (v : Fin n → α) :
         intro heq
         apply ha
         exact (congrFun heq 0).symm
+
+/-- Real-summability of any `‖·‖ ≤ 1` observable weighted by an iid mass (comparison with the
+total mass `∑ = 1`). Backbone for the block-independence factorization. -/
+theorem summable_iid_norm_le_one (p : PMF α) (k : ℕ) (h : (Fin k → α) → ℂ) (hh : ∀ v, ‖h v‖ ≤ 1) :
+    Summable (fun v => ‖((p.iid k) v).toReal * h v‖) := by
+  have hbase : Summable (fun v : Fin k → α => ((p.iid k) v).toReal) :=
+    ENNReal.summable_toReal (by rw [(p.iid k).tsum_coe]; exact ENNReal.one_ne_top)
+  refine Summable.of_nonneg_of_le (fun v => norm_nonneg _) (fun v => ?_) hbase
+  rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg ENNReal.toReal_nonneg]
+  calc ((p.iid k) v).toReal * ‖h v‖ ≤ ((p.iid k) v).toReal * 1 :=
+        mul_le_mul_of_nonneg_left (hh v) ENNReal.toReal_nonneg
+    _ = ((p.iid k) v).toReal := mul_one _
+
+/-- **iid block-independence** (D1 product form): the complex expectation of a product of a
+head-observable `f` (first `j` coords) and a tail-observable `g` (last `q` coords) over `iid (j+q)`
+factors as the product of the two block expectations. Bounded observables (`‖·‖ ≤ 1`, as for
+character/indicator products) supply the summability. This is the reusable engine behind §6's
+conditional character-sum factorization: with `g` carrying a `1_{pre(tail)=l}` indicator, the head
+and tail blocks separate. -/
+theorem cexpect_iid_append (p : PMF α) (j q : ℕ)
+    (f : (Fin j → α) → ℂ) (g : (Fin q → α) → ℂ)
+    (hf : ∀ v, ‖f v‖ ≤ 1) (hg : ∀ v, ‖g v‖ ≤ 1) :
+    (p.iid (j + q)).cexpect
+        (fun v => f (fun i => v (Fin.castAdd q i)) * g (fun i => v (Fin.natAdd j i)))
+      = (p.iid j).cexpect f * (p.iid q).cexpect g := by
+  rw [cexpect, cexpect, cexpect,
+    tsum_mul_tsum_of_summable_norm (summable_iid_norm_le_one p j f hf)
+      (summable_iid_norm_le_one p q g hg),
+    ← Equiv.tsum_eq (Fin.appendEquiv j q)
+      (fun v => ((p.iid (j + q)) v).toReal * (f (fun i => v (Fin.castAdd q i))
+        * g (fun i => v (Fin.natAdd j i))))]
+  refine tsum_congr (fun z => ?_)
+  obtain ⟨vh, vt⟩ := z
+  have happ : (Fin.appendEquiv j q) (vh, vt) = Fin.append vh vt := rfl
+  rw [happ]
+  have hhead : (fun i => Fin.append vh vt (Fin.castAdd q i)) = vh := by
+    funext i; exact Fin.append_left vh vt i
+  have htail : (fun i => Fin.append vh vt (Fin.natAdd j i)) = vt := by
+    funext i; exact Fin.append_right vh vt i
+  have hmass : (p.iid (j + q)) (Fin.append vh vt) = (p.iid j) vh * (p.iid q) vt := by
+    rw [iid_apply_eq_prod, Fin.prod_univ_add, iid_apply_eq_prod p j vh, iid_apply_eq_prod p q vt]
+    congr 1
+    · exact Finset.prod_congr rfl (fun i _ => by rw [Fin.append_left])
+    · exact Finset.prod_congr rfl (fun i _ => by rw [Fin.append_right])
+  rw [hhead, htail, hmass, ENNReal.toReal_mul]
+  push_cast
+  ring
 
 end PMF
