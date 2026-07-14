@@ -364,6 +364,53 @@ theorem highfreq_l2_le_collision (m n : ℕ) (c : ZMod (3 ^ n) → ℝ) :
         refine Finset.sum_congr rfl (fun Y _ => ?_)
         rw [densC, Complex.norm_real, Real.norm_eq_abs, sq_abs]
 
+/-- **`osc` subadditivity** (C10, the (6.1)–(6.5) triangle inequality). The oscillation functional
+is subadditive: `osc(c₁ + c₂) ≤ osc(c₁) + osc(c₂)`. The `3ᵐ`-conditional average is linear, so the
+per-`Y` deviation splits and `|a + b| ≤ |a| + |b|`. This is what lets the event assembly telescope
+`osc(syracZ density) ≤ ∑_{k,l} osc(condDens_{k,l}) + osc(error)` — the density decomposition over the
+conditioning partition passes through `osc` by the triangle inequality. -/
+theorem osc_add_le (m n : ℕ) (hmn : m ≤ n) (c₁ c₂ : ZMod (3 ^ n) → ℝ) :
+    osc m n hmn (fun Y => c₁ Y + c₂ Y) ≤ osc m n hmn c₁ + osc m n hmn c₂ := by
+  unfold osc
+  rw [← Finset.sum_add_distrib]
+  refine Finset.sum_le_sum (fun Y _ => ?_)
+  rw [show (c₁ Y + c₂ Y) - (3 : ℝ) ^ ((m : ℤ) - (n : ℤ)) *
+        ∑ Y' ∈ Finset.univ.filter (fun Y' : ZMod (3 ^ n) =>
+          ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y'
+            = ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y), (c₁ Y' + c₂ Y')
+      = (c₁ Y - (3 : ℝ) ^ ((m : ℤ) - (n : ℤ)) *
+          ∑ Y' ∈ Finset.univ.filter (fun Y' : ZMod (3 ^ n) =>
+            ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y'
+              = ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y), c₁ Y')
+        + (c₂ Y - (3 : ℝ) ^ ((m : ℤ) - (n : ℤ)) *
+          ∑ Y' ∈ Finset.univ.filter (fun Y' : ZMod (3 ^ n) =>
+            ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y'
+              = ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y), c₂ Y')
+      from by rw [Finset.sum_add_distrib]; ring]
+  exact abs_add_le _ _
+
+/-- `osc` is nonnegative (a sum of absolute values). -/
+theorem osc_nonneg (m n : ℕ) (hmn : m ≤ n) (c : ZMod (3 ^ n) → ℝ) : 0 ≤ osc m n hmn c :=
+  Finset.sum_nonneg (fun _ _ => abs_nonneg _)
+
+/-- **`osc` subadditivity over a finite sum** (C10, the event-assembly telescope). For a density
+written as a finite sum `∑ᵢ cᵢ` (e.g. the conditioning partition `∑_{k,l} g_{k,l}` + error),
+`osc(∑ᵢ cᵢ) ≤ ∑ᵢ osc(cᵢ)`. Finset induction on `osc_add_le`. This is the exact shape Tao's (6.1)–(6.8)
+event assembly needs: decompose the syracZ density over the events, bound each piece's oscillation
+(`condDens_osc_le` for the conditioned pieces), and sum. -/
+theorem osc_sum_le {ι : Type*} (m n : ℕ) (hmn : m ≤ n) (s : Finset ι) (c : ι → ZMod (3 ^ n) → ℝ) :
+    osc m n hmn (fun Y => ∑ i ∈ s, c i Y) ≤ ∑ i ∈ s, osc m n hmn (c i) := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp [osc]
+  | insert a s ha ih =>
+    rw [Finset.sum_insert ha]
+    calc osc m n hmn (fun Y => ∑ i ∈ insert a s, c i Y)
+        = osc m n hmn (fun Y => c a Y + ∑ i ∈ s, c i Y) := by
+          refine congrArg _ (funext (fun Y => ?_)); rw [Finset.sum_insert ha]
+      _ ≤ osc m n hmn (c a) + osc m n hmn (fun Y => ∑ i ∈ s, c i Y) := osc_add_le _ _ _ _ _
+      _ ≤ osc m n hmn (c a) + ∑ i ∈ s, osc m n hmn (c i) := by linarith [ih]
+
 /-! ## ⚠️ ROUTE FINDING (2026-07-15): the raw-`syracZ` high-frequency `L²` mass is NOT small
 
 The naive plan — bound `∑_{ξ∈highFreq} ‖𝓕(densC n) ξ‖²` directly from `charFn_decay` — is

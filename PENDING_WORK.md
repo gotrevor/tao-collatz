@@ -1,5 +1,32 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-18 (2026-07-15, §6 osc assembly bricks): ℓ²-refinement + per-conditioning osc bound + osc subadditivity
+
+Build green 3285, all `#print axioms`-clean. Commits `dd48d86`, `3256a90`, + this. **The full §6
+Plancherel + factorization chain is now assembled into a single per-conditioning osc bound, and the
+osc subadditivity needed for the event telescope is proved.** New lemmas (`Sec6/MixingFromDecay.lean`):
+- **`condDens_highfreq_l2_le`**: the sharp (6.10)–(6.11) ℓ²-refinement `∑_{high}‖𝓕(densC condDens)‖²
+  ≤ D²·(3^(j+p)·∑(tailDens)²)`, given a uniform head decay `D` (`hunif` hypothesis).
+- **`condDens_osc_le`**: Tao's (6.10) for a single conditioning `(k,l)`: `osc(condDens) ≤
+  D·√(3^(j+p)·∑(tailDens)²)`. Assembles `osc_le_sqrt_highfreq` + the ℓ²-refinement end-to-end.
+- **`osc_add_le`, `osc_sum_le`, `osc_nonneg`**: osc is a subadditive nonneg seminorm; `osc(∑ᵢcᵢ) ≤
+  ∑ᵢosc(cᵢ)` — the (6.1)–(6.8) triangle inequality that lets the density decomposition over the
+  conditioning partition telescope through osc.
+
+### → REMAINING C10 obligations (all couple to the NOT-YET-BUILT event scaffold; next lap starts it):
+1. **Event/stopping-time scaffold** (NEW infra): define the stopping time `k` (unique with
+   `a_{[1,k]} ≤ n·log3/log2−Cₐ²log n < a_{[1,k+1]}`), events `E` (sub-Gaussian (6.2)), `Eₖ`, `Bₖ`
+   (`k=k`), `Cₖ,ₗ` (`a_{[1,k+1]}=l`), and the density decomposition `syracZ = ∑_{k,l} condDens_{k,l} +
+   error`. This gates 2 & 3. Largest remaining build.
+2. **`hunif` uniform head decay**: for `ξ∈highFreq m (j+p)` (val `< (j+p)−m`), construct the per-ξ
+   `j',η` decomposition (val `j'=` 3-adic val of `2⁻ˡ·castHom ξ`, `q=j−j'`), verify `hfreq`+coprimality,
+   and bound `q ≥ q_min` uniformly ⟹ `‖head‖ ≤ Cₐ·q_min⁻ᴬ =: D`. Couples to the `k`-choice (which
+   fixes `j=n−k−1`, `p=k+1`) from the scaffold. Feeds `condDens_osc_le`'s `hunif`.
+3. **Rényi tail count** `∑_Y (tailDens j p l Y)² ≤ small` (Lemma 6.2, offset injectivity / Syracuse
+   near-uniformity mod `3^p`). Feeds the `√` in `condDens_osc_le`.
+Then: `fine_scale_mixing` = `osc_sum_le` telescope over `(k,l)` + `condDens_osc_le` per piece +
+`hunif`(2) + tail-count(3) + error(6.2). Decompose into named `sorry`s once the scaffold exists.
+
 ## Lap fruit-17 (2026-07-15, §6 Plancherel bricks): per-freq bound + both (6.11) collision-entropy halves
 
 Build green 3285, all `#print axioms`-clean. Commits `b92d1e5` (dft_condDens_norm_le), `d61dbc3`
