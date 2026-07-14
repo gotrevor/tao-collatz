@@ -43,7 +43,12 @@ probability. Route (hardest-first):
 
 # 🧭 JUDGE PASS 29 (2026-07-14, HEAD `7ff033b`) — read `DIRECTION.md` first; it outranks this file
 
-**The campaign is `C10 → C8 → C9`, in that order.** Both pass-28 tripwires are DISCHARGED
+**The campaign is `C10 → C8 (pin) → C7 (prove) → C8 (close) → C9`.** ⚠️ **C7 renders GREEN in the
+blueprint web and is NOT done** — it carried a statement `\leanok` while its `\lean{}` named three
+*defs*; its content, **(1.19)** `P(T_x(N_y)=∞) ≪ x^{-c}`, was nowhere in Lean (fixed 2026-07-14;
+`blueprint_audit.py` now fails the build on **FALSE STATEMENT-GREEN**). **C8 gets pinned FIRST** —
+it is the risk (75%, lowest on the board), its `\uses{C7}` binds only its **proof**, and its
+*statement* is written over the first-passage **defs**, which exist. **STATEMENT-deps ≠ PROOF-deps.** Both pass-28 tripwires are DISCHARGED
 (`lRange_hbudget` clean; the `A′`-absorption at `C_A = 30` is **shown** by `osc_mainHigh_bound`, not
 asserted). **C10 is one tail bound from done**: `mainHigh_eq_restrictedDensity` and
 `sum_abs_syracZ_sub_mainHigh_eq` are axiom-clean, so `error_l1_high_bound`
