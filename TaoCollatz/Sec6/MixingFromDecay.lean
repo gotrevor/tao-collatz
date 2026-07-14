@@ -1,6 +1,7 @@
 import TaoCollatz.Fourier.ZMod3
 import TaoCollatz.Fourier.Parseval
 import TaoCollatz.Syracuse.SyracRV
+import TaoCollatz.Sec7.Decay
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Algebra.Order.Chebyshev
 
@@ -476,6 +477,64 @@ theorem tail_char_descent {j p : ℕ} (ζ : ZMod (3 ^ (j + p))) (vt : Fin p → 
   rw [harg, stdAddChar_pow3_descent]
   congr 1
   rw [map_neg, map_mul, map_mul, map_pow, map_natCast, castHom_two_inv]
+
+/-- `eC` only depends on its numerator mod `3ⁿ`: congruent integers give equal phases (periodicity
+via `eC_add` + `eC_intCast`). -/
+theorem eC_val_congr {n : ℕ} (a b : ℤ) (h : (a : ZMod (3 ^ n)) = (b : ZMod (3 ^ n))) :
+    eC ((a : ℚ) / 3 ^ n) = eC ((b : ℚ) / 3 ^ n) := by
+  have hdvd : ((3 : ℤ) ^ n) ∣ (a - b) := by
+    have := (ZMod.intCast_zmod_eq_zero_iff_dvd (a - b) (3 ^ n)).mp (by push_cast [h]; ring)
+    simpa using this
+  obtain ⟨k, hk⟩ := hdvd
+  have hab : (a : ℚ) / (3 : ℚ) ^ n = (b : ℚ) / (3 : ℚ) ^ n + (k : ℚ) := by
+    have h3 : ((3 : ℚ) ^ n) ≠ 0 := by positivity
+    have hq : (a : ℚ) = (b : ℚ) + (3 : ℚ) ^ n * k := by
+      exact_mod_cast (by linarith : a = b + 3 ^ n * k)
+    rw [hq]; field_simp
+  rw [hab, eC_add, eC_intCast, mul_one]
+
+/-- `stdAddChar` of a product equals the exact `eC` phase used by `charFn_decay` (Prop 1.17):
+`stdAddChar(-(Y·ξ)) = eC(-(ξ.val·Y.val)/3ⁿ)`. The `.val`-product congruence is handled by
+`eC_val_congr` (both sides reduce to `-(ξ·Y)` in `ZMod (3ⁿ)`). -/
+theorem stdAddChar_mul_eq_eC {n : ℕ} (ξ Y : ZMod (3 ^ n)) :
+    ZMod.stdAddChar (-(Y * ξ)) = eC (-(ξ.val * Y.val : ℚ) / 3 ^ n) := by
+  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero _ (by norm_num)⟩
+  rw [stdAddChar_eq_eC,
+    show ((-(Y * ξ)).val : ℚ) = (((-(Y * ξ)).val : ℤ) : ℚ) by push_cast; ring,
+    show (-(ξ.val * Y.val : ℚ)) = (((-(↑ξ.val * ↑Y.val) : ℤ)) : ℚ) by push_cast; ring]
+  apply eC_val_congr; push_cast [ZMod.natCast_zmod_val]; ring
+
+/-- The tail block expectation over `iid geomHalf p` of the level-`p` Syracuse character is a
+`syracZ p`-expectation, via `syracZ_eq_rev_fnat` (the pushforward form) and `cexpect_map`. -/
+theorem tail_cexpect_eq_syracZ {j p : ℕ} (ζ : ZMod (3 ^ (j + p))) :
+    (geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ p))
+        * (2 : ZMod (3 ^ p))⁻¹ ^ pre vt p)
+        * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) ζ)))
+      = (syracZ p).cexpect (fun Y => ZMod.stdAddChar (-(Y
+          * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) ζ))) := by
+  haveI : NeZero (3 ^ p) := ⟨pow_ne_zero _ (by norm_num)⟩
+  rw [syracZ_eq_rev_fnat p, cexpect_map _ _ _ (fun Y => le_of_eq (norm_stdAddChar _))]
+
+/-- **Brick (b), the tail-factor ⟹ `charFn_decay` capstone** (C10): for a frequency `ξ = 3ʲ·ζ`, the
+tail character factor over the `p`-coordinate block equals **exactly** the level-`p` Syracuse
+character sum in `charFn_decay`'s form, at frequency `ξ' = ζ mod 3^p`:
+`E_vt[stdAddChar_{3^(j+p)}(-(offset(vt)·3ʲζ))] = (syracZ p).cexpect (Y ↦ eC(-(ξ'.val·Y.val)/3^p))`.
+Chains `tail_char_descent` (pointwise level-descent) → `tail_cexpect_eq_syracZ` (pushforward) →
+`stdAddChar_mul_eq_eC` (`stdAddChar`→`eC`). So `charFn_decay` bounds the tail factor by `Cₐ·p⁻ᴬ`
+whenever `3 ∤ ξ'.val`. -/
+theorem tail_factor_eq_charFn {j p : ℕ} (ζ : ZMod (3 ^ (j + p))) :
+    (geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ((3 : ZMod (3 ^ (j + p))) ^ j * ζ))))
+      = (syracZ p).cexpect (fun Y => eC (-(((ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j))
+          (ZMod (3 ^ p)) ζ).val) * Y.val : ℚ) / 3 ^ p)) := by
+  rw [show (geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ((3 : ZMod (3 ^ (j + p))) ^ j * ζ))))
+        = (geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ p))
+          * (2 : ZMod (3 ^ p))⁻¹ ^ pre vt p)
+          * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) ζ)))
+        from congrArg (PMF.cexpect (geomHalf.iid p)) (funext (fun vt => tail_char_descent ζ vt)),
+      tail_cexpect_eq_syracZ]
+  exact congrArg (PMF.cexpect (syracZ p)) (funext (fun Y => stdAddChar_mul_eq_eC _ Y))
 
 /-- **Brick (b), step 3 — the conditional character factorization** (C10). Fix the cut
 `n = j + p` and the level `l`. Conditioning the character sum on the tail-valuation event
