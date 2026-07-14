@@ -152,6 +152,47 @@ theorem syracZ_map_cast {k n : ℕ} (hkn : k ≤ n) :
       funext a; exact htrunc a,
     ← PMF.map_comp, iid_map_castLE]
 
+/-- Peeling the head coordinate off a prefix sum: `pre a (m+1) = a 0 + pre (tail a) m`. -/
+private theorem pre_succ_tail {n : ℕ} (a : Fin (n + 1) → ℕ) (m : ℕ) :
+    pre a (m + 1) = a 0 + pre (Fin.tail a) m := by
+  rw [pre_eq_sum_preNat, pre_eq_sum_preNat, Finset.sum_range_succ']
+  have h0 : preNat a 0 = a 0 := by
+    unfold preNat; rw [dif_pos (Nat.succ_pos n)]; rfl
+  have hshift : ∀ i ∈ Finset.range m, preNat a (i + 1) = preNat (Fin.tail a) i := by
+    intro i _
+    unfold preNat Fin.tail
+    by_cases hi : i < n
+    · rw [dif_pos (by omega : i + 1 < n + 1), dif_pos hi]; rfl
+    · rw [dif_neg (by omega : ¬ i + 1 < n + 1), dif_neg hi]
+  rw [Finset.sum_congr rfl hshift, h0, add_comm]
+
+/-- **Head-peel of the (1.26) offset (algebraic core of Lemma 1.12).** In `ZMod (3ⁿ⁺¹)`,
+factoring out the first geometric coordinate `a 0`:
+`Gₙ₊₁(a) = 2⁻ᵃ⁰ · (1 + 3·Ĝ(tail a))`, where `Ĝ` is the level-`n` offset formula
+computed in `ZMod (3ⁿ⁺¹)`. -/
+private theorem syracZ_offset_peel {n : ℕ} (a : Fin (n + 1) → ℕ) :
+    (∑ j ∈ Finset.range (n + 1),
+        (3 : ZMod (3 ^ (n + 1))) ^ j * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre a (j + 1))
+      = (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ a 0 *
+          (1 + 3 * ∑ j ∈ Finset.range n,
+              (3 : ZMod (3 ^ (n + 1))) ^ j
+                * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre (Fin.tail a) (j + 1)) := by
+  -- head term `f 0 = 2⁻ᵃ⁰`.
+  have hhead : (3 : ZMod (3 ^ (n + 1))) ^ 0 * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre a (0 + 1)
+      = (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ a 0 := by
+    rw [pow_zero, one_mul, pre_succ_tail, show pre (Fin.tail a) 0 = 0 from rfl, add_zero]
+  -- each tail term factors as `2⁻ᵃ⁰ · (3 · 3ʲ · 2⁻ᵖʳᵉ)`.
+  have hterm : ∀ k ∈ Finset.range n,
+      (3 : ZMod (3 ^ (n + 1))) ^ (k + 1) * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre a (k + 1 + 1)
+        = (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ a 0
+            * (3 * (3 ^ k * (2 : ZMod (3 ^ (n + 1)))⁻¹ ^ pre (Fin.tail a) (k + 1))) := by
+    intro k _
+    rw [pre_succ_tail a (k + 1), pow_add, pow_succ]
+    ring
+  rw [Finset.sum_range_succ', hhead, Finset.sum_congr rfl hterm, ← Finset.mul_sum,
+    ← Finset.mul_sum]
+  ring
+
 -- RATIFY-DRIFT: the "divide by 3" step of Lemma 1.12 is spelled in ℕ
 -- (`(2^a · x.val - 1) / 3`, exact under the guard `(2^a · x.val) % 3 = 1`) rather than
 -- with `(3 : ZMod (3^(n+1)))⁻¹`, because 3 is a zero-divisor there and `ZMod.inv` is
@@ -168,6 +209,19 @@ theorem syracZ_recursion (n : ℕ) (x : ZMod (3 ^ (n + 1))) :
             (if (2 ^ a * x.val) % 3 = 1
               then 2⁻¹ ^ a * (syracZ n) (((2 ^ a * x.val - 1) / 3 : ℕ) : ZMod (3 ^ n))
               else 0) := by
+  -- DECOMPOSITION (algebraic core PROVED: `syracZ_offset_peel`, `pre_succ_tail`).
+  -- Remaining route (probabilistic, multi-lap):
+  --  (1) `syracZ (n+1) x = ∑' a₀:ℕ, geomHalf a₀ * (mass over tail w of {Gₙ₊₁(cons a₀ w) = x})`
+  --      via `PMF.map_apply` + `iid_apply_eq_prod` / `tsum_iid_succ_mul`.
+  --  (2) `syracZ_offset_peel`: `Gₙ₊₁(cons a₀ w) = 2⁻ᵃ⁰·(1 + 3·Ĝ(w))`, so `Gₙ₊₁ = x`
+  --      ⟺ `1 + 3·Ĝ(w) = 2^{a₀}·x` in `ZMod 3ⁿ⁺¹` ⟺ [`2^{a₀}·x.val ≡ 1 (mod 3)` AND
+  --      `Ĝ(w) = (2^{a₀}·x.val − 1)/3`]. The guard is exactly the `if` condition.
+  --  (3) reduce `Ĝ(w) mod 3ⁿ = Gₙ(w)` (the `syracZ_map_cast`/`castHom` truncation, already
+  --      built), so the tail-mass = `syracZ n (((2^{a₀}x.val−1)/3 : ℕ) : ZMod 3ⁿ)`.
+  --  (4) FOLD the `a₀`-sum: `a₀ ↦ (2^{a₀}x.val−1)/3 mod 3ⁿ` is periodic with period
+  --      `2·3ⁿ` (= multiplicative order of 2 mod 3ⁿ⁺¹), giving `∑_{a₀≥1} = (1−2^{−2·3ⁿ})⁻¹
+  --      · ∑_{a₀=1}^{2·3ⁿ}` — the normalization. Needs `orderOf (2 : ZMod 3ⁿ⁺¹) = 2·3ⁿ`
+  --      + a geometric-tail resummation over the residue.
   sorry
 
 /-- Reversal splits a prefix sum: the first `m` reversed coordinates plus the first
