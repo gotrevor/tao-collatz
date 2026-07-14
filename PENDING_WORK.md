@@ -1,5 +1,37 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-20 (2026-07-15, obligation-3 ATOM): **Lemma 6.2 (offset injectivity) PROVED — `fnat_inj_fixed_val`**
+
+Build green 3285, `#print axioms fnat_inj_fixed_val = [propext, Classical.choice, Quot.sound]`.
+Commit `5502020`. **The genuine number-theoretic atom under obligation 3 (the deepest, most
+route-decisive of the three remaining C10 inputs) is now machine-checked.** New lemmas in
+`Basic/Valuation.lean` (after `fnat_split`):
+- **`fnat_inj_fixed_val`**: Tao's Lemma 6.2 (the `n`-Syracuse offset map `Fₙ` is injective), in the
+  repo-native form the Rényi block consumes — among positive-coordinate vectors of **fixed total
+  valuation** `a_{[1,n]}`, the integer offset `fnat n` determines the vector. Fixed-valuation is
+  exactly what Cor 6.3 uses (it invokes 6.2 at equal valuations via (6.13) `a_{[1,k+1]}=l`).
+- **`fnat_cons`**: paper (1.5) first-coordinate recursion `Fnat_{n+1}(a) = 3ⁿ + 2^{a₀}·Fnat_n(tail a)`
+  (repo mirror of Tao's `F_n = 3ⁿ2^{-a_{[1,n]}} + F_{n-1}`, cleared of ℤ[1/2]).
+- **`two_pow_odd_eq`** (`2ˢu = 2ᵗv`, `u,v` odd ⟹ `s=t ∧ u=v`), **`pre_cons_head`** (first-coord prefix
+  peel). Proof is entirely **ℕ-native** — no ℤ[1/2] / 2-adic machinery. Peel first coord; the
+  `2^{a₀}·(odd fnat core)` factorization pins `a₀` + core (`two_pow_odd_eq` + `fnat_mod_two_of_pos`);
+  the length-1 base is discharged by the fixed-valuation hypothesis.
+
+⚠️ NOTE — `pre_cons` was already taken (Sec7/Bridge.lean:49, different lemma); mine is `pre_cons_head`.
+
+### → NEXT on obligation 3, hardest-first — **Corollary 6.3 (3-adic separation)** is the remaining brick:
+`fnat_inj_fixed_val` gives injectivity of `fnat p` as NATURALS on `{pre = l}`. But `tailDens` counts
+preimages **mod `3^{j+p}`** — different vectors with `pre=l` could be congruent mod `3^{j+p}` yet
+unequal as naturals (verified: p=2, a₀=1 vs a₀=7 collide mod 9, but NOT mod 27). Cor 6.3 closes this:
+the sub-Gaussian window (6.12) `|a_{[i+1,j]} − 2(j−i)| ≤ Cₐ√((j−i)log n)+log n` forces the offset
+naturals `< 3^n`, so mod-`3^n` equality ⟹ natural equality ⟹ `fnat_inj_fixed_val`. THEN each `Y` has
+≤ 1 preimage on the good event, giving `tailDens Y ≤ 2^{-l}` (single point mass) ⟹ the `M` feeding
+`tailDens_renyi_le`. **This is where the sub-Gaussian event `E` (6.2) MUST enter** — obligation 3 is
+FALSE without the window, so it couples to the scaffold (obligation 1) after all. Next brick: state
+Cor 6.3 as a `sorry`-headed lemma (the window bound `< 3^n` is the analytic content), OR first define
+the window predicate + prove the elementary `< 3^n` estimate (6.14)→(6.15) which is a geometric-sum
+bound, self-contained given the window hypothesis.
+
 ## Lap fruit-19 (2026-07-15, §6 event-scaffold START): `syracZ_eq_tsum_condDens` — the (6.9) l-marginalization
 
 Build green 3285, `#print axioms syracZ_eq_tsum_condDens = [propext, Classical.choice, Quot.sound]`.
