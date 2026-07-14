@@ -87,6 +87,62 @@ C7 sorry into visible, attackable holes and isolates the ONE new analytic brick 
 3. `descent_passes` — the (1.5)/(1.7) descent: if `|ā^{(n₀)}(N_y)| > 1.9 n₀` then
    `Syr^{n₀}(N_y) = O(x^{0.99}) ≤ x`, hence `passes`. Pointwise, over `syr_iterate_key` (C2). -/
 
+/-- **Numeric closure for the integral test.**  For `x ≥ 1` and `y ∈ {x^α, x^{α²}}`, the modulus
+`2^{3n₀}` (`n₀ = ⌊log x / (10 log 2)⌋`, so `2^{n₀} ≍ x^{0.1}`) gives `2^{3n₀} / y ≤ 2^{-3n₀}`, i.e. the
+integral-test error `O(2^{n'}/y)` is `≤ 2^{-n'}`, with room to spare (`2^{6n₀} ≤ x^{0.6} ≤ x^{1.001} ≤ y`).
+Mirrors `descent_pow_bounds`; the only transcendental input is `6 n₀ log 2 ≤ 0.6 log x` from
+`n₀ · 10 log 2 ≤ log x`. -/
+theorem intTest_numeric :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      (2 : ℝ) ^ (3 * (nZero x : ℝ)) / y ≤ (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) := by
+  refine ⟨1, le_refl _, fun x hx1 y hy => ?_⟩
+  have hxpos : (0 : ℝ) < x := by linarith
+  have hL0 : 0 ≤ Real.log x := Real.log_nonneg hx1
+  have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have harg : 0 ≤ Real.log x / (10 * Real.log 2) := by positivity
+  have hν_le : (nZero x : ℝ) * (10 * Real.log 2) ≤ Real.log x := by
+    have h : (nZero x : ℝ) ≤ Real.log x / (10 * Real.log 2) := by
+      unfold nZero; exact Nat.floor_le harg
+    exact (le_div_iff₀ (by positivity)).mp h
+  have h6le : (2 : ℝ) ^ (6 * (nZero x : ℝ)) ≤ x ^ (0.6 : ℝ) := by
+    rw [Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 2), Real.rpow_def_of_pos hxpos]
+    apply Real.exp_le_exp.mpr
+    nlinarith [hν_le, hlog2, hL0]
+  have hy6 : x ^ (0.6 : ℝ) ≤ y := by
+    rcases hy with h | h <;> rw [h] <;>
+      exact Real.rpow_le_rpow_of_exponent_le hx1 (by unfold alpha; norm_num)
+  have h6y : (2 : ℝ) ^ (6 * (nZero x : ℝ)) ≤ y := le_trans h6le hy6
+  have hypos : (0 : ℝ) < y := lt_of_lt_of_le (Real.rpow_pos_of_pos (by norm_num) _) h6y
+  rw [div_le_iff₀ hypos]
+  have hsplit : (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) * (2 : ℝ) ^ (6 * (nZero x : ℝ))
+      = (2 : ℝ) ^ (3 * (nZero x : ℝ)) := by
+    rw [← Real.rpow_add (by norm_num : (0 : ℝ) < 2)]; congr 1; ring
+  calc (2 : ℝ) ^ (3 * (nZero x : ℝ))
+      = (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) * (2 : ℝ) ^ (6 * (nZero x : ℝ)) := hsplit.symm
+    _ ≤ (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) * y :=
+        mul_le_mul_of_nonneg_left h6y (Real.rpow_nonneg (by norm_num) _)
+
+/-- **The integral-test error estimate** — the analytic heart of C7, and the ONE remaining new brick.
+For the log-uniform odd window `N_y ∈ [y, y^α]`, the total-variation distance of its reduction mod
+`2^{3n₀}` from the uniform law on odd residues is `≪ 2^{3n₀}/y` (the raw integral-test error, before the
+numeric closure `intTest_numeric` converts `2^{3n₀}/y` to `≤ 2^{-3n₀}`).
+
+**Proof owed** (the elementary integral test — NOT dynamical equidistribution, which mathlib lacks; this
+uses machinery mathlib HAS). Route (see `PENDING_WORK` "C7 integral test — attack plan"):
+* `PMF.map_apply` ⟹ the pushforward mass on residue `r` is `S_r/D`, `S_r := ∑_{N≡r} 1/N`, `D := ∑_{N∈W} 1/N`;
+  all `N∈W` odd ⇒ supported on odd residues, so `dTV = (1/D) ∑_{r odd} |S_r − 2D/M|` (`M := 2^{3n₀}`);
+* per odd class, `S_r = (1/M)·log(y^α/y) + O(1/y)` via `AntitoneOn.sum_le_integral` /
+  `AntitoneOn.integral_le_sum` on `t ↦ 1/t` over the AP (step `M`) + `integral_inv` (`∫ 1/t = log`), and
+  `D = ½·log(y^α/y) + O(1/y)` likewise (odds are half); AP counts via `Nat.Ioc_filter_modEq_card`;
+* summing the `M/2` odd classes and dividing by `D ≥ c·log y` gives `dTV ≤ C·M/y = C·2^{3n₀}/y`. -/
+theorem intTest_error :
+    ∃ K : ℝ, 0 < K ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
+                (unifOddMod (3 * nZero x))
+          ≤ K * ((2 : ℝ) ^ (3 * (nZero x : ℝ)) / y) := by
+  sorry
+
 /-- **The integral test** (Tao pp.20, the one new analytic brick of C7).  For the log-uniform window
 `N_y` on odds in `[y, y^α]`, its reduction mod `2^{3 n₀}` is within `≪ 2^{-3 n₀}` (total variation)
 of the uniform law on odd residues.  This is precisely the hypothesis consumed by `valuation_dist`
@@ -101,7 +157,14 @@ theorem integral_test_logUnif :
         PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
                 (unifOddMod (3 * nZero x))
           ≤ K * (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) := by
-  sorry
+  -- Assembled from the analytic error estimate `intTest_error` (dTV ≤ K·2^{3n₀}/y) and the numeric
+  -- closure `intTest_numeric` (2^{3n₀}/y ≤ 2^{-3n₀}).  Only `intTest_error` carries owed content.
+  obtain ⟨K, hK, x₀e, herr⟩ := intTest_error
+  obtain ⟨x₀n, _, hnum⟩ := intTest_numeric
+  refine ⟨K, hK, max x₀e x₀n, fun x hx y hy => ?_⟩
+  have hxe : x₀e ≤ x := le_trans (le_max_left _ _) hx
+  have hxn : x₀n ≤ x := le_trans (le_max_right _ _) hx
+  exact le_trans (herr x hxe y hy) (mul_le_mul_of_nonneg_left (hnum x hxn y hy) hK.le)
 
 /-- **Paper (5.5)** — the lower-tail bound: the total valuation `|ā^{(n₀)}(N_y)| = valSum N_y n₀`
 falls at or below `1.9 n₀` with probability `≪ x^{-c}`.  This is the LOWER-tail analogue of
