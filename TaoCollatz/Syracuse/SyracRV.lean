@@ -193,6 +193,34 @@ private theorem syracZ_offset_peel {n : ℕ} (a : Fin (n + 1) → ℕ) :
     ← Finset.mul_sum]
   ring
 
+/-- **Geometric fold for a `P`-periodic weight (normalization core of Lemma 1.12).**
+For `g` periodic with period `P`, the `2⁻ᵃ`-weighted sum over all `a` collapses to one
+period times the geometric normalization `(1 − 2⁻ᴾ)⁻¹`. -/
+private theorem geom_fold {P : ℕ} (hP : 0 < P) (g : ℕ → ℝ≥0∞)
+    (hper : ∀ a, g (a + P) = g a) :
+    ∑' a : ℕ, (2⁻¹ : ℝ≥0∞) ^ a * g a
+      = (1 - (2⁻¹ : ℝ≥0∞) ^ P)⁻¹ * ∑ r ∈ Finset.range P, (2⁻¹ : ℝ≥0∞) ^ r * g r := by
+  haveI : NeZero P := ⟨hP.ne'⟩
+  have hperk : ∀ k r, g (k * P + r) = g r := by
+    intro k r
+    induction k with
+    | zero => simp
+    | succ k ih => rw [Nat.succ_mul, add_right_comm, hper, ih]
+  rw [← (Nat.divModEquiv P).symm.tsum_eq (fun a => (2⁻¹ : ℝ≥0∞) ^ a * g a)]
+  simp only [Nat.divModEquiv_symm_apply]
+  rw [ENNReal.tsum_prod']
+  have hinner : ∀ k : ℕ,
+      (∑' r : Fin P, (2⁻¹ : ℝ≥0∞) ^ (k * P + (r : ℕ)) * g (k * P + (r : ℕ)))
+        = ((2⁻¹ : ℝ≥0∞) ^ P) ^ k * ∑ r ∈ Finset.range P, (2⁻¹ : ℝ≥0∞) ^ r * g r := by
+    intro k
+    rw [tsum_fintype, ← Fin.sum_univ_eq_sum_range (fun r => (2⁻¹ : ℝ≥0∞) ^ r * g r) P,
+      Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro r _
+    rw [hperk k r, pow_add, mul_comm k P, pow_mul]
+    ring
+  rw [tsum_congr hinner, ENNReal.tsum_mul_right, ENNReal.tsum_geometric]
+
 -- RATIFY-DRIFT: the "divide by 3" step of Lemma 1.12 is spelled in ℕ
 -- (`(2^a · x.val - 1) / 3`, exact under the guard `(2^a · x.val) % 3 = 1`) rather than
 -- with `(3 : ZMod (3^(n+1)))⁻¹`, because 3 is a zero-divisor there and `ZMod.inv` is
