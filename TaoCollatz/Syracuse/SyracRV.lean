@@ -23,10 +23,134 @@ noncomputable def syracZ (n : ℕ) : PMF (ZMod (3 ^ n)) :=
   (PMF.iid geomHalf n).map fun a =>
     ∑ j ∈ Finset.range n, (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre a (j + 1)
 
+/-- `pre a m` as a plain ℕ-indexed summand (the `dite`-guarded coordinate). -/
+private def preNat {n : ℕ} (a : Fin n → ℕ) (i : ℕ) : ℕ :=
+  if h : i < n then a ⟨i, h⟩ else 0
+
+private theorem pre_eq_sum_preNat {n : ℕ} (a : Fin n → ℕ) (m : ℕ) :
+    pre a m = ∑ i ∈ Finset.range m, preNat a i := rfl
+
+/-- The prefix-`k` marginal of an iid vector is again iid: pushing `p.iid n` forward
+under restriction to the first `k` coordinates (`· ∘ Fin.castLE`) gives `p.iid k`. -/
+private theorem iid_map_castLE {α : Type*} (p : PMF α) :
+    ∀ (k n : ℕ) (h : k ≤ n),
+      (p.iid n).map (fun a : Fin n → α => a ∘ Fin.castLE h) = p.iid k := by
+  intro k
+  induction k with
+  | zero =>
+      intro n _
+      -- target `Fin 0 → α` is a subsingleton: the map is constant.
+      rw [show (fun a : Fin n → α => a ∘ Fin.castLE (Nat.zero_le n))
+            = Function.const _ (fun i : Fin 0 => i.elim0) from by
+          funext a; funext i; exact i.elim0]
+      rw [PMF.map_const]
+      rfl
+  | succ k ih =>
+      intro n h
+      obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+      have h' : k ≤ m := Nat.succ_le_succ_iff.mp h
+      -- cons/castLE commutation: restricting `cons a0 w` to `k+1` prefix = `cons a0`
+      -- of the `k`-prefix restriction of `w`.
+      have hcons : ∀ (a0 : α) (w : Fin m → α),
+          (Fin.cons a0 w : Fin (m + 1) → α) ∘ Fin.castLE h
+            = Fin.cons a0 (w ∘ Fin.castLE h') := by
+        intro a0 w
+        funext i
+        rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨j, rfl⟩
+        · simp only [Function.comp_apply]
+          rw [show Fin.castLE h (0 : Fin (k + 1)) = (0 : Fin (m + 1)) from by
+            apply Fin.ext; simp, Fin.cons_zero, Fin.cons_zero]
+        · simp only [Function.comp_apply]
+          rw [show Fin.castLE h j.succ = (Fin.castLE h' j).succ from by
+            apply Fin.ext; simp, Fin.cons_succ, Fin.cons_succ, Function.comp_apply]
+      rw [show p.iid (m + 1) = p.bind fun a0 => (p.iid m).map (Fin.cons a0) from rfl,
+        PMF.map_bind, show p.iid (k + 1) = p.bind fun a0 => (p.iid k).map (Fin.cons a0) from rfl]
+      congr 1
+      funext a0
+      rw [PMF.map_comp, show (fun a : Fin (m + 1) → α => a ∘ Fin.castLE h) ∘ Fin.cons a0
+          = Fin.cons a0 ∘ (fun w : Fin m → α => w ∘ Fin.castLE h') from by
+        funext w; exact hcons a0 w, ← PMF.map_comp, ih m h']
+
 /-- Paper (1.22): reducing `Syrac(ℤ/3ⁿℤ)` mod `3ᵏ` gives `Syrac(ℤ/3ᵏℤ)`. -/
 theorem syracZ_map_cast {k n : ℕ} (hkn : k ≤ n) :
     (syracZ n).map (ZMod.castHom (pow_dvd_pow 3 hkn) (ZMod (3 ^ k))) = syracZ k := by
-  sorry
+  set φ := ZMod.castHom (pow_dvd_pow 3 hkn) (ZMod (3 ^ k)) with hφ
+  -- `2` is a unit mod `3ⁿ` and mod `3ᵏ`.
+  have hunit : ∀ r : ℕ, (2 : ZMod (3 ^ r)) * (2 : ZMod (3 ^ r))⁻¹ = 1 := by
+    intro r
+    apply ZMod.mul_inv_of_unit
+    rw [show (2 : ZMod (3 ^ r)) = ((2 : ℕ) : ZMod (3 ^ r)) from by norm_cast,
+      ZMod.isUnit_iff_coprime]
+    exact Nat.Coprime.pow_right r (by decide)
+  have hphi3 : φ (3 : ZMod (3 ^ n)) = (3 : ZMod (3 ^ k)) := map_ofNat φ 3
+  have hphi2 : φ ((2 : ZMod (3 ^ n))⁻¹) = (2 : ZMod (3 ^ k))⁻¹ := by
+    have h1 : (2 : ZMod (3 ^ k)) * φ ((2 : ZMod (3 ^ n))⁻¹) = 1 := by
+      rw [show (2 : ZMod (3 ^ k)) = φ 2 from (map_ofNat φ 2).symm, ← map_mul, hunit n, map_one]
+    calc φ ((2 : ZMod (3 ^ n))⁻¹)
+        = 1 * φ ((2 : ZMod (3 ^ n))⁻¹) := (one_mul _).symm
+      _ = ((2 : ZMod (3 ^ k))⁻¹ * 2) * φ ((2 : ZMod (3 ^ n))⁻¹) := by
+          rw [mul_comm ((2 : ZMod (3 ^ k))⁻¹) 2, hunit k]
+      _ = (2 : ZMod (3 ^ k))⁻¹ * ((2 : ZMod (3 ^ k)) * φ ((2 : ZMod (3 ^ n))⁻¹)) := by ring
+      _ = (2 : ZMod (3 ^ k))⁻¹ := by rw [h1, mul_one]
+  -- `3^j = 0` in `ZMod (3ᵏ)` for `j ≥ k`.
+  have h3zero : ∀ j, k ≤ j → (3 : ZMod (3 ^ k)) ^ j = 0 := by
+    intro j hj
+    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hj
+    rw [pow_add, show (3 : ZMod (3 ^ k)) ^ k = ((3 ^ k : ℕ) : ZMod (3 ^ k)) from by push_cast; ring,
+      ZMod.natCast_self, zero_mul]
+  -- prefix sums are unchanged by the restriction on the first `k` coordinates.
+  have hpre : ∀ (a : Fin n → ℕ) (j : ℕ), j + 1 ≤ k →
+      pre (a ∘ Fin.castLE hkn) (j + 1) = pre a (j + 1) := by
+    intro a j hj
+    rw [pre_eq_sum_preNat, pre_eq_sum_preNat]
+    apply Finset.sum_congr rfl
+    intro i hi
+    rw [Finset.mem_range] at hi
+    have hik : i < k := by omega
+    have hin : i < n := lt_of_lt_of_le hik hkn
+    unfold preNat
+    rw [dif_pos hik, dif_pos hin]
+    show a (Fin.castLE hkn ⟨i, hik⟩) = a ⟨i, hin⟩
+    congr 1
+  -- truncation: `φ (F_n a) = F_k (a ∘ castLE)`.
+  have htrunc : ∀ a : Fin n → ℕ,
+      φ (∑ j ∈ Finset.range n,
+            (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre a (j + 1))
+        = ∑ j ∈ Finset.range k,
+            (3 : ZMod (3 ^ k)) ^ j * (2 : ZMod (3 ^ k))⁻¹ ^ pre (a ∘ Fin.castLE hkn) (j + 1) := by
+    intro a
+    rw [map_sum]
+    -- push `φ` through each term.
+    have hterm : ∀ j, φ ((3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre a (j + 1))
+        = (3 : ZMod (3 ^ k)) ^ j * (2 : ZMod (3 ^ k))⁻¹ ^ pre a (j + 1) := by
+      intro j
+      rw [map_mul, map_pow, map_pow, hphi3, hphi2]
+    rw [Finset.sum_congr rfl (fun j _ => hterm j)]
+    -- split `range n` into `range k` and the vanishing tail.
+    rw [← Finset.sum_range_add_sum_Ico _ hkn]
+    rw [show (∑ j ∈ Finset.Ico k n,
+          (3 : ZMod (3 ^ k)) ^ j * (2 : ZMod (3 ^ k))⁻¹ ^ pre a (j + 1)) = 0 from by
+      apply Finset.sum_eq_zero
+      intro j hj
+      rw [Finset.mem_Ico] at hj
+      rw [h3zero j hj.1, zero_mul]]
+    rw [add_zero]
+    apply Finset.sum_congr rfl
+    intro j hj
+    rw [Finset.mem_range] at hj
+    rw [hpre a j (by omega)]
+  -- assembly.
+  unfold syracZ
+  rw [PMF.map_comp,
+    show (φ ∘ fun a : Fin n → ℕ =>
+          ∑ j ∈ Finset.range n,
+            (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre a (j + 1))
+        = (fun a' : Fin k → ℕ =>
+              ∑ j ∈ Finset.range k,
+                (3 : ZMod (3 ^ k)) ^ j * (2 : ZMod (3 ^ k))⁻¹ ^ pre a' (j + 1))
+            ∘ (fun a : Fin n → ℕ => a ∘ Fin.castLE hkn) from by
+      funext a; exact htrunc a,
+    ← PMF.map_comp, iid_map_castLE]
 
 -- RATIFY-DRIFT: the "divide by 3" step of Lemma 1.12 is spelled in ℕ
 -- (`(2^a · x.val - 1) / 3`, exact under the guard `(2^a · x.val) % 3 = 1`) rather than
@@ -45,13 +169,6 @@ theorem syracZ_recursion (n : ℕ) (x : ZMod (3 ^ (n + 1))) :
               then 2⁻¹ ^ a * (syracZ n) (((2 ^ a * x.val - 1) / 3 : ℕ) : ZMod (3 ^ n))
               else 0) := by
   sorry
-
-/-- `pre a m` as a plain ℕ-indexed summand (the `dite`-guarded coordinate). -/
-private def preNat {n : ℕ} (a : Fin n → ℕ) (i : ℕ) : ℕ :=
-  if h : i < n then a ⟨i, h⟩ else 0
-
-private theorem pre_eq_sum_preNat {n : ℕ} (a : Fin n → ℕ) (m : ℕ) :
-    pre a m = ∑ i ∈ Finset.range m, preNat a i := rfl
 
 /-- Reversal splits a prefix sum: the first `m` reversed coordinates plus the first
 `n - m` forward coordinates cover the whole vector. (Exchangeability's ℕ backbone.) -/
