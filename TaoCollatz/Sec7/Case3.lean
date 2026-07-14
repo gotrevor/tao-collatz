@@ -1520,6 +1520,122 @@ theorem few_white_pointwise_dichotomy {n ξ : ℕ} (F : TriangleFamily n ξ)
     obtain ⟨p, hp, t, ht, hmem, hbig⟩ := hE
     exact ⟨p, hp, t, ht, hmem, hbig⟩
 
+open scoped Classical in
+/-- **The pointwise THREE-way split for (7.56)** (the assembly glue). For a fixed
+first-passage displacement `e` and walk `v`, the few-white indicator `1_{myNw≤K}` is
+dominated by the sum of three indicators: the **reach-`R`** event (fold reaches `R` with
+`cumWhite ≤ K+1`), the **E∗** union `Σ_{p≤P} 1_{phase pt ∈ bigTriangleSet ⌊4^{A'}(1+p)³⌋}`,
+and the **bad-column** event `{0.9m ≤ e.1+(pathSum v P).1}`. Proof by cases on `myNw>K`
+(⟹ LHS 0), then the bad column (⟹ third term 1), then on the good column the depth holds
+(`pathSum_depth_le`, `adv+g<m` from `adv<0.9m` and `g≤0.1m`) so
+`few_white_pointwise_dichotomy` gives reach (first term 1) or E∗
+(`bigTriangle_of_encounter` ⟹ one middle summand 1). This is exactly the pointwise bound
+`few_white_mass_le` integrates, its three terms bounded by `reaches_fewWhite_mass_le_ten`,
+`estar_union_le`, and `col_tail`. -/
+theorem few_white_pointwise_split {n ξ : ℕ} (F : TriangleFamily n ξ)
+    (m : ℕ) (hmn : m ≤ n / 2) (hpos : 1 ≤ n / 2 - m) (l : ℤ)
+    (g R K : ℕ) (A' : ℝ) (hA' : 1 ≤ A') (P : ℕ) (hP : encWindowIter A' (K + 1) R ≤ P)
+    (hg : (g : ℝ) ≤ (1 / 10 : ℝ) * (m : ℝ))
+    (e : ℕ × ℤ) (v : Fin P → ℕ × ℤ) (hv : ∀ i, v i ∈ hold.support) :
+    ENNReal.ofReal (if (∑ p ∈ Finset.range P,
+          Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+            (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+        ≤ (K : ℝ)
+      then (1 : ℝ) else 0)
+    ≤ ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
+            (encInit (n / 2 - m + e.1) (l + e.2))).count
+          ∧ ((List.ofFn v).foldl (encStep F R g)
+            (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+        then (1 : ℝ) else 0)
+      + (∑ p ∈ Finset.range (P + 1),
+          Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+            (1 : ℕ × ℤ → ℝ≥0∞)
+            (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+      + ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+          then (1 : ℝ) else 0) := by
+  classical
+  set q₀ : ℕ × ℤ := (n / 2 - m + e.1, l + e.2) with hq₀def
+  have hq1 : q₀.1 = n / 2 - m + e.1 := rfl
+  set Nw : ℝ := ∑ p ∈ Finset.range P,
+      Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+        (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2) with hNwdef
+  set T1 : ℝ≥0∞ := ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
+        (encInit (n / 2 - m + e.1) (l + e.2))).count
+      ∧ ((List.ofFn v).foldl (encStep F R g)
+        (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1 then (1 : ℝ) else 0) with hT1def
+  set T2 : ℝ≥0∞ := ∑ p ∈ Finset.range (P + 1),
+      Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+        (1 : ℕ × ℤ → ℝ≥0∞)
+        (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2) with hT2def
+  set T3 : ℝ≥0∞ := ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+      then (1 : ℝ) else 0) with hT3def
+  by_cases hfew : Nw ≤ (K : ℝ)
+  · rw [if_pos hfew, ENNReal.ofReal_one]
+    by_cases hcol : (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+    · -- bad column: `T3 = 1`.
+      have hT3one : T3 = 1 := by rw [hT3def, if_pos hcol, ENNReal.ofReal_one]
+      calc (1 : ℝ≥0∞) = T3 := hT3one.symm
+        _ ≤ T1 + T2 + T3 := self_le_add_left _ _
+    · -- good column: depth holds, apply the dichotomy.
+      have hset : whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2} = whiteStrip n ξ := by
+        ext q; simp only [whiteStrip, Set.mem_inter_iff, Set.mem_setOf_eq]; tauto
+      have hcast : Nw = ((∑ p ∈ Finset.range P,
+              (if q₀ + pathSum v p ∈ whiteStrip n ξ then (1 : ℕ) else 0) : ℕ) : ℝ) := by
+        rw [hNwdef, Nat.cast_sum]
+        refine Finset.sum_congr rfl fun p _ => ?_
+        have hpt : (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)
+            = q₀ + pathSum v p := rfl
+        rw [hpt, hset, Set.indicator_apply, Pi.one_apply, Nat.cast_ite, Nat.cast_one,
+          Nat.cast_zero]
+      have hNatK : (∑ p ∈ Finset.range P,
+          (if q₀ + pathSum v p ∈ whiteStrip n ξ then (1 : ℕ) else 0)) ≤ K := by
+        have h := hfew; rw [hcast] at h; exact_mod_cast h
+      -- depth: adv + g ≤ m, hence every intermediate position stays deep.
+      have hadv : (e.1 + (pathSum v P).1 : ℕ) + g ≤ m := by
+        have hlt : ((e.1 + (pathSum v P).1 : ℕ) : ℝ) < 0.9 * (m : ℝ) := not_le.mp hcol
+        have hsum : ((e.1 + (pathSum v P).1 : ℕ) : ℝ) + (g : ℝ) ≤ (m : ℝ) := by
+          nlinarith [hlt, hg]
+        exact_mod_cast hsum
+      have hqone : 1 ≤ q₀.1 := by rw [hq1]; omega
+      have hendpt : q₀.1 + (pathSum v P).1 + g ≤ n / 2 := by rw [hq1]; omega
+      have hdepth : ∀ p, p ≤ P → (q₀ + pathSum v p).1 + g ≤ n / 2 :=
+        pathSum_depth_le v q₀ g (n / 2) hendpt
+      have hdich := few_white_pointwise_dichotomy F g R K A' hA' P hP q₀ hqone v hv hdepth hNatK
+      rcases hdich with ⟨hreach, hcw⟩ | ⟨p, hp, t, ht, hmem, hbig⟩
+      · -- reach: `T1 = 1`.
+        have hT1one : T1 = 1 := by
+          rw [hT1def, if_pos ⟨hreach, hcw⟩, ENNReal.ofReal_one]
+        calc (1 : ℝ≥0∞) = T1 := hT1one.symm
+          _ ≤ T1 + T2 := self_le_add_right _ _
+          _ ≤ T1 + T2 + T3 := self_le_add_right _ _
+      · -- E∗: one middle summand of `T2` is 1.
+        have hpt : ((q₀ + pathSum v p).1 - 1, (q₀ + pathSum v p).2)
+            = (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2) := by
+          have h1 : (q₀ + pathSum v p).1 = n / 2 - m + e.1 + (pathSum v p).1 := rfl
+          have h2 : (q₀ + pathSum v p).2 = l + e.2 + (pathSum v p).2 := rfl
+          refine Prod.ext_iff.mpr ⟨?_, h2⟩
+          rw [h1]; omega
+        have hbigmem : (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)
+            ∈ bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ := by
+          rw [← hpt]; exact bigTriangle_of_encounter F A' p _ t ht hmem hbig
+        have hone : Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+            (1 : ℕ × ℤ → ℝ≥0∞)
+            (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2) = 1 := by
+          rw [Set.indicator_of_mem hbigmem]; rfl
+        have hT2ge : (1 : ℝ≥0∞) ≤ T2 := by
+          have hsingle := Finset.single_le_sum (f := fun p : ℕ =>
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+              (1 : ℕ × ℤ → ℝ≥0∞)
+              (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+            (fun i _ => zero_le') (Finset.mem_range.mpr (Nat.lt_succ_of_le hp))
+          rw [hone] at hsingle
+          rw [hT2def]; exact hsingle
+        calc (1 : ℝ≥0∞) ≤ T2 := hT2ge
+          _ ≤ T1 + T2 := self_le_add_left _ _
+          _ ≤ T1 + T2 + T3 := self_le_add_right _ _
+  · rw [if_neg hfew, ENNReal.ofReal_zero]
+    exact zero_le'
+
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
 /-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first
