@@ -99,9 +99,20 @@ the assembly lives inside the `Q_black_edge_case3` sorry.
   §6 proof only ever invokes Cor 6.3 with `l = a_{[1,k+1]} ≤ T + a_{k+1}` where
   `T = n·log3/log2 − C_A²·log n` is the stopping threshold and `a_{k+1} ≤ 2 + 2·C_A·log n` on
   Eₖ — the TIGHT window `l ≤ n·log3/log2 − (C_A²−2C_A)·log n − O(1)`, budget
-  `ln2·(C_A²−2C_A) = 0.693·(C_A²−2C_A)`. Against Young at `ε = 1/4` (cost
-  `(ln2)²·C_A² = 0.4805·C_A²`, geometric rate `ln(4/3)−1/4 = 0.0377`, sum ≤ 28) this closes for
-  `C_A ≥ 10` with margin `0.213·C_A²·log n`. The Lean Cor-6.3 analogue therefore carries the
+  `ln2·(C_A²−2C_A) = 0.693·C_A² − 1.386·C_A`.
+  ⚠️ **CORRECTED BY JUDGE PASS 28 — the `C_A ≥ 10` figure this bullet used to carry was WRONG.**
+  It came from a *pre-proof* Young estimate at `ε = 1/4` (cost `(ln2)²·C_A² = 0.481·C_A²`). The
+  kernel that was actually **proved** (`fnat_lt_of_suffix_window`) runs AM-GM at **`ε = 1/5`**,
+  whose cost is `C_A·ln2 + (5/4)(C_A·ln2)² = 0.601·C_A² + 0.693·C_A`. Against the tight budget
+  that closes iff `0.0926·C_A² > 2.079·C_A`, i.e. **`C_A > 22.46` ⟹ `C_A ≥ 23`** — at `C_A = 10`
+  the cost is `66.99` vs a budget of `55.45` and it **fails**. The proved lemma's own docstring
+  says `C ≳ 23`; that is the correct number. (Judge-recomputed independently:
+  `tools/sandbox/tao_hbudget_check.py`.) An ε=1/4 re-proof would restore `C_A ≳ 10` if the larger
+  constant ever proves inconvenient downstream.
+  📌 **Also strengthened**: (6.8) does not merely lose to the Young cost at small `C_A` — for the
+  proved kernel, `budget − cost` has a **negative `C_A²` coefficient** (`0.347 − 0.601 = −0.254`),
+  so **no `C_A` whatsoever** rescues the ½-window. The sign is wrong, not the size.
+  The Lean Cor-6.3 analogue therefore carries the
   tight l-hypothesis, and the estimate is run in SUFFIX form
   (`fnat = Σ_r 3^(r-1)·2^(l−suffix_r)`, suffix windows from (6.12)) — the prefix-indexed
   factoring the repo briefly targeted (`fnat_lt_of_prefix_bound`'s hypothesis) is unsatisfiable
@@ -113,7 +124,7 @@ the assembly lives inside the `Q_black_edge_case3` sorry.
 
 | where | paper | ours | why | ratified |
 |---|---|---|---|---|
-| Cor 6.3 l-window | (6.8): `l ≤ nlog3/log2 − ½C_A²log n` | tight: `l ≤ nlog3/log2 − (C_A²−2C_A)log n − O(1)` | hole #3 above (½-window provably too lossy) | **JUDGE-FLAG pending, pass 28** |
+| Cor 6.3 l-window | (6.8): `l ≤ nlog3/log2 − ½C_A²log n` | tight: `l ≤ nlog3/log2 − (C_A²−2C_A)log n − O(1)`, with **`C_A ≥ 23`** | hole #3 above (½-window can NEVER close the proved kernel's budget — negative `C_A²` coefficient) | ✅ **RATIFIED pass 28.** A *restriction* (our window ⊂ paper's) ⟹ our Cor-6.3 is strictly **weaker** than the paper's ⟹ sound. Prop 1.14's statement is untouched. ⚠️ Tripwire: `hbudget` must be discharged from the tight window at `C_A ≥ 23` — undischarged, load-bearing. |
 | Lemma 7.9 constant | `exp(ε)` | `exp(2ε)` (depth-gated fold pending, lap-55 directive) | holes #1, #2 above | pass 9; re-ratification due after gate |
 | Lemma 7.9 form | infinite renewal process, stopping times | finite-horizon encounter fold (D6) | D1 no measure theory | pass 8 |
 | white-exit mass | `≫ 1` | explicit `p₀ > 1/2` (may weaken to numeral `c₀`) | corrected ledger constant | pass 12 (pin) |

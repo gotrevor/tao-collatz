@@ -41,6 +41,47 @@ C9. Do NOT touch watched statements (`fine_scale_mixing`/`stabilization`) or any
 
 ---
 
+## 🚨 JUDGE PASS 28 — CORRECTION TO THE ABOVE. READ BEFORE TOUCHING `hbudget`.
+
+**The JUDGE-FLAG is ruled on: the tight-window deviation is ✅ RATIFIED (see below). But the
+review lap's instruction to "discharge `hbudget` from the (6.8) l-range + `Cₐ≥10`" is
+IMPOSSIBLE ON BOTH COUNTS, and a lap that tries it will be grinding at a false target.**
+
+The kernel you proved, `fnat_lt_of_suffix_window`, carries (AM-GM at **ε = 1/5**):
+
+> `hbudget`: cost `= C·ln2 + (5/4)·(C·ln2)² ≈ 0.601·C² + 0.693·C` per `ln n`.
+
+Judge-recomputed (`tools/sandbox/tao_hbudget_check.py`, independent of the box's numbers):
+
+| window | budget per `ln n` | discharges `hbudget`? |
+|---|---|---|
+| **(6.8) paper ½-window** | `ln2·½C² = 0.347·C²` | ❌ **NEVER — for ANY `C`.** budget − cost has a **negative** `C²` coefficient (−0.254). This is not a "too small `C`" problem; the sign is wrong. |
+| **tight (`Bₖ` + one-step `Eₖ`)** | `ln2·(C²−2C) = 0.693·C² − 1.386·C` | ✅ **only for `C > 22.46`, i.e. `C ≥ 23`** |
+
+So:
+1. **Discharge `hbudget` from the TIGHT window, never (6.8).** The kernel's own docstring already
+   says *"Do NOT weaken this hypothesis toward (6.8)"* — obey the docstring, not the bullet above.
+2. **`Cₐ ≥ 23`, not `Cₐ ≥ 10`.** The "closes for `C_A ≥ 10`" figure in the reflection block,
+   in `papers/literature-review.md`, and in item 3 above is **stale** — it came from a *pre-proof*
+   ε=1/4 estimate (cost `0.481·C²`). The lemma you actually proved uses **ε = 1/5** (cost
+   `0.601·C²`), and at `C = 10` that costs `66.99` against a tight budget of `55.45` — **it fails.**
+   The docstring of the proved lemma (`C ≳ 23`) is the number that is right. 📌 *Two worker
+   numerals disagreed; the one attached to the machine-checked artifact wins.*
+3. `Cₐ ≥ 23` is **consumable** — `C_A` is a "sufficiently large" constant chosen from `A` exactly as
+   the paper does. But it is not free: it worsens the single-point mass to `n^{O(C_A²)}·3^{-n}`.
+   ⚠️ **Do not assume that absorbs.** When you wire obl-2/obl-3 together, *show* the `A′`-absorption
+   at `C_A = 23` rather than asserting it. If it does not absorb, **`JUDGE-FLAG:` — do not respond
+   by shaving `C_A` back toward 10, and do not touch the window.**
+4. If you would rather buy margin than raise `C_A`: re-prove the kernel at **ε = 1/4** (cost
+   `0.481·C²`, threshold back to `C ≳ 10`). That is a *strengthening of an unwatched internal
+   lemma* and is allowed. Adding a lemma beside it is always allowed.
+
+**Standing:** `hbudget` is now the campaign's single load-bearing undischarged number. It is the
+one place C10 runs on critical constants. Treat a failure to close it as **information**, not as
+pressure to adjust something.
+
+---
+
 **⚖️ The review lap's C10 retarget below is RATIFIED.** The judge has now verified it
 independently (pass 27, worktree pinned at `8505bd4`, dated axiom runs): §7 is complete, the
 `Cthr` bridge is genuinely discharged in Lean, the statement differ reports **28/29
