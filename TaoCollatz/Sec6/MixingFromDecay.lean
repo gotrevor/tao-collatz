@@ -140,6 +140,154 @@ theorem fiber_card (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) :
       simp only [hg, map_add, map_mul, hcast3m, mul_zero, add_zero]
   rw [hfib_eq, Finset.card_image_of_injOn hginj, Finset.card_range]
 
+/-- Equation (1.22), in pointwise fiber form: summing the level-`n` Syracuse law over
+the `castHom`-fiber above `Y` gives the level-`m` law at the projection of `Y`.
+
+This is the exact consistency identity needed by Tao's final scale telescope in §6. -/
+theorem fiber_syracZ_sum (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) :
+    ∑ Y' ∈ fiber m n hmn Y, ((syracZ n) Y').toReal =
+      ((syracZ m) (ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y)).toReal := by
+  classical
+  let π : ZMod (3 ^ n) → ZMod (3 ^ m) :=
+    ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m))
+  have hmap := congrArg
+    (fun p : PMF (ZMod (3 ^ m)) => (p (π Y)).toReal)
+    (syracZ_map_cast hmn)
+  rw [PMF.map_apply,
+    tsum_eq_sum (s := Finset.univ) (fun a ha => absurd (Finset.mem_univ a) ha),
+    ENNReal.toReal_sum (fun a _ => by
+      split
+      · exact (syracZ n).apply_ne_top a
+      · exact ENNReal.zero_ne_top)] at hmap
+  simpa only [fiber, Finset.sum_filter, apply_ite ENNReal.toReal,
+    ENNReal.toReal_zero, eq_comm, π] using hmap
+
+/-- The level-`m` Syracuse density, lifted uniformly to level `n`. -/
+noncomputable def syracLift (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) : ℝ :=
+  (3 : ℝ) ^ ((m : ℤ) - (n : ℤ)) *
+    ((syracZ m) (ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y)).toReal
+
+/-- The oscillation of `syracZ n` is exactly its `L¹` distance from the uniform lift of
+the projected law `syracZ m`. This exposes the metric form used in the scale telescope. -/
+theorem osc_syracZ_eq_l1_lift (m n : ℕ) (hmn : m ≤ n) :
+    osc m n hmn (fun Y => ((syracZ n) Y).toReal) =
+      ∑ Y, |((syracZ n) Y).toReal - syracLift m n hmn Y| := by
+  classical
+  rw [osc]
+  refine Finset.sum_congr rfl (fun Y _ => ?_)
+  change |((syracZ n) Y).toReal - (3 : ℝ) ^ ((m : ℤ) - (n : ℤ)) *
+      ∑ Y' ∈ fiber m n hmn Y, ((syracZ n) Y').toReal| = _
+  rw [fiber_syracZ_sum]
+  rfl
+
+/-- Every fiber of the level projection has the expected cardinality. -/
+theorem castFiber_card (m n : ℕ) (hmn : m ≤ n) (Z : ZMod (3 ^ m)) :
+    (Finset.univ.filter (fun Y : ZMod (3 ^ n) =>
+      ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y = Z)).card = 3 ^ (n - m) := by
+  classical
+  obtain ⟨Y, rfl⟩ := ZMod.castHom_surjective (pow_dvd_pow 3 hmn) Z
+  simpa only [fiber] using fiber_card m n hmn Y
+
+/-- Summing a function pulled back along `ZMod (3ⁿ) → ZMod (3ᵐ)` repeats every value
+exactly `3^{n-m}` times. -/
+theorem sum_comp_castHom (m n : ℕ) (hmn : m ≤ n) (f : ZMod (3 ^ m) → ℝ) :
+    ∑ Y : ZMod (3 ^ n),
+        f (ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y) =
+      ((3 ^ (n - m) : ℕ) : ℝ) * ∑ Z, f Z := by
+  classical
+  let π : ZMod (3 ^ n) → ZMod (3 ^ m) :=
+    ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m))
+  calc
+    ∑ Y, f (π Y) = ∑ Z, ∑ Y ∈ Finset.univ with π Y = Z, f (π Y) := by
+      simpa using
+        (Finset.sum_fiberwise (Finset.univ : Finset (ZMod (3 ^ n))) π (fun Y => f (π Y))).symm
+    _ = ∑ Z, ((3 ^ (n - m) : ℕ) : ℝ) * f Z := by
+      refine Finset.sum_congr rfl (fun Z _ => ?_)
+      simp only [Finset.sum_filter]
+      calc
+        ∑ Y, (if π Y = Z then f (π Y) else 0) =
+            ∑ Y, (if π Y = Z then f Z else 0) := by
+          refine Finset.sum_congr rfl (fun Y _ => ?_)
+          split_ifs with h
+          · rw [h]
+          · rfl
+        _ = ((3 ^ (n - m) : ℕ) : ℝ) * f Z := by
+          rw [← Finset.sum_filter, Finset.sum_const, nsmul_eq_mul]
+          congr 1
+          norm_cast
+          simpa only [π] using castFiber_card m n hmn Z
+    _ = ((3 ^ (n - m) : ℕ) : ℝ) * ∑ Z, f Z := by
+      rw [Finset.mul_sum]
+
+/-- Uniform lifts compose across an intermediate scale. -/
+theorem syracLift_tower (m k n : ℕ) (hmk : m ≤ k) (hkn : k ≤ n) (Y : ZMod (3 ^ n)) :
+    syracLift m n (hmk.trans hkn) Y =
+      (3 : ℝ) ^ ((k : ℤ) - (n : ℤ)) *
+        syracLift m k hmk
+          (ZMod.castHom (pow_dvd_pow 3 hkn) (ZMod (3 ^ k)) Y) := by
+  have hcast :
+      ZMod.castHom (pow_dvd_pow 3 hmk) (ZMod (3 ^ m))
+          (ZMod.castHom (pow_dvd_pow 3 hkn) (ZMod (3 ^ k)) Y) =
+        ZMod.castHom (pow_dvd_pow 3 (hmk.trans hkn)) (ZMod (3 ^ m)) Y := by
+    exact congrArg (fun f : ZMod (3 ^ n) →+* ZMod (3 ^ m) => f Y)
+      (ZMod.castHom_comp (pow_dvd_pow 3 hmk) (pow_dvd_pow 3 hkn))
+  rw [syracLift, syracLift, hcast]
+  rw [← mul_assoc, ← zpow_add₀ (by norm_num : (3 : ℝ) ≠ 0)]
+  congr 2
+  ring
+
+/-- The `L¹` distance between two lifted laws is unchanged by lifting both to a finer level. -/
+theorem sum_abs_syracLift_sub_lift (m k n : ℕ) (hmk : m ≤ k) (hkn : k ≤ n) :
+    ∑ Y : ZMod (3 ^ n),
+        |syracLift k n hkn Y - syracLift m n (hmk.trans hkn) Y| =
+      osc m k hmk (fun Z => ((syracZ k) Z).toReal) := by
+  classical
+  rw [osc_syracZ_eq_l1_lift]
+  let π : ZMod (3 ^ n) → ZMod (3 ^ k) :=
+    ZMod.castHom (pow_dvd_pow 3 hkn) (ZMod (3 ^ k))
+  have hlift (Y : ZMod (3 ^ n)) :
+      |syracLift k n hkn Y - syracLift m n (hmk.trans hkn) Y| =
+        (3 : ℝ) ^ ((k : ℤ) - (n : ℤ)) *
+          |((syracZ k) (π Y)).toReal - syracLift m k hmk (π Y)| := by
+    rw [syracLift_tower m k n hmk hkn]
+    change |(3 : ℝ) ^ ((k : ℤ) - (n : ℤ)) * ((syracZ k) (π Y)).toReal -
+      (3 : ℝ) ^ ((k : ℤ) - (n : ℤ)) * syracLift m k hmk (π Y)| = _
+    rw [← mul_sub, abs_mul, abs_of_nonneg (zpow_nonneg (by norm_num : (0 : ℝ) ≤ 3) _)]
+  simp_rw [hlift]
+  rw [← Finset.mul_sum]
+  have hsum :
+      ∑ i : ZMod (3 ^ n), |((syracZ k) (π i)).toReal - syracLift m k hmk (π i)| =
+        ((3 ^ (n - k) : ℕ) : ℝ) *
+          ∑ Z, |((syracZ k) Z).toReal - syracLift m k hmk Z| := by
+    simpa only [π] using sum_comp_castHom k n hkn
+      (fun Z => |((syracZ k) Z).toReal - syracLift m k hmk Z|)
+  rw [hsum]
+  rw [← mul_assoc]
+  have hpow : ((3 ^ (n - k) : ℕ) : ℝ) = (3 : ℝ) ^ ((n : ℤ) - (k : ℤ)) := by
+    rw [← Nat.cast_sub hkn, zpow_natCast]
+    norm_cast
+  rw [hpow, ← zpow_add₀ (by norm_num : (3 : ℝ) ≠ 0)]
+  norm_num
+
+/-- Triangle inequality across Syracuse projection scales. This is the exact metric consequence
+of (1.22) used by the regime telescope on Tao p.28. -/
+theorem osc_syracZ_levels_triangle (m k n : ℕ) (hmk : m ≤ k) (hkn : k ≤ n) :
+    osc m n (hmk.trans hkn) (fun Y => ((syracZ n) Y).toReal) ≤
+      osc k n hkn (fun Y => ((syracZ n) Y).toReal) +
+        osc m k hmk (fun Z => ((syracZ k) Z).toReal) := by
+  rw [osc_syracZ_eq_l1_lift, osc_syracZ_eq_l1_lift]
+  calc
+    ∑ Y, |((syracZ n) Y).toReal - syracLift m n (hmk.trans hkn) Y| ≤
+        ∑ Y, (|((syracZ n) Y).toReal - syracLift k n hkn Y| +
+          |syracLift k n hkn Y - syracLift m n (hmk.trans hkn) Y|) := by
+      exact Finset.sum_le_sum (fun Y _ => abs_sub_le _ _ _)
+    _ = (∑ Y, |((syracZ n) Y).toReal - syracLift k n hkn Y|) +
+        ∑ Y, |syracLift k n hkn Y - syracLift m n (hmk.trans hkn) Y| :=
+      Finset.sum_add_distrib
+    _ = (∑ Y, |((syracZ n) Y).toReal - syracLift k n hkn Y|) +
+        osc m k hmk (fun Z => ((syracZ k) Z).toReal) := by
+      rw [sum_abs_syracLift_sub_lift]
+
 /-- **`L¹`-contraction of the oscillation** (C10, the error-term tool): the `3ᵐ`-scale oscillation
 of a density `c` is at most twice its `L¹` mass, `osc(c) ≤ 2·∑_Y |c Y|`. The conditional average is
 an `L¹`-contraction (`∑_Y ‖condAvgC Y‖ ≤ ∑_Y |c Y|`, via the `fiber_card` double-count), and
