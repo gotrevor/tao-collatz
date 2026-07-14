@@ -992,6 +992,52 @@ theorem dft_condDens_norm_le (A : ℝ) (hA : 0 < A) :
           (norm_nonneg _) hCq
     _ = C * (q : ℝ) ^ (-A) := mul_one _
 
+/-- **Brick (b), the sharp `ℓ²`-mass refinement** (C10, (6.10)–(6.11)). Given a **uniform** head-factor
+decay bound `D` over all high frequencies (`hunif` — the valuation bookkeeping: each high `ξ` has
+residual descent level `q ≥ q_min`, so `‖head(ξ)‖ ≤ Cₐ·q_min⁻ᴬ =: D`), the high-frequency `ℓ²`-mass
+of the conditioned density is `≤ D²·(tail collision entropy)`. Proof: per high `ξ`,
+`𝓕(densC condDens)ξ = head·tail` (`dft_condDens_eq_cond_char` + `cond_char_factor`) so
+`‖𝓕‖² = ‖head‖²‖tail‖² ≤ D²‖tail‖²`; sum, drop to all frequencies (nonneg), and apply the tail
+Parseval `tail_factor_l2_eq`. This isolates the two genuinely-remaining obligations — establishing
+`hunif` (uniform head decay) and bounding `∑(tailDens)²` (the Rényi/offset-injectivity count, Lemma
+6.2) — behind a machine-checked reduction. -/
+theorem condDens_highfreq_l2_le (j p l m : ℕ) (D : ℝ) (hD : 0 ≤ D)
+    (hunif : ∀ ξ ∈ highFreq m (j + p),
+      ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
+          (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))‖ ≤ D) :
+    ∑ ξ ∈ highFreq m (j + p), ‖ZMod.dft (densC (j + p) (condDens j p l)) ξ‖ ^ 2
+      ≤ D ^ 2 * (3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2 := by
+  have hpt : ∀ ξ ∈ highFreq m (j + p),
+      ‖ZMod.dft (densC (j + p) (condDens j p l)) ξ‖ ^ 2
+        ≤ D ^ 2 * ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar
+            (-(((fnat p vt : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+            * (if pre vt p = l then 1 else 0))‖ ^ 2 := by
+    intro ξ hξ
+    rw [dft_condDens_eq_cond_char, cond_char_factor, norm_mul, mul_pow]
+    exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) (hunif ξ hξ) 2)
+      (sq_nonneg _)
+  calc ∑ ξ ∈ highFreq m (j + p), ‖ZMod.dft (densC (j + p) (condDens j p l)) ξ‖ ^ 2
+      ≤ ∑ ξ ∈ highFreq m (j + p), D ^ 2 * ‖(geomHalf.iid p).cexpect (fun vt =>
+            ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+            * (if pre vt p = l then 1 else 0))‖ ^ 2 := Finset.sum_le_sum hpt
+    _ = D ^ 2 * ∑ ξ ∈ highFreq m (j + p), ‖(geomHalf.iid p).cexpect (fun vt =>
+            ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+            * (if pre vt p = l then 1 else 0))‖ ^ 2 := by rw [Finset.mul_sum]
+    _ ≤ D ^ 2 * ∑ ξ, ‖(geomHalf.iid p).cexpect (fun vt =>
+            ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+            * (if pre vt p = l then 1 else 0))‖ ^ 2 :=
+        mul_le_mul_of_nonneg_left
+          (Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
+            (fun _ _ _ => sq_nonneg _)) (sq_nonneg _)
+    _ = D ^ 2 * ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2) := by rw [tail_factor_l2_eq]
+    _ = D ^ 2 * (3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2 := by ring
+
 
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
