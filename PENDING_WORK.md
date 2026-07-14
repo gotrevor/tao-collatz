@@ -1,5 +1,35 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box cont6 (2026-07-14): **`hold_fst_tail_le` PROVED (axiom-clean)** — all 4 inputs of `fpDist_edgeWeight_le` now proved
+
+The hold half of the (7.48) tail is done (axiom-clean). Route was far cleaner than the
+fp tail: `hold`'s first marginal IS the geometric `geomQuarter` (`hold_map_fst`), so
+`hold_tsum_fst` + `geomQuarter_tail` gives the closed form `∑_{k>m/4} geomQuarter(k) =
+(3/4)^⌊m/4⌋`, then `(3/4)^⌊m/4⌋ ≤ exp(−(log(4/3)/8)m) ≤ δ·m^{−A}` via the same
+`log_le_eps_mul_of_large`+`exp_neg_mul_le_of_large` closeout. No Fubini/MGF.
+
+**STATUS of the (7.48) glue `fpDist_edgeWeight_le` — ALL FOUR inputs now PROVED:**
+`fpDist_fst_mgf_le` ✓ · `hold_fst_mgf_le_real` ✓ · `fpDist_fst_tail_le` ✓ · `hold_fst_tail_le` ✓.
+
+**NEXT (the crux is now pure assembly): `fpDist_edgeWeight_le`** (`BlackEdge.lean`, sorried).
+Goal `∑_e fpDist·edgeWeight A m e ≤ (1+δ)m^{−A}` for `m≥Cthr`, `s≤m/log²m`. Route:
+- Pointwise `edgeWeight_summand_le` (PROVED): `edgeWeight A m e = max(m−(e₁+d₁),1)^{−A}`?
+  NB — CHECK the exact shape: `edgeWeight` is over `e` only; the `d` (hold) sum enters
+  via the renewal? RE-READ `edgeWeight` def + `edgeWeight_summand_le` statement first —
+  the summand bound is `max(m−J,1)^{−A} ≤ m^{−A}exp(2A·J/m) + 1_{m<2J}` with `J=e₁+d₁`,
+  so the glue is a DOUBLE sum over `e` (fpDist) and `d` (hold). Confirm whether the
+  `fpDist_edgeWeight_le` statement already folds the `d`-sum into `edgeWeight`, or if the
+  hold sum is separate. If `edgeWeight` depends only on `e`, the `d`/hold machinery may
+  belong to a different lemma — verify before assembling.
+- MGF term: `m^{−A}·Z_fp(2A/m)·Z_hold(2A/m) ≤ (1+δ/2)m^{−A}` from `fpDist_fst_mgf_le`
+  (needs `2A/m ≤ 1/100` too for `hold_fst_mgf_le_real`; add threshold) — factor
+  `exp(2A·J/m)=exp(2A e₁/m)exp(2A d₁/m)`, Fubini over `e,d`.
+- Tail term: `1_{m<2J} ≤ 1_{4e₁>m} + 1_{4d₁>m}` (since `2J>m ⟹ 4e₁>m ∨ 4d₁>m`), giving
+  `≤ (δ/2)m^{−A}` from `fpDist_fst_tail_le` + `hold_fst_tail_le` (each with δ→δ/4-ish so
+  the two tails sum to δ/2). Then `(1+δ/2)+(δ/2)=1+δ`.
+- Then `fpDist_white_exit` (derive from `fpDist_white_exit_deep`, now a theorem), then
+  `Q_black_edge_case2`, then `Q_black_edge_case3` (X11d, `Case3.lean`).
+
 ## Lap D-box cont5 (2026-07-14): **`fpDist_fst_tail_le` PROVED (axiom-clean)** — the fixed-tilt fp tail, the hardest X8 input
 
 The genuinely-new large-deviation input of the (7.48) tail is now a machine-checked
