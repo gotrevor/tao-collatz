@@ -715,7 +715,130 @@ one-class `AntitoneOn.integral_le_sum` on the odds gives `D ≥ (1/2)∫ − O(1
 theorem intTest_D_lower :
     ∃ D₀ : ℝ, 0 < D₀ ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       D₀ ≤ windowMass y (y ^ alpha) := by
-  sorry
+  refine ⟨1/8, by norm_num, ?_⟩
+  obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
+  refine ⟨max x₀z ((2:ℝ) ^ (2000:ℝ)), fun x hx y hy => ?_⟩
+  have hxz : x₀z ≤ x := le_trans (le_max_left _ _) hx
+  have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_max_right _ _) hx
+  have hnz : 0 < nZero x := hzpos x hxz
+  have hyset : y = x ^ alpha ∨ y = x ^ alpha ^ 2 := by simpa [Set.mem_insert_iff] using hy
+  obtain ⟨hMy, h2y⟩ := window_arith hx2000 hyset
+  -- y is huge: y ≥ 8
+  have hx1 : (1:ℝ) ≤ x := by
+    refine le_trans ?_ hx2000
+    rw [show (1:ℝ) = (2:ℝ) ^ (0:ℝ) from (Real.rpow_zero 2).symm]
+    exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (by norm_num)
+  have hxy : x ≤ y := by
+    rcases hyset with h | h <;> rw [h] <;>
+      · nth_rewrite 1 [show x = x ^ (1:ℝ) from (Real.rpow_one x).symm]
+        exact Real.rpow_le_rpow_of_exponent_le hx1 (by unfold alpha; norm_num)
+  have hy8 : (8:ℝ) ≤ y := by
+    refine le_trans ?_ (le_trans hx2000 hxy)
+    have h1 : (2:ℝ) ^ (3:ℝ) ≤ (2:ℝ) ^ (2000:ℝ) :=
+      Real.rpow_le_rpow_of_exponent_le (by norm_num) (by norm_num)
+    have h2 : (2:ℝ) ^ (3:ℝ) = 8 := by
+      rw [show (3:ℝ) = ((3:ℕ):ℝ) by norm_num, Real.rpow_natCast]; norm_num
+    rw [h2] at h1; exact h1
+  have hy0 : (0:ℝ) < y := lt_of_lt_of_le (by norm_num) hy8
+  -- make `y ^ alpha` a genuinely opaque variable (`linarith` chokes on the decimal `alpha`, and it
+  -- unfolds a `set` let-binding, so introduce the variable via an existential instead)
+  obtain ⟨Yα, hYα⟩ : ∃ Y : ℝ, y ^ alpha = Y := ⟨y ^ alpha, rfl⟩
+  rw [hYα] at h2y ⊢
+  have hyα0 : (0:ℝ) ≤ Yα := by linarith only [h2y, hy8]
+  have hyαpos : (0:ℝ) < Yα := by linarith only [h2y, hy8]
+  -- interval endpoints
+  set ylo : ℕ := ⌈y⌉₊ with hylodef
+  set yhi : ℕ := ⌊Yα⌋₊ with hyhidef
+  have hylo_ge : y ≤ (ylo : ℝ) := Nat.le_ceil y
+  have hylo_lt : (ylo : ℝ) < y + 1 := Nat.ceil_lt_add_one hy0.le
+  have hyhi_le : (yhi : ℝ) ≤ Yα := Nat.floor_le hyα0
+  have hyhi_gt : Yα - 1 < (yhi : ℝ) := by linarith [Nat.lt_floor_add_one Yα]
+  -- least odd ≥ ylo (the AP start `a`, step 2)
+  have hex : ∃ N, ylo ≤ N ∧ N % 2 = 1 := ⟨2 * ylo + 1, by omega, by omega⟩
+  set a : ℕ := Nat.find hex with hadef
+  obtain ⟨haylo, haodd⟩ : ylo ≤ a ∧ a % 2 = 1 := Nat.find_spec hex
+  have ha_lt : a < ylo + 2 := by
+    by_contra hcon
+    push_neg at hcon
+    exact Nat.find_min hex (show a - 2 < a by omega) ⟨by omega, by omega⟩
+  have haR : (a : ℝ) < y + 3 := by
+    have h1 : (a : ℝ) < (ylo : ℝ) + 2 := by exact_mod_cast ha_lt
+    linarith [hylo_lt]
+  have hay : y ≤ (a : ℝ) := le_trans hylo_ge (by exact_mod_cast haylo)
+  have haleyα : (a : ℝ) < Yα := by linarith only [haR, h2y, hy8]
+  have ha_yhi : a ≤ yhi := by rw [hyhidef]; exact Nat.le_floor haleyα.le
+  set count : ℕ := (yhi - a) / 2 + 1 with hcountdef
+  have hinj : ∀ i ∈ Finset.range count, ∀ j ∈ Finset.range count,
+      a + 2 * i = a + 2 * j → i = j := by
+    intro i _ j _ h; omega
+  -- logWindow IS the odd AP `{a + 2·i : i < count}`
+  have hFeq : logWindow y Yα = (Finset.range count).image (fun i => a + 2 * i) := by
+    ext N
+    simp only [Finset.mem_image, Finset.mem_range, logWindow, Finset.mem_filter,
+      Nat.lt_add_one_iff]
+    constructor
+    · rintro ⟨_, hNodd, hNy, hNyα⟩
+      have hNylo : ylo ≤ N := by rw [hylodef]; exact Nat.ceil_le.mpr hNy
+      have hNyhi : N ≤ yhi := by rw [hyhidef]; exact Nat.le_floor hNyα
+      have haN : a ≤ N := Nat.find_min' hex ⟨hNylo, hNodd⟩
+      refine ⟨(N - a) / 2, ?_, ?_⟩
+      · have : (N - a) / 2 ≤ (yhi - a) / 2 := Nat.div_le_div_right (Nat.sub_le_sub_right hNyhi a)
+        omega
+      · omega
+    · rintro ⟨i, hi, rfl⟩
+      have hle_yhi : a + 2 * i ≤ yhi := by
+        have hile : i ≤ (yhi - a) / 2 := by omega
+        have hmul : 2 * i ≤ yhi - a := by
+          calc 2 * i ≤ 2 * ((yhi - a) / 2) := by omega
+            _ ≤ yhi - a := by omega
+        omega
+      refine ⟨?_, ?_, ?_, ?_⟩
+      · have h1 : a + 2 * i ≤ ⌊Yα⌋₊ := hle_yhi
+        have h2 : ⌊Yα⌋₊ ≤ ⌈Yα⌉₊ := Nat.floor_le_ceil _
+        omega
+      · omega
+      · push_cast
+        have h0 : (0:ℝ) ≤ 2 * (i : ℝ) := by positivity
+        linarith [hay, h0]
+      · have hle2 : (a + 2 * i : ℕ) ≤ yhi := hle_yhi
+        have hcst : ((a + 2 * i : ℕ) : ℝ) ≤ (yhi : ℝ) := by exact_mod_cast hle2
+        linarith [hyhi_le, hcst]
+  -- windowMass as the AP reciprocal sum
+  have hWM : windowMass y Yα = ∑ i ∈ Finset.range count, ((a : ℝ) + 2 * (i : ℝ))⁻¹ := by
+    rw [windowMass, hFeq, Finset.sum_image hinj]
+    apply Finset.sum_congr rfl; intro i _; push_cast; ring_nf
+  -- lower-bound each term by `1/Yα` ⟹ `windowMass ≥ count/Yα`
+  have hterm : ∀ i ∈ Finset.range count, Yα⁻¹ ≤ ((a : ℝ) + 2 * (i : ℝ))⁻¹ := by
+    intro i hi
+    rw [Finset.mem_range] at hi
+    have hile : a + 2 * i ≤ yhi := by
+      have hile2 : i ≤ (yhi - a) / 2 := by omega
+      have hmul : 2 * i ≤ yhi - a := by
+        calc 2 * i ≤ 2 * ((yhi - a) / 2) := by omega
+          _ ≤ yhi - a := by omega
+      omega
+    have hposi : (0:ℝ) < (a : ℝ) + 2 * (i : ℝ) := by
+      have ha0 : (0:ℝ) < (a : ℝ) := by exact_mod_cast (show 0 < a by omega)
+      have h0 : (0:ℝ) ≤ 2 * (i : ℝ) := by positivity
+      linarith only [ha0, h0]
+    have hle : (a : ℝ) + 2 * (i : ℝ) ≤ Yα := by
+      have hcst : ((a + 2 * i : ℕ) : ℝ) ≤ (yhi : ℝ) := by exact_mod_cast hile
+      push_cast at hcst; linarith [hyhi_le]
+    exact inv_anti₀ hposi hle
+  have hWMlb : (count : ℝ) * Yα⁻¹ ≤ windowMass y Yα := by
+    rw [hWM]
+    calc (count : ℝ) * Yα⁻¹
+        = ∑ _i ∈ Finset.range count, Yα⁻¹ := by
+          rw [Finset.sum_const, Finset.card_range]; ring
+      _ ≤ ∑ i ∈ Finset.range count, ((a : ℝ) + 2 * (i : ℝ))⁻¹ := Finset.sum_le_sum hterm
+  -- count lower bound: `yhi + 1 ≤ a + 2·count`
+  have hcountnat : yhi + 1 ≤ a + 2 * count := by omega
+  have hac : (yhi : ℝ) + 1 ≤ (a : ℝ) + 2 * (count : ℝ) := by exact_mod_cast hcountnat
+  have hcountR : Yα - y - 3 < 2 * (count : ℝ) := by linarith only [hac, hyhi_gt, haR]
+  -- assemble: `windowMass ≥ count/Yα > (Yα-y-3)/(2Yα) ≥ 1/8`
+  refine le_trans ?_ hWMlb
+  rw [← div_eq_mul_inv, le_div_iff₀ hyαpos]
+  linarith only [hcountR, h2y, hy8]
 
 /-- **Window nonemptiness** — for large `x` there is an odd integer in `[y, y^α]` (the interval has
 length `y^α − y → ∞`).  Owed: an explicit odd point, e.g. `2⌊y/2⌋+1`. -/
