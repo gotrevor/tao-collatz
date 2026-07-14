@@ -31,6 +31,22 @@ injectivity → single-point mass → Rényi → osc). Item 1 below is DONE; the
 3. `P(Ē) ≤ n^{-A-1}` (obl 1 tail, reuses §7 sub-Gaussian), `hunif` (obl 2), regime telescope (obl 0),
    final wire.
 
+### ✅ UPDATE 2 (same lap, commit `14175a9`): **assembly inner-loop DONE** — `osc_windowed_conditioning_le`.
+The (6.10) telescope over the conditioning partition is proved, no sorry:
+`osc(∑ᵢ condDensW (l i) (W i)) ≤ ∑ᵢ Dᵢ·√(3^(j+p)·∑ (tailDensW)²)` (= `osc_sum_le ∘ condDensW_osc_le`).
+So the reusable core of the assembly is banked. **What's left for `fine_scale_mixing` (all still open):**
+- **(6.2)–(6.9) decomposition**: define events `E`/`Eₖ`/`Bₖ`/`Cₖ,ₗ` (tail `DecidablePred`s) + a finite
+  index set `s` over `(k,l)`, and prove `syracZ n Y = ∑_{i∈s} condDensW j p (l i) (W i) Y + errorDens Y`
+  where `errorDens` is the mass on the bad event `Ē`. Then `osc(syracZ) ≤ osc(∑ condDensW) + osc(errorDens)`
+  (`osc_add_le`); first term via `osc_windowed_conditioning_le`, second via `osc_le_two_mul_l1` (already
+  proved: `osc(c) ≤ 2·∑|c|`) + `P(Ē) ≤ n^{-A-1}`.
+- **`hunif` (obl 2)**: `Dᵢ = Cₐ·q⁻ᴬ` from `head_factor_norm_le_charFn` (proved) — the per-ξ valuation
+  bookkeeping placing high `ξ` at residual level `q ≥ q_min ≈ n/10`.
+- **geometric `l`-sum**: `∑ᵢ Cₐ·q⁻ᴬ·√(3^(j+p)·2⁻ˡ)` → `Cₐ·q⁻ᴬ·(geom in 2^{-l/2})` → `≤ C·m⁻ᴬ`.
+- **obl 0 regime telescope** + **the `hwin` discharge** (`fnat_lt_of_suffix_window`'s `hbudget`/`hsuf`
+  from `Bₖ`/`Eₖ`, numeric `0.693(C²−2C) > …`, `C ≥ 23`) — feed W's definition into `tailDensW_le_single_mass`.
+Next lap: define the events + the decomposition, decompose `fine_scale_mixing` into these named sorries.
+
 ## Lap fruit-25 (2026-07-14, same session): **windowed single-point mass PROVED — `tailDensW ≤ 2⁻ˡ`**
 
 Build green 3285, all `#print axioms`-clean (believed clean, judge to verify). New
