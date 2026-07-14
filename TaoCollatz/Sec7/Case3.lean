@@ -1692,6 +1692,50 @@ theorem few_white_reach_mass_le (A : ℝ) :
   refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_left' (hinner e) _) ?_
   rw [ENNReal.tsum_mul_right, (fpDist s).tsum_coe, one_mul]
 
+/-- Poly·geom domination: `x²·exp(−bx) ≤ 4/b²` for `x ≥ 0`, `b > 0` (from `exp(bx) ≥ (bx)²/4`). -/
+theorem sq_mul_exp_neg_le (b : ℝ) (hb : 0 < b) (x : ℝ) (hx : 0 ≤ x) :
+    x ^ 2 * Real.exp (-b * x) ≤ 4 / b ^ 2 := by
+  have hquad : (b * x) ^ 2 / 4 ≤ Real.exp (b * x) := by
+    have h1 : 1 + b * x / 2 ≤ Real.exp (b * x / 2) := by
+      have := Real.add_one_le_exp (b * x / 2); linarith
+    have hnn : (0 : ℝ) ≤ 1 + b * x / 2 := by positivity
+    have h2 : (1 + b * x / 2) ^ 2 ≤ Real.exp (b * x / 2) ^ 2 :=
+      pow_le_pow_left₀ hnn h1 2
+    have h3 : Real.exp (b * x / 2) ^ 2 = Real.exp (b * x) := by
+      rw [← Real.exp_nat_mul]; congr 1; ring
+    have h5 : (1 + b * x / 2) ^ 2 ≤ Real.exp (b * x) := h3 ▸ h2
+    nlinarith [h5]
+  have hexppos : (0 : ℝ) < Real.exp (b * x) := Real.exp_pos _
+  have hexpneg : Real.exp (-b * x) = 1 / Real.exp (b * x) := by
+    rw [neg_mul, Real.exp_neg, one_div]
+  rw [hexpneg, mul_one_div, div_le_div_iff₀ hexppos (by positivity : (0:ℝ) < b ^ 2)]
+  nlinarith [hquad, Real.exp_pos (b * x)]
+
+/-- Cubic poly·geom domination: `x²·exp(−bx) ≤ 27/(b³x)` for `x > 0`, `b > 0`
+(from `exp(bx) ≥ (bx)³/27`), giving the `A₀ → 0` decay of `A₀²·4^{−A₀}`. -/
+theorem sq_mul_exp_neg_le_inv (b : ℝ) (hb : 0 < b) (x : ℝ) (hx : 0 < x) :
+    x ^ 2 * Real.exp (-b * x) ≤ 27 / (b ^ 3 * x) := by
+  have hbx : (0 : ℝ) < b * x := by positivity
+  have hcube : (b * x) ^ 3 / 27 ≤ Real.exp (b * x) := by
+    have h1 : 1 + b * x / 3 ≤ Real.exp (b * x / 3) := by
+      have := Real.add_one_le_exp (b * x / 3); linarith
+    have hnn : (0 : ℝ) ≤ 1 + b * x / 3 := by positivity
+    have h2 : (1 + b * x / 3) ^ 3 ≤ Real.exp (b * x / 3) ^ 3 :=
+      pow_le_pow_left₀ hnn h1 3
+    have h3 : Real.exp (b * x / 3) ^ 3 = Real.exp (b * x) := by
+      rw [← Real.exp_nat_mul]; congr 1; ring
+    have h5 : (1 + b * x / 3) ^ 3 ≤ Real.exp (b * x) := h3 ▸ h2
+    nlinarith [h5, hbx.le]
+  have hexppos : (0 : ℝ) < Real.exp (b * x) := Real.exp_pos _
+  have hexpneg : Real.exp (-b * x) = 1 / Real.exp (b * x) := by
+    rw [neg_mul, Real.exp_neg, one_div]
+  rw [hexpneg, mul_one_div, div_le_div_iff₀ hexppos (by positivity : (0:ℝ) < b ^ 3 * x)]
+  nlinarith [hcube, hexppos, hx, hb]
+
+-- HEARTBEAT: large single-shot constant-chase (two poly·geom dominations + complete-the-square
+-- over the base-16-vs-10 comparison); the `Real.log 4`/`Real.log 10` denominators make the calc
+-- defeq checks heavy. Pure real inequality, no `native_decide`.
+set_option maxHeartbeats 1600000 in
 /-- **Numeric closure for the E∗ term.** With the base-4 geometry lemmas instantiated at the
 scaled exponent `A' := 2A + A₀`, the `estar_union_le` bound `C'·A'²·4^{−A'} + C'·exp(−c·A'²)`
 fits the target `10^{−A−3}` for ALL `A > 0`, provided `A₀` is a large enough constant. The
@@ -1704,7 +1748,173 @@ theorem estar_scaled_numeric (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA�
       C' * (2 * A + A₀) ^ 2 * (4 : ℝ) ^ (-(2 * A + A₀))
         + C' * Real.exp (-c * (2 * A + A₀) ^ 2)
         ≤ (10 : ℝ) ^ (-A - 3) := by
-  sorry
+  have hL4 : (0 : ℝ) < Real.log 4 := Real.log_pos (by norm_num)
+  have hL10 : (0 : ℝ) < Real.log 10 := Real.log_pos (by norm_num)
+  have hL85 : (0 : ℝ) < 2 * Real.log 4 - Real.log 10 := by
+    have h16eq : Real.log 16 = 2 * Real.log 4 := by
+      rw [show (16 : ℝ) = 4 ^ (2 : ℕ) by norm_num, Real.log_pow]; push_cast; ring
+    have h16 : Real.log 10 < Real.log 16 := Real.log_lt_log (by norm_num) (by norm_num)
+    linarith [h16, h16eq]
+  -- cleared-denominator threshold (avoids nested fractions in `nlinarith`/`field_simp`)
+  set Kthr : ℝ := 3456000 * C' / ((2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3)
+    + 216000 * C' / (Real.log 4) ^ 3 with hKthrdef
+  set Warg : ℝ := (16 * c * Real.log (2000 * C') + (Real.log 10) ^ 2) / (16 * c ^ 2) with hWdef
+  set X2 : ℝ := max 0 Warg with hX2def
+  have hX2nn : 0 ≤ X2 := le_max_left _ _
+  set A₀ : ℝ := max A₀e (max 1 (max Kthr (Real.sqrt X2))) with hA₀def
+  have hA₀e_le : A₀e ≤ A₀ := le_max_left _ _
+  have hA₀1 : (1 : ℝ) ≤ A₀ := le_trans (le_max_left _ _) (le_max_right _ _)
+  have hA₀pos : (0 : ℝ) < A₀ := by linarith
+  have hA₀Kthr : Kthr ≤ A₀ :=
+    le_trans (le_max_left _ _) (le_trans (le_max_right _ _) (le_max_right _ _))
+  have hA₀sqrt : Real.sqrt X2 ≤ A₀ :=
+    le_trans (le_max_right _ _) (le_trans (le_max_right _ _) (le_max_right _ _))
+  refine ⟨A₀, hA₀e_le, hA₀1, ?_⟩
+  intro A hA
+  -- rpow → exp conversions
+  have h4y : (4 : ℝ) ^ (-(2 * A + A₀))
+      = Real.exp (-(2 * Real.log 4 - Real.log 10) * A) * Real.exp (-Real.log 4 * A₀)
+        * Real.exp (-Real.log 10 * A) := by
+    rw [Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 4)]
+    rw [← Real.exp_add, ← Real.exp_add]; congr 1; ring
+  have hRval : (10 : ℝ) ^ (-A - 3) = Real.exp (-Real.log 10 * A) / 1000 := by
+    rw [Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 10)]
+    have h3 : Real.exp (Real.log 10 * (-A - 3))
+        = Real.exp (-Real.log 10 * A) * Real.exp (-3 * Real.log 10) := by
+      rw [← Real.exp_add]; congr 1; ring
+    rw [h3]
+    have h1000 : Real.exp (-3 * Real.log 10) = 1 / 1000 := by
+      rw [show (-3 : ℝ) * Real.log 10 = -(Real.log 1000) by
+        rw [show (1000 : ℝ) = 10 ^ (3 : ℕ) by norm_num, Real.log_pow]; push_cast; ring]
+      rw [Real.exp_neg, Real.exp_log (by norm_num : (0 : ℝ) < 1000)]; norm_num
+    rw [h1000]; ring
+  set E85 : ℝ := Real.exp (-(2 * Real.log 4 - Real.log 10) * A) with hE85def
+  set E4 : ℝ := Real.exp (-Real.log 4 * A₀) with hE4def
+  set E10 : ℝ := Real.exp (-Real.log 10 * A) with hE10def
+  have hE85pos : 0 < E85 := Real.exp_pos _
+  have hE4pos : 0 < E4 := Real.exp_pos _
+  have hE10pos : 0 < E10 := Real.exp_pos _
+  have hE85_1 : E85 ≤ 1 := by rw [hE85def, Real.exp_le_one_iff]; nlinarith [hL85, hA]
+  have hAE85 : A ^ 2 * E85 ≤ 4 / (2 * Real.log 4 - Real.log 10) ^ 2 :=
+    sq_mul_exp_neg_le (2 * Real.log 4 - Real.log 10) hL85 A hA.le
+  have hA0E4 : A₀ ^ 2 * E4 ≤ 27 / ((Real.log 4) ^ 3 * A₀) :=
+    sq_mul_exp_neg_le_inv (Real.log 4) hL4 A₀ hA₀pos
+  have hE4dom : E4 ≤ 27 / ((Real.log 4) ^ 3 * A₀ ^ 3) := by
+    rw [le_div_iff₀ (by positivity : (0 : ℝ) < (Real.log 4) ^ 3 * A₀ ^ 3)]
+    have h := hA0E4
+    rw [le_div_iff₀ (by positivity : (0 : ℝ) < (Real.log 4) ^ 3 * A₀)] at h
+    nlinarith [h, hE4pos]
+  -- **term 1**: `C'·y²·4^{−y} ≤ (1/2)·10^{−A−3}`.
+  have hterm1 : C' * (2 * A + A₀) ^ 2 * (4 : ℝ) ^ (-(2 * A + A₀)) ≤ (1 / 2) * (10 : ℝ) ^ (-A - 3) := by
+    rw [h4y, hRval]
+    rw [show C' * (2 * A + A₀) ^ 2 * (E85 * E4 * E10)
+        = (C' * (2 * A + A₀) ^ 2 * E85 * E4) * E10 by ring,
+      show (1 / 2 : ℝ) * (E10 / 1000) = (1 / 2000) * E10 by ring]
+    refine mul_le_mul_of_nonneg_right ?_ hE10pos.le
+    -- reduced target: `C'·y²·E85·E4 ≤ 1/2000`.
+    have hy2 : (2 * A + A₀) ^ 2 ≤ 8 * A ^ 2 + 2 * A₀ ^ 2 := by nlinarith [sq_nonneg (2 * A - A₀)]
+    have hsplit : C' * (8 * A ^ 2 + 2 * A₀ ^ 2) * E85 * E4
+        = 8 * (C' * (A ^ 2 * E85) * E4) + 2 * (C' * (A₀ ^ 2 * E4) * E85) := by ring
+    have hb1 : 8 * (C' * (A ^ 2 * E85) * E4)
+        ≤ 8 * (C' * (4 / (2 * Real.log 4 - Real.log 10) ^ 2) * (27 / ((Real.log 4) ^ 3 * A₀ ^ 3))) := by
+      refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
+      have t1 : C' * (A ^ 2 * E85) * E4 ≤ C' * (4 / (2 * Real.log 4 - Real.log 10) ^ 2) * E4 :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hAE85 hC'.le) hE4pos.le
+      have t2 : C' * (4 / (2 * Real.log 4 - Real.log 10) ^ 2) * E4
+          ≤ C' * (4 / (2 * Real.log 4 - Real.log 10) ^ 2) * (27 / ((Real.log 4) ^ 3 * A₀ ^ 3)) :=
+        mul_le_mul_of_nonneg_left hE4dom (by positivity)
+      exact le_trans t1 t2
+    have hb2 : 2 * (C' * (A₀ ^ 2 * E4) * E85)
+        ≤ 2 * (C' * (27 / ((Real.log 4) ^ 3 * A₀)) * 1) := by
+      refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
+      have t1 : C' * (A₀ ^ 2 * E4) * E85 ≤ C' * (27 / ((Real.log 4) ^ 3 * A₀)) * E85 :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hA0E4 hC'.le) hE85pos.le
+      have t2 : C' * (27 / ((Real.log 4) ^ 3 * A₀)) * E85 ≤ C' * (27 / ((Real.log 4) ^ 3 * A₀)) * 1 :=
+        mul_le_mul_of_nonneg_left hE85_1 (by positivity)
+      exact le_trans t1 t2
+    have hchain : C' * (2 * A + A₀) ^ 2 * E85 * E4
+        ≤ 864 * C' / ((2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3 * A₀ ^ 3)
+          + 54 * C' / ((Real.log 4) ^ 3 * A₀) := by
+      have hle1 : C' * (2 * A + A₀) ^ 2 * E85 * E4 ≤ C' * (8 * A ^ 2 + 2 * A₀ ^ 2) * E85 * E4 :=
+        mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hy2 hC'.le) hE85pos.le) hE4pos.le
+      rw [hsplit] at hle1
+      have hcombine := add_le_add hb1 hb2
+      have heq : 8 * (C' * (4 / (2 * Real.log 4 - Real.log 10) ^ 2) * (27 / ((Real.log 4) ^ 3 * A₀ ^ 3)))
+          + 2 * (C' * (27 / ((Real.log 4) ^ 3 * A₀)) * 1)
+          = 864 * C' / ((2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3 * A₀ ^ 3)
+            + 54 * C' / ((Real.log 4) ^ 3 * A₀) := by
+        field_simp; ring
+      linarith [hle1, hcombine, heq.le, heq.ge]
+    -- clear denominators: `A₀ ≥ Kthr` gives the two linear-in-`A₀` bounds.
+    have hden1 : (0 : ℝ) < (2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3 := by positivity
+    have hA0_i : 3456000 * C' ≤ (2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3 * A₀ := by
+      have hle : 3456000 * C' / ((2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3) ≤ A₀ :=
+        le_trans (le_add_of_nonneg_right (by positivity)) hA₀Kthr
+      calc 3456000 * C'
+          = (2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3
+              * (3456000 * C' / ((2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3)) := by
+            field_simp
+        _ ≤ (2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3 * A₀ :=
+            mul_le_mul_of_nonneg_left hle hden1.le
+    have hA0_ii : 216000 * C' ≤ (Real.log 4) ^ 3 * A₀ := by
+      have hle : 216000 * C' / (Real.log 4) ^ 3 ≤ A₀ :=
+        le_trans (le_add_of_nonneg_left (by positivity)) hA₀Kthr
+      calc 216000 * C'
+          = (Real.log 4) ^ 3 * (216000 * C' / (Real.log 4) ^ 3) := by field_simp
+        _ ≤ (Real.log 4) ^ 3 * A₀ := mul_le_mul_of_nonneg_left hle (by positivity)
+    have hbnd1 : 864 * C' / ((2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3 * A₀ ^ 3)
+        ≤ 1 / 4000 := by
+      rw [div_le_div_iff₀ (by positivity) (by norm_num)]
+      have hA03 : A₀ ≤ A₀ ^ 3 := by nlinarith [hA₀1, hA₀pos]
+      nlinarith [hA0_i, mul_le_mul_of_nonneg_left hA03 hden1.le]
+    have hbnd2 : 54 * C' / ((Real.log 4) ^ 3 * A₀) ≤ 1 / 4000 := by
+      rw [div_le_div_iff₀ (by positivity) (by norm_num)]
+      nlinarith [hA0_ii]
+    calc C' * (2 * A + A₀) ^ 2 * E85 * E4
+        ≤ 864 * C' / ((2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3 * A₀ ^ 3)
+          + 54 * C' / ((Real.log 4) ^ 3 * A₀) := hchain
+      _ ≤ 1 / 4000 + 1 / 4000 := add_le_add hbnd1 hbnd2
+      _ ≤ 1 / 2000 := by norm_num
+  -- **term 2**: `C'·exp(−c·y²) ≤ (1/2)·10^{−A−3}` (complete the square).
+  have hterm2 : C' * Real.exp (-c * (2 * A + A₀) ^ 2) ≤ (1 / 2) * (10 : ℝ) ^ (-A - 3) := by
+    rw [hRval]
+    -- reduce to `2000·C'·exp(−c y²) ≤ E10` then to the quadratic in exponents.
+    have hquad2 : A * Real.log 10 + Real.log (2000 * C') ≤ c * (2 * A + A₀) ^ 2 := by
+      have hy2ge : 4 * A ^ 2 + A₀ ^ 2 ≤ (2 * A + A₀) ^ 2 := by nlinarith [hA.le, hA₀pos.le]
+      have hA0X2 : X2 ≤ A₀ ^ 2 := by
+        have h1 : Real.sqrt X2 ^ 2 ≤ A₀ ^ 2 := pow_le_pow_left₀ (Real.sqrt_nonneg _) hA₀sqrt 2
+        rwa [Real.sq_sqrt hX2nn] at h1
+      have hWle : Warg ≤ X2 := le_max_right _ _
+      have hA0sq : 16 * c * Real.log (2000 * C') + (Real.log 10) ^ 2 ≤ 16 * c ^ 2 * A₀ ^ 2 := by
+        have hWval : 16 * c ^ 2 * Warg = 16 * c * Real.log (2000 * C') + (Real.log 10) ^ 2 := by
+          rw [hWdef]; field_simp
+        have h2 : 16 * c ^ 2 * Warg ≤ 16 * c ^ 2 * A₀ ^ 2 :=
+          mul_le_mul_of_nonneg_left (le_trans hWle hA0X2) (by positivity)
+        linarith [h2, hWval.le, hWval.ge]
+      have hmul : 16 * c * (A * Real.log 10 + Real.log (2000 * C'))
+          ≤ 16 * c * (c * (2 * A + A₀) ^ 2) := by
+        nlinarith [hA0sq, sq_nonneg (8 * c * A - Real.log 10),
+          mul_le_mul_of_nonneg_left hy2ge (by positivity : (0 : ℝ) ≤ 16 * c ^ 2)]
+      exact le_of_mul_le_mul_left hmul (by positivity : (0 : ℝ) < 16 * c)
+    -- from the quadratic bound, `C'·exp(−c y²) ≤ E10/2000`.
+    rw [show (1 / 2 : ℝ) * (E10 / 1000) = E10 / 2000 by ring]
+    rw [le_div_iff₀ (by norm_num : (0 : ℝ) < 2000)]
+    have hlhs : 2000 * C' = Real.exp (Real.log (2000 * C')) := by
+      rw [Real.exp_log (by positivity)]
+    have hexp_le : Real.exp (Real.log (2000 * C') + -c * (2 * A + A₀) ^ 2) ≤ E10 := by
+      rw [hE10def]
+      apply Real.exp_le_exp.mpr
+      nlinarith [hquad2]
+    calc C' * Real.exp (-c * (2 * A + A₀) ^ 2) * 2000
+        = Real.exp (Real.log (2000 * C')) * Real.exp (-c * (2 * A + A₀) ^ 2) := by
+          rw [← hlhs]; ring
+      _ = Real.exp (Real.log (2000 * C') + -c * (2 * A + A₀) ^ 2) := by rw [← Real.exp_add]
+      _ ≤ E10 := hexp_le
+  -- combine the two terms.
+  calc C' * (2 * A + A₀) ^ 2 * (4 : ℝ) ^ (-(2 * A + A₀)) + C' * Real.exp (-c * (2 * A + A₀) ^ 2)
+      ≤ (1 / 2) * (10 : ℝ) ^ (-A - 3) + (1 / 2) * (10 : ℝ) ^ (-A - 3) := add_le_add hterm1 hterm2
+    _ = (10 : ℝ) ^ (-A - 3) := by ring
 
 open scoped Classical in
 /-- **(7.56) E∗ mass term.** The first-passage⊗walk mass of the union-over-`p` big-triangle
