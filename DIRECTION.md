@@ -7,34 +7,35 @@ PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ---
 
-## CURRENT DIRECTIVE (judge pass 25, 2026-07-13)
+## CURRENT DIRECTIVE (review lap, 2026-07-14; under judge pass 25)
 
-**✅ THE PREVIOUS DIRECTIVE IS FULFILLED.** X9 / Lemma 7.9 is **COMPLETE and
-axiom-clean** — `fpDist_any_triangle_le`, `fpDist_white_exit_deep`, and
-`many_triangles_white` all verified `[propext, Classical.choice, Quot.sound]` by dated
-judge runs; `ManyTriangles.lean` has **zero sorries**. `B = 64`, `Y = 150`, the box
-`√(51²+150²) ≈ 158.4` fits under `sep ≈ 230.26` at `epsBW = 10⁻¹⁰⁰⁰`, and the ε-sweep
-re-ratification fired and discharged clean. **Both pinnacle kernels (X9, X10) are done.**
-Do not re-open any of it.
+**✅ X8 / Case-2 IS NOW COMPLETE AND axiom-clean.** Both kernels
+(`fpDist_edgeWeight_le`, `fpDist_white_exit`) AND the assembly `Q_black_edge_case2` all
+verify `[propext, Classical.choice, Quot.sound]` (review-lap `#print axioms`, judge to
+ratify). X9 (`many_triangles_white`) and X10 (`triangle_encounter_le`) remain done and
+clean. **The §7 monotonicity chain now hinges on EXACTLY ONE sorry:** X11
+`Q_black_edge_case3` (`Case3.lean:1062`) — confirmed sole `sorryAx` carrier under
+`prop_7_8`. Do not re-open X8/X9/X10.
 
-**THE objective now**: **the Case-2 / Case-3 assembly** — the last 5 crux sorries, and
-the material the campaign has always rated *precedented volume, not novelty*. Prop 1.17
-is a theorem over exactly this chain.
+**THE objective now**: **close X11 `Q_black_edge_case3`** — the (7.53)–(7.67) Case-3
+chain, `m/log²m < s ≤ O(m)`. The moment it lands, `Q_black_edge → prop_7_8 →
+Q_polynomial_decay` (all DI-assembled in `Case3.lean`) go axiom-clean and §7 monotonicity
+is done. The campaign has always rated this *precedented volume, not novelty*.
 
-**Mandated next move** (in order):
-1. **X8 / Case 2** (already in flight — keep going):
-   `fpDist_fst_mgf_le` (`BlackEdge.lean:318`, the decomposed core) →
-   `fpDist_edgeWeight_le` (341) → `fpDist_white_exit` (369) → `Q_black_edge_case2` (457).
-   `fpDist_white_exit` is the **Case-2 twin** of the now-proved deep kernel: same
-   geometry, budget hypothesis `s ≤ m/log²m` added. **Derive it from
-   `fpDist_white_exit_deep` if you can** — the kernel-merge was always the plan, and the
-   deep variant is now a theorem, so this should be much cheaper than it was.
-2. **X11 / Case 3**: `Q_black_edge_case3` (`Case3.lean:941`) — the (7.53)–(7.67) chain.
-   X9 and X10 are both available and clean, so its two hardest inputs are now ground truth.
-3. **🗂️ The `ManyTriangles.lean` split** (BLUEPRINT §2) — **still not done**, now 5,204
-   lines, and you have been editing that file anyway, against your own written plan. Pure
-   moves, zero statement/proof edits, names verbatim. Take the lap; you are paying for it
-   on every elaboration.
+**Mandated next move** (hardest-first, in order — full attack in PENDING_WORK.md top):
+1. **X11a `estar_union_le`** (NEXT): sum the proved per-`p` `bigTriangle_walk_le` over
+   `p ∈ range(T+1)` at `s'=⌈4^A(1+p)³⌉`. Two analytic facts: (a) `Σ_p (1+p)^{-2} ≤ 2`
+   (telescoping) for the `1/s'` terms; (b) geometric `Σ_p exp(−c·A²(1+p))` + the
+   comparison `exp(−cA²) ≤ const·A²·4^{-A}` for `A ≥ A₀`. Net E∗-mass `≤ C'·A²·4^{-A}`.
+2. **X11c `few_whites_le`**: `fstar_markov` (✓) + `deterministic_encounter_claim` (✓);
+   `K=⌈10A/epsBW³⌉`, `R:=⌈(K+(A+3)log10+2)/ε⌉`, {reaches R} ⊆ F∗ via `encFold_banked_le`.
+3. **X11d body** = `Q_black_edge_case3`: `Q_le_damped_iter` + (7.54) col split + few-white
+   damping + X11a + X11c. Handle the two reconciliations (phase −1 shift; ceil vs strict).
+
+All three X11 bridges (`fstar_markov`, `fpDist_walk_eq_fpDistPlus`, `bigTriangle_walk_le`)
+are proved and axiom-clean, so X11a is "just" summation. Do NOT retreat to the
+`ManyTriangles` split or spine stubs while X11a is the live crux — decompose X11 further
+(rule 1) before dropping altitude.
 
 ## 🌙 UNATTENDED / OVERNIGHT RUN — NO JUDGE IS AWAKE (2026-07-13 → 07-14 morning)
 
@@ -107,6 +108,10 @@ machinery. The campaign's risk is no longer concentrated in a kernel — it is n
   FUTURE ε change: shrinking `epsBW` fires a full ε-sweep re-ratification (judge's).
 
 ### Directive history
+- **review lap (2026-07-14)**: X8/Case-2 COMPLETE + axiom-clean; §7 chain now hinges on
+  the single sorry X11 `Q_black_edge_case3`. All 3 X11 bridges proved. Directive narrows
+  to closing X11 via X11a → X11c → X11d; no drop to the ManyTriangles split / spine stubs
+  while X11a is live. Within judge pass 25's Case-2/Case-3 objective (not a destination change).
 - **judge pass 25 (2026-07-13)**: X9 COMPLETE — both pinnacle kernels done;
   directive moves to the Case-2/Case-3 assembly. Supersedes the pass-24
   directive, which is FULFILLED (B=64, Y=150, epsBW=10⁻¹⁰⁰⁰, ε-sweep clean).

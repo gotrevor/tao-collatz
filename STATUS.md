@@ -1,31 +1,44 @@
 # STATUS — tao-collatz 📊
 
 **First-anywhere Lean 4 formalization of Tao 2019 "Almost all Collatz orbits
- attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3281 jobs) ·
-**Updated**: lap 59 (explicit (7.50) localization) · 2026-07-13 · working tree
+ attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3282 jobs) ·
+**Updated**: review lap · 2026-07-14 · `7e2398f`
 
 ## Where it stands
 
 Multi-month campaign; the §7 crux (Prop 1.17) is the risk concentration and is
-under active assault. **Seven crux nodes are CLOSED and axiom-clean**: S3
-(Lemma 2.2 engine), X3 (Lemma 7.4 triangles), X6 (Lemma 7.7 first passage), X1
-((7.4)/(7.5) pairing), X2 (Lemma 7.2), X5 (Lemma 7.6), and now **X9 Lemma 7.9**
-— `many_triangles_white` verified CLOSED (`#print axioms` = trust base +
-`sorryAx` via exactly ONE input, the Y-induction `encExpect_entered_le` is
-axiom-clean). X4/X7 (D6 Q-recursion, Q_m + Case 1) are also complete (files
-sorry-free). Prop 1.17 is a theorem over exactly the Prop 7.8 chain: **5 open
-crux sorries** (BlackEdge ×3, Case3 ×1, ManyTriangles ×1), plus 9 deliberate
-spine stubs.
-This lap the white-exit kernel `fpDist_white_exit_deep` was **PROVED from a clean
-(7.50)-geometry decomposition** — the monolithic sorry became two named analytic
-tails (`fpDist_out_of_strip_le`, `fpDist_any_triangle_le`, both `≤ 1/8`), and
-the first is now proved. The reduction glue and overshoot-exclusion helper
-`endpoint_notMem_start_triangle` are also proved. The remaining tail consumes X6
-`fpDist_location_bound` and is the SAME geometry shared with X8's Case-2 twin
-`fpDist_white_exit`. X10's route was re-grounded against pp.52–54: precedented
-volume, not novelty. 14 actual proof `sorry`s remain in `TaoCollatz/` total.
+under active assault. **Both pinnacle kernels are done and axiom-clean**: X9
+(Lemma 7.9 `many_triangles_white`) and X10 (Lemma 7.10 `triangle_encounter_le`),
+alongside S3, X3, X6, X1, X2, X5, X4/X7. **X8 / Case-2 is now COMPLETE and
+axiom-clean** — both kernels (`fpDist_edgeWeight_le`, `fpDist_white_exit`) and the
+assembly `Q_black_edge_case2` verify `[propext, choice, Quot.sound]`. The §7
+monotonicity chain now hinges on **EXACTLY ONE sorry**: X11 `Q_black_edge_case3`
+(`Case3.lean:1062`) — confirmed the sole `sorryAx` carrier under `prop_7_8`.
+Its three bridges (`fstar_markov`, `fpDist_walk_eq_fpDistPlus`,
+`bigTriangle_walk_le`) are all proved and axiom-clean; the remaining assembly is
+X11a `estar_union_le` (sum the per-`p` bridge over the horizon) → X11c
+`few_whites_le` → the X11d body. Beyond §7: 6 deliberate spine stubs
+(`SyracRV` ×3, `FirstPassage` ×2, `MixingFromDecay` ×1, `Collatz` ×1) plus the
+2 headline sorries in `Statement.lean`. **9 actual proof `sorry`s remain in
+`TaoCollatz/` total** (2 headline + 1 crux + 6 spine).
 
 ## What's happened (newest first)
+
+- **review lap (2026-07-14)**: direction confirmed sound — recent laps drove
+  straight at the X11 crux, not side-leaves. `#print axioms` re-run: X8
+  `Q_black_edge_case2`/`fpDist_white_exit`, X9 `many_triangles_white`, X10
+  `triangle_encounter_le`, and all three X11 bridges verify trust-base-only;
+  `prop_7_8` carries `sorryAx` solely via `Q_black_edge_case3`. Directive
+  narrowed to closing X11 (X11a → X11c → X11d); STATUS refreshed.
+- **lap D-box cont8–12 (2026-07-14)**: **X8 / Case-2 CLOSED** —
+  `fpDist_white_exit` proved via kernel-merge relocation (new `BlackEdgeQ.lean`),
+  `Q_black_edge_case2` assembled. **X11 crux opened**: three axiom-clean bridges
+  landed — `fstar_markov` (7.56 Markov, X9-discharged), `fpDist_walk_eq_fpDistPlus`
+  (7.53→7.54 walk→fpDistPlus), `bigTriangle_walk_le` (per-`p` E∗ term, validates
+  X11a composes with X10). Next = `estar_union_le` (X11a).
+- **lap D-box cont1–7 (2026-07-14)**: X8 first-coord MGF engine —
+  `fpDist_fst_mgf_le`/`_general`, `fpDist_fst_tail_le`, `hold_fst_tail_le`,
+  `fpDist_edgeWeight_le` (the (7.48) weight-degradation crux) all axiom-clean.
 
 - **lap 59 (2026-07-13, X11 LOCALIZATION DE-RISK)**: replaced the false
   fixed-Euclidean-radius idea and the speculative packing route with the paper's
@@ -118,36 +131,33 @@ volume, not novelty. 14 actual proof `sorry`s remain in `TaoCollatz/` total.
 ## Outstanding
 
 ### Short-term (mirror PENDING_WORK top)
-- **`fpDist_any_triangle_le`** — the single remaining geometry input to
-  `fpDist_white_exit_deep`, shared by X9 and X8's Case-2 white-exit kernel.
-  Its probability estimate, deterministic geometry, and mass bookkeeping are
-  proved by `exists_fpDist_localization_box`,
-  `phaseInFamily_support_imp_localization_bad`, and
-  `fpDist_any_triangle_le_of_localization_box`. The unresolved part is only the
-  upstream `epsBW` quantifier order: make Lemma 7.4 separation exceed the chosen
-  localization box.
-- **X8/X11 assembly**: `Q_black_edge_case2` (mechanical once kernels land),
-  `fpDist_edgeWeight_le`; X11 is now exactly the sole
-  `Q_black_edge_case3` gate, placed after its checked reusable machinery in
-  `Case3.lean` and wired into the public theorem chain.
+- **X11a `estar_union_le`** (NEXT crux sub-lemma): sum the proved per-`p`
+  `bigTriangle_walk_le` over `p ∈ range(T+1)` at `s'=⌈4^A(1+p)³⌉`. Needs
+  `Σ_p (1+p)^{-2} ≤ 2` (telescoping) for the `1/s'` terms + geometric
+  `Σ_p exp(−c·A²(1+p))` with the comparison `exp(−cA²) ≤ const·A²·4^{-A}` for
+  `A ≥ A₀`. Net E∗-mass `≤ C'·A²·4^{-A}`.
+- **X11c `few_whites_le`**, then **X11d body** `Q_black_edge_case3` — see
+  PENDING_WORK top for the full X11 attack path.
 
 ### Long-term
-- X11 finite-union/numerical closure inside the sole `Q_black_edge_case3` gate;
-  upstream geometry dependency `fpDist_any_triangle_le`; X8 assembly
-  (`Q_black_edge_case2` + `fpDist_edgeWeight_le`).
+- After X11 lands: `Q_black_edge → prop_7_8 → Q_polynomial_decay` go clean and
+  §7 monotonicity is done; assemble Prop 1.17 → C10 → C9 → C6 → headline.
+- 🗂️ `ManyTriangles.lean` split (BLUEPRINT §2, 5k+ lines) — queued, pure moves;
+  do only when off the X11 critical path.
 - C8 pin (Prop 5.2, §5) — the last RED statement-less node; opportunistic.
-- C-spine: C5/C7/C9/C10, Sec5/Sec6, Syracuse layer, Basic/Statement scaffolding
-  (9 stub sorries, deliberately deferred).
+- Spine stubs: `SyracRV` ×3, `FirstPassage` ×2, `MixingFromDecay` ×1,
+  `Collatz` ×1 (6 stub sorries, downstream of the crux, deliberately deferred).
 
 ### To completion
-Assemble §7 crux → Prop 1.17 → Prop 1.14 → C10 → C9 → C6 → Thm 1.3; discharge
-all 14 proof `sorry`s; `#print axioms` on `Statement` headline = trust base only.
+Close X11 `Q_black_edge_case3` → §7 crux assembles → Prop 1.17 → Prop 1.14 →
+C10 → C9 → C6 → Thm 1.3; discharge the 6 spine `sorry`s; `#print axioms` on the
+`Statement` headline = trust base only.
 
 ## Axiom ledger (fidelity spine)
 
 The headline theorems are NOT yet assembled — the spine (§1–§6) is stubbed while
-the §7 crux is built bottom-up. Ledger re-run this lap (2026-07-12, real
-`#print axioms` at `6876501`):
+the §7 crux is built bottom-up. Ledger re-run this review lap (2026-07-14, real
+`#print axioms` at `7e2398f`):
 
 | headline / node | paper claim | `#print axioms` shows | status |
 |---|---|---|---|
@@ -158,17 +168,19 @@ the §7 crux is built bottom-up. Ledger re-run this lap (2026-07-12, real
 | X1 `cexpect_pairing` | (7.4)/(7.5) | `[propext, choice, Quot.sound]` | 🟢 done, clean |
 | X2 `white_cos_bound` / `fCond_three_norm` | Lemma 7.2 | `[propext, choice, Quot.sound]` | 🟢 done, clean |
 | X5 `hold_mean_fst` / `hold_aperiodic` | Lemma 7.6 | `[propext, choice, Quot.sound]` | 🟢 done, clean |
-| X9 `many_triangles_white` (Lemma 7.9) | (7.57) pp.50–51 | trust base + `sorryAx` | 🟢 CLOSED modulo exactly `fpDist_white_exit_deep`; `encExpect_entered_le` clean |
-| X10 `apex_separation` | (7.65) geometry | `[propext, choice, Quot.sound]` | 🟢 clean (geometric core) |
-| Prop 1.17 `charFn_decay` / Prop 7.1 / Prop 7.3 | §7 headline | trust base + `sorryAx` | 🟡 theorem over the 6 open Prop-7.8-chain sorries |
+| X9 `many_triangles_white` (Lemma 7.9) | (7.57) pp.50–51 | `[propext, choice, Quot.sound]` | 🟢 CLOSED, clean |
+| X10 `triangle_encounter_le` (Lemma 7.10) | (7.65) pp.52–54 | `[propext, choice, Quot.sound]` | 🟢 CLOSED, clean |
+| X8 `Q_black_edge_case2` (Prop 7.8 Case 2) | (7.46)–(7.51) | `[propext, choice, Quot.sound]` | 🟢 CLOSED, clean |
+| X11 `Q_black_edge_case3` (Prop 7.8 Case 3) | (7.53)–(7.67) | `sorry` (3 bridges clean) | 🟡 sole open §7 crux |
+| `prop_7_8` (Prop 7.8 Monotonicity) | §7 headline | trust base + `sorryAx` | 🟡 theorem over the single open X11 sorry |
 
 Math-axiom count on every completed node = **0** (trust base only). No 🔴
 (open-conjecture) axioms anywhere — correct, since Thm 1.3 is unconditional. No
 🟡/🟠 *cited* axioms in use: the crux is being PROVED, not cited. The remaining
-work is `sorry`-discharge (7 crux + 13 spine), not axiom-discharge.
+work is `sorry`-discharge (1 crux + 6 spine + 2 headline), not axiom-discharge.
 
 ## Pointers
 DIRECTION.md (binding directive) · BLUEPRINT.md (frozen node ledger §2) ·
-newest `HANDOFF-2026-07-12-i.md` · PENDING_WORK.md (Reflection 2026-07-12 +
-attack paths) · papers/literature-review.md (route-facing source synthesis) ·
+newest `HANDOFF-2026-07-14-e.md` · PENDING_WORK.md (X11 attack path, newest top) ·
+papers/literature-review.md (route-facing source synthesis) ·
 paper `papers/tao-2019-almost-all-orbits.pdf`.
