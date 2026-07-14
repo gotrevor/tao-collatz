@@ -331,7 +331,7 @@ theorem intTest_dTV_le {lo hi : ℝ} (hhi : 1 ≤ hi) (hne : (logWindow lo hi).N
           (windowMass_eq_sum_classMass hn') (fun r hr => hdev r ((Finset.mem_filter.mp hr).2))
     _ = 2 * ε * ((2 ^ (n' - 1) : ℕ) : ℝ) / windowMass lo hi := by rw [hcard]
 
-/-- **The integral-test error estimate** — the analytic heart of C7, and the ONE remaining new brick.
+/- **The integral-test error estimate** — the analytic heart of C7, and the ONE remaining new brick.
 For the log-uniform odd window `N_y ∈ [y, y^α]`, the total-variation distance of its reduction mod
 `2^{3n₀}` from the uniform law on odd residues is `≪ 2^{3n₀}/y` (the raw integral-test error, before the
 numeric closure `intTest_numeric` converts `2^{3n₀}/y` to `≤ 2^{-3n₀}`).
@@ -344,13 +344,94 @@ uses machinery mathlib HAS). Route (see `PENDING_WORK` "C7 integral test — att
   `AntitoneOn.integral_le_sum` on `t ↦ 1/t` over the AP (step `M`) + `integral_inv` (`∫ 1/t = log`), and
   `D = ½·log(y^α/y) + O(1/y)` likewise (odds are half); AP counts via `Nat.Ioc_filter_modEq_card`;
 * summing the `M/2` odd classes and dividing by `D ≥ c·log y` gives `dTV ≤ C·M/y = C·2^{3n₀}/y`. -/
+/-- `nZero x = ⌊log x / (10 log 2)⌋ ≥ 1` once `x ≥ 2^{11}`, so `3 n₀ ≥ 1` and the modulus `2^{3n₀}`
+is nontrivial. -/
+theorem nZero_pos_of_large : ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → 0 < nZero x := by
+  refine ⟨2 ^ 11, by norm_num, fun x hx => ?_⟩
+  have hx0 : (0 : ℝ) < x := lt_of_lt_of_le (by norm_num) hx
+  have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  unfold nZero
+  rw [Nat.floor_pos, le_div_iff₀ (by positivity)]
+  have hmono : Real.log ((2 : ℝ) ^ 11) ≤ Real.log x := Real.log_le_log (by norm_num) hx
+  rw [Real.log_pow] at hmono
+  push_cast at hmono
+  nlinarith [hmono, hlog2]
+
+/-- **Per-class integral test** (Tao pp.20, "a routine application of the integral test") — the ONE
+genuinely-analytic brick remaining in C7.  For the log-uniform odd window `[y, y^α]`, the class masses
+`S_r = ∑_{N ≡ r} 1/N` at modulus `2^{3n₀}` are all within `c/y` of a COMMON target `t` (`= L/M` with
+`L = ∫_y^{y^α} dt/t`).  Owed: comparison of `∑_{N≡r} 1/N` to `∫ dt/t` per arithmetic progression via
+`AntitoneOn.sum_le_integral` / `AntitoneOn.integral_le_sum` on `t ↦ 1/t` + `integral_inv`; the
+discretization and endpoint-alignment errors are each `≤ 1/y`, so the per-class error is `O(1/y)`. -/
+theorem intTest_class_dev :
+    ∃ c : ℝ, 0 < c ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      ∃ t : ℝ, ∀ r : ZMod (2 ^ (3 * nZero x)), r.val % 2 = 1 →
+        |classMass y (y ^ alpha) (3 * nZero x) r - t| ≤ c / y := by
+  sorry
+
+/-- **Window normalizer lower bound** — `D = ∑_{N ∈ [y,y^α] odd} 1/N` exceeds a positive constant for
+large `x`.  (In fact `D ≍ (α−1)/2 · log y → ∞`; a constant `1/2` suffices for the reduction, since
+`dTV = (1/D)·O(2^{3n₀}/y)` and dividing by any positive constant preserves the decay.)  Owed:
+one-class `AntitoneOn.integral_le_sum` on the odds gives `D ≥ (1/2)∫ − O(1/y)`. -/
+theorem intTest_D_lower :
+    ∃ D₀ : ℝ, 0 < D₀ ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      D₀ ≤ windowMass y (y ^ alpha) := by
+  sorry
+
+/-- **Window nonemptiness** — for large `x` there is an odd integer in `[y, y^α]` (the interval has
+length `y^α − y → ∞`).  Owed: an explicit odd point, e.g. `2⌊y/2⌋+1`. -/
+theorem logWindow_nonempty_of_large :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      (logWindow y (y ^ alpha)).Nonempty := by
+  sorry
+
 theorem intTest_error :
     ∃ K : ℝ, 0 < K ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
                 (unifOddMod (3 * nZero x))
           ≤ K * ((2 : ℝ) ^ (3 * (nZero x : ℝ)) / y) := by
-  sorry
+  obtain ⟨c, hc, x₀d, hdev⟩ := intTest_class_dev
+  obtain ⟨D₀, hD₀, x₀D, hDl⟩ := intTest_D_lower
+  obtain ⟨x₀n, hnon⟩ := logWindow_nonempty_of_large
+  obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
+  refine ⟨c / D₀, by positivity, max (max x₀d x₀D) (max x₀n (max x₀z 1)), fun x hx y hy => ?_⟩
+  have hxd : x₀d ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+  have hxD : x₀D ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxn : x₀n ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_right _ _)) hx
+  have hxz : x₀z ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_right _ _)) (le_trans (le_max_right _ _) hx)
+  have hx1 : (1 : ℝ) ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_right _ _)) (le_trans (le_max_right _ _) hx)
+  -- `y ≥ 1`, `y^α ≥ 1`, `y > 0`
+  have hy1 : (1 : ℝ) ≤ y := by
+    rcases hy with h | h <;> rw [h] <;>
+      · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
+        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha <;> positivity)
+  have hypos : (0 : ℝ) < y := lt_of_lt_of_le one_pos hy1
+  have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
+    rw [show (1 : ℝ) = (1 : ℝ) ^ alpha from (Real.one_rpow _).symm]
+    exact Real.rpow_le_rpow (by norm_num) hy1 (by unfold alpha; positivity)
+  -- the pieces
+  have hn'pos : 0 < 3 * nZero x := by have := hzpos x hxz; omega
+  have hDpos : 0 < windowMass y (y ^ alpha) := lt_of_lt_of_le hD₀ (hDl x hxD y hy)
+  obtain ⟨t, ht⟩ := hdev x hxd y hy
+  have hbound := intTest_dTV_le hyα1 (hnon x hxn y hy) hn'pos hDpos ht
+  refine le_trans hbound ?_
+  -- `2·(c/y)·2^{n'-1}/D ≤ (c/D₀)·(2^{3n₀}/y)`
+  set n' := 3 * nZero x with hn'def
+  set B : ℝ := ((2 ^ (n' - 1) : ℕ) : ℝ) with hBdef
+  have hBpos : 0 < B := by rw [hBdef]; positivity
+  have hpow : (2 : ℝ) ^ (3 * (nZero x : ℝ)) = 2 * B := by
+    rw [hBdef, show (3 : ℝ) * (nZero x : ℝ) = ((n' : ℕ) : ℝ) by rw [hn'def]; push_cast; ring,
+      Real.rpow_natCast]
+    rw [show n' = (n' - 1) + 1 by omega, pow_succ]
+    push_cast; ring
+  rw [hpow]
+  have hDge : D₀ ≤ windowMass y (y ^ alpha) := hDl x hxD y hy
+  rw [show 2 * (c / y) * B / windowMass y (y ^ alpha) = 2 * c * B / (y * windowMass y (y ^ alpha)) by
+        field_simp,
+      show c / D₀ * (2 * B / y) = 2 * c * B / (y * D₀) by field_simp]
+  apply div_le_div_of_nonneg_left (by positivity) (by positivity)
+  exact mul_le_mul_of_nonneg_left hDge hypos.le
 
 /-- **The integral test** (Tao pp.20, the one new analytic brick of C7).  For the log-uniform window
 `N_y` on odds in `[y, y^α]`, its reduction mod `2^{3 n₀}` is within `≪ 2^{-3 n₀}` (total variation)
