@@ -1,5 +1,37 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-13 (2026-07-14, brick b tail-reindex COMPLETE): **`tail_factor_eq_charFn` PROVED — tail factor IS a `charFn_decay` char sum**
+
+Build green 3285, all new lemmas `#print axioms`-clean. Commits `489a4e2`, `afab378`. **The
+tail-factor reindex — the last genuine analytic novelty of C10 — is DONE.** For a frequency
+`ξ = 3ʲ·ζ`, the tail character factor over the `p`-coordinate block equals *exactly* the level-`p`
+Syracuse character sum in `charFn_decay`'s `eC` form (`tail_factor_eq_charFn`):
+```
+E_vt[stdAddChar_{3^(j+p)}(-(offset(vt)·3ʲζ))] = (syracZ p).cexpect (Y ↦ eC(-(ξ'.val·Y.val)/3^p)),  ξ' = ζ mod 3^p
+```
+so `charFn_decay` (Prop 1.17, PROVED) bounds it `≤ Cₐ·p⁻ᴬ` when `3∤ξ'.val`. New lemmas (all in
+`Sec6/MixingFromDecay.lean`):
+- `castHom_two_inv`, `tail_char_descent`: pointwise level-descent `3^(j+p)→3^p` of the tail char
+  (factor `3ʲ` out, `stdAddChar_pow3_descent`, push `castHom` through the offset).
+- `eC_val_congr` (eC periodicity: congruent-mod-`3ⁿ` numerators ⟹ equal phase), `stdAddChar_mul_eq_eC`
+  (`stdAddChar(-(Y·ξ)) = eC(-(ξ.val·Y.val)/3ⁿ)`).
+- `tail_cexpect_eq_syracZ` (`syracZ_eq_rev_fnat`+`cexpect_map`), `tail_factor_eq_charFn` (the capstone).
+- Imported `Sec7.Decay` into `Sec6` (C10 consumes Prop 1.17 — architecturally correct).
+
+**→ NEXT (assemble the §6 osc bound; the remaining work is bookkeeping, no new analytic kernel)**:
+1. **Apply `charFn_decay` to `tail_factor_eq_charFn`**: obtain `‖tail factor‖ ≤ Cₐ·p⁻ᴬ` for high
+   `ξ = 3ʲ·2ˡ·ξ'` (here `ζ = 2ˡ·ξ'`, so `ξ' = ζ mod 3^p`; need `3∤(castHom ζ).val` — holds since
+   `3∤ξ'` and `3∤2`). Head factor: `‖·‖≤1` (`cexpect_norm_le`+`norm_stdAddChar`). Product ⟹
+   `‖𝓕(densC condDens)ξ‖ ≤ Cₐ·p⁻ᴬ` (via `dft_condDens_eq_cond_char` + `cond_char_factor`).
+2. **Indicator/orientation**: `cond_char_factor`'s tail carries `1_{pre(vt)=l}`. Recheck which block
+   `tail_factor_eq_charFn` applies to for the actual §6 `ξ` — the `3ʲ`-extraction lands the decay on the
+   block *without* the conditioning indicator. May need to swap head/tail roles in `cond_char_factor`
+   (condition on head valuation) or sum the indicator over `l`. This is the one open modeling choice.
+3. **osc bound + conditioning events**: `osc_le_sqrt_highfreq` on `condDens`,
+   `∑_{highFreq}‖𝓕‖² ≤ (count)·(Cₐp⁻ᴬ)²` small; then stopping time `k`, events E/Eₖ/Bₖ/Cₖ,ₗ, union
+   over `k,l`, triangle to recover `osc(syracZ) = ∑_{k,l} osc(condDens)`. Decompose into named `sorry`s
+   in `Sec6/MixingFromDecay.lean`. Full 7-step plan: fruit-8.
+
 ## Lap fruit-12 (2026-07-14, brick b tail-reindex): **`stdAddChar_eq_eC` + `stdAddChar_pow3_descent` PROVED**
 
 Build green 3285, both `#print axioms`-clean. Landed in `Sec6/MixingFromDecay.lean` (commits
