@@ -269,6 +269,67 @@ private theorem valVec_unique_of (n : ℕ) : ∀ (N : ℕ), N % 2 = 1 →
       · simpa [x, valVec] using hxval
       · simpa [b, initVec, valVec] using congrFun hb j
 
+/-! ### The `Fnat` splitting identity (paper (1.26), integerified) — brick (a) for C10
+
+For a valuation vector split at index `j` into its first `j` and last `p` coordinates, the
+integerified affine offset splits as
+`Fnat_{j+p}(a) = 3^p · Fnat_j(first j) + 2^{a_{[1,j]}} · Fnat_p(last p)`.
+This is the algebraic heart of Tao's independent-split (1.5)/(1.26): once reduced mod `3ⁿ` it makes
+the Syracuse character sum FACTOR (the second summand is a level-`p` Syracuse offset, independent of
+the first `j` steps). Purely algebraic — no probability. -/
+
+/-- The prefix sum of the first `j` coordinates agrees with the prefix sum of the whole vector,
+for indices `m ≤ j`. -/
+theorem pre_castAdd {j p : ℕ} (a : Fin (j + p) → ℕ) {m : ℕ} (hm : m ≤ j) :
+    pre (fun i => a (Fin.castAdd p i)) m = pre a m := by
+  unfold pre
+  apply Finset.sum_congr rfl
+  intro i hi
+  rw [Finset.mem_range] at hi
+  have hij : i < j := lt_of_lt_of_le hi hm
+  have hijp : i < j + p := lt_of_lt_of_le hij (Nat.le_add_right j p)
+  rw [dif_pos hij, dif_pos hijp]
+  congr 1
+
+/-- The prefix sum through `j + m` splits as the first-`j` prefix plus the last-`p` prefix
+(offset by `j`), for `m ≤ p`. -/
+theorem pre_natAdd_split {j p : ℕ} (a : Fin (j + p) → ℕ) {m : ℕ} (hm : m ≤ p) :
+    pre a (j + m) = pre a j + pre (fun i => a (Fin.natAdd j i)) m := by
+  unfold pre
+  rw [Finset.sum_range_add]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro i hi
+  rw [Finset.mem_range] at hi
+  have hip : i < p := lt_of_lt_of_le hi hm
+  have hjip : j + i < j + p := by omega
+  rw [dif_pos hip, dif_pos hjip]
+  congr 1
+
+/-- **Paper (1.26), integerified** (brick a): the `Fnat` offset splits across a cut at index `j`
+into `3^p · Fnat_j(first j coords) + 2^{a_{[1,j]}} · Fnat_p(last p coords)`. -/
+theorem fnat_split {j p : ℕ} (a : Fin (j + p) → ℕ) :
+    fnat (j + p) a
+      = 3 ^ p * fnat j (fun i => a (Fin.castAdd p i))
+        + 2 ^ pre a j * fnat p (fun i => a (Fin.natAdd j i)) := by
+  unfold fnat
+  rw [Finset.sum_range_add]
+  congr 1
+  · rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro m hm
+    rw [Finset.mem_range] at hm
+    rw [pre_castAdd a (le_of_lt hm)]
+    have hexp : j + p - 1 - m = p + (j - 1 - m) := by omega
+    rw [hexp, pow_add]; ring
+  · rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro m hm
+    rw [Finset.mem_range] at hm
+    rw [pre_natAdd_split a (le_of_lt hm), pow_add]
+    have hexp : j + p - 1 - (j + m) = p - 1 - m := by omega
+    rw [hexp]; ring
+
 /-- Every Syracuse iterate of an odd natural number is odd. -/
 theorem syr_iterate_odd (N n : ℕ) (hN : N % 2 = 1) : syr^[n] N % 2 = 1 := by
   induction n with

@@ -18,11 +18,29 @@ already density-independent — untouched. `#print axioms osc_le_sqrt_highfreq =
 Quot.sound]`. So the bridge `osc m n hmn c ≤ √(∑_{highFreq} ‖𝓕(densC n c)ξ‖²)` now holds for ANY
 real density — ready to apply to the conditioned `g`.
 
-**→ NEXT = brick (a)**: the independent `F`-split of `Xₙ` on `Cₖ,ₗ` as a Lean identity
-((1.5)/(1.26)). This is the route-decisive step — it's where the char-sum factorization (and hence
-the whole conditioning route) either closes or fails. See fruit-8 below for the full 7-step plan and
-the `pre`/`fnat` machinery in `Basic/`,`Syracuse/`. After (a): brick (b) independence⟹factorization,
-then the conditioning events + `charFn_decay` on the 2nd factor + triangle reassembly.
+**Brick (a) ALGEBRAIC CORE DONE** (build green 3285, axiom-clean): `fnat_split` in
+`Basic/Valuation.lean` — the route-decisive identity, Tao's (1.26) integerified:
+```
+fnat (j+p) a = 3^p · fnat j (fun i => a (Fin.castAdd p i))         -- first j coords
+             + 2^{pre a j} · fnat p (fun i => a (Fin.natAdd j i))  -- last p coords
+```
+Purely algebraic (no probability): split `∑_{m∈range(j+p)}` via `Finset.sum_range_add`; first block
+factors `3^p` (exponent `j+p-1-m = p+(j-1-m)`) with `pre_castAdd` (prefix of first `j` = prefix of
+whole for `m≤j`); second block factors `2^{pre a j}` with `pre_natAdd_split`
+(`pre a (j+m) = pre a j + pre(tail) m`). Both helper lemmas also proved + clean. This CONFIRMS the
+F-split route is viable at the algebra level — the char-sum factorization now has its foundation.
+
+**→ NEXT (finish brick a → brick b)**:
+1. **Reduce `fnat_split` mod `3ⁿ`** to the `ZMod (3^n)` character setting: `syracZ n` lives on
+   `ZMod (3^n)` and its offset is `fnat n (valVec ..) mod 3^n` (see `Syracuse/SyracRV.lean` for the
+   `Ghat`/`syracZ` encoding). On the event `Cₖ,ₗ` (stopping time `k`, level `l=a_{[1,k+1]}`), the cut
+   `j=k+1`, `p=n-k-1` gives `Xₙ ≡ F_{k+1}(head) + 3^{k+1}·2^{-l}·F_{n-k-1}(tail)`. The `3^{k+1}` factor
+   is the KEY: mod `3^n` it kills the low `k+1` 3-adic digits, so the 2nd summand only touches high
+   frequencies — exactly why the char sum's high-freq mass is controlled.
+2. **brick (b)**: independence of head/tail ⟹ character-sum factorization
+   `∑_Y g(Y)e(-ξY) = [E e(-ξ·head)·1_{event}]·[E e(-ξ·2^{-l}·tail)]` (D1 PMF product form,
+   `cexpect_mul` of independent factors). The 2nd factor is a level-`n-k-1` Syracuse char sum bounded
+   by `charFn_decay` (Prop 1.17, PROVED). See fruit-8 for the remaining conditioning-event apparatus.
 
 ## Lap fruit-8 (2026-07-15): **C10 Cauchy–Schwarz bridge `osc_le_sqrt_highfreq` FULLY PROVED, axiom-clean**
 
