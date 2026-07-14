@@ -157,17 +157,134 @@ theorem rpow_le_eps_mul_of_lt_one {θ ε : ℝ} (hθ0 : 0 ≤ θ) (hθ1 : θ < 1
     _ = ε * (x ^ θ * x ^ (1 - θ)) := by ring
     _ = ε * x := by rw [hsplit]
 
+/-- **The two power bounds of the descent numeric** (`2^{n₀} ≍ x^{0.1}`, `n₀ = ⌊log x/(10 log 2)⌋`).
+For large `x`: `3^{n₀} ≤ x^{0.2}` and `3^{n₀}·x^{α³}/2^{1.9 n₀} ≤ x^{0.99}`.  The only transcendental
+input is `log 3 / log 2 ≤ 8/5`, which is the clean rational fact `3^5 = 243 ≤ 256 = 2^8`. -/
+theorem descent_pow_bounds :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      (3 : ℝ) ^ (nZero x) ≤ x ^ (0.2 : ℝ) ∧
+      (3 : ℝ) ^ (nZero x) * x ^ (alpha ^ 3) / (2 : ℝ) ^ (1.9 * (nZero x : ℝ)) ≤ x ^ (0.99 : ℝ) := by
+  refine ⟨(2 : ℝ) ^ (30 : ℕ), by norm_num, fun x hx => ?_⟩
+  have hx1 : (1 : ℝ) ≤ x := le_trans (by norm_num) hx
+  have hxpos : 0 < x := by linarith
+  have hL0 : 0 ≤ Real.log x := Real.log_nonneg hx1
+  have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog3_0 : 0 ≤ Real.log 3 := Real.log_nonneg (by norm_num)
+  have hlog : 5 * Real.log 3 ≤ 8 * Real.log 2 := by
+    have h := Real.log_le_log (show (0 : ℝ) < (3 : ℝ) ^ (5 : ℕ) by positivity)
+      (show (3 : ℝ) ^ (5 : ℕ) ≤ (2 : ℝ) ^ (8 : ℕ) by norm_num)
+    rw [Real.log_pow, Real.log_pow] at h; push_cast at h; linarith
+  have hlog30 : (30 : ℝ) * Real.log 2 ≤ Real.log x := by
+    rw [show (30 : ℝ) * Real.log 2 = Real.log ((2 : ℝ) ^ (30 : ℕ)) by rw [Real.log_pow]; push_cast; ring]
+    exact Real.log_le_log (by positivity) hx
+  have harg : 0 ≤ Real.log x / (10 * Real.log 2) := by positivity
+  have hν_le' : (nZero x : ℝ) * (10 * Real.log 2) ≤ Real.log x := by
+    have h : (nZero x : ℝ) ≤ Real.log x / (10 * Real.log 2) := by
+      unfold nZero; exact Nat.floor_le harg
+    exact (le_div_iff₀ (by positivity)).mp h
+  have hν_ge' : Real.log x < ((nZero x : ℝ) + 1) * (10 * Real.log 2) := by
+    have h : Real.log x / (10 * Real.log 2) < (nZero x : ℝ) + 1 := by
+      unfold nZero; exact Nat.lt_floor_add_one _
+    exact (div_lt_iff₀ (by positivity)).mp h
+  have hν0 : (0 : ℝ) ≤ (nZero x : ℝ) := Nat.cast_nonneg _
+  have hprod2 : (0 : ℝ) ≤ (nZero x : ℝ) * (8 * Real.log 2 - 5 * Real.log 3) :=
+    mul_nonneg hν0 (by linarith)
+  refine ⟨?_, ?_⟩
+  · -- 3^{n₀} ≤ x^{0.2}
+    rw [← Real.rpow_natCast (3 : ℝ) (nZero x),
+        Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 3),
+        Real.rpow_def_of_pos hxpos]
+    apply Real.exp_le_exp.mpr
+    nlinarith [hν_le', hprod2, hlog2, hL0]
+  · -- 3^{n₀}·x^{α³}/2^{1.9 n₀} ≤ x^{0.99}
+    have hα3 : alpha ^ 3 ≤ 1.01 := by unfold alpha; norm_num
+    rw [← Real.rpow_natCast (3 : ℝ) (nZero x),
+        Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 3),
+        Real.rpow_def_of_pos hxpos (alpha ^ 3),
+        Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 2),
+        Real.rpow_def_of_pos hxpos (0.99 : ℝ),
+        ← Real.exp_add, ← Real.exp_sub]
+    apply Real.exp_le_exp.mpr
+    nlinarith [hν_le', hν_ge', hprod2, hlog2, hL0, hlog30, hα3, hν0]
+
 /-- **The descent step** (Tao pp.21, over (1.5)/(1.7)).  For `x` large and `N` in the support of the
 log-uniform window (`N` odd, `y ≤ N ≤ y^α ≤ x^{α³}`), if the total valuation `valSum N n₀` exceeds
 `1.9 n₀`, then `Syr^{n₀}(N) ≤ 3^{n₀} 2^{-1.9 n₀} x^{α³} + O(3^{n₀}) = O(x^{0.99}) ≤ x`, so `N` passes.
-Proof (owed): `syr_iterate_key` (C2) gives `2^{valSum N n₀}·Syr^{n₀}N = 3^{n₀}N + fnat`, and
-`fnat ≤ 3^{n₀} 2^{valSum N n₀}`, then the numeric `3^{n₀} 2^{-1.9 n₀} x^{α³} ≤ x^{0.99}` at
-`2^{n₀} ≍ x^{0.1}`. -/
+Uses `syr_descent_bound` (C2 core) + `descent_pow_bounds` (numeric) + `rpow_le_eps_mul_of_lt_one`. -/
 theorem descent_passes :
     ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       ∀ N ∈ (logUnifOdd y (y ^ alpha)).support,
         1.9 * (nZero x : ℝ) < (valSum N (nZero x) : ℝ) → passes ⌊x⌋₊ N := by
-  sorry
+  obtain ⟨xa, hxa1, hxa⟩ := rpow_le_eps_mul_of_lt_one (θ := (0.99 : ℝ)) (ε := (1 / 4 : ℝ))
+    (by norm_num) (by norm_num) (by norm_num)
+  obtain ⟨xb, hxb1, hxb⟩ := rpow_le_eps_mul_of_lt_one (θ := (0.2 : ℝ)) (ε := (1 / 4 : ℝ))
+    (by norm_num) (by norm_num) (by norm_num)
+  obtain ⟨xc, hxc1, hpow⟩ := descent_pow_bounds
+  refine ⟨max (max xa xb) (max xc 2), fun x hx y hy N hNsupp hval => ?_⟩
+  have hxa' : xa ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+  have hxb' : xb ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxc' : xc ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_right _ _)) hx
+  have hx2 : (2 : ℝ) ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_right _ _)) hx
+  have hx1 : (1 : ℝ) ≤ x := by linarith
+  have hxpos : 0 < x := by linarith
+  have hone : ∀ z : ℝ, 0 ≤ z → (1 : ℝ) ≤ x ^ z := fun z hz => by
+    calc (1 : ℝ) = 1 ^ z := (Real.one_rpow z).symm
+      _ ≤ x ^ z := Real.rpow_le_rpow zero_le_one hx1 hz
+  have haα : (0 : ℝ) ≤ alpha := by unfold alpha; norm_num
+  have hyge1 : (1 : ℝ) ≤ y := by
+    rcases hy with h | h <;> rw [h]
+    · exact hone alpha haα
+    · exact hone (alpha ^ 2) (by positivity)
+  have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
+    calc (1 : ℝ) = 1 ^ alpha := (Real.one_rpow alpha).symm
+      _ ≤ y ^ alpha := Real.rpow_le_rpow zero_le_one hyge1 haα
+  obtain ⟨hodd, hNle⟩ := logUnifOdd_support_le hyα1 hNsupp
+  have hNb : (N : ℝ) ≤ x ^ (alpha ^ 3) := by
+    refine le_trans hNle ?_
+    rcases hy with h | h
+    · rw [h, ← Real.rpow_mul hxpos.le]
+      exact Real.rpow_le_rpow_of_exponent_le hx1 (by unfold alpha; nlinarith)
+    · rw [h, ← Real.rpow_mul hxpos.le]
+      exact le_of_eq (by rw [show alpha ^ 2 * alpha = alpha ^ 3 by ring])
+  -- descent bound cast to ℝ
+  have h2v : (0 : ℝ) < 2 ^ (valSum N (nZero x)) := by positivity
+  have hsdR : (2 : ℝ) ^ (valSum N (nZero x)) * (syr^[nZero x] N : ℝ)
+      ≤ 3 ^ (nZero x) * (N : ℝ) + 2 ^ (valSum N (nZero x)) * 3 ^ (nZero x) := by
+    exact_mod_cast syr_descent_bound N (nZero x) hodd
+  have hsyr_le : (syr^[nZero x] N : ℝ)
+      ≤ 3 ^ (nZero x) * (N : ℝ) / 2 ^ (valSum N (nZero x)) + 3 ^ (nZero x) := by
+    have hrhs : (3 ^ (nZero x) * (N : ℝ) / 2 ^ (valSum N (nZero x)) + 3 ^ (nZero x))
+          * 2 ^ (valSum N (nZero x))
+        = 3 ^ (nZero x) * (N : ℝ) + 3 ^ (nZero x) * 2 ^ (valSum N (nZero x)) := by
+      field_simp
+    refine le_of_mul_le_mul_right ?_ h2v
+    rw [hrhs]; nlinarith [hsdR]
+  have h2vge : (2 : ℝ) ^ (1.9 * (nZero x : ℝ)) ≤ 2 ^ (valSum N (nZero x)) := by
+    rw [← Real.rpow_natCast (2 : ℝ) (valSum N (nZero x))]
+    exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (le_of_lt hval)
+  have hfrac : 3 ^ (nZero x) * (N : ℝ) / 2 ^ (valSum N (nZero x))
+      ≤ 3 ^ (nZero x) * x ^ (alpha ^ 3) / 2 ^ (1.9 * (nZero x : ℝ)) := by
+    have hnumpos : (0 : ℝ) ≤ 3 ^ (nZero x) * x ^ (alpha ^ 3) := by positivity
+    calc 3 ^ (nZero x) * (N : ℝ) / 2 ^ (valSum N (nZero x))
+        ≤ 3 ^ (nZero x) * x ^ (alpha ^ 3) / 2 ^ (valSum N (nZero x)) :=
+          div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hNb (by positivity)) h2v.le
+      _ ≤ 3 ^ (nZero x) * x ^ (alpha ^ 3) / 2 ^ (1.9 * (nZero x : ℝ)) :=
+          div_le_div_of_nonneg_left hnumpos (by positivity) h2vge
+  obtain ⟨hp1, hp2⟩ := hpow x hxc'
+  have hsyr_final : (syr^[nZero x] N : ℝ) ≤ x ^ (0.99 : ℝ) + x ^ (0.2 : ℝ) := by
+    calc (syr^[nZero x] N : ℝ)
+        ≤ 3 ^ (nZero x) * (N : ℝ) / 2 ^ (valSum N (nZero x)) + 3 ^ (nZero x) := hsyr_le
+      _ ≤ 3 ^ (nZero x) * x ^ (alpha ^ 3) / 2 ^ (1.9 * (nZero x : ℝ)) + 3 ^ (nZero x) :=
+          add_le_add hfrac (le_refl _)
+      _ ≤ x ^ (0.99 : ℝ) + x ^ (0.2 : ℝ) := add_le_add hp2 hp1
+  have hxx : x ^ (0.99 : ℝ) + x ^ (0.2 : ℝ) ≤ x - 1 := by
+    have ha := hxa x hxa'
+    have hb := hxb x hxb'
+    nlinarith [ha, hb, hx2]
+  refine ⟨nZero x, ?_⟩
+  have hsyrR : (syr^[nZero x] N : ℝ) ≤ x - 1 := le_trans hsyr_final hxx
+  have hfloor : x - 1 < (⌊x⌋₊ : ℝ) := by have := Nat.lt_floor_add_one x; linarith
+  exact_mod_cast (lt_of_le_of_lt hsyrR hfloor).le
 
 -- RATIFY-C7: paper (1.19), §5 pp.20–21. Stated character-identically to the FIRST CONJUNCT of
 -- `stabilization` below, which is where this content had been absorbed. Judge against p.20.
