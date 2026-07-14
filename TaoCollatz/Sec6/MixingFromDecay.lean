@@ -83,15 +83,48 @@ theorem osc_eq_sum_norm_devC (m n : ℕ) (hmn : m ≤ n) :
     ring
   rw [hcast, Complex.norm_real, Real.norm_eq_abs, fiber]
 
+/-- **Fourier inversion** for the density: `densC Y = N⁻¹ ∑_ξ 𝓕(densC)(ξ)·e(ξ·Y)`. Immediate
+from `densC = 𝓕⁻(𝓕 densC)` (`LinearEquiv.symm_apply_apply`) and `ZMod.invDFT_apply`. -/
+theorem densC_inversion (n : ℕ) (Y : ZMod (3 ^ n)) :
+    densC n Y = (3 ^ n : ℂ)⁻¹ * ∑ ξ, ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y) := by
+  have hNcast : ((3 ^ n : ℕ) : ℂ) = (3 ^ n : ℂ) := by push_cast; ring
+  have hself : densC n Y = ZMod.dft.symm (ZMod.dft (densC n)) Y := by
+    rw [LinearEquiv.symm_apply_apply]
+  rw [hself, ZMod.invDFT_apply, smul_eq_mul, hNcast]
+  congr 1
+  exact Finset.sum_congr rfl (fun ξ _ => by rw [smul_eq_mul, mul_comm])
+
+/-- **Coset character sum** (the number-theoretic heart of C10): the additive character summed
+over a `3ᵐ`-fiber vanishes unless `ξ` is a low frequency (`3^{n-m} ∣ ξ.val`), in which case it is
+`3^{n-m}` times the character at the base point. Route: parametrize the fiber as `{Y + t·3ᵐ}`
+(`t < 3^{n-m}`), split the character `e(ξ·(Y+t·3ᵐ)) = e(ξ·Y)·e(ξ·3ᵐ·t)`, and evaluate the
+geometric sum over the `3^{n-m}`-th roots of unity (`= 3^{n-m}` when `e(ξ·3ᵐ)=1`, else `0`). -/
+theorem coset_char_sum (m n : ℕ) (hmn : m ≤ n) (ξ Y : ZMod (3 ^ n)) :
+    ∑ Y' ∈ fiber m n hmn Y, ZMod.stdAddChar (ξ * Y')
+      = (if ξ ∈ lowFreq m n then (3 ^ (n - m) : ℂ) else 0) * ZMod.stdAddChar (ξ * Y) := by
+  sorry
+
+/-- **The conditional average is the low-frequency projection**: substituting Fourier inversion
+into the fiber average and applying `coset_char_sum` collapses it to the low-frequency inverse DFT
+(`3^{m-n}·3^{n-m} = 1` cancels). -/
+theorem condAvgC_eq_lowSum (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) :
+    condAvgC m n hmn Y
+      = (3 ^ n : ℂ)⁻¹ * ∑ ξ ∈ lowFreq m n,
+          ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y) := by
+  sorry
+
 /-- **The Fourier-inversion crux** (Remark 1.18): the `3ᵐ`-scale deviation is the high-frequency
-inverse DFT. The conditional average is the projection onto the low frequencies
-`{ξ : 3^{n-m} ∣ ξ.val}` (those `ξ` constant on `3ᵐ`-cosets, by the coset character sum
-`coset_char_sum`), so `devC Y = c Y − avg(Y) = N⁻¹ ∑_{ξ∈highFreq} 𝓕c(ξ)·e(ξ·Y)`. -/
+inverse DFT. The conditional average is the projection onto the low frequencies (`condAvgC_eq_lowSum`),
+so `devC Y = c Y − avg(Y) = N⁻¹·(∑_all − ∑_low) = N⁻¹ ∑_{ξ∈highFreq} 𝓕c(ξ)·e(ξ·Y)`. -/
 theorem devC_eq_highfreq_invDFT (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) :
     devC m n hmn Y
       = (3 ^ n : ℂ)⁻¹ * ∑ ξ ∈ highFreq m n,
           ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y) := by
-  sorry
+  have hsplit : ∑ ξ ∈ highFreq m n, ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y)
+      = (∑ ξ, ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y))
+        - ∑ ξ ∈ lowFreq m n, ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y) := by
+    rw [highFreq, lowFreq, eq_sub_iff_add_eq, add_comm, Finset.sum_filter_add_sum_filter_not]
+  rw [devC, densC_inversion n Y, condAvgC_eq_lowSum m n hmn Y, ← mul_sub, ← hsplit]
 
 /-- **Parseval `L²` identity for the deviation**: `∑_Y ‖devC Y‖² = N⁻¹·∑_{highFreq} ‖𝓕c(ξ)‖²`.
 From `devC_eq_highfreq_invDFT` (`devC = 𝓕⁻ g`, `g` the high-frequency restriction of `𝓕c`) and
