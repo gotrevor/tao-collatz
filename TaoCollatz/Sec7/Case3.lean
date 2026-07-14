@@ -89,6 +89,22 @@ theorem pathSum_of_ge {T : ℕ} (v : Fin T → ℕ × ℤ) {p : ℕ} (hp : T ≤
   rw [pathSum, pathSum, List.take_of_length_le (by simpa using hp),
     List.take_of_length_le (by simp)]
 
+/-- The partial sum's **first coordinate is monotone** in `p` (the first coordinate of
+each `ℕ × ℤ` step is a `ℕ`, hence `≥ 0`). This sources the good-column depth bound in
+X11d: on `{adv := e.1+(pathSum v P).1 < 0.9m}` every intermediate position
+`(pathSum v p).1 ≤ (pathSum v P).1` stays deep in the strip. -/
+theorem pathSum_fst_le {T : ℕ} (v : Fin T → ℕ × ℤ) {p q : ℕ} (hpq : p ≤ q) :
+    (pathSum v p).1 ≤ (pathSum v q).1 := by
+  have hsplit : (List.ofFn v).take q
+      = (List.ofFn v).take p ++ ((List.ofFn v).take q).drop p := by
+    conv_lhs => rw [← List.take_append_drop p ((List.ofFn v).take q)]
+    rw [List.take_take, Nat.min_eq_left hpq]
+  have hq : pathSum v q = pathSum v p + (((List.ofFn v).take q).drop p).sum := by
+    conv_lhs => rw [pathSum, hsplit, List.sum_append]
+    rw [pathSum]
+  rw [hq, Prod.fst_add]
+  exact Nat.le_add_right _ _
+
 /-! ### Encounter-fold invariants (interface to X9's `encStep`) -/
 
 /-- `encStep` always advances the position by the step. -/
