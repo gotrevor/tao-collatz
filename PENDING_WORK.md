@@ -1,3 +1,47 @@
+# Lap (2026-07-14, HEAD `d24618b`): k-sum CAST CRACKED + `osc_syracZ_high_regime` DECOMPOSED
+
+**Absorbed judge pass 28 first**: `hbudget` from the **tight** window never (6.8); **C_A ≥ 23**
+(fixed `caConst = 30`); SHOW the `A′`-absorption at C_A=30 rather than assert it (do this when
+wiring `osc_mainHigh_bound`). Alternative allowed: re-prove the kernel at ε=1/4 (cost 0.481·C²,
+threshold back to ≳10) — a strengthening of the unwatched `fnat_lt_of_suffix_window`.
+
+**The route-decisive friction is discharged.** The k-sum dependent-index cast `(n−1−k)+(k+1)=n`
+(flagged "main new friction" for 3 laps) is now proved + axiom-clean:
+- `cutEq`/`osc_cast`/`osc_cast'` — transport `osc` across an exponent equality. KEY trick: state
+  with `a b` as FREE vars ⇒ `subst h` collapses the `Eq.rec`; the k-varying cut lives on a
+  different `ZMod(3^…)` but its *oscillation* is a real number moved losslessly to level `n`.
+- `castedTerm`/`osc_castedTerm` — one stopping-cut `condDensW` cast to level n. **GOTCHA**: a raw
+  `▸` under the `osc_sum_le` sum forces `whnf` into `condDensW`'s `tsum` → heartbeat blowup. FIX:
+  wrap the `▸` in its own `def` so it stays an opaque atom to the unifier (+ name the eq lemma
+  `cutEq` so the `Eq.rec` proof term is syntactically stable, not an anonymous `by omega`).
+- `mainDensity`/`osc_mainDensity_le` — the (k,l)-summed main density and the cast glue
+  `osc(main) ≤ ∑_{k,l} B k l` via `osc_sum_le` (×2) ∘ `osc_castedTerm`.
+- `osc_syracZ_split_le` — the main/error split combiner (`osc_add_le`+`osc_le_two_mul_l1`):
+  `osc(syracZ) ≤ osc(main) + 2·‖err‖_{L¹}`.
+
+**`osc_syracZ_high_regime` was ONE opaque sorry; now PROVED**, resting on two precisely-named
+obligations in `src/` (src sorry count 5→6 = PROGRESS: the crux is decomposed):
+1. **`osc_mainHigh_bound`** (obl 1+2, MAIN term) `osc(mainHigh n) ≤ C·m^{-A}`. Attack:
+   `osc_mainDensity_le` (DONE) reduces to per-cut bounds; each is `condDensWB_osc_le` (DONE,
+   `≤ D·√(3ⁿ2⁻ˡ)`) with `D = C_A·q⁻ᴬ` from `head_factor_norm_le_charFn` (obl 2 / `hunif`); then the
+   geometric l-sum `∑√(2⁻ˡ)` (√(3ⁿ·2⁻ˡ)=3^{n/2}2^{-l/2}, l≈n log₂3 cancels 3^{n/2}) + k-count +
+   constant chase (⚠️ SHOW the A′-absorption of `n^{O(C_A²)}` at C_A=30). This is where `hbudget`
+   lives — discharge from the TIGHT window `l ≤ n log₂3 − (C_A²−2C_A)log n`, per `lRange`.
+2. **`error_l1_high_bound`** (obl 1, ERROR term) `2·∑|syracZ − mainHigh| ≤ C·m^{-A}`. The (6.3)
+   `P(Ē) ≤ n^{-A-1}` + (6.4) `E→Eₖ` enlargements via S3/§7 sub-Gaussian tails (Lemma 2.2 + union).
+   NB this is where the (6.2)-(6.9) event *partition* correctness must actually be shown — currently
+   `mainHigh` is DEFINED (the (k,l)-sum of casts) but that it captures P(Xn=Y ∧ E-good) up to the
+   error is the content. May need to relate `mainDensity`'s Σ_l `condDensW` to `syracZ_eq_tsum_condDens`.
+
+Concrete §6 objects now defined: `caConst`(=30), `caThr`(6.6 threshold), `lRange`(tight (6.8)
+range per judge pass 28), `mainHigh`. Build green 3285; `fine_scale_mixing`/`stabilization` differ
+27/29 char-identical; all new glue `[propext, Classical.choice, Quot.sound]`.
+
+**Next lap (hardest-first)**: attack `osc_mainHigh_bound` — it holds `hbudget` (the campaign's single
+load-bearing undischarged number, judge tripwire armed). Start by feeding `osc_mainDensity_le` the
+per-cut `condDensWB_osc_le`, reducing to `∑_{k∈range n} ∑_{l∈lRange} C_A·q⁻ᴬ·√(3ⁿ2⁻ˡ) ≤ C·m^{-A}`;
+that isolates the geometric/chase + the tight-window `hbudget` discharge + the A′-absorption SHOW.
+
 # PENDING WORK (kept current per lap; newest on top)
 
 ## Review lap (2026-07-15, HEAD `4eabb35`): route CONTINUE; frontier → the ASSEMBLY
