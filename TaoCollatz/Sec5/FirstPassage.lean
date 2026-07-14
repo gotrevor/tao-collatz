@@ -87,6 +87,47 @@ C7 sorry into visible, attackable holes and isolates the ONE new analytic brick 
 3. `descent_passes` — the (1.5)/(1.7) descent: if `|ā^{(n₀)}(N_y)| > 1.9 n₀` then
    `Syr^{n₀}(N_y) = O(x^{0.99}) ≤ x`, hence `passes`. Pointwise, over `syr_iterate_key` (C2). -/
 
+/-- **Support extraction for the log-uniform window.**  Any `N` in the support of `logUnifOdd lo hi`
+is odd and `≤ hi` (in the nonempty case it lies in `logWindow lo hi`; in the degenerate empty case
+the support is the point mass `{1}`, and `1` is odd and `≤ hi` when `hi ≥ 1`). -/
+theorem logUnifOdd_support_le {lo hi : ℝ} (hhi : 1 ≤ hi)
+    {N : ℕ} (hN : N ∈ (logUnifOdd lo hi).support) : N % 2 = 1 ∧ (N : ℝ) ≤ hi := by
+  unfold logUnifOdd at hN
+  by_cases h : (logWindow lo hi).Nonempty
+  · rw [dif_pos h, PMF.mem_support_ofFinset_iff] at hN
+    have hw := hN.1
+    simp only [logWindow, Finset.mem_filter, Finset.mem_range] at hw
+    exact ⟨hw.2.1, hw.2.2.2⟩
+  · rw [dif_neg h, PMF.mem_support_iff, PMF.pure_apply] at hN
+    have hN1 : N = 1 := by by_contra hne; simp [hne] at hN
+    subst hN1
+    exact ⟨by norm_num, by exact_mod_cast hhi⟩
+
+/-- **Odd-support of the reduced window** — a structural brick of the `intTest_error` dTV reduction.
+The pushforward of `logUnifOdd lo hi` under reduction mod `2^{n'}` (`n' ≥ 1`) puts mass `0` on every
+EVEN residue: all `N` in the window are odd, and `Nat.cast` to `ZMod (2^{n'})` preserves the low bit
+(`(↑N).val % 2 = N % 2`). Hence the dTV against `unifOddMod` collapses to a sum over odd residues.
+
+Note the `.map`-of-a-coercion elaborates (via coercion lifting) to a DOUBLE map `id ∘ cast`, so we
+first collapse the identity outer map (`PMF.map_id`) and force the `PMF.map` head (`show`) before
+`PMF.map_apply` — otherwise the apply lemmas mis-unify with the identity map (index over `ZMod`). -/
+theorem logUnifOdd_map_even_zero {lo hi : ℝ} (hhi : 1 ≤ hi) {n' : ℕ} (hn' : 0 < n')
+    (r : ZMod (2 ^ n')) (hr : r.val % 2 = 0) :
+    ((logUnifOdd lo hi).map fun N => (N : ZMod (2 ^ n'))) r = 0 := by
+  rw [show (fun N : ZMod (2 ^ n') => N) = id from rfl, PMF.map_id]
+  show (PMF.map (fun N : ℕ => (N : ZMod (2 ^ n'))) (logUnifOdd lo hi)) r = 0
+  rw [PMF.map_apply, ENNReal.tsum_eq_zero]
+  intro N
+  split_ifs with hcond
+  · by_contra hne
+    have hsupp : N ∈ (logUnifOdd lo hi).support := hne
+    have hodd : N % 2 = 1 := (logUnifOdd_support_le hhi hsupp).1
+    have hval : ((N : ℕ) : ZMod (2 ^ n')).val % 2 = 1 := by
+      rw [ZMod.val_natCast, Nat.mod_mod_of_dvd N (dvd_pow_self 2 hn'.ne')]; exact hodd
+    have hr1 : r.val % 2 = 1 := by rw [hcond]; exact hval
+    omega
+  · rfl
+
 /-- **Numeric closure for the integral test.**  For `x ≥ 1` and `y ∈ {x^α, x^{α²}}`, the modulus
 `2^{3n₀}` (`n₀ = ⌊log x / (10 log 2)⌋`, so `2^{n₀} ≍ x^{0.1}`) gives `2^{3n₀} / y ≤ 2^{-3n₀}`, i.e. the
 integral-test error `O(2^{n'}/y)` is `≤ 2^{-n'}`, with room to spare (`2^{6n₀} ≤ x^{0.6} ≤ x^{1.001} ≤ y`).
@@ -179,22 +220,6 @@ theorem valSum_lower_tail :
             (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
           ≤ C * x ^ (-c) := by
   sorry
-
-/-- **Support extraction for the log-uniform window.**  Any `N` in the support of `logUnifOdd lo hi`
-is odd and `≤ hi` (in the nonempty case it lies in `logWindow lo hi`; in the degenerate empty case
-the support is the point mass `{1}`, and `1` is odd and `≤ hi` when `hi ≥ 1`). -/
-theorem logUnifOdd_support_le {lo hi : ℝ} (hhi : 1 ≤ hi)
-    {N : ℕ} (hN : N ∈ (logUnifOdd lo hi).support) : N % 2 = 1 ∧ (N : ℝ) ≤ hi := by
-  unfold logUnifOdd at hN
-  by_cases h : (logWindow lo hi).Nonempty
-  · rw [dif_pos h, PMF.mem_support_ofFinset_iff] at hN
-    have hw := hN.1
-    simp only [logWindow, Finset.mem_filter, Finset.mem_range] at hw
-    exact ⟨hw.2.1, hw.2.2.2⟩
-  · rw [dif_neg h, PMF.mem_support_iff, PMF.pure_apply] at hN
-    have hN1 : N = 1 := by by_contra hne; simp [hne] at hN
-    subst hN1
-    exact ⟨by norm_num, by exact_mod_cast hhi⟩
 
 /-- **Sub-linear powers are eventually dominated.**  For `0 ≤ θ < 1` and `ε > 0`, `x^θ ≤ ε·x` for
 all large `x`.  (Take `x₀ = max 1 ((1/ε)^{1/(1-θ)}`).)  The workhorse for the `O(x^{0.99}) ≤ x`
