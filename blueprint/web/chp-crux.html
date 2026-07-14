@@ -388,6 +388,9 @@
 
     <a class="icon proof" href="chp-crux.html#X4">#</a>
     
+    <a class="icon proof" href="chp-crux.html#a0000000035"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
 </button>
@@ -441,11 +444,23 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   The <b class="bfseries">holding law</b> \(\mathrm{Hold}\) on \(\mathbb {N}\times \mathbb {Z}\) (§7.3), whose first coordinate is always \(\ge 1\), governing how the renewal walk steps between pairs. Design decision D6 replaces the paper’s infinite renewal product (7.34) by the <em>defined</em> downward recursion \(Q:\mathbb {N}\times \mathbb {Z}\to \mathbb {R}\) (paper (7.35)), </p>
-<div class="displaymath" id="a0000000035">
+<div class="displaymath" id="a0000000036">
   \[  Q(j,l) = 1 \  \  (j{\gt}\lfloor n/2\rfloor ); \qquad Q(j,l) = e^{-\varepsilon ^3\mathbf1_W(j,l)}\cdot \! \! \sum _{d}\! (\mathrm{Hold}\, d)\, Q\bigl((j,l)+d\bigr) \  \  (j\le \lfloor n/2\rfloor ),  \]
 </div>
 <p> well-founded on \(\lfloor n/2\rfloor - j\) (Hold’s first coordinate is \(\ge 1\)), with \(0\le Q\le 1\). The bridge (7.28)/(7.34)–(7.36) makes \(\mathbb {E}\, Q(\mathrm{Hold})\ll _A n^{-A}\) equivalent to <b class="bfseries">Proposition 7.3</b> (the renewal white-encounter count, in the finite-vector form over \(\mathrm{Pascal}^{\otimes \lfloor n/2\rfloor }\)). This node exists to validate the D6 finitization. </p>
 <p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 8–15 treadmill laps; risk <b class="bfseries">medium</b> (80% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000035">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>PROVED. <em>Judge pass 27 (2026-07-14), dated <span class="ttfamily">#print axioms</span> at pin <span class="ttfamily">8505bd4</span></em>: <span class="ttfamily">Q_rec</span>, <span class="ttfamily">Q_boundary</span>, <span class="ttfamily">renewal_white_encounters</span> all \(=\) \([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\) — the trust base only. The D6 downward recursion is <em>defined</em> (well-founded on \(\lfloor n/2\rfloor - j\)), so the (7.28)/(7.34)–(7.36) bridge is a theorem rather than a construction obligation. </p>
 
   </div>
 </div>
@@ -465,7 +480,7 @@
 
     <a class="icon proof" href="chp-crux.html#X5">#</a>
     
-    <a class="icon proof" href="chp-crux.html#a0000000036"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+    <a class="icon proof" href="chp-crux.html#a0000000037"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
 </a>
     
     
@@ -520,7 +535,7 @@
 
   </div>
 </div>
-<div class="proof_wrapper" id="a0000000036">
+<div class="proof_wrapper" id="a0000000037">
   <div class="proof_heading">
     <span class="proof_caption">
     Proof
@@ -548,7 +563,7 @@
 
     <a class="icon proof" href="chp-crux.html#X6">#</a>
     
-    <a class="icon proof" href="chp-crux.html#a0000000037"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+    <a class="icon proof" href="chp-crux.html#a0000000038"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
 </a>
     
     
@@ -603,7 +618,7 @@
 
   </div>
 </div>
-<div class="proof_wrapper" id="a0000000037">
+<div class="proof_wrapper" id="a0000000038">
   <div class="proof_heading">
     <span class="proof_caption">
     Proof
@@ -631,6 +646,9 @@
     <div class="thm_header_hidden_extras">
 
     <a class="icon proof" href="chp-crux.html#X7">#</a>
+    
+    <a class="icon proof" href="chp-crux.html#a0000000039"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
     
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
@@ -689,6 +707,18 @@
 
   </div>
 </div>
+<div class="proof_wrapper" id="a0000000039">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>PROVED — <b class="bfseries">§7 monotonicity is closed</b>. <em>Judge pass 27 (2026-07-14), dated <span class="ttfamily">#print axioms</span> at pin <span class="ttfamily">8505bd4</span></em>: <span class="ttfamily">prop_7_8</span>, <span class="ttfamily">Q_white_case1</span>, <span class="ttfamily">Q_black_edge</span>, <span class="ttfamily">Q_polynomial_decay</span> all \(=\) \([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\). <span class="ttfamily">prop_7_8</span> no longer carries <span class="ttfamily">sorryAx</span>: Case 1 was already proved, and the black edge is now discharged through both branches — Case 2 (node&#160;<a href="chp-crux.html#X8">7.8</a>) and Case 3 (node&#160;<a href="chp-crux.html#X11">7.11</a>). </p>
+
+  </div>
+</div>
 <div class="lemma_thmwrapper theorem-style-definition" id="X8">
   <div class="lemma_thmheading">
     <span class="lemma_thmcaption">
@@ -704,6 +734,9 @@
     <div class="thm_header_hidden_extras">
 
     <a class="icon proof" href="chp-crux.html#X8">#</a>
+    
+    <a class="icon proof" href="chp-crux.html#a0000000040"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
     
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
@@ -768,6 +801,18 @@
 
   </div>
 </div>
+<div class="proof_wrapper" id="a0000000040">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>PROVED — <b class="bfseries">Case 2 is closed</b> (the twelfth verified node). <em>Judge pass 26 (2026-07-14), re-verified pass 27 at pin <span class="ttfamily">8505bd4</span></em>: <span class="ttfamily">Q_black_edge_case2</span>, <span class="ttfamily">fpDist_white_exit</span>, <span class="ttfamily">fpDist_edgeWeight_le</span>, <span class="ttfamily">Q_fp_endpoint_le</span>, <span class="ttfamily">budget_le_of_mem_triangle</span> all \(=\) \([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\). Both kernels that were open at pin time landed: the (7.48)/(7.49) weight degradation (<span class="ttfamily">fpDist_edgeWeight_le</span>, via the first-coordinate MGF engine) and the (7.50)/(7.51) white-exit mass (<span class="ttfamily">fpDist_white_exit</span>, by kernel-merge relocation into <span class="ttfamily">BlackEdgeQ.lean</span>). </p>
+
+  </div>
+</div>
 <div class="lemma_thmwrapper theorem-style-definition" id="X9">
   <div class="lemma_thmheading">
     <span class="lemma_thmcaption">
@@ -784,7 +829,7 @@
 
     <a class="icon proof" href="chp-crux.html#X9">#</a>
     
-    <a class="icon proof" href="chp-crux.html#a0000000038"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+    <a class="icon proof" href="chp-crux.html#a0000000041"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
 </a>
     
     
@@ -851,7 +896,7 @@
 
   </div>
 </div>
-<div class="proof_wrapper" id="a0000000038">
+<div class="proof_wrapper" id="a0000000041">
   <div class="proof_heading">
     <span class="proof_caption">
     Proof
@@ -879,7 +924,7 @@
 
     <a class="icon proof" href="chp-crux.html#X10">#</a>
     
-    <a class="icon proof" href="chp-crux.html#a0000000039"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+    <a class="icon proof" href="chp-crux.html#a0000000042"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
 </a>
     
     
@@ -949,7 +994,7 @@
 
   </div>
 </div>
-<div class="proof_wrapper" id="a0000000039">
+<div class="proof_wrapper" id="a0000000042">
   <div class="proof_heading">
     <span class="proof_caption">
     Proof
@@ -977,6 +1022,9 @@
     <div class="thm_header_hidden_extras">
 
     <a class="icon proof" href="chp-crux.html#X11">#</a>
+    
+    <a class="icon proof" href="chp-crux.html#a0000000043"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
     
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
@@ -1029,11 +1077,25 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   <b class="bfseries">Case 3</b> assembly (paper (7.48)/(7.49), (7.52)–(7.67)): the events \(E_*,F_*\), the choice \(R=\lfloor A^2/\varepsilon ^4\rfloor \), and the deterministic claim (7.67), combining Lemma&#160;7.9 (node&#160;<a href="chp-crux.html#X9">7.9</a>) and Lemma&#160;7.10 (node&#160;<a href="chp-crux.html#X10">7.10</a>). This closes Prop&#160;7.8, hence Prop&#160;7.3 (node&#160;<a href="chp-crux.html#X4">7.4</a>) and Prop&#160;7.1, hence the <b class="bfseries">crux</b> <b class="bfseries">Proposition 1.17</b> (character-sum decay): for every \(A{\gt}0\) there is \(C{\gt}0\) with, for all \(n\ge 1\) and all \(\xi \) with \(3\nmid \xi \), </p>
-<div class="displaymath" id="a0000000040">
+<div class="displaymath" id="a0000000044">
   \[  \Bigl\| \, \mathbb {E}_{Y\sim \texttt{syracZ}\, n}\,  e\bigl(-\xi \,  Y/3^{n}\bigr)\Bigr\|  \; \le \;  C\, n^{-A}.  \]
 </div>
 <p> This is the single Fourier-analytic input the whole spine reduces to (feeds node&#160;<a href="chp-mixing.html#C10">6.1</a>). The Case-3 entry statement <span class="ttfamily">Q_black_edge_case3</span> ((7.53)–(7.67) interface, budget hypotheses matching (7.52) with the documented lattice slack) is judge-ratified 2026-07-12 vs pp.48–49 and consumed by the proved <span class="ttfamily">Q_black_edge</span> split. <em>Consumer checks pre-cleared (judge pass 15, pp.48–49 + 54–56 read)</em>: the (7.54) 0.9m split, the \(R := \lfloor A^2/\varepsilon ^4\rfloor \)-after-\(\varepsilon \) choice, the \(-O(A)\) Markov slack absorbing X9’s \(e^{2\varepsilon }\), the depth of every (7.67) encounter, and X10’s consumption at a single large \(A\) at the p.54 union bound (safe for the \(\exists A_0\) re-pin, judge pass 18). What remains at ratification time is pinning this node’s own statements (\(E_*, F_*\), (7.66)/(7.67), the assembly chain) when they land. </p>
 <p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 10–20 treadmill laps; risk <b class="bfseries">high — assembly volume; consumer geometry pre-cleared</b> (75% (2026-07-12 judge pass 15) confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000043">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>PROVED — <b class="bfseries">this closes §7, and with it the crux Proposition&#160;1.17</b>. <em>Judge pass 27 (2026-07-14), dated <span class="ttfamily">#print axioms</span> at pin <span class="ttfamily">8505bd4</span></em>: <span class="ttfamily">Q_black_edge_case3</span>, <span class="ttfamily">charFn_decay</span> (Prop&#160;1.17) and <span class="ttfamily">key_fourier_decay</span> (Prop&#160;7.1) all \(=\) \([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\). </p>
+<p>The two Case-3 leaves both landed and are themselves axiom-clean: <span class="ttfamily">col_tail_mass_le</span> ((7.54), the bad-column Gaussian tail) and <span class="ttfamily">few_white_mass_le</span> ((7.56)). The latter carries the <em>paper-faithful</em> deep hypothesis \(m/\log ^2 m {\lt} s\) — the weaker \(m^{0.8}\) form introduced during the pass-26 deviation was confined to the <span class="ttfamily">_rpow</span> <em>engines</em> and never reached this leaf. </p>
+<p><em>The one step the judge required to see discharged in Lean, not on paper</em>: the Case-3 consumer sits at depth \(m+1\), and \(m/\log ^2 m {\lt} s \Rightarrow (m+1)/\log ^2(m+1) {\lt} s\) genuinely <b class="bfseries">fails</b>. The chain closes only by threading a largeness constant, which is done in <span class="ttfamily">Case3.lean:2011–2068</span>: \((m+1)^{0.8}\le 2m^{0.8}\), \(\log ^2 m \le 400\, m^{0.1}\), hence \((m+1)^{0.8}\log ^2 m \le 800\,  m^{0.9}\le m\), so \((m+1)^{0.8}\le m/\log ^2 m {\lt} s\). The largeness is consumed at \(800 \le m^{0.1}\), which needs \(C_{\mathrm{thr}} = 10^{30}\) (at \(10^{27}\), \(m^{0.1}\approx 501 {\lt} 800\) and the route fails). Kernel-checked. </p>
 
   </div>
 </div>

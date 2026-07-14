@@ -564,6 +564,17 @@ This node exists to validate the D6 finitization.
 \lapsrisk{8--15}{medium}{80\%}
 \end{proposition}
 
+\begin{proof}
+  \leanok
+  PROVED.  \emph{Judge pass 27 (2026-07-14), dated \texttt{\#print axioms} at pin
+  \texttt{8505bd4}}: \texttt{Q\_rec}, \texttt{Q\_boundary},
+  \texttt{renewal\_white\_encounters} all \(=\)
+  \([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\) --- the trust base
+  only.  The D6 downward recursion is \emph{defined} (well-founded on
+  \(\lfloor n/2\rfloor - j\)), so the (7.28)/(7.34)--(7.36) bridge is a theorem rather than a
+  construction obligation.
+\end{proof}
+
 \begin{lemma}[Holding-law basics; Lemma 7.6]\label{X5}
   \lean{hold_mean_fst, hold_mean_snd, hold_aperiodic}
   \uses{X4}
@@ -630,6 +641,16 @@ two case statements alone.
 \lapsrisk{4--8}{low}{85\%}
 \end{proposition}
 
+\begin{proof}
+  \leanok
+  PROVED --- \textbf{\S7 monotonicity is closed}.  \emph{Judge pass 27 (2026-07-14), dated
+  \texttt{\#print axioms} at pin \texttt{8505bd4}}: \texttt{prop\_7\_8},
+  \texttt{Q\_white\_case1}, \texttt{Q\_black\_edge}, \texttt{Q\_polynomial\_decay} all \(=\)
+  \([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\).  \texttt{prop\_7\_8}
+  no longer carries \texttt{sorryAx}: Case 1 was already proved, and the black edge is now
+  discharged through both branches --- Case 2 (node~\ref{X8}) and Case 3 (node~\ref{X11}).
+\end{proof}
+
 \begin{lemma}[Case 2: shallow inside a triangle]\label{X8}
   \lean{TriangleFamily, Q_black_edge_case2, Q_fp_endpoint_le, fpDist_edgeWeight_le, fpDist_white_exit, budget_le_of_mem_triangle}
   \uses{X3, X6, X7}
@@ -648,6 +669,19 @@ strengthens the paper's ``white'' to ``white and in-strip'', which the damping m
 requires.
 \lapsrisk{8--16}{medium --- risk kernel 3a, statements pinned}{75\% (2026-07-12 judge re-rate: endpoint step + budget PROVED axiom-clean; white-exit $\approx 0.99$ Monte Carlo, $\varepsilon$-sites verified 2026-07-10)}
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  PROVED --- \textbf{Case 2 is closed} (the twelfth verified node).  \emph{Judge pass 26
+  (2026-07-14), re-verified pass 27 at pin \texttt{8505bd4}}: \texttt{Q\_black\_edge\_case2},
+  \texttt{fpDist\_white\_exit}, \texttt{fpDist\_edgeWeight\_le},
+  \texttt{Q\_fp\_endpoint\_le}, \texttt{budget\_le\_of\_mem\_triangle} all \(=\)
+  \([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\).  Both kernels that
+  were open at pin time landed: the (7.48)/(7.49) weight degradation
+  (\texttt{fpDist\_edgeWeight\_le}, via the first-coordinate MGF engine) and the
+  (7.50)/(7.51) white-exit mass (\texttt{fpDist\_white\_exit}, by kernel-merge relocation into
+  \texttt{BlackEdgeQ.lean}).
+\end{proof}
 
 \begin{lemma}[Many triangles \(\Rightarrow\) many white points; Lemma 7.9]\label{X9}
   \lean{many_triangles_white, EncState, encStep, encVal, encExpect, encChainX, encounter_vertex_bound, fpDist_white_exit_deep}
@@ -922,3 +956,26 @@ What remains at ratification time is pinning this node's own statements
 (\(E_*, F_*\), (7.66)/(7.67), the assembly chain) when they land.
 \lapsrisk{10--20}{high --- assembly volume; consumer geometry pre-cleared}{75\% (2026-07-12 judge pass 15)}
 \end{proposition}
+
+\begin{proof}
+  \leanok
+  PROVED --- \textbf{this closes \S7, and with it the crux Proposition~1.17}.  \emph{Judge
+  pass 27 (2026-07-14), dated \texttt{\#print axioms} at pin \texttt{8505bd4}}:
+  \texttt{Q\_black\_edge\_case3}, \texttt{charFn\_decay} (Prop~1.17) and
+  \texttt{key\_fourier\_decay} (Prop~7.1) all \(=\)
+  \([\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}]\).
+
+  The two Case-3 leaves both landed and are themselves axiom-clean:
+  \texttt{col\_tail\_mass\_le} ((7.54), the bad-column Gaussian tail) and
+  \texttt{few\_white\_mass\_le} ((7.56)).  The latter carries the \emph{paper-faithful} deep
+  hypothesis \(m/\log^2 m < s\) --- the weaker \(m^{0.8}\) form introduced during the pass-26
+  deviation was confined to the \texttt{\_rpow} \emph{engines} and never reached this leaf.
+
+  \emph{The one step the judge required to see discharged in Lean, not on paper}: the
+  Case-3 consumer sits at depth \(m+1\), and \(m/\log^2 m < s \Rightarrow (m+1)/\log^2(m+1) < s\)
+  genuinely \textbf{fails}.  The chain closes only by threading a largeness constant, which is
+  done in \texttt{Case3.lean:2011--2068}: \((m+1)^{0.8}\le 2m^{0.8}\), \(\log^2 m \le 400\,m^{0.1}\),
+  hence \((m+1)^{0.8}\log^2 m \le 800\, m^{0.9}\le m\), so \((m+1)^{0.8}\le m/\log^2 m < s\).
+  The largeness is consumed at \(800 \le m^{0.1}\), which needs \(C_{\mathrm{thr}} = 10^{30}\)
+  (at \(10^{27}\), \(m^{0.1}\approx 501 < 800\) and the route fails).  Kernel-checked.
+\end{proof}
