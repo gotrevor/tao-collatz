@@ -1692,6 +1692,185 @@ theorem few_white_reach_mass_le (A : ℝ) :
   refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_left' (hinner e) _) ?_
   rw [ENNReal.tsum_mul_right, (fpDist s).tsum_coe, one_mul]
 
+/-- **Numeric closure for the E∗ term.** With the base-4 geometry lemmas instantiated at the
+scaled exponent `A' := 2A + A₀`, the `estar_union_le` bound `C'·A'²·4^{−A'} + C'·exp(−c·A'²)`
+fits the target `10^{−A−3}` for ALL `A > 0`, provided `A₀` is a large enough constant. The
+scaling `2A` makes the effective base `4² = 16 > 10`, so `4^{−A'} = 4^{−A₀}·16^{−A}` beats
+`10^{−A}`; the leftover poly·geom `(2A+A₀)²·(10/16)^A` is dominated (`x²·r^x ≤ 4/log(1/r)²`)
+and the `exp(−c·A'²)` term closed by completing the square. `A₀` is chosen `≥ A₀e` (the E∗
+threshold) and `≥ 1`. -/
+theorem estar_scaled_numeric (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA₀e : 1 ≤ A₀e) :
+    ∃ A₀ : ℝ, A₀e ≤ A₀ ∧ 1 ≤ A₀ ∧ ∀ A : ℝ, 0 < A →
+      C' * (2 * A + A₀) ^ 2 * (4 : ℝ) ^ (-(2 * A + A₀))
+        + C' * Real.exp (-c * (2 * A + A₀) ^ 2)
+        ≤ (10 : ℝ) ^ (-A - 3) := by
+  sorry
+
+open scoped Classical in
+/-- **(7.56) E∗ mass term.** The first-passage⊗walk mass of the union-over-`p` big-triangle
+event (the middle term of `few_white_pointwise_split`) is `≤ 10^{−A−3}`. Wraps
+`estar_union_le` at the scaled exponent `A' := 2A + A₀` (`estar_scaled_numeric`), after the
+`ℝ≥0∞` tsum↔finite-sum swap (`Summable.tsum_finsetSum`) that turns the inner `Σ_p` into the
+outer union `estar_union_le` bounds. The deep hyp `(m+1)^0.8 < s` is bridged from the regime
+`m/log²m < s` via `(m+1)^0.8 ≤ 2m^0.8 ≤ m/log²m`. -/
+theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
+    ∃ A' : ℝ, 1 ≤ A' ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      ∀ P : ℕ, (∀ p, p ≤ P →
+          ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          (∑ p ∈ Finset.range (P + 1),
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+              (1 : ℕ × ℤ → ℝ≥0∞)
+              (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
+  obtain ⟨C', hC', c, hc, A₀e, hA₀e, hestar⟩ := estar_union_le
+  obtain ⟨A₀, hA₀ge, hA₀1, hnum⟩ := estar_scaled_numeric C' c A₀e hC' hc hA₀e
+  set A' : ℝ := 2 * A + A₀ with hA'def
+  have hA'ge : A₀e ≤ A' := by rw [hA'def]; linarith
+  have hA'1 : (1 : ℝ) ≤ A' := by rw [hA'def]; linarith
+  refine ⟨A', hA'1, 10 ^ 30, ?_⟩
+  intro n ξ hξ F m hmCthr hmn l hpos t ht hmem s hs hreg_s P hreg
+  -- the E∗ summand, per `p`, matching `estar_union_le`'s form at `j = n/2-m-1`, `T = P`.
+  set G : ℕ → ℝ≥0∞ := fun p => ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ,
+      hold.iid P v * Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+        (1 : ℕ × ℤ → ℝ≥0∞)
+        (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2) with hGdef
+  -- each summand indicator ≤ 1, so each `G p ≤ 1` (finite).
+  have hind_le1 : ∀ (p : ℕ) (y : ℕ × ℤ),
+      Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+        (1 : ℕ × ℤ → ℝ≥0∞) y ≤ 1 := by
+    intro p y; rw [Set.indicator_apply]; split_ifs with h
+    · simp
+    · simp
+  have hGle1 : ∀ p, G p ≤ 1 := by
+    intro p
+    rw [hGdef]
+    calc (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+            Set.indicator _ (1 : ℕ × ℤ → ℝ≥0∞) _)
+        ≤ ∑' e : ℕ × ℤ, fpDist s e * 1 := by
+          refine ENNReal.tsum_le_tsum fun e => mul_le_mul_left' ?_ _
+          calc (∑' v : Fin P → ℕ × ℤ, hold.iid P v * Set.indicator _ (1 : ℕ × ℤ → ℝ≥0∞) _)
+              ≤ ∑' v : Fin P → ℕ × ℤ, hold.iid P v * 1 :=
+                ENNReal.tsum_le_tsum fun v => mul_le_mul_left' (hind_le1 _ _) _
+            _ = 1 := by rw [ENNReal.tsum_mul_right, (hold.iid P).tsum_coe, one_mul]
+      _ = 1 := by rw [ENNReal.tsum_mul_right, (fpDist s).tsum_coe, one_mul]
+  have hGne : ∀ p, G p ≠ ⊤ := fun p => ne_top_of_le_ne_top ENNReal.one_ne_top (hGle1 p)
+  -- **tsum ↔ finite-sum swap**: the goal LHS equals `∑_{p<P+1} G p`.
+  have hstep1 : ∀ e : ℕ × ℤ, (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+        (∑ p ∈ Finset.range (P + 1),
+          Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+            (1 : ℕ × ℤ → ℝ≥0∞)
+            (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
+      = ∑ p ∈ Finset.range (P + 1), ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+            (1 : ℕ × ℤ → ℝ≥0∞)
+            (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2) := by
+    intro e
+    rw [show (∑' v : Fin P → ℕ × ℤ, hold.iid P v * (∑ p ∈ Finset.range (P + 1), _))
+        = ∑' v : Fin P → ℕ × ℤ, ∑ p ∈ Finset.range (P + 1), hold.iid P v *
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+              (1 : ℕ × ℤ → ℝ≥0∞)
+              (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2) from
+        tsum_congr fun v => by rw [Finset.mul_sum]]
+    exact Summable.tsum_finsetSum (fun p _ => ENNReal.summable)
+  have hswap : (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+        (∑ p ∈ Finset.range (P + 1),
+          Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+            (1 : ℕ × ℤ → ℝ≥0∞)
+            (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
+      = ∑ p ∈ Finset.range (P + 1), G p := by
+    rw [show (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          (∑ p ∈ Finset.range (P + 1), _))
+        = ∑' e : ℕ × ℤ, ∑ p ∈ Finset.range (P + 1), fpDist s e *
+            ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+              Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+                (1 : ℕ × ℤ → ℝ≥0∞)
+                (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2) from
+        tsum_congr fun e => by rw [hstep1 e, Finset.mul_sum]]
+    rw [Summable.tsum_finsetSum (fun p _ => ENNReal.summable)]
+  rw [hswap]
+  -- the deep-hyp bridge `(m+1)^0.8 < s` and the ℕ depth identity `n/2-(n/2-m-1) = m+1`.
+  have hmC : (10 : ℝ) ^ (30 : ℕ) ≤ (m : ℝ) := by exact_mod_cast hmCthr
+  have hm2 : (2 : ℝ) ≤ (m : ℝ) := le_trans (by norm_num) hmC
+  have hmpos : (0 : ℝ) < (m : ℝ) := by linarith
+  have hlogpos : (0 : ℝ) < Real.log (m : ℝ) := Real.log_pos (by linarith)
+  have hbridge : ((m + 1 : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) := by
+    have hlogsqpos : (0 : ℝ) < Real.log (m : ℝ) ^ 2 := by positivity
+    -- (m+1)^0.8 ≤ 2·m^0.8
+    have h08 : ((m + 1 : ℕ) : ℝ) ^ (0.8 : ℝ) ≤ 2 * (m : ℝ) ^ (0.8 : ℝ) := by
+      have hle : ((m + 1 : ℕ) : ℝ) ≤ 2 * (m : ℝ) := by push_cast; linarith
+      calc ((m + 1 : ℕ) : ℝ) ^ (0.8 : ℝ) ≤ (2 * (m : ℝ)) ^ (0.8 : ℝ) :=
+            Real.rpow_le_rpow (by positivity) hle (by norm_num)
+        _ = (2 : ℝ) ^ (0.8 : ℝ) * (m : ℝ) ^ (0.8 : ℝ) := Real.mul_rpow (by norm_num) hmpos.le
+        _ ≤ 2 * (m : ℝ) ^ (0.8 : ℝ) := by
+            have h2 : (2 : ℝ) ^ (0.8 : ℝ) ≤ 2 := by
+              calc (2 : ℝ) ^ (0.8 : ℝ) ≤ (2 : ℝ) ^ (1 : ℝ) :=
+                    Real.rpow_le_rpow_of_exponent_le (by norm_num) (by norm_num)
+                _ = 2 := Real.rpow_one _
+            nlinarith [Real.rpow_nonneg hmpos.le (0.8 : ℝ)]
+    -- log m ≤ 20·m^0.05, hence log²m ≤ 400·m^0.1
+    have hlog : Real.log (m : ℝ) ≤ 20 * (m : ℝ) ^ (0.05 : ℝ) := by
+      have hld := Real.log_le_rpow_div hmpos.le (by norm_num : (0 : ℝ) < 0.05)
+      have heq : (m : ℝ) ^ (0.05 : ℝ) / 0.05 = 20 * (m : ℝ) ^ (0.05 : ℝ) := by ring
+      linarith [hld, heq.ge, heq.le]
+    have hm01 : (m : ℝ) ^ (0.05 : ℝ) * (m : ℝ) ^ (0.05 : ℝ) = (m : ℝ) ^ (0.1 : ℝ) := by
+      rw [← Real.rpow_add hmpos]; norm_num
+    have hlogsq : Real.log (m : ℝ) ^ 2 ≤ 400 * (m : ℝ) ^ (0.1 : ℝ) := by
+      have hlognn : (0 : ℝ) ≤ Real.log (m : ℝ) := hlogpos.le
+      have hmul := mul_le_mul hlog hlog hlognn (by positivity)
+      calc Real.log (m : ℝ) ^ 2 = Real.log (m : ℝ) * Real.log (m : ℝ) := by ring
+        _ ≤ (20 * (m : ℝ) ^ (0.05 : ℝ)) * (20 * (m : ℝ) ^ (0.05 : ℝ)) := hmul
+        _ = 400 * (m : ℝ) ^ (0.1 : ℝ) := by rw [← hm01]; ring
+    -- (m+1)^0.8 · log²m ≤ 800·m^0.9 ≤ m
+    have hm89 : (m : ℝ) ^ (0.8 : ℝ) * (m : ℝ) ^ (0.1 : ℝ) = (m : ℝ) ^ (0.9 : ℝ) := by
+      rw [← Real.rpow_add hmpos]; norm_num
+    have hm91 : (m : ℝ) ^ (0.9 : ℝ) * (m : ℝ) ^ (0.1 : ℝ) = (m : ℝ) := by
+      rw [← Real.rpow_add hmpos]; norm_num
+    have hm01ge : (800 : ℝ) ≤ (m : ℝ) ^ (0.1 : ℝ) := by
+      calc (800 : ℝ) ≤ (1000 : ℝ) := by norm_num
+        _ = ((10 : ℝ) ^ (30 : ℕ)) ^ (0.1 : ℝ) := by
+            rw [← Real.rpow_natCast (10 : ℝ) 30, ← Real.rpow_mul (by norm_num)]
+            norm_num
+        _ ≤ (m : ℝ) ^ (0.1 : ℝ) := Real.rpow_le_rpow (by positivity) hmC (by norm_num)
+    have hm08nn : (0 : ℝ) ≤ (m : ℝ) ^ (0.8 : ℝ) := Real.rpow_nonneg hmpos.le _
+    have hm09nn : (0 : ℝ) ≤ (m : ℝ) ^ (0.9 : ℝ) := Real.rpow_nonneg hmpos.le _
+    have hprod : ((m + 1 : ℕ) : ℝ) ^ (0.8 : ℝ) * Real.log (m : ℝ) ^ 2 ≤ (m : ℝ) := by
+      calc ((m + 1 : ℕ) : ℝ) ^ (0.8 : ℝ) * Real.log (m : ℝ) ^ 2
+          ≤ (2 * (m : ℝ) ^ (0.8 : ℝ)) * (400 * (m : ℝ) ^ (0.1 : ℝ)) := by
+            apply mul_le_mul h08 hlogsq (by positivity) (by positivity)
+        _ = 800 * ((m : ℝ) ^ (0.8 : ℝ) * (m : ℝ) ^ (0.1 : ℝ)) := by ring
+        _ = 800 * (m : ℝ) ^ (0.9 : ℝ) := by rw [hm89]
+        _ ≤ (m : ℝ) := by
+            have hstep : (800 : ℝ) * (m : ℝ) ^ (0.9 : ℝ)
+                ≤ (m : ℝ) ^ (0.1 : ℝ) * (m : ℝ) ^ (0.9 : ℝ) :=
+              mul_le_mul_of_nonneg_right hm01ge hm09nn
+            rw [mul_comm ((m : ℝ) ^ (0.1 : ℝ)) ((m : ℝ) ^ (0.9 : ℝ)), hm91] at hstep
+            exact hstep
+    have hle : ((m + 1 : ℕ) : ℝ) ^ (0.8 : ℝ) ≤ (m : ℝ) / Real.log (m : ℝ) ^ 2 := by
+      rw [le_div_iff₀ hlogsqpos]; exact hprod
+    exact lt_of_le_of_lt hle hreg_s
+  have hdd : n / 2 - (n / 2 - m - 1) = m + 1 := by omega
+  have hdeep' : ((n / 2 - (n / 2 - m - 1) : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) := by
+    rw [hdd]; exact hbridge
+  have hreg' : ∀ p, p ≤ P →
+      ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+        ≤ ((n / 2 - (n / 2 - m - 1) : ℕ) : ℝ) ^ (0.4 : ℝ) := by
+    intro p hp; rw [hdd]; exact hreg p hp
+  -- apply `estar_union_le` at `A' = 2A+A₀`, `j = n/2-m-1`, `T = P`.
+  have hest := hestar A' hA'ge n ξ hξ F t ht (n / 2 - m - 1) l hmem s hs hdeep' P hreg'
+  -- `(∑_p G p).toReal = ∑_p (G p).toReal ≤ estar bound ≤ 10^{−A−3}`.
+  have hSne : (∑ p ∈ Finset.range (P + 1), G p) ≠ ⊤ :=
+    (ENNReal.sum_ne_top).mpr (fun p _ => hGne p)
+  have hStoreal : (∑ p ∈ Finset.range (P + 1), G p).toReal ≤ (10 : ℝ) ^ (-A - 3) := by
+    rw [ENNReal.toReal_sum (fun p _ => hGne p)]
+    exact le_trans hest (hnum A hA)
+  rw [ENNReal.le_ofReal_iff_toReal_le hSne (Real.rpow_nonneg (by norm_num) _)]
+  exact hStoreal
+
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
 /-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first
