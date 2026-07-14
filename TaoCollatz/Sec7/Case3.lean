@@ -1096,12 +1096,14 @@ theorem sum_geom_pow_le (r : ℝ) (hr0 : 0 ≤ r) (hr : r ≤ 1 / 2) (T : ℕ) :
 open scoped Classical in
 /-- **X11a: the E∗ union bound** (paper (7.54)–(7.56)): summing the per-`p`
 `bigTriangle_walk_le` mass over the horizon `p ∈ range(T+1)` at
-`s' = ⌈4^A(1+p)³⌉`, the total big-triangle (E∗) mass is
-`≤ C'·A²·4^{-A} + C'·exp(−c·A²)`. The `1/s'` first-passage terms telescope
-(`sum_inv_sq_le_two`, since `s' ≥ 4^A(1+p)³` gives `A²(1+p)/s' ≤ A²·4^{-A}(1+p)^{-2}`);
-the renewal-tail `exp(−c·A²(1+p))` terms sum geometrically (`sum_geom_pow_le`, with
-`r = exp(−c·A²) ≤ 1/2` for `A ≥ A₀`). Both terms decay super-polynomially, so E∗ is
-negligible in the X11d damping assembly. -/
+`s' = ⌊4^A(1+p)³⌋`, the total big-triangle (E∗) mass is
+`≤ C'·A²·4^{-A} + C'·exp(−c·A²)`. **FLOOR** (not ceil) so `s' ≤ 4^A(1+p)³ ≤ t.2.2`:
+this is what makes `bigTriangleSet F s'` CONTAIN the geometry-join E∗ event (whose
+threshold is the real `4^A(1+p)³`), see `deterministic_encounter_or_bigTriangle`. The
+`1/s'` first-passage terms telescope (`sum_inv_sq_le_two`, using `s' = ⌊4^A(1+p)³⌋ ≥
+½·4^A(1+p)³` so `A²(1+p)/s' ≤ 2·A²·4^{-A}(1+p)^{-2}`); the renewal-tail `exp(−c·A²(1+p))`
+terms sum geometrically (`sum_geom_pow_le`, `r = exp(−c·A²) ≤ 1/2` for `A ≥ A₀`). Both
+decay super-polynomially, so E∗ is negligible in the X11d damping assembly. -/
 theorem estar_union_le :
     ∃ C' > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
@@ -1110,17 +1112,18 @@ theorem estar_union_le :
         ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
       ∀ (T : ℕ),
         (∀ p, p ≤ T →
-          ((⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ : ℕ) : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+          ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ)) →
         (Finset.range (T + 1)).sum (fun p =>
           (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
-            Set.indicator (bigTriangleSet F ⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊) (1 : ℕ × ℤ → ℝ≥0∞)
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊) (1 : ℕ × ℤ → ℝ≥0∞)
               (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal)
           ≤ C' * A ^ 2 * (4 : ℝ) ^ (-A) + C' * Real.exp (-c * A ^ 2) := by
   obtain ⟨C, hC, c, hc, A₀0, hA₀0, hX10⟩ := bigTriangle_walk_le
-  refine ⟨2 * C, by positivity, c, hc, max A₀0 (Real.sqrt (Real.log 2 / c)),
+  refine ⟨4 * C, by positivity, c, hc, max A₀0 (Real.sqrt (Real.log 2 / c)),
     le_max_of_le_left hA₀0, ?_⟩
   intro A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep T hreg
   have hA0 : A₀0 ≤ A := le_trans (le_max_left _ _) hA
+  have hA1 : (1 : ℝ) ≤ A := le_trans hA₀0 hA0
   have hAsqrt : Real.sqrt (Real.log 2 / c) ≤ A := le_trans (le_max_right _ _) hA
   -- r = exp(-c·A²) ≤ 1/2 for A ≥ sqrt(log 2 / c)
   have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
@@ -1139,57 +1142,74 @@ theorem estar_union_le :
     linarith [hle, (by norm_num : (2 : ℝ)⁻¹ = 1 / 2)]
   have hCA2nn : (0 : ℝ) ≤ C * A ^ 2 * (4 : ℝ) ^ (-A) :=
     mul_nonneg (mul_nonneg hC.le (sq_nonneg A)) (Real.rpow_nonneg (by norm_num) _)
-  -- per-p bound from bigTriangle_walk_le (X10)
+  -- 4 ≤ 4^A·(1+p)³ for A ≥ 1 (used for the floor lower bound and `1 ≤ s'`)
+  have hxfour : ∀ p : ℕ, (4 : ℝ) ≤ (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 := by
+    intro p
+    have h4A : (4 : ℝ) ≤ (4 : ℝ) ^ A := by
+      calc (4 : ℝ) = (4 : ℝ) ^ (1 : ℝ) := (Real.rpow_one 4).symm
+        _ ≤ (4 : ℝ) ^ A := Real.rpow_le_rpow_of_exponent_le (by norm_num) hA1
+    have hp0 : (0 : ℝ) ≤ (p : ℝ) := Nat.cast_nonneg p
+    have h13 : (1 : ℝ) ≤ (1 + (p : ℝ)) ^ 3 := by
+      nlinarith [hp0, mul_nonneg hp0 hp0, mul_nonneg (mul_nonneg hp0 hp0) hp0]
+    nlinarith [h4A, h13]
+  -- per-p bound from bigTriangle_walk_le (X10) at s' = ⌊4^A(1+p)³⌋
   have hbig : ∀ p ∈ Finset.range (T + 1),
       (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
-        Set.indicator (bigTriangleSet F ⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊) (1 : ℕ × ℤ → ℝ≥0∞)
+        Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊) (1 : ℕ × ℤ → ℝ≥0∞)
           (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal
-        ≤ C * A ^ 2 * (1 + (p : ℝ)) / ((⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ : ℕ) : ℝ)
+        ≤ C * A ^ 2 * (1 + (p : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
           + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) := by
     intro p hp
     have hpT : p ≤ T := Nat.lt_succ_iff.mp (Finset.mem_range.mp hp)
-    have hs'pos : (0 : ℝ) < (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 := by positivity
-    have h1s' : 1 ≤ ⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ := Nat.ceil_pos.mpr hs'pos
+    have h1s' : 1 ≤ ⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ := by
+      apply Nat.le_floor
+      push_cast
+      linarith [hxfour p]
     exact hX10 A hA0 n ξ hξ F t₀ ht₀ j l hmem s hs hdeep T p _ hpT h1s' (hreg p hpT)
   refine le_trans (Finset.sum_le_sum hbig) ?_
   rw [Finset.sum_add_distrib]
   apply add_le_add
   · -- polynomial (first-passage) terms
     have hpoly : ∀ p ∈ Finset.range (T + 1),
-        C * A ^ 2 * (1 + (p : ℝ)) / ((⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ : ℕ) : ℝ)
-          ≤ C * A ^ 2 * (4 : ℝ) ^ (-A) * (1 / (1 + (p : ℝ)) ^ 2) := by
+        C * A ^ 2 * (1 + (p : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+          ≤ 2 * C * A ^ 2 * (4 : ℝ) ^ (-A) * (1 / (1 + (p : ℝ)) ^ 2) := by
       intro p _
       have hq : (0 : ℝ) < 1 + (p : ℝ) := by positivity
       have hPpos : (0 : ℝ) < (4 : ℝ) ^ A := Real.rpow_pos_of_pos (by norm_num) A
-      have hs'pos : (0 : ℝ) < (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 := by positivity
-      have hle : (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 ≤ ((⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ : ℕ) : ℝ) :=
-        Nat.le_ceil _
-      have step1 : (1 + (p : ℝ)) / ((⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ : ℕ) : ℝ)
-          ≤ (1 + (p : ℝ)) / ((4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3) := by
+      have hx4 : (4 : ℝ) ≤ (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 := hxfour p
+      -- floor lower bound: ½·x ≤ ⌊x⌋ (since x ≥ 4 ⟹ x/2 ≤ x−1 < ⌊x⌋)
+      have hfloor : (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 / 2
+          ≤ ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) := by
+        have hlt := Nat.lt_floor_add_one ((4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3)
+        linarith [hlt, hx4]
+      have step1 : (1 + (p : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+          ≤ (1 + (p : ℝ)) / ((4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 / 2) := by
         gcongr
-      have step2 : (1 + (p : ℝ)) / ((4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3)
-          = (4 : ℝ) ^ (-A) * (1 / (1 + (p : ℝ)) ^ 2) := by
+      have step2 : (1 + (p : ℝ)) / ((4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 / 2)
+          = 2 * (4 : ℝ) ^ (-A) * (1 / (1 + (p : ℝ)) ^ 2) := by
         rw [Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 4)]
         have hPne : (4 : ℝ) ^ A ≠ 0 := ne_of_gt hPpos
         have hqne : (1 + (p : ℝ)) ≠ 0 := ne_of_gt hq
         field_simp
-      calc C * A ^ 2 * (1 + (p : ℝ)) / ((⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ : ℕ) : ℝ)
-          = C * A ^ 2 * ((1 + (p : ℝ)) / ((⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ : ℕ) : ℝ)) := by
+      calc C * A ^ 2 * (1 + (p : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+          = C * A ^ 2 * ((1 + (p : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)) := by
             ring
-        _ ≤ C * A ^ 2 * ((1 + (p : ℝ)) / ((4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3)) :=
+        _ ≤ C * A ^ 2 * ((1 + (p : ℝ)) / ((4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 / 2)) :=
             mul_le_mul_of_nonneg_left step1 (mul_nonneg hC.le (sq_nonneg A))
-        _ = C * A ^ 2 * ((4 : ℝ) ^ (-A) * (1 / (1 + (p : ℝ)) ^ 2)) := by rw [step2]
-        _ = C * A ^ 2 * (4 : ℝ) ^ (-A) * (1 / (1 + (p : ℝ)) ^ 2) := by ring
+        _ = C * A ^ 2 * (2 * (4 : ℝ) ^ (-A) * (1 / (1 + (p : ℝ)) ^ 2)) := by rw [step2]
+        _ = 2 * C * A ^ 2 * (4 : ℝ) ^ (-A) * (1 / (1 + (p : ℝ)) ^ 2) := by ring
     calc (Finset.range (T + 1)).sum (fun p =>
-            C * A ^ 2 * (1 + (p : ℝ)) / ((⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ : ℕ) : ℝ))
+            C * A ^ 2 * (1 + (p : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ))
         ≤ (Finset.range (T + 1)).sum (fun p =>
-            C * A ^ 2 * (4 : ℝ) ^ (-A) * (1 / (1 + (p : ℝ)) ^ 2)) := Finset.sum_le_sum hpoly
-      _ = C * A ^ 2 * (4 : ℝ) ^ (-A)
+            2 * C * A ^ 2 * (4 : ℝ) ^ (-A) * (1 / (1 + (p : ℝ)) ^ 2)) := Finset.sum_le_sum hpoly
+      _ = 2 * C * A ^ 2 * (4 : ℝ) ^ (-A)
             * (Finset.range (T + 1)).sum (fun p => 1 / (1 + (p : ℝ)) ^ 2) := by
           rw [← Finset.mul_sum]
-      _ ≤ C * A ^ 2 * (4 : ℝ) ^ (-A) * 2 :=
-          mul_le_mul_of_nonneg_left (sum_inv_sq_le_two T) hCA2nn
-      _ = 2 * C * A ^ 2 * (4 : ℝ) ^ (-A) := by ring
+      _ ≤ 2 * C * A ^ 2 * (4 : ℝ) ^ (-A) * 2 :=
+          mul_le_mul_of_nonneg_left (sum_inv_sq_le_two T)
+            (mul_nonneg (mul_nonneg (mul_nonneg (by norm_num) hC.le) (sq_nonneg A))
+              (Real.rpow_nonneg (by norm_num) _))
+      _ = 4 * C * A ^ 2 * (4 : ℝ) ^ (-A) := by ring
   · -- renewal-tail (geometric) terms
     have hexp : ∀ p ∈ Finset.range (T + 1),
         C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ)))
@@ -1208,7 +1228,7 @@ theorem estar_union_le :
       _ ≤ C * (2 * Real.exp (-c * A ^ 2)) :=
           mul_le_mul_of_nonneg_left
             (sum_geom_pow_le (Real.exp (-c * A ^ 2)) (le_of_lt (Real.exp_pos _)) hr T) hC.le
-      _ = 2 * C * Real.exp (-c * A ^ 2) := by ring
+      _ ≤ 4 * C * Real.exp (-c * A ^ 2) := by nlinarith [hC.le, Real.exp_pos (-c * A ^ 2)]
 
 /-! ### X11c ingredients — the reaches-`R` / few-white → F∗ join -/
 
