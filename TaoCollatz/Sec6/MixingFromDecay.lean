@@ -2047,6 +2047,31 @@ theorem condDensWB_osc_le (j p l m : ℕ) (C T : ℝ) (hmn : m ≤ j + p) (D : �
   exact tailDensW_renyi_le j p l (condWindowB j p C l T) ((2 : ℝ)⁻¹ ^ l)
     (tailDensW_condWindowB_le j p l C T hbudget)
 
+/-- **The (6.8) `l`-union sum at a fixed cut** (C10 assembly, obligation-3 discharged): summing the
+single-conditioning bound `condDensWB_osc_le` over a finite family of valuations `l i` (Tao's union over
+`l` in the (6.8) range, at a fixed stopping time `k` ⇒ fixed cut `(j, p)`), the oscillation of the summed
+conditioned density is `≤ ∑ᵢ Dᵢ·√(3^(j+p)·2⁻ˡⁱ)`. Composes `osc_sum_le` (subadditivity) with the
+fully-assembled `condDensWB_osc_le`. Only `hunif` (obligation 2) and `hbudget` (the (6.8) numeric,
+obligation 1) remain per term; the tail collision entropy is already the explicit `2⁻ˡⁱ`. -/
+theorem osc_windowedB_conditioning_le {ι : Type*} (m j p : ℕ) (hmn : m ≤ j + p) (C T : ℝ)
+    (s : Finset ι) (l : ι → ℕ) (D : ι → ℝ) (hD : ∀ i, 0 ≤ D i)
+    (hunif : ∀ i ∈ s, ∀ ξ ∈ highFreq m (j + p),
+      ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
+          (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ (l i)) * ξ)))‖ ≤ D i)
+    (hbudget : ∀ i ∈ s, (l i : ℝ) * Real.log 2
+        + (C * Real.log 2 + 5 / 4 * (C * Real.log 2) ^ 2) * Real.log ((j + p : ℕ) : ℝ)
+        + Real.log 4 < ((j + p : ℕ) : ℝ) * Real.log 3) :
+    osc m (j + p) hmn (fun Y => ∑ i ∈ s, condDensW j p (l i) (condWindowB j p C (l i) T) Y)
+      ≤ ∑ i ∈ s, D i * Real.sqrt ((3 ^ (j + p) : ℝ) * (2 : ℝ)⁻¹ ^ (l i)) := by
+  calc osc m (j + p) hmn (fun Y => ∑ i ∈ s, condDensW j p (l i) (condWindowB j p C (l i) T) Y)
+      ≤ ∑ i ∈ s, osc m (j + p) hmn (condDensW j p (l i) (condWindowB j p C (l i) T)) :=
+        osc_sum_le m (j + p) hmn s (fun i => condDensW j p (l i) (condWindowB j p C (l i) T))
+    _ ≤ ∑ i ∈ s, D i * Real.sqrt ((3 ^ (j + p) : ℝ) * (2 : ℝ)⁻¹ ^ (l i)) :=
+        Finset.sum_le_sum (fun i hi =>
+          condDensWB_osc_le j p (l i) m C T hmn (D i) (hD i) (hunif i hi) (hbudget i hi))
+
 
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
