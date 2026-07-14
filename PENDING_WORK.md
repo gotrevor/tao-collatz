@@ -47,6 +47,32 @@ So the reusable core of the assembly is banked. **What's left for `fine_scale_mi
   from `Bₖ`/`Eₖ`, numeric `0.693(C²−2C) > …`, `C ≥ 23`) — feed W's definition into `tailDensW_le_single_mass`.
 Next lap: define the events + the decomposition, decompose `fine_scale_mixing` into these named sorries.
 
+### ✅ UPDATE 3 (same lap, commit `059a9bb`): **`condWindow` (the (6.2)/Eₖ event) DEFINED + obl-3 packaged.**
+`condWindow j p C l` = the suffix-form (6.2) window `∀ 1≤r≤p, 2r − C(√(r·log n)+log n) ≤ l − pre vt (p−r)`
+(decidable via `Classical.decPred`), and `tailDensW_condWindow_le` gives `tailDensW … (condWindow) Y ≤ 2⁻ˡ`
+from `tailDensW_le_single_mass ∘ fnat_lt_of_suffix_window` given the numeric `hbudget`. So obligation 3's
+output is now available at the CONCRETE window event.
+
+### 📖 Tao §6 EXACT reduction chain (read from PDF pp.28–31 this lap — the roadmap for the assembly)
+Cut `n = j + p`, tail = coords `1..k+1` (repo's LAST p coords via the `syracZ_eq_rev_fnat` reversal),
+`p = k+1`, `j = n−k−1`. `a[i,j] = a_i+…+a_j`; `a[1,r] = pre vt r` in the reversed convention.
+1. **(6.1) regime**: suffices `0.9n ≤ m ≤ n`; general `10≤m≤n` by the (1.22) telescope, `m<10` trivial. [obl 0]
+2. **(6.2) event E**: `|a[i,j] − 2(j−i)| ≤ Cₐ(√((j−i)log n)+log n)` ∀ `1≤i≤j≤n`. **(6.3)**: `P(Ē) ≤ n^{-A-1}`
+   (Lemma 2.2 + union bound). Triangle ⟹ suffices `Osc(P(Xn=Y ∧ E)) ≤ n^{-A}`.
+3. **stopping time k / (6.5)(6.6) Bₖ**: on E, `a[1,n] > (log3/log2)n`, so unique `0≤k<n` with
+   `a[1,k] ≤ n log3/log2 − Cₐ²log n < a[1,k+1]`; `k = n log3/(2log2) + O(Cₐ√(n log n))`. Union over k ⟹
+   suffices `Osc(P(Xn=Y ∧ E ∧ Bₖ)) ≤ n^{-A-1}`.
+4. **Eₖ** = (6.2) for `1≤i<j≤k+1` (tail-measurable; E ⊆ Eₖ, `P(Eₖ∖E)=O(n^{-A-1})`). ⟹ suffices
+   `Osc(P(Xn=Y ∧ Eₖ ∧ Bₖ)) ≤ n^{-A-1}`. On Eₖ∧Bₖ: **(6.7)** `n log3/log2 − Cₐ²log n ≤ a[1,k+1] ≤ n log3/log2 − ½Cₐ²log n`.
+5. **Cₖ,ₗ** = `{a[1,k+1] = l}` (= repo's `pre vt p = l`, baked into tailDensW). Union over l in **(6.8)**
+   `[n log3/log2 − Cₐ²log n, n log3/log2 − ½Cₐ²log n]` ⟹ suffices `Osc(g_{n,k,l}) ≤ n^{-A-2}`.
+   NB our tight-window kernel uses the LOWER end (`l ≥ n log3/log2 − Cₐ²log n`) — that's `hbudget`.
+6. **(6.9) g** = `P(Xn=Y ∧ Eₖ ∧ Bₖ ∧ Cₖ,ₗ)` = repo's `condDensW j p l (Eₖ∧Bₖ window)`. **(6.10)** Cauchy–Schwarz
+   ⟹ the L² bound = repo's `condDensW_osc_le` (DONE), tail entropy `≤ 2⁻ˡ` (DONE), head decay = charFn (obl 2).
+**Repo mapping**: `condWindow` = Eₖ (DONE). Still to define: Bₖ (stopping predicate on vt), the finite index
+set over (k,l), the decomposition identity `syracZ = ∑_{k,l} condDensW + errorₖ,ₗ`, and the error/telescope
+bookkeeping. `osc_windowed_conditioning_le` (DONE) is the inner loop; `osc_le_two_mul_l1` (DONE) the error tool.
+
 ## Lap fruit-25 (2026-07-14, same session): **windowed single-point mass PROVED — `tailDensW ≤ 2⁻ˡ`**
 
 Build green 3285, all `#print axioms`-clean (believed clean, judge to verify). New
