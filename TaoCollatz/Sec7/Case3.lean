@@ -2083,6 +2083,26 @@ theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
 
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
+/-- **Super-exponential beats polynomial** (explicit-threshold form): `exp(−ρm) ≤ δ·m^{−A}`
+for `m ≥ N`. Extracted from `hold_fst_tail_le`'s `hclose`; combines `log_le_eps_mul_of_large`
+(`log m ≤ (ρ/2A)m`) with `exp_neg_mul_le_of_large` (final tail). -/
+theorem exp_neg_mul_le_rpow_neg (A : ℝ) (hA : 0 < A) (ρ : ℝ) (hρ : 0 < ρ)
+    (δ : ℝ) (hδ : 0 < δ) : ∃ N : ℕ, ∀ m : ℕ, N ≤ m →
+      Real.exp (-ρ * (m : ℝ)) ≤ δ * (m : ℝ) ^ (-A) := by
+  obtain ⟨Nlog, hNlog⟩ := log_le_eps_mul_of_large (ρ / (2 * A)) (by positivity)
+  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_of_large (ρ / 2) (by positivity) δ hδ
+  refine ⟨1 + Nlog + Nexp, fun m hm => ?_⟩
+  have hmpos : (0 : ℝ) < m := by exact_mod_cast (by omega : 0 < m)
+  rw [Real.rpow_neg hmpos.le, ← div_eq_mul_inv, le_div_iff₀ (Real.rpow_pos_of_pos hmpos A),
+    Real.rpow_def_of_pos hmpos A, ← Real.exp_add]
+  have hAlog : A * Real.log m ≤ ρ / 2 * m := by
+    have h := hNlog m (by omega)
+    have h2 : A * Real.log m ≤ A * (ρ / (2 * A) * (m : ℝ)) := mul_le_mul_of_nonneg_left h hA.le
+    have h3 : A * (ρ / (2 * A) * (m : ℝ)) = ρ / 2 * m := by field_simp
+    linarith [h2, h3.le, h3.ge]
+  have hexparg : -ρ * (m : ℝ) + Real.log m * A ≤ -(ρ / 2) * m := by nlinarith [hAlog]
+  exact le_trans (Real.exp_le_exp.mpr hexparg) (hNexp m (by omega))
+
 /-- **(7.54) bad-column tail** (paper: the `j_end ≥ 0.9m` contribution). The mass that the
 `P`-step walk after first passage advances past `0.9m` is `O(e^{−cm})` (Lemma 7.7 + Lemma 2.2:
 first passage `≥ 0.8m` and the extra `P` Geom(4) steps `≥ 0.1m` each have mass `e^{−cm}`),
@@ -2101,7 +2121,118 @@ theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
           ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
             then (1 : ℝ) else 0))
         ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) := by
-  sorry
+  classical
+  obtain ⟨c, hc, C, hC, htail⟩ := fpDistPlus_col_tail
+  -- final tail threshold: `2C·exp(−(c/16960)m) ≤ m^{−A}/2`, i.e. `exp ≤ (1/4C)·m^{−A}`.
+  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_rpow_neg A hA (c / 16960) (by positivity)
+    (1 / (4 * C)) (by positivity)
+  refine ⟨400 * (P + 1) + 32 + Nexp, ?_⟩
+  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hmpos : (0 : ℝ) < (m : ℝ) := by exact_mod_cast (by omega : 0 < m)
+  set D : ℝ := (m : ℝ) / 40 with hDdef
+  -- the fpDistPlus tail hypothesis `10(1+P) ≤ D`.
+  have hDbound : 10 * (1 + (P : ℝ)) ≤ D := by
+    rw [hDdef]
+    have : (400 * (P + 1) : ℕ) ≤ m := by omega
+    have hcast : (400 : ℝ) * ((P : ℝ) + 1) ≤ (m : ℝ) := by exact_mod_cast this
+    linarith
+  -- budget bound `s < 3.2(m+2)` from `s·log2 ≤ (m+2)log9` and `log9 < 3.2 log2` (`9^5 < 2^16`).
+  have hlog2pos : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog93 : Real.log 9 < 3.2 * Real.log 2 := by
+    have hll := Real.log_lt_log (by positivity) (by norm_num : (9 : ℝ) ^ 5 < (2 : ℝ) ^ 16)
+    rw [Real.log_pow, Real.log_pow] at hll
+    push_cast at hll; linarith
+  have hsbound : (s : ℝ) < 3.2 * ((m : ℝ) + 2) := by
+    have h2 : ((m : ℝ) + 2) * Real.log 9 < ((m : ℝ) + 2) * (3.2 * Real.log 2) :=
+      mul_lt_mul_of_pos_left hlog93 (by positivity)
+    have h3 : (s : ℝ) * Real.log 2 < (3.2 * ((m : ℝ) + 2)) * Real.log 2 := by nlinarith [hs2, h2]
+    exact lt_of_mul_lt_mul_right h3 hlog2pos.le
+  -- the marginal function.
+  set g : ℕ × ℤ → ℝ≥0∞ := fun x =>
+    ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((x.1 : ℕ) : ℝ) then (1 : ℝ) else 0) with hgdef
+  -- walk → fpDistPlus marginal.
+  have hbridge : (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+        ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+          then (1 : ℝ) else 0))
+      = ∑' x : ℕ × ℤ, fpDistPlus s P x * g x := fpDist_walk_eq_fpDistPlus s (le_refl P) g
+  rw [hbridge]
+  -- pointwise real containment: `{0.9m ≤ x.1} ⊆ {2D ≤ |x.1 − s/4|}`.
+  have hcont : ∀ x : ℕ × ℤ,
+      (if (0.9 : ℝ) * (m : ℝ) ≤ ((x.1 : ℕ) : ℝ) then (1 : ℝ) else 0)
+      ≤ Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 x := by
+    intro x
+    by_cases h : (0.9 : ℝ) * (m : ℝ) ≤ ((x.1 : ℕ) : ℝ)
+    · rw [if_pos h]
+      have hmem2 : x ∈ {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} := by
+        show 2 * D ≤ |((x.1 : ℕ) : ℝ) - (s : ℝ) / 4|
+        have hstep : 2 * D ≤ ((x.1 : ℕ) : ℝ) - (s : ℝ) / 4 := by
+          rw [hDdef]
+          have hm32 : (32 : ℝ) ≤ (m : ℝ) := by
+            have : (32 : ℕ) ≤ m := by omega
+            exact_mod_cast this
+          nlinarith [hsbound, h, hm32]
+        exact le_trans hstep (le_abs_self _)
+      rw [Set.indicator_of_mem hmem2, Pi.one_apply]
+    · rw [if_neg h]
+      rw [Set.indicator_apply]; split_ifs <;> norm_num
+  -- lift the containment through `fpDistPlus`, then compare via `fpDistPlus_col_tail`.
+  set RHS : ℝ≥0∞ := ∑' x : ℕ × ℤ, fpDistPlus s P x *
+      ENNReal.ofReal (Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 x)
+    with hRHSdef
+  have hUB : (∑' x : ℕ × ℤ, fpDistPlus s P x * g x) ≤ RHS := by
+    rw [hRHSdef]
+    refine ENNReal.tsum_le_tsum fun x => mul_le_mul_left' ?_ _
+    rw [hgdef]; exact ENNReal.ofReal_le_ofReal (hcont x)
+  have hRHSle1 : RHS ≤ 1 := by
+    rw [hRHSdef]
+    calc (∑' x : ℕ × ℤ, fpDistPlus s P x *
+          ENNReal.ofReal (Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 x))
+        ≤ ∑' x : ℕ × ℤ, fpDistPlus s P x * 1 := by
+          refine ENNReal.tsum_le_tsum fun x => mul_le_mul_left' ?_ _
+          refine ENNReal.ofReal_le_one.mpr ?_
+          rw [Set.indicator_apply]; split_ifs <;> norm_num
+      _ = 1 := by rw [ENNReal.tsum_mul_right, (fpDistPlus s P).tsum_coe, one_mul]
+  have hRHSne : RHS ≠ ⊤ := ne_top_of_le_ne_top ENNReal.one_ne_top hRHSle1
+  have hne : (∑' x : ℕ × ℤ, fpDistPlus s P x * g x) ≠ ⊤ := ne_top_of_le_ne_top hRHSne hUB
+  rw [ENNReal.le_ofReal_iff_toReal_le hne (by positivity)]
+  have hRHSreal : RHS.toReal = ∑' x : ℕ × ℤ, (fpDistPlus s P x).toReal *
+      Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 x := by
+    rw [hRHSdef]
+    exact PMF.toReal_tsum_mul_ofReal (fpDistPlus s P) _
+      (fun x => by rw [Set.indicator_apply]; split_ifs <;> norm_num)
+  -- final numeric closure: `C(exp(−cD²/(1+s))+exp(−cD)) ≤ m^{−A}/2`.
+  have h1s : (1 : ℝ) + (s : ℝ) ≤ 10.6 * (m : ℝ) := by
+    have hm1 : (1 : ℝ) ≤ (m : ℝ) := by
+      have : (1 : ℕ) ≤ m := by omega
+      exact_mod_cast this
+    nlinarith [hsbound, hm1]
+  have hexp1 : Real.exp (-c * D ^ 2 / (1 + (s : ℝ)))
+      ≤ Real.exp (-(c / 16960) * (m : ℝ)) := by
+    apply Real.exp_le_exp.mpr
+    rw [div_le_iff₀ (by positivity : (0 : ℝ) < 1 + (s : ℝ)), hDdef]
+    nlinarith [mul_nonneg (by linarith [h1s] : (0 : ℝ) ≤ 10.6 * (m : ℝ) - (1 + (s : ℝ)))
+      (by positivity : (0 : ℝ) ≤ c * (m : ℝ)), hc.le, hmpos.le]
+  have hexp2 : Real.exp (-c * D) ≤ Real.exp (-(c / 16960) * (m : ℝ)) := by
+    apply Real.exp_le_exp.mpr
+    rw [hDdef]; nlinarith [mul_pos hc hmpos]
+  have hfinal : C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D))
+      ≤ (m : ℝ) ^ (-A) / 2 := by
+    have hCne : C ≠ 0 := ne_of_gt hC
+    have h3 : (2 : ℝ) * C * ((1 / (4 * C)) * (m : ℝ) ^ (-A)) = (m : ℝ) ^ (-A) / 2 := by
+      field_simp; ring
+    calc C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D))
+        ≤ C * (Real.exp (-(c / 16960) * (m : ℝ)) + Real.exp (-(c / 16960) * (m : ℝ))) :=
+          mul_le_mul_of_nonneg_left (add_le_add hexp1 hexp2) hC.le
+      _ = 2 * C * Real.exp (-(c / 16960) * (m : ℝ)) := by ring
+      _ ≤ 2 * C * ((1 / (4 * C)) * (m : ℝ) ^ (-A)) :=
+          mul_le_mul_of_nonneg_left (hNexp m (by omega)) (by positivity)
+      _ = (m : ℝ) ^ (-A) / 2 := h3
+  calc (∑' x : ℕ × ℤ, fpDistPlus s P x * g x).toReal
+      ≤ RHS.toReal := ENNReal.toReal_mono hRHSne hUB
+    _ = ∑' x : ℕ × ℤ, (fpDistPlus s P x).toReal *
+          Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 x := hRHSreal
+    _ ≤ C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D)) := htail s P D hDbound
+    _ ≤ (m : ℝ) ^ (-A) / 2 := hfinal
 
 /-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first
 passage encounters at most `K := ⌈(A+3)·log10/ε³⌉` whites with probability `≤ 10^{−(A+2)}`.
