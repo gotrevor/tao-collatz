@@ -1306,6 +1306,47 @@ theorem reaches_fewWhite_mass_le :
   exact le_trans (Summable.tsum_le_tsum hle hsumL hsumR)
     (hmark ε hεpos hεle n ξ hξ F R hR T q₀ (Real.exp (-(K : ℝ) + ε * R)) hlam)
 
+/-- **The (7.56) numerical closure**: with the X11d block count
+`R := ⌈(K+(A+3)log10+2)/ε⌉` (encoded as the hypothesis `εR ≥ K+(A+3)log10+2`), the
+Markov ratio `e^{2ε}/e^{−K+εR} ≤ 10^{−(A+1)}`. Uses `e^a/e^b = e^{a−b}` and
+`10^x = e^{x·log10}`; the slack `2ε−2 ≤ 0 ≤ 2log10` (from `ε ≤ 1`) absorbs the `e^{2ε}`. -/
+theorem fewWhite_num_closure (A ε : ℝ) (hε1 : ε ≤ 1) (K R : ℕ)
+    (hRbound : (K : ℝ) + (A + 3) * Real.log 10 + 2 ≤ ε * R) :
+    Real.exp (2 * ε) / Real.exp (-(K : ℝ) + ε * R) ≤ (10 : ℝ) ^ (-(A + 1)) := by
+  rw [← Real.exp_sub]
+  have hlog : (0 : ℝ) < Real.log 10 := Real.log_pos (by norm_num)
+  have h1 : (A + 3) * Real.log 10 = (A + 1) * Real.log 10 + 2 * Real.log 10 := by ring
+  have hstep : 2 * ε - (-(K : ℝ) + ε * R) ≤ -(A + 1) * Real.log 10 := by
+    nlinarith [hRbound, hε1, hlog, h1]
+  calc Real.exp (2 * ε - (-(K : ℝ) + ε * R))
+      ≤ Real.exp (-(A + 1) * Real.log 10) := Real.exp_le_exp.mpr hstep
+    _ = (10 : ℝ) ^ (-(A + 1)) := by
+        rw [Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 10)]
+        congr 1; ring
+
+open scoped Classical in
+/-- **The full (7.56) reaches-`R`/few-white bound**: with `R := ⌈(K+(A+3)log10+2)/ε⌉`
+(as `εR ≥ K+(A+3)log10+2`), the joint-walk mass of {fold reaches `R` ∧ ≤ `K` whites}
+is `≤ 10^{−(A+1)}`. Composes `reaches_fewWhite_mass_le` (the Markov join) with
+`fewWhite_num_closure` (the numerical `R`-choice). This is the F∗ term X11d subtracts
+from the (7.56) white-count split. -/
+theorem reaches_fewWhite_mass_le_ten :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
+      ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ → ∀ A : ℝ,
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
+        (K : ℝ) + (A + 3) * Real.log 10 + 2 ≤ ε * R →
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
+              ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K
+            then (1 : ℝ) else 0)
+          ≤ (10 : ℝ) ^ (-(A + 1)) := by
+  obtain ⟨ε₀, hε₀pos, hε₀le, g, hmass⟩ := reaches_fewWhite_mass_le
+  refine ⟨ε₀, hε₀pos, hε₀le, g, ?_⟩
+  intro ε hεpos hεle A n ξ hξ F R hR T q₀ K hRbound
+  exact le_trans (hmass ε hεpos hεle n ξ hξ F R hR T q₀ K)
+    (fewWhite_num_closure A ε (by linarith [hεle, hε₀le]) K R hRbound)
+
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
 /-- **Case 3 of Proposition 7.8** ((7.53)–(7.67), paper pp.48–49 + Lemmas
