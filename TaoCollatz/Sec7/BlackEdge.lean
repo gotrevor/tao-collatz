@@ -283,6 +283,34 @@ theorem edgeWeight_summand_le {A : ℝ} (hA : 0 ≤ A) {m : ℕ} (hm : 2 ≤ m)
     have := mul_le_mul_of_nonneg_left hconc (Real.rpow_nonneg hmpos.le (-A))
     linarith
 
+/-- `log² m` exceeds any bound for `m` large (turns the `s ≤ m/log²m` budget into an
+explicit threshold). -/
+theorem log_sq_ge_of_large (b : ℝ) : ∃ N : ℕ, ∀ m : ℕ, N ≤ m → b ≤ Real.log m ^ 2 := by
+  refine ⟨⌈Real.exp (Real.sqrt (max b 0))⌉₊, fun m hm => ?_⟩
+  set r : ℝ := Real.sqrt (max b 0) with hr
+  have hr0 : 0 ≤ r := Real.sqrt_nonneg _
+  have hexp_pos : 0 < Real.exp r := Real.exp_pos _
+  have hmN : Real.exp r ≤ (m : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hm)
+  have hlogm : r ≤ Real.log m := by
+    rw [← Real.log_exp r]; exact Real.log_le_log hexp_pos hmN
+  calc b ≤ max b 0 := le_max_left _ _
+    _ = r ^ 2 := (Real.sq_sqrt (le_max_right _ _)).symm
+    _ ≤ Real.log m ^ 2 := pow_le_pow_left₀ hr0 hlogm 2
+
+/-- `exp (-ρ m)` drops below any positive bound for `m` large (the super-exponential
+tail decay, made into an explicit threshold). -/
+theorem exp_neg_mul_le_of_large (ρ : ℝ) (hρ : 0 < ρ) (b : ℝ) (hb : 0 < b) :
+    ∃ N : ℕ, ∀ m : ℕ, N ≤ m → Real.exp (-ρ * m) ≤ b := by
+  refine ⟨⌈Real.log b⁻¹ / ρ⌉₊, fun m hm => ?_⟩
+  have hx : Real.log b⁻¹ / ρ ≤ (m : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hm)
+  have hρm : Real.log b⁻¹ ≤ (m : ℝ) * ρ := by
+    have h := mul_le_mul_of_nonneg_right hx hρ.le
+    rwa [div_mul_cancel₀ _ hρ.ne'] at h
+  have hfin : -ρ * (m : ℝ) ≤ Real.log b := by rw [Real.log_inv] at hρm; nlinarith [hρm]
+  calc Real.exp (-ρ * (m : ℝ)) ≤ Real.exp (Real.log b) := Real.exp_le_exp.mpr hfin
+    _ = b := Real.exp_log hb
+
+set_option maxHeartbeats 4000000 in
 /-- **Numeric core of `fpDist_fst_mgf_le`** — the explicit threshold `Cthr` and the
 per-`(m,s)` split point `K` bundling all the constant-juggling estimates that the
 mechanical Fubini/split assembly consumes.  With `θ = 2A/m` and
@@ -292,8 +320,9 @@ range `θ ≤ ½·min(c, c²/20)`; (b) the `gaussExp` cutoff budget `s·log2 ≤
 `K`); (d) the `gaussExp` tail RHS at cutoff `K` is `≤ δ/2` (super-exponential decay
 `x₀ = K+1-s/4 = Θ(m)` beats the bounded prefactor `exp(θs/4) ≤ exp(A/2)`).
 
-OPEN (the analytic tail-threshold; route sound via `gaussExp_col_tail`).  The
-mechanical assembly `fpDist_fst_mgf_le` below is PROVED off this interface. -/
+PROVED (axiom-clean) via `log_sq_ge_of_large` (budget + `x₀` bound) and
+`exp_neg_mul_le_of_large` (the final tail decay); rates `a₂ = c²/20-θ ≥ c²/40`,
+`a₁ = c-θ ≥ c/2` bound the geometric denominators; `Cthr = 25+N₁+N₃+N₈₅+N₄`. -/
 theorem fpDist_fst_mgf_numeric {A δ c C' : ℝ} (hA : 0 < A) (hδ : 0 < δ)
     (hc : 0 < c) (hC' : 0 < C') :
     ∃ Cthr : ℕ, 25 ≤ Cthr ∧ ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
@@ -307,7 +336,217 @@ theorem fpDist_fst_mgf_numeric {A δ c C' : ℝ} (hA : 0 < A) (hδ : 0 < δ)
                 / (1 - Real.exp (-(c ^ 2 / 20 - 2 * A / (m : ℝ))))
              + Real.exp (-(c - 2 * A / (m : ℝ)) * (((K : ℝ) + 1) - (s : ℝ) / 4))
                 / (1 - Real.exp (-(c - 2 * A / (m : ℝ))))) ≤ δ / 2 := by
-  sorry
+  -- absolute constants
+  set μ : ℝ := min c (c ^ 2 / 20) / 2 with hμdef
+  have hμ : 0 < μ := by rw [hμdef]; have : 0 < min c (c ^ 2 / 20) := lt_min hc (by positivity); linarith
+  have hμc : μ ≤ c / 2 := by rw [hμdef]; gcongr; exact min_le_left _ _
+  have hμc2 : μ ≤ c ^ 2 / 40 := by
+    rw [hμdef]; have : min c (c ^ 2 / 20) ≤ c ^ 2 / 20 := min_le_right _ _; linarith
+  set L : ℝ := Real.log (1 + δ / 2) with hLdef
+  have hL : 0 < L := Real.log_pos (by linarith)
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos one_lt_two
+  have hlog9 : (0 : ℝ) < Real.log 9 := Real.log_pos (by norm_num)
+  -- decay rate and denominators
+  set d₂ : ℝ := 1 - Real.exp (-(c ^ 2 / 40)) with hd2def
+  set d₁ : ℝ := 1 - Real.exp (-(c / 2)) with hd1def
+  have hd2 : 0 < d₂ := by
+    rw [hd2def]; have : Real.exp (-(c ^ 2 / 40)) < 1 := by rw [Real.exp_lt_one_iff]; nlinarith
+    linarith
+  have hd1 : 0 < d₁ := by
+    rw [hd1def]; have : Real.exp (-(c / 2)) < 1 := by rw [Real.exp_lt_one_iff]; linarith
+    linarith
+  set ρ : ℝ := min (c ^ 2 / 40) (c / 2) * L / (4 * A) with hρdef
+  have hρ : 0 < ρ := by
+    rw [hρdef]; have : 0 < min (c ^ 2 / 40) (c / 2) := lt_min (by positivity) (by positivity)
+    positivity
+  set Q : ℝ := C' * Real.exp (A / 2) * (1 / d₂ + 1 / d₁) with hQdef
+  have hQ : 0 < Q := by rw [hQdef]; positivity
+  -- thresholds
+  obtain ⟨N85, hN85⟩ :=
+    log_sq_ge_of_large (max (max (2 * A * Real.log 2 / (L * Real.log 9)) (A / L)) 1)
+  obtain ⟨N4, hN4⟩ := exp_neg_mul_le_of_large ρ hρ (δ / (2 * Q)) (by positivity)
+  set N1 : ℕ := ⌈2 * A / μ⌉₊ with hN1def
+  set N3 : ℕ := ⌈50 * A / L⌉₊ with hN3def
+  refine ⟨25 + N1 + N3 + N85 + N4, by omega, fun m hm s hs => ?_⟩
+  -- unpack the threshold
+  have hm25 : 25 ≤ m := by omega
+  have hmN1 : N1 ≤ m := by omega
+  have hmN3 : N3 ≤ m := by omega
+  have hmN85 : N85 ≤ m := by omega
+  have hmN4 : N4 ≤ m := by omega
+  have hmpos : (0 : ℝ) < (m : ℝ) := by exact_mod_cast (by omega : 0 < m)
+  set θ : ℝ := 2 * A / (m : ℝ) with hθdef
+  have hθpos : 0 < θ := by rw [hθdef]; positivity
+  have hθnn : 0 ≤ θ := hθpos.le
+  -- log m facts
+  have hlogm_pos : 0 < Real.log m := Real.log_pos (by exact_mod_cast (by omega : 1 < m))
+  have hlogsq_pos : 0 < Real.log m ^ 2 := by positivity
+  have hlogsq := hN85 m hmN85
+  have hb3 : 2 * A * Real.log 2 / (L * Real.log 9) ≤ Real.log m ^ 2 :=
+    le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hlogsq
+  have hb4 : A / L ≤ Real.log m ^ 2 :=
+    le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hlogsq
+  have hb1 : (1 : ℝ) ≤ Real.log m ^ 2 := le_trans (le_max_right _ _) hlogsq
+  -- (E1) θ ≤ μ
+  have hθμ : θ ≤ μ := by
+    rw [hθdef, div_le_iff₀ hmpos]
+    have hm1 : (2 * A / μ) ≤ (m : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hmN1)
+    have : 2 * A = μ * (2 * A / μ) := by field_simp
+    rw [this]; exact mul_le_mul_of_nonneg_left hm1 hμ.le
+  -- the split point K
+  set κ : ℝ := (m : ℝ) * L / (2 * A) with hκdef
+  have hκnn : 0 ≤ κ := by rw [hκdef]; positivity
+  set K : ℕ := ⌊κ⌋₊ with hKdef
+  have hKle : (K : ℝ) ≤ κ := Nat.floor_le hκnn
+  have hKlb : κ - 1 ≤ (K : ℝ) := by
+    have := Nat.lt_floor_add_one κ; rw [← hKdef] at this; linarith
+  refine ⟨K, ?_, hθμ, ?_, ?_, ?_⟩
+  · -- 25 ≤ K
+    rw [hKdef]; apply Nat.le_floor
+    have hm50 : (50 * A / L) ≤ (m : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hmN3)
+    have hmL : 50 * A ≤ (m : ℝ) * L := by
+      have h := mul_le_mul_of_nonneg_right hm50 hL.le
+      rwa [div_mul_cancel₀ _ hL.ne'] at h
+    rw [hκdef, le_div_iff₀ (by positivity : (0:ℝ) < 2 * A)]
+    push_cast; linarith
+  · -- (E3) budget: s·log2 ≤ (K+2)·log9
+    have hb3' : 2 * A * Real.log 2 ≤ Real.log m ^ 2 * (L * Real.log 9) := by
+      rw [div_le_iff₀ (by positivity)] at hb3; linarith
+    have hstep1 : (s : ℝ) * Real.log 2 ≤ ((m : ℝ) / Real.log m ^ 2) * Real.log 2 :=
+      mul_le_mul_of_nonneg_right hs hlog2.le
+    have hstep2 : ((m : ℝ) / Real.log m ^ 2) * Real.log 2 ≤ κ * Real.log 9 := by
+      rw [hκdef,
+        show ((m:ℝ)/Real.log m^2)*Real.log 2 = ((m:ℝ)*Real.log 2)/Real.log m^2 by ring,
+        show ((m:ℝ)*L/(2*A))*Real.log 9 = ((m:ℝ)*L*Real.log 9)/(2*A) by ring,
+        div_le_div_iff₀ hlogsq_pos (by positivity : (0:ℝ) < 2*A)]
+      nlinarith [mul_le_mul_of_nonneg_left hb3' hmpos.le]
+    have hstep3 : κ * Real.log 9 ≤ ((K : ℝ) + 2) * Real.log 9 :=
+      mul_le_mul_of_nonneg_right (by linarith) hlog9.le
+    linarith
+  · -- (E2) bulk: exp(θK) ≤ 1+δ/2
+    have hθK : θ * (K : ℝ) ≤ L := by
+      have h1 : θ * (K : ℝ) ≤ θ * κ := mul_le_mul_of_nonneg_left hKle hθnn
+      have h2 : θ * κ = L := by rw [hθdef, hκdef]; field_simp
+      linarith
+    calc Real.exp (θ * (K : ℝ)) ≤ Real.exp L := Real.exp_le_exp.mpr hθK
+      _ = 1 + δ / 2 := by rw [hLdef]; exact Real.exp_log (by linarith)
+  · -- (E4) tail ≤ δ/2
+    set x₀ : ℝ := ((K : ℝ) + 1) - (s : ℝ) / 4 with hx0def
+    have hs4 : (s : ℝ) / 4 ≤ (m : ℝ) / (4 * Real.log m ^ 2) := by
+      rw [show (m:ℝ)/(4*Real.log m^2) = ((m:ℝ)/Real.log m^2)/4 by ring]
+      linarith [hs]
+    -- x₀ ≥ κ - s/4 ≥ m L/(4A) (uses log²m ≥ A/L)
+    have hx0lb : (m : ℝ) * L / (4 * A) ≤ x₀ := by
+      rw [hx0def]
+      have hx1 : κ ≤ (K : ℝ) + 1 := by linarith
+      have hsmall : (m : ℝ) / (4 * Real.log m ^ 2) ≤ (m : ℝ) * L / (4 * A) := by
+        rw [div_le_div_iff₀ (by positivity) (by positivity)]
+        have : A ≤ L * Real.log m ^ 2 := by
+          rw [div_le_iff₀ hL] at hb4; linarith
+        nlinarith [this, hmpos.le]
+      have hκval : κ = (m : ℝ) * L / (2 * A) := hκdef
+      have : (m : ℝ) * L / (4 * A) ≤ κ - (s : ℝ) / 4 := by
+        have hh : (s : ℝ) / 4 ≤ (m : ℝ) * L / (4 * A) := le_trans hs4 hsmall
+        have h2 : κ - (m:ℝ)*L/(4*A) = (m:ℝ)*L/(4*A) := by rw [hκval]; ring
+        linarith
+      linarith
+    have hx0pos : 0 < x₀ := lt_of_lt_of_le (by positivity) hx0lb
+    -- rates
+    have ha2 : c ^ 2 / 40 ≤ c ^ 2 / 20 - θ := by linarith [hθμ, hμc2]
+    have ha1 : c / 2 ≤ c - θ := by linarith [hθμ, hμc]
+    have ha2pos : 0 < c ^ 2 / 20 - θ := lt_of_lt_of_le (by positivity) ha2
+    have ha1pos : 0 < c - θ := lt_of_lt_of_le (by positivity) ha1
+    -- prefactor: exp(θ s/4) ≤ exp(A/2)
+    have hpre : Real.exp (θ * ((s : ℝ) / 4)) ≤ Real.exp (A / 2) := by
+      apply Real.exp_le_exp.mpr
+      have hθs : θ * ((s : ℝ) / 4) ≤ A / (2 * Real.log m ^ 2) := by
+        have hsm : (s : ℝ) * Real.log m ^ 2 ≤ (m : ℝ) := by
+          have h := mul_le_mul_of_nonneg_right hs hlogsq_pos.le
+          rwa [div_mul_cancel₀ _ hlogsq_pos.ne'] at h
+        have hkey : (s : ℝ) / (m : ℝ) ≤ 1 / Real.log m ^ 2 := by
+          rw [div_le_div_iff₀ hmpos hlogsq_pos]; nlinarith [hsm]
+        have e1 : θ * ((s : ℝ) / 4) = (A / 2) * ((s : ℝ) / (m : ℝ)) := by rw [hθdef]; ring
+        have e2 : A / (2 * Real.log m ^ 2) = (A / 2) * (1 / Real.log m ^ 2) := by ring
+        rw [e1, e2]
+        exact mul_le_mul_of_nonneg_left hkey (by positivity)
+      have hle2 : A / (2 * Real.log m ^ 2) ≤ A / 2 :=
+        div_le_div_of_nonneg_left hA.le (by norm_num) (by nlinarith [hb1])
+      linarith
+    -- denominators: 1/(1-exp(-a)) ≤ 1/d
+    have hden2 : 1 / (1 - Real.exp (-(c ^ 2 / 20 - θ))) ≤ 1 / d₂ := by
+      apply one_div_le_one_div_of_le hd2
+      rw [hd2def]
+      have : Real.exp (-(c ^ 2 / 20 - θ)) ≤ Real.exp (-(c ^ 2 / 40)) :=
+        Real.exp_le_exp.mpr (by linarith [ha2])
+      linarith
+    have hden1 : 1 / (1 - Real.exp (-(c - θ))) ≤ 1 / d₁ := by
+      apply one_div_le_one_div_of_le hd1
+      rw [hd1def]
+      have : Real.exp (-(c - θ)) ≤ Real.exp (-(c / 2)) := Real.exp_le_exp.mpr (by linarith [ha1])
+      linarith
+    have hden2pos : 0 < 1 - Real.exp (-(c ^ 2 / 20 - θ)) := by
+      have : Real.exp (-(c ^ 2 / 20 - θ)) < 1 := by rw [Real.exp_lt_one_iff]; linarith [ha2pos]
+      linarith
+    have hden1pos : 0 < 1 - Real.exp (-(c - θ)) := by
+      have : Real.exp (-(c - θ)) < 1 := by rw [Real.exp_lt_one_iff]; linarith [ha1pos]
+      linarith
+    -- numerators: exp(-a x₀) ≤ exp(-ρ m)
+    have hnum2 : Real.exp (-(c ^ 2 / 20 - θ) * x₀) ≤ Real.exp (-ρ * m) := by
+      apply Real.exp_le_exp.mpr
+      have hrate : ρ ≤ (c ^ 2 / 40) * L / (4 * A) := by
+        rw [hρdef]; gcongr; exact min_le_left _ _
+      have hprod : ρ * (m : ℝ) ≤ (c ^ 2 / 20 - θ) * x₀ := by
+        calc ρ * (m : ℝ) ≤ (c ^ 2 / 40) * L / (4 * A) * (m : ℝ) :=
+              mul_le_mul_of_nonneg_right hrate hmpos.le
+          _ = (c ^ 2 / 40) * ((m : ℝ) * L / (4 * A)) := by ring
+          _ ≤ (c ^ 2 / 20 - θ) * x₀ :=
+              mul_le_mul ha2 hx0lb (by positivity) ha2pos.le
+      nlinarith [hprod]
+    have hnum1 : Real.exp (-(c - θ) * x₀) ≤ Real.exp (-ρ * m) := by
+      apply Real.exp_le_exp.mpr
+      have hrate : ρ ≤ (c / 2) * L / (4 * A) := by
+        rw [hρdef]; gcongr; exact min_le_right _ _
+      have hprod : ρ * (m : ℝ) ≤ (c - θ) * x₀ := by
+        calc ρ * (m : ℝ) ≤ (c / 2) * L / (4 * A) * (m : ℝ) :=
+              mul_le_mul_of_nonneg_right hrate hmpos.le
+          _ = (c / 2) * ((m : ℝ) * L / (4 * A)) := by ring
+          _ ≤ (c - θ) * x₀ := mul_le_mul ha1 hx0lb (by positivity) ha1pos.le
+      nlinarith [hprod]
+    -- assemble each term ≤ exp(-ρm)/d, sum, then prefactor
+    have hterm2 : Real.exp (-(c ^ 2 / 20 - θ) * x₀) / (1 - Real.exp (-(c ^ 2 / 20 - θ)))
+        ≤ Real.exp (-ρ * m) * (1 / d₂) := by
+      rw [div_eq_mul_one_div]
+      exact mul_le_mul hnum2 hden2 (one_div_nonneg.mpr hden2pos.le) (Real.exp_pos _).le
+    have hterm1 : Real.exp (-(c - θ) * x₀) / (1 - Real.exp (-(c - θ)))
+        ≤ Real.exp (-ρ * m) * (1 / d₁) := by
+      rw [div_eq_mul_one_div]
+      exact mul_le_mul hnum1 hden1 (one_div_nonneg.mpr hden1pos.le) (Real.exp_pos _).le
+    have hsum : Real.exp (-(c ^ 2 / 20 - θ) * x₀) / (1 - Real.exp (-(c ^ 2 / 20 - θ)))
+        + Real.exp (-(c - θ) * x₀) / (1 - Real.exp (-(c - θ)))
+        ≤ Real.exp (-ρ * m) * (1 / d₂ + 1 / d₁) := by
+      have := add_le_add hterm2 hterm1; rw [mul_add]; linarith [this]
+    have hsumnn : 0 ≤ Real.exp (-(c ^ 2 / 20 - θ) * x₀) / (1 - Real.exp (-(c ^ 2 / 20 - θ)))
+        + Real.exp (-(c - θ) * x₀) / (1 - Real.exp (-(c - θ))) :=
+      add_nonneg (div_nonneg (Real.exp_pos _).le hden2pos.le)
+        (div_nonneg (Real.exp_pos _).le hden1pos.le)
+    have hfinal : C' * Real.exp (θ * ((s : ℝ) / 4))
+        * (Real.exp (-(c ^ 2 / 20 - θ) * x₀) / (1 - Real.exp (-(c ^ 2 / 20 - θ)))
+           + Real.exp (-(c - θ) * x₀) / (1 - Real.exp (-(c - θ))))
+        ≤ Q * Real.exp (-ρ * m) := by
+      have h1 : C' * Real.exp (θ * ((s : ℝ) / 4)) ≤ C' * Real.exp (A / 2) :=
+        mul_le_mul_of_nonneg_left hpre hC'.le
+      calc C' * Real.exp (θ * ((s : ℝ) / 4))
+            * (Real.exp (-(c ^ 2 / 20 - θ) * x₀) / (1 - Real.exp (-(c ^ 2 / 20 - θ)))
+               + Real.exp (-(c - θ) * x₀) / (1 - Real.exp (-(c - θ))))
+          ≤ C' * Real.exp (A / 2) * (Real.exp (-ρ * m) * (1 / d₂ + 1 / d₁)) :=
+            mul_le_mul h1 hsum hsumnn (by positivity)
+        _ = Q * Real.exp (-ρ * m) := by rw [hQdef]; ring
+    have hlast : Q * Real.exp (-ρ * m) ≤ δ / 2 := by
+      have h := hN4 m hmN4
+      calc Q * Real.exp (-ρ * m) ≤ Q * (δ / (2 * Q)) :=
+            mul_le_mul_of_nonneg_left h hQ.le
+        _ = δ / 2 := by field_simp
+    exact le_trans hfinal hlast
 
 /-- **First-coordinate `fpDist` MGF bound** (node X8 sub-goal — the genuinely-new
 analytic input on which both the main term and the tail of `fpDist_edgeWeight_le`

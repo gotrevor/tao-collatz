@@ -1,5 +1,35 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box cont3 (2026-07-14): **`fpDist_fst_mgf_le` FULLY PROVED (axiom-clean)** — X8 first-coord MGF closed
+
+`fpDist_fst_mgf_numeric` (the analytic tail-threshold core) is now **PROVED**, so
+`fpDist_fst_mgf_le` is `#print axioms = [propext, Classical.choice, Quot.sound]` — no
+`sorryAx`. The genuinely-new analytic input of the (7.48) crux is a machine-checked
+theorem. Full build green (3281 jobs).
+
+**What landed (`BlackEdge.lean`, all axiom-clean):**
+- **`log_sq_ge_of_large`**: `∀ b, ∃ N, ∀ m≥N, b ≤ log²m` — turns the `s ≤ m/log²m`
+  budget into an explicit threshold (`N = ⌈exp√(max b 0)⌉`, via `Real.log_le_log` +
+  `pow_le_pow_left₀`).
+- **`exp_neg_mul_le_of_large`**: `∀ ρ>0 b>0, ∃ N, ∀ m≥N, exp(-ρm) ≤ b` — the
+  super-exponential tail decay as an explicit threshold (`N = ⌈log b⁻¹/ρ⌉`).
+- **`fpDist_fst_mgf_numeric`**: `Cthr = 25+N₁+N₃+N₈₅+N₄`, split `K = ⌊mL/(2A)⌋`
+  (`L = log(1+δ/2)`). Five estimates: (E1) `θ=2A/m ≤ ½min(c,c²/20)` (m≥N₁); (E2) bulk
+  `exp(θK) ≤ exp L = 1+δ/2` (floor); (E3) budget `s·log2 ≤ (K+2)log9` (log²m ≥
+  `2A log2/(L log9)`); (E4) tail `≤ δ/2` — prefactor `exp(θs/4) ≤ exp(A/2)`, rates
+  `a₂=c²/20-θ ≥ c²/40`, `a₁=c-θ ≥ c/2` bound denominators, `x₀=K+1-s/4 ≥ mL/(4A)`
+  (log²m ≥ A/L), so tail `≤ Q·exp(-ρm) ≤ δ/2`. ~200 lines, `maxHeartbeats 4000000`.
+
+**NEXT — glue `fpDist_edgeWeight_le`** (`BlackEdge.lean`, the (7.48)/(7.49) weight
+degradation; still `sorry`). Now that BOTH inputs are proved (`edgeWeight_summand_le`
+pointwise bound + `fpDist_fst_mgf_le` first-coord MGF), this is the double-`tsum`
+glue: sum `edgeWeight_summand_le` over `d` (hold MGF `tiltZ_hold_fst_le` → 1) then
+over `e` with `fpDist` (`fpDist_fst_mgf_le` for the `e.1` factor); tail
+`P(e.1+d.1 > m/2) ≤ (δ/2)m^{-A}` via a Chernoff of `fpDist_fst_mgf_le` (`e.1 > m/4`)
++ hold Chernoff (`holdSum_halfspace_le`, `d.1 > m/4`). `Cthr = max` of region
+thresholds; `(1+δ/2)+(δ/2) = 1+δ`. Then `fpDist_white_exit` / `Q_black_edge_case2`
+(X8 Case-2), then `Q_black_edge_case3_assembled` (X11d, `Case3.lean`).
+
 ## Lap D-box cont2 (2026-07-14): **`fpDist_fst_mgf_le` mechanical spine PROVED** — crux reduced to one numeric obligation
 
 The X8 crux sub-goal `fpDist_fst_mgf_le` (`BlackEdge.lean`) is now **proved off a single
