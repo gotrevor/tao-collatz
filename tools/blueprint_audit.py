@@ -16,19 +16,22 @@ The cure: ONE registry, everything else derived.
 
   This tool reads that registry, asks the KERNEL what is actually true, and rules.
 
-Four findings, in descending severity:
+Findings, in descending severity. See blueprint_rules.md for the model these enforce.
 
-  FALSE-GREEN  a node's proof is marked \leanok but a declaration it claims is NOT
-               axiom-clean (carries sorryAx, or an extra axiom). This is the one that
-               lies to a reviewer. Exit code 1.
-  DRIFT        a node names a declaration that does not exist in the Lean source.
-  SEAM         a node claims NO theorem at all — only defs, or nothing. It contributes
-               ZERO sorries while being unfinished, so the sorry census silently
-               understates the distance to done. (Found independently by a Codex
-               inventory pass, 2026-07-14; mechanized here so it cannot be forgotten.)
-  MISSED-FLIP  every declaration is axiom-clean but the proof is not marked \leanok.
-               The blueprint is understating real progress. (Judge pass 27 had to flip
-               X4/X7/X8/X11 by hand — this is that, automated.)
+  FALSE-GREEN            a node's proof is marked \leanok but a declaration it claims is
+                         NOT axiom-clean (sorryAx, or an extra axiom). Lies to a reviewer.
+                         Exit code 1.
+  FALSE STATEMENT-GREEN  a node's STATEMENT is marked \leanok but it names no theorem at
+                         all. It renders GREEN in the blueprint web while its content is
+                         absent, so a reader trusts the border and routes around it.
+                         Exit code 1. (Found 2026-07-14 on C7 — see blueprint_architecture.md.)
+  DRIFT                  a node names a declaration the Lean source does not have.
+  ORANGE                 a node that owes a proof and names NO theorem: its statement is
+                         not in Lean. It contributes ZERO sorries while being unfinished,
+                         so the census understates the distance to done. THE FIX IS A PIN
+                         (write the statement with `sorry`), not a report.
+  MISSED-FLIP            every declaration is axiom-clean but the proof is not marked
+                         \leanok — the blueprint is UNDERSTATING real progress.
 
 Usage:
     tools/blueprint_audit.py                 # audit, print the report, gate on FALSE-GREEN
@@ -58,7 +61,8 @@ DEF_KINDS = ("def", "abbrev", "structure", "inductive", "instance", "noncomputab
 
 
 # Environments that carry a proof obligation. A `definition` node with only defs is
-# CORRECT, not a seam — the seam finding must not cry wolf on every definition block.
+# CORRECT — the ORANGE finding must not cry wolf on every definition block. (One node,
+# one claim: a block with defs AND an estimate is TWO nodes. See blueprint_rules.md.)
 PROOF_ENVS = {"theorem", "lemma", "proposition", "corollary"}
 
 
@@ -92,10 +96,13 @@ class Node:
 
     @property
     def is_seam(self) -> bool:
-        """A node that OWES a proof but names no theorem: zero sorries, still unfinished.
+        """ORANGE: a node that OWES a proof but names no theorem — its statement is not
+        in Lean. Zero sorries, still unfinished.
 
-        The sorry census counts only holes someone has written down. A proposition with
-        no Lean theorem behind it contributes nothing to that count and is not done.
+        The sorry census counts only holes someone has written down, so this node is
+        invisible to it. The dep-graph renders it with an ORANGE border, which is the
+        honest display; the fix is to PIN it (write the statement with `sorry`), after
+        which it turns green-bordered and enters the census. See blueprint_rules.md.
         """
         return self.wants_proof and not self.theorems
 
@@ -207,6 +214,25 @@ def run_axiom_check(nodes: list[Node]) -> None:
     proc = subprocess.run(["lake", "env", "lean", scratch], cwd=REPO,
                           capture_output=True, text=True)
     out = proc.stdout + proc.stderr
+
+    # 🚨 REFUSE TO REPORT ON A FAILED MEASUREMENT.
+    # If the probe cannot even import the library — a stale/missing .olean, which happens
+    # ROUTINELY while a treadmill box is mid-rebuild in the shared tree — then NOTHING
+    # resolves, every declaration reads MISSING, and the report renders as a catastrophe:
+    # "0 nodes proved · 25 drift · 30 false-green · GATE FAILED". That is a lie, and it is
+    # the most alarming lie this tool can tell. An instrument that reports confidently on a
+    # measurement that did not happen is worse than one that is merely wrong.
+    # (2026-07-14: hit exactly this while a lap was live. Abort, say why, exit 2 — a
+    #  distinct code, so CI can tell "could not measure" from "measured, and it is bad".)
+    if m := re.search(r"object file '.*?' of module (\S+) does not exist", out):
+        print(f"\n🚫 CANNOT MEASURE — the library does not import: `{m.group(1)}` has no .olean.\n"
+              f"   The kernel was never asked, so every finding below would be fabricated.\n"
+              f"   Usual cause: a treadmill box or Codex is MID-BUILD in this tree.\n"
+              f"     • check   : lean-treadmill list ; pgrep -fl c-yolo\n"
+              f"     • fix     : wait for the lap to finish, or `lake build`, then re-run\n"
+              f"     • or judge: run in a pinned worktree (lean-create-worktree … --start-point <sha>)",
+              file=sys.stderr)
+        sys.exit(2)
 
     found: dict[str, set[str]] = {}
     for line in out.splitlines():
