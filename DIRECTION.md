@@ -36,17 +36,61 @@ is a theorem over exactly this chain.
    moves, zero statement/proof edits, names verbatim. Take the lap; you are paying for it
    on every elaboration.
 
-**Standing constraints**:
-- **`epsBW` is FROZEN at `1/10^1000`** and is the judge's constant. Do not touch it. The
-  ε-sweep tripwire is RE-ARMED: any future change fires a full re-ratification.
-- **Pinned statements are frozen.** An edit revokes ratification. `Statement.lean` is the
-  trusted base — its two sorries are the headline stubs, not holes to fix.
-- No spine leaves (SyracRV / Sec5 / Sec6 / Basic / Prob stubs) — downstream, cheap later.
+## 🌙 UNATTENDED / OVERNIGHT RUN — NO JUDGE IS AWAKE (2026-07-13 → 07-14 morning)
+
+**The judge will not look in for ~8 hours.** Nobody will unblock you, re-rule, or
+redirect. Two consequences, and they pull in opposite directions — respect both.
+
+### 🔓 NEVER IDLE, NEVER SPIN — the unstick ladder
+**Overnight, grinding down ANY sorry is acceptable progress.** The mandated order above
+is a *preference*, not a cage. If you are stuck, you are **required** to move, in this
+order:
+
+1. **Decompose.** Can't prove the target as stated? Split it into named sub-lemmas with
+   their own `sorry`s and prove the ones you can. **Raising the sorry count this way is
+   PROGRESS, not regress** — it converts one opaque wall into named, attackable pieces,
+   and it is exactly how `fpDist_any_triangle_le` finally fell.
+2. **Move down the mandated list** (X8 → X11 → the split).
+3. **🗂️ Do the `ManyTriangles` split.** Mechanical, zero-risk, high-payoff, and it has
+   been queued for four laps. An unattended night is the *ideal* time for it.
+4. **Take a spine stub.** ✅ **The old "no spine leaves" ban is LIFTED for this run.**
+   Fair game: `Syracuse/SyracRV.lean` (3), `Sec5/FirstPassage.lean` (2),
+   `Sec6/MixingFromDecay.lean` (1), `Basic/Collatz.lean` (1). These are downstream and
+   cheap; a night spent clearing them is a night well spent.
+5. **Pin C8** (§5 first-passage — the last un-pinned node). Allowed as statement work,
+   but a NEW pin is a **claim, not a fact**: mark it `RATIFY-C8` in a comment and say so
+   in your handoff. The judge ratifies against pp.22–25. Never mark it `\leanok`.
+
+**Two sustained failed attempts on one target = move.** Do not spend the night on a
+single wall.
+
+### 🚨 HARD RAILS — the things no lap may do, awake or asleep
+These are the failure modes the judge exists to catch, and tonight the judge is asleep.
+
+1. **NEVER weaken a statement to make it provable.** This is the cardinal sin. If a
+   statement will not yield, **decompose it (rule 1) or leave it sorried** — do NOT add a
+   hypothesis, narrow a quantifier, shrink a bound, or "adjust" a constant to get green.
+   A `sorry` is honest; a weakened theorem is a **lie that compiles**. Any pinned
+   statement you edit has its ratification REVOKED and will be reverted.
+2. **NEVER touch `Statement.lean`'s two sorries.** They are `tao_collatz` and
+   `tao_collatz_quantitative` — the headline theorems themselves. They discharge when the
+   whole chain lands, and not one minute before. They are the trusted base.
+3. **NEVER clear a crux sorry by parking it in `wip/`.** The completion gate is cleared by
+   PROVING. Parking is fabricated progress.
+4. **`epsBW` is FROZEN at `1/10^1000`** — the judge's constant. Do not touch it; the
+   ε-sweep tripwire is RE-ARMED and any change fires a full re-ratification.
+5. **Do not claim a node "COMPLETE" or "verified".** You may report `#print axioms` output
+   as *evidence*; the judge's dated run is what makes it true. Write "believed clean,
+   judge to verify."
+
+### Standing constraints (unchanged)
 - `native_decide` is permitted as scaffolding but tag it `-- NATIVE_DECIDE:`; a decl whose
   trail contains it does **not** count as judge-verified and must be discharged before
   publication. Prefer `decide +kernel`. (It has been needed exactly zero times so far.)
 - New `set_option exponentiation.threshold 3000` is expected in ε-touching files (Lean
   refuses `10^1000` otherwise). That option is justified; do not remove it.
+- Local `maxHeartbeats` bumps need a `-- HEARTBEAT:` justification comment.
+- Commit green, commit often. A lap that ends with uncommitted work has thrown it away.
 
 **Why**: with X9 and X10 both closed, every remaining §7 sorry is assembly over proved
 machinery. The campaign's risk is no longer concentrated in a kernel — it is now volume.
