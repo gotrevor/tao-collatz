@@ -88,6 +88,19 @@ bookkeeping. `osc_windowed_conditioning_le` (DONE) is the inner loop; `osc_le_tw
    into A′; take A large) + **obl 0** (6.1) regime telescope for m<0.9n + small-n via `osc ≤ 2`.
 4. Discharge **`hbudget`** from the (6.8) l-range (`l ≤ n log3/log2 − ½Cₐ²log n`) + `Cₐ≥10`, `n≥n₀`.
 
+### ✅ UPDATE 5 (same lap, commit `791144a`): **`fine_scale_mixing` DECOMPOSED (headline sorry-free).**
+Via Tao's (6.1) split, `fine_scale_mixing` is now the term `osc_syracZ_regime_telescope A hA
+(osc_syracZ_high_regime A hA)` — **no sorry in the headline decl** (statement char-identical, differ 27/29).
+The two named obligations (src sorry count 4→5, which is PROGRESS):
+- **`osc_syracZ_high_regime`** (obl 1+2+3, high regime `9n ≤ 10m`, `n₀ ≤ n`): the §6 conditioning core.
+  Next decomposition → the decomposition identity + k-sum cast, `hunif` (obl 2), geometric/constant chase.
+  All the per-conditioning machinery it needs is banked axiom-clean (`condDensWB_osc_le`,
+  `osc_windowedB_conditioning_le`, `head_factor_norm_le_charFn`, `osc_le_two_mul_l1`).
+- **`osc_syracZ_regime_telescope`** (obl 0): reduces high-regime → all `1≤m≤n` via the (1.22) telescope
+  (Tao p.28) + small-`n` via `osc ≤ 2`. Independent, separable; needs the (1.22) consistency identity.
+**Next lap**: attack `osc_syracZ_high_regime` — start with the decomposition identity (model on
+`syracZ_eq_tsum_condDens`), handling the `k`-sum cast `(n−k−1)+(k+1)=n`. That's the last heroic node in C10.
+
 ## Lap fruit-25 (2026-07-14, same session): **windowed single-point mass PROVED — `tailDensW ≤ 2⁻ˡ`**
 
 Build green 3285, all `#print axioms`-clean (believed clean, judge to verify). New
