@@ -189,4 +189,41 @@ theorem abs_expect_indicator_sub_le_dTV (p q : PMF α) (E : Set α) :
     _ ≤ ∑' a, |(p a).toReal - (q a).toReal| :=
         ((hpE.sub hqE).abs).tsum_le_tsum hkey ((hp.sub hq).abs)
 
+/-- The pointwise mass of an iid vector factorizes as the product of coordinate masses. -/
+theorem iid_apply_eq_prod (p : PMF α) (n : Nat) (v : Fin n → α) :
+    p.iid n v = ∏ i, p (v i) := by
+  classical
+  induction n with
+  | zero =>
+      have hv : v = fun i : Fin 0 => i.elim0 := by
+        funext i
+        exact i.elim0
+      subst v
+      rw [show p.iid 0 = PMF.pure (fun i : Fin 0 => i.elim0) from rfl]
+      simp [PMF.pure_apply]
+  | succ n ih =>
+      rw [show p.iid (n + 1) = p.bind fun a => (p.iid n).map (Fin.cons a) from rfl,
+        PMF.bind_apply]
+      rw [tsum_eq_single (v 0)]
+      · rw [PMF.map_apply]
+        rw [tsum_eq_single (Fin.tail v)]
+        · rw [if_pos (Fin.cons_self_tail v).symm, ih, Fin.prod_univ_succ]
+          congr 1
+        · intro w hw
+          rw [if_neg]
+          intro heq
+          apply hw
+          funext j
+          exact (congrFun heq j.succ).symm
+      · intro a ha
+        rw [PMF.map_apply]
+        rw [mul_eq_zero]
+        right
+        apply ENNReal.tsum_eq_zero.mpr
+        intro w
+        rw [if_neg]
+        intro heq
+        apply ha
+        exact (congrFun heq 0).symm
+
 end PMF

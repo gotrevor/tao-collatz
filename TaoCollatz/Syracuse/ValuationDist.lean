@@ -247,41 +247,10 @@ theorem card_zmod_two_pow_cast_fiber (n k : Nat) (hkn : k ≤ n) (r : ZMod (2 ^ 
     rw [hg, ZMod.val_natCast, Nat.mod_eq_of_lt hval]
     rw [Nat.add_mul_div_left _ _ (show 0 < m by simp [m]), Nat.div_eq_of_lt hrlt, zero_add]
 
-theorem iid_apply_eq_prod {α : Type*} (p : PMF α) (n : Nat) (v : Fin n -> α) :
-    p.iid n v = ∏ i, p (v i) := by
-  classical
-  induction n with
-  | zero =>
-      have hv : v = fun i : Fin 0 => i.elim0 := by
-        funext i
-        exact i.elim0
-      subst v
-      rw [show p.iid 0 = PMF.pure (fun i : Fin 0 => i.elim0) from rfl]
-      simp [PMF.pure_apply]
-  | succ n ih =>
-      rw [show p.iid (n + 1) = p.bind fun a => (p.iid n).map (Fin.cons a) from rfl,
-        PMF.bind_apply]
-      rw [tsum_eq_single (v 0)]
-      · rw [PMF.map_apply]
-        rw [tsum_eq_single (Fin.tail v)]
-        · rw [if_pos (Fin.cons_self_tail v).symm, ih, Fin.prod_univ_succ]
-          congr 1
-        · intro w hw
-          rw [if_neg]
-          intro heq
-          apply hw
-          funext j
-          exact (congrFun heq j.succ).symm
-      · intro a ha
-        rw [PMF.map_apply]
-        rw [mul_eq_zero]
-        right
-        apply ENNReal.tsum_eq_zero.mpr
-        intro w
-        rw [if_neg]
-        intro heq
-        apply ha
-        exact (congrFun heq 0).symm
+/-- Re-exported from `Prob/Basic.lean`: the pointwise mass of an iid vector is the
+product of its coordinate masses. -/
+theorem iid_apply_eq_prod {α : Type*} (p : PMF α) (n : Nat) (v : Fin n → α) :
+    p.iid n v = ∏ i, p (v i) := PMF.iid_apply_eq_prod p n v
 
 theorem iid_geomHalf_apply_of_pos (n : Nat) (a : Fin n -> Nat) (ha : ∀ i, 1 ≤ a i) :
     (geomHalf.iid n) a = 2⁻¹ ^ pre a n := by
