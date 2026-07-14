@@ -639,46 +639,113 @@ theorem syracZ_char_descent {j' q : ℕ} (η : ZMod (3 ^ (j' + q))) :
     cexpect_map _ _ _ (fun Y => le_of_eq (norm_stdAddChar _))]
 
 /-- **Brick (b), the head-factor Stage-A descent** (C10, pointwise). The head character factor from
-`cond_char_factor` carries a `3ᵖ` block-scaling prefactor (at the *low* end of the modulus) and the
-frozen tail-valuation phase `2⁻ˡ`. For a high frequency `ξ = 3ʲ'·2ˡ·ξ'`, the `2⁻ˡ·2ˡ = 1`
-cancellation removes the frozen phase, and the `3ᵖ` prefactor descends the character from level
-`j+p` down to level `j`, landing the head offset `Fnat_j(vh)·2⁻ᵖʳᵉ` at level `j` as a genuine
-level-`j` Syracuse character at the frequency `3ʲ'·(ξ' mod 3ʲ)`. Proof: `ring`-fold the `2⁻ˡ·2ˡ`
-into a single factor and cancel it, then `stdAddChar_pow3_descent_right` (right-summand descent) +
-push `castHom` through the offset (`castHom_two_inv_right`, `map_ofNat`). This is Stage A; Stage B is
-`syracZ_char_descent`, which then descends the `3ʲ'` valuation to `charFn_decay`'s level `j - j'`. -/
-theorem head_char_descent {j p : ℕ} (j' l : ℕ) (ξ' : ZMod (3 ^ (j + p))) (vh : Fin j → ℕ) :
+`cond_char_factor` carries a `3^p` block-scaling prefactor (at the *low* end of the modulus
+`3^(j+p)`) and the frozen tail-valuation phase `2⁻ˡ`. The `3^p` prefactor descends the character
+from level `j+p` down to level `j`, landing the head offset `Fnat_j(vh)·2⁻ᵖʳᵉ` at level `j` as a
+genuine level-`j` Syracuse character at the **reduced frequency** `2⁻ˡ·(ξ mod 3ʲ)` — the frozen
+phase `2⁻ˡ` is a unit coprime to `3`, so it is absorbed into the frequency (it need not cancel; it
+preserves the `3`-adic valuation). Proof: `ring`-refactor to pull `3^p` leftmost,
+`stdAddChar_pow3_descent_right` (right-summand descent `3^(j+p)→3ʲ`), then push `castHom` through the
+offset and phase (`castHom_two_inv_right`). Stage B is `syracZ_char_descent`, which peels the `3ʲ'`
+valuation of the reduced frequency off to `charFn_decay`'s level. -/
+theorem head_char_descent {j p : ℕ} (l : ℕ) (ξ : ZMod (3 ^ (j + p))) (vh : Fin j → ℕ) :
     ZMod.stdAddChar (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
-        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l)
-        * ((3 : ZMod (3 ^ (j + p))) ^ j' * (2 : ZMod (3 ^ (j + p))) ^ l * ξ')))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ))
       = ZMod.stdAddChar (-(((fnat j vh : ZMod (3 ^ j))
         * (2 : ZMod (3 ^ j))⁻¹ ^ pre vh j)
-        * ((3 : ZMod (3 ^ j)) ^ j'
-          * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right j p)) (ZMod (3 ^ j)) ξ'))) := by
-  have hunit : (2 : ZMod (3 ^ (j + p)))⁻¹ * (2 : ZMod (3 ^ (j + p))) = 1 := by
-    rw [mul_comm]; apply ZMod.mul_inv_of_unit
-    rw [show (2 : ZMod (3 ^ (j + p))) = ((2 : ℕ) : ZMod (3 ^ (j + p))) by norm_cast,
-      ZMod.isUnit_iff_coprime]
-    exact Nat.Coprime.pow_right _ (by decide)
-  have hcancel : (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l * (2 : ZMod (3 ^ (j + p))) ^ l = 1 := by
-    rw [← mul_pow, hunit, one_pow]
+        * ((2 : ZMod (3 ^ j))⁻¹ ^ l
+          * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right j p)) (ZMod (3 ^ j)) ξ))) := by
   have harg : -((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
-        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l)
-        * ((3 : ZMod (3 ^ (j + p))) ^ j' * (2 : ZMod (3 ^ (j + p))) ^ l * ξ'))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)
       = (3 : ZMod (3 ^ (j + p))) ^ p * (-(((fnat j vh : ZMod (3 ^ (j + p)))
         * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
-        * ((3 : ZMod (3 ^ (j + p))) ^ j' * ξ'))) := by
-    have hfold : (3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
-          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l)
-          * ((3 : ZMod (3 ^ (j + p))) ^ j' * (2 : ZMod (3 ^ (j + p))) ^ l * ξ')
-        = ((3 : ZMod (3 ^ (j + p))) ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
-          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
-          * ((3 : ZMod (3 ^ (j + p))) ^ j' * ξ'))
-          * ((2 : ZMod (3 ^ (j + p)))⁻¹ ^ l * (2 : ZMod (3 ^ (j + p))) ^ l) := by ring
-    rw [hfold, hcancel, mul_one]; ring
+        * ((2 : ZMod (3 ^ (j + p)))⁻¹ ^ l * ξ))) := by ring
   rw [harg, stdAddChar_pow3_descent_right]
   congr 1
-  simp only [map_neg, map_mul, map_pow, map_natCast, castHom_two_inv_right, map_ofNat]
+  simp only [map_neg, map_mul, map_pow, map_natCast, castHom_two_inv_right]
+
+/-- The block expectation over `iid geomHalf n` of a level-`n` Syracuse character (offset
+`Fnat_n·2⁻ᵖʳᵉ`) at any frequency `freq` is a `syracZ n`-expectation. General form of
+`tail_cexpect_eq_syracZ`, used for the head block via `head_char_descent`. `syracZ_eq_rev_fnat`
+(pushforward) + `cexpect_map`. -/
+theorem offset_cexpect_eq_syracZ {n : ℕ} (freq : ZMod (3 ^ n)) :
+    (geomHalf.iid n).cexpect (fun v => ZMod.stdAddChar (-(((fnat n v : ZMod (3 ^ n))
+        * (2 : ZMod (3 ^ n))⁻¹ ^ pre v n) * freq)))
+      = (syracZ n).cexpect (fun Y => ZMod.stdAddChar (-(Y * freq))) := by
+  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero _ (by norm_num)⟩
+  rw [syracZ_eq_rev_fnat n, cexpect_map _ _ _ (fun Y => le_of_eq (norm_stdAddChar _))]
+
+/-- **Brick (b), the head factor as a level-`j` Syracuse character sum** (C10, Stage A wrapped). The
+head character factor from `cond_char_factor` equals the level-`j` `syracZ` character sum at the
+reduced frequency `2⁻ˡ·(ξ mod 3ʲ)`. Chains `head_char_descent` (pointwise Stage-A descent) through
+`offset_cexpect_eq_syracZ` (the `iid j → syracZ j` pushforward). Stage B (`syracZ_char_eq_charFn`)
+then peels the `3`-valuation of the reduced frequency off to `charFn_decay`. -/
+theorem head_factor_eq_syracZ {j p : ℕ} (l : ℕ) (ξ : ZMod (3 ^ (j + p))) :
+    (geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))
+      = (syracZ j).cexpect (fun Y => ZMod.stdAddChar (-(Y
+          * ((2 : ZMod (3 ^ j))⁻¹ ^ l
+            * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right j p)) (ZMod (3 ^ j)) ξ)))) := by
+  rw [congrArg (PMF.cexpect (geomHalf.iid j))
+      (funext (fun vh : Fin j → ℕ => head_char_descent l ξ vh))]
+  exact offset_cexpect_eq_syracZ _
+
+/-- **Brick (b), the Syracuse character descent to `charFn_decay` form** (C10, Stage B + `eC`). For a
+level-`(j'+q)` `syracZ` character sum at a frequency `3ʲ'·η` (valuation `j'`), the sum equals the
+level-`q` Syracuse character sum in `charFn_decay`'s exact `eC` form at the reduced frequency
+`castHom η`. Chains `syracZ_char_descent` (the consistency descent, level `j'+q → q`) with
+`stdAddChar_mul_eq_eC`. So `charFn_decay` (Prop 1.17) bounds it `≤ Cₐ·q⁻ᴬ` when `3 ∤ (castHom η).val`. -/
+theorem syracZ_char_eq_charFn {j' q : ℕ} (η : ZMod (3 ^ (j' + q))) :
+    (syracZ (j' + q)).cexpect (fun Y => ZMod.stdAddChar (-(Y
+        * ((3 : ZMod (3 ^ (j' + q))) ^ j' * η))))
+      = (syracZ q).cexpect (fun Y' => eC (-(((ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j'))
+          (ZMod (3 ^ q)) η).val) * Y'.val : ℚ) / 3 ^ q)) := by
+  rw [syracZ_char_descent]
+  exact congrArg (PMF.cexpect (syracZ q)) (funext (fun Y' => stdAddChar_mul_eq_eC _ Y'))
+
+/-- **Brick (b), the head-factor ⟹ `charFn_decay` capstone** (C10). For a high frequency `ξ` at
+level `(j'+q)+p` whose reduced frequency `2⁻ˡ·(ξ mod 3^(j'+q))` factors as `3ʲ'·η` (valuation `j'`,
+cofactor `η`, encoded by `hfreq`), the head character factor from `cond_char_factor` equals **exactly**
+a level-`q` Syracuse character sum in `charFn_decay`'s `eC` form at `castHom η`. Chains
+`head_factor_eq_syracZ` (Stage A → `syracZ (j'+q)`), the `hfreq` frequency decomposition, and
+`syracZ_char_eq_charFn` (Stage B: the consistency descent `j'+q → q` + `eC`). This is the head-block
+analog of `tail_factor_eq_charFn`, and — via the `syracZ_char_descent` novelty — the object on which
+`charFn_decay` (Prop 1.17) delivers the `q⁻ᴬ` decay of the C10 high-entropy factor. -/
+theorem head_factor_eq_charFn {j' q p : ℕ} (l : ℕ) (ξ : ZMod (3 ^ ((j' + q) + p)))
+    (η : ZMod (3 ^ (j' + q)))
+    (hfreq : (2 : ZMod (3 ^ (j' + q)))⁻¹ ^ l
+        * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right (j' + q) p)) (ZMod (3 ^ (j' + q))) ξ
+      = (3 : ZMod (3 ^ (j' + q))) ^ j' * η) :
+    (geomHalf.iid (j' + q)).cexpect (fun vh => ZMod.stdAddChar
+        (-((3 ^ p * ((fnat (j' + q) vh : ZMod (3 ^ ((j' + q) + p)))
+          * (2 : ZMod (3 ^ ((j' + q) + p)))⁻¹ ^ pre vh (j' + q))
+          * (2 : ZMod (3 ^ ((j' + q) + p)))⁻¹ ^ l) * ξ)))
+      = (syracZ q).cexpect (fun Y' => eC (-(((ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j'))
+          (ZMod (3 ^ q)) η).val) * Y'.val : ℚ) / 3 ^ q)) := by
+  rw [head_factor_eq_syracZ, hfreq, syracZ_char_eq_charFn]
+
+/-- **Brick (b), the head-factor decay bound** (C10): the head character factor decays polynomially
+`≤ Cₐ·q⁻ᴬ` whenever the reduced-frequency cofactor `η` (valuation `j'`) is `3`-coprime after the
+final descent. Immediate from `head_factor_eq_charFn` + `charFn_decay` (Prop 1.17). Together with the
+tail factor's `≤ 1` bound, this is the per-frequency decay of `‖𝓕(densC condDens) ξ‖`. -/
+theorem head_factor_norm_le_charFn (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∀ (j' q p l : ℕ), 1 ≤ q → ∀ (ξ : ZMod (3 ^ ((j' + q) + p)))
+      (η : ZMod (3 ^ (j' + q))),
+      (2 : ZMod (3 ^ (j' + q)))⁻¹ ^ l
+          * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right (j' + q) p)) (ZMod (3 ^ (j' + q))) ξ
+        = (3 : ZMod (3 ^ (j' + q))) ^ j' * η →
+      ¬ (3 ∣ (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) η).val) →
+      ‖(geomHalf.iid (j' + q)).cexpect (fun vh => ZMod.stdAddChar
+          (-((3 ^ p * ((fnat (j' + q) vh : ZMod (3 ^ ((j' + q) + p)))
+            * (2 : ZMod (3 ^ ((j' + q) + p)))⁻¹ ^ pre vh (j' + q))
+            * (2 : ZMod (3 ^ ((j' + q) + p)))⁻¹ ^ l) * ξ)))‖
+        ≤ C * (q : ℝ) ^ (-A) := by
+  obtain ⟨C, hC0, hC⟩ := charFn_decay A hA
+  refine ⟨C, hC0, fun j' q p l hq ξ η hfreq hη => ?_⟩
+  rw [head_factor_eq_charFn l ξ η hfreq]
+  exact hC q hq _ hη
+
+
 
 /-- **Brick (b), the head-factor `≤ 1` bound** (C10): the head character factor is a character
 expectation, hence has norm `≤ 1` (`cexpect_norm_le` + `norm_stdAddChar`). The low-entropy factor. -/

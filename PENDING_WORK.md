@@ -1,5 +1,44 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-16 (2026-07-15, HEAD-block reindex COMPLETE): **`head_factor_eq_charFn` PROVED — head factor IS a `charFn_decay` char sum**
+
+Build green 3276→3285, all new lemmas `#print axioms`-clean. Commits after `06c02f3`. **The entire
+head-block decay reindex — the live capstone of C10, the DECAY block per the fruit-14 source read —
+is DONE.** For a high frequency `ξ` at level `(j'+q)+p` whose reduced frequency `2⁻ˡ·(ξ mod 3^(j'+q))`
+factors as `3ʲ'·η`, the head character factor from `cond_char_factor` equals **exactly** a level-`q`
+Syracuse character sum in `charFn_decay`'s `eC` form at `castHom η`:
+```
+E_vh[stdAddChar(-((3^p·(Fnat_{j'+q}·2⁻ᵖʳᵉ)·2⁻ˡ)·ξ))] = (syracZ q).cexpect(Y'↦eC(-((castHom η).val·Y'.val)/3^q))
+```
+so `head_factor_norm_le_charFn`: `‖head factor‖ ≤ Cₐ·q⁻ᴬ` when `3∤(castHom η).val`. New lemmas (all in
+`Sec6/MixingFromDecay.lean`, hardest-first order they were built):
+- **`syracZ_char_descent`** (fruit-15, the genuine novelty): level-`(j'+q)` char at `3ʲ'·η` = level-`q`
+  char at `castHom η`; Tao (1.22) via `stdAddChar_pow3_descent`+`cexpect_map`+`syracZ_map_cast`.
+- `stdAddChar_pow3_descent_right`, `castHom_two_inv_right`: right-summand (`3^(j+p)→3ʲ`) descent
+  mirrors, for the head's `3ᵖ` block-scaling prefactor at the low end of the modulus.
+- `head_char_descent` (Stage A, pointwise): `3ᵖ` descent `j+p→j`, absorbing the frozen `2⁻ˡ` (a
+  3-coprime unit) into the reduced frequency `2⁻ˡ·castHom ξ` (it need NOT cancel — corrects the
+  fruit-14 over-specific `2ˡ` shape assumption).
+- `offset_cexpect_eq_syracZ` (general block→`syracZ`), `head_factor_eq_syracZ` (Stage A wrapped),
+  `syracZ_char_eq_charFn` (Stage B + `eC`), **`head_factor_eq_charFn`** (capstone),
+  `head_factor_norm_le_charFn` (decay bound).
+
+The `hfreq : 2⁻ˡ·castHom ξ = 3ʲ'·η` hypothesis honestly isolates the frequency-decomposition
+bookkeeping (valuation `j'`, cofactor `η`) from the analytic descent — to be discharged per-`ξ` in
+the osc assembly (each high `ξ` gets its `j', η`).
+
+**→ NEXT (osc bound + event assembly — the remaining C10 work is bookkeeping, no new analytic kernel)**:
+1. **Per-frequency product bound**: `‖𝓕(densC condDens) ξ‖ = ‖head factor · tail factor‖ ≤ (Cₐ·q⁻ᴬ)·1`
+   via `dft_condDens_eq_cond_char` + `cond_char_factor` (‖head‖ from `head_factor_norm_le_charFn`,
+   ‖tail‖≤1 from the indicator block `head_factor_norm_le`-style bound). ⚠️ recheck: `cond_char_factor`'s
+   head factor DOES carry `3ᵖ`+`2⁻ˡ` (matches `head_factor_*`); its tail factor carries the indicator
+   `1_{pre vt = l}` and is the `≤1` block. Orientation now consistent with fruit-14 (head=decay).
+2. **Rényi ℓ²-mass + Plancherel** (6.11): `∑_{high ξ}‖𝓕‖² ≤ (Cₐ·q⁻ᴬ)²·∑_ξ‖tail‖²`; the tail ℓ²-mass
+   is the collision entropy `3ⁿ·∑_Yₖ₊₁ P(...)²` bounded by offset injectivity (Lemma 6.2). Then
+   `osc_le_sqrt_highfreq` on `condDens` closes (6.10).
+3. **Event assembly** (6.1)–(6.8): stopping time `k`, E/Eₖ/Bₖ/Cₖ,ₗ, union over `k,l`, triangle;
+   telescope to `0.9n≤m≤n`. Decompose into named `sorry`s in `Sec6/MixingFromDecay.lean` as built.
+
 ## Lap fruit-15 (2026-07-15, HEAD-block novelty): **`syracZ_char_descent` PROVED — the Syracuse consistency descent (the last real novelty of C10)**
 
 Build green 3276, `#print axioms syracZ_char_descent = [propext, Classical.choice, Quot.sound]`.
