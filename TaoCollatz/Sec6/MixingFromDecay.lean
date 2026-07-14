@@ -344,6 +344,26 @@ theorem osc_le_sqrt_highfreq (m n : ℕ) (hmn : m ≤ n) (c : ZMod (3 ^ n) → �
   calc D = Real.sqrt (D ^ 2) := (Real.sqrt_sq hnn).symm
     _ ≤ Real.sqrt H := Real.sqrt_le_sqrt key
 
+/-- **(6.11) collision-entropy skeleton** (C10): for any real density `c`, the high-frequency `L²`
+mass is bounded by the collision entropy `3ⁿ·∑_Y (c Y)²`. High freq ⊆ all freq (nonneg terms) +
+`dft_parseval` (`∑_ξ‖𝓕Φ ξ‖² = N·∑_Y‖Φ Y‖²`) + `‖(c Y : ℂ)‖² = (c Y)²`. This is the Plancherel side
+of the C10 bound: combined with the head-factor decay (`dft_condDens_norm_le`), Tao's (6.11) refines
+`∑_{high}‖𝓕(densC condDens)‖²` to `decay²·(tail collision entropy)`; this lemma is the raw Plancherel
+step underneath, reusable for any conditioned density. -/
+theorem highfreq_l2_le_collision (m n : ℕ) (c : ZMod (3 ^ n) → ℝ) :
+    ∑ ξ ∈ highFreq m n, ‖ZMod.dft (densC n c) ξ‖ ^ 2 ≤ (3 ^ n : ℝ) * ∑ Y, (c Y) ^ 2 := by
+  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
+  calc ∑ ξ ∈ highFreq m n, ‖ZMod.dft (densC n c) ξ‖ ^ 2
+      ≤ ∑ ξ, ‖ZMod.dft (densC n c) ξ‖ ^ 2 :=
+        Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
+          (fun ξ _ _ => by positivity)
+    _ = (3 ^ n : ℝ) * ∑ Y, ‖densC n c Y‖ ^ 2 := by
+        rw [ZMod.dft_parseval (densC n c)]; push_cast; ring
+    _ = (3 ^ n : ℝ) * ∑ Y, (c Y) ^ 2 := by
+        congr 1
+        refine Finset.sum_congr rfl (fun Y _ => ?_)
+        rw [densC, Complex.norm_real, Real.norm_eq_abs, sq_abs]
+
 /-! ## ⚠️ ROUTE FINDING (2026-07-15): the raw-`syracZ` high-frequency `L²` mass is NOT small
 
 The naive plan — bound `∑_{ξ∈highFreq} ‖𝓕(densC n) ξ‖²` directly from `charFn_decay` — is
