@@ -1,5 +1,35 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-23 (2026-07-15, obligation-3): **`fnat_lt_of_prefix_bound` — window-bound geometric algebra**
+
+Build green 3285, `#print axioms`-clean. Commit `9913ad3`. New lemmas (`Sec6/MixingFromDecay.lean`,
+before `fnat_offset_zmod_inj`):
+- **`fnat_lt_of_prefix_bound`**: given the per-prefix ℕ hypothesis `∀ m<p, 3^{p-1-m}·2^{pre vt m+(p-m)}
+  < 3^{j+p}`, proves `fnat p vt < 3^{j+p}`. The pure-algebra half of Tao (6.14)→(6.15): ×2^p, split
+  `2^p=2^m·2^{p-m}` per term, apply hyp, sum `∑2^m<2^p`. **This is the `< 3^n` bound that
+  `fnat_offset_zmod_inj` consumes.** Supporting: `sum_two_pow_lt`.
+
+### → OBLIGATION 3 IS NOW FULLY REDUCED to ONE analytic implication:
+`window (6.12) ⟹ ∀ m<p, 3^{p-1-m}·2^{pre vt m+(p-m)} < 3^{j+p}`. The chain is complete:
+`fnat_lt_of_prefix_bound` → `fnat_offset_zmod_inj` (mod-3ⁿ injectivity) → windowed `tailDens Y ≤ 2^{-l}`
+→ `M` → `tailDens_renyi_le` → the `√` in `condDens_osc_le`. The remaining implication is the
+**sub-Gaussian √/log/Young estimate** (Tao p.32): from `|a_{[i+1,j]} − 2(j−i)| ≤ Cₐ√((j−i)log n)+log n`
+(6.12), derive the per-prefix bound. ⚠️ **This is genuinely real-analysis-heavy** (√, log, exp,
+Young's inequality) and the leading order is CRITICAL (typical `fnat ≈ 4^{k+1} ≈ 3^n` — the window's
+job is to control the O(√) fluctuation around the boundary). It couples to the event `E`/scaffold
+(obligation 1) since the window only holds on `E`. Multi-lap sub-project; needs the window predicate
+`W n vt` defined in reals first, then the estimate.
+
+### → C10 dashboard (all surrounding machinery banked; 3 analytic gaps remain):
+- **Obl 1**: marginalization ✓, error-tool ✓. GAPS: stopping-time `k` + events (DecidablePreds);
+  `syracZ = ∑ condDens^E + error` decomposition; `P(Ē) ≪ n^{-A-1}` (sub-Gaussian, reuses §7).
+- **Obl 2** (`hunif` head decay): unchanged — per-ξ valuation bookkeeping.
+- **Obl 3**: Lemma 6.2 ✓, mod-3ⁿ wrapper ✓, geometric bound ✓. GAP: window ⟹ per-prefix hyp (√/log/Young).
+The three gaps all route through the sub-Gaussian **event `E`/window** — that is THE remaining crux
+kernel. Next lap: either (a) define `W n vt` (6.12) in reals + start the Young estimate, or (b) define
+the stopping time `k`/events and decompose `fine_scale_mixing` into named sub-sorries wiring the banked
+machinery. (a) is hardest-first on obl-3; (b) lays the obl-1 gate skeleton. Lean toward (a).
+
 ## Lap fruit-22 (2026-07-15, obligation-1): **`osc_le_two_mul_l1` (+ `fiber_card`) — the error-term tool**
 
 Build green 3285, both `#print axioms`-clean. Commit `819723e`. New lemmas (`Sec6/MixingFromDecay.lean`,
