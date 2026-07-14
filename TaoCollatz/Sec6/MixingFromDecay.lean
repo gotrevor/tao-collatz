@@ -1775,6 +1775,169 @@ theorem condDens_osc_le (j p l m : ℕ) (hmn : m ≤ j + p) (D : ℝ) (hD : 0 �
         rw [Real.sqrt_mul (sq_nonneg D), Real.sqrt_sq hD]
 
 
+/-! ### Windowed conditioned density — the osc bound carrying the (6.12) window `W`
+
+The §6 assembly conditions on the full event `Eₖ ∧ Bₖ ∧ Cₖ,ₗ`, which is tail-measurable, i.e. a
+predicate `W` of the tail block `Fin p → ℕ`. The following mirror `condDens`/`tailDens` and their
+osc chain with the extra conjunct `W vt`, so the windowed single-point mass
+`tailDensW_le_single_mass` (`tailDensW Y ≤ 2⁻ˡ`, only valid on the window) actually feeds the osc `√`.
+Everything is the exact non-windowed proof with `pre vt p = l` replaced by `pre vt p = l ∧ W vt`; the
+head factor is unchanged (the `2⁻ˡ` freeze uses only `pre(tail) = l`). -/
+
+/-- The **windowed conditioned density** `g_{j,p,l,W}` (Tao's `g_{n,k,l}` with the tail-measurable
+event `W`): `condDens` restricted to `{pre(tail) = l ∧ W(tail)}`. -/
+noncomputable def condDensW (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W] :
+    ZMod (3 ^ (j + p)) → ℝ := fun Y =>
+  ∑' a : Fin (j + p) → ℕ, ((geomHalf.iid (j + p)) a).toReal
+    * (if (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p) = Y
+          ∧ pre (fun i => a (Fin.natAdd j i)) p = l ∧ W (fun i => a (Fin.natAdd j i))
+        then (1 : ℝ) else 0)
+
+/-- The DFT of the windowed conditioned density is the windowed conditional character sum
+(general `dft_cond_density` at `w = {pre(tail) = l ∧ W(tail)}`). -/
+theorem dft_condDensW_eq_cond_char (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W]
+    (ξ : ZMod (3 ^ (j + p))) :
+    ZMod.dft (densC (j + p) (condDensW j p l W)) ξ
+      = (geomHalf.iid (j + p)).cexpect (fun a =>
+          ZMod.stdAddChar (-(((fnat (j + p) a : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p)) * ξ))
+            * (if pre (fun i => a (Fin.natAdd j i)) p = l ∧ W (fun i => a (Fin.natAdd j i))
+                then 1 else 0)) :=
+  dft_cond_density (geomHalf.iid (j + p))
+    (fun a => (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p))
+    (fun a => pre (fun i => a (Fin.natAdd j i)) p = l ∧ W (fun i => a (Fin.natAdd j i))) ξ
+
+/-- **The windowed conditional character factorization** — mirror of `cond_char_factor` carrying the
+extra tail conjunct `W(tail)`. The head factor is identical; only the tail expectation's indicator
+gains `∧ W`. -/
+theorem cond_char_factorW {j p : ℕ} (ξ : ZMod (3 ^ (j + p))) (l : ℕ)
+    (W : (Fin p → ℕ) → Prop) [DecidablePred W] :
+    (geomHalf.iid (j + p)).cexpect
+        (fun a => ZMod.stdAddChar (-(((fnat (j + p) a : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p)) * ξ))
+          * (if pre (fun i => a (Fin.natAdd j i)) p = l ∧ W (fun i => a (Fin.natAdd j i))
+              then 1 else 0))
+      = (geomHalf.iid j).cexpect
+            (fun vh => ZMod.stdAddChar (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+                  * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+                  * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))
+        * (geomHalf.iid p).cexpect
+            (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+                  * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+              * (if pre vt p = l ∧ W vt then 1 else 0)) := by
+  set f : (Fin j → ℕ) → ℂ := fun vh => ZMod.stdAddChar (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+      * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)) with hf
+  set g : (Fin p → ℕ) → ℂ := fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+      * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ)) * (if pre vt p = l ∧ W vt then 1 else 0) with hg
+  have hfb : ∀ vh, ‖f vh‖ ≤ 1 := fun vh => le_of_eq (norm_stdAddChar _)
+  have hgb : ∀ vt, ‖g vt‖ ≤ 1 := fun vt => by
+    simp only [hg]
+    by_cases h : pre vt p = l ∧ W vt
+    · rw [if_pos h, mul_one]; exact le_of_eq (norm_stdAddChar _)
+    · rw [if_neg h, mul_zero, norm_zero]; exact zero_le_one
+  rw [← PMF.cexpect_iid_append geomHalf j p f g hfb hgb]
+  refine congrArg (PMF.cexpect (geomHalf.iid (j + p))) ?_
+  funext a
+  simp only [hf, hg]
+  by_cases h : pre (fun i => a (Fin.natAdd j i)) p = l ∧ W (fun i => a (Fin.natAdd j i))
+  · simp only [if_pos h, mul_one]
+    rw [char_offset_split a ξ, pre_castAdd a (le_refl j), h.1]
+  · simp only [if_neg h, mul_zero]
+
+/-- The windowed tail factor is the DFT of the windowed tail sub-density `tailDensW`
+(general `dft_cond_density` at `w = {pre = l ∧ W}`). -/
+theorem tail_factor_dft_eqW (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W]
+    (ξ : ZMod (3 ^ (j + p))) :
+    ZMod.dft (densC (j + p) (tailDensW j p l W)) ξ
+      = (geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+          * (if pre vt p = l ∧ W vt then 1 else 0)) :=
+  dft_cond_density (geomHalf.iid p)
+    (fun vt => (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p)
+    (fun vt => pre vt p = l ∧ W vt) ξ
+
+/-- **(6.11) windowed tail collision entropy**: `∑_ξ ‖windowed tail factor‖² = 3^(j+p)·∑ (tailDensW)²`,
+by Parseval through `tail_factor_dft_eqW`. Mirror of `tail_factor_l2_eq`. -/
+theorem tail_factor_l2_eqW (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W] :
+    ∑ ξ, ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ)) * (if pre vt p = l ∧ W vt then 1 else 0))‖ ^ 2
+      = (3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p l W Y) ^ 2 := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have h1 : ∀ ξ : ZMod (3 ^ (j + p)),
+      (geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ)) * (if pre vt p = l ∧ W vt then 1 else 0))
+        = ZMod.dft (densC (j + p) (tailDensW j p l W)) ξ := fun ξ => (tail_factor_dft_eqW j p l W ξ).symm
+  have hnorm : ∀ Y : ZMod (3 ^ (j + p)),
+      ‖densC (j + p) (tailDensW j p l W) Y‖ ^ 2 = (tailDensW j p l W Y) ^ 2 := by
+    intro Y; rw [densC, Complex.norm_real, Real.norm_eq_abs, sq_abs]
+  simp_rw [h1]
+  rw [ZMod.dft_parseval (densC (j + p) (tailDensW j p l W))]
+  simp_rw [hnorm]
+  push_cast; ring
+
+/-- **Windowed sharp `ℓ²`-mass refinement** — mirror of `condDens_highfreq_l2_le` for `condDensW`. -/
+theorem condDensW_highfreq_l2_le (j p l m : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W]
+    (D : ℝ) (hD : 0 ≤ D)
+    (hunif : ∀ ξ ∈ highFreq m (j + p),
+      ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
+          (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))‖ ≤ D) :
+    ∑ ξ ∈ highFreq m (j + p), ‖ZMod.dft (densC (j + p) (condDensW j p l W)) ξ‖ ^ 2
+      ≤ D ^ 2 * (3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p l W Y) ^ 2 := by
+  have hpt : ∀ ξ ∈ highFreq m (j + p),
+      ‖ZMod.dft (densC (j + p) (condDensW j p l W)) ξ‖ ^ 2
+        ≤ D ^ 2 * ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar
+            (-(((fnat p vt : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+            * (if pre vt p = l ∧ W vt then 1 else 0))‖ ^ 2 := by
+    intro ξ hξ
+    rw [dft_condDensW_eq_cond_char, cond_char_factorW, norm_mul, mul_pow]
+    exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) (hunif ξ hξ) 2)
+      (sq_nonneg _)
+  calc ∑ ξ ∈ highFreq m (j + p), ‖ZMod.dft (densC (j + p) (condDensW j p l W)) ξ‖ ^ 2
+      ≤ ∑ ξ ∈ highFreq m (j + p), D ^ 2 * ‖(geomHalf.iid p).cexpect (fun vt =>
+            ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+            * (if pre vt p = l ∧ W vt then 1 else 0))‖ ^ 2 := Finset.sum_le_sum hpt
+    _ = D ^ 2 * ∑ ξ ∈ highFreq m (j + p), ‖(geomHalf.iid p).cexpect (fun vt =>
+            ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+            * (if pre vt p = l ∧ W vt then 1 else 0))‖ ^ 2 := by rw [Finset.mul_sum]
+    _ ≤ D ^ 2 * ∑ ξ, ‖(geomHalf.iid p).cexpect (fun vt =>
+            ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+            * (if pre vt p = l ∧ W vt then 1 else 0))‖ ^ 2 :=
+        mul_le_mul_of_nonneg_left
+          (Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
+            (fun _ _ _ => sq_nonneg _)) (sq_nonneg _)
+    _ = D ^ 2 * ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p l W Y) ^ 2) := by rw [tail_factor_l2_eqW]
+    _ = D ^ 2 * (3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p l W Y) ^ 2 := by ring
+
+/-- **The windowed per-conditioning osc bound** (C10, (6.10) with the window `W`): mirror of
+`condDens_osc_le`. `osc(condDensW) ≤ D·√(3^(j+p)·∑ (tailDensW)²)`. With `∑ (tailDensW)² ≤ 2⁻ˡ`
+(`tailDensW_renyi_le` ∘ `tailDensW_le_single_mass`) and the head decay `D`, the `√` collapses. -/
+theorem condDensW_osc_le (j p l m : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W]
+    (hmn : m ≤ j + p) (D : ℝ) (hD : 0 ≤ D)
+    (hunif : ∀ ξ ∈ highFreq m (j + p),
+      ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
+          (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))‖ ≤ D) :
+    osc m (j + p) hmn (condDensW j p l W)
+      ≤ D * Real.sqrt ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p l W Y) ^ 2) := by
+  calc osc m (j + p) hmn (condDensW j p l W)
+      ≤ Real.sqrt (∑ ξ ∈ highFreq m (j + p),
+          ‖ZMod.dft (densC (j + p) (condDensW j p l W)) ξ‖ ^ 2) :=
+        osc_le_sqrt_highfreq _ _ _ _
+    _ ≤ Real.sqrt (D ^ 2 * ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p l W Y) ^ 2)) := by
+        apply Real.sqrt_le_sqrt
+        rw [← mul_assoc]
+        exact condDensW_highfreq_l2_le j p l m W D hD hunif
+    _ = D * Real.sqrt ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p l W Y) ^ 2) := by
+        rw [Real.sqrt_mul (sq_nonneg D), Real.sqrt_sq hD]
+
+
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
 
