@@ -51,6 +51,59 @@ theorem fpDist_white_exit :
     fun n ξ hξ F m hm hmn l hl t ht htmem s hs _hbudget =>
       h n ξ hξ F m hm hmn l hl t ht htmem s hs⟩
 
+/-- `edgeWeight A m e ≤ 1` for `A ≥ 0`: each landing weight `max(·,1)^{-A} ≤ 1`
+and `hold` is a PMF, so the average is `≤ 1`. -/
+theorem edgeWeight_le_one {A : ℝ} (hA : 0 ≤ A) (m : ℕ) (e : ℕ × ℤ) :
+    edgeWeight A m e ≤ 1 := by
+  have hterm : ∀ d : ℕ × ℤ,
+      (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) ≤ (hold d).toReal := by
+    intro d
+    have h1 : ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) ≤ 1 :=
+      Real.rpow_le_one_of_one_le_of_nonpos
+        (by exact_mod_cast Nat.le_max_right (m - e.1 - d.1) 1) (by linarith)
+    exact mul_le_of_le_one_right ENNReal.toReal_nonneg h1
+  have hsummLHS : Summable (fun d : ℕ × ℤ =>
+      (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)) :=
+    Summable.of_nonneg_of_le
+      (fun d => mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _))
+      hterm hold_summable_toReal
+  calc edgeWeight A m e
+      = ∑' d : ℕ × ℤ, (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) := rfl
+    _ ≤ ∑' d : ℕ × ℤ, (hold d).toReal := hsummLHS.tsum_le_tsum hterm hold_summable_toReal
+    _ = 1 := hold_tsum_toReal
+
+/-- `(m)^{-A} ≤ edgeWeight A m e` for `A ≥ 0`, `1 ≤ m`: each landing weight
+`max(m − e₁ − d₁, 1)^{−A} ≥ m^{−A}` since `max(…) ≤ m` and `x ↦ x^{−A}` is
+antitone; average against the PMF `hold` preserves it. -/
+theorem rpow_neg_le_edgeWeight {A : ℝ} (hA : 0 ≤ A) {m : ℕ} (hm : 1 ≤ m) (e : ℕ × ℤ) :
+    (m : ℝ) ^ (-A) ≤ edgeWeight A m e := by
+  have hterm : ∀ d : ℕ × ℤ,
+      (hold d).toReal * (m : ℝ) ^ (-A)
+        ≤ (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) := by
+    intro d
+    apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+    have hmax_le : ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ≤ (m : ℝ) := by
+      have : (max (m - e.1 - d.1) 1 : ℕ) ≤ m := by omega
+      exact_mod_cast this
+    have hmax_pos : (0 : ℝ) < ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) := by
+      have : 0 < (max (m - e.1 - d.1) 1 : ℕ) := by omega
+      exact_mod_cast this
+    exact Real.rpow_le_rpow_of_nonpos hmax_pos hmax_le (by linarith)
+  have hsummL : Summable (fun d : ℕ × ℤ => (hold d).toReal * (m : ℝ) ^ (-A)) :=
+    hold_summable_toReal.mul_right _
+  have hsummR : Summable (fun d : ℕ × ℤ =>
+      (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)) :=
+    Summable.of_nonneg_of_le
+      (fun d => mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _))
+      (fun d => mul_le_of_le_one_right ENNReal.toReal_nonneg
+        (Real.rpow_le_one_of_one_le_of_nonpos
+          (by exact_mod_cast Nat.le_max_right (m - e.1 - d.1) 1) (by linarith)))
+      hold_summable_toReal
+  calc (m : ℝ) ^ (-A)
+      = ∑' d : ℕ × ℤ, (hold d).toReal * (m : ℝ) ^ (-A) := by
+        rw [tsum_mul_right, hold_tsum_toReal, one_mul]
+    _ ≤ edgeWeight A m e := hsummL.tsum_le_tsum hterm hsummR
+
 /-- **Case 2 of Proposition 7.8** ((7.46)–(7.51) assembly, paper pp.46–48):
 black edge start whose triangle-top budget satisfies `s ≤ m/log²m`. Route:
 `Q_le_fpDist_expect` ((7.45) entry) + `Q_fp_endpoint_le` per endpoint, then
@@ -69,7 +122,159 @@ theorem Q_black_edge_case2 (A : ℝ) (hA : 0 < A) :
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
         ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
-  sorry
+  classical
+  -- fixed constants: `ε = epsBW ≥ 0`, the white-exit gain `c = 1 - e^{-ε³} ∈ (0,1)`
+  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  have hεpos : (0 : ℝ) < (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) < epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  have hc_pos : 0 < 1 - Real.exp (-(epsBW : ℝ) ^ 3) := by
+    rw [sub_pos]; exact Real.exp_lt_one_iff.mpr (neg_lt_zero.mpr (pow_pos hεpos 3))
+  have hc_le : 1 - Real.exp (-(epsBW : ℝ) ^ 3) ≤ 1 := by
+    have := Real.exp_pos (-(epsBW : ℝ) ^ 3); linarith
+  -- the white-exit mass `p₀ > 0` and the (7.48) weight-degradation with `δ = c·p₀/2`
+  obtain ⟨p₀, hp₀pos, Cw, hWhite⟩ := fpDist_white_exit
+  obtain ⟨Ce, hEdge⟩ := fpDist_edgeWeight_le A hA
+    ((1 - Real.exp (-(epsBW : ℝ) ^ 3)) * p₀ / 2)
+    (div_pos (mul_pos hc_pos hp₀pos) (by norm_num))
+  refine ⟨max (max Cw Ce) 2, ?_⟩
+  intro n ξ hξ F m hm hmn l hl t ht htmem s hs hbudget
+  have hmCw : Cw ≤ m := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hm
+  have hmCe : Ce ≤ m := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hm
+  have hm2 : 2 ≤ m := le_trans (le_max_right _ _) hm
+  have hm1 : 1 ≤ m := by omega
+  -- specialize the two kernels + the per-endpoint step (all with literal ε)
+  have hwhite := hWhite n ξ hξ F m hmCw hmn l hl t ht htmem s hs hbudget
+  have hedge := hEdge m hmCe s hbudget
+  have hendpt : ∀ e : ℕ × ℤ,
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m + e.1) (l + e.2)
+        ≤ (1 - (1 - Real.exp (-(epsBW : ℝ) ^ 3))
+              * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2))
+          * (edgeWeight A m e * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :=
+    fun e => Q_fp_endpoint_le n ξ (epsBW : ℝ) A hA.le hε0 m hm1 hmn l e
+  -- (7.45) entry, converted ℝ≥0∞ → ℝ
+  have hstart_enn := Q_le_fpDist_expect (n / 2) (whiteSet n ξ) (epsBW : ℝ) hε0 s (n / 2 - m) l
+  have hRne : (∑' e : ℕ × ℤ, fpDist s e
+        * ENNReal.ofReal (Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m + e.1) (l + e.2)))
+          ≠ ⊤ :=
+    ne_top_of_le_ne_top ENNReal.one_ne_top
+      (PMF.tsum_mul_ofReal_le_one (fpDist s) _ (fun e => Q_le_one _ _ _ hε0 _ _))
+  have hRtoReal : (∑' e : ℕ × ℤ, fpDist s e
+        * ENNReal.ofReal (Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m + e.1) (l + e.2))).toReal
+      = ∑' e : ℕ × ℤ, (fpDist s e).toReal
+          * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m + e.1) (l + e.2) :=
+    PMF.toReal_tsum_mul_ofReal (fpDist s) _ (fun e => Q_nonneg _ _ _ _ _)
+  have hstep1 : Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+      ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
+          * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m + e.1) (l + e.2) := by
+    have h := ENNReal.toReal_mono hRne hstart_enn
+    rwa [ENNReal.toReal_ofReal (Q_nonneg _ _ _ _ _), hRtoReal] at h
+  -- tidy scalar names (fold hedge, hendpt, goal; also hc_pos/hc_le)
+  set c : ℝ := 1 - Real.exp (-(epsBW : ℝ) ^ 3) with hc
+  set QM : ℝ := Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) with hQMdef
+  set mA : ℝ := (m : ℝ) ^ (-A) with hmAdef
+  -- basic sign/bound facts
+  have hQM0 : 0 ≤ QM := Qm_nonneg _ _ _ _ _ _
+  have hmA0 : 0 ≤ mA := Real.rpow_nonneg (Nat.cast_nonneg _) _
+  have hmA_le1 : mA ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hm1) (by linarith)
+  have hf_nonneg : ∀ e : ℕ × ℤ, 0 ≤ (fpDist s e).toReal := fun _ => ENNReal.toReal_nonneg
+  have hf_summable : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal) :=
+    ENNReal.summable_toReal (by rw [(fpDist s).tsum_coe]; exact ENNReal.one_ne_top)
+  have hind0 : ∀ e : ℕ × ℤ,
+      0 ≤ Set.indicator (whiteStrip n ξ) (1 : ℕ × ℤ → ℝ) (n / 2 - m + e.1, l + e.2) :=
+    fun e => Set.indicator_nonneg (fun _ _ => zero_le_one) _
+  have hind1 : ∀ e : ℕ × ℤ,
+      Set.indicator (whiteStrip n ξ) (1 : ℕ × ℤ → ℝ) (n / 2 - m + e.1, l + e.2) ≤ 1 := by
+    intro e
+    by_cases h : (n / 2 - m + e.1, l + e.2) ∈ whiteStrip n ξ
+    · simp [Set.indicator_of_mem h]
+    · simp [Set.indicator_of_notMem h]
+  have hew_ge : ∀ e : ℕ × ℤ, mA ≤ edgeWeight A m e := fun e => rpow_neg_le_edgeWeight hA.le hm1 e
+  -- a uniform summability helper for `fpDist · (bounded observable)`
+  have hbound : ∀ g : ℕ × ℤ → ℝ, (∀ e, 0 ≤ g e) → (∀ e, g e ≤ 1) →
+      Summable (fun e : ℕ × ℤ => (fpDist s e).toReal * g e) := by
+    intro g hg0 hg1
+    exact Summable.of_nonneg_of_le (fun e => mul_nonneg (hf_nonneg e) (hg0 e))
+      (fun e => mul_le_of_le_one_right (hf_nonneg e) (hg1 e)) hf_summable
+  have hsum_ew : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal * edgeWeight A m e) :=
+    hbound _ (fun e => edgeWeight_nonneg A m e) (fun e => edgeWeight_le_one hA.le m e)
+  have hsum_Qe : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal
+      * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m + e.1) (l + e.2)) :=
+    hbound _ (fun e => Q_nonneg _ _ _ _ _) (fun e => Q_le_one _ _ _ hε0 _ _)
+  have hsum_indew : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal
+      * (Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) * edgeWeight A m e)) :=
+    hbound _ (fun e => mul_nonneg (hind0 e) (edgeWeight_nonneg A m e))
+      (fun e => mul_le_one₀ (hind1 e) (edgeWeight_nonneg A m e) (edgeWeight_le_one hA.le m e))
+  have hsum_indmA : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal
+      * (Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) * mA)) :=
+    hbound _ (fun e => mul_nonneg (hind0 e) hmA0)
+      (fun e => mul_le_one₀ (hind1 e) hmA0 hmA_le1)
+  have hsum_main : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal
+      * ((1 - c * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2))
+          * edgeWeight A m e)) :=
+    (hsum_ew.sub (hsum_indew.mul_left c)).congr (fun e => by ring)
+  -- the mixed tail is `≥ p₀·mA` (edgeWeight ≥ m^{-A}, then white-exit)
+  have hindew_ge : p₀ * mA ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
+      * (Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) * edgeWeight A m e) := by
+    have hge : ∀ e : ℕ × ℤ,
+        (fpDist s e).toReal
+            * (Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) * mA)
+          ≤ (fpDist s e).toReal
+            * (Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) * edgeWeight A m e) :=
+      fun e => mul_le_mul_of_nonneg_left
+        (mul_le_mul_of_nonneg_left (hew_ge e) (hind0 e)) (hf_nonneg e)
+    calc p₀ * mA
+        ≤ (∑' e : ℕ × ℤ, (fpDist s e).toReal
+            * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2)) * mA :=
+          mul_le_mul_of_nonneg_right hwhite hmA0
+      _ = ∑' e : ℕ × ℤ, (fpDist s e).toReal
+            * (Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) * mA) := by
+          rw [← tsum_mul_right]; exact tsum_congr (fun e => by ring)
+      _ ≤ _ := hsum_indmA.tsum_le_tsum hge hsum_indew
+  -- the main functional `∑ fpDist·(1 - c·1_W)·edgeWeight ≤ mA`
+  have hSmain : ∑' e : ℕ × ℤ, (fpDist s e).toReal
+      * ((1 - c * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2))
+          * edgeWeight A m e) ≤ mA := by
+    have hcong : ∀ e : ℕ × ℤ,
+        (fpDist s e).toReal
+            * ((1 - c * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2))
+                * edgeWeight A m e)
+          = (fpDist s e).toReal * edgeWeight A m e
+            - c * ((fpDist s e).toReal
+                * (Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2)
+                    * edgeWeight A m e)) := fun e => by ring
+    rw [tsum_congr hcong, Summable.tsum_sub hsum_ew (hsum_indew.mul_left c), tsum_mul_left]
+    nlinarith [hedge, mul_le_mul_of_nonneg_left hindew_ge hc_pos.le, hmA0,
+      mul_nonneg (mul_nonneg hc_pos.le hp₀pos.le) hmA0]
+  -- assemble: Q ≤ ∑ fpDist·Q_endpoint ≤ QM·(main) ≤ QM·mA = mA·QM
+  have hpt : ∀ e : ℕ × ℤ,
+      (fpDist s e).toReal * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m + e.1) (l + e.2)
+        ≤ QM * ((fpDist s e).toReal
+            * ((1 - c * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2))
+                * edgeWeight A m e)) := by
+    intro e
+    calc (fpDist s e).toReal * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m + e.1) (l + e.2)
+        ≤ (fpDist s e).toReal
+            * ((1 - c * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2))
+                * (edgeWeight A m e * QM)) :=
+          mul_le_mul_of_nonneg_left (hendpt e) (hf_nonneg e)
+      _ = QM * ((fpDist s e).toReal
+            * ((1 - c * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2))
+                * edgeWeight A m e)) := by ring
+  calc Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+      ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
+          * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m + e.1) (l + e.2) := hstep1
+    _ ≤ ∑' e : ℕ × ℤ, QM * ((fpDist s e).toReal
+          * ((1 - c * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2))
+              * edgeWeight A m e)) := hsum_Qe.tsum_le_tsum hpt (hsum_main.mul_left QM)
+    _ = QM * ∑' e : ℕ × ℤ, (fpDist s e).toReal
+          * ((1 - c * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2))
+              * edgeWeight A m e) := tsum_mul_left
+    _ ≤ QM * mA := mul_le_mul_of_nonneg_left hSmain hQM0
+    _ = mA * QM := mul_comm _ _
 
 /-- **The (7.41) edge bound for BLACK starts** (Cases 2–3 of Proposition 7.8,
 paper (7.44)–(7.67), pp.46–49): the case split. The black phase point

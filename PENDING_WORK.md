@@ -1,5 +1,36 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box cont9 (2026-07-14): **`Q_black_edge_case2` PROVED (axiom-clean)** — X8 Case-2 (Prop 7.8 Case 2) is COMPLETE
+
+The (7.46)–(7.51) Case-2 assembly is a machine-checked theorem
+(`#print axioms = [propext, Classical.choice, Quot.sound]`, no `sorryAx`). **All of X8
+Case-2 is now done**: both kernels (`fpDist_edgeWeight_le` ✓, `fpDist_white_exit` ✓) AND
+the assembly. Full build green (3282 jobs).
+
+**The proof (in `BlackEdgeQ.lean`):** entry `Q_le_fpDist_expect` (ℝ≥0∞ (7.45)) converted
+to ℝ via `PMF.toReal_tsum_mul_ofReal` + `PMF.tsum_mul_ofReal_le_one` (RHS ≤ 1 finite) +
+`ENNReal.toReal_mono`, giving `Q ≤ ∑ₑ fpDist·Q(endpoint)`. Per-endpoint `Q_fp_endpoint_le`:
+`Q(endpt) ≤ (1 - c·1_W)·(edgeWeight·Q_{m-1})` with `c = 1-e^{-ε³} ∈ (0,1)`. Then the (7.47)
+split `∑ fpDist·(1-c·1_W)·edgeWeight = ∑ fpDist·edgeWeight - c·∑ fpDist·1_W·edgeWeight`
+(`Summable.tsum_sub`), bounded by `fpDist_edgeWeight_le` (`∑ fpDist·ew ≤ (1+δ)m^{-A}`,
+δ=c·p₀/2) and, using the NEW pointwise `edgeWeight ≥ m^{-A}` (`rpow_neg_le_edgeWeight`)
++ white-exit (`∑ fpDist·1_W ≥ p₀`): `∑ fpDist·1_W·edgeWeight ≥ p₀·m^{-A}`. Net
+`∑ fpDist·(1-c·1_W)·ew ≤ (1+δ-c·p₀)m^{-A} = (1-c·p₀/2)m^{-A} ≤ m^{-A}`, so
+`Q ≤ Q_{m-1}·m^{-A}`. Two new helper lemmas added (`edgeWeight_le_one`,
+`rpow_neg_le_edgeWeight`).
+
+**X8 is COMPLETE. Remaining §7 assembly sorry: exactly ONE — `Q_black_edge_case3`
+(`Case3.lean:941`, X11), the (7.53)–(7.67) Case-3 chain.** This is the DIRECTION step-2
+target. X9 (`fpDist_white_exit_deep`/`many_triangles_white`) and X10 are both proved and
+axiom-clean, so its two hardest inputs are ground truth. Once it lands, `Q_black_edge` →
+`prop_7_8` → `Q_polynomial_decay` (all in Case3.lean, already assembled via DI) close, and
+§7 monotonicity is done.
+
+**NEXT: `Q_black_edge_case3` (`Case3.lean`).** First move: read its statement + the
+(7.53)–(7.67) route in the paper (pp.48–49); it is the `s > m/log²m` (large-budget) twin of
+Case 2. Entry is again `Q_le_fpDist_expect` at `P=0` per its docstring; the budget bound
+`budget_le_of_mem_triangle` (`s·log2 ≤ (m+2)log9`, still in `BlackEdge.lean`) caps `s=O(m)`.
+
 ## Lap D-box cont8 (2026-07-14): **`fpDist_white_exit` PROVED (axiom-clean)** — the (7.50)/(7.51) Case-2 white-exit crux is DONE via kernel-merge
 
 The DIRECTION-mandated next move is discharged. `fpDist_white_exit` is now a machine-checked
