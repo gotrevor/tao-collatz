@@ -1,5 +1,55 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-14 (2026-07-14, §6 SOURCE-READ — orientation pinned + factor bounds): decisive route correction
+
+Build green 3285 (commit `c195d29`: `tail_factor_norm_le` + `head_factor_norm_le`, both axiom-clean).
+Then **read Tao §6 (paper pp.29–31)** and pinned the exact conditioning/split — correcting the
+block orientation. **This is the lap's advance on the crux: a source read yielding the concrete
+next step.**
+
+### 🔑 THE CORRECT §6 STRUCTURE (Tao pp.30–31, verbatim math)
+- Event stack: `E` (sub-Gaussian (6.2), `P(Ē)≪n^{-A-1}`) → stopping time `k` (unique with
+  `a_{[1,k]} ≤ n·log3/log2 − Cₐ²log n < a_{[1,k+1]}`; `k = n·log3/(2log2)+O(Cₐ√(n log n))`) → `Bₖ`
+  (`k=k`) → `Ek` (E restricted to `a₁..a_{k+1}`, so independent of `a_{k+2}..aₙ`) → `Cₖ,ₗ`
+  (`a_{[1,k+1]}=l`), `l` in a `½Cₐ²log n`-window. `g_{n,k,l}(Y)=P((Xₙ=Y)∧Ek∧Bₖ∧Cₖ,ₗ)` (6.9).
+- Split on `Cₖ,ₗ` (6-split): `Xₙ = Fₖ₊₁(aₖ₊₁,…,a₁) + 3^{k+1}·2^{-l}·Fₙ₋ₖ₋₁(aₙ,…,aₖ₊₂) mod 3ⁿ`.
+- **`3^{k+1}·2^{-l}·Fₙ₋ₖ₋₁` is INDEPENDENT of `a₁..a_{k+1}, Ek, Bₖ, Cₖ,ₗ`** → char sum factors:
+  `∑_Y g(Y)e(-ξY/3ⁿ) = [E e(-ξFₖ₊₁/3ⁿ)·1_{Ek∧Bₖ∧Cₖ,ₗ}] · [E e(-ξ·2^{-l}Fₙ₋ₖ₋₁/3^{n-k-1})]`.
+- **DECAY block = the 2nd factor** (`Fₙ₋ₖ₋₁`, the `3^{k+1}`-scaled one, **NO indicator**): for high
+  `ξ=3ʲ2ˡξ'` (`0≤j<n-m≤0.1n`, `3∤ξ'`), the `2^{-l}` cancels `ξ`'s `2ˡ` and it `= E e(-ξ'·
+  Syrac(Z/3^{n-k-j-1})/3^{n-k-j-1})` = `charFn_decay` at `ξ'`, level `n-k-j-1≫n` ⟹ `Oₐ'(n^{-A'})`.
+- **≤1/Rényi block = the 1st factor** (`Fₖ₊₁`, carries the indicator): (6.11) bounds
+  `∑_ξ ‖1st factor‖² = 3ⁿ·∑_{Yₖ₊₁} P((Fₖ₊₁=Yₖ₊₁)∧Ek∧Bₖ∧Cₖ,ₗ)²` = Rényi-2-entropy (Lemma 6.2
+  offset injectivity). Plancherel closes it.
+
+### ⚠️ ROUTE CORRECTION for my `syracZ` (`a∘rev`) convention
+Matching 3-powers: my **HEAD** block (`3^p·Fnat_j·…`, first `j` coords) = Tao's **decay** block
+`Fₙ₋ₖ₋₁` with **`p=k+1`, `j=n-k-1`**; my **TAIL** (`Fnat_p·2⁻ᴹ`, last `p` coords) = Tao's ≤1 block
+`Fₖ₊₁` (carries the indicator `1_{pre(tail)=l}`). So:
+- `cond_char_factor` is correctly oriented: its **head factor is the DECAY block**, its **tail factor
+  is the ≤1/indicator block** — the OPPOSITE of what `tail_factor_norm_le`/`head_factor_norm_le`
+  assumed. Those two lemmas are correct math but **on the wrong blocks for the critical frequency
+  range** (`tail_factor_eq_charFn` needs `ξ=3ʲ·ζ` divisible by `3^{n-k-1}` = LOW freq, not the high
+  freq `valuation<n-m`). Keep them (axiom-clean, banked), but the live path needs the HEAD analog.
+- **The decay reindex must target the HEAD factor**: for high `ξ=3^{j'}·2ˡ·ξ'` (`j'<n-m`), head·ξ =
+  `3^p·(Fnat_j·2⁻ᴸ·2⁻ˡ)·3^{j'}·2ˡ·ξ'` → the `2⁻ˡ·2ˡ=1` cancels, leaving `3^{p+j'}·(Fnat_j·2⁻ᴸ)·ξ'`;
+  descend by `3^{p+j'}` (my `stdAddChar_pow3_descent` is ALREADY general: instantiate `j:=p+j'`,
+  `p:=j-j'`, level `j-j' = n-k-j'-1`) to a level-`(j-j')` Syracuse char at `ξ'` ⟹ `charFn_decay`.
+
+### → NEXT (build the HEAD-block decay reindex, the live capstone)
+1. **`head_factor_eq_charFn`** (analog of `tail_factor_eq_charFn` for the head): for `ξ=3^{j'}·2ˡ·ξ'`,
+   `E_vh[stdAddChar(-((3^p·Fnat_j·2⁻ᴸ·2⁻ˡ)·ξ))] = (syracZ (j-j')).cexpect(Y↦eC(-(ξ'.val·Y.val)/3^{j-j'}))`.
+   Reuse `stdAddChar_pow3_descent`(j:=p+j', p:=j-j'), `castHom_two_inv`, `tail_cexpect_eq_syracZ`
+   pattern (now for the `j`-coord head block via `syracZ_eq_rev_fnat`), `stdAddChar_mul_eq_eC`. The
+   `2⁻ˡ·2ˡ` cancellation is the new wrinkle (handle inside the `harg` ring-step).
+2. **`head_factor_norm_le` via charFn_decay** ⟹ `‖head factor‖ ≤ Cₐ'·(n-k-j'-1)^{-A'}`; tail factor
+   (Fₖ₊₁, ≤1) via `cexpect_norm_le`. Product ⟹ `‖𝓕(densC g)ξ‖ ≤ decay` per high `ξ`.
+3. **Rényi ℓ²-mass + Plancherel** (6.11): `∑_{high ξ}‖𝓕(densC g)ξ‖² ≤ Oₐ'(n^{-2A'})·3ⁿ·∑_{Yₖ₊₁}P(…)²`;
+   the collision-entropy sum is `≤ 3^{-(k+1)}·(small)` by offset injectivity (Lemma 6.2). Then
+   `osc_le_sqrt_highfreq` on `condDens` closes (6.10).
+4. **Event assembly** (6.1)–(6.8): telescoping to `0.9n≤m≤n`, `E`/`Ek`/`Bₖ`/`Cₖ,ₗ` triangle+union.
+   Decompose into named `sorry`s in `Sec6/MixingFromDecay.lean`. Full plan: fruit-8.
+
 ## Lap fruit-13 (2026-07-14, brick b tail-reindex COMPLETE): **`tail_factor_eq_charFn` PROVED — tail factor IS a `charFn_decay` char sum**
 
 Build green 3285, all new lemmas `#print axioms`-clean. Commits `489a4e2`, `afab378`. **The
