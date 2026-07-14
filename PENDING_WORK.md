@@ -1,5 +1,29 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-2 (2026-07-14): **Syracuse (1.21) `syracZ_eq_rev_fnat` PROVED (axiom-clean)** — SyracRV stub 1/3
+
+Objective-3 fruit, SyracRV stub 1 of 3. Closed `syracZ_eq_rev_fnat` (`Syracuse/SyracRV.lean`):
+the paper-(1.21) bridge showing the (1.26)-**reversed** offset law `Syrac(ℤ/3ⁿℤ)` agrees in law
+with the `fnat`-based forward-offset form. NOT a pointwise identity (checked n=2 — the two
+functions differ); it is genuinely **distributional**, and the reversal is essential.
+
+**Proof shape (exchangeability):**
+- **Pointwise** `hkey : ∀ b, g b = f (b ∘ Fin.rev)` where `f` = reversed summand, `g` = fnat summand.
+  Pure `ZMod (3ⁿ)` algebra: reflect the `fnat` sum (`Finset.sum_range_reflect`), then per term the
+  exponent identity `2^P·(2⁻¹)^(Q+P) = (2⁻¹)^Q` using `2·2⁻¹=1` (2 is a unit mod 3ⁿ via
+  `ZMod.isUnit_iff_coprime` + `Nat.Coprime.pow_right`).
+- **Prefix-split lemma** `pre_comp_rev : pre (a∘Fin.rev) m + pre a (n-m) = pre a n` (ℕ backbone of
+  exchangeability): reflect + `sum_Ico_eq_sum_range` + `sum_Ico_consecutive`.
+- **Law invariance** `iid_map_rev : (p.iid n).map (·∘Fin.rev) = p.iid n` via `iid_apply_eq_prod`
+  (product form) + `Fintype.prod_equiv Fin.revPerm`. Then `iid.map g = iid.map (f∘rev)
+  = (iid.map rev).map f = iid.map f = syracZ n` (`PMF.map_comp`).
+- Refactor: moved `iid_apply_eq_prod` up to `Prob/Basic.lean` (namespace `PMF`) so SyracRV can use
+  it without importing ValuationDist (import cycle); ValuationDist re-exports it. Full build green
+  (3282), `#print axioms syracZ_eq_rev_fnat = [propext, Classical.choice, Quot.sound]`.
+
+**NEXT in SyracRV:** `syracZ_map_cast` (1.22 projection compat) and `syracZ_recursion` (Lemma 1.12).
+The recursion is the meatier one (divide-by-3 guard, geometric normalization `(1-2^{-2·3ⁿ})⁻¹`).
+
 ## Lap fruit-1 (2026-07-14): **Collatz (1.2) `colMin_eq_syrMin_oddPart` PROVED (axiom-clean)** — spine stub C1 closed
 
 With §7 done, pivoted to objective 3 (fruit). Closed the paper-(1.2) spine stub
