@@ -402,17 +402,107 @@ theorem harmonic_ap_integral_bound {a M : ℝ} (ha : 0 < a) (hM : 0 < M) (n : �
   rw [abs_le]
   constructor <;> nlinarith [h1, h2, hSminus, hpos_end, hainv]
 
-/-- **Per-class integral test** (Tao pp.20, "a routine application of the integral test") — the ONE
+/- **Per-class integral test** (Tao pp.20, "a routine application of the integral test") — the ONE
 genuinely-analytic brick remaining in C7.  For the log-uniform odd window `[y, y^α]`, the class masses
 `S_r = ∑_{N ≡ r} 1/N` at modulus `2^{3n₀}` are all within `c/y` of a COMMON target `t` (`= L/M` with
 `L = ∫_y^{y^α} dt/t`).  Owed: comparison of `∑_{N≡r} 1/N` to `∫ dt/t` per arithmetic progression via
 `AntitoneOn.sum_le_integral` / `AntitoneOn.integral_le_sum` on `t ↦ 1/t` + `integral_inv`; the
 discretization and endpoint-alignment errors are each `≤ 1/y`, so the per-class error is `O(1/y)`. -/
+/-- **AP-reindexing bridge** (the ONE remaining hole under `intTest_class_dev`).  For large `x` and an
+odd residue `r`, the class `{N ∈ [y, y^α] : N ≡ r (mod 2^{3n₀})}` is an arithmetic progression: its
+first element `a ∈ [y, y+M)` (`M = 2^{3n₀}`), it has `count ≥ 1` terms `a, a+M, …, a+M(count−1)`, and
+its one-past-the-end `a + M·count ∈ (y^α, y^α+M]`.  Hence `classMass = ∑_{i<count} 1/(a+Mi)`.
+
+Owed: the interval `[y, y^α]` has length `y^α − y ≫ M`, so every residue class is hit; the finset
+`(logWindow …).filter (·≡r)` equals `(range count).image (a + M·)` with `a` the least class member
+`≥ y` — an `AP ↔ image` bijection (`Nat.Ioc_filter_modEq_card` counts it; the sum needs `sum_image`
+with injectivity of `i ↦ a + Mi`). -/
+theorem classMass_ap_form :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      ∀ r : ZMod (2 ^ (3 * nZero x)), r.val % 2 = 1 →
+        ∃ a count : ℕ, 1 ≤ count ∧
+          classMass y (y ^ alpha) (3 * nZero x) r
+            = ∑ i ∈ Finset.range count,
+                ((a : ℝ) + ((2 ^ (3 * nZero x) : ℕ) : ℝ) * (i : ℝ))⁻¹ ∧
+          (y : ℝ) ≤ (a : ℝ) ∧ (a : ℝ) < y + ((2 ^ (3 * nZero x) : ℕ) : ℝ) ∧
+          y ^ alpha < (a : ℝ) + ((2 ^ (3 * nZero x) : ℕ) : ℝ) * (count : ℝ) ∧
+          (a : ℝ) + ((2 ^ (3 * nZero x) : ℕ) : ℝ) * (count : ℝ) ≤ y ^ alpha
+            + ((2 ^ (3 * nZero x) : ℕ) : ℝ) := by
+  sorry
+
 theorem intTest_class_dev :
     ∃ c : ℝ, 0 < c ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       ∃ t : ℝ, ∀ r : ZMod (2 ^ (3 * nZero x)), r.val % 2 = 1 →
         |classMass y (y ^ alpha) (3 * nZero x) r - t| ≤ c / y := by
-  sorry
+  obtain ⟨x₀b, hbridge⟩ := classMass_ap_form
+  refine ⟨2, by norm_num, max x₀b 1, fun x hx y hy => ?_⟩
+  have hxb : x₀b ≤ x := le_trans (le_max_left _ _) hx
+  have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
+  -- `y ≥ 1`, `y^α ≥ y`, positivity
+  have hy1 : (1 : ℝ) ≤ y := by
+    rcases hy with h | h <;> rw [h] <;>
+      · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
+        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha <;> positivity)
+  have hypos : (0 : ℝ) < y := lt_of_lt_of_le one_pos hy1
+  have hyα_ge : y ≤ y ^ alpha := by
+    calc y = y ^ (1 : ℝ) := (Real.rpow_one y).symm
+      _ ≤ y ^ alpha := Real.rpow_le_rpow_of_exponent_le hy1 (by unfold alpha; norm_num)
+  have hyαpos : (0 : ℝ) < y ^ alpha := lt_of_lt_of_le hypos hyα_ge
+  -- modulus `M = 2^{3n₀}` as a real, `M ≥ 1`
+  set M : ℝ := ((2 ^ (3 * nZero x) : ℕ) : ℝ) with hMdef
+  have hM1 : (1 : ℝ) ≤ M := by rw [hMdef]; exact_mod_cast Nat.one_le_two_pow
+  have hMpos : (0 : ℝ) < M := lt_of_lt_of_le one_pos hM1
+  refine ⟨M⁻¹ * Real.log (y ^ alpha / y), fun r hr => ?_⟩
+  obtain ⟨a, count, hcount, hsum, hay, hayM, hlo, hhi⟩ := hbridge x hxb y hy r hr
+  rw [← hMdef] at hsum hayM hlo hhi
+  rw [hsum]
+  set P : ℝ := (a : ℝ) + M * (count : ℝ) with hPdef
+  have hApos : (0 : ℝ) < (a : ℝ) := lt_of_lt_of_le hypos hay
+  have hPpos : (0 : ℝ) < P := lt_trans hyαpos hlo
+  -- harmonic-sum ↔ integral bound (discretization ≤ 1/a ≤ 1/y)
+  have hharm := harmonic_ap_integral_bound hApos hMpos count
+  rw [← hPdef] at hharm
+  have hinv_a : (a : ℝ)⁻¹ ≤ 1 / y := by
+    rw [one_div]; exact inv_anti₀ hypos hay
+  -- reconciliation: |M⁻¹ log(P/a) − M⁻¹ log(y^α/y)| ≤ 1/y
+  have hrecon : |M⁻¹ * Real.log (P / (a : ℝ)) - M⁻¹ * Real.log (y ^ alpha / y)| ≤ 1 / y := by
+    rw [← mul_sub, abs_mul, abs_of_pos (by positivity : (0 : ℝ) < M⁻¹)]
+    rw [Real.log_div hPpos.ne' hApos.ne', Real.log_div hyαpos.ne' hypos.ne']
+    -- D = (log P − log a) − (log y^α − log y) = (log P − log y^α) + (log y − log a)
+    have hlogP : Real.log P - Real.log (y ^ alpha) ≤ M / y ^ alpha := by
+      have h1 : Real.log (P / y ^ alpha) ≤ P / y ^ alpha - 1 :=
+        Real.log_le_sub_one_of_pos (by positivity)
+      rw [Real.log_div hPpos.ne' hyαpos.ne'] at h1
+      have h2 : P / y ^ alpha - 1 = (P - y ^ alpha) / y ^ alpha := by field_simp
+      rw [h2] at h1
+      refine h1.trans ?_
+      rw [div_le_div_iff_of_pos_right hyαpos]; linarith [hhi]
+    have hlogP0 : 0 ≤ Real.log P - Real.log (y ^ alpha) := by
+      have := Real.log_le_log hyαpos (le_of_lt hlo); linarith
+    have hlogA : Real.log (a : ℝ) - Real.log y ≤ M / y := by
+      have h1 : Real.log ((a : ℝ) / y) ≤ (a : ℝ) / y - 1 :=
+        Real.log_le_sub_one_of_pos (by positivity)
+      rw [Real.log_div hApos.ne' hypos.ne'] at h1
+      have h2 : (a : ℝ) / y - 1 = ((a : ℝ) - y) / y := by field_simp
+      rw [h2] at h1
+      refine h1.trans ?_
+      rw [div_le_div_iff_of_pos_right hypos]; linarith [hayM]
+    have hlogA0 : 0 ≤ Real.log (a : ℝ) - Real.log y := by
+      have := Real.log_le_log hypos hay; linarith
+    have hMyα : M / y ^ alpha ≤ M / y := div_le_div_of_nonneg_left hMpos.le hypos hyα_ge
+    have hDbound : |Real.log P - Real.log (a : ℝ) - (Real.log (y ^ alpha) - Real.log y)| ≤ M / y := by
+      rw [abs_le]; constructor <;> nlinarith [hlogP, hlogP0, hlogA, hlogA0, hMyα]
+    calc M⁻¹ * |Real.log P - Real.log (a : ℝ) - (Real.log (y ^ alpha) - Real.log y)|
+        ≤ M⁻¹ * (M / y) := by
+          apply mul_le_mul_of_nonneg_left hDbound (by positivity)
+      _ = 1 / y := by field_simp
+  -- assemble via triangle inequality
+  calc |(∑ i ∈ Finset.range count, ((a : ℝ) + M * (i : ℝ))⁻¹) - M⁻¹ * Real.log (y ^ alpha / y)|
+      ≤ |(∑ i ∈ Finset.range count, ((a : ℝ) + M * (i : ℝ))⁻¹) - M⁻¹ * Real.log (P / (a : ℝ))|
+          + |M⁻¹ * Real.log (P / (a : ℝ)) - M⁻¹ * Real.log (y ^ alpha / y)| := abs_sub_le _ _ _
+    _ ≤ (a : ℝ)⁻¹ + 1 / y := add_le_add hharm hrecon
+    _ ≤ 1 / y + 1 / y := by linarith [hinv_a]
+    _ = 2 / y := by ring
 
 /-- **Window normalizer lower bound** — `D = ∑_{N ∈ [y,y^α] odd} 1/N` exceeds a positive constant for
 large `x`.  (In fact `D ≍ (α−1)/2 · log y → ∞`; a constant `1/2` suffices for the reduction, since
