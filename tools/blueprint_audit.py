@@ -67,6 +67,7 @@ class Node:
     label: str
     env: str = ""                                            # theorem | definition | ...
     decls: list[str] = field(default_factory=list)
+    uses: list[str] = field(default_factory=list)            # \uses{} dependency edges
     stmt_ok: bool = False
     proof_ok: bool = False
     # filled by the audit
@@ -99,6 +100,20 @@ class Node:
         return self.wants_proof and not self.theorems
 
     @property
+    def false_stmt_green(self) -> bool:
+        r"""A node that OWES a proof, names NO theorem, yet carries a statement `\leanok`.
+
+        `\leanok` outside a proof block means "this STATEMENT is formalized in Lean". A seam
+        that also claims it is asserting that a statement exists which does not. It renders
+        green in the blueprint web while the theorem is simply absent — a false green one
+        level up from the one the proof gate catches, and invisible to the sorry census.
+
+        Found 2026-07-14 on C7: `\lean{passes, passTime, passLoc}` (three DEFS) + `\leanok`,
+        on a `lemma` node whose real content is the estimate (1.19), which was nowhere in Lean.
+        """
+        return self.is_seam and self.stmt_ok
+
+    @property
     def all_clean(self) -> bool:
         return bool(self.theorems) and not self.unclean and not self.missing
 
@@ -112,6 +127,13 @@ def parse_registry() -> list[Node]:
     pending_env = ""
 
     for line in tex.splitlines():
+        # Strip TeX comments FIRST. Without this, a line of PROSE mentioning \leanok flips
+        # the node green — a comment can silently ratify a node it is only talking about.
+        # (Found 2026-07-14 the honest way: a comment added to document C7's false green
+        # re-greened C7. An instrument that its own documentation can corrupt is not one.)
+        line = re.sub(r"(?<!\\)%.*$", "", line)
+        if not line.strip():
+            continue
         if m := re.search(r"\\begin\{(theorem|lemma|proposition|corollary|definition)\}", line):
             pending_env = m.group(1)
         if re.search(r"\\begin\{proof\}", line):
@@ -130,6 +152,10 @@ def parse_registry() -> list[Node]:
             continue
         if m := re.search(r"\\lean\{([^}]*)\}", line):
             cur.decls += [d.strip() for d in m.group(1).split(",") if d.strip()]
+        if m := re.search(r"\\uses\{([^}]*)\}", line):
+            # Statement-\uses and proof-\uses are unioned: either way the node cannot be
+            # FINISHED until that dependency exists. Blocking order is what we need here.
+            cur.uses += [d.strip() for d in m.group(1).split(",") if d.strip()]
         if re.search(r"\\leanok", line):
             if in_proof:
                 cur.proof_ok = True
@@ -208,7 +234,7 @@ def run_axiom_check(nodes: list[Node]) -> None:
 
 
 def report(nodes: list[Node]) -> int:
-    false_green, drift, seams, missed = [], [], [], []
+    false_green, drift, seams, missed, false_stmt = [], [], [], [], []
 
     for n in nodes:
         if n.proof_ok and (n.unclean or n.missing):
@@ -217,6 +243,8 @@ def report(nodes: list[Node]) -> int:
             drift.append(n)
         if n.is_seam:
             seams.append(n)
+        if n.false_stmt_green:
+            false_stmt.append(n)
         # A `definition` node needs no proof block — its statement \leanok is the whole
         # story, even when it bundles a proved lemma. Only a proof-owing env can MISS a flip.
         if n.wants_proof and n.all_clean and not n.proof_ok:
@@ -233,6 +261,16 @@ def report(nodes: list[Node]) -> int:
                 print(f"   {n.label:<5} {d}  ← declaration does not exist")
         print()
 
+    if false_stmt:
+        print("🚨 FALSE STATEMENT-GREEN — statement marked \\leanok, but NO theorem exists:")
+        print("     the node renders GREEN in the blueprint web while its content is absent.")
+        print("     A reader trusts the border and routes around the node. Drop the \\leanok")
+        print("     (or \\notready it) until the statement is really in Lean.")
+        for n in false_stmt:
+            what = ", ".join(f"{d} ({n.kinds[d]})" for d in n.decls) or "nothing"
+            print(f"   {n.label:<5} \\lean{{{what}}} — all defs, no theorem")
+        print()
+
     if drift:
         print("⚠️  DRIFT — blueprint names declarations the Lean source does not have:")
         for n in drift:
@@ -240,11 +278,44 @@ def report(nodes: list[Node]) -> int:
         print()
 
     if seams:
+        by_label = {n.label: n for n in nodes}
+        seam_labels = {n.label for n in seams}
+        done = lambda lab: (m := by_label.get(lab)) is not None and not m.is_seam  # noqa: E731
+
         print("🕳️  SEAMS — nodes claiming NO theorem (zero sorries, still unfinished):")
         print("     the sorry census cannot see these. This is the distance-to-done gap.")
         for n in seams:
             what = ", ".join(f"{d} ({n.kinds[d]})" for d in n.decls) or "— nothing claimed —"
             print(f"   {n.label:<5} {what}")
+            # A FLAT seam list invites the reader to treat seams as independent. They are not:
+            # a seam upstream of another seam must be PROVED before the downstream one can be
+            # CLOSED (its statement can still be pinned first — statement-deps ≠ proof-deps).
+            # Cost the judge a wrong campaign order once (pass 29); the list now carries it.
+            blocks = sorted(m.label for m in nodes if n.label in m.uses)
+            unmet = sorted(u for u in n.uses if u in seam_labels or not done(u))
+            bits = []
+            if blocks:
+                bits.append(f"blocks {', '.join(blocks)}")
+            if not unmet:
+                bits.append("✅ deps met — ATTACKABLE NOW")
+            else:
+                # STATEMENT-deps ≠ PROOF-deps, and the difference decides the campaign order.
+                # If every declaration of the unmet dep EXISTS (its defs are in Lean, only its
+                # theorem is missing), this node's STATEMENT can be pinned today — only its
+                # PROOF is blocked. That is what lets you de-risk a scary downstream node
+                # (pin + route + probe) BEFORE grinding out a cheap upstream one, which is the
+                # standing charter's breadth-first rule. Say so, or a reader reads "⛔" as
+                # "do not touch" and de-risks in the wrong order.
+                defs_exist = all(
+                    by_label[u].decls and not by_label[u].missing
+                    for u in unmet if u in by_label
+                )
+                if defs_exist:
+                    bits.append(f"⛔ PROOF needs {', '.join(unmet)} · "
+                                f"📌 statement PINNABLE NOW (their defs exist)")
+                else:
+                    bits.append(f"⛔ needs {', '.join(unmet)} first")
+            print(f"   {'':<5} └─ {' · '.join(bits)}")
         print()
 
     if missed:
@@ -256,12 +327,13 @@ def report(nodes: list[Node]) -> int:
 
     proved = [n for n in nodes if n.proof_ok and n.all_clean]
     print(f"📊 {len(proved)} nodes proved + axiom-clean · {len(seams)} seams · "
-          f"{len(drift)} drift · {len(false_green)} false-green")
+          f"{len(drift)} drift · {len(false_green) + len(false_stmt)} false-green "
+          f"({len(false_green)} proof, {len(false_stmt)} statement)")
 
-    if false_green:
+    if false_green or false_stmt:
         print("\n❌ GATE FAILED — a reviewer-facing \\leanok is not backed by the kernel.")
         return 1
-    print("\n✅ no false greens: every \\leanok proof is kernel-backed.")
+    print("\n✅ no false greens: every \\leanok is kernel-backed, statement and proof.")
     return 0
 
 

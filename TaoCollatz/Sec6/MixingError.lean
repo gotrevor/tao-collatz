@@ -144,12 +144,27 @@ theorem pre_mono_length {n r s : ℕ} (a : Fin n → ℕ) (hrs : r ≤ s) :
   rw [show s = r + (s - r) by omega, Finset.sum_range_add]
   omega
 
+/-- One step of a prefix sum in range: `pre a (m+1) = pre a m + a_m`. -/
+theorem pre_succ {n : ℕ} (a : Fin n → ℕ) (m : ℕ) (hm : m < n) :
+    pre a (m + 1) = pre a m + a ⟨m, hm⟩ := by
+  unfold pre
+  rw [Finset.sum_range_succ, dif_pos hm]
+
 /-- The full sum of a transported tail is the full sum minus the preceding head. -/
 theorem pre_cast_tail_eq_sub (j p n : ℕ) (e : j + p = n) (a : Fin n → ℕ) :
     pre (fun i : Fin p => a (Fin.cast e (Fin.natAdd j i))) p = pre a n - pre a j := by
   subst n
   simp only [Fin.cast_eq_self]
   have hsplit := pre_natAdd_split a (m := p) le_rfl
+  omega
+
+/-- A prefix of the transported tail is a difference of level-`n` prefix sums:
+`pre vt s = pre a (j + s) − pre a j` for `s ≤ p` (generalises `pre_cast_tail_eq_sub`, `s = p`). -/
+theorem pre_cast_tail_prefix (j p n s : ℕ) (hs : s ≤ p) (e : j + p = n) (a : Fin n → ℕ) :
+    pre (fun i : Fin p => a (Fin.cast e (Fin.natAdd j i))) s = pre a (j + s) - pre a j := by
+  subst n
+  simp only [Fin.cast_eq_self]
+  have hsplit := pre_natAdd_split a (m := s) hs
   omega
 
 /-- Removing the first reversed-tail coordinate leaves the suffix after the enlarged head. -/
@@ -349,13 +364,223 @@ theorem sum_abs_syracZ_sub_mainHigh_eq (A : ℝ) (n : ℕ) :
     (fun a => (fnat n a : ZMod (3 ^ n)) * (2 : ZMod (3 ^ n))⁻¹ ^ pre a n)
     (mainEvent A n)
 
-/-- **Obligation 1 (error term)**: the `L¹` mass of `syracZ − mainHigh` is polynomially small. This
-is Tao (6.3), `P(Ē) ≤ n^{-A-1}`, plus the (6.4) event enlargements `E → Eₖ`: the events `E`/`Eₖ`/`Bₖ`
-partition the good event, so the difference is the mass on the bad event, controlled by the §7/S3
-sub-Gaussian tails (Lemma 2.2 + union bound). -/
+/-- Suffix sum: the total mass of the last `r` coordinates, `a_{n-r} + ⋯ + a_{n-1}`. -/
+def sufSum {n : ℕ} (a : Fin n → ℕ) (r : ℕ) : ℕ := pre a n - pre a (n - r)
+
+/-- **Packaging lemma for `globalGood ⊆ mainEvent`.** Given a cut `k < n` at which the suffix sums
+straddle the threshold (`stopEvent`) and satisfy the lower-deviation window at every scale, the
+`(k, sufSum a (k+1))` conditioning term fires: `mainPieceEvent` holds. All three constituents
+(`pre vt (k+1) = l`, `stopEvent`, `condWindow`) reduce to facts about the suffix sums `sufSum a r`. -/
+theorem mainPieceEvent_of (n k : ℕ) (C T : ℝ) (a : Fin n → ℕ) (hk : k < n)
+    (hstop_lo : (sufSum a k : ℝ) ≤ T)
+    (hstop_hi : T < (sufSum a (k + 1) : ℝ))
+    (hwin : ∀ r, 1 ≤ r → r ≤ k + 1 →
+      2 * (r : ℝ) - C * (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) + Real.log (n : ℝ))
+        ≤ (sufSum a r : ℝ)) :
+    mainPieceEvent n k (sufSum a (k + 1)) C T a := by
+  have hjn : n - 1 - k = n - (k + 1) := by omega
+  have hmono : ∀ x y : ℕ, x ≤ y → pre a x ≤ pre a y := fun x y h => pre_mono_length a h
+  -- vt is the reversed tail block; its prefix sums are differences of level-n prefix sums
+  set vt : Fin (k + 1) → ℕ := fun i => a (Fin.cast (cutEq hk) (Fin.natAdd (n - 1 - k) i)) with hvt
+  have hvt_full : pre vt (k + 1) = pre a n - pre a (n - 1 - k) :=
+    pre_cast_tail_eq_sub (n - 1 - k) (k + 1) n (cutEq hk) a
+  have hvt_pre : ∀ s, s ≤ k + 1 → pre vt s = pre a (n - 1 - k + s) - pre a (n - 1 - k) :=
+    fun s hs => pre_cast_tail_prefix (n - 1 - k) (k + 1) n s hs (cutEq hk) a
+  have hA : pre vt (k + 1) = sufSum a (k + 1) := by rw [hvt_full, sufSum, hjn]
+  -- condWindow component
+  have hwindow : condWindow (n - 1 - k) (k + 1) C (sufSum a (k + 1)) vt := by
+    intro r hr1 hrp
+    rw [show n - 1 - k + (k + 1) = n from cutEq hk]
+    have hsr : k + 1 - r ≤ k + 1 := by omega
+    have hpvt : pre vt (k + 1 - r) = pre a (n - r) - pre a (n - 1 - k) := by
+      rw [hvt_pre _ hsr]; congr 2; omega
+    have hnat : sufSum a (k + 1) = pre vt (k + 1 - r) + sufSum a r := by
+      rw [hpvt, sufSum, sufSum, hjn]
+      have h1 : pre a (n - (k + 1)) ≤ pre a (n - r) := hmono _ _ (by omega)
+      have h2 : pre a (n - r) ≤ pre a n := hmono _ _ (by omega)
+      omega
+    have hcast : (sufSum a (k + 1) : ℝ) - (pre vt (k + 1 - r) : ℝ) = (sufSum a r : ℝ) := by
+      have := congrArg (Nat.cast : ℕ → ℝ) hnat; push_cast at this ⊢; linarith
+    rw [hcast]
+    exact hwin r hr1 hrp
+  -- stopEvent component
+  have hstop : stopEvent (k + 1) T vt := by
+    refine ⟨?_, ?_⟩
+    · have hpvt1 : pre vt 1 = pre a (n - 1 - k + 1) - pre a (n - 1 - k) := hvt_pre 1 (by omega)
+      have hnat : pre vt (k + 1) = pre vt 1 + sufSum a k := by
+        rw [hvt_full, hpvt1, sufSum]
+        have h1 : pre a (n - 1 - k) ≤ pre a (n - 1 - k + 1) := hmono _ _ (by omega)
+        have h2 : pre a (n - 1 - k + 1) ≤ pre a n := hmono _ _ (by omega)
+        have h3 : pre a (n - 1 - k + 1) = pre a (n - k) := by
+          rw [show n - 1 - k + 1 = n - k from by omega]
+        omega
+      have hcast : (pre vt (k + 1) : ℝ) - (pre vt 1 : ℝ) = (sufSum a k : ℝ) := by
+        have := congrArg (Nat.cast : ℕ → ℝ) hnat; push_cast at this ⊢; linarith
+      rw [hcast]; exact hstop_lo
+    · rw [hA]; exact hstop_hi
+  -- assemble the dependent-if event
+  unfold mainPieceEvent
+  rw [dif_pos hk]
+  exact ⟨hA, hwindow, hstop⟩
+
+/-- `sufSum a 0 = 0`. -/
+theorem sufSum_zero {n : ℕ} (a : Fin n → ℕ) : sufSum a 0 = 0 := by
+  simp [sufSum]
+
+/-- `sufSum a n = pre a n` (the full-length suffix is the whole vector). -/
+theorem sufSum_full {n : ℕ} (a : Fin n → ℕ) : sufSum a n = pre a n := by
+  have h0 : pre a 0 = 0 := by simp [pre]
+  simp only [sufSum, Nat.sub_self, h0, Nat.sub_zero]
+
+/-- Adding the next-from-top coordinate: an `M`-bound on every coordinate gives
+`sufSum a (k+1) ≤ sufSum a k + M`. Used for the upper end of the `lRange` window. -/
+theorem sufSum_succ_le_add {n : ℕ} (a : Fin n → ℕ) (k : ℕ) (hk : k < n)
+    (M : ℝ) (hM : ∀ i : Fin n, (a i : ℝ) ≤ M) :
+    (sufSum a (k + 1) : ℝ) ≤ (sufSum a k : ℝ) + M := by
+  have hlt : n - 1 - k < n := by omega
+  have hpre : pre a (n - k) = pre a (n - 1 - k) + a ⟨n - 1 - k, hlt⟩ := by
+    rw [show n - k = (n - 1 - k) + 1 from by omega, pre_succ a (n - 1 - k) hlt]
+  have hle2 : pre a (n - k) ≤ pre a n := pre_mono_length a (by omega)
+  have heq : sufSum a (k + 1) = sufSum a k + a ⟨n - 1 - k, hlt⟩ := by
+    simp only [sufSum, show n - (k + 1) = n - 1 - k from by omega]
+    omega
+  have hcoord := hM ⟨n - 1 - k, hlt⟩
+  rw [heq]; push_cast; linarith
+
+/-- **The (6.2) global good deviation event** (an ENLARGEMENT of Tao's `Eₖ`, per the pass-29 ruling —
+never document it as equal). Three tail-measurable deviation constraints on the suffix sums:
+(G1) the total mass exceeds the (6.6) threshold, so a stopping cut exists; (G2) no single coordinate
+exceeds `2C·log n`, pinning the crossing value into the tight `lRange` window; (G3) every suffix sum
+`a_{[n-r,n]}` sits above its lower-deviation window `2r − C(√(r log n) + log n)`. Its complement is a
+finite union of one-sided large-deviation events, each controlled by `geomHalf_tail_bound`. -/
+def globalGood (A : ℝ) (n : ℕ) (a : Fin n → ℕ) : Prop :=
+  caThr (caConst A) n < (pre a n : ℝ)
+  ∧ (∀ i : Fin n, (a i : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ))
+  ∧ (∀ r, 1 ≤ r → r ≤ n →
+      2 * (r : ℝ) - caConst A * (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) + Real.log (n : ℝ))
+        ≤ (sufSum a r : ℝ))
+
+noncomputable instance globalGood_decidablePred (A : ℝ) (n : ℕ) :
+    DecidablePred (globalGood A n) := Classical.decPred _
+
+/-- **THE inclusion `globalGood ⊆ mainEvent`** (the content of the C10 error node, per the directive).
+Given the good event and `0 ≤ caThr` (a large-`n` regime fact the caller supplies via `n₀`), the
+first-passage stopping cut `k` — the least `k` with `sufSum a (k+1) > T` — witnesses `mainEvent`: it
+lands in `range n`, its valuation `l = sufSum a (k+1)` lies in the tight `lRange` window (lower end
+from the crossing `T < l`, upper end from the coordinate cap G2), and `mainPieceEvent` fires via
+`mainPieceEvent_of` (stopping straddle from the first-passage minimality, window from G3). -/
+theorem globalGood_subset_mainEvent (A : ℝ) (n : ℕ) (a : Fin n → ℕ)
+    (hTpos : 0 ≤ caThr (caConst A) n) (hg : globalGood A n a) :
+    mainEvent A n a := by
+  classical
+  obtain ⟨hG1, hG2, hG3⟩ := hg
+  set C := caConst A with hC
+  set T := caThr C n with hTdef
+  -- first-passage predicate
+  set p : ℕ → Prop := fun r => T < (sufSum a r : ℝ) with hp
+  have hpn : p n := by rw [hp]; simp only []; rw [sufSum_full]; exact hG1
+  have hex : ∃ r, p r := ⟨n, hpn⟩
+  have hp0 : ¬ p 0 := by
+    rw [hp]; simp only [sufSum_zero, Nat.cast_zero]; exact not_lt.mpr hTpos
+  set m0 := Nat.find hex with hm0
+  have hm0spec : p m0 := Nat.find_spec hex
+  have hm0le : m0 ≤ n := Nat.find_min' hex hpn
+  have hm0pos : 1 ≤ m0 := by
+    rcases Nat.eq_zero_or_pos m0 with h | h
+    · exact absurd (h ▸ hm0spec) hp0
+    · exact h
+  set k := m0 - 1 with hk
+  have hkm0 : k + 1 = m0 := by omega
+  have hkn : k < n := by omega
+  -- stopping straddle
+  have hstop_hi : T < (sufSum a (k + 1) : ℝ) := by rw [hkm0]; exact hm0spec
+  have hstop_lo : (sufSum a k : ℝ) ≤ T := by
+    have hnpk : ¬ p k := Nat.find_min hex (by omega)
+    rw [hp] at hnpk; exact not_lt.mp hnpk
+  -- window at all scales ≤ k+1 ≤ n
+  have hwin : ∀ r, 1 ≤ r → r ≤ k + 1 →
+      2 * (r : ℝ) - C * (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) + Real.log (n : ℝ))
+        ≤ (sufSum a r : ℝ) :=
+    fun r hr1 hrp => hG3 r hr1 (by omega)
+  have hpiece : mainPieceEvent n k (sufSum a (k + 1)) C T a :=
+    mainPieceEvent_of n k C T a hkn hstop_lo hstop_hi hwin
+  -- the valuation lands in the tight window
+  have hTexp : T = (n : ℝ) * Real.log 3 / Real.log 2 - C ^ 2 * Real.log (n : ℝ) := by
+    rw [hTdef]; simp only [caThr]
+  have hlow : ⌈(n : ℝ) * Real.log 3 / Real.log 2 - C ^ 2 * Real.log (n : ℝ)⌉₊ ≤ sufSum a (k + 1) := by
+    apply Nat.ceil_le.mpr
+    have : T ≤ (sufSum a (k + 1) : ℝ) := le_of_lt hstop_hi
+    rw [hTexp] at this; exact this
+  have hhigh : sufSum a (k + 1) ≤
+      ⌊(n : ℝ) * Real.log 3 / Real.log 2 - (C ^ 2 - 2 * C) * Real.log (n : ℝ)⌋₊ := by
+    apply Nat.le_floor
+    have hstep := sufSum_succ_le_add a k hkn (2 * C * Real.log (n : ℝ)) hG2
+    have hle : (sufSum a (k + 1) : ℝ) ≤ T + 2 * C * Real.log (n : ℝ) := by linarith
+    rw [hTexp] at hle
+    have hE : (n : ℝ) * Real.log 3 / Real.log 2 - C ^ 2 * Real.log (n : ℝ)
+          + 2 * C * Real.log (n : ℝ)
+        = (n : ℝ) * Real.log 3 / Real.log 2 - (C ^ 2 - 2 * C) * Real.log (n : ℝ) := by ring
+    linarith [hle, hE]
+  have hmem : (k, sufSum a (k + 1)) ∈ Finset.range n ×ˢ lRange C n := by
+    refine Finset.mem_product.mpr ⟨Finset.mem_range.mpr hkn, ?_⟩
+    simp only [lRange, Finset.mem_Icc]
+    exact ⟨hlow, hhigh⟩
+  exact ⟨(k, sufSum a (k + 1)), hmem, hpiece⟩
+
+/-- **The remaining C10 tail estimate — a pure probability bound (Tao (6.3)–(6.4)).**
+`P(¬globalGood) ≤ (C/2)·m^{-A}`, together with the large-`n` positivity `0 ≤ caThr` that the inclusion
+`globalGood_subset_mainEvent` consumes; both are delivered by the same `n₀`. The bound is a union over
+the finitely many one-sided large-deviation events making up `¬globalGood` — the total-mass deficit
+`pre a n ≤ T` (G1), the per-coordinate overshoots `a_i > 2C log n` (G2), and the per-scale window
+deficits `sufSum a r < 2r − C(√(r log n)+log n)` (G3) — each dominated by `geomHalf_tail_bound`, with
+the `n → m` conversion paid out of `0.9n ≤ m ≤ n`. There is no structural content left: the event
+algebra is discharged (`globalGood_subset_mainEvent`), only this probability estimate remains. -/
+theorem prob_not_globalGood_le (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, m ≤ n → n₀ ≤ n → 9 * n ≤ 10 * m →
+      0 ≤ caThr (caConst A) n ∧
+      2 * (∑' a : Fin n → ℕ, if globalGood A n a then 0 else ((geomHalf.iid n) a).toReal)
+        ≤ C * (m : ℝ) ^ (-A) := by
+  sorry
+
+/-- **Obligation 1 (error term)**: the `L¹` mass of `syracZ − mainHigh` is polynomially small. Now a
+thin wrapper: `sum_abs_syracZ_sub_mainHigh_eq` turns the `L¹` sum into `P(¬mainEvent)`, the proved
+inclusion `globalGood_subset_mainEvent` bounds it by `P(¬globalGood)`, and the pure tail estimate
+`prob_not_globalGood_le` finishes. This is Tao (6.3), `P(Ē) ≤ n^{-A-1}`, plus the (6.4) enlargements. -/
 theorem error_l1_high_bound (A : ℝ) (hA : 0 < A) :
     ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, m ≤ n → n₀ ≤ n → 9 * n ≤ 10 * m →
       2 * ∑ Y, |(syracZ n Y).toReal - mainHigh A n Y| ≤ C * (m : ℝ) ^ (-A) := by
-  sorry
+  obtain ⟨C, hC, n₀, H⟩ := prob_not_globalGood_le A hA
+  refine ⟨C, hC, n₀, fun n m hmn hn hreg => ?_⟩
+  obtain ⟨hTpos, hbnd⟩ := H n m hmn hn hreg
+  rw [sum_abs_syracZ_sub_mainHigh_eq]
+  refine le_trans ?_ hbnd
+  have hPsum : Summable fun a : Fin n → ℕ => ((geomHalf.iid n) a).toReal :=
+    ENNReal.summable_toReal (geomHalf.iid n).tsum_coe_ne_top
+  have hmaskM : ∀ a, (if mainEvent A n a then (0 : ℝ) else ((geomHalf.iid n) a).toReal)
+      ≤ ((geomHalf.iid n) a).toReal :=
+    fun a => by by_cases h : mainEvent A n a <;> simp [h, ENNReal.toReal_nonneg]
+  have hmaskG : ∀ a, (if globalGood A n a then (0 : ℝ) else ((geomHalf.iid n) a).toReal)
+      ≤ ((geomHalf.iid n) a).toReal :=
+    fun a => by by_cases h : globalGood A n a <;> simp [h, ENNReal.toReal_nonneg]
+  have hsummM : Summable fun a : Fin n → ℕ =>
+      if mainEvent A n a then (0 : ℝ) else ((geomHalf.iid n) a).toReal :=
+    Summable.of_nonneg_of_le
+      (fun a => by by_cases h : mainEvent A n a <;> simp [h, ENNReal.toReal_nonneg]) hmaskM hPsum
+  have hsummG : Summable fun a : Fin n → ℕ =>
+      if globalGood A n a then (0 : ℝ) else ((geomHalf.iid n) a).toReal :=
+    Summable.of_nonneg_of_le
+      (fun a => by by_cases h : globalGood A n a <;> simp [h, ENNReal.toReal_nonneg]) hmaskG hPsum
+  -- ¬mainEvent-mass ≤ ¬globalGood-mass, pointwise via the inclusion
+  have hmono : (∑' a : Fin n → ℕ, if mainEvent A n a then 0 else ((geomHalf.iid n) a).toReal)
+      ≤ ∑' a : Fin n → ℕ, if globalGood A n a then 0 else ((geomHalf.iid n) a).toReal := by
+    refine hsummM.tsum_le_tsum (fun a => ?_) hsummG
+    by_cases hgood : globalGood A n a
+    · have hmain : mainEvent A n a := globalGood_subset_mainEvent A n a hTpos hgood
+      simp [hmain, hgood]
+    · rw [if_neg hgood]
+      by_cases hmain : mainEvent A n a
+      · simp [hmain, ENNReal.toReal_nonneg]
+      · simp [hmain]
+  exact mul_le_mul_of_nonneg_left hmono (by norm_num)
 
 end TaoCollatz

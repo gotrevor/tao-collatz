@@ -7,18 +7,50 @@ PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ---
 
-## CURRENT DIRECTIVE (JUDGE PASS 29, 2026-07-14, HEAD `7ff033b`) — **the campaign is C10 → C8 → C9, in that order**
+## CURRENT DIRECTIVE (JUDGE PASS 29, 2026-07-14, HEAD `7ff033b`) — **the campaign is C10 → C7 → C8 → C9, in that order**
 
 *Supersedes the pass-27 objective and the pass-28 correction block below (both FULFILLED — see
 "What pass 29 verified"). The hard rails below are LIVE; the rails in the superseded blocks still
 bind wherever they are not restated here.*
 
-### 🎯 THREE OBJECTIVES, IN STRICT ORDER. Finish one before starting the next.
+### 🎯 THE ORDER: **C10 → C8 (pin) → C7 (prove) → C8 (close) → C9**
 
-The order is **forced by the dependency graph**, not a preference: **C9 consumes BOTH C10 and C8**,
-and **C8 is a SEAM — no Lean theorem exists behind it at all.** Doing C9 first means proving Prop
-1.11 against an unpinned §5, which is how you discover at assembly time that the thing you cited does
-not say what you needed.
+Two facts set it, and the second one is the subtle one:
+
+**1. Both C7 and C8 are SEAMS** — zero theorems, zero sorries, invisible to the census.
+`./tools/blueprint_audit.py` prints them, with their blocking order:
+
+```
+C7   passes (def), passTime (def), passLoc (def)
+     └─ blocks C6, C8 · ✅ deps met — ATTACKABLE NOW
+C8   — nothing claimed —
+     └─ blocks C6, C9 · ⛔ PROOF needs C7 · 📌 statement PINNABLE NOW (their defs exist)
+```
+
+⚠️ **C7 renders GREEN in the blueprint web and it is NOT DONE.** It carried a statement `\leanok`
+while its `\lean{}` named only three *defs*; its actual content, the estimate **(1.19)**
+`P(T_x(N_y) = ∞) ≪ x^{-c}`, was **nowhere in Lean**. Fixed 2026-07-14 (now `\notready`), and the
+audit gates on it (**FALSE STATEMENT-GREEN**). *If you were routing around C7 because it looked
+finished: it isn't.*
+
+**2. STATEMENT-deps ≠ PROOF-deps.** C8's `\uses{C2, C5, C7}` is a dependency of its **proof**.
+C8's *statement* (Prop 5.2 / (5.8)) is written in terms of the first-passage **definitions**
+(`passes`, `passTime`, `passLoc`) — **which exist.** So **C8 can be pinned, routed and probed
+TODAY**, before a line of C7 is proved.
+
+**And it should be.** The standing charter (BLUEPRINT §2) is *de-risk breadth-first: turn RED nodes
+YELLOW (pinned + routed + hardest sub-lemma probed) everywhere before polishing yellow → green.*
+**C8 is the risk** (diff 4, 15–30 laps, **75%**); C7 is the cheap one (diff 2, 5–10 laps, **85%**,
+unblocked). Grinding the cheap node first buys no information. **Pin the scary one first, then feed
+it.** Pinning C8 also tells you *precisely what C8 needs from C7* — which may not be (1.19) exactly
+as the blueprint states it.
+
+*(Trevor caught two judge errors here in one exchange. Pass 29 first ordered C10 → C8 → C9, calling
+it "forced by the dependency graph" **while skipping the C7 edge in that graph** — the audit had
+printed `C7` on the line directly above `C8`. Corrected to C10 → C7 → C8 → C9, which was **also
+wrong**: it de-risked in cost order instead of risk order, and treated a proof-dep as a
+statement-dep. **Invoking an instrument's authority is not the same as reading it — and reading a
+dependency edge is not the same as knowing what it blocks.**)*
 
 ---
 
@@ -67,34 +99,69 @@ Two demands follow, and they are binding:
 
 ---
 
-### 🥈 OBJECTIVE 2 — C8 (Prop 5.2, §5 pp.22–25): **it is a SEAM. Build it, then pin it.**
+### 🥈 OBJECTIVE 2 — C8 (Prop 5.2, §5 pp.22–25): **PIN + ROUTE + PROBE it. Do NOT try to close it.**
 
-**There is no Lean behind C8 at all** — zero sorries, zero theorems, and the census cannot see it.
-It has been ordered pinned since pass 27 and has not been. It **blocks C9**.
+**C8 is the risk on the board** (diff 4, 15–30 laps, **75%** — the lowest confidence of anything
+left) and **there is no Lean behind it at all**: zero theorems, zero sorries, invisible to the census.
+It has been ordered pinned since pass 27 and never has been. **De-risk it before you feed it.**
 
 - **Scope**: Prop 5.2 approximate formula **(5.8)**; the events `𝒜^{(n')}` **(5.11)**, `E'` **(5.10)**,
   `I_y` **(5.9)**; the `B_{n,y}` equivalence chain.
+- **You do NOT need C7 to do this.** C8's statement is written over the first-passage *definitions*
+  (`passes`, `passTime`, `passLoc`), which exist. Only its **proof** consumes (1.19).
 - **Statements are copy-not-compose**: render each verbatim against its numbered display in the PDF
-  (pp.22–25), then freeze. Mark each with a `RATIFY-C8` comment.
-- 🔒 **Never set `\leanok` yourself. Ratification is the judge's.** A new pin is a **claim, not a
-  fact** — say in your handoff that you have pinned it and what you pinned it against.
-- Decompose freely into named sub-`sorry`s as you build. **Raising the sorry count this way is
-  PROGRESS** — it converts an invisible seam into visible, attackable holes. A seam is strictly worse
-  than a sorry: a sorry is honest about what it owes.
+  (pp.22–25), then freeze. Mark each `RATIFY-C8`.
+- **Then ROUTE and PROBE**: decompose into named sub-`sorry`s, and **write down exactly what C8's
+  proof needs from C7.** That is the deliverable of this objective — it may not be (1.19) precisely
+  as the blueprint states it, and finding that out now is worth more than a proved C7.
+- **Do not grind C8 to green here.** Pinned + routed + hardest sub-lemma probed = objective met.
 
 ---
 
-### 🥉 OBJECTIVE 3 — C9 `stabilization` (Prop 1.11, `Sec5/FirstPassage.lean:81`)
+### 🥉 OBJECTIVE 3 — C7 (§5 pp.20–21): **prove (1.19) — the input C8's proof consumes**
 
-Lemma 5.3 (`c_n(X) ≪ 1`), (5.18)–(5.21), and the Prop 1.11 assembly (which applies Prop 1.14 at
-scale `m₀`). It consumes **C10 and C8**. Start it when they are done, not before.
+**C7 has three definitions and NO theorem** (`Sec5/FirstPassage.lean:21–28`). ⚠️ **It renders GREEN
+in the blueprint web and it is not done** — that badge was a false statement-`\leanok`, fixed
+2026-07-14. What it owes:
+
+> **(1.19)**: `P(T_x(N_y) = ∞) ≪ x^{-c}` — the first-passage time is finite but for `x^{-c}`.
+
+- **Both dependencies are green** (C5 = Prop 1.9 + Lemma 4.1, axiom-clean; S2 = the step laws).
+  Nothing is in your way. Diff 2, 5–10 laps, 85% — the cheapest real node left, and **two** nodes
+  (C8, C6) wait on it.
+- **State (1.19) verbatim against pp.20–21, mark it `RATIFY-C7`,** then prove it — a geometric
+  first-passage tail off the valuation law you already have.
+- **Prefer the form objective 2 asked for**, if they differ. C8 is the consumer; the consumer's need
+  is the spec.
+
+---
+
+### 4️⃣ OBJECTIVE 4 — close C8, then C9 `stabilization` (Prop 1.11, `Sec5/FirstPassage.lean:81`)
+
+With (1.19) in hand, discharge C8's named sorries. **Then** C9: Lemma 5.3 (`c_n(X) ≪ 1`),
+(5.18)–(5.21), and the Prop 1.11 assembly (applies Prop 1.14 at scale `m₀`). C9 consumes **C10 and C8**.
+
+---
+
+**For BOTH seam nodes (C7 and C8):**
+- 🔒 **Never set `\leanok` yourself — statement OR proof. Ratification is the judge's.** A new pin is a
+  **claim, not a fact**: say in your handoff what you pinned and what you pinned it against.
+  ⚠️ **A statement `\leanok` on a node with no theorem is a FALSE GREEN** — it is what C7 was carrying,
+  and `blueprint_audit.py` now fails the build on it.
+- Decompose freely into named sub-`sorry`s as you build. **Raising the sorry count this way is
+  PROGRESS** — it converts an invisible seam into visible, attackable holes. **A seam is strictly
+  worse than a sorry: a sorry is honest about what it owes.**
 
 ---
 
 ### 🚧 Forbidden drift
 
-- **Do NOT start C8 or C9 while C10's single sorry is open.** C10 is one tail bound from complete and
-  it is upstream of both. Finish it.
+- **Do NOT start C8, C7 or C9 while C10's single sorry is open.** C10 is one tail bound from complete
+  and it is upstream of all of them. Finish it.
+- **Do NOT grind C7 first because it is easy.** Cheap-first buys no information. The charter is
+  *de-risk breadth-first*: **pin the 75% node, then feed it.**
+- **Do NOT try to CLOSE C8 before C7 exists.** Pin it, route it, probe it, and stop there. Its proof
+  consumes (1.19).
 - **Do NOT touch the two `Statement.lean` headline sorries** (hard rail 2). They discharge when the
   whole chain C10 → C9 → C6 lands, and not one minute before.
 - **Do NOT edit `fine_scale_mixing` or `stabilization`** — the two open crux statements are WATCHED

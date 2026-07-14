@@ -1,3 +1,46 @@
+# ✅ LAP (2026-07-15): `globalGood ⊆ mainEvent` PROVED — C10 error node reduced to a pure union bound
+
+**The inclusion IS the content, and it is now machine-checked + axiom-clean** (`[propext, choice,
+Quot.sound]`). `error_l1_high_bound` (`Sec6/MixingError.lean`) is now a **fully-proved thin wrapper**;
+the single remaining C10 sorry is `prob_not_globalGood_le` — a PURE probability/tail estimate. The
+event algebra is entirely discharged.
+
+**What landed (all in `Sec6/MixingError.lean`, all axiom-clean):**
+- `pre_cast_tail_prefix`, `pre_succ`, `sufSum`, `sufSum_zero/_full`, `sufSum_succ_le_add` — suffix-sum
+  calculus on the reversed tail block.
+- `mainPieceEvent_of` — packaging lemma: a first-passage cut `k` with straddle + all-scale window ⇒
+  `mainPieceEvent n k (sufSum a (k+1)) C T a`. All three constituents (`pre vt(k+1)=l`, `stopEvent`,
+  `condWindow`) reduce to facts about `sufSum a r`.
+- `globalGood` (Tao (6.2), an ENLARGEMENT of `Eₖ` — documented as such) = three tail-measurable
+  deviation constraints: (G1) `pre a n > T`; (G2) `∀ i, a i ≤ 2C log n`; (G3) `∀ r∈[1,n], 2r −
+  C(√(r log n)+log n) ≤ sufSum a r`.
+- **`globalGood_subset_mainEvent`** — THE inclusion. Cut `k` = least `k` with `sufSum a(k+1) > T`
+  (`Nat.find`); needs `0 ≤ caThr` (large-`n`, supplied by caller). lRange lower from crossing `T<l`,
+  upper from G2 via `sufSum_succ_le_add`; window from G3; straddle from first-passage minimality.
+- `error_l1_high_bound` — proved wrapper: `sum_abs_syracZ_sub_mainHigh_eq` (P(¬mainEvent)) →
+  pointwise `tsum_le_tsum` via the inclusion (¬globalGood ⊇ ¬mainEvent) → `prob_not_globalGood_le`.
+
+## → NEXT (the only remaining C10 content): prove `prob_not_globalGood_le`
+`0 ≤ caThr (caConst A) n ∧ 2·P(¬globalGood) ≤ C·m^{-A}` for `n ≥ n₀`, `9n ≤ 10m ≤ 10n`. Pure
+probability. Route (hardest-first):
+1. **Union decomposition**: `¬globalGood ⊆ (G1-bad) ∪ (⋃_i G2-bad_i) ∪ (⋃_r G3-bad_r)`, so
+   `P(¬globalGood) ≤ P(G1) + Σ_i P(G2_i) + Σ_r P(G3_r)`. Each is a masked-tsum; bound the union mass
+   by the sum of the piece masses (a `tsum` triangle/union bound over ≤ `1 + n + n` events).
+2. **Per-event tail bound via `geomHalf_tail_bound`** (`Prob/LocalInstances.lean:540`): each event is a
+   one-sided deviation of a partial sum `pre a r` / suffix `sufSum a r` / single coord `a i` of the
+   iid Geom(2) vector. NEEDS: the pushforward fact that `pre a r` under `geomHalf.iid n` is distributed
+   as `iidSum geomHalf r` (find/prove the marginal lemma — check `Syracuse/SyracRV.lean`,
+   `ValuationDist.lean` for an existing `geomHalf.iid`→`iidSum` marginal). Then `P(|pre a r − 2r| ≥ λ)
+   ≤ 2·Gweight(1+r)(λ/400)`. G3 uses `λ ≈ C√(r log n)` ⇒ `Gweight ≈ exp(−c·C²·log n) = n^{−cC²}`;
+   `caConst_tail_exponent` (`A+3 ≤ C/400`) gives the exponent room. G2: `λ ≈ 2C log n` on a single
+   coord (r=1). G1: `λ ≈ (2−log₂3)n` deficit, exponentially small (`Gweight` at linear λ).
+3. **`0 ≤ caThr`**: `n log₃/log2 ≥ C² log n` for `n ≥ n₀` — standard `log n / n → 0`; provable via
+   `log n ≤ 2√n` (as already scoped for `lRange_hbudget`'s `hwin`; reuse that machinery).
+4. **n→m**: `m ≤ n ⇒ n^{-A} ≤ m^{-A}`; the `Σ_r` (≤ n terms) × `n^{−cC²}` absorbs into `m^{-A}` with
+   room (cC² ≫ A+1 at C=30). Convert `Gweight` sums to `m^{-A}` at the end.
+
+---
+
 # 🧭 JUDGE PASS 29 (2026-07-14, HEAD `7ff033b`) — read `DIRECTION.md` first; it outranks this file
 
 **The campaign is `C10 → C8 → C9`, in that order.** Both pass-28 tripwires are DISCHARGED

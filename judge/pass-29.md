@@ -130,15 +130,70 @@ That is the same disease the seams (C7/C8) have, one level down. The sorry censu
 
 ---
 
-## 6. The campaign, re-aimed (Trevor, 2026-07-14): **C10 → C8 → C9**
+## 6. The campaign: **C10 → C8 (pin) → C7 (prove) → C8 (close) → C9**
 
-That order is **forced by the dependency graph**, not chosen: C9 `stabilization` (Prop 1.11) consumes
-**both** C10 and C8, and **C8 is a seam with nothing behind it** — no theorem, no sorry, invisible to
-the census. Pass 27 ordered C8 pinned before any C9 work starts; it still is not. Doing C9 before C8
-would mean proving Prop 1.11 against an unpinned §5, which is how you discover at assembly time that
-the thing you cited does not say what you needed.
+### 🚨 6a. C7 was a FALSE GREEN — a whole class the audit could not see
 
-Written into `DIRECTION.md` as the current directive. Next pass: **30.**
+C7's blueprint block is a `lemma` carrying a **statement `\leanok`**, with `\lean{passes, passTime,
+passLoc}` — **three DEFS**. Its actual content, the estimate **(1.19)** `P(T_x(N_y) = ∞) ≪ x^{-c}`,
+was **nowhere in Lean**. So C7 rendered **GREEN in the blueprint web** while its theorem did not
+exist, and `blueprint_audit.py` **simultaneously listed it as a SEAM** — because the false-green gate
+only ever checked **proof** `\leanok`s. Nothing reconciled the two.
+
+**This is worse than a seam.** A seam is invisible; C7 was **actively misleading** — it told a reader
+"finished, route around me." *Trevor did exactly that, correctly, and was misled by the instrument.*
+
+🔧 Fixed: C7 → `\notready` in `content.tex`; new gate **FALSE STATEMENT-GREEN** (`\leanok` on a
+proof-owing node with no theorem) — **the build now fails on it**.
+
+🐛 And fixing it exposed a second, nastier bug: the TeX parser **did not strip `%` comments**, so the
+comment I wrote *documenting* C7's false green — which contains the string `\leanok` — **re-greened
+C7**. Any prose mentioning `\leanok` could ratify the node it was merely discussing.
+**An instrument its own documentation can corrupt is not an instrument.** Comments are now stripped
+first. (Caught only because the gate I had *just* added kept firing when it should have gone quiet.
+The gate audited its own repair.)
+
+### 6b. STATEMENT-deps ≠ PROOF-deps — and that decides the order
+
+C8's `\uses{C2, C5, C7}` is a dependency of its **proof**. C8's *statement* (Prop 5.2 / (5.8)) is
+written over the first-passage **definitions**, which exist. **So C8 is pinnable today.**
+
+The standing charter (BLUEPRINT §2) is *de-risk breadth-first: turn RED nodes YELLOW (pinned + routed
++ probed) everywhere before polishing yellow → green.* **C8 is the risk** (diff 4, 15–30 laps, **75%**
+— lowest on the board); C7 is cheap (diff 2, 5–10 laps, **85%**, unblocked). Grinding the cheap node
+first buys **no information**. Pin the scary one, learn what it actually needs from C7, then feed it.
+
+### 🔴 6c. The judge got the order wrong TWICE in one exchange. Both misses are worth the fix.
+
+1. First: **C10 → C8 → C9**, called *"forced by the dependency graph"* — **while skipping the C7 edge
+   in that graph.** The audit had printed `C7` on the line **directly above** `C8`, in output quoted
+   in this very pass.
+   > 📌 **Invoking an instrument's authority is not the same as reading it.** "The dependency graph
+   > says" is a *claim about the graph* — and a claim about a machine-readable artifact is the
+   > cheapest thing in the world to check. **If you name an instrument as your warrant, open it.**
+2. Then, corrected to **C10 → C7 → C8 → C9** — **also wrong.** It read the edge and still got the
+   order backwards: it de-risked in **cost** order instead of **risk** order, and silently treated a
+   **proof**-dep as a **statement**-dep. Trevor caught this one too, reasoning from the (false) green
+   border — *right conclusion, from a lying instrument.*
+
+Same disease as pass 28, pointed at the judge: there, `DIRECTION.md` ordered a lap to grind at a
+target its own reflection had refuted. Here the judge ordered a campaign its own audit contradicted,
+twice. **Nothing was unsound; both would have wasted a run.**
+
+🔧 **System fix — the tool now answers the questions I failed to ask.** The seam report was a *flat
+list*, which is exactly the shape that invites a reader to treat seams as independent. It now prints,
+per seam, **what it blocks**, **whether its deps are met**, and — the crux — **whether the block is on
+the STATEMENT or only on the PROOF**:
+
+```
+C7   passes (def), passTime (def), passLoc (def)
+     └─ blocks C6, C8 · ✅ deps met — ATTACKABLE NOW
+C8   — nothing claimed —
+     └─ blocks C6, C9 · ⛔ PROOF needs C7 · 📌 statement PINNABLE NOW (their defs exist)
+```
+
+*A seam list that does not carry the order will be read in the wrong order.* Written into
+`DIRECTION.md`. Next pass: **30.**
 
 ---
 

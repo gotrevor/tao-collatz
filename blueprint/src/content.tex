@@ -369,7 +369,13 @@ over dyadic scales (§3).
 \begin{lemma}[First-passage non-escape; (1.19)]\label{C7}
   \lean{passes, passTime, passLoc}
   \uses{C5, S2}
-  \leanok
+  \notready
+% The three \lean{} names above are DEFS and they do exist. The node's CONTENT is the
+% estimate (1.19) below, and that is not in Lean yet — so this node is NOT \leanok.
+% It carried \leanok until 2026-07-14 (judge pass 29), which painted it GREEN in the
+% blueprint web while its theorem was absent, and a reader who trusted the border would
+% route around it. `blueprint_audit.py` now gates on exactly this (FALSE STATEMENT-GREEN).
+% Restore \leanok when (1.19) is stated in Lean; the judge flips the proof \leanok.
 The first-passage data: \(\mathrm{passes}(x,N)\) (\(=T_x(N)<\infty\), the orbit reaches
 \(\le x\)), the passage time \(\mathrm{passTime}\), and the passage location
 \(\mathrm{Pass}_x = \mathrm{passLoc}\) (with the convention \(\mathrm{Syr}^\infty := 1\)).
