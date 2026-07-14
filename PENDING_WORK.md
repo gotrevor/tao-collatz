@@ -1,5 +1,36 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-19 (2026-07-15, §6 event-scaffold START): `syracZ_eq_tsum_condDens` — the (6.9) l-marginalization
+
+Build green 3285, `#print axioms syracZ_eq_tsum_condDens = [propext, Classical.choice, Quot.sound]`.
+Commit `0b4a73b`. **First brick of obligation 1 (the event/stopping-time scaffold): the innermost
+identity of Tao's (6.9) density decomposition.** New lemma (`Sec6/MixingFromDecay.lean`, after
+`dft_condDens_eq_cond_char`):
+- **`syracZ_eq_tsum_condDens (j p) (Y)`**: `((syracZ (j+p)) Y).toReal = ∑' l, condDens j p l Y`.
+  Summing the conditioned density over ALL tail-valuations `l ∈ ℕ` recovers the raw Syracuse density
+  — the exhaustiveness of the `{pre(tail)=l}` partition, i.e. conditioning on the tail valuation
+  loses no mass. Proof: lift both sides to `ENNReal`, Tonelli-swap `∑_l` inside the `iid`-tsum
+  (`ENNReal.tsum_comm`), collapse `∑_l 1_{pre(tail)=l}=1` (`tsum_eq_single`), match `syracZ = map offset`.
+
+### Why this brick: it de-risks the whole scaffold's marginalization mechanics
+The event assembly (6.1)–(6.10) telescopes `osc(syracZ) ≤ ∑_{k,l} osc(condDens_{k,l}) + osc(error)`.
+The `∑_l` telescope needs exactly this identity (that the l-partition is exhaustive) — now machine-
+checked, so the swap/collapse pattern is banked for the richer `k`-conditioned version.
+
+### → NEXT (continue the scaffold, hardest-first):
+1. **The finite-window truncation.** `osc_sum_le` needs a FINITE index set, but `l` ranges over ℕ.
+   Tao restricts `l` to a `½Cₐ²log n`-window via `Bₖ`/`Cₖ,ₗ`; outside it the mass is the `error` term
+   `≤ P(Ē) ≪ n^{-A-1}`. NEXT BRICK: `syracZ = (∑_{l∈window} condDens l) + tail_l` with
+   `∑_Y tail_l ≤ P(pre(tail) ∉ window)`, then `osc(tail_l) ≤ ∑_Y|tail_l| ≤` that mass. This makes the
+   `∑_l` finite and is the honest home of the "error" term. (Aim: an `osc_tsum_tail_le` bound.)
+2. **Stopping time `k` + event `E`** (sub-Gaussian (6.2)): defer to a `k`-conditioned density that
+   ALSO carries `1_{E∧Bₖ}`; the current `condDens` only carries `1_{pre(tail)=l}`. Either generalize
+   `condDens` to an extra `DecidablePred` event factor, or define `condDensE j p l` with the E∧Bₖ
+   indicator. This is where obligation 3's `M ≈ 3⁻ᵖ` (offset injectivity, Lemma 6.2) becomes true —
+   it FAILS without the good event, so the event MUST enter before the tail Rényi count is provable.
+3. Then wire `condDens_osc_le` (have) + `tailDens_renyi_le` (have) + this marginalization into a
+   named-`sorry` decomposition of `fine_scale_mixing`.
+
 ## Lap fruit-18 (2026-07-15, §6 osc assembly bricks): ℓ²-refinement + per-conditioning osc bound + osc subadditivity
 
 Build green 3285, all `#print axioms`-clean. Commits `dd48d86`, `3256a90`, + this. **The full §6
