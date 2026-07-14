@@ -44,23 +44,40 @@ cancellation via `linear_combination`. **The `3^p` on the head term is the struc
 carries the HIGH frequencies. The residual head↔tail coupling is exactly `2⁻ᵖʳᵉ⁽ᵗᵃⁱˡ,ᵖ⁾`, which
 conditioning on the cut-valuation `pre a j = l` removes.
 
-**→ NEXT (brick b — character-sum factorization, then the conditioning apparatus)**:
-1. **`char_of_offset_split`** (PROVABLE NOW, cheap): pointwise, `stdAddChar(ξ·X) =
-   stdAddChar(ξ·3^p·Hval·2⁻ᴹ) · stdAddChar(ξ·Tval)` for `X` = the split above, via
-   `AddChar.map_add_eq_mul` (as in `coset_char_sum`). This turns the additive split into a
-   multiplicative character factorization pointwise in `a`.
-2. **Expectation factorization** (the conditioning core): `𝓕(densC (syracZ n)) ξ = E_a[stdAddChar(ξ·X)]`.
-   Condition on `L := pre a j` (fix cut-valuation): on `{L = l}` the two factors depend on DISJOINT
-   coordinate blocks (head: first `j` coords; tail: last `p` coords), so by iid-independence the
-   conditional expectation FACTORS into `[E_head stdAddChar(ξ·3^p·Hval·2⁻ᵐ) 1_{L=l}]·[E_tail stdAddChar(ξ·Tval)]`.
-   Needs: a `PMF.iid` independence/product lemma splitting `Fin (j+p) → ℕ` as `Fin j × Fin p`
-   (`Fin.append`/`Fin.addCases`; cf. `iid_map_castLE` already here). This is the D1 product-form step.
-3. **Tail factor = level-`p` Syracuse char sum** ⟹ bounded by `charFn_decay` (Prop 1.17, PROVED
-   axiom-clean): `E_tail stdAddChar(ξ·Tval)` is the char fn of `syracZ p` at frequency `ξ` (mod the
-   `3^p`/reindex bookkeeping — cf. `syracZ_map_cast`). With `p = n-k-1 ≥ m`, decay `≤ Cₐ·p^{-A}`.
-4. **Conditioning events + reassembly**: the stopping time `k`, events `E/Eₖ/Bₖ/Cₖ,ₗ`, union bound
-   over `k,l`, triangle inequality over the events (paper (6.2)–(6.10)). See fruit-8 for the full
-   7-step plan. Decompose these into named `sorry`s in `Sec6/MixingFromDecay.lean` as they're built.
+**Brick (b) step 1 DONE** (build green, axiom-clean): `char_offset_split` in
+`Sec6/MixingFromDecay.lean` — the pointwise additive→multiplicative character factorization,
+`stdAddChar(-(X·ξ)) = stdAddChar(-(head·ξ))·stdAddChar(-(tail·ξ))` via `AddChar.map_add_eq_mul`,
+where `head = 3^p·(Fnat_j·2⁻ᴸ)·2⁻ᴹ`, `tail = Fnat_p(last p)·2⁻ᴹ` (L=pre a j, M=pre tail p).
+
+### 🔑 KEY ROUTE FINDING (this lap — sharpens the crux; the decisive step-2 recipe)
+Coordinate-dependence of the two split terms (`X = Term1 + Term2`, `L=pre a j` head-val,
+`M=pre(tail) p` tail-val):
+- **Term1** (head term) `= 3^p·(Fnat_j(head)·2⁻ᴸ)·2⁻ᴹ` — depends on head (via `Fnat_j`,`L`) **and tail
+  (via `2⁻ᴹ`)**.
+- **Term2** (tail term) `= Fnat_p(tail)·2⁻ᴹ` — depends on **tail only**.
+
+So the `char_offset_split` factors are NOT (pure-head)·(pure-tail): the head factor carries `2⁻ᴹ`, a
+tail quantity. Hence `E_a[stdAddChar(-(X·ξ))]` does **NOT** factor into head×tail directly.
+**RESOLUTION (decisive)**: condition on `M = pre(tail) p` (the *tail* valuation). On `{M = l}`:
+`2⁻ᴹ → 2⁻ˡ` is a constant, so Term1 becomes head-only (`3^p·Fnat_j(head)·2⁻ᴸ·2⁻ˡ`) and Term2 stays
+tail-only. Then the two `stdAddChar` factors depend on DISJOINT iid coordinate blocks and the
+conditional expectation FACTORS. (Note: this is the mirror of Tao's orientation — Tao's `2^{-l}` sits
+on his 2nd term with `l` the head valuation; `syracZ`'s `a∘rev` convention swaps the roles, so *we*
+condition on the tail valuation `M`. Math identical, just which block is "head".) **This is why
+conditioning is mandatory, not bookkeeping — and it says exactly WHICH valuation to condition on.**
+
+**→ NEXT (brick b — the conditional-expectation factorization, now unambiguous)**:
+1. **Block-independence for iid conditioned on the tail valuation.** Prove a `PMF.iid` lemma:
+   splitting `Fin (j+p)→ℕ` as head×tail (`Fin.append`/`Fin.addCases`; cf. `iid_map_castLE`), the
+   expectation of `f(head)·g(tail)·1_{pre(tail)=l}` factors as `E_head[f]·E_tail[g·1_{pre(tail)=l}]`.
+   (Head fully independent of the tail-conditioning + tail factor.)
+2. **Apply** with `f(head)=stdAddChar(-(3^p·Fnat_j(head)·2⁻ᴸ·2⁻ˡ·ξ))`,
+   `g(tail)=stdAddChar(-(Fnat_p(tail)·2⁻ᴹ·ξ))`. Sum over `l` reassembles the full char sum.
+3. **Tail factor = level-`p` Syracuse char sum** ⟹ `charFn_decay` (Prop 1.17, PROVED) via a
+   `syracZ_map_cast`-style reindex of `stdAddChar(-(Fnat_p(tail)·2⁻ᴹ·ξ))` at level `3^p`.
+4. **Conditioning events + reassembly** (stopping time k, E/Eₖ/Bₖ/Cₖ,ₗ, union over k,l, triangle
+   ineq; paper (6.2)–(6.10)). Decompose into named `sorry`s in `Sec6/MixingFromDecay.lean` as built.
+   Full 7-step plan: fruit-8.
 
 ## Lap fruit-8 (2026-07-15): **C10 Cauchy–Schwarz bridge `osc_le_sqrt_highfreq` FULLY PROVED, axiom-clean**
 

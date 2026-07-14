@@ -366,6 +366,28 @@ never used `syracZ`-ness); (2) build the §6 conditioning apparatus (stopping ti
 factored char sum + `charFn_decay`; (4) reassemble by triangle inequality. See `PENDING_WORK` fruit-8.
 -/
 
+/-- **Brick (b), step 1 — the pointwise character factorization** (C10): the additive character
+of the split offset factors multiplicatively across the cut, `stdAddChar(-(X·ξ)) =
+stdAddChar(-(head·ξ)) · stdAddChar(-(tail·ξ))`, where `head = 3^p·(Fnat_j·2⁻ᵃ⁽¹ʲ⁾)·2⁻ᵗᵃⁱˡᵛᵃˡ` and
+`tail = Fnat_p(last p coords)·2⁻ᵗᵃⁱˡᵛᵃˡ` from `syracZ_offset_split`. This is the additive-to-
+multiplicative step of the §6 factorization.
+
+⚠️ **KEY ROUTE FACT** (governs the next step): the `head` factor still carries a `2⁻ᵗᵃⁱˡᵛᵃˡ`
+(`M := pre (tail) p`) that depends on the TAIL coordinates, so the character does NOT split into a
+pure head-function times a pure tail-function. The expectation `E_a[·]` therefore does **not** factor
+into head × tail directly — it factors only AFTER conditioning on the cut-valuation `L := pre a j`
+(equivalently on `M`), which fixes `2⁻ᵗᵃⁱˡᵛᵃˡ` to a constant. This is exactly why Tao conditions on
+the level `l`; it is mandatory, not bookkeeping. -/
+theorem char_offset_split {j p : ℕ} (a : Fin (j + p) → ℕ) (ξ : ZMod (3 ^ (j + p))) :
+    ZMod.stdAddChar (-(((fnat (j + p) a : ZMod (3 ^ (j + p)))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p)) * ξ))
+      = ZMod.stdAddChar (-((3 ^ p * ((fnat j (fun i => a (Fin.castAdd p i)) : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a j)
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre (fun i => a (Fin.natAdd j i)) p) * ξ))
+          * ZMod.stdAddChar (-(((fnat p (fun i => a (Fin.natAdd j i)) : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre (fun i => a (Fin.natAdd j i)) p) * ξ)) := by
+  rw [syracZ_offset_split, add_mul, neg_add, AddChar.map_add_eq_mul]
+
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
 
