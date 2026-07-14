@@ -2160,6 +2160,58 @@ at `C_A = caConst`, threshold `caThr`, valuation range `lRange`. -/
 noncomputable def mainHigh (n : ℕ) : ZMod (3 ^ n) → ℝ :=
   mainDensity n caConst (caThr caConst n) (fun _ => lRange caConst n)
 
+/-- **Discharge of `hbudget` from the tight (6.8) window** (C10, obl-1; judge pass 28 tripwire #1):
+for every valuation `l` in the tight window `lRange caConst n`, given the window is non-degenerate
+(`hwin`, i.e. `hi ≥ 0`; supplied by the caller's `n₀` via the standard `n/log n → ∞` threshold), the
+AM-GM budget inequality that `condDensWB_osc_le` consumes holds at `C_A = caConst = 30`. The `l·log2`
+term is bounded by the window's upper endpoint `n·log₂3 − (C_A²−2C_A)·log n`, leaving a strictly
+negative `log n` coefficient `L(1125L−810) < 0` (`L = log 2 < 0.72`) — exactly where the judge's
+`C_A ≥ 23` threshold bites (the (6.8) ½-window would give a *positive* coefficient, closing for no C). -/
+theorem lRange_hbudget (n : ℕ) (hn : 2 ≤ n) (l : ℕ) (hl : l ∈ lRange caConst n)
+    (hwin : (caConst ^ 2 - 2 * caConst) * Real.log (n:ℝ) ≤ (n:ℝ) * Real.log 3 / Real.log 2) :
+    (l : ℝ) * Real.log 2
+      + (caConst * Real.log 2 + 5 / 4 * (caConst * Real.log 2) ^ 2) * Real.log (n : ℝ)
+      + Real.log 4 < (n : ℝ) * Real.log 3 := by
+  have hCA : caConst = 30 := rfl
+  set L := Real.log 2 with hL
+  have hLlo : (0.6931471803 : ℝ) < L := Real.log_two_gt_d9
+  have hLhi : L < (0.6931471808 : ℝ) := Real.log_two_lt_d9
+  have hLpos : 0 < L := by linarith
+  have hlog4 : Real.log 4 = 2 * L := by
+    rw [show (4:ℝ) = 2^2 by norm_num, Real.log_pow]; push_cast; ring
+  have hn2 : (2:ℝ) ≤ (n:ℝ) := by exact_mod_cast hn
+  have hlogn_pos : 0 < Real.log (n:ℝ) := Real.log_pos (by linarith)
+  have hlogn_ge : L ≤ Real.log (n:ℝ) := Real.log_le_log (by norm_num) hn2
+  set coeff := caConst * L + 5 / 4 * (caConst * L) ^ 2 - (caConst ^ 2 - 2 * caConst) * L with hcoeff
+  have hcoeff_val : coeff = L * (1125 * L - 810) := by rw [hcoeff, hCA]; ring
+  have hcoeff_neg : coeff < 0 := by rw [hcoeff_val]; nlinarith [hLlo, hLhi, hLpos]
+  -- the window upper bound
+  have hupper : (l : ℝ) * L
+      ≤ (n:ℝ) * Real.log 3 - (caConst ^ 2 - 2 * caConst) * L * Real.log (n:ℝ) := by
+    rw [lRange, Finset.mem_Icc] at hl
+    have hlb : l ≤ ⌊(n : ℝ) * Real.log 3 / Real.log 2
+        - (caConst ^ 2 - 2 * caConst) * Real.log (n:ℝ)⌋₊ := hl.2
+    set hival := (n : ℝ) * Real.log 3 / Real.log 2
+        - (caConst ^ 2 - 2 * caConst) * Real.log (n:ℝ) with hhi
+    have hival_nonneg : 0 ≤ hival := by rw [hhi, ← hL]; linarith [hwin]
+    have hlle : (l : ℝ) ≤ hival := le_trans (Nat.cast_le.mpr hlb) (Nat.floor_le hival_nonneg)
+    have hmul : (l:ℝ) * L ≤ hival * L := mul_le_mul_of_nonneg_right hlle (le_of_lt hLpos)
+    rw [hhi, ← hL] at hmul
+    calc (l:ℝ) * L
+        ≤ ((n : ℝ) * Real.log 3 / L - (caConst ^ 2 - 2 * caConst) * Real.log (n:ℝ)) * L := hmul
+      _ = (n:ℝ) * Real.log 3 - (caConst ^ 2 - 2 * caConst) * L * Real.log (n:ℝ) := by field_simp
+  have key : coeff * Real.log (n:ℝ) + Real.log 4 < 0 := by
+    rw [hlog4]
+    have h1 : coeff * Real.log (n:ℝ) ≤ coeff * L :=
+      mul_le_mul_of_nonpos_left hlogn_ge (le_of_lt hcoeff_neg)
+    rw [hcoeff_val] at h1
+    nlinarith [h1, hLlo, hLhi, hLpos]
+  have hexpand : (l : ℝ) * L
+      + (caConst * L + 5 / 4 * (caConst * L) ^ 2) * Real.log (n:ℝ) + Real.log 4
+      ≤ (n:ℝ) * Real.log 3 + (coeff * Real.log (n:ℝ) + Real.log 4) := by
+    rw [hcoeff]; nlinarith [hupper]
+  linarith [hexpand, key]
+
 /-- **The pointwise main/error split combiner** (C10 obl-1 skeleton, fully proved): splitting the
 syracZ density as `main + (syracZ − main)`, its oscillation is bounded by `osc(main)` plus twice the
 error `L¹` mass (`osc_add_le` + `osc_le_two_mul_l1`). The content is entirely in the two inputs. -/
