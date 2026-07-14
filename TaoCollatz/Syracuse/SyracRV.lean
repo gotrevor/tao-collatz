@@ -221,6 +221,31 @@ private theorem geom_fold {P : ℕ} (hP : 0 < P) (g : ℕ → ℝ≥0∞)
     ring
   rw [tsum_congr hinner, ENNReal.tsum_mul_right, ENNReal.tsum_geometric]
 
+/-- `2^{2·3ⁿ} ≡ 1 (mod 3ⁿ⁺¹)` — i.e. `2·3ⁿ` is a period of `a ↦ 2ᵃ` in `ZMod 3ⁿ⁺¹`
+(the periodicity input to Lemma 1.12's `a`-fold; weaker than the exact order). -/
+private theorem two_pow_period (n : ℕ) : (2 : ZMod (3 ^ (n + 1))) ^ (2 * 3 ^ n) = 1 := by
+  have hdvd : ∀ m : ℕ, (3 : ℤ) ^ (m + 1) ∣ (2 : ℤ) ^ (2 * 3 ^ m) - 1 := by
+    intro m
+    induction m with
+    | zero => norm_num
+    | succ m ih =>
+        have hpow : (2 : ℤ) ^ (2 * 3 ^ (m + 1)) = ((2 : ℤ) ^ (2 * 3 ^ m)) ^ 3 := by
+          rw [← pow_mul]; congr 1; ring
+        set A : ℤ := (2 : ℤ) ^ (2 * 3 ^ m) with hA
+        have hfact : A ^ 3 - 1 = (A - 1) * (A ^ 2 + A + 1) := by ring
+        have h3 : (3 : ℤ) ∣ A ^ 2 + A + 1 := by
+          obtain ⟨c, hc⟩ := dvd_trans (dvd_pow_self (3 : ℤ) (Nat.succ_ne_zero m)) ih
+          have hAc : A = 1 + 3 * c := by linarith
+          exact ⟨1 + 3 * c + 3 * c ^ 2, by rw [hAc]; ring⟩
+        rw [hpow, hfact, pow_succ]
+        exact mul_dvd_mul ih h3
+  have h := hdvd n
+  rw [show (3 : ℤ) ^ (n + 1) = ((3 ^ (n + 1) : ℕ) : ℤ) from by push_cast; ring,
+    ← ZMod.intCast_zmod_eq_zero_iff_dvd] at h
+  push_cast at h
+  rw [sub_eq_zero] at h
+  exact h
+
 -- RATIFY-DRIFT: the "divide by 3" step of Lemma 1.12 is spelled in ℕ
 -- (`(2^a · x.val - 1) / 3`, exact under the guard `(2^a · x.val) % 3 = 1`) rather than
 -- with `(3 : ZMod (3^(n+1)))⁻¹`, because 3 is a zero-divisor there and `ZMod.inv` is
