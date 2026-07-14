@@ -1,5 +1,36 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-1 (2026-07-14): **Collatz (1.2) `colMin_eq_syrMin_oddPart` PROVED (axiom-clean)** — spine stub C1 closed
+
+With §7 done, pivoted to objective 3 (fruit). Closed the paper-(1.2) spine stub
+`colMin_eq_syrMin_oddPart : colMin N = syrMin (oddPart N)` (`Basic/Collatz.lean`, axiom-clean,
+`lake build` green 3282). This is a foundational on-path node (the Collatz→Syracuse reformulation
+the whole reduction rests on).
+
+**Proof (two structural facts + `sInf` monotonicity):**
+- **Fact A** `col_reaches_syr`: every Syracuse iterate of `oddPart N` is a Collatz iterate of `N`
+  (induction on `j`; each step `col` does `3M+1` then halves `padicValNat 2 (3M+1)` times down to
+  `oddPart(3M+1)=syr M` via `col_iterate_oddPart`).
+- **Invariant B** `oddPart_col_iterate`: the odd part of every Collatz iterate is a Syracuse
+  iterate (induction on `k`; `oddPart` invariant under halving, and on odds `col x=3x+1` gives
+  `oddPart=syr x`).
+- Then: `colMin ≤ syrMin` since `{syr iterates} ⊆ {col iterates}` (Fact A, `Nat.sInf_mem`+`Nat.sInf_le`);
+  `syrMin ≤ colMin` since `colMin` is attained and its odd part `≤` it is a `syr` iterate (Invariant B).
+- New helpers (all axiom-clean, `Basic/Collatz.lean`): `padicValNat_two_of_odd`, `oddPart_of_odd`,
+  `padicValNat_two_two_mul`, `oddPart_two_mul`, `col_pos`, `col_iterate_pos`, `syr_iterate_pos`,
+  `col_iterate_oddPart`.
+
+### NEXT — remaining spine stubs / fruit (objective 3):
+- `Syracuse/SyracRV.lean` (3 sorries: `syracZ_map_cast`, `syracZ_recursion`, `syracZ_eq_rev_fnat`) —
+  foundational Syracuse-random-variable identities. Likely tractable next.
+- `Sec6/MixingFromDecay.lean` `fine_scale_mixing`, `Sec5/FirstPassage.lean` `stabilization` (Prop 1.11)
+  + `logUnifOdd` normalization — the two big ones are HEROIC analytic (multi-lap); `logUnifOdd`
+  normalization needs a `dite` refactor to bring the nonempty hyp into scope.
+- `Sec7/White.lean`, `Sec7/Reduction.lean`, `Sec7/BlackEdgeQ.lean`, `Prob/Basic.lean` each carry a
+  sorry — inventory the on-path ones.
+- **The `ManyTriangles.lean` split** (5,519 lines, zero-risk hygiene) — DIRECTION obj-3 item 1.
+- **Pin C8** (§5 first-passage) — mark `RATIFY-C8`, never `\leanok`.
+
 ## Lap X11d-DONE (2026-07-14): **🏆🏆 §7 MONOTONICITY COMPLETE — `prop_7_8` AXIOM-CLEAN, Case3.lean SORRY-FREE**
 
 The sole remaining §7 leaf `col_tail_mass_le` (7.54 bad-column Gaussian tail) is PROVED and
