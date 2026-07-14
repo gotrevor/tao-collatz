@@ -1,3 +1,51 @@
+# 🎯 C7 integral test — attack plan (2026-07-14 review lap, HEAD `e0913ce`)
+
+**Frontier**: C10 ✅ done (axiom-clean), C8 ✅ pinned. Live target = **C7 = `first_passage_nonescape`**,
+down to 2 sub-sorries in `Sec5/FirstPassage.lean`: `integral_test_logUnif` (:104, CRUX) and
+`valSum_lower_tail` (:118, downstream/mechanical). **Attack the CRUX first (hardest-first).**
+
+## The reframe (this is the lap's key finding)
+`integral_test_logUnif` was flagged in the 2130 handoff as "no equidistribution machinery." That was a
+mis-search for the *dynamical* `{ξθⁿ}` theorem (genuinely absent). Our lemma is the **elementary integral
+test**, and mathlib HAS the pieces:
+- `AntitoneOn.sum_le_integral` / `AntitoneOn.integral_le_sum` (+`_Ico`) — `Mathlib/Analysis/SumIntegralComparisons.lean`
+- `integral_inv` (`∫_a^b 1/t = log(b/a)`, a,b>0) — `Mathlib/Analysis/SpecialFunctions/Integrals/Basic.lean`
+- `Nat.Ioc_filter_modEq_card` (exact AP count in interval) — `Mathlib/Data/Int/CardIntervalMod.lean`
+
+## The statement (pinned, RATIFY-C7 — do not edit)
+`∃ K>0, ∃ x₀, ∀ x≥x₀, ∀ y∈{x^α, x^{α²}}, dTV( (logUnifOdd y (y^α)).map (·mod 2^{3n₀}), unifOddMod(3n₀) ) ≤ K·2^{-3n₀}`,
+`n₀ = ⌊log x/(10 log2)⌋` so `2^{n₀} ≍ x^{0.1}`. Write `M := 2^{n'}`, `n' := 3n₀`, `W := logWindow y (y^α)`
+(odds in `[y,y^α]`), `D := ∑_{N∈W} 1/N`, `S_r := ∑_{N∈W, N≡r} 1/N`.
+
+## The math (Tao pp.20, "routine integral test")
+`logUnifOdd` mass `∝ 1/N`, so `(P.map res)(r) = S_r/D`; all `N∈W` odd ⇒ supported on ODD residues.
+`unifOddMod n'` = uniform on the `M/2` odd residues = `2/M` each. Hence
+`dTV = ∑_{r odd} |S_r/D − 2/M| = (1/D) ∑_{r odd} |S_r − 2D/M|`.
+Integral test per odd class (AP with step `M`, `f=1/t` antitone): `S_r = (1/M)·L + O(1/y)`, `L := ∫_y^{y^α}dt/t
+= (α−1)log y`; likewise `D = L/2 + O(1/y)` (odds are half). So `|S_r − 2D/M| ≤ C/y + (2/M)(C/y)`, and summing
+over `M/2` odd classes: `∑_{r odd}|S_r−2D/M| ≤ C·M/y`. With `D ≥ c·(α−1)log y`: `dTV ≤ C·M/(y·log y) ≤ C·M/y`.
+**Numeric closure**: `M/y ≤ 2^{-n'} ⟺ 2^{2n'} ≤ y`. `2^{2n'}=2^{6n₀} ≤ x^{0.6}` and `y ≥ x^{1.001}` ⇒ closes with room.
+
+## Decomposition (named sub-sorries to write into FirstPassage.lean — raising the count is PROGRESS)
+1. **`intTest_class_dev`** (THE analytic heart — the one real brick): `∑_{r odd mod M} |S_r − 2D/M| ≤ C·M/y`
+   (or the cleaner per-class relative form `|(P.map res)(r) − 2/M| ≤ (K·M/y)·(2/M)`). This is where
+   `sum_le_integral`/`integral_le_sum` + `integral_inv` + the AP reindex live. Everything else is glue.
+2. **`intTest_D_lower`**: `D ≥ c·log y` (normalizer lower bound; a one-class `sum_le_integral` gives `D ≥ ∫/…`,
+   or crude: `D ≥ (#W)/(y^α) ≥ …`). Needed so `1/D` is controlled.
+3. **`intTest_numeric`** (PROVE FIRST — cheap, mirrors `descent_pow_bounds`): for large x, `y∈{x^α,x^{α²}}`,
+   `(2:ℝ)^(2*(3*nZero x)) ≤ y`, i.e. `2^{6n₀} ≤ x^{1.001}` via `2^{6n₀} ≤ x^{0.6}` (`6n₀·log2 ≤ 0.6 log x`
+   from `n₀·10log2 ≤ log x`) and `x^{0.6} ≤ x^{1.001}`.
+4. **dTV assembly**: `dTV = (1/D)∑_{r odd}|S_r−2D/M|` — needs `PMF.map_apply`, `logUnifOdd` support ⊆ odds,
+   `unifOddMod` residue values, `ENNReal.toReal` glue. Then (1)+(2)+(3) ⟹ target.
+
+## Sub-sorry watch
+- `valSum_lower_tail` (:118) is DOWNSTREAM (consumes the crux via `valuation_dist`) + mechanical (clone
+  `valuation_tail`'s upper-tail structure; `geomHalf_tail_bound` two-sided). Do it AFTER the integral test.
+- Consumer shape confirmed: `valuation_dist`/`valuation_tail` (`Syracuse/ValuationDist.lean:999/1066`) take
+  exactly this dTV bound as their `hmod` hypothesis and are PROVED. So the integral test is the ONLY thing owed.
+
+---
+
 # ✅ LAP (2026-07-14 1958): C10 one sorry from done — g1 + g2 proved, only g3 (suffix marginal) left
 
 `prob_not_globalGood_le` is assembled and proved **modulo a single sorry** `g3_mass_le`. The marginal

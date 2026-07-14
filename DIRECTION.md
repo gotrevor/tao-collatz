@@ -17,6 +17,45 @@ statement with `sorry`; green border = *the statement exists*, never *finished*;
 "What pass 29 verified"). The hard rails below are LIVE; the rails in the superseded blocks still
 bind wherever they are not restated here.*
 
+### 🔎 REVIEW-LAP UPDATE (2026-07-14, HEAD `e0913ce`) — obj 1+2 DONE; frontier = C7's integral test; route CONTINUE
+
+*(Refines — does not override — Judge Pass 29. The C10→C8→C7→C8→C9 order STANDS. This records where
+we are ALONG it and reframes the C7 crux; the pass-29 rails all still bind.)*
+
+**Route CONTINUE; no trigger fired.** Positions re-verified this lap by fresh `#print axioms`:
+- ✅ **OBJECTIVE 1 (C10) — DONE, axiom-clean.** `fine_scale_mixing`, `error_l1_high_bound`,
+  `prob_not_globalGood_le` all `[propext, Classical.choice, Quot.sound]` at `e0913ce`. `globalGood ⊆
+  mainEvent` proved; (6.3) union bound in; `MixingError.lean` sorry-free. **Judge to flip C10 `\leanok`.**
+- ✅ **OBJECTIVE 2 (C8) — PINNED + ROUTED + PROBED.** `first_passage_approx` (RATIFY-C8,
+  `Sec5/ApproxFormula.lean`) + 2 named sub-sorries; `blueprint_audit` 0 orange. **C8's proof consumes
+  C7 at EXACTLY ONE place** — `approx_passtime_window` (5.16), the `{¬passes}` escape term = (1.19).
+- 🎯 **LIVE TARGET = OBJECTIVE 3 (C7).** `first_passage_nonescape` is down to **2** sub-sorries:
+  `integral_test_logUnif` (the CRUX) + `valSum_lower_tail`. Descent leaves (`syr_descent_bound`,
+  `descent_passes`, `descent_pow_bounds`) DONE + axiom-clean.
+
+**⚡ THE C7 CRUX IS MIS-FRAMED AS HARDER THAN IT IS — reframe BEFORE attacking.** The 2130 handoff
+calls `integral_test_logUnif` "no existing equidistribution machinery (grepped)." That grep was for
+*dynamical* equidistribution (`{ξθⁿ}`), which mathlib genuinely lacks (corpus
+`2026-06-14-mathlib-equidistribution-geometric-gap.md`) — **but that is NOT our lemma.** Ours is the
+**elementary integral test**, and BOTH its ingredients are already in mathlib:
+- **exact AP count in an interval**: `Nat.Ioc_filter_modEq_card` (`Mathlib/Data/Int/CardIntervalMod.lean`)
+  — corpus `mathlib-has-ap-count-and-multimod-crt.md`;
+- **sum ↔ integral comparison** (the test itself): `AntitoneOn.sum_le_integral` /
+  `AntitoneOn.integral_le_sum` (+`_Ico`) (`Mathlib/Analysis/SumIntegralComparisons.lean`), with
+  `integral_inv` (`∫ 1/t = log`, `Analysis/SpecialFunctions/Integrals/Basic.lean`).
+
+**🥇 MANDATED NEXT MOVE (hardest-first): attack `integral_test_logUnif` FIRST — NOT `valSum_lower_tail`.**
+`valSum_lower_tail` is *downstream* of the crux (it consumes it via `valuation_dist`) and mechanical, so
+closing it first banks NO information — that is exactly the crux-neglect the last laps drifted into
+(descent leaves closed, crux untouched). Decompose the integral test into named sub-sorries in `src/`
+(raising the count is PROGRESS): the per-odd-residue-class 1/N-mass uniformity (sum↔integral on `t↦1/t`
+per AP, error `O(2^{n'}/y)`), the dTV assembly, the numeric closure `2^{2n'}≍x^{0.6} ≤ y≍x^{1.001}`.
+Full attack plan: **PENDING_WORK top, "C7 integral test — attack plan (2026-07-14 review)".**
+
+**Forbidden drift (this update, atop pass-29's):** do NOT grind `valSum_lower_tail` before the integral
+test exists; do NOT retreat to C8-close or C9 while C7's crux is open; the mathlib reframe is a
+*route*, not a licence to touch `stabilization`/`fine_scale_mixing` or any ratified pin.
+
 ### 🎯 THE ORDER: **C10 → C8 (pin) → C7 (prove) → C8 (close) → C9**
 
 Two facts set it, and the second one is the subtle one:
@@ -416,6 +455,12 @@ analytic assembly over machinery that is *already proved*. Driving C10 → C9 �
 wiring is the last mile. No route trigger has fired; route = CONTINUE.
 
 ### Directive history (this section's entries; full campaign history below under SUPERSEDED)
+- **review lap (2026-07-14, `e0913ce`)**: route CONTINUE, no trigger fired. Pass-29 obj 1 (C10) +
+  obj 2 (C8 pin) VERIFIED DONE (C10 chain re-run axiom-clean); frontier now C7's 2 sub-sorries.
+  **Key reframe**: the C7 crux `integral_test_logUnif` is the ELEMENTARY integral test (AP-count
+  `CardIntervalMod` + `SumIntegralComparisons` + `integral_inv`), NOT the from-scratch dynamical
+  equidistribution the 2130 handoff feared. Mandated next move = attack the integral test FIRST
+  (hardest-first), not the downstream mechanical `valSum_lower_tail`. STATUS + PENDING refreshed.
 - **review lap (2026-07-15, `4eabb35`)**: route CONTINUE, no trigger fired; **T3 DE-RISKED** — the
   reflection's route-decisive window kernel `fnat_lt_of_suffix_window` + the collision bound
   `tailDensW_le_single_mass` landed machine-checked/axiom-clean (obl-3 analytic content DONE). Frontier
