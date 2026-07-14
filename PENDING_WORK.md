@@ -1,5 +1,40 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap X11d-decomp-3 (2026-07-14): **(7.54) BRANCH SPLIT PROVED — crux down to the two paper atoms (7.55)/(7.54-tail)**
+
+`damping_column_mass_le` is now **kernel-checked assembly** from TWO sub-lemmas, following
+Tao (7.54) exactly. Proved this lap (the assembly, ~230 lines, axiom-clean): the pointwise
+column-weight split
+`exp(−ε³Nw)·max(n/2−j_end,1)^{−A} ≤ 1_{adv≥0.9m} + 10^A·m^{−A}·exp(−ε³Nw)`
+(case `adv≥0.9m`: my ABSOLUTE weight ≤1, exp≤1; case `adv<0.9m`: `n/2−j_end = m−adv > 0.1m` so
+weight ≤ (0.1m)^{−A} = 10^A·m^{−A} via `rpow_le_rpow_of_nonpos`), then `tsum_add` split +
+factoring `ofReal(10^A m^{−A})` out of the damping sum, then the constant collapse
+`10^A·m^{−A}·10^{−A−1} = m^{−A}/10` and final `m^{−A}/2 + m^{−A}/10 ≤ m^{−A}`.
+
+**The §7 crux is now the TWO leaf obligations (both `Case3.lean`):**
+1. **`damping_expectation_le`** (`:1423`) — **THE deep piece (7.55/7.56).** `P`-uniform,
+   `m`-INDEPENDENT: `E[exp(−ε³Nw)] ≤ 10^{−A−1}` (a constant). This is where ALL the proved
+   X11c machinery plugs in. Attack: `E[exp(−ε³Nw)] ≤ P(Nw≤K) + e^{−10A}` (K=⌈10A/ε³⌉; the
+   `e^{−10A} ≤ 10^{−A−1}` slack holds for A≥1), then `P(Nw≤K) ≤ P(reach R)+P(E∗)` via
+   `deterministic_encounter_or_bigTriangle` (cumWhite=Nw through `encFold_cumWhite`), bounded
+   by `reaches_fewWhite_mass_le_ten` (≤10^{−(A+1)}) + `estar_union_le ∘ bigTriangle_of_encounter`.
+   ⚠ CONSTANT CHASE: `reaches_fewWhite_mass_le_ten` gives 10^{−(A+1)} but summing with e^{−10A}
+   + E∗ must stay ≤ 10^{−A−1}; may need to re-derive with a bigger R (the lemma's hyp
+   `K+(A+3)log10+2 ≤ εR` allows tightening to (A+4) etc.) OR route the e^{−10A} into the tail
+   more carefully. Study the exact (7.55)→(7.56) slack in Tao pp.48-49 before coding.
+   P = `deterministic_encounter_or_bigTriangle` P₀ (needs g,R,K,A).
+2. **`col_tail_mass_le`** (`:1443`) — standard Gaussian tail (7.54 bad column). `P`-parametric:
+   mass{adv ≥ 0.9m} ≤ m^{−A}/2 for m≥Cthr. Bridge walk→marginal via `fpDist_walk_eq_fpDistPlus`,
+   then `fpDistPlus_col_tail` (dev D≍m, via `budget_le_of_mem_triangle`: s·log2≤(m+2)log9), then
+   `exp(−cm) ≤ m^{−A}/2` via `exp_neg_mul_le_of_large`/`log_le_eps_mul_of_large` (both in
+   `BlackEdge.lean`). NOTE the col event is `0.9m ≤ e.1+(pathSum v P).1` (walk displacement),
+   which under the marginal law is `fpDistPlus`'s first coord — align with `fpDistPlus_col_tail`'s
+   `|e.1 − s/4| ≥ 2D` deviation form (s = O(m) via (7.52), so 0.9m advance ⟹ large deviation).
+
+**NEXT: `damping_expectation_le`** (hardest-first). First move: state the {Nw>K}/{Nw≤K} split
+as a pointwise `exp(−ε³Nw) ≤ 1_{Nw≤K} + e^{−ε³K}` bound, reduce to `P(Nw≤K) ≤ 10^{−A−1}−e^{−10A}`,
+then wire `deterministic_encounter_or_bigTriangle`. Decompose further if the constant chase bites.
+
 ## Lap X11d-decomp-2 (2026-07-14): **(7.54) COLUMN PEEL PROVED — crux narrowed to `damping_column_mass_le`**
 
 `damped_iter_expectation_le` is now **kernel-checked assembly** from ONE deeper sub-lemma.

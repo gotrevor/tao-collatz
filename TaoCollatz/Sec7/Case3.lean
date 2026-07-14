@@ -1413,6 +1413,46 @@ theorem bigTriangle_of_encounter {n ξ : ℕ} (F : TriangleFamily n ξ) (A : ℝ
 
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
+/-- **(7.55)–(7.56) — the pure damping expectation.** After the (7.54) column split, on the
+good column `j_end < 0.9m` (weight `≤ 10^A·m^{−A}`) it suffices to bound the damping factor's
+expectation by the `A`-only constant `10^{−A−1}` (paper (7.55)). The horizon `P = O_{A,ε}(1)`
+is the `deterministic_encounter_or_bigTriangle` `P₀`. This is the deep piece the proved X11c
+machinery targets: `E[exp(−ε³Nw)] ≤ P(Nw≤K) + e^{−10A}` with `K=⌈10A/ε³⌉`, and
+`P(Nw≤K) ≤ P(reach R)+P(E∗)` via `deterministic_encounter_or_bigTriangle`, bounded by
+`reaches_fewWhite_mass_le_ten` + `estar_union_le ∘ bigTriangle_of_encounter`. -/
+theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
+    ∃ P : ℕ, 1 ≤ P ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+            Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+              (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) := by
+  sorry
+
+/-- **(7.54) bad-column tail** (paper: the `j_end ≥ 0.9m` contribution). The mass that the
+`P`-step walk after first passage advances past `0.9m` is `O(e^{−cm})` (Lemma 7.7 + Lemma 2.2:
+first passage `≥ 0.8m` and the extra `P` Geom(4) steps `≥ 0.1m` each have mass `e^{−cm}`),
+absorbed here into `≤ m^{−A}/2` for `m ≥ Cthr`. Bridged to `fpDistPlus_col_tail` via
+`fpDist_walk_eq_fpDistPlus`; the deviation scale uses `budget_le_of_mem_triangle`
+(`s·log2 ≤ (m+2)log9`). Stated for any horizon `P ≥ 1` (`Cthr` absorbs the `P`-dependence). -/
+theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) := by
+  sorry
+
 /-- **X11d crux (post-(7.54)) — the damping × column mass estimate.** Once the end
 value `Q(end)` has been peeled by (7.54) (`Q_le_Qm`: `Q(end) ≤ max(n/2−j_end,1)^{−A}·Q_{m−1}`)
 and the constant `Q_{m−1}` factored out, what remains is this pure first-passage ⊗ Hold-walk
@@ -1444,7 +1484,188 @@ theorem damping_column_mass_le (A : ℝ) (hA : 0 < A) :
                 (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
             ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A)))
         ≤ ENNReal.ofReal ((m : ℝ) ^ (-A)) := by
-  sorry
+  obtain ⟨P, hP1, Cdamp, hdamp⟩ := damping_expectation_le A hA
+  obtain ⟨Ctail, htail⟩ := col_tail_mass_le A hA P hP1
+  refine ⟨max (max Cdamp Ctail) 10, P, hP1, ?_⟩
+  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hmC : Cdamp ≤ m := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hm
+  have hmT : Ctail ≤ m := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hm
+  have hm10 : 10 ≤ m := le_trans (le_max_right _ _) hm
+  have hmpos : 0 < m := by omega
+  have hmR : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hmpos
+  have hm0R : (0 : ℝ) ≤ (m : ℝ) ^ (-A) := Real.rpow_nonneg hmR.le _
+  have h10A0 : (0 : ℝ) ≤ (10 : ℝ) ^ A := Real.rpow_nonneg (by norm_num) _
+  have hC10nn : (0 : ℝ) ≤ (10 : ℝ) ^ A * (m : ℝ) ^ (-A) := mul_nonneg h10A0 hm0R
+  -- Constant-collapse `10^A · m^{−A} · 10^{−A−1} = m^{−A}/10`.
+  have hconst10 : (10 : ℝ) ^ A * (m : ℝ) ^ (-A) * (10 : ℝ) ^ (-A - 1) = (m : ℝ) ^ (-A) / 10 := by
+    have h1 : (10 : ℝ) ^ A * (10 : ℝ) ^ (-A - 1) = (10 : ℝ) ^ (-1 : ℝ) := by
+      rw [← Real.rpow_add (by norm_num : (0 : ℝ) < 10)]; congr 1; ring
+    have h2 : (10 : ℝ) ^ (-1 : ℝ) = 1 / 10 := by
+      rw [Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 10), Real.rpow_one]; norm_num
+    calc (10 : ℝ) ^ A * (m : ℝ) ^ (-A) * (10 : ℝ) ^ (-A - 1)
+        = (m : ℝ) ^ (-A) * ((10 : ℝ) ^ A * (10 : ℝ) ^ (-A - 1)) := by ring
+      _ = (m : ℝ) ^ (-A) * (1 / 10) := by rw [h1, h2]
+      _ = (m : ℝ) ^ (-A) / 10 := by ring
+  -- **Step 1 — the pointwise (7.54) column-weight split.**
+  have hpoint : ∀ (e : ℕ × ℤ) (v : Fin P → ℕ × ℤ),
+      ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+          Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+            (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+        ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A))
+      ≤ ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0)
+        + ENNReal.ofReal ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)) *
+          ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+            Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+              (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))) := by
+    intro e v
+    set EXPV : ℝ := Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+        Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+          (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) with hEXVdef
+    have hEXPV0 : (0 : ℝ) ≤ EXPV := (Real.exp_pos _).le
+    have hEXPV1 : EXPV ≤ 1 := by
+      rw [hEXVdef, Real.exp_le_one_iff]
+      have hsum0 : (0 : ℝ) ≤ ∑ p ∈ Finset.range P,
+          Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+            (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2) :=
+        Finset.sum_nonneg fun p _ => Set.indicator_nonneg (fun _ _ => by norm_num) _
+      have hεnn : (0 : ℝ) ≤ (epsBW : ℝ) := by
+        have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+        exact_mod_cast h0
+      have hε30 : (0 : ℝ) ≤ (epsBW : ℝ) ^ 3 := by positivity
+      nlinarith [hsum0, hε30]
+    set WT : ℝ := ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A)
+      with hWTdef
+    have hWT0 : (0 : ℝ) ≤ WT := by rw [hWTdef]; exact Real.rpow_nonneg (by positivity) _
+    have hind0 : (0 : ℝ) ≤ (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+        then (1 : ℝ) else 0) := by split_ifs <;> norm_num
+    rw [← ENNReal.ofReal_mul hC10nn, ← ENNReal.ofReal_add hind0 (mul_nonneg hC10nn hEXPV0)]
+    refine ENNReal.ofReal_le_ofReal ?_
+    by_cases hcol : (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+    · rw [if_pos hcol]
+      have hWT1 : WT ≤ 1 := by
+        rw [hWTdef]
+        refine Real.rpow_le_one_of_one_le_of_nonpos ?_ (by linarith)
+        have : (1 : ℕ) ≤ max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 := le_max_right _ _
+        exact_mod_cast this
+      have hmul : EXPV * WT ≤ 1 := by
+        have := mul_le_mul hEXPV1 hWT1 hWT0 (by norm_num : (0 : ℝ) ≤ 1)
+        linarith
+      nlinarith [hmul, mul_nonneg hC10nn hEXPV0]
+    · rw [if_neg hcol]
+      have hadvm : e.1 + (pathSum v P).1 < m := by
+        have h09 : (0.9 : ℝ) * (m : ℝ) ≤ (m : ℝ) := by nlinarith [hmR.le]
+        have : ((e.1 + (pathSum v P).1 : ℕ) : ℝ) < (m : ℝ) :=
+          lt_of_lt_of_le (not_le.mp hcol) h09
+        exact_mod_cast this
+      have hdcol_eq : n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)
+          = m - (e.1 + (pathSum v P).1) := by omega
+      have hcast : ((n / 2 - (n / 2 - m + e.1 + (pathSum v P).1) : ℕ) : ℝ)
+          = (m : ℝ) - ((e.1 + (pathSum v P).1 : ℕ) : ℝ) := by
+        rw [hdcol_eq, Nat.cast_sub (le_of_lt hadvm)]
+      have hmaxge : (0.1 : ℝ) * (m : ℝ)
+          ≤ ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) := by
+        have hbase : (0.1 : ℝ) * (m : ℝ)
+            ≤ ((n / 2 - (n / 2 - m + e.1 + (pathSum v P).1) : ℕ) : ℝ) := by
+          rw [hcast]; have := not_le.mp hcol; linarith
+        have hle : ((n / 2 - (n / 2 - m + e.1 + (pathSum v P).1) : ℕ) : ℝ)
+            ≤ ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) := by
+          exact_mod_cast Nat.le_max_left _ _
+        linarith
+      have h01m_pos : (0 : ℝ) < 0.1 * (m : ℝ) := by positivity
+      have hconstEq : (0.1 * (m : ℝ)) ^ (-A) = (10 : ℝ) ^ A * (m : ℝ) ^ (-A) := by
+        rw [Real.mul_rpow (by norm_num) hmR.le]
+        congr 1
+        rw [show (0.1 : ℝ) = (10 : ℝ)⁻¹ by norm_num, Real.inv_rpow (by norm_num) (-A),
+          Real.rpow_neg (by norm_num) A, inv_inv]
+      have hWTbound : WT ≤ (10 : ℝ) ^ A * (m : ℝ) ^ (-A) := by
+        rw [hWTdef, ← hconstEq]
+        exact Real.rpow_le_rpow_of_nonpos h01m_pos hmaxge (by linarith)
+      calc EXPV * WT ≤ EXPV * ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)) :=
+            mul_le_mul_of_nonneg_left hWTbound hEXPV0
+        _ = 0 + (10 : ℝ) ^ A * (m : ℝ) ^ (-A) * EXPV := by ring
+  -- **Step 2 — apply the pointwise bound under the double sum.**
+  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_left'
+    (ENNReal.tsum_le_tsum fun v => mul_le_mul_left' (hpoint e v) _) _) ?_
+  -- **Step 3 — split the sum and factor the constant `10^A·m^{−A}` out of the damping part.**
+  have heq :
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+        (ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+              then (1 : ℝ) else 0)
+          + ENNReal.ofReal ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)) *
+            ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))))
+      = (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        + ENNReal.ofReal ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)) *
+          ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+            ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))) := by
+    have inner : ∀ e : ℕ × ℤ,
+        (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          (ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+                then (1 : ℝ) else 0)
+            + ENNReal.ofReal ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)) *
+              ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))))
+        = (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+            ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+              then (1 : ℝ) else 0))
+          + ENNReal.ofReal ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)) *
+            ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+              ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))) := by
+      intro e
+      rw [tsum_congr fun v => mul_add (hold.iid P v)
+          (ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+          (ENNReal.ofReal ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)) *
+            ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))),
+        ENNReal.tsum_add]
+      congr 1
+      rw [tsum_congr fun v => mul_left_comm (hold.iid P v)
+          (ENNReal.ofReal ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)))
+          (ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+            Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+              (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))),
+        ENNReal.tsum_mul_left]
+    rw [tsum_congr fun e => by
+      rw [inner e, mul_add (fpDist s e)], ENNReal.tsum_add]
+    congr 1
+    rw [tsum_congr fun e => mul_left_comm (fpDist s e)
+        (ENNReal.ofReal ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)))
+        (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+            Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+              (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))),
+      ENNReal.tsum_mul_left]
+  rw [heq]
+  -- **Step 4 — bound the two parts by `col_tail_mass_le` and `damping_expectation_le`.**
+  have hb1 := htail n ξ hξ F m hmT hmn l hpos t ht hmem s hs hs1 hs2
+  have hb2 := hdamp n ξ hξ F m hmC hmn l hpos t ht hmem s hs hs1 hs2
+  calc (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        + ENNReal.ofReal ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)) *
+          ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+            ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
+      ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2)
+        + ENNReal.ofReal ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)) * ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) :=
+        add_le_add hb1 (mul_le_mul_left' hb2 _)
+    _ = ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) + ENNReal.ofReal ((m : ℝ) ^ (-A) / 10) := by
+        rw [← ENNReal.ofReal_mul hC10nn, hconst10]
+    _ ≤ ENNReal.ofReal ((m : ℝ) ^ (-A)) := by
+        rw [← ENNReal.ofReal_add (by positivity) (by positivity)]
+        exact ENNReal.ofReal_le_ofReal (by linarith [hm0R])
 
 /-- **X11d crux — the damped-walk expectation bound** (paper (7.54)–(7.67)).
 This is the pure integral estimate that remains once `Q_le_damped_iter` (7.53) has
