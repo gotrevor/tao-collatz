@@ -34,6 +34,10 @@ namespace TaoCollatz
 
 open scoped ENNReal
 
+-- `epsBW = 10⁻¹⁰⁰⁰` ⟹ `1/ε = 10^1000` past the default `norm_num`
+-- exponentiation cap (256); raise it so `1 ≤ 10^1000` etc. evaluate.
+set_option exponentiation.threshold 3000
+
 /-- **Lemma 7.4 data, bundled** (paper pp.38–41): the family of corner triangles
 covering the black strip, with pairwise set-separation and strip confinement.
 Produced by `black_structure` (`Triangles.lean`); consumed by Cases 2–3 of
@@ -299,8 +303,8 @@ theorem budget_le_of_mem_triangle {n ξ : ℕ} (F : TriangleFamily n ξ)
   have hconf := F.confined t ht _ hqmem
   -- separation constant is nonnegative
   have hsep : (0 : ℝ) ≤ (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ)) := by
-    have heps : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 90 := by
-      rw [show epsBW = 1 / 10 ^ 90 from rfl]
+    have heps : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 1000 := by
+      rw [show epsBW = 1 / 10 ^ 1000 from rfl]
       push_cast
       norm_num
     rw [heps]

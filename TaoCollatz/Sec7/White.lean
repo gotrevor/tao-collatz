@@ -15,6 +15,9 @@ open scoped Real
 
 namespace TaoCollatz
 
+-- `epsBW = 10⁻¹⁰⁰⁰`: raise the `norm_num` exponentiation cap so `10^1000` evaluates.
+set_option exponentiation.threshold 3000
+
 /-- The magnitude factor `|cos(π θ(j,l))|` controlling the character sum (Lemma 7.2). -/
 noncomputable def cosπθ (n ξ : ℕ) (j : ℕ) (l : ℤ) : ℝ :=
   Real.cos (Real.pi * (θq n ξ j l : ℝ))
@@ -40,8 +43,8 @@ theorem white_cos_bound (n ξ : ℕ) (j : ℕ) (l : ℤ) (hw : white n ξ j l) :
   have hε : ((epsBW : ℚ) : ℝ) < |t| := by
     rw [ht, ← Rat.cast_abs]
     exact Rat.cast_lt.mpr hεq
-  have hεval : ((epsBW : ℚ) : ℝ) = 1 / 10 ^ 90 := by
-    rw [show epsBW = 1 / 10 ^ 90 from rfl]
+  have hεval : ((epsBW : ℚ) : ℝ) = 1 / 10 ^ 1000 := by
+    rw [show epsBW = 1 / 10 ^ 1000 from rfl]
     push_cast
     norm_num
   have hπ := Real.pi_gt_three

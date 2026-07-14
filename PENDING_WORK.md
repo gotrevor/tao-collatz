@@ -1,5 +1,40 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-eps (2026-07-14): **`epsBW` re-frozen `10⁻⁹⁰ → 10⁻¹⁰⁰⁰`** (judge pre-authorized) — DEDICATED lap
+
+The judge's pre-authorized ε-ruling (DIRECTION.md) fires: proved constants `B = 64 ≤ 250`,
+`Y = 150 ≤ 200` are inside the envelope, so `epsBW := 1/10^1000` is authorized.
+`sep = (1/10)·log(1/ε) = 100·log 10 ≈ 230.3`, which dominates the box `√(51²+150²) ≈ 158.4`.
+Executed as a **dedicated lap** (only the numeral + mechanical repairs, NO route work):
+
+- `Setup.lean`: `epsBW := 1/10^1000`.
+- Bulk `10^90 → 10^1000` (White, BlackEdge, ManyTriangles, Triangles).
+- **X3 Lemma 7.4 window cascade** (the ε-sweep "armed items", monotone-good): the buffer
+  radius grew `<26 → <301`, so the lattice window bumped `25 → 300` and the corner-scale
+  factor `9^25·2^25 → 9^300·2^300` across `sep_const_lt_twenty_six`,
+  `lattice_close_of_sq_dist_lt_sep`, `corner_scale_near_le`,
+  `weaklyBlack_of_corner_scale_near`, `black_near_black_mem_corner`. Content survives
+  (the far smaller ε overwhelms the larger window: `9^300·2^300·10^{-1000} ≈ 10^{-623} < 1/2`).
+- **Gotcha**: `norm_num` refuses to evaluate `a^b` past `exponentiation.threshold 256`;
+  added `set_option exponentiation.threshold 3000` to the four §7 files so `10^1000` and
+  `9^300·2^300` magnitude checks evaluate.
+
+All axiom-clean; full `lake build` green (3281 jobs). **JUDGE**: the ε-sweep
+re-ratification (seven armed items; `#print axioms` on X2/X3/X10) is yours to run.
+
+**NEXT — Lap D-box (route)**: now that `sep ≈ 230 > 158.4`, close `fpDist_any_triangle_le`
+(`ManyTriangles.lean:2095`). Rewire the box from the throwaway `40000000` (old `B`) to the
+sharp `64`, and from the existential `Y` to `150`: `exists_fpDist_localization_box`,
+`fpDist_any_triangle_le_of_localization_box` (hyp `5Y+40000000 ≤ 16X` and the `40000000`
+in the bad-event), `phaseInFamily_support_imp_localization_bad`, and
+`fpDist_localization_le_eighth` (swap `fpDist_height_tail_le_sixteenth` →
+`fpDist_height_tail_le_sixteenth_sharp`, `fpDist_linear_tail_le_sixteenth` → `_sharp`).
+Then `X = ⌈814/16⌉ = 51`, and `hsepXY : 51² + 150² < ((1/10)·log(1/10^1000))²` closes
+(`51²+150² = 25101 < 230.3² ≈ 53019`). That discharges `fpDist_any_triangle_le`, hence
+`fpDist_white_exit_deep`, hence the X9 white-exit kernel. (Do the `ManyTriangles.lean`
+BLUEPRINT §2 split first if iterating on that 5.2k-line file gets painful.)
+
+
 ## Lap C part 2b (2026-07-14): started X8 `fpDist_edgeWeight_le` — concavity core landed
 
 With Lap C/D done/gated (below), moved to the non-gated X8 crux

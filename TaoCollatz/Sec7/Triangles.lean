@@ -16,6 +16,11 @@ open scoped Real
 
 namespace TaoCollatz
 
+-- `epsBW = 10⁻¹⁰⁰⁰` puts `1/ε = 10^1000` past the default `norm_num`
+-- exponentiation-evaluation cap (256); raise it so the Lemma-7.4 corner-scale
+-- magnitude checks (`9^300·2^300·ε < 1/2`, etc.) evaluate.
+set_option exponentiation.threshold 3000
+
 /-! ### θ-identity exactness and the weakly-black claims (paper p.38)
 
 The recursions (7.13)/(7.14) hold mod ℤ (`θq_succ_j`/`θq_pred_l`). When the phase is
@@ -566,7 +571,7 @@ theorem black_nine_le (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) {j : ℕ} {l : ℤ} (h2j 
   have h1 : (1 : ℚ) / 3 ^ 8 ≤ 1 / 3 ^ (n - 2 * j) := by
     apply div_le_div_of_nonneg_left (by norm_num) (by positivity) hpow
   unfold epsBW at hle
-  have : (1 : ℚ) / 3 ^ 8 ≤ 1 / 10 ^ 90 := le_trans h1 (le_trans hlb hle)
+  have : (1 : ℚ) / 3 ^ 8 ≤ 1 / 10 ^ 1000 := le_trans h1 (le_trans hlb hle)
   norm_num at this
 
 /-! ### Upward-run termination: `l*` exists
@@ -1097,15 +1102,15 @@ theorem corner_triangle_confined {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 �
   have hlog3pos : (0:ℝ) < Real.log 3 := Real.log_pos (by norm_num)
   have hlog3le : Real.log 3 ≤ 1.0987 := by linarith [Real.log_three_lt_d9]
   have hSge : (9:ℝ) ≤ S := by
-    have h1 : (1:ℝ) / (epsBW : ℝ) = 10 ^ 90 := by
-      have : (epsBW : ℝ) = 1 / 10 ^ 90 := by
-        have : epsBW = 1 / 10 ^ 90 := rfl
+    have h1 : (1:ℝ) / (epsBW : ℝ) = 10 ^ 1000 := by
+      have : (epsBW : ℝ) = 1 / 10 ^ 1000 := by
+        have : epsBW = 1 / 10 ^ 1000 := rfl
         rw [this]; push_cast; norm_num
       rw [this]; norm_num
     rw [hS, h1]
     calc (9:ℝ) ≤ 13 * Real.log 2 := by linarith [Real.log_two_gt_d9]
       _ = Real.log (2 ^ 13) := by rw [Real.log_pow]; push_cast; ring
-      _ ≤ Real.log (10 ^ 90) := Real.log_le_log (by positivity) (by norm_num)
+      _ ≤ Real.log (10 ^ 1000) := Real.log_le_log (by positivity) (by norm_num)
   -- assemble: 2·(p.1 - j*)·log3 ≤ -S + (n - 2j*)·log3 ⇒ p.1 + 1 ≤ n/2 - S/10
   have hcastk : ((n - 2 * jstar n ξ j l : ℕ) : ℝ)
       = (n : ℝ) - 2 * (jstar n ξ j l : ℝ) := by
@@ -1131,8 +1136,8 @@ theorem corner_triangle_strip {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ �
   have hreal := corner_triangle_confined hξ h2j hb hp
   have hSpos : (0:ℝ) ≤ Real.log (1 / (epsBW : ℝ)) := by
     apply Real.log_nonneg
-    rw [show (epsBW : ℝ) = 1 / 10 ^ 90 from by
-      rw [show epsBW = 1 / 10 ^ 90 from rfl]; push_cast; norm_num]
+    rw [show (epsBW : ℝ) = 1 / 10 ^ 1000 from by
+      rw [show epsBW = 1 / 10 ^ 1000 from rfl]; push_cast; norm_num]
     norm_num
   have h2 : 2 * (p.1 : ℝ) + 2 ≤ (n : ℝ) := by linarith
   exact_mod_cast (by push_cast; linarith : (2 * p.1 + 1 : ℝ) ≤ (n : ℝ))
@@ -1238,17 +1243,20 @@ theorem corner_top_white_gap {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
 
 /-! ### The quantitative white buffer (Lemma 7.4, Claim (*))
 
-At `epsBW = 10⁻⁹⁰` the required buffer radius is less than `26`.  Thus a
-lattice point in the buffer differs by at most `25` in either coordinate from a
+At `epsBW = 10⁻¹⁰⁰⁰` the required buffer radius is less than `301`.  Thus a
+lattice point in the buffer differs by at most `300` in either coordinate from a
 point of the triangle.  The following lemmas turn that coarse integral bound into
 the weak-black estimates used in the paper's Cases 1--3. -/
 
-/-- The Lemma-7.4 buffer radius is strictly less than `26`. -/
+/-- The Lemma-7.4 buffer radius is strictly less than `301` (at `ε = 10⁻¹⁰⁰⁰`,
+`sep = 100·log 10 ≈ 230.3`; the crude bound `100·log 10 ≤ 400·log 2 < 277.3`
+clears `301`).  The lattice window in `lattice_close_of_sq_dist_lt_sep` is the
+matching `300`. -/
 theorem sep_const_lt_twenty_six :
-    (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ)) < 26 := by
-  have hε : (epsBW : ℝ) = 1 / 10 ^ 90 := by
+    (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ)) < 301 := by
+  have hε : (epsBW : ℝ) = 1 / 10 ^ 1000 := by
     norm_num [epsBW]
-  have hone : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 90 := by
+  have hone : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 1000 := by
     rw [hε]
     norm_num
   have hlog : Real.log (10 : ℝ) ≤ Real.log (2 ^ 4 : ℝ) :=
@@ -1264,9 +1272,9 @@ theorem sep_const_lt_twenty_six :
 /-- The chosen epsilon gives more than twenty lattice units of separation. -/
 theorem twenty_lt_sep_const :
     (20 : ℝ) < (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ)) := by
-  have hε : (epsBW : ℝ) = 1 / 10 ^ 90 := by
+  have hε : (epsBW : ℝ) = 1 / 10 ^ 1000 := by
     norm_num [epsBW]
-  have hone : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 90 := by
+  have hone : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 1000 := by
     rw [hε]
     norm_num
   have hp : (2 : ℝ) ^ 33 < 10 ^ 10 := by norm_num
@@ -1278,34 +1286,34 @@ theorem twenty_lt_sep_const :
   nlinarith [Real.log_two_gt_d9]
 
 /-- Squared distance below the buffer radius gives a coordinatewise lattice bound
-of `25`.  This deliberately uses a coarse constant; `10⁻⁹⁰` leaves enormous
+of `300`.  This deliberately uses a coarse constant; `10⁻¹⁰⁰⁰` leaves enormous
 room in all subsequent phase estimates. -/
 theorem lattice_close_of_sq_dist_lt_sep {p q : ℕ × ℤ}
     (hdist : ((p.1 : ℝ) - q.1) ^ 2 + ((p.2 : ℝ) - q.2) ^ 2 <
       ((1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) ^ 2) :
-    p.1 ≤ q.1 + 25 ∧ q.1 ≤ p.1 + 25 ∧
-      p.2 ≤ q.2 + 25 ∧ q.2 ≤ p.2 + 25 := by
+    p.1 ≤ q.1 + 300 ∧ q.1 ≤ p.1 + 300 ∧
+      p.2 ≤ q.2 + 300 ∧ q.2 ≤ p.2 + 300 := by
   have hsep0 : 0 ≤ (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ)) := by
     apply mul_nonneg (by norm_num)
     apply Real.log_nonneg
-    rw [show epsBW = 1 / 10 ^ 90 from rfl]
+    rw [show epsBW = 1 / 10 ^ 1000 from rfl]
     push_cast
     norm_num
   have hsep := sep_const_lt_twenty_six
-  have hsq : ((p.1 : ℝ) - q.1) ^ 2 + ((p.2 : ℝ) - q.2) ^ 2 < 26 ^ 2 := by
+  have hsq : ((p.1 : ℝ) - q.1) ^ 2 + ((p.2 : ℝ) - q.2) ^ 2 < 301 ^ 2 := by
     nlinarith [sq_nonneg ((p.1 : ℝ) - q.1), sq_nonneg ((p.2 : ℝ) - q.2)]
-  have hjlo : -(26 : ℝ) < (p.1 : ℝ) - q.1 := by
+  have hjlo : -(301 : ℝ) < (p.1 : ℝ) - q.1 := by
     nlinarith [sq_nonneg ((p.2 : ℝ) - q.2)]
-  have hjhi : (p.1 : ℝ) - q.1 < 26 := by
+  have hjhi : (p.1 : ℝ) - q.1 < 301 := by
     nlinarith [sq_nonneg ((p.2 : ℝ) - q.2)]
-  have hllo : -(26 : ℝ) < (p.2 : ℝ) - q.2 := by
+  have hllo : -(301 : ℝ) < (p.2 : ℝ) - q.2 := by
     nlinarith [sq_nonneg ((p.1 : ℝ) - q.1)]
-  have hlhi : (p.2 : ℝ) - q.2 < 26 := by
+  have hlhi : (p.2 : ℝ) - q.2 < 301 := by
     nlinarith [sq_nonneg ((p.1 : ℝ) - q.1)]
-  have hjloZ : -(26 : ℤ) < (p.1 : ℤ) - q.1 := by exact_mod_cast hjlo
-  have hjhiZ : (p.1 : ℤ) - q.1 < 26 := by exact_mod_cast hjhi
-  have hlloZ : -(26 : ℤ) < p.2 - q.2 := by exact_mod_cast hllo
-  have hlhiZ : p.2 - q.2 < 26 := by exact_mod_cast hlhi
+  have hjloZ : -(301 : ℤ) < (p.1 : ℤ) - q.1 := by exact_mod_cast hjlo
+  have hjhiZ : (p.1 : ℤ) - q.1 < 301 := by exact_mod_cast hjhi
+  have hlloZ : -(301 : ℤ) < p.2 - q.2 := by exact_mod_cast hllo
+  have hlhiZ : p.2 - q.2 < 301 := by exact_mod_cast hlhi
   constructor
   · omega
   constructor
@@ -1314,35 +1322,35 @@ theorem lattice_close_of_sq_dist_lt_sep {p q : ℕ × ℤ}
   · omega
   · omega
 
-/-- Moving at most `25` exponent steps past a corner-fibre point costs at most
-the fixed factor `9²⁵2²⁵`. -/
+/-- Moving at most `300` exponent steps past a corner-fibre point costs at most
+the fixed factor `9³⁰⁰2³⁰⁰`. -/
 theorem corner_scale_near_le {n ξ J : ℕ} {L : ℤ}
     {a b ap bp : ℕ}
     (hscale : (9 : ℚ) ^ ap * 2 ^ bp * |θq n ξ J L| ≤ epsBW)
-    (ha : a ≤ ap + 25) (hb : b ≤ bp + 25) :
+    (ha : a ≤ ap + 300) (hb : b ≤ bp + 300) :
     (9 : ℚ) ^ a * 2 ^ b * |θq n ξ J L|
-      ≤ (9 ^ 25 * 2 ^ 25 : ℚ) * epsBW := by
-  have h9 : (9 : ℚ) ^ a ≤ 9 ^ (ap + 25) :=
+      ≤ (9 ^ 300 * 2 ^ 300 : ℚ) * epsBW := by
+  have h9 : (9 : ℚ) ^ a ≤ 9 ^ (ap + 300) :=
     pow_le_pow_right₀ (by norm_num) ha
-  have h2 : (2 : ℚ) ^ b ≤ 2 ^ (bp + 25) :=
+  have h2 : (2 : ℚ) ^ b ≤ 2 ^ (bp + 300) :=
     pow_le_pow_right₀ (by norm_num) hb
   calc (9 : ℚ) ^ a * 2 ^ b * |θq n ξ J L|
-      ≤ 9 ^ (ap + 25) * 2 ^ (bp + 25) * |θq n ξ J L| := by
+      ≤ 9 ^ (ap + 300) * 2 ^ (bp + 300) * |θq n ξ J L| := by
         gcongr <;> positivity
-    _ = (9 ^ 25 * 2 ^ 25 : ℚ) *
+    _ = (9 ^ 300 * 2 ^ 300 : ℚ) *
         (9 ^ ap * 2 ^ bp * |θq n ξ J L|) := by
       rw [pow_add, pow_add]
       ring
-    _ ≤ (9 ^ 25 * 2 ^ 25 : ℚ) * epsBW := by
+    _ ≤ (9 ^ 300 * 2 ^ 300 : ℚ) * epsBW := by
       gcongr
 
-/-- A point at most `25` exponent steps beyond a corner-fibre point is weakly
+/-- A point at most `300` exponent steps beyond a corner-fibre point is weakly
 black.  This is the exact-rational substitute for the paper's bounds
 `ε^(1-(log 9 + log 2)/10) < 1/100`. -/
 theorem weaklyBlack_of_corner_scale_near {n ξ J : ℕ} {L : ℤ}
     {a b ap bp : ℕ}
     (hscale : (9 : ℚ) ^ ap * 2 ^ bp * |θq n ξ J L| ≤ epsBW)
-    (ha : a ≤ ap + 25) (hb : b ≤ bp + 25) :
+    (ha : a ≤ ap + 300) (hb : b ≤ bp + 300) :
     weaklyBlack n ξ (J + a) (L - b) := by
   have hnear := corner_scale_near_le (n := n) (ξ := ξ) (J := J) (L := L)
     hscale ha hb
@@ -1350,7 +1358,7 @@ theorem weaklyBlack_of_corner_scale_near {n ξ J : ℕ} {L : ℤ}
   unfold weaklyBlack
   calc |θq n ξ (J + a) (L - b)|
       ≤ (9 : ℚ) ^ a * 2 ^ b * |θq n ξ J L| := hphase
-    _ ≤ (9 ^ 25 * 2 ^ 25 : ℚ) * epsBW := hnear
+    _ ≤ (9 ^ 300 * 2 ^ 300 : ℚ) * epsBW := hnear
     _ ≤ 1 / 100 := by
       rw [epsBW]
       norm_num
@@ -1468,13 +1476,13 @@ theorem black_near_black_mem_corner {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
       set bq := (L - q.2).toNat with hbq
       have hqj : J + aq = q.1 := by omega
       have hql : L - (bq : ℤ) = q.2 := by omega
-      have ha : aq ≤ ap + 25 := by omega
-      have hb : bq ≤ bp + 25 := by omega
+      have ha : aq ≤ ap + 300 := by omega
+      have hb : bq ≤ bp + 300 := by omega
       have hnear := corner_scale_near_le (n := n) (ξ := ξ) (J := J) (L := L)
         hscale ha hb
       have hsmall : (9 : ℚ) ^ aq * 2 ^ bq * |θq n ξ J L| < 1 / 2 := by
         calc (9 : ℚ) ^ aq * 2 ^ bq * |θq n ξ J L|
-            ≤ (9 ^ 25 * 2 ^ 25 : ℚ) * epsBW := hnear
+            ≤ (9 ^ 300 * 2 ^ 300 : ℚ) * epsBW := hnear
           _ < 1 / 2 := by rw [epsBW]; norm_num
       have heq := θq_iterate_exact n ξ J L aq bq hsmall
       have hscaleq : (9 : ℚ) ^ aq * 2 ^ bq * |θq n ξ J L| ≤ epsBW := by
@@ -1492,7 +1500,7 @@ theorem black_near_black_mem_corner {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
       -- then propagate weak blackness horizontally to the known white point.
       have hLq : L + 1 ≤ q.2 := by omega
       set b := (q.2 - (L + 1)).toNat with hb
-      have hb25 : b ≤ 25 := by omega
+      have hb300 : b ≤ 300 := by omega
       have hheight : q.2 - (b : ℤ) = L + 1 := by omega
       have htop : weaklyBlack n ξ q.1 (L + 1) := by
         unfold weaklyBlack
@@ -1502,9 +1510,9 @@ theorem black_near_black_mem_corner {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
               θq_iterate_abs_le n ξ q.1 q.2 0 b
           _ ≤ 2 ^ b * epsBW := by simpa using
               mul_le_mul_of_nonneg_left hqb (by positivity : (0 : ℚ) ≤ (2 : ℚ) ^ b)
-          _ ≤ 2 ^ 25 * epsBW := by
+          _ ≤ 2 ^ 300 * epsBW := by
               exact mul_le_mul_of_nonneg_right
-                (pow_le_pow_right₀ (by norm_num : (1 : ℚ) ≤ 2) hb25)
+                (pow_le_pow_right₀ (by norm_num : (1 : ℚ) ≤ 2) hb300)
                 (by rw [epsBW]; norm_num)
           _ ≤ 1 / 100 := by rw [epsBW]; norm_num
       have hpTopBlack : black n ξ p.1 L := by
@@ -1519,7 +1527,7 @@ theorem black_near_black_mem_corner {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
           intro j'' hj1 hj2
           set a := j'' - J with ha
           have hja : J + a = j'' := by omega
-          have haa : a ≤ ap + 25 := by omega
+          have haa : a ≤ ap + 300 := by omega
           have hw := weaklyBlack_of_corner_scale_near
             (n := n) (ξ := ξ) (J := J) (L := L)
             (a := a) (b := 0) hscale haa (by omega)
@@ -1539,7 +1547,7 @@ theorem black_near_black_mem_corner {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
     have hqJ' : q.1 < J := by omega
     have hJpos : 1 ≤ J := by omega
     set a := (J - 1) - q.1 with ha
-    have ha25 : a ≤ 25 := by omega
+    have ha300 : a ≤ 300 := by omega
     have hcol : q.1 + a = J - 1 := by omega
     have hleftAtQ : weaklyBlack n ξ (J - 1) q.2 := by
       unfold weaklyBlack
@@ -1549,9 +1557,9 @@ theorem black_near_black_mem_corner {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
             by simpa using θq_iterate_abs_le n ξ q.1 q.2 a 0
         _ ≤ 9 ^ a * epsBW := by simpa using
             mul_le_mul_of_nonneg_left hqb (by positivity : (0 : ℚ) ≤ (9 : ℚ) ^ a)
-        _ ≤ 9 ^ 25 * epsBW := by
+        _ ≤ 9 ^ 300 * epsBW := by
             exact mul_le_mul_of_nonneg_right
-              (pow_le_pow_right₀ (by norm_num : (1 : ℚ) ≤ 9) ha25)
+              (pow_le_pow_right₀ (by norm_num : (1 : ℚ) ≤ 9) ha300)
               (by rw [epsBW]; norm_num)
         _ ≤ 1 / 100 := by rw [epsBW]; norm_num
     have hcornerBlack : black n ξ J L := by
@@ -1563,7 +1571,7 @@ theorem black_near_black_mem_corner {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
       exact hm.resolve_left (by omega)
     by_cases hLq : L ≤ q.2
     · set b := (q.2 - L).toNat with hb
-      have hb25 : b ≤ 25 := by omega
+      have hb300 : b ≤ 300 := by omega
       have htarget : q.2 - (b : ℤ) = L := by omega
       have hweak : weaklyBlack n ξ (J - 1) L := by
         unfold weaklyBlack
@@ -1573,11 +1581,11 @@ theorem black_near_black_mem_corner {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
               θq_iterate_abs_le n ξ q.1 q.2 a b
           _ ≤ (9 ^ a * 2 ^ b : ℚ) * epsBW := by
               exact mul_le_mul_of_nonneg_left hqb (by positivity)
-          _ ≤ (9 ^ 25 * 2 ^ 25 : ℚ) * epsBW := by
+          _ ≤ (9 ^ 300 * 2 ^ 300 : ℚ) * epsBW := by
               apply mul_le_mul_of_nonneg_right _ (by rw [epsBW]; norm_num)
               exact mul_le_mul
-                (pow_le_pow_right₀ (by norm_num : (1 : ℚ) ≤ 9) ha25)
-                (pow_le_pow_right₀ (by norm_num : (1 : ℚ) ≤ 2) hb25)
+                (pow_le_pow_right₀ (by norm_num : (1 : ℚ) ≤ 9) ha300)
+                (pow_le_pow_right₀ (by norm_num : (1 : ℚ) ≤ 2) hb300)
                 (by positivity) (by positivity)
           _ ≤ 1 / 100 := by rw [epsBW]; norm_num
       exact False.elim (hleftWhite (black_of_weaklyBlack_succ_j hweak (by
@@ -1591,7 +1599,7 @@ theorem black_near_black_mem_corner {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
         intro i hi
         set b := (L - (q.2 + (i + 1))).toNat with hb
         have hz : L - (b : ℤ) = q.2 + (i + 1) := by omega
-        have hbb : b ≤ bp + 25 := by omega
+        have hbb : b ≤ bp + 300 := by omega
         have hw := weaklyBlack_of_corner_scale_near
           (n := n) (ξ := ξ) (J := J) (L := L)
           (a := 0) (b := b) hscale (by omega) hbb
@@ -1694,7 +1702,7 @@ theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
       have hconf := corner_triangle_confined hξ h2j hwb hq'
       have hS : (0:ℝ) ≤ Real.log (1 / (epsBW : ℝ)) := by
         apply Real.log_nonneg
-        rw [show epsBW = 1 / 10 ^ 90 from rfl]
+        rw [show epsBW = 1 / 10 ^ 1000 from rfl]
         push_cast
         norm_num
       have h2 : (2 * q.1 + 2 : ℝ) ≤ (n : ℝ) := by push_cast; linarith

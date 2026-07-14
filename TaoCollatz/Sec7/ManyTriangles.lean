@@ -78,6 +78,9 @@ namespace TaoCollatz
 
 open scoped ENNReal
 
+-- `epsBW = 10⁻¹⁰⁰⁰`: raise the `norm_num` exponentiation cap so `10^1000` evaluates.
+set_option exponentiation.threshold 3000
+
 /-- **The `(k+p)`-step renewal endpoint law** (paper `v_{[1,k+p]}` of Lemma 7.10):
 the first-passage endpoint at budget `s` (the `k` steps, `fpDist s`) followed by `p`
 further independent `Hold` steps (`iidSum hold p`). By independence its law is the
@@ -146,8 +149,8 @@ theorem TriangleFamily.not_mem_two {n ξ : ℕ} (F : TriangleFamily n ξ)
     {q : ℕ × ℤ} (hq : q ∈ triangle t.1 t.2.1 t.2.2)
     (hq' : q ∈ triangle t'.1 t'.2.1 t'.2.2) : False := by
   have hsep := F.separated t ht t' ht' hne q hq q hq'
-  have heps : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 90 := by
-    rw [show epsBW = 1 / 10 ^ 90 from rfl]; push_cast; norm_num
+  have heps : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 1000 := by
+    rw [show epsBW = 1 / 10 ^ 1000 from rfl]; push_cast; norm_num
   have hlogpos : (0 : ℝ) < Real.log (1 / (epsBW : ℝ)) := by
     rw [heps]; exact Real.log_pos (by norm_num)
   have hpos : (0 : ℝ) < ((1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) ^ 2 :=
