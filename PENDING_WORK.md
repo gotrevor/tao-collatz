@@ -17,12 +17,30 @@ factoring `ofReal(10^A m^{−A})` out of the damping sum, then the constant coll
    X11c machinery plugs in. Attack: `E[exp(−ε³Nw)] ≤ P(Nw≤K) + e^{−10A}` (K=⌈10A/ε³⌉; the
    `e^{−10A} ≤ 10^{−A−1}` slack holds for A≥1), then `P(Nw≤K) ≤ P(reach R)+P(E∗)` via
    `deterministic_encounter_or_bigTriangle` (cumWhite=Nw through `encFold_cumWhite`), bounded
-   by `reaches_fewWhite_mass_le_ten` (≤10^{−(A+1)}) + `estar_union_le ∘ bigTriangle_of_encounter`.
-   ⚠ CONSTANT CHASE: `reaches_fewWhite_mass_le_ten` gives 10^{−(A+1)} but summing with e^{−10A}
-   + E∗ must stay ≤ 10^{−A−1}; may need to re-derive with a bigger R (the lemma's hyp
-   `K+(A+3)log10+2 ≤ εR` allows tightening to (A+4) etc.) OR route the e^{−10A} into the tail
-   more carefully. Study the exact (7.55)→(7.56) slack in Tao pp.48-49 before coding.
-   P = `deterministic_encounter_or_bigTriangle` P₀ (needs g,R,K,A).
+   by `reaches_fewWhite_mass_le_ten` + `estar_union_le ∘ bigTriangle_of_encounter`.
+
+   ### ⚠⚠ ROUTE FINDING (2026-07-14, lap decomp-3): **base-4 E∗ threshold is TOO SMALL —
+   but the fix needs NO reproving, just A-SCALED instantiation.**
+   The E∗ union bound `estar_union_le` gives `P(E∗) ≤ C'·A²·4^{−A} + C'·e^{−cA²}`, and
+   `4^{−A} = 10^{−0.6A} ≫ 10^{−A−1}`, so **`A²·4^{−A} > 10^{−A−2}` for ALL A≥1** — the E∗ mass
+   at base 4 cannot fit the `damping_expectation_le` budget (worse, its (7.54) contribution
+   `10^A·A²4^{−A} = A²·2.5^A → ∞`). Base 4 must become a base `> 10` (column-weight base).
+   **KEY: Lemma 7.10 (`bigTriangle_walk_le`) is base-FREE (`s'` is a free ∀-param), and in the
+   geometry lemmas `A` enters ONLY through the threshold `4^A`** (`deterministic_encounter_claim`,
+   `_or_bigTriangle`, `bigTriangle_of_encounter`, `estar_union_le` all take `A` as a free
+   universal, used only in `4^A(1+p)³`). So instantiate them at **`A' := κ·A`** (integer κ, e.g.
+   κ=10): since `4^{κA} = (4^κ)^A`, the effective base becomes `4^κ = 4^{10} ≈ 10^6`, giving
+   `P(E∗) ≤ C'(κA)²·(4^κ)^{−A} + … = C'κ²A²·10^{−6A}·(…) ≤ 10^{−(A+3)}` for A≥A₀ — NO reproving.
+   (Need `A' = κA ≥ A₀_estar/claim`; absorb into `Cthr`/A₀.)
+   Likewise **`reaches_fewWhite_mass_le_ten` tunes to `10^{−(A+j)}`** by instantiating at `A+j−1`
+   (its `A` is a free universal appearing only in the bound `10^{−(A+1)}` and hyp
+   `K+(A+3)log10+2 ≤ εR`; at `A+2` → `10^{−(A+3)}` under `K+(A+5)log10+2 ≤ εR`, so
+   `R := ⌈(K+(A+5)log10+2)/ε⌉`).
+   **Net assembly closes**: `P(F∗) ≤ 10^{−(A+3)}` [reaches at A+2] `+ P(E∗) ≤ 10^{−(A+3)}` [estar
+   at κA] `+ e^{−10A} ≤ 10^{−(A+3)}` [A≥A₀] `= 3·10^{−(A+3)} = 0.03·10^{−(A+1)} ≤ 10^{−(A+1)}`. ✓
+   ⚠ shared gate `g`: obtain `g` from `reaches_fewWhite_mass_le_ten` (existential) and pass THAT
+   same `g` into `deterministic_encounter_or_bigTriangle` (parameter) — that is why reaches
+   provides `g` existentially. P = `_or_bigTriangle` P₀ at `A'=κA` (needs g,R,K,A').
 2. **`col_tail_mass_le`** (`:1443`) — standard Gaussian tail (7.54 bad column). `P`-parametric:
    mass{adv ≥ 0.9m} ≤ m^{−A}/2 for m≥Cthr. Bridge walk→marginal via `fpDist_walk_eq_fpDistPlus`,
    then `fpDistPlus_col_tail` (dev D≍m, via `budget_le_of_mem_triangle`: s·log2≤(m+2)log9), then
