@@ -1,5 +1,39 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-7 (2026-07-14): **Parseval on `ZMod N` PROVED (S4 brick) + full C10 route mapped**
+
+With §7 done and all of SyracRV closed, the two remaining spine sorries are the HEROIC
+analytic nodes. Dependency order (BLUEPRINT critical path `… → C10 → C9 → C6`) makes
+**C10 = `fine_scale_mixing` (§6, Prop 1.14) the upstream target** (C9/`stabilization` §5
+consumes it). This lap NARROWED C10:
+
+**Landed (axiom-clean, build green):** `TaoCollatz/Fourier/Parseval.lean` (node S4) —
+`ZMod.dft_parseval_complex` (`∑ₖ 𝓕Φ(k)·conj = N·∑ⱼ Φ(j)·conj`) and `ZMod.dft_parseval`
+(real: `∑ₖ ‖𝓕Φ(k)‖² = N·∑ⱼ ‖Φ(j)‖²`), derived from `stdAddChar` orthogonality
+(`AddChar.sum_eq_zero_of_ne_one` + `isPrimitive_stdAddChar`) via the double-sum swap. Mathlib
+has `ZMod.dft` + inversion `dft_dft` but NOT Parseval; now we do.
+
+**Full C10 route (`fine_scale_mixing`), derived & ready to execute next lap:**
+Let `c_n(Y) := (syracZ n Y).toReal` (the density; ∑=1). The 3ᵐ-conditional average in `osc`
+= projection onto **low frequencies** `{ξ : 3^{n-m} ∣ ξ.val}` (those ξ constant on 3ᵐ-cosets:
+`e(ξ·3ᵐt/3ⁿ)=1 ⟺ 3^{n-m}∣ξ`). So the deviation `c_n − avg = 3⁻ⁿ ∑_{high ξ} ĉ_n(ξ) e(ξ·/3ⁿ)`
+where `high = {ξ : ¬ 3^{n-m}∣ξ.val}`, `ĉ_n(ξ) = ∑_Y c_n(Y) e(-ξY/3ⁿ)` (= `𝓕 (c_n)` up to sign;
+note `ĉ_n(ξ) = (syracZ n).cexpect (Y ↦ eC(-(ξ.val·Y.val)/3ⁿ))`, EXACTLY charFn_decay's expr).
+1. **Cauchy–Schwarz** (`osc = ∑_Y |dev|`): `osc ≤ √(3ⁿ)·√(∑_Y |dev|²)`, and by **`dft_parseval`**
+   `∑_Y|dev|² = 3⁻ⁿ ∑_{high ξ}|ĉ_n(ξ)|²` ⟹ `osc ≤ √(∑_{high ξ}|ĉ_n(ξ)|²)`.  ← new sub-lemma.
+2. **Per-frequency decay**: for `ξ = 3ʲ·η`, `η` not div by 3, `j = v₃(ξ) < n-m`, the projection
+   compat `syracZ_map_cast` gives `ĉ_n(3ʲη) = ĉ_{n-j}(η)`; **Prop 1.17 `charFn_decay`** (PROVED,
+   axiom-clean) bounds `|ĉ_{n-j}(η)| ≤ C·(n-j)^{-A} ≤ C·m^{-A}` (since n-j ≥ m+1).  ← new sub-lemma.
+3. **Sum the frequencies**: split `high` by `j = v₃(ξ)`; at each `j`, `∑_{η not÷3, lvl n-j}|ĉ_{n-j}(η)|²
+   ≤ ∑_all |ĉ_{n-j}|² = 3^{n-j}∑_Y c_{n-j}(Y)²` (Parseval at lvl n-j). Balance the count vs the
+   Prop-1.17 decay to get `∑_{high}|ĉ_n|² ≤ C'·m^{-A'}`; combine with step 1 ⟹ `osc ≤ C·m^{-A}`.
+   (Constant chase: choose the Prop-1.17 exponent `A` large enough to beat the ≤ n frequency
+   scales; each scale contributes `≲ m^{-2A}`, ∑ over j<n-m scales is `≲ n·m^{-2A} ≤ m^{1-2A}`.)
+
+**NEXT lap**: state the two sub-lemmas (step-1 CS/Parseval bridge `osc_le_sqrt_highfreq`, step-2/3
+decay `highfreq_l2_le`) in `Sec6/MixingFromDecay.lean` as `sorry`s, prove `fine_scale_mixing`
+from them, then discharge each. The Parseval brick + charFn_decay + syracZ_map_cast are all in hand.
+
 ## Lap fruit-6 (2026-07-14): **Lemma 1.12 `syracZ_recursion` PROVED — ALL of SyracRV closed**
 
 The last SyracRV stub is done; `Syracuse/SyracRV.lean` is now **sorry-free & axiom-clean**

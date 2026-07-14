@@ -12,6 +12,7 @@ import TaoCollatz.Prob.LocalInstances
 import TaoCollatz.Syracuse.SyracRV
 import TaoCollatz.Syracuse.ValuationDist
 import TaoCollatz.Fourier.ZMod3
+import TaoCollatz.Fourier.Parseval
 import TaoCollatz.Sec5.FirstPassage
 import TaoCollatz.Sec6.MixingFromDecay
 import TaoCollatz.Sec7.Setup
