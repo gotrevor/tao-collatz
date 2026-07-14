@@ -1,4 +1,56 @@
-# 🎯 C7 integral test — SCAFFOLDING DONE; 3 analytic holes remain (2026-07-14, HEAD `b4870c5`)
+# 🎯 C8 close — attack plan (2026-07-14 review lap, HEAD `810518b`)
+
+**Frontier**: C10 ✅ done · C7 ✅ **DONE + axiom-clean** (`first_passage_nonescape` = trust base,
+verified this lap) · C8 = live target. **C8 = `first_passage_approx`** (Prop 5.2 / (5.8),
+`Sec5/ApproxFormula.lean`), 3 named sorries. Per DIRECTION: hardest-first = the **assembly** (:97, the
+Lemma-2.1 affine reindexing), then the two whp sub-lemmas. C9 `stabilization` (`FirstPassage.lean:1351`)
+after C8.
+
+## Tao's Prop 5.2 proof (pp.22–25) → Lean decomposition
+Read verbatim from the PDF this lap. The proof of (5.8) is a chain:
+1. **(5.12)** `approx_good_tuple_whp` (PINNED sorry, :116) — `ℙ(ā^{(n₀)}(N_y) ∉ 𝒜^{(n₀)}) ≪ log^{-10} x`.
+   From (5.4)=C5 `valuation_dist` (✅) + Lemma 2.2=S3 `geomHalf_tail_bound` (✅, two-sided): each of the
+   `n₀+1` prefixes deviates `≥ log^{0.6} x` w.p. `≪ exp(−c log^{0.2} x)`; union bound. **No C7.**
+2. **(5.13)/(5.14)** pointwise orbit estimate: on `{ā^{(n₀)} ∈ 𝒜}`, `Syr^n(N_y) = exp(O(log^{0.6}x))(3/4)^n N_y`
+   for `0 ≤ n ≤ n₀`. Pure consequence of goodTuple (5.11) + (5.1) + (1.7) `syr_iterate_key` (✅).
+3. **(5.15)/(5.16)** `approx_passtime_window` (PINNED sorry, :132) — `ℙ(T_x(N_y) ∈ I_y) = 1 − O(log^{-c}x)`.
+   THE C7 consumer: complement `{¬passes} ∪ {passes ∧ T_x∉I_y}`. First term = `first_passage_nonescape`
+   (✅ now proved). Second = integral test that `N_y` is not within `2 log^{0.8}x` of a window edge (reuse
+   C7's `classMass`/`windowMass`/`intTest_*` machinery in FirstPassage.lean) + (5.12).
+4. **(5.17) B_{n,y} event chain** — pointwise event-algebra identity: for `n ∈ I_y`, the event
+   `(T_x(N_y)=n) ∧ Pass∈E ∧ good` **equals** `B_{n,y} := (T_x(Syr^{n-m₀}N_y)=m₀) ∧ (Pass_x(Syr^{n-m₀}N_y)∈E) ∧ good`,
+   which **equals** `(Syr^{n-m₀}N_y ∈ E') ∧ good`. "Step back `m₀` steps." Gives
+   `ℙ(Pass∈E) = ∑_{n∈I_y} ℙ((Syr^{n-m₀}N_y ∈ E') ∧ good^{(n-m₀)}) + O(log^{-c}x)` (using 𝒜^{(n₀)}⊂𝒜^{(n-m₀)} + (5.12)).
+5. **(5.18) Lemma 2.1 affine reindexing** — the ROUTE-DECISIVE piece. `= valVec_unique` (Valuation.lean:483).
+   `ℙ((Syr^{n-m₀}N_y∈E') ∧ good^{(n-m₀)}) = ∑_{ā∈𝒜}∑_{M∈E'} ℙ(Aff_ā(N_y)=M)`, giving (5.8).
+
+## ⚠️ ROUTE-DECISIVE INSIGHT (banked this lap — do NOT try to prove an EXACT reindex identity)
+Our Lean `Aff N k ā = (3^k N + fnat k ā)/2^{pre ā k}` uses **truncating ℕ-division**; Tao's `Aff_ā` (1.3)
+uses **exact** division (his (5.19): `N_y = 2^{|ā|}(M−F)/3^k`, one N per (ā,M)). So the pointwise count
+`#{ā∈𝒜 : Aff N k ā ∈ E'}` can EXCEED 1 (truncation coincidences where `2^{pre ā k} ∤ 3^k N+fnat k ā`,
+`Aff` = floor, `valVec_unique` gives ā=valVec ONLY under the divisibility guard). **BUT this is by design
+absorbed in the `O(log^{-c}x)` error**: Tao's (5.18)–(5.19) computation carries `M − F = (1+O(x^{-c}))M`
+and `+O(3^{n-m₀})` precisely to handle the rounding. So step 5 is an **APPROXIMATE** reindex (matching
+`first_passage_approx`'s `≤ C·log^{-c}x`), never an exact equality. A grind lap that tries to prove
+`ℙ(...) = ∑ ℙ(Aff)` exactly will fail on the truncation set. **Not a JUDGE-FLAG** — the pinned
+`approxMainTerm` + the statement's error term are consistent with this; just prove the ≤ form.
+
+## Banked this lap (proved, axiom-clean; in ApproxFormula.lean)
+- **`aff_valVec_eq_syr`**: for odd N, `Aff N k (valVec N k) = syr^[k] N` — Lemma 2.1's exact GENERATING
+  direction (the "main" contribution; truncation ā's are the absorbed error). Foundation for step 5.
+
+## Next moves (hardest-first)
+1. Prove the pointwise event-algebra of step 4 (the `B_{n,y}` chain) as an internal lemma — it's exact
+   (no error), uses `syr_iterate_key` + `passTime`/`passLoc` defs + the E' def. This de-risks the
+   assembly's skeleton before the analytic reindex.
+2. State step 5 as an internal `≤`/approx lemma (truncation absorbed) and prove the main (exact `ā=valVec`)
+   contribution via `aff_valVec_eq_syr` + `valVec_unique`; bound the truncation remainder in the error.
+3. Then `approx_passtime_window` (wire proved `first_passage_nonescape` into `{¬passes}` + integral test),
+   then `approx_good_tuple_whp` (union bound, C5+S3), then assemble `first_passage_approx`.
+
+---
+
+# 🎯 C7 integral test — SCAFFOLDING DONE; 3 analytic holes remain (2026-07-14, HEAD `b4870c5`) [SUPERSEDED — C7 DONE]
 
 **The `intTest_error` crux is now fully decomposed and its interface machine-verified.** All mechanical
 glue is PROVED axiom-clean this run:

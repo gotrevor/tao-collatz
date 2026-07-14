@@ -76,6 +76,32 @@ noncomputable def approxMainTerm (x : ℝ) (E : Set ℕ) (y : ℝ) : ℝ :=
         (((logUnifOdd y (y ^ alpha)).map (fun N => Aff N (n - mZero x) ā)) M).toReal
       else 0
 
+/-! ## Lemma 2.1 kernels for the (5.18) affine reindexing (the route-decisive assembly step)
+
+The proof of (5.8) reindexes `ℙ((Syr^{n-m₀}N_y ∈ E') ∧ good)` into `∑_ā ∑_M ℙ(Aff_ā(N_y)=M)` via
+Tao's Lemma 2.1 (`valVec_unique`, `Basic/Valuation.lean`).  Two facts drive the **main** (exact)
+contribution `ā = valVec N k`; both are proved axiom-clean below.
+
+⚠️ **The reindex is APPROXIMATE, not exact.**  Our `Aff` uses truncating ℕ-division while Tao's
+`Aff_ā` (1.3) uses exact division.  The count `#{ā good : Aff N k ā ∈ E'}` can exceed 1 on the
+truncation set (`2^{pre ā k} ∤ 3^k N + fnat k ā`, where `valVec_unique`'s guard fails).  Tao absorbs
+this in the `O(log^{-c} x)` / `O(3^{n-m₀})` errors of (5.18)–(5.19); it is consistent with the
+`≤ C·(log x)^{-c}` error of `first_passage_approx`.  **Do not attempt an exact `=` reindex.** -/
+
+/-- **Lemma 2.1, generating direction.**  For odd `N`, the affine map at the true valuation vector
+recovers the Syracuse iterate: `Aff N k (valVec N k) = syr^[k] N`.  (The guarded ℕ-division is exact
+here: `2^{|valVec N k|}·syr^[k] N = 3^k N + fnat k (valVec N k)` — paper (1.7), `syr_iterate_key`.)
+This is the exact/main contribution of the (5.18) reindexing; the truncation `ā ≠ valVec N k` terms
+are the error absorbed in `O(log^{-c} x)`. -/
+theorem aff_valVec_eq_syr (N k : ℕ) (hN : N % 2 = 1) :
+    Aff N k (valVec N k) = syr^[k] N := by
+  unfold Aff
+  rw [← syr_iterate_key N k hN, Nat.mul_comm, Nat.mul_div_left _ (by positivity)]
+
+-- The positivity hypothesis `valVec_unique` / Lemma 2.1 and the good-tuple set `𝒜⁽ⁿ'⁾` (5.11)
+-- require on the reindexing vectors is already proved: `valVec_pos` (`Syracuse/ValuationDist.lean`)
+-- gives `1 ≤ valVec N k i` for odd `N` (since `3·(odd)+1` is even).
+
 -- RATIFY-C8: paper Proposition 5.2 / (5.8), §5 pp.22–25.  Rendered against the numbered display;
 -- the `O(log^{-c} x)` error is spelled as an explicit `∃ c C x₀` bound (design invariant D3).
 /-- **Proposition 5.2** (approximate first-passage formula, paper (5.8)).  For every odd

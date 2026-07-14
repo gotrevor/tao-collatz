@@ -17,6 +17,38 @@ statement with `sorry`; green border = *the statement exists*, never *finished*;
 "What pass 29 verified"). The hard rails below are LIVE; the rails in the superseded blocks still
 bind wherever they are not restated here.*
 
+### 🔎 REVIEW-LAP UPDATE (2026-07-14, HEAD `810518b`) — **C7 PROVED axiom-clean; live target advances to C8-close**; route CONTINUE
+
+*(Refines — does not override — Judge Pass 29 and the `e0913ce` update below. The
+C10→C8→C7→C8→C9 order STANDS; **objectives 1, 2, 3 are now all DONE**, so the live target is the
+**C8-close** leg (objective 4, first half). Every pass-29 rail still binds.)*
+
+**Route CONTINUE; no trigger fired.** Re-verified this lap by fresh `#print axioms` at `810518b`:
+- ✅ **OBJECTIVE 3 (C7) — DONE, axiom-clean.** `first_passage_nonescape` (1.19) =
+  `[propext, Classical.choice, Quot.sound]`. The integral test (`integral_test_logUnif` via
+  `intTest_class_dev` / `classMass_ap_form` — the AP-reindexing bridge) AND `valSum_lower_tail`
+  (5.5) both closed. **Judge to flip the C7 `\leanok`.**
+- ✅ **C10 + C8-pin still verified**: `fine_scale_mixing` clean; `first_passage_approx` pinned
+  (trust base + `sorryAx`, 3 named sub-sorries); `stabilization` (C9) pinned (trust base + `sorryAx`).
+- 🎯 **LIVE TARGET = close C8 = `first_passage_approx`** (`Sec5/ApproxFormula.lean`). Three named
+  sorries: the **assembly** `first_passage_approx` (:97 — the (5.8) affine reindexing, Lemma 2.1),
+  `approx_good_tuple_whp` (:116 — (5.12) good-tuple union bound, **does NOT use C7**), and
+  `approx_passtime_window` (:132 — (5.16), **THE C7 consumer**). C7 is now available to wire into
+  (5.16)'s `{¬ passes}` term.
+
+**🥇 MANDATED NEXT MOVE (hardest-first): the C8 ASSEMBLY's affine reindexing is the route-decisive
+piece — probe it FIRST.** The two whp sub-lemmas are "small-probability" bounds over PROVED
+machinery (C5/S3 for 5.12; C7 + the integral test for 5.16); the assembly `first_passage_approx` is
+the only piece whose failure would falsify the *pinned* `approxMainTerm` definition — the Lemma-2.1
+affine pushforward `Aff` reindexing that collapses `ℙ(Pass_x(N_y) ∈ E)` to the affine main term. If
+that reindexing does not go through against our defs, that is route-decisive information about the
+pin. Decompose it into named sub-sorries in `src/` (raising the count is PROGRESS). Detailed attack
+plan: **PENDING_WORK top, "C8 close — attack plan (2026-07-14 review)".**
+
+**Forbidden drift (this update, atop pass-29's):** do NOT retreat to C9 while C8 is open; do NOT
+touch `first_passage_nonescape` / `stabilization` / `fine_scale_mixing` (all WATCHED) or any ratified
+pin; do NOT edit the RATIFY-C8 statements/defs — decompose *below* them only.
+
 ### 🔎 REVIEW-LAP UPDATE (2026-07-14, HEAD `e0913ce`) — obj 1+2 DONE; frontier = C7's integral test; route CONTINUE
 
 *(Refines — does not override — Judge Pass 29. The C10→C8→C7→C8→C9 order STANDS. This records where
@@ -455,6 +487,12 @@ analytic assembly over machinery that is *already proved*. Driving C10 → C9 �
 wiring is the last mile. No route trigger has fired; route = CONTINUE.
 
 ### Directive history (this section's entries; full campaign history below under SUPERSEDED)
+- **review lap (2026-07-14, `810518b`)**: route CONTINUE, no trigger fired. **C7 (obj 3) PROVED +
+  axiom-clean** (`first_passage_nonescape` = trust base; integral test + `valSum_lower_tail` closed
+  by the grind laps since `e0913ce`). Objectives 1/2/3 all DONE. Live target advances to the
+  **C8-close** leg; mandated hardest-first target = the C8 assembly's Lemma-2.1 affine reindexing
+  (the only piece that can falsify the pinned `approxMainTerm`), the two whp sub-lemmas after. STATUS
+  + PENDING refreshed; C8 attack plan at PENDING top.
 - **review lap (2026-07-14, `e0913ce`)**: route CONTINUE, no trigger fired. Pass-29 obj 1 (C10) +
   obj 2 (C8 pin) VERIFIED DONE (C10 chain re-run axiom-clean); frontier now C7's 2 sub-sorries.
   **Key reframe**: the C7 crux `integral_test_logUnif` is the ELEMENTARY integral test (AP-count
