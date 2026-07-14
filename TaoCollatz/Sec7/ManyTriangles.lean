@@ -1605,7 +1605,7 @@ theorem phaseInFamily_support_imp_margin {n ξ : ℕ}
 
 /-- Parameterized deterministic half of (7.50).  Suppose the endpoint has
 vertical overshoot `< Y` and lies in the negative-drift half-space
-`16*e₁ - 5*e₂ < 40000000`.  If `X` absorbs the resulting fixed horizontal
+`16*e₁ - 5*e₂ < 64`.  If `X` absorbs the resulting fixed horizontal
 offset, then `(e₁-X, lΔ)` is a point of the start triangle.  Consequently a
 foreign-triangle capture would put two triangle points within squared distance
 `X²+Y²`, contradicting any larger Lemma-7.4 separation.
@@ -1618,13 +1618,13 @@ theorem phaseInFamily_support_imp_localization_bad {n ξ X Y : ℕ}
     {t : ℕ × ℤ × ℝ} (ht : t ∈ F.T)
     (hmem : (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2)
     {s : ℕ} (hs : (s : ℤ) = t.2.1 - l)
-    (hXY : (5 : ℝ) * Y + 40000000 ≤ 16 * X)
+    (hXY : (5 : ℝ) * Y + 64 ≤ 16 * X)
     (hsepXY : (X : ℝ) ^ 2 + (Y : ℝ) ^ 2 <
       ((1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) ^ 2)
     {e : ℕ × ℤ} (he : e ∈ (fpDist s).support)
     (hphase : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ phaseInFamily F) :
     (s : ℝ) + Y ≤ (e.2 : ℝ) ∨
-      (40000000 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ) := by
+      (64 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ) := by
   by_contra hgood
   push_neg at hgood
   obtain ⟨t', ht', hmem'⟩ := hphase
@@ -1652,7 +1652,7 @@ theorem phaseInFamily_support_imp_localization_bad {n ξ X Y : ℕ}
     · have hacast : (a : ℝ) = (e.1 : ℝ) - X := by
         rw [ha, Nat.cast_sub (by omega : X ≤ e.1)]
       rw [hacast]
-      have hXY' : (5 : ℝ) * Y + 40000000 ≤ 16 * X := hXY
+      have hXY' : (5 : ℝ) * Y + 64 ≤ 16 * X := hXY
       nlinarith [hgood.2]
   have hlogSlope : 5 * Real.log 9 < 16 * Real.log 2 := by
     have hp : (9 : ℝ) ^ 5 < (2 : ℝ) ^ 16 := by norm_num
@@ -2084,17 +2084,143 @@ theorem fpDist_out_of_strip_le :
     Summable.of_nonneg_of_le hinnernn hcolbnd hsummB
   exact le_trans (Summable.tsum_le_tsum hcolbnd hinnersum hsummB) htailB
 
+/-- Uniform (7.50) localization with all probability constants exposed, at the
+**sharp explicit** radii `Y = 150` and `B = 64`.  Apart from mass `1/8`, a
+first-passage endpoint has bounded vertical overshoot (`< 150`) and stays in the
+negative-drift half-space `16*j - 5*l < 64`.  The latter is a rational inner
+approximation to the triangle slope (`9^5 < 2^16`).  Both radii are numerals
+(off X6, via the renewal route and the exact `Hold` MGF), so the localization box
+is now an explicit `√(51² + 150²)`. -/
+theorem fpDist_localization_le_eighth (s : ℕ) :
+      (∑' e : ℕ × ℤ,
+        if (s : ℝ) + 150 ≤ (e.2 : ℝ) ∨
+            (64 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+          then fpDist s e else 0) ≤ (1 : ℝ≥0∞) / 8 := by
+  calc
+    (∑' e : ℕ × ℤ,
+        if (s : ℝ) + 150 ≤ (e.2 : ℝ) ∨
+            (64 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+          then fpDist s e else 0)
+      ≤ (∑' e : ℕ × ℤ,
+          if (s : ℝ) + 150 ≤ (e.2 : ℝ) then fpDist s e else 0)
+        + ∑' e : ℕ × ℤ,
+          if (64 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+            then fpDist s e else 0 := by
+        rw [← ENNReal.tsum_add]
+        refine ENNReal.tsum_le_tsum fun e => ?_
+        by_cases hv : (s : ℝ) + 150 ≤ (e.2 : ℝ)
+        · simp [hv]
+        · by_cases hh : (64 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+          · simp [hv, hh]
+          · simp [hv, hh]
+    _ ≤ (1 : ℝ≥0∞) / 16 + (1 : ℝ≥0∞) / 16 :=
+      add_le_add (fpDist_height_tail_le_sixteenth_sharp s)
+        (fpDist_linear_tail_le_sixteenth_sharp s)
+    _ = (1 : ℝ≥0∞) / 8 := by
+      have h16 : ENNReal.ofReal (1 / 16 : ℝ) = (1 : ℝ≥0∞) / 16 := by
+        rw [ENNReal.ofReal_div_of_pos (by norm_num : (0 : ℝ) < 16)]
+        norm_num
+      have h8 : ENNReal.ofReal (1 / 8 : ℝ) = (1 : ℝ≥0∞) / 8 := by
+        rw [ENNReal.ofReal_div_of_pos (by norm_num : (0 : ℝ) < 8)]
+        norm_num
+      have hadd : ENNReal.ofReal (1 / 16 : ℝ) + ENNReal.ofReal (1 / 16 : ℝ)
+          = ENNReal.ofReal (1 / 8 : ℝ) := by
+        rw [← ENNReal.ofReal_add (by positivity : (0 : ℝ) ≤ 1 / 16)
+          (by positivity : (0 : ℝ) ≤ 1 / 16)]
+        congr 1
+        norm_num
+      simpa only [h16, h8] using hadd
+
+/-- The localization box exists independently of the triangle family.  The
+only property not included here is that the globally selected `epsBW` makes
+Lemma 7.4's separation larger than this box. -/
+theorem exists_fpDist_localization_box :
+    ∃ X Y : ℕ,
+      (5 : ℝ) * Y + 64 ≤ 16 * X ∧
+      ∀ s : ℕ,
+        (∑' e : ℕ × ℤ,
+          if (s : ℝ) + Y ≤ (e.2 : ℝ) ∨
+              (64 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+            then fpDist s e else 0) ≤ (1 : ℝ≥0∞) / 8 := by
+  refine ⟨51, 150, by norm_num, fun s => ?_⟩
+  have h := fpDist_localization_le_eighth s
+  simpa only [Nat.cast_ofNat] using h
+
+/-- The foreign-triangle estimate, reduced to one explicit separation-vs-box
+inequality.  This theorem contains all event/support/`toReal` bookkeeping; no
+probabilistic or geometric argument remains once `X,Y` satisfy the hypotheses. -/
+theorem fpDist_any_triangle_le_of_localization_box {X Y : ℕ}
+    (hXY : (5 : ℝ) * Y + 64 ≤ 16 * X)
+    (hsepXY : (X : ℝ) ^ 2 + (Y : ℝ) ^ 2 <
+      ((1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) ^ 2)
+    (hloc : ∀ s : ℕ,
+      (∑' e : ℕ × ℤ,
+        if (s : ℝ) + Y ≤ (e.2 : ℝ) ∨
+            (64 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+          then fpDist s e else 0) ≤ (1 : ℝ≥0∞) / 8) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
+      ∀ F : TriangleFamily n ξ, ∀ m : ℕ, m ≤ n / 2 →
+      ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      ∑' e : ℕ × ℤ, (fpDist s e).toReal
+        * Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2) ≤ 1 / 8 := by
+  classical
+  intro n ξ hξ F m hmn l hl t ht hmem s hs
+  let bad : ℕ × ℤ → Prop := fun e =>
+    (s : ℝ) + Y ≤ (e.2 : ℝ) ∨
+      (64 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+  let captured : ℕ × ℤ → Prop := fun e =>
+    ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ phaseInFamily F
+  set P : ℝ≥0∞ := ∑' e : ℕ × ℤ, if captured e then fpDist s e else 0 with hP
+  set B : ℝ≥0∞ := ∑' e : ℕ × ℤ, if bad e then fpDist s e else 0 with hB
+  have hPB : P ≤ B := by
+    rw [hP, hB]
+    refine ENNReal.tsum_le_tsum fun e => ?_
+    by_cases hc : captured e
+    · rw [if_pos hc]
+      by_cases hz : fpDist s e = 0
+      · rw [hz]
+        exact bot_le
+      · have he : e ∈ (fpDist s).support := by rwa [PMF.mem_support_iff]
+        have hb := phaseInFamily_support_imp_localization_bad F hmn hl ht hmem hs
+          hXY hsepXY he hc
+        rw [if_pos hb]
+    · rw [if_neg hc]
+      exact bot_le
+  have hBle : B ≤ (1 : ℝ≥0∞) / 8 := by
+    rw [hB]
+    exact hloc s
+  have hBtop : B ≠ ⊤ := ne_top_of_le_ne_top (by finiteness) hBle
+  have hPtop : P ≠ ⊤ := ne_top_of_le_ne_top hBtop hPB
+  have hLHS :
+      (∑' e : ℕ × ℤ, (fpDist s e).toReal
+        * Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2)) = P.toReal := by
+    rw [hP, ENNReal.tsum_toReal_eq (fun e => by
+      split_ifs
+      exacts [PMF.apply_ne_top _ _, ENNReal.zero_ne_top])]
+    refine tsum_congr fun e => ?_
+    by_cases hc : captured e
+    · rw [if_pos hc, Set.indicator_of_mem hc, Pi.one_apply, mul_one]
+    · rw [if_neg hc, Set.indicator_of_notMem hc, mul_zero, ENNReal.toReal_zero]
+  rw [hLHS]
+  have hto : P.toReal ≤ ((1 : ℝ≥0∞) / 8).toReal :=
+    ENNReal.toReal_mono (by finiteness) (hPB.trans hBle)
+  norm_num at hto ⊢
+  exact hto
+
 /-- **Foreign-triangle mass** (⅛ of the (7.50) budget): the first-passage endpoint's
 phase point lands in some family triangle with probability `≤ 1/8`. The start
 triangle contributes nothing (`endpoint_notMem_start_triangle`), so this is the
 foreign mass.
 
-The probability and geometry are now proved below: `exists_fpDist_localization_box`
-constructs `X,Y` with bad mass `≤ 1/8`, and
-`fpDist_any_triangle_le_of_localization_box` proves this conclusion whenever
-Lemma 7.4's separation exceeds `sqrt(X²+Y²)`.  The remaining obligation is solely
-the paper's quantifier order: `epsBW` must be selected sufficiently small AFTER
-the X6 localization box, rather than fixed upstream at `10⁻⁹⁰`. -/
+**PROVED** (2026-07-14): both localization radii are now numerals — `Y = 150`
+(`fpDist_localization_le_eighth`, via the off-X6 renewal route) and `B = 64` (the
+exact `Hold` MGF), so the box is the explicit `√(51² + 150²) ≈ 158.4`.  With
+`epsBW = 10⁻¹⁰⁰⁰` the Lemma-7.4 separation is `sep = 100·log 10 > 200`
+(`sep_const_gt_two_hundred`), which dominates the box; feeding `X = 51, Y = 150`
+into `fpDist_any_triangle_le_of_localization_box` discharges the estimate.  This
+was the last route-decisive blocker on the X9 white-exit kernel. -/
 theorem fpDist_any_triangle_le :
     ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
       ∀ F : TriangleFamily n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
@@ -2103,7 +2229,23 @@ theorem fpDist_any_triangle_le :
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       ∑' e : ℕ × ℤ, (fpDist s e).toReal
         * Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2) ≤ 1 / 8 := by
-  sorry
+  -- The two localization radii are now numerals (`Y = 150`, `B = 64`), so the box
+  -- `√(51² + 150²) ≈ 158.4` is explicit; `epsBW = 10⁻¹⁰⁰⁰` gives separation
+  -- `sep = 100·log 10 > 200`, dominating the box.  Feed both into the reduced
+  -- geometric estimate.
+  refine ⟨0, ?_⟩
+  intro n ξ hξ F m _hm hmn l hl t ht htmem s hs
+  have hsep := sep_const_gt_two_hundred
+  have hsepXY : ((51 : ℕ) : ℝ) ^ 2 + ((150 : ℕ) : ℝ) ^ 2 <
+      ((1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) ^ 2 := by
+    have h0 : (0 : ℝ) ≤ (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ)) :=
+      le_of_lt (lt_trans (by norm_num) hsep)
+    push_cast
+    nlinarith [hsep, h0]
+  exact fpDist_any_triangle_le_of_localization_box (X := 51) (Y := 150)
+    (by norm_num) hsepXY
+    (fun s => by simpa only [Nat.cast_ofNat] using fpDist_localization_le_eighth s)
+    n ξ hξ F m hmn l hl t ht htmem s hs
 
 /-- **The (7.59)-shaped deep white-exit bound** (the ONLY open external input of
 the X9 induction; sibling of the Case-2 kernel `fpDist_white_exit` in
@@ -2698,133 +2840,6 @@ theorem fpDist_height_tail_le_sixteenth :
     norm_num
   rwa [h16] at hof
 
-/-- Uniform (7.50) localization with all probability constants exposed.  Apart
-from mass `1/8`, a first-passage endpoint has bounded vertical overshoot and
-stays in the negative-drift half-space `16*j - 5*l < 40000000`.  The latter is
-a rational inner approximation to the triangle slope (`9^5 < 2^16`). -/
-theorem fpDist_localization_le_eighth :
-    ∃ Y : ℕ, ∀ s : ℕ,
-      (∑' e : ℕ × ℤ,
-        if (s : ℝ) + Y ≤ (e.2 : ℝ) ∨
-            (40000000 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
-          then fpDist s e else 0) ≤ (1 : ℝ≥0∞) / 8 := by
-  obtain ⟨Y, hheight⟩ := fpDist_height_tail_le_sixteenth
-  refine ⟨Y, fun s => ?_⟩
-  calc
-    (∑' e : ℕ × ℤ,
-        if (s : ℝ) + Y ≤ (e.2 : ℝ) ∨
-            (40000000 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
-          then fpDist s e else 0)
-      ≤ (∑' e : ℕ × ℤ,
-          if (s : ℝ) + Y ≤ (e.2 : ℝ) then fpDist s e else 0)
-        + ∑' e : ℕ × ℤ,
-          if (40000000 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
-            then fpDist s e else 0 := by
-        rw [← ENNReal.tsum_add]
-        refine ENNReal.tsum_le_tsum fun e => ?_
-        by_cases hv : (s : ℝ) + Y ≤ (e.2 : ℝ)
-        · simp [hv]
-        · by_cases hh : (40000000 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
-          · simp [hv, hh]
-          · simp [hv, hh]
-    _ ≤ (1 : ℝ≥0∞) / 16 + (1 : ℝ≥0∞) / 16 :=
-      add_le_add (hheight s) (fpDist_linear_tail_le_sixteenth s)
-    _ = (1 : ℝ≥0∞) / 8 := by
-      have h16 : ENNReal.ofReal (1 / 16 : ℝ) = (1 : ℝ≥0∞) / 16 := by
-        rw [ENNReal.ofReal_div_of_pos (by norm_num : (0 : ℝ) < 16)]
-        norm_num
-      have h8 : ENNReal.ofReal (1 / 8 : ℝ) = (1 : ℝ≥0∞) / 8 := by
-        rw [ENNReal.ofReal_div_of_pos (by norm_num : (0 : ℝ) < 8)]
-        norm_num
-      have hadd : ENNReal.ofReal (1 / 16 : ℝ) + ENNReal.ofReal (1 / 16 : ℝ)
-          = ENNReal.ofReal (1 / 8 : ℝ) := by
-        rw [← ENNReal.ofReal_add (by positivity : (0 : ℝ) ≤ 1 / 16)
-          (by positivity : (0 : ℝ) ≤ 1 / 16)]
-        congr 1
-        norm_num
-      simpa only [h16, h8] using hadd
-
-/-- The localization box exists independently of the triangle family.  The
-only property not included here is that the globally selected `epsBW` makes
-Lemma 7.4's separation larger than this box. -/
-theorem exists_fpDist_localization_box :
-    ∃ X Y : ℕ,
-      (5 : ℝ) * Y + 40000000 ≤ 16 * X ∧
-      ∀ s : ℕ,
-        (∑' e : ℕ × ℤ,
-          if (s : ℝ) + Y ≤ (e.2 : ℝ) ∨
-              (40000000 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
-            then fpDist s e else 0) ≤ (1 : ℝ≥0∞) / 8 := by
-  obtain ⟨Y, hY⟩ := fpDist_localization_le_eighth
-  let X : ℕ := Nat.ceil (((5 : ℝ) * Y + 40000000) / 16)
-  refine ⟨X, Y, ?_, hY⟩
-  have hceil : ((5 : ℝ) * Y + 40000000) / 16 ≤ (X : ℝ) := by
-    exact Nat.le_ceil _
-  rw [div_le_iff₀ (by norm_num : (0 : ℝ) < 16)] at hceil
-  linarith
-
-/-- The foreign-triangle estimate, reduced to one explicit separation-vs-box
-inequality.  This theorem contains all event/support/`toReal` bookkeeping; no
-probabilistic or geometric argument remains once `X,Y` satisfy the hypotheses. -/
-theorem fpDist_any_triangle_le_of_localization_box {X Y : ℕ}
-    (hXY : (5 : ℝ) * Y + 40000000 ≤ 16 * X)
-    (hsepXY : (X : ℝ) ^ 2 + (Y : ℝ) ^ 2 <
-      ((1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))) ^ 2)
-    (hloc : ∀ s : ℕ,
-      (∑' e : ℕ × ℤ,
-        if (s : ℝ) + Y ≤ (e.2 : ℝ) ∨
-            (40000000 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
-          then fpDist s e else 0) ≤ (1 : ℝ≥0∞) / 8) :
-    ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
-      ∀ F : TriangleFamily n ξ, ∀ m : ℕ, m ≤ n / 2 →
-      ∀ l : ℤ, 1 ≤ n / 2 - m →
-      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
-      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
-      ∑' e : ℕ × ℤ, (fpDist s e).toReal
-        * Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2) ≤ 1 / 8 := by
-  classical
-  intro n ξ hξ F m hmn l hl t ht hmem s hs
-  let bad : ℕ × ℤ → Prop := fun e =>
-    (s : ℝ) + Y ≤ (e.2 : ℝ) ∨
-      (40000000 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
-  let captured : ℕ × ℤ → Prop := fun e =>
-    ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ phaseInFamily F
-  set P : ℝ≥0∞ := ∑' e : ℕ × ℤ, if captured e then fpDist s e else 0 with hP
-  set B : ℝ≥0∞ := ∑' e : ℕ × ℤ, if bad e then fpDist s e else 0 with hB
-  have hPB : P ≤ B := by
-    rw [hP, hB]
-    refine ENNReal.tsum_le_tsum fun e => ?_
-    by_cases hc : captured e
-    · rw [if_pos hc]
-      by_cases hz : fpDist s e = 0
-      · rw [hz]
-        exact bot_le
-      · have he : e ∈ (fpDist s).support := by rwa [PMF.mem_support_iff]
-        have hb := phaseInFamily_support_imp_localization_bad F hmn hl ht hmem hs
-          hXY hsepXY he hc
-        rw [if_pos hb]
-    · rw [if_neg hc]
-      exact bot_le
-  have hBle : B ≤ (1 : ℝ≥0∞) / 8 := by
-    rw [hB]
-    exact hloc s
-  have hBtop : B ≠ ⊤ := ne_top_of_le_ne_top (by finiteness) hBle
-  have hPtop : P ≠ ⊤ := ne_top_of_le_ne_top hBtop hPB
-  have hLHS :
-      (∑' e : ℕ × ℤ, (fpDist s e).toReal
-        * Set.indicator (phaseInFamily F) 1 (n / 2 - m + e.1, l + e.2)) = P.toReal := by
-    rw [hP, ENNReal.tsum_toReal_eq (fun e => by
-      split_ifs
-      exacts [PMF.apply_ne_top _ _, ENNReal.zero_ne_top])]
-    refine tsum_congr fun e => ?_
-    by_cases hc : captured e
-    · rw [if_pos hc, Set.indicator_of_mem hc, Pi.one_apply, mul_one]
-    · rw [if_neg hc, Set.indicator_of_notMem hc, mul_zero, ENNReal.toReal_zero]
-  rw [hLHS]
-  have hto : P.toReal ≤ ((1 : ℝ≥0∞) / 8).toReal :=
-    ENNReal.toReal_mono (by finiteness) (hPB.trans hBle)
-  norm_num at hto ⊢
-  exact hto
 
 /-- **`p`-step height tail** (step (iii) of the (7.61) plan): the `Hold` walk's
 height sum exceeds `y` with probability `≤ e^{17p/1000 − y/1000}` — Markov under

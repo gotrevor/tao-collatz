@@ -1285,6 +1285,25 @@ theorem twenty_lt_sep_const :
   push_cast at hlog ⊢
   nlinarith [Real.log_two_gt_d9]
 
+/-- The `10⁻¹⁰⁰⁰` epsilon gives more than two hundred lattice units of separation.
+`sep = (1/10)·log(10^1000) = 100·log 10`, and `log 10 > 3·log 2 > 2.07`, so
+`sep > 207 > 200`.  This dominates the sharp localization box
+`√(51² + 150²) ≈ 158.4`, hence closes `fpDist_any_triangle_le`. -/
+theorem sep_const_gt_two_hundred :
+    (200 : ℝ) < (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ)) := by
+  have hε : (epsBW : ℝ) = 1 / 10 ^ 1000 := by
+    norm_num [epsBW]
+  have hone : (1 : ℝ) / (epsBW : ℝ) = 10 ^ 1000 := by
+    rw [hε]
+    norm_num
+  have hp : (2 : ℝ) ^ 30 < 10 ^ 10 := by norm_num
+  have hlog := Real.strictMonoOn_log (by positivity : (0 : ℝ) < (2 : ℝ) ^ 30)
+    (by positivity : (0 : ℝ) < (10 : ℝ) ^ 10) hp
+  rw [Real.log_pow, Real.log_pow] at hlog
+  rw [hone, Real.log_pow]
+  push_cast at hlog ⊢
+  nlinarith [Real.log_two_gt_d9]
+
 /-- Squared distance below the buffer radius gives a coordinatewise lattice bound
 of `300`.  This deliberately uses a coarse constant; `10⁻¹⁰⁰⁰` leaves enormous
 room in all subsequent phase estimates. -/
