@@ -2073,17 +2073,44 @@ theorem osc_windowedB_conditioning_le {ι : Type*} (m j p : ℕ) (hmn : m ≤ j 
           condDensWB_osc_le j p (l i) m C T hmn (D i) (hD i) (hunif i hi) (hbudget i hi))
 
 
-/-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
-little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
+/-- **(6.2)–(6.10): the §6 conditioning core** (C10, obligations 1+2+3), in the high regime
+`0.9n ≤ m ≤ n` (encoded `9n ≤ 10m`) and for `n` sufficiently large. This is where the whole conditioning
+machinery lives: the event decomposition `syracZ = ∑_{k,l} g_{n,k,l} + error` (6.9) over stopping times
+`k` and valuations `l`, the fully-assembled per-conditioning bound `condDensWB_osc_le` (6.10)+(6.11)
+(obligation 3 already discharged: `osc(g) ≤ D·√(3ⁿ·2⁻ˡ)`), the head uniform decay `D = Cₐ·q⁻ᴬ` (obl 2,
+from the proved `head_factor_norm_le_charFn`), the (6.4)/(6.8) union sums (`osc_windowedB_conditioning_le`),
+and the error `L¹` bound `P(Ē) ≤ n^{-A-1}` (6.3, via `osc_le_two_mul_l1`). **Next decomposition targets**
+(PENDING_WORK §6 box): the decomposition identity + the `k`-sum dependent-index cast `(n−k−1)+(k+1)=n`,
+`hunif`, and the geometric-`l`-sum/constant chase. -/
+theorem osc_syracZ_high_regime (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, ∀ hmn : m ≤ n, n₀ ≤ n → 9 * n ≤ 10 * m →
+      osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-A) := by
+  sorry
 
-The Cauchy–Schwarz/Parseval bridge `osc_le_sqrt_highfreq` is proved (axiom-clean), but the naive
-`highfreq_l2_le` route is REFUTED (see the route finding above): the raw high-frequency `L²` mass
-grows, so the bound must go through Tao's §6 **conditioning** of the density (independent `F`-split
-+ `charFn_decay` on the high-entropy factor + triangle inequality over the events). This is the
-genuine heroic §6 core; `sorry` pending that apparatus. -/
-theorem fine_scale_mixing (A : ℝ) (hA : 0 < A) :
+/-- **(6.1) the regime reduction** (C10, obligation 0): the general bound for all `1 ≤ m ≤ n` follows
+from the high-regime bound (`0.9n ≤ m ≤ n`, large `n`). Tao p.28: once (1.23) holds in the regime
+`0.9n ≤ m ≤ n`, the (1.22)-consistency telescope across scales gives it for general `10 ≤ m ≤ n`, and
+`1 ≤ m < 10` follows trivially from the triangle inequality; the finitely many small `n < n₀` are
+absorbed by the trivial `osc ≤ 2` bound (a probability density has total mass ≤ 1) into a large constant. -/
+theorem osc_syracZ_regime_telescope (A : ℝ) (hA : 0 < A)
+    (hhigh : ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, ∀ hmn : m ≤ n, n₀ ≤ n → 9 * n ≤ 10 * m →
+        osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-A)) :
     ∃ C > 0, ∀ n m : ℕ, ∀ hmn : m ≤ n, 1 ≤ m →
       osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-A) := by
   sorry
+
+/-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
+little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
+
+Decomposed (2026-07-15) via Tao's (6.1) reduction into the §6 conditioning core `osc_syracZ_high_regime`
+(obligations 1+2+3, high regime — the heroic content, itself now reduced to the decomposition identity +
+`hunif` + the geometric/constant chase over an all-`#print axioms`-clean support layer) and the regime
+telescope `osc_syracZ_regime_telescope` (obligation 0). The Cauchy–Schwarz/Parseval bridge and the whole
+per-conditioning chain (`condDensWB_osc_le`, `osc_windowedB_conditioning_le`) are proved axiom-clean; the
+raw-`syracZ` route was REFUTED (see the route finding above), so conditioning is mandatory. -/
+theorem fine_scale_mixing (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∀ n m : ℕ, ∀ hmn : m ≤ n, 1 ≤ m →
+      osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-A) :=
+  osc_syracZ_regime_telescope A hA (osc_syracZ_high_regime A hA)
 
 end TaoCollatz
