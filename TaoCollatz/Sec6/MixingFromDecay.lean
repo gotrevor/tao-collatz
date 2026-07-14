@@ -1964,6 +1964,34 @@ theorem osc_windowed_conditioning_le {ι : Type*} (m j p : ℕ) (hmn : m ≤ j +
         Finset.sum_le_sum (fun i hi =>
           condDensW_osc_le j p (l i) m (W i) hmn (D i) (hD i) (hunif i hi))
 
+/-- **The (6.2)/(6.12) window event `Eₖ`** on the tail block (`p = k+1` coords), in the SUFFIX form
+the kernel `fnat_lt_of_suffix_window` consumes: `2r − Cₐ(√(r·log n)+log n) ≤ l − pre vt (p−r)` for all
+`1 ≤ r ≤ p`. This is Tao (6.2) restricted to `1 ≤ i < j ≤ k+1` (so it depends only on `a₁,…,a_{k+1}`,
+i.e. the tail block), reindexed to suffix intervals `[p−r+1, p]`. Real-inequality predicate; decidable
+only classically. -/
+def condWindow (j p : ℕ) (C : ℝ) (l : ℕ) : (Fin p → ℕ) → Prop := fun vt =>
+  ∀ r : ℕ, 1 ≤ r → r ≤ p →
+    2 * (r : ℝ) - C * (Real.sqrt (r * Real.log ((j + p : ℕ) : ℝ)) + Real.log ((j + p : ℕ) : ℝ))
+      ≤ (l : ℝ) - (pre vt (p - r) : ℝ)
+
+noncomputable instance condWindow_decidablePred (j p : ℕ) (C : ℝ) (l : ℕ) :
+    DecidablePred (condWindow j p C l) := Classical.decPred _
+
+/-- **Obligation 3, packaged for the §6 assembly**: on the suffix window `condWindow` with the
+tight-window budget `hbudget` (discharged from the (6.8) `l`-range + `Cₐ ≥ 10`, `n ≥ n₀` — a
+`vt`-independent numeric fact), the windowed tail single-point mass is `≤ 2⁻ˡ`. This composes the
+proved collision bound `tailDensW_le_single_mass` with the kernel `fnat_lt_of_suffix_window`, so the
+whole obligation-3 pipeline (kernel → injectivity → single-point mass) is now available at the concrete
+window event `Eₖ`. It feeds `tailDensW_renyi_le` (`∑ (tailDensW)² ≤ 2⁻ˡ`) → `condDensW_osc_le`. -/
+theorem tailDensW_condWindow_le (j p l : ℕ) (C : ℝ)
+    (hbudget : (l : ℝ) * Real.log 2
+        + (C * Real.log 2 + 5 / 4 * (C * Real.log 2) ^ 2) * Real.log ((j + p : ℕ) : ℝ)
+        + Real.log 4 < ((j + p : ℕ) : ℝ) * Real.log 3)
+    (Y : ZMod (3 ^ (j + p))) :
+    tailDensW j p l (condWindow j p C l) Y ≤ (2 : ℝ)⁻¹ ^ l :=
+  tailDensW_le_single_mass j p l (condWindow j p C l)
+    (fun vt _ hl hW => fnat_lt_of_suffix_window vt l C hl hW hbudget) Y
+
 
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
