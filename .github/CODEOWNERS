@@ -1,0 +1,9 @@
+# Reviewer-facing specification and governance are single-owner surfaces.
+/BLUEPRINT.md                 @gotrevor
+/SKELETON-SPEC.md             @gotrevor
+/blueprint/                   @gotrevor
+/judge/                       @gotrevor
+/DIRECTION.md                 @gotrevor
+/EXECUTABILITY.md             @gotrevor
+/STATUS.md                    @gotrevor
+/tools/tao_stmt_diff.py       @gotrevor
