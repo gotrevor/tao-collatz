@@ -437,6 +437,89 @@ theorem cond_char_factor {j p : ℕ} (ξ : ZMod (3 ^ (j + p))) (l : ℕ) :
   · -- off the event: both sides vanish through the indicator
     simp only [if_neg h, mul_zero]
 
+/-- **DFT of a conditioned pushforward density** (general engine, C10 brick b). For any PMF `P`
+on `Fin n → ℕ`, any random variable `X` into `ZMod (3ⁿ)`, and any event `w`, the DFT of the density
+`Y ↦ P(X = Y ∧ w)` equals the conditioned character sum `E[stdAddChar(-(X·ξ))·1_w]`. This is the
+`𝓕(densC g) ↔ cexpect` bridge that connects the proved Cauchy–Schwarz bridge `osc_le_sqrt_highfreq`
+(applied to the conditioned density) with the factorization `cond_char_factor`. Proof: `dft_apply`
+unfolds `𝓕` to `∑_Y stdAddChar(-(Y·ξ))·g(Y)`; push `Complex.ofReal_tsum` through `g(Y)=∑'_a …`;
+swap the finite `∑_Y` with `∑'_a` (`Summable.tsum_finsetSum`, summability from the iid mass
+dominating the bounded observable); collapse `∑_Y stdAddChar(-(Y·ξ))·1_{X=Y}=stdAddChar(-(X·ξ))`
+(`Finset.sum_ite_eq`). -/
+theorem dft_cond_density {n : ℕ} (P : PMF (Fin n → ℕ)) (X : (Fin n → ℕ) → ZMod (3 ^ n))
+    (w : (Fin n → ℕ) → Prop) [DecidablePred w] (ξ : ZMod (3 ^ n)) :
+    ZMod.dft (densC n (fun Y =>
+        ∑' a, (P a).toReal * (if X a = Y ∧ w a then (1 : ℝ) else 0))) ξ
+      = P.cexpect (fun a => ZMod.stdAddChar (-(X a * ξ)) * (if w a then (1 : ℂ) else 0)) := by
+  classical
+  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
+  have hbase : Summable (fun a => (P a).toReal) :=
+    ENNReal.summable_toReal (by rw [P.tsum_coe]; exact ENNReal.one_ne_top)
+  have hsum : ∀ Y : ZMod (3 ^ n), Summable (fun a => ZMod.stdAddChar (-(Y * ξ))
+      * (((P a).toReal : ℂ) * ((if X a = Y ∧ w a then (1 : ℝ) else 0 : ℝ) : ℂ))) := by
+    intro Y
+    refine Summable.of_norm_bounded hbase (fun a => ?_)
+    rw [norm_mul, norm_mul, norm_stdAddChar, one_mul, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg ENNReal.toReal_nonneg]
+    have hle : ‖((if X a = Y ∧ w a then (1 : ℝ) else 0 : ℝ) : ℂ)‖ ≤ 1 := by
+      rw [Complex.norm_real, Real.norm_eq_abs]; by_cases h : X a = Y ∧ w a
+      · rw [if_pos h]; simp
+      · rw [if_neg h]; simp
+    calc (P a).toReal * ‖((if X a = Y ∧ w a then (1 : ℝ) else 0 : ℝ) : ℂ)‖
+        ≤ (P a).toReal * 1 := mul_le_mul_of_nonneg_left hle ENNReal.toReal_nonneg
+      _ = (P a).toReal := mul_one _
+  -- the inner finite sum over `Y` collapses onto `Y = X a`
+  have hcore : ∀ a : Fin n → ℕ, (∑ Y, ZMod.stdAddChar (-(Y * ξ))
+        * ((if X a = Y ∧ w a then (1 : ℝ) else 0 : ℝ) : ℂ))
+      = ZMod.stdAddChar (-(X a * ξ)) * (if w a then (1 : ℂ) else 0) := by
+    intro a
+    by_cases h : w a
+    · simp only [h, and_true, if_pos h, mul_one, apply_ite (Complex.ofReal), Complex.ofReal_one,
+        Complex.ofReal_zero, mul_ite, mul_one, mul_zero]
+      rw [Finset.sum_ite_eq Finset.univ (X a) (fun Y => ZMod.stdAddChar (-(Y * ξ)))]
+      simp
+    · simp only [h, and_false, if_false, Complex.ofReal_zero, mul_zero, Finset.sum_const_zero]
+  -- push the ofReal through the inner tsum, pull the (Y-constant) character into it
+  have hterm : ∀ Y : ZMod (3 ^ n),
+      ZMod.stdAddChar (-(Y * ξ)) * ((∑' a, (P a).toReal
+          * (if X a = Y ∧ w a then (1 : ℝ) else 0) : ℝ) : ℂ)
+        = ∑' a, ZMod.stdAddChar (-(Y * ξ)) * (((P a).toReal : ℂ)
+          * ((if X a = Y ∧ w a then (1 : ℝ) else 0 : ℝ) : ℂ)) := by
+    intro Y
+    rw [Complex.ofReal_tsum, ← tsum_mul_left]
+    refine tsum_congr (fun a => ?_); push_cast; ring
+  rw [ZMod.dft_apply, PMF.cexpect]
+  simp only [smul_eq_mul, densC]
+  -- swap ∑_Y with ∑'_a, then collapse and refactor
+  rw [Finset.sum_congr rfl (fun Y _ => hterm Y), ← Summable.tsum_finsetSum (fun Y _ => hsum Y)]
+  refine tsum_congr (fun a => ?_)
+  rw [show (fun Y => ZMod.stdAddChar (-(Y * ξ)) * (((P a).toReal : ℂ)
+        * ((if X a = Y ∧ w a then (1 : ℝ) else 0 : ℝ) : ℂ)))
+      = (fun Y => ((P a).toReal : ℂ) * (ZMod.stdAddChar (-(Y * ξ))
+        * ((if X a = Y ∧ w a then (1 : ℝ) else 0 : ℝ) : ℂ))) from by funext Y; ring,
+    ← Finset.mul_sum, hcore a]
+
+/-- The **conditioned density** `g_{j,p,l}` (Tao's `g_{n,k,l}` with cut `n = j + p`): the sub-PMF
+of `Xₙ = Fnat(a)·2⁻ᵖʳᵉ` restricted to the tail-valuation event `{pre(tail) = l}`, as a real density. -/
+noncomputable def condDens (j p l : ℕ) : ZMod (3 ^ (j + p)) → ℝ := fun Y =>
+  ∑' a : Fin (j + p) → ℕ, ((geomHalf.iid (j + p)) a).toReal
+    * (if (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p) = Y
+          ∧ pre (fun i => a (Fin.natAdd j i)) p = l then (1 : ℝ) else 0)
+
+/-- **Brick (b), the DFT↔cexpect bridge specialized to `condDens`** (C10): the DFT of the
+conditioned Syracuse density is exactly the character sum `cond_char_factor` factors into head ×
+tail. Immediate from the general `dft_cond_density` at `P = iid geomHalf`, `X = syracOffset`,
+`w = {pre(tail)=l}`. -/
+theorem dft_condDens_eq_cond_char (j p l : ℕ) (ξ : ZMod (3 ^ (j + p))) :
+    ZMod.dft (densC (j + p) (condDens j p l)) ξ
+      = (geomHalf.iid (j + p)).cexpect (fun a =>
+          ZMod.stdAddChar (-(((fnat (j + p) a : ZMod (3 ^ (j + p)))
+              * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p)) * ξ))
+            * (if pre (fun i => a (Fin.natAdd j i)) p = l then 1 else 0)) :=
+  dft_cond_density (geomHalf.iid (j + p))
+    (fun a => (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p))
+    (fun a => pre (fun i => a (Fin.natAdd j i)) p = l) ξ
+
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
 
