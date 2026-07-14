@@ -1,3 +1,20 @@
+# ✅ LAP (2026-07-14 1941): (6.3) union bound + MARGINAL LAW proved — C10 tail reduced to 3 pure sorries
+
+`prob_not_globalGood_le` is now **fully assembled** (union decomposition → `tsum_le_tsum` → split →
+per-event bounds → `n→m`, final `C = 6`). The flagged "genuine multi-lap content" — the **marginal
+law** — is proved axiom-clean: `iidMap_pre` (prefix-block marginal), `iid_map_coord` (coordinate
+marginal), `iidSum_one`, `masked_tsum_map` (pushforward bridge), `not_globalGood_pointwise_le` (the
+union bound, pointwise), `caThr_nonneg_large`. C10 is complete **modulo 3 named tail sorries**.
+
+**→ NEXT: `g2_mass_le` (easiest, coord marginal ready) → `g1_mass_le` (prefix marginal ready) →
+`g3_mass_le` (needs the SUFFIX marginal `(geomHalf.iid n).map (sufSum · r) = iidSum geomHalf r`, a
+last-block analogue of `iidMap_pre` via `cexpect_iid_append` head=1).** All three are pure
+`geomHalf_tail_bound` arithmetic (route: `masked_tsum_map` → dominate mask by `[λ≤|L−mean|]` →
+`geomHalf_tail_bound` → `Gweight ≤ n^{-(A+2)}` via `caConst_tail_exponent`). Full attack + gotchas:
+`HANDOFF-2026-07-14-1941.md`. After C10 lands: pin C8 (obj 2) → prove C7 → close C8 → C9.
+
+---
+
 # ✅ LAP (2026-07-15): `globalGood ⊆ mainEvent` PROVED — C10 error node reduced to a pure union bound
 
 **The inclusion IS the content, and it is now machine-checked + axiom-clean** (`[propext, choice,
