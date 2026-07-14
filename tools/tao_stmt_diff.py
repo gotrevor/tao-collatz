@@ -90,17 +90,29 @@ def show(rev: str, path: str) -> str:
 
 
 def statement(src: str, name: str) -> str | None:
-    """Text from `theorem/lemma/def NAME` through the end of its signature."""
+    """Text from `theorem/lemma/def NAME` through the end of its signature.
+
+    The trailing proof delimiter is NORMALIZED away: a proof that switches from tactic
+    mode (`:= by`) to term mode (`:=`) leaves the *statement* character-identical, and
+    the differ must not report it.
+
+    This is not a nicety. On 2026-07-14 (judge pass 28→29 boundary) `fine_scale_mixing`
+    — the C10 crux, a WATCHED statement — went `:= by` -> `:=` when its proof became a
+    term, and the differ screamed "RATIFICATION REVOKED" at a statement whose every
+    mathematical character was unchanged. **An over-sensitive guard is a guard that gets
+    muted**, and a muted guard is how a real deviation walks through. Cry wolf never.
+    """
     m = re.search(rf"^(?:theorem|lemma|def|noncomputable def)\s+{re.escape(name)}\b",
                   src, re.M)
     if not m:
         return None
     tail = src[m.start():]
-    # end of signature = first ':= by' or ':=' at depth 0-ish; take the first occurrence
+    # end of signature = the first `:= by` or `:=`
     e = re.search(r":=\s*by\b|:=", tail)
     if not e:
         return None
-    return tail[: e.end()]
+    body = tail[: e.start()]                 # the signature, WITHOUT the delimiter
+    return body.rstrip() + " :="             # normalized terminator: mode-agnostic
 
 
 def locate(rev: str, name: str):
