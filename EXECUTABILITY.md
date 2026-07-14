@@ -151,7 +151,19 @@ tail pins (pass 18), X9 depth-gated re-pin (pass 14). 🔓 **ZERO OPEN SUSPENSIO
 proof** — it is now a theorem, axiom-clean (pass 25). A proof settles truth; nothing is
 left to believe.
 
-⚠️ **TWO RATIFICATIONS REVOKED (pass 26) — X10 `triangle_encounter_le` + X10a
+✅ **X10 + X10a REVOCATION DISCHARGED SAME DAY (pass-26 addendum, `4f51542`).** The repair
+landed as overnight-run-#2's opening move: the four weaker-hypothesis lemmas are kept as
+`*_rpow` **engines**, and both pins were **restored character-identically** and re-proved as
+corollaries. Machine-checked: the differ reports **19/19 pinned statements byte-identical**
+to the pre-deviation baseline, and dated runs on both restored pins *and* all four engines
+(plus X9/X8, which survive the refactor) are exactly `[propext, Classical.choice, Quot.sound]`.
+`ManyTriangles.lean` has **zero** sorries — restored by *proving*. **Ratifications RESTORED;
+blueprint `\leanok` back up.** Net: a strictly stronger engine layer *and* a faithful Lemma
+7.10. ⚠️ Still open: **thread `Cthr ≥ 10^27`** so the depth-`m+1` bridge actually closes — it
+is unproved, inside `few_white_mass_le`. Verify on the next boundary; do not let it be assumed.
+
+*(Historical — the finding that produced the repair:)* ⚠️ **TWO RATIFICATIONS REVOKED
+(pass 26) — X10 `triangle_encounter_le` + X10a
 `encounter_apex_proximity`.** `61f8e80` rewrote their deep hypothesis
 `m/log²m < s` → `m^0.8 < s`. Both are still **proved and axiom-clean** — the mathematics
 is not in doubt — but **Tao p.51 states Lemma 7.10 with `s > m/log²m` verbatim**, and the

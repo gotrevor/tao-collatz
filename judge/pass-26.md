@@ -135,6 +135,36 @@ absorbs an O(1) shift in `m` legitimately. Do not add it to the gap ledger.
 - `61f8e80` asserted "All axiom-clean" flatly rather than "believed clean, judge to verify."
   It was right every time — keep the hedge anyway.
 
+## 4b. ✅ ADDENDUM — the X10/X10a repair is DISCHARGED (2026-07-14, same day)
+
+The first lap of overnight run #2 did the repair as its opening move (`4f51542`, "split
+`_rpow` engines + restore Lemma 7.10/X10a pins"), before touching objective 1 — the right
+call, and its handoff says so: *"judge pass 26 repair DONE; NEXT = few_white_mass_le
+assembly."*
+
+**Machine-checked, not claimed:**
+- **`tao_stmt_diff.py e08871e HEAD` → 19/19 character-identical.** `triangle_encounter_le`
+  and `encounter_apex_proximity` are byte-identical to the pre-deviation baseline. That was
+  the stated re-ratification condition, and it is met.
+- **Dated `#print axioms`** (worktree pinned at `b9fa428`) — all exactly
+  `[propext, Classical.choice, Quot.sound]`: both restored pins, all four engines
+  (`triangle_encounter_le_rpow`, `encounter_apex_proximity_rpow`, `bigTriangle_walk_le_rpow`,
+  `estar_union_le_rpow`), and the completed nodes X9 (`many_triangles_white`,
+  `fpDist_any_triangle_le`) + X8 (`Q_black_edge_case2`, `fpDist_white_exit`) which survive
+  the refactor untouched.
+- **`ManyTriangles.lean` has ZERO sorries** — the pins were restored by *proving*, not by
+  sorrying. `Case3.lean` still holds exactly the two crux sorries. Spine unchanged:
+  `Q_black_edge_case3` / `prop_7_8` carry `sorryAx` from those two alone.
+
+⚖️ **X10 + X10a ratifications RESTORED. Blueprint `\leanok` back up.** Net position: the
+campaign gained a strictly stronger engine layer *and* kept a faithful Lemma 7.10 — a better
+outcome than either the revert or the mutation.
+
+**Still open from §2 (demand 3):** thread `Cthr ≥ 10^27` so the depth-`m+1` bridge
+`(m+1)^0.8 ≤ 2·m^0.8 ≤ m/log²m < s` actually closes. It remains **unproved**, inside
+`few_white_mass_le` — which is exactly the sorry now being assembled. Verify it on the next
+boundary; do not let it be assumed.
+
 ## 5. State after this pass
 
 - **TWELVE verified nodes**: S3, X1, X2, X3, X5, X6, **X8** (new), X9, X10*, C2, C5, X4/X7 files.
