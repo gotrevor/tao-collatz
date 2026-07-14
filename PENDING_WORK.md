@@ -1,5 +1,27 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box cont7 (2026-07-14): **`fpDist_edgeWeight_le` PROVED (axiom-clean)** — the (7.48) Case-2 crux glue is DONE
+
+The (7.48)/(7.49) weight degradation is a machine-checked theorem. Decomposed into:
+- **`fpDist_edgeWeight_split`** (NEW, the mechanical Fubini heart, axiom-clean): sums
+  `edgeWeight_summand_le` over `d` (hold) and `e` (fpDist), splits the joint tail via
+  `1_{m<2(e₁+d₁)} ≤ 1_{m<4e₁}+1_{m<4d₁}`, factoring into `m^{−A}·Z_fp(θ)·Z_hold(θ) +
+  T_fp + T_hold` (θ=2A/m). Takes the two MGF summabilities as hypotheses.
+- **`fpDist_edgeWeight_le`** (main): supplies summabilities (`fpDist_fst_mgf_general.1`
+  for fp; `tiltZ_hold_ne_top`→`ENNReal.summable_toReal` for hold), ε=min(δ/8,2), bounds
+  Z_fp,Z_hold ≤ 1+ε (`fpDist_fst_mgf_le`, `hold_fst_mgf_le_real`), MGF ≤ m^{−A}(1+ε)² ≤
+  (1+δ/2)m^{−A}, tails ≤ (δ/4)m^{−A} each; sum = (1+δ)m^{−A}. HEARTBEAT 1M.
+
+**X8 Case-2 remaining: `fpDist_white_exit` (`BlackEdge.lean`, sorried) → `Q_black_edge_case2`.**
+
+**NEXT: `fpDist_white_exit`.** DIRECTION.md: it is the Case-2 TWIN of the now-proved
+deep kernel `fpDist_white_exit_deep` (`ManyTriangles.lean`) — "same geometry, budget
+hypothesis `s ≤ m/log²m` added; DERIVE it from `fpDist_white_exit_deep` if you can."
+First move: read both statements side by side, diff the hypotheses, and try to obtain
+`fpDist_white_exit` as a specialization/weakening of the deep variant. Then
+`Q_black_edge_case2` ((7.46)–(7.51) assembly, uses `fpDist_edgeWeight_le` ✓ +
+`fpDist_white_exit`), then X11 `Q_black_edge_case3` (`Case3.lean`).
+
 ## Lap D-box cont6 (2026-07-14): **`hold_fst_tail_le` PROVED (axiom-clean)** — all 4 inputs of `fpDist_edgeWeight_le` now proved
 
 The hold half of the (7.48) tail is done (axiom-clean). Route was far cleaner than the
