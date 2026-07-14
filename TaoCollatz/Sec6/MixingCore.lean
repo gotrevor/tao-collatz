@@ -2161,12 +2161,13 @@ theorem tailDensW_condWindow_le (j p l : ℕ) (C : ℝ)
   tailDensW_le_single_mass j p l (condWindow j p C l)
     (fun vt _ hl hW => fnat_lt_of_suffix_window vt l C hl hW hbudget) Y
 
-/-- **The stopping event `Bₖ`** (Tao (6.6)) on the tail block: `a[1,k] ≤ T < a[1,k+1]`, i.e.
-`pre vt (p−1) ≤ T ∧ T < pre vt p` with `p = k+1` and threshold `T = n·log3/log2 − Cₐ²·log n`. This is
-the predicate that `k` is the stopping value; the events `Bₖ` (as `k` varies) partition the good event.
-Real threshold; decidable classically. -/
+/-- **The stopping event `Bₖ`** (Tao (6.6)) on the reversed tail block.  With `p = k+1`, the tail is
+stored as `(a_{k+1}, …, a₁)`, so Tao's `a[1,k]` is its total sum with the *first* reversed coordinate
+removed: `pre vt p - pre vt 1`.  Thus this is exactly
+`a[1,k] ≤ T < a[1,k+1]`, for `T = n·log3/log2 − Cₐ²·log n`.  Dropping `pre vt (p−1)` instead would
+remove `a₁`, not `a_{k+1}`, and the resulting events would not form a stopping-time partition. -/
 def stopEvent (p : ℕ) (T : ℝ) : (Fin p → ℕ) → Prop := fun vt =>
-  (pre vt (p - 1) : ℝ) ≤ T ∧ T < (pre vt p : ℝ)
+  (pre vt p : ℝ) - (pre vt 1 : ℝ) ≤ T ∧ T < (pre vt p : ℝ)
 
 /-- **The full §6 conditioning window `Eₖ ∧ Bₖ`** on the tail block (Tao (6.9), minus `Cₖ,ₗ = {pre = l}`
 which `tailDensW`/`condDensW` bake in): the (6.2) window `condWindow` together with the stopping event
