@@ -403,6 +403,7 @@ with \(n_0 := \lfloor \log x / (10\log 2)\rfloor\) (5.1).
 \end{lemma}
 
 \begin{proposition}[Approximate first-passage formula; Prop 5.2]\label{C8}
+  \lean{first_passage_approx}
   \uses{C2, C5, C7}
   \notready
 \textbf{Proposition 5.2}, the approximate formula (paper (5.8)) for the law of the
@@ -411,7 +412,11 @@ first-passage location, built from the bookkeeping events
 \(B_{n,y}\) equivalence chain relating the passage location to the affine images of the input
 window.  This is where the Prop~1.9 geometric approximation is fed into the concrete window
 statistics.
-% TODO-PRECISE: Prop 5.2 has no canonical Lean name in SKELETON-SPEC yet; bound when named.
+% PINNED 2026-07-14 (RATIFY-C8): first_passage_approx (paper (5.8)) written with `sorry` over the
+% existing first-passage defs + the affine map Aff (1.3); defs nZero/mZero/goodTuple/Iy/Eprime and
+% the main term approxMainTerm (TaoCollatz/Sec5/ApproxFormula.lean).  Decomposed into named sorries
+% approx_good_tuple_whp (5.12) and approx_passtime_window (5.16, the SOLE C7 consumer).  \leanok is
+% the judge's to set after ratification against pp.22--25 -- kept \notready until then.
 \lapsrisk{15--30}{medium}{75\%}
 \end{proposition}
 

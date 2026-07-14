@@ -14,6 +14,7 @@ import TaoCollatz.Syracuse.ValuationDist
 import TaoCollatz.Fourier.ZMod3
 import TaoCollatz.Fourier.Parseval
 import TaoCollatz.Sec5.FirstPassage
+import TaoCollatz.Sec5.ApproxFormula
 import TaoCollatz.Sec6.MixingFromDecay
 import TaoCollatz.Sec7.Setup
 import TaoCollatz.Sec7.White
