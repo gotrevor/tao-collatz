@@ -117,6 +117,46 @@ theorem valSum_lower_tail :
           ≤ C * x ^ (-c) := by
   sorry
 
+/-- **Support extraction for the log-uniform window.**  Any `N` in the support of `logUnifOdd lo hi`
+is odd and `≤ hi` (in the nonempty case it lies in `logWindow lo hi`; in the degenerate empty case
+the support is the point mass `{1}`, and `1` is odd and `≤ hi` when `hi ≥ 1`). -/
+theorem logUnifOdd_support_le {lo hi : ℝ} (hhi : 1 ≤ hi)
+    {N : ℕ} (hN : N ∈ (logUnifOdd lo hi).support) : N % 2 = 1 ∧ (N : ℝ) ≤ hi := by
+  unfold logUnifOdd at hN
+  by_cases h : (logWindow lo hi).Nonempty
+  · rw [dif_pos h, PMF.mem_support_ofFinset_iff] at hN
+    have hw := hN.1
+    simp only [logWindow, Finset.mem_filter, Finset.mem_range] at hw
+    exact ⟨hw.2.1, hw.2.2.2⟩
+  · rw [dif_neg h, PMF.mem_support_iff, PMF.pure_apply] at hN
+    have hN1 : N = 1 := by by_contra hne; simp [hne] at hN
+    subst hN1
+    exact ⟨by norm_num, by exact_mod_cast hhi⟩
+
+/-- **Sub-linear powers are eventually dominated.**  For `0 ≤ θ < 1` and `ε > 0`, `x^θ ≤ ε·x` for
+all large `x`.  (Take `x₀ = max 1 ((1/ε)^{1/(1-θ)}`).)  The workhorse for the `O(x^{0.99}) ≤ x`
+closing of the descent. -/
+theorem rpow_le_eps_mul_of_lt_one {θ ε : ℝ} (hθ0 : 0 ≤ θ) (hθ1 : θ < 1) (hε : 0 < ε) :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → x ^ θ ≤ ε * x := by
+  refine ⟨max 1 ((1 / ε) ^ (1 / (1 - θ))), le_max_left _ _, fun x hx => ?_⟩
+  have hx1 : 1 ≤ x := le_trans (le_max_left _ _) hx
+  have hxpos : 0 < x := by linarith
+  have h1θ : 0 < 1 - θ := by linarith
+  have hlb : (1 / ε) ^ (1 / (1 - θ)) ≤ x := le_trans (le_max_right _ _) hx
+  have hkey : 1 / ε ≤ x ^ (1 - θ) := by
+    have hmono := Real.rpow_le_rpow (Real.rpow_nonneg (by positivity) _) hlb (le_of_lt h1θ)
+    rwa [← Real.rpow_mul (by positivity), one_div_mul_cancel (ne_of_gt h1θ), Real.rpow_one] at hmono
+  have hxθ : 0 < x ^ θ := Real.rpow_pos_of_pos hxpos θ
+  have hsplit : x ^ θ * x ^ (1 - θ) = x := by
+    rw [← Real.rpow_add hxpos, show θ + (1 - θ) = 1 by ring, Real.rpow_one]
+  have h1 : 1 ≤ ε * x ^ (1 - θ) := by
+    have hmul := mul_le_mul_of_nonneg_left hkey hε.le
+    rwa [mul_one_div, div_self (ne_of_gt hε)] at hmul
+  calc x ^ θ = x ^ θ * 1 := (mul_one _).symm
+    _ ≤ x ^ θ * (ε * x ^ (1 - θ)) := mul_le_mul_of_nonneg_left h1 hxθ.le
+    _ = ε * (x ^ θ * x ^ (1 - θ)) := by ring
+    _ = ε * x := by rw [hsplit]
+
 /-- **The descent step** (Tao pp.21, over (1.5)/(1.7)).  For `x` large and `N` in the support of the
 log-uniform window (`N` odd, `y ≤ N ≤ y^α ≤ x^{α³}`), if the total valuation `valSum N n₀` exceeds
 `1.9 n₀`, then `Syr^{n₀}(N) ≤ 3^{n₀} 2^{-1.9 n₀} x^{α³} + O(3^{n₀}) = O(x^{0.99}) ≤ x`, so `N` passes.
