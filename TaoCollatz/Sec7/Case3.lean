@@ -105,6 +105,20 @@ theorem pathSum_fst_le {T : ℕ} (v : Fin T → ℕ × ℤ) {p q : ℕ} (hpq : p
   rw [hq, Prod.fst_add]
   exact Nat.le_add_right _ _
 
+/-- **Good-column depth sourcing.** If the walk's endpoint stays deep
+(`q₀.1 + (pathSum v T).1 + g ≤ half`) then EVERY intermediate position does too, by
+`pathSum_fst_le`. This discharges the depth hypothesis of
+`few_white_pointwise_dichotomy` on the good column `{adv := e.1+(pathSum v P).1 < 0.9m}`
+(with `q₀.1 = n/2−m+e.1`, `half = n/2`: the endpoint bound is `adv + g ≤ m`, which holds
+for `g ≤ 0.1m` i.e. `Cthr ≥ 10g`). -/
+theorem pathSum_depth_le {T : ℕ} (v : Fin T → ℕ × ℤ) (q₀ : ℕ × ℤ) (g half : ℕ)
+    (hend : q₀.1 + (pathSum v T).1 + g ≤ half) :
+    ∀ p, p ≤ T → (q₀ + pathSum v p).1 + g ≤ half := by
+  intro p hp
+  have hmono : (pathSum v p).1 ≤ (pathSum v T).1 := pathSum_fst_le v hp
+  have hfst : (q₀ + pathSum v p).1 = q₀.1 + (pathSum v p).1 := rfl
+  omega
+
 /-! ### Encounter-fold invariants (interface to X9's `encStep`) -/
 
 /-- `encStep` always advances the position by the step. -/
