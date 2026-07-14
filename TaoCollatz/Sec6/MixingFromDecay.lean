@@ -392,6 +392,16 @@ theorem char_offset_split {j p : ℕ} (a : Fin (j + p) → ℕ) (ξ : ZMod (3 ^ 
 theorem norm_stdAddChar {N : ℕ} [NeZero N] (x : ZMod N) : ‖ZMod.stdAddChar x‖ = 1 := by
   rw [ZMod.stdAddChar_apply]; exact Circle.norm_coe _
 
+/-- **`stdAddChar` ↔ `eC` bridge**: the mathlib standard additive character on `ZMod (3ⁿ)` is the
+`§7` phase `eC(j.val/3ⁿ)`. This is the seam that lets the `cond_char_factor` factors (written in
+`stdAddChar`) be bounded by `charFn_decay` (Prop 1.17, written in `eC`). -/
+theorem stdAddChar_eq_eC {n : ℕ} (j : ZMod (3 ^ n)) :
+    ZMod.stdAddChar j = eC ((j.val : ℚ) / 3 ^ n) := by
+  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
+  rw [ZMod.stdAddChar_apply, ZMod.toCircle_apply, eC]
+  push_cast
+  ring_nf
+
 /-- **Brick (b), step 3 — the conditional character factorization** (C10). Fix the cut
 `n = j + p` and the level `l`. Conditioning the character sum on the tail-valuation event
 `{pre(tail) = l}` makes the split character factor into a **pure head expectation** times a
