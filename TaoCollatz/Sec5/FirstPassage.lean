@@ -206,6 +206,66 @@ theorem l1_normalize_telescope {ι : Type*} (O : Finset ι) (s : ι → ℝ) (D 
   calc ∑ r ∈ O, |s r - D / c| ≤ ∑ _r ∈ O, 2 * ε := Finset.sum_le_sum hterm
     _ = 2 * ε * c := by rw [Finset.sum_const, nsmul_eq_mul, ← hc]; ring
 
+/-- Raw class mass `S_r := ∑_{N ∈ W, N ≡ r (mod 2^{n'})} 1/N` for the log-uniform window
+`W = logWindow lo hi`.  The pushforward of `logUnifOdd` mod `2^{n'}` puts real mass `S_r / D` on
+residue `r`, where `D = windowMass`. -/
+noncomputable def classMass (lo hi : ℝ) (n' : ℕ) (r : ZMod (2 ^ n')) : ℝ :=
+  ∑ N ∈ (logWindow lo hi).filter (fun N : ℕ => (N : ZMod (2 ^ n')) = r), (N : ℝ)⁻¹
+
+/-- Total window mass `D := ∑_{N ∈ W} 1/N` (the log-uniform normalizer, in ℝ). -/
+noncomputable def windowMass (lo hi : ℝ) : ℝ := ∑ N ∈ logWindow lo hi, (N : ℝ)⁻¹
+
+/-- Apply lemma for `logUnifOdd` in the nonempty-window case: mass `∝ 1/N` on the window. -/
+theorem logUnifOdd_apply_of_nonempty {lo hi : ℝ} (h : (logWindow lo hi).Nonempty) (N : ℕ) :
+    logUnifOdd lo hi N
+      = if N ∈ logWindow lo hi then
+          (N : ℝ≥0∞)⁻¹ / (∑ M ∈ logWindow lo hi, (M : ℝ≥0∞)⁻¹) else 0 := by
+  unfold logUnifOdd
+  rw [dif_pos h, PMF.ofFinset_apply]
+
+/-- **Pushforward-mass identity** — the class mass glue of the integral-test dTV reduction.  In the
+nonempty-window case the reduction `logUnifOdd lo hi` mod `2^{n'}` puts real mass `S_r / D` on residue
+`r` (`S_r = classMass`, `D = windowMass`).  This is what lets `l1_normalize_telescope` consume the
+per-class masses. -/
+theorem map_res_apply_toReal {lo hi : ℝ} (h : (logWindow lo hi).Nonempty) {n' : ℕ}
+    (r : ZMod (2 ^ n')) :
+    (((logUnifOdd lo hi).map fun N => (N : ZMod (2 ^ n'))) r).toReal
+      = classMass lo hi n' r / windowMass lo hi := by
+  -- odd ⇒ every window element is nonzero (needed for `toReal` of `(N)⁻¹`)
+  have hne : ∀ N ∈ logWindow lo hi, (N : ℝ≥0∞) ≠ 0 := by
+    intro N hN
+    simp only [logWindow, Finset.mem_filter] at hN
+    have : N % 2 = 1 := hN.2.1
+    simp only [ne_eq, Nat.cast_eq_zero]; omega
+  -- ENNReal pushforward value: `S_r^{en} / D^{en}`
+  have hmap : ((logUnifOdd lo hi).map fun N => (N : ZMod (2 ^ n'))) r
+      = (∑ N ∈ (logWindow lo hi).filter (fun N : ℕ => (N : ZMod (2 ^ n')) = r), (N : ℝ≥0∞)⁻¹)
+          / (∑ M ∈ logWindow lo hi, (M : ℝ≥0∞)⁻¹) := by
+    rw [show (fun N : ZMod (2 ^ n') => N) = id from rfl, PMF.map_id]
+    show (PMF.map (fun N : ℕ => (N : ZMod (2 ^ n'))) (logUnifOdd lo hi)) r = _
+    rw [PMF.map_apply]
+    rw [tsum_eq_sum (s := logWindow lo hi) (fun N hN => by
+      rw [logUnifOdd_apply_of_nonempty h, if_neg hN]; split_ifs <;> rfl)]
+    -- ENNReal has no `sum_div`; push the normalizer as `* D⁻¹` instead.
+    rw [Finset.sum_filter, div_eq_mul_inv, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun N hN => ?_
+    rw [logUnifOdd_apply_of_nonempty h, if_pos hN]
+    by_cases hc : (N : ZMod (2 ^ n')) = r
+    · rw [if_pos hc.symm, if_pos hc, div_eq_mul_inv]
+    · rw [if_neg (fun hh => hc hh.symm), if_neg hc, zero_mul]
+  rw [hmap, ENNReal.toReal_div]
+  congr 1
+  · rw [ENNReal.toReal_sum fun N hN => by
+      rw [ne_eq, ENNReal.inv_eq_top, Nat.cast_eq_zero]
+      exact fun h0 => hne N (Finset.mem_of_mem_filter N hN) (by simp [h0])]
+    refine Finset.sum_congr rfl fun N _ => ?_
+    rw [ENNReal.toReal_inv, ENNReal.toReal_natCast]
+  · rw [ENNReal.toReal_sum fun M hM => by
+      rw [ne_eq, ENNReal.inv_eq_top, Nat.cast_eq_zero]
+      exact fun h0 => hne M hM (by simp [h0])]
+    refine Finset.sum_congr rfl fun M _ => ?_
+    rw [ENNReal.toReal_inv, ENNReal.toReal_natCast]
+
 /-- **The integral-test error estimate** — the analytic heart of C7, and the ONE remaining new brick.
 For the log-uniform odd window `N_y ∈ [y, y^α]`, the total-variation distance of its reduction mod
 `2^{3n₀}` from the uniform law on odd residues is `≪ 2^{3n₀}/y` (the raw integral-test error, before the
