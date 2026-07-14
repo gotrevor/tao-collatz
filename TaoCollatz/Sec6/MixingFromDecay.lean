@@ -94,15 +94,81 @@ theorem densC_inversion (n : ℕ) (Y : ZMod (3 ^ n)) :
   congr 1
   exact Finset.sum_congr rfl (fun ξ _ => by rw [smul_eq_mul, mul_comm])
 
+/-- **Geometric sum over roots of unity**: if `r^K = 1` then `∑_{j<K} rʲ = K` when `r = 1`,
+else `0` (the numerator `r^K − 1` vanishes). -/
+theorem geom_sum_root_of_pow_eq_one {K : ℕ} (r : ℂ) (hr : r ^ K = 1) :
+    ∑ j ∈ Finset.range K, r ^ j = if r = 1 then (K : ℂ) else 0 := by
+  split_ifs with h
+  · subst h; simp
+  · rw [geom_sum_eq h, hr, sub_self, zero_div]
+
+/-- **Fiber reindexing** (pure combinatorics, no character theory): the `3ᵐ`-fiber of `Y` is
+`{Y + t·3ᵐ : t < 3^{n-m}}`, so any function summed over it reindexes to a sum over
+`Finset.range (3^{n-m})`. -/
+theorem fiber_char_reindex (m n : ℕ) (hmn : m ≤ n) (ξ Y : ZMod (3 ^ n)) :
+    ∑ Y' ∈ fiber m n hmn Y, ZMod.stdAddChar (ξ * Y')
+      = ∑ t ∈ Finset.range (3 ^ (n - m)),
+          ZMod.stdAddChar (ξ * (Y + (t : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n)))) := by
+  sorry
+
 /-- **Coset character sum** (the number-theoretic heart of C10): the additive character summed
 over a `3ᵐ`-fiber vanishes unless `ξ` is a low frequency (`3^{n-m} ∣ ξ.val`), in which case it is
-`3^{n-m}` times the character at the base point. Route: parametrize the fiber as `{Y + t·3ᵐ}`
-(`t < 3^{n-m}`), split the character `e(ξ·(Y+t·3ᵐ)) = e(ξ·Y)·e(ξ·3ᵐ·t)`, and evaluate the
-geometric sum over the `3^{n-m}`-th roots of unity (`= 3^{n-m}` when `e(ξ·3ᵐ)=1`, else `0`). -/
+`3^{n-m}` times the character at the base point. Route: reindex the fiber as `{Y + t·3ᵐ}`
+(`fiber_char_reindex`), split the character `e(ξ·(Y+t·3ᵐ)) = e(ξ·Y)·e(ξ·3ᵐ)ᵗ`, and evaluate the
+geometric sum over the `3^{n-m}`-th roots of unity (`geom_sum_root_of_pow_eq_one`). -/
 theorem coset_char_sum (m n : ℕ) (hmn : m ≤ n) (ξ Y : ZMod (3 ^ n)) :
     ∑ Y' ∈ fiber m n hmn Y, ZMod.stdAddChar (ξ * Y')
       = (if ξ ∈ lowFreq m n then (3 ^ (n - m) : ℂ) else 0) * ZMod.stdAddChar (ξ * Y) := by
-  sorry
+  classical
+  set r : ℂ := ZMod.stdAddChar (ξ * (3 ^ m : ZMod (3 ^ n))) with hr_def
+  -- `(3:ZMod 3ⁿ)ⁿ = 0`.
+  have hpow_zero : (3 : ZMod (3 ^ n)) ^ n = 0 := by
+    rw [show (3 : ZMod (3 ^ n)) ^ n = ((3 ^ n : ℕ) : ZMod (3 ^ n)) from by push_cast; ring,
+      ZMod.natCast_self]
+  -- `rᴷ = 1` for `K = 3^{n-m}`: the exponent `3^{n-m}·(ξ·3ᵐ)` is `ξ·3ⁿ = 0`.
+  have hrK : r ^ (3 ^ (n - m)) = 1 := by
+    rw [hr_def, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul]
+    rw [show ((3 ^ (n - m) : ℕ) : ZMod (3 ^ n)) * (ξ * (3 ^ m : ZMod (3 ^ n))) = 0 from ?_,
+      AddChar.map_zero_eq_one]
+    rw [show ((3 ^ (n - m) : ℕ) : ZMod (3 ^ n)) = (3 : ZMod (3 ^ n)) ^ (n - m) from by
+        push_cast; ring,
+      show (3 : ZMod (3 ^ n)) ^ (n - m) * (ξ * (3 ^ m : ZMod (3 ^ n)))
+        = ξ * ((3 : ZMod (3 ^ n)) ^ (n - m) * (3 : ZMod (3 ^ n)) ^ m) from by ring,
+      ← pow_add, Nat.sub_add_cancel hmn, hpow_zero, mul_zero]
+  -- `r = 1 ⟺ ξ` is a low frequency.
+  have hlow_iff : (ξ ∈ lowFreq m n) ↔ r = 1 := by
+    have hchar : (r = 1) ↔ (ξ * (3 ^ m : ZMod (3 ^ n)) = 0) := by
+      rw [hr_def]
+      constructor
+      · intro h
+        exact ZMod.injective_stdAddChar (h.trans (AddChar.map_zero_eq_one _).symm)
+      · intro h; rw [h, AddChar.map_zero_eq_one]
+    have hdvd : ∀ v : ℕ, ((3 : ℕ) ^ n ∣ v * 3 ^ m ↔ 3 ^ (n - m) ∣ v) := by
+      intro v
+      rw [show (3 : ℕ) ^ n = 3 ^ (n - m) * 3 ^ m from by rw [← pow_add, Nat.sub_add_cancel hmn]]
+      exact Nat.mul_dvd_mul_iff_right (by positivity : 0 < 3 ^ m)
+    rw [lowFreq, Finset.mem_filter, hchar]
+    simp only [Finset.mem_univ, true_and]
+    rw [show ξ * (3 ^ m : ZMod (3 ^ n)) = ((ξ.val * 3 ^ m : ℕ) : ZMod (3 ^ n)) from by
+        push_cast [ZMod.natCast_zmod_val]; ring,
+      ZMod.natCast_eq_zero_iff]
+    exact (hdvd ξ.val).symm
+  -- Reindex, split the character, and sum the geometric series.
+  rw [fiber_char_reindex m n hmn ξ Y]
+  have hsplit : ∀ t : ℕ,
+      ZMod.stdAddChar (ξ * (Y + (t : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n))))
+        = ZMod.stdAddChar (ξ * Y) * r ^ t := by
+    intro t
+    rw [hr_def, mul_add, AddChar.map_add_eq_mul, ← AddChar.map_nsmul_eq_pow]
+    congr 2
+    rw [nsmul_eq_mul]; ring
+  rw [Finset.sum_congr rfl (fun t _ => hsplit t), ← Finset.mul_sum,
+    geom_sum_root_of_pow_eq_one r hrK]
+  by_cases h : ξ ∈ lowFreq m n
+  · rw [if_pos h, if_pos (hlow_iff.mp h)]
+    push_cast
+    ring
+  · rw [if_neg h, if_neg (fun hr1 => h (hlow_iff.mpr hr1)), mul_zero, zero_mul]
 
 /-- **The conditional average is the low-frequency projection**: substituting Fourier inversion
 into the fiber average and applying `coset_char_sum` collapses it to the low-frequency inverse DFT
