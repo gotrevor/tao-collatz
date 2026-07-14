@@ -432,6 +432,34 @@ theorem stdAddChar_pow3_descent {j p : ℕ} (w : ZMod (3 ^ (j + p))) :
   rw [pow_add]
   field_simp
 
+/-- **Character level-descent, right-summand variant** (C10 head-block): multiplying the argument
+by `3ᵖ` (the *second* exponent summand) drops the modulus `3^(j+p) → 3^j`:
+`stdAddChar_{3^(j+p)}(3ᵖ·w) = stdAddChar_{3^j}(w mod 3^j)`. This is the mirror of
+`stdAddChar_pow3_descent`, needed for the head factor whose `3ᵖ` block-scaling prefactor sits at the
+*low* end of the modulus `3^(j+p)`. Same proof: lift `w` to `ℕ`, fold into `natCast (3ᵖ·m)`, push
+through `stdAddChar_coe`, cancel `3ᵖ / 3^(j+p) = 1/3ʲ`. -/
+theorem stdAddChar_pow3_descent_right {j p : ℕ} (w : ZMod (3 ^ (j + p))) :
+    ZMod.stdAddChar ((3 : ZMod (3 ^ (j + p))) ^ p * w)
+      = ZMod.stdAddChar (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right j p)) (ZMod (3 ^ j)) w) := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  haveI : NeZero (3 ^ j) := ⟨pow_ne_zero _ (by norm_num)⟩
+  set m : ℕ := w.val with hmdef
+  have hw : w = ((m : ℕ) : ZMod (3 ^ (j + p))) := (ZMod.natCast_zmod_val w).symm
+  rw [hw]
+  have hL : (3 : ZMod (3 ^ (j + p))) ^ p * ((m : ℕ) : ZMod (3 ^ (j + p)))
+      = (((3 ^ p * m : ℕ)) : ZMod (3 ^ (j + p))) := by push_cast; ring
+  have hR : ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right j p)) (ZMod (3 ^ j))
+        ((m : ℕ) : ZMod (3 ^ (j + p))) = ((m : ℕ) : ZMod (3 ^ j)) := by rw [map_natCast]
+  rw [hL, hR,
+     show (((3 ^ p * m : ℕ)) : ZMod (3 ^ (j + p)))
+         = (((3 ^ p * m : ℕ) : ℤ) : ZMod (3 ^ (j + p))) by push_cast; ring,
+     show ((m : ℕ) : ZMod (3 ^ j)) = (((m : ℕ) : ℤ) : ZMod (3 ^ j)) by push_cast; ring,
+     ZMod.stdAddChar_coe, ZMod.stdAddChar_coe]
+  congr 1
+  push_cast
+  rw [pow_add]
+  field_simp
+
 /-- `castHom` sends the level-`(j+p)` inverse of `2` to the level-`p` inverse of `2` (both are the
 unique inverse of the unit `2` under the ring hom). Used to reduce the Syracuse offset mod `3^p`. -/
 theorem castHom_two_inv {j p : ℕ} :
@@ -456,6 +484,31 @@ theorem castHom_two_inv {j p : ℕ} :
       = (2 : ZMod (3 ^ p))⁻¹ * ((2 : ZMod (3 ^ p)) * F (2 : ZMod (3 ^ (j + p)))⁻¹) := by
         rw [← mul_assoc, mul_comm ((2 : ZMod (3 ^ p))⁻¹) 2, h2, one_mul]
     _ = (2 : ZMod (3 ^ p))⁻¹ := by rw [hc, mul_one]
+
+/-- `castHom` sends the level-`(j+p)` inverse of `2` to the level-`j` inverse of `2` (right-summand
+descent, `3^(j+p) → 3^j`). Mirror of `castHom_two_inv`, used to reduce the head Syracuse offset. -/
+theorem castHom_two_inv_right {j p : ℕ} :
+    ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right j p)) (ZMod (3 ^ j)) (2 : ZMod (3 ^ (j + p)))⁻¹
+      = (2 : ZMod (3 ^ j))⁻¹ := by
+  set F := ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right j p)) (ZMod (3 ^ j)) with hF
+  have h2 : (2 : ZMod (3 ^ j)) * (2 : ZMod (3 ^ j))⁻¹ = 1 := by
+    apply ZMod.mul_inv_of_unit
+    rw [show (2 : ZMod (3 ^ j)) = ((2 : ℕ) : ZMod (3 ^ j)) by norm_cast, ZMod.isUnit_iff_coprime]
+    exact Nat.Coprime.pow_right _ (by decide)
+  have h1 : (2 : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ = 1 := by
+    apply ZMod.mul_inv_of_unit
+    rw [show (2 : ZMod (3 ^ (j + p))) = ((2 : ℕ) : ZMod (3 ^ (j + p))) by norm_cast,
+      ZMod.isUnit_iff_coprime]
+    exact Nat.Coprime.pow_right _ (by decide)
+  have hF2 : F (2 : ZMod (3 ^ (j + p))) = (2 : ZMod (3 ^ j)) := by
+    rw [hF, show (2 : ZMod (3 ^ (j + p))) = ((2 : ℕ) : ZMod (3 ^ (j + p))) by norm_cast,
+      map_natCast]; norm_cast
+  have hc : (2 : ZMod (3 ^ j)) * F (2 : ZMod (3 ^ (j + p)))⁻¹ = 1 := by
+    have := congrArg F h1; rwa [map_mul, map_one, hF2] at this
+  calc F (2 : ZMod (3 ^ (j + p)))⁻¹
+      = (2 : ZMod (3 ^ j))⁻¹ * ((2 : ZMod (3 ^ j)) * F (2 : ZMod (3 ^ (j + p)))⁻¹) := by
+        rw [← mul_assoc, mul_comm ((2 : ZMod (3 ^ j))⁻¹) 2, h2, one_mul]
+    _ = (2 : ZMod (3 ^ j))⁻¹ := by rw [hc, mul_one]
 
 /-- **Brick (b), the tail-factor reindex** (C10): for a frequency of the form `ξ = 3ʲ·ζ`, the tail
 character factor `stdAddChar_{3^(j+p)}(-(offset(vt)·ξ))` — with `offset(vt) = Fnat_p(vt)·2⁻ᵖʳᵉ⁽ᵛᵗ,ᵖ⁾`
@@ -584,6 +637,48 @@ theorem syracZ_char_descent {j' q : ℕ} (η : ZMod (3 ^ (j' + q))) :
       from funext hpt,
     ← syracZ_map_cast (Nat.le_add_left q j'),
     cexpect_map _ _ _ (fun Y => le_of_eq (norm_stdAddChar _))]
+
+/-- **Brick (b), the head-factor Stage-A descent** (C10, pointwise). The head character factor from
+`cond_char_factor` carries a `3ᵖ` block-scaling prefactor (at the *low* end of the modulus) and the
+frozen tail-valuation phase `2⁻ˡ`. For a high frequency `ξ = 3ʲ'·2ˡ·ξ'`, the `2⁻ˡ·2ˡ = 1`
+cancellation removes the frozen phase, and the `3ᵖ` prefactor descends the character from level
+`j+p` down to level `j`, landing the head offset `Fnat_j(vh)·2⁻ᵖʳᵉ` at level `j` as a genuine
+level-`j` Syracuse character at the frequency `3ʲ'·(ξ' mod 3ʲ)`. Proof: `ring`-fold the `2⁻ˡ·2ˡ`
+into a single factor and cancel it, then `stdAddChar_pow3_descent_right` (right-summand descent) +
+push `castHom` through the offset (`castHom_two_inv_right`, `map_ofNat`). This is Stage A; Stage B is
+`syracZ_char_descent`, which then descends the `3ʲ'` valuation to `charFn_decay`'s level `j - j'`. -/
+theorem head_char_descent {j p : ℕ} (j' l : ℕ) (ξ' : ZMod (3 ^ (j + p))) (vh : Fin j → ℕ) :
+    ZMod.stdAddChar (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l)
+        * ((3 : ZMod (3 ^ (j + p))) ^ j' * (2 : ZMod (3 ^ (j + p))) ^ l * ξ')))
+      = ZMod.stdAddChar (-(((fnat j vh : ZMod (3 ^ j))
+        * (2 : ZMod (3 ^ j))⁻¹ ^ pre vh j)
+        * ((3 : ZMod (3 ^ j)) ^ j'
+          * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right j p)) (ZMod (3 ^ j)) ξ'))) := by
+  have hunit : (2 : ZMod (3 ^ (j + p)))⁻¹ * (2 : ZMod (3 ^ (j + p))) = 1 := by
+    rw [mul_comm]; apply ZMod.mul_inv_of_unit
+    rw [show (2 : ZMod (3 ^ (j + p))) = ((2 : ℕ) : ZMod (3 ^ (j + p))) by norm_cast,
+      ZMod.isUnit_iff_coprime]
+    exact Nat.Coprime.pow_right _ (by decide)
+  have hcancel : (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l * (2 : ZMod (3 ^ (j + p))) ^ l = 1 := by
+    rw [← mul_pow, hunit, one_pow]
+  have harg : -((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l)
+        * ((3 : ZMod (3 ^ (j + p))) ^ j' * (2 : ZMod (3 ^ (j + p))) ^ l * ξ'))
+      = (3 : ZMod (3 ^ (j + p))) ^ p * (-(((fnat j vh : ZMod (3 ^ (j + p)))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+        * ((3 : ZMod (3 ^ (j + p))) ^ j' * ξ'))) := by
+    have hfold : (3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l)
+          * ((3 : ZMod (3 ^ (j + p))) ^ j' * (2 : ZMod (3 ^ (j + p))) ^ l * ξ')
+        = ((3 : ZMod (3 ^ (j + p))) ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+          * ((3 : ZMod (3 ^ (j + p))) ^ j' * ξ'))
+          * ((2 : ZMod (3 ^ (j + p)))⁻¹ ^ l * (2 : ZMod (3 ^ (j + p))) ^ l) := by ring
+    rw [hfold, hcancel, mul_one]; ring
+  rw [harg, stdAddChar_pow3_descent_right]
+  congr 1
+  simp only [map_neg, map_mul, map_pow, map_natCast, castHom_two_inv_right, map_ofNat]
 
 /-- **Brick (b), the head-factor `≤ 1` bound** (C10): the head character factor is a character
 expectation, hence has norm `≤ 1` (`cexpect_norm_le` + `norm_stdAddChar`). The low-entropy factor. -/
