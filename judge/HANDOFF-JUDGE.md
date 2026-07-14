@@ -119,6 +119,18 @@ not to generalize.* When a pin blocks a lap and no judge is awake, it writes a
    `lean-create-worktree tao-collatz ~/src/tao-collatz-judge27 --start-point <HEAD>`
    (CoW `.lake`, builds in ~2 min). Run every axiom check *there*.
 1. `lean-treadmill status tao-collatz --commits 30` — read the night's commits.
+1b. **📖 READ THE LAPS' OWN HANDOFFS** — `ls -t HANDOFF-*.md | head -5`, plus
+   `PENDING_WORK.md`'s top. **Do this BEFORE you rule on anything they did.** ⚠️ *This step
+   exists because pass 26's judge skipped it and Trevor had to intervene.* The machine
+   evidence (diff, axioms, census) tells you **what** changed; only the handoffs tell you
+   **what the lap was thinking**, and the verdict often turns on that. Pass 26's X10 edit
+   read as a careless rail violation until the handoffs showed the lap had *planned* the
+   `Cthr` bridge, *tried* it, hit a genuine fractional-part counterexample, and pivoted
+   deliberately. That reframe is the whole reason the ruling became "split, don't revert"
+   (keeping a stronger engine) instead of a revert that would have thrown the insight away.
+   **A worker's reasoning is evidence. Read it, then judge it — in that order.**
+   (Corollary: a lap that hit a wall it was forbidden to route around leaves a
+   **`JUDGE-FLAG:`** — grep for it.)
 2. **`./tools/tao_stmt_diff.py <last-judged> <HEAD>`** — **statement erosion is the #1
    unattended risk; it fired for real on pass 26.** A restricted theorem compiles green,
    keeps clean axioms, and never moves the sorry census. The differ is the ONLY instrument
@@ -171,6 +183,11 @@ because nobody had added it. **Ratify a statement ⟹ add it to `PINNED_NAMES` t
 Corollary for directives: *"never weaken a statement"* is not a sufficient rail. A worker
 that believes it is **strengthening** will sail straight through it. Say **"never edit a
 ratified pin"** and give it somewhere to go instead (`JUDGE-FLAG:` + move on).
+
+**And the judge's own failure mode, from the same pass: judging the artifact without
+reading the reasoning.** Verify with machines, but *understand* with the handoffs — a
+worker's stated reasoning is evidence, and skipping it turns a sound-route-wrong-move into
+a rail violation you'd wrongly revert. Machine-check everything; read before you rule.
 
 *Judge passes 1–23 by Ren/Fable; 24–26 by Ren/Opus. Updated at the pass-26 boundary +
 addendum, 2026-07-14 (overnight run #2 in flight).*
