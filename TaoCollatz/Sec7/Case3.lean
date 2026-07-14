@@ -464,7 +464,7 @@ regime `1 ≤ s' ≤ (n/2−j)^{0.4}`. Composes `fpDist_walk_eq_fpDistPlus` (wal
 `fpDistPlus` marginal) with X10; the `ℝ≥0∞` walk sum is pushed to `ℝ` in one step via
 `PMF.toReal_tsum_mul_ofReal`. This is the summand of the X11a `estar_union_le` union
 bound. -/
-theorem bigTriangle_walk_le :
+theorem bigTriangle_walk_le_rpow :
     ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
@@ -477,7 +477,7 @@ theorem bigTriangle_walk_le :
             (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal
           ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
             + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) := by
-  obtain ⟨C, hC, c, hc, A₀, hA₀, hX10⟩ := triangle_encounter_le
+  obtain ⟨C, hC, c, hc, A₀, hA₀, hX10⟩ := triangle_encounter_le_rpow
   refine ⟨C, hC, c, hc, A₀, hA₀, ?_⟩
   intro A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep T p s' hpT hs'1 hs'm
   have hind_eq : ∀ y : ℕ × ℤ,
@@ -1150,7 +1150,7 @@ threshold is the real `4^A(1+p)³`), see `deterministic_encounter_or_bigTriangle
 ½·4^A(1+p)³` so `A²(1+p)/s' ≤ 2·A²·4^{-A}(1+p)^{-2}`); the renewal-tail `exp(−c·A²(1+p))`
 terms sum geometrically (`sum_geom_pow_le`, `r = exp(−c·A²) ≤ 1/2` for `A ≥ A₀`). Both
 decay super-polynomially, so E∗ is negligible in the X11d damping assembly. -/
-theorem estar_union_le :
+theorem estar_union_le_rpow :
     ∃ C' > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
@@ -1164,7 +1164,7 @@ theorem estar_union_le :
             Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊) (1 : ℕ × ℤ → ℝ≥0∞)
               (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal)
           ≤ C' * A ^ 2 * (4 : ℝ) ^ (-A) + C' * Real.exp (-c * A ^ 2) := by
-  obtain ⟨C, hC, c, hc, A₀0, hA₀0, hX10⟩ := bigTriangle_walk_le
+  obtain ⟨C, hC, c, hc, A₀0, hA₀0, hX10⟩ := bigTriangle_walk_le_rpow
   refine ⟨4 * C, by positivity, c, hc, max A₀0 (Real.sqrt (Real.log 2 / c)),
     le_max_of_le_left hA₀0, ?_⟩
   intro A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep T hreg
@@ -1937,7 +1937,7 @@ theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
               (1 : ℕ × ℤ → ℝ≥0∞)
               (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
         ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
-  obtain ⟨C', hC', c, hc, A₀e, hA₀e, hestar⟩ := estar_union_le
+  obtain ⟨C', hC', c, hc, A₀e, hA₀e, hestar⟩ := estar_union_le_rpow
   obtain ⟨A₀, hA₀ge, hA₀1, hnum⟩ := estar_scaled_numeric C' c A₀e hC' hc hA₀e
   set A' : ℝ := 2 * A + A₀ with hA'def
   have hA'ge : A₀e ≤ A' := by rw [hA'def]; linarith
