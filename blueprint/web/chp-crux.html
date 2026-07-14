@@ -784,6 +784,9 @@
 
     <a class="icon proof" href="chp-crux.html#X9">#</a>
     
+    <a class="icon proof" href="chp-crux.html#a0000000038"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
     
     <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
 </button>
@@ -848,6 +851,18 @@
 
   </div>
 </div>
+<div class="proof_wrapper" id="a0000000038">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>The depth-gated \(Y\)/\(Z\) induction (<span class="ttfamily">many_triangles_white</span>, judge pass 16) reduces Lemma 7.9 to the single white-exit kernel <span class="ttfamily">fpDist_white_exit_deep</span>, which p.48’s (7.50)/(7.51) decomposition splits into the out-of-strip mass (<span class="ttfamily">fpDist_out_of_strip_le</span>) and the foreign-triangle mass (<span class="ttfamily">fpDist_any_triangle_le</span>). The latter — blocked since judge pass 18 — follows from <span class="ttfamily">fpDist_any_triangle_le_of_localization_box</span> once the X6 localization box is an explicit numeral and \(\mathrm{sep}\) dominates it: the endpoint is projected back onto \(\Delta \) at the top edge (<span class="ttfamily">triangle_top_mem_add</span>, via the rational inner slope \(5/16 {\lt} \log 2/\log 9\), i.e. \(9^5 {\lt} 2^{16}\)) and Lemma 7.4’s separation (<span class="ttfamily">F.separated</span>) excludes every foreign triangle. The box is explicit because (i) the transverse threshold \(B = 64\) comes from the <em>exact</em> <span class="ttfamily">Hold</span> MGF (<span class="ttfamily">tiltZ_hold_closed</span>) rather than a quadratic bound, and (ii) the overshoot radius \(Y = 150\) comes from <span class="ttfamily">fpDist_le_renewal_conv</span> \(+\) <span class="ttfamily">renewal_level_le_one</span> (heights increase by \(\ge 3\), so each level is visited at most once) \(+\) \(\Delta l\)’s exact MGF — leaving X6’s envelope constants existential. \(\sqrt{51^2+150^2} \approx 158.4 {\lt} 100\ln 10 \approx 230.26\) at \(\varepsilon = 10^{-1000}\). </p>
+
+  </div>
+</div>
 <div class="lemma_thmwrapper theorem-style-definition" id="X10">
   <div class="lemma_thmheading">
     <span class="lemma_thmcaption">
@@ -864,7 +879,7 @@
 
     <a class="icon proof" href="chp-crux.html#X10">#</a>
     
-    <a class="icon proof" href="chp-crux.html#a0000000038"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+    <a class="icon proof" href="chp-crux.html#a0000000039"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
 </a>
     
     
@@ -933,7 +948,7 @@
 
   </div>
 </div>
-<div class="proof_wrapper" id="a0000000038">
+<div class="proof_wrapper" id="a0000000039">
   <div class="proof_heading">
     <span class="proof_caption">
     Proof
@@ -1013,7 +1028,7 @@
   </div>
   <div class="proposition_thmcontent">
   <p>   <b class="bfseries">Case 3</b> assembly (paper (7.48)/(7.49), (7.52)–(7.67)): the events \(E_*,F_*\), the choice \(R=\lfloor A^2/\varepsilon ^4\rfloor \), and the deterministic claim (7.67), combining Lemma&#160;7.9 (node&#160;<a href="chp-crux.html#X9">7.9</a>) and Lemma&#160;7.10 (node&#160;<a href="chp-crux.html#X10">7.10</a>). This closes Prop&#160;7.8, hence Prop&#160;7.3 (node&#160;<a href="chp-crux.html#X4">7.4</a>) and Prop&#160;7.1, hence the <b class="bfseries">crux</b> <b class="bfseries">Proposition 1.17</b> (character-sum decay): for every \(A{\gt}0\) there is \(C{\gt}0\) with, for all \(n\ge 1\) and all \(\xi \) with \(3\nmid \xi \), </p>
-<div class="displaymath" id="a0000000039">
+<div class="displaymath" id="a0000000040">
   \[  \Bigl\| \, \mathbb {E}_{Y\sim \texttt{syracZ}\, n}\,  e\bigl(-\xi \,  Y/3^{n}\bigr)\Bigr\|  \; \le \;  C\, n^{-A}.  \]
 </div>
 <p> This is the single Fourier-analytic input the whole spine reduces to (feeds node&#160;<a href="chp-mixing.html#C10">6.1</a>). The Case-3 entry statement <span class="ttfamily">Q_black_edge_case3</span> ((7.53)–(7.67) interface, budget hypotheses matching (7.52) with the documented lattice slack) is judge-ratified 2026-07-12 vs pp.48–49 and consumed by the proved <span class="ttfamily">Q_black_edge</span> split. <em>Consumer checks pre-cleared (judge pass 15, pp.48–49 + 54–56 read)</em>: the (7.54) 0.9m split, the \(R := \lfloor A^2/\varepsilon ^4\rfloor \)-after-\(\varepsilon \) choice, the \(-O(A)\) Markov slack absorbing X9’s \(e^{2\varepsilon }\), the depth of every (7.67) encounter, and X10’s consumption at a single large \(A\) at the p.54 union bound (safe for the \(\exists A_0\) re-pin, judge pass 18). What remains at ratification time is pinning this node’s own statements (\(E_*, F_*\), (7.66)/(7.67), the assembly chain) when they land. </p>
