@@ -1038,6 +1038,32 @@ theorem condDens_highfreq_l2_le (j p l m : ℕ) (D : ℝ) (hD : 0 ≤ D)
     _ = D ^ 2 * ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2) := by rw [tail_factor_l2_eq]
     _ = D ^ 2 * (3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2 := by ring
 
+/-- **Brick (b), the per-conditioning osc bound** (C10, (6.10)). Assembling the full Plancherel
+chain: for a conditioned density `condDens j p l`, given the uniform head decay `D` (`hunif`), the
+`3ᵐ`-scale oscillation is `≤ D·√(3^(j+p)·∑(tailDens)²)` — the Cauchy–Schwarz/Parseval bridge
+`osc_le_sqrt_highfreq` on the sharp `ℓ²`-refinement `condDens_highfreq_l2_le`. This is Tao's (6.10)
+for a single conditioning `(k,l)`, machine-checked modulo the two remaining obligations (`hunif`
+uniform head decay + the tail collision-entropy count inside the `√`). The event assembly (6.1)–(6.8)
+then telescopes these single-conditioning bounds into `fine_scale_mixing`. -/
+theorem condDens_osc_le (j p l m : ℕ) (hmn : m ≤ j + p) (D : ℝ) (hD : 0 ≤ D)
+    (hunif : ∀ ξ ∈ highFreq m (j + p),
+      ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
+          (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))‖ ≤ D) :
+    osc m (j + p) hmn (condDens j p l)
+      ≤ D * Real.sqrt ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2) := by
+  calc osc m (j + p) hmn (condDens j p l)
+      ≤ Real.sqrt (∑ ξ ∈ highFreq m (j + p),
+          ‖ZMod.dft (densC (j + p) (condDens j p l)) ξ‖ ^ 2) :=
+        osc_le_sqrt_highfreq _ _ _ _
+    _ ≤ Real.sqrt (D ^ 2 * ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2)) := by
+        apply Real.sqrt_le_sqrt
+        rw [← mul_assoc]
+        exact condDens_highfreq_l2_le j p l m D hD hunif
+    _ = D * Real.sqrt ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2) := by
+        rw [Real.sqrt_mul (sq_nonneg D), Real.sqrt_sq hD]
+
 
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
