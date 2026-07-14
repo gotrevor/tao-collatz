@@ -87,6 +87,114 @@ theorem osc_eq_sum_norm_devC (m n : ℕ) (hmn : m ≤ n) (c : ZMod (3 ^ n) → �
     ring
   rw [hcast, Complex.norm_real, Real.norm_eq_abs, fiber]
 
+/-- The `3ᵐ`-scale fiber has exactly `3^{n-m}` points (the `castHom` kernel size): it is the image
+of `t ↦ Y + t·3ᵐ` over `range (3^{n-m})` (`fiber_char_reindex`'s injective reindexing), so
+`card = 3^{n-m}`. Used for the `L¹`-contraction of the conditional-average (`osc_le_two_mul_l1`). -/
+theorem fiber_card (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) :
+    (fiber m n hmn Y).card = 3 ^ (n - m) := by
+  classical
+  have h3m : (3 ^ m : ZMod (3 ^ n)) = ((3 ^ m : ℕ) : ZMod (3 ^ n)) := by push_cast; ring
+  have hcast3m : ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) (3 ^ m : ZMod (3 ^ n)) = 0 := by
+    rw [h3m, map_natCast]; exact ZMod.natCast_self _
+  set g : ℕ → ZMod (3 ^ n) := fun t => Y + (t : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n)) with hg
+  have hginj : Set.InjOn g (Finset.range (3 ^ (n - m))) := by
+    intro t ht t' ht' heq
+    simp only [Finset.coe_range, Set.mem_Iio] at ht ht'
+    simp only [hg] at heq
+    have h2 : (t : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n))
+        = (t' : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n)) := add_left_cancel heq
+    rw [show (t : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n)) = ((t * 3 ^ m : ℕ) : ZMod (3 ^ n)) from by
+        push_cast; ring,
+      show (t' : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n)) = ((t' * 3 ^ m : ℕ) : ZMod (3 ^ n)) from by
+        push_cast; ring,
+      ZMod.natCast_eq_natCast_iff,
+      show (3 : ℕ) ^ n = 3 ^ (n - m) * 3 ^ m from by rw [← pow_add, Nat.sub_add_cancel hmn]] at h2
+    have h3 : t ≡ t' [MOD 3 ^ (n - m)] := Nat.ModEq.mul_right_cancel' (by positivity) h2
+    rwa [Nat.ModEq, Nat.mod_eq_of_lt ht, Nat.mod_eq_of_lt ht'] at h3
+  have hfib_eq : fiber m n hmn Y = (Finset.range (3 ^ (n - m))).image g := by
+    ext Y'
+    simp only [Finset.mem_image, Finset.mem_range]
+    constructor
+    · intro hY'
+      rw [fiber, Finset.mem_filter] at hY'
+      have hz : ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) (Y' - Y) = 0 := by
+        rw [map_sub, hY'.2, sub_self]
+      have hval0 : (((Y' - Y).val : ℕ) : ZMod (3 ^ m)) = 0 := by
+        rw [ZMod.castHom_apply] at hz
+        rw [ZMod.natCast_val]
+        exact hz
+      have hdvd : (3 ^ m : ℕ) ∣ (Y' - Y).val := (ZMod.natCast_eq_zero_iff _ _).mp hval0
+      refine ⟨(Y' - Y).val / 3 ^ m, ?_, ?_⟩
+      · rw [Nat.div_lt_iff_lt_mul (by positivity : 0 < 3 ^ m)]
+        calc (Y' - Y).val < 3 ^ n := ZMod.val_lt _
+          _ = 3 ^ (n - m) * 3 ^ m := by rw [← pow_add, Nat.sub_add_cancel hmn]
+      · simp only [hg]
+        have hmul : (((Y' - Y).val / 3 ^ m : ℕ) : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n))
+            = Y' - Y := by
+          rw [h3m, ← Nat.cast_mul, Nat.div_mul_cancel hdvd, ZMod.natCast_zmod_val]
+        rw [hmul]; abel
+    · rintro ⟨t, _, rfl⟩
+      rw [fiber, Finset.mem_filter]
+      refine ⟨Finset.mem_univ _, ?_⟩
+      simp only [hg, map_add, map_mul, hcast3m, mul_zero, add_zero]
+  rw [hfib_eq, Finset.card_image_of_injOn hginj, Finset.card_range]
+
+/-- **`L¹`-contraction of the oscillation** (C10, the error-term tool): the `3ᵐ`-scale oscillation
+of a density `c` is at most twice its `L¹` mass, `osc(c) ≤ 2·∑_Y |c Y|`. The conditional average is
+an `L¹`-contraction (`∑_Y ‖condAvgC Y‖ ≤ ∑_Y |c Y|`, via the `fiber_card` double-count), and
+`devC = densC − condAvgC` gives the triangle bound. This is the lemma that turns "small total mass"
+into "small oscillation" — the mechanism bounding the bad-event error `osc(syracZ − ∑ condDens) ≤
+2·P(Ē)` in the §6 event telescope, and the finite-`l`-window truncation tail. -/
+theorem osc_le_two_mul_l1 (m n : ℕ) (hmn : m ≤ n) (c : ZMod (3 ^ n) → ℝ) :
+    osc m n hmn c ≤ 2 * ∑ Y, |c Y| := by
+  classical
+  rw [osc_eq_sum_norm_devC]
+  have hnorm3 : ‖(3 : ℂ) ^ ((m : ℤ) - (n : ℤ))‖ = (3 : ℝ) ^ ((m : ℤ) - (n : ℤ)) := by
+    rw [norm_zpow, Complex.norm_ofNat]
+  have hdens : ∀ Y, ‖densC n c Y‖ = |c Y| := fun Y => by
+    rw [densC, Complex.norm_real, Real.norm_eq_abs]
+  have hcount : ∑ Y, ∑ Y' ∈ fiber m n hmn Y, |c Y'|
+      = ((3 ^ (n - m) : ℕ) : ℝ) * ∑ Y', |c Y'| := by
+    have h1 : ∀ Y, ∑ Y' ∈ fiber m n hmn Y, |c Y'|
+        = ∑ Y', (if ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y'
+              = ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y then |c Y'| else 0) := by
+      intro Y; rw [fiber, Finset.sum_filter]
+    simp_rw [h1]
+    rw [Finset.sum_comm, Finset.mul_sum]
+    refine Finset.sum_congr rfl (fun Y' _ => ?_)
+    rw [← Finset.sum_filter, Finset.sum_const]
+    have hfeq : (Finset.univ.filter (fun Y => ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y'
+          = ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y)) = fiber m n hmn Y' := by
+      rw [fiber]; ext Y; simp only [Finset.mem_filter, Finset.mem_univ, true_and, eq_comm]
+    rw [hfeq, fiber_card, nsmul_eq_mul]
+  have hpow : ((3 ^ (n - m) : ℕ) : ℝ) = (3 : ℝ) ^ ((n : ℤ) - (m : ℤ)) := by
+    rw [← Nat.cast_sub hmn, zpow_natCast]; push_cast; ring
+  have hcond : ∑ Y, ‖condAvgC m n hmn c Y‖ ≤ ∑ Y, |c Y| := by
+    have hpt : ∀ Y, ‖condAvgC m n hmn c Y‖
+        ≤ (3 : ℝ) ^ ((m : ℤ) - (n : ℤ)) * ∑ Y' ∈ fiber m n hmn Y, |c Y'| := by
+      intro Y
+      rw [condAvgC, norm_mul, hnorm3]
+      refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+      calc ‖∑ Y' ∈ fiber m n hmn Y, densC n c Y'‖
+          ≤ ∑ Y' ∈ fiber m n hmn Y, ‖densC n c Y'‖ := norm_sum_le _ _
+        _ = ∑ Y' ∈ fiber m n hmn Y, |c Y'| := Finset.sum_congr rfl (fun Y' _ => hdens Y')
+    calc ∑ Y, ‖condAvgC m n hmn c Y‖
+        ≤ ∑ Y, (3 : ℝ) ^ ((m : ℤ) - (n : ℤ)) * ∑ Y' ∈ fiber m n hmn Y, |c Y'| :=
+          Finset.sum_le_sum (fun Y _ => hpt Y)
+      _ = (3 : ℝ) ^ ((m : ℤ) - (n : ℤ)) * ∑ Y, ∑ Y' ∈ fiber m n hmn Y, |c Y'| := by
+          rw [Finset.mul_sum]
+      _ = (3 : ℝ) ^ ((m : ℤ) - (n : ℤ)) * (((3 ^ (n - m) : ℕ) : ℝ) * ∑ Y', |c Y'|) := by rw [hcount]
+      _ = ∑ Y', |c Y'| := by
+          rw [hpow, ← mul_assoc, ← zpow_add₀ (by norm_num : (3:ℝ) ≠ 0)]
+          norm_num
+  calc ∑ Y, ‖devC m n hmn c Y‖
+      ≤ ∑ Y, (‖densC n c Y‖ + ‖condAvgC m n hmn c Y‖) := by
+        refine Finset.sum_le_sum (fun Y _ => ?_); rw [devC]; exact norm_sub_le _ _
+    _ = (∑ Y, ‖densC n c Y‖) + ∑ Y, ‖condAvgC m n hmn c Y‖ := Finset.sum_add_distrib
+    _ ≤ (∑ Y, |c Y|) + ∑ Y, |c Y| :=
+        add_le_add (le_of_eq (Finset.sum_congr rfl (fun Y _ => hdens Y))) hcond
+    _ = 2 * ∑ Y, |c Y| := by ring
+
 /-- **Fourier inversion** for the density: `densC Y = N⁻¹ ∑_ξ 𝓕(densC)(ξ)·e(ξ·Y)`. Immediate
 from `densC = 𝓕⁻(𝓕 densC)` (`LinearEquiv.symm_apply_apply`) and `ZMod.invDFT_apply`. -/
 theorem densC_inversion (n : ℕ) (c : ZMod (3 ^ n) → ℝ) (Y : ZMod (3 ^ n)) :
