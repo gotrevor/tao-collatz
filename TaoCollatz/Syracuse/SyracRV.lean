@@ -221,6 +221,43 @@ private theorem geom_fold {P : ℕ} (hP : 0 < P) (g : ℕ → ℝ≥0∞)
     ring
   rw [tsum_congr hinner, ENNReal.tsum_mul_right, ENNReal.tsum_geometric]
 
+/-- Geometric fold against the `Geom(2)` law: for `f` with period `P`, the `geomHalf`-
+weighted sum over `a₀` collapses to `(1−2⁻ᴾ)⁻¹` times one period `[1,P]`. This is the
+exact shape Lemma 1.12's `a`-fold consumes (`geomHalf` supported on `a₀ ≥ 1`). -/
+private theorem geom_fold_geomHalf {P : ℕ} (hP : 0 < P) (f : ℕ → ℝ≥0∞)
+    (hper : ∀ a, f (a + P) = f a) :
+    ∑' a0 : ℕ, geomHalf a0 * f a0
+      = (1 - (2⁻¹ : ℝ≥0∞) ^ P)⁻¹ * ∑ a ∈ Finset.Icc 1 P, (2⁻¹ : ℝ≥0∞) ^ a * f a := by
+  have hstep1 : (∑' a0 : ℕ, geomHalf a0 * f a0)
+      = ∑' b : ℕ, (2⁻¹ : ℝ≥0∞) ^ (b + 1) * f (b + 1) := by
+    rw [← tsum_ite_zero_eq_succ (fun a => (2⁻¹ : ℝ≥0∞) ^ a * f a)]
+    apply tsum_congr; intro a0
+    rw [geomHalf_apply]
+    by_cases h0 : a0 = 0
+    · rw [if_pos h0, if_pos h0, zero_mul]
+    · rw [if_neg h0, if_neg h0]
+  have hstep2 : (∑' b : ℕ, (2⁻¹ : ℝ≥0∞) ^ (b + 1) * f (b + 1))
+      = 2⁻¹ * ∑' b : ℕ, (2⁻¹ : ℝ≥0∞) ^ b * f (b + 1) := by
+    rw [← ENNReal.tsum_mul_left]
+    apply tsum_congr; intro b
+    rw [pow_succ]; ring
+  rw [hstep1, hstep2,
+    geom_fold hP (fun b => f (b + 1)) (fun a => by rw [Nat.add_right_comm]; exact hper (a + 1)),
+    ← mul_assoc, mul_comm (2⁻¹ : ℝ≥0∞) _, mul_assoc]
+  congr 1
+  have hmap : Finset.Icc 1 P
+      = (Finset.range P).map ⟨fun r => r + 1, add_left_injective 1⟩ := by
+    ext a
+    simp only [Finset.mem_Icc, Finset.mem_map, Finset.mem_range, Function.Embedding.coeFn_mk]
+    constructor
+    · rintro ⟨h1, h2⟩; exact ⟨a - 1, by omega, by omega⟩
+    · rintro ⟨r, hr, rfl⟩; omega
+  rw [Finset.mul_sum, hmap, Finset.sum_map]
+  apply Finset.sum_congr rfl
+  intro r _
+  simp only [Function.Embedding.coeFn_mk]
+  rw [pow_succ]; ring
+
 /-- `2^{2·3ⁿ} ≡ 1 (mod 3ⁿ⁺¹)` — i.e. `2·3ⁿ` is a period of `a ↦ 2ᵃ` in `ZMod 3ⁿ⁺¹`
 (the periodicity input to Lemma 1.12's `a`-fold; weaker than the exact order). -/
 private theorem two_pow_period (n : ℕ) : (2 : ZMod (3 ^ (n + 1))) ^ (2 * 3 ^ n) = 1 := by
