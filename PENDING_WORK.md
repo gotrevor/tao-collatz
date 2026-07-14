@@ -38,15 +38,33 @@ and `+O(3^{n-m₀})` precisely to handle the rounding. So step 5 is an **APPROXI
 ## Banked this lap (proved, axiom-clean; in ApproxFormula.lean)
 - **`aff_valVec_eq_syr`**: for odd N, `Aff N k (valVec N k) = syr^[k] N` — Lemma 2.1's exact GENERATING
   direction (the "main" contribution; truncation ā's are the absorbed error). Foundation for step 5.
+- **`approx_passtime_window` (5.16) — PROVED** (was a pinned sorry; now C7 is WIRED into C8). Split the
+  complement `{¬(passes ∧ T_x∈Iy)}` into the disjoint `{¬passes}` ⊕ `{passes ∧ T_x∉Iy}`; the first is
+  `first_passage_nonescape` (C7, `≤ C x^{-c}`), folded into `log^{-c}` via `escape_to_log`; the second
+  is the new isolated sub-sorry `passtime_window_inner`. `#print axioms` = trust base + one `sorryAx`
+  (= `passtime_window_inner`). **This is the whole of C8's C7-dependence, discharged.**
+- Reusable glue: **`expect_le_add_of_indicator_le`** (PMF.expect subadditivity for indicator unions) +
+  **`escape_to_log`** (`x^{-c} ≤ (log x)^{-c}` for `x ≥ e`), both axiom-clean.
+
+## C8 sorry census now (still 3 in ApproxFormula, but the C7 seam is gone)
+1. `first_passage_approx` (:116) — the assembly (steps 4+5: `B_{n,y}` event chain + the approximate
+   affine reindex; truncation absorbed per the INSIGHT above).
+2. `approx_good_tuple_whp` (:136) — (5.12) union bound, C5 `valuation_dist` + S3 `geomHalf_tail_bound`.
+3. `passtime_window_inner` (:191) — (5.16) window term ONLY: `{passes ∧ T_x∉Iy}`, the integral test
+   that `N_y` avoids the `2 log^{0.8}x` edge collars; reuse C7's `classMass`/`windowMass`/`intTest_*`.
 
 ## Next moves (hardest-first)
-1. Prove the pointwise event-algebra of step 4 (the `B_{n,y}` chain) as an internal lemma — it's exact
-   (no error), uses `syr_iterate_key` + `passTime`/`passLoc` defs + the E' def. This de-risks the
-   assembly's skeleton before the analytic reindex.
-2. State step 5 as an internal `≤`/approx lemma (truncation absorbed) and prove the main (exact `ā=valVec`)
-   contribution via `aff_valVec_eq_syr` + `valVec_unique`; bound the truncation remainder in the error.
-3. Then `approx_passtime_window` (wire proved `first_passage_nonescape` into `{¬passes}` + integral test),
-   then `approx_good_tuple_whp` (union bound, C5+S3), then assemble `first_passage_approx`.
+1. **`approx_good_tuple_whp` (5.12)** — most self-contained, precedented by C7's just-proved
+   `valSum_lower_geom` (SAME machinery: `valuation_dist` → `geomHalf.iid`, then two-sided
+   `geomHalf_tail_bound`). Route: on the odd support `valVec_pos` kills the `∀i, 1≤aᵢ` conjunct, so
+   `¬goodTuple ⟺ ∃ n≤n₀, log^{0.6}x ≤ |valSum N n − 2n|` (via `pre_valVec`); union-bound over the
+   `n₀+1` prefixes (`expect_le_add_of_indicator_le` generalizes to a finite `Finset.sum`); transfer each
+   prefix deviation to `geomHalf.iid` via `valuation_dist` + the prefix marginal (`iidMap_pre` from C10);
+   bound by `Gweight` and sum. Decompose into a per-prefix tail sub-sorry + the Gweight-sum if it fights.
+2. **`passtime_window_inner` (5.16 window)** — the integral test over the log-uniform window edges.
+3. **`first_passage_approx`** assembly — step-4 `B_{n,y}` event chain (exact, `syr_iterate_key` +
+   `passTime`/E' defs) then the step-5 approximate reindex (`aff_valVec_eq_syr` + `valVec_unique`,
+   truncation in the error).
 
 ---
 

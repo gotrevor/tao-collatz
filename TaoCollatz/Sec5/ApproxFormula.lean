@@ -141,20 +141,117 @@ theorem approx_good_tuple_whp :
           ≤ C * (Real.log x) ^ (-c) := by
   sorry
 
+/-! ### Glue for the (5.16) split -/
+
+/-- Expectation of an event indicator dominated pointwise by a sum of two indicators is at most the
+sum of their expectations (a union/subadditivity bound for `PMF.expect`). -/
+theorem expect_le_add_of_indicator_le {α : Type*} (p : PMF α) (U S T : Set α)
+    (h : ∀ a, Set.indicator U (1 : α → ℝ) a ≤ Set.indicator S 1 a + Set.indicator T 1 a) :
+    p.expect (Set.indicator U 1) ≤
+      p.expect (Set.indicator S 1) + p.expect (Set.indicator T 1) := by
+  classical
+  have hsumP : Summable fun a => (p a).toReal := ENNReal.summable_toReal p.tsum_coe_ne_top
+  have ind01 : ∀ (V : Set α) a,
+      (0 : ℝ) ≤ Set.indicator V (1 : α → ℝ) a ∧ Set.indicator V (1 : α → ℝ) a ≤ 1 := by
+    intro V a
+    refine ⟨Set.indicator_nonneg (fun _ _ => zero_le_one) a, ?_⟩
+    rw [Set.indicator_apply]; split <;> simp
+  have hsum : ∀ (V : Set α), Summable fun a => (p a).toReal * Set.indicator V (1 : α → ℝ) a := by
+    intro V
+    exact Summable.of_nonneg_of_le (fun a => mul_nonneg ENNReal.toReal_nonneg (ind01 V a).1)
+      (fun a => mul_le_of_le_one_right ENNReal.toReal_nonneg (ind01 V a).2) hsumP
+  show (∑' a, (p a).toReal * Set.indicator U 1 a) ≤
+      (∑' a, (p a).toReal * Set.indicator S 1 a) + (∑' a, (p a).toReal * Set.indicator T 1 a)
+  rw [← (hsum S).tsum_add (hsum T)]
+  refine (hsum U).tsum_le_tsum (fun a => ?_) ((hsum S).add (hsum T))
+  calc (p a).toReal * Set.indicator U 1 a
+      ≤ (p a).toReal * (Set.indicator S 1 a + Set.indicator T 1 a) :=
+        mul_le_mul_of_nonneg_left (h a) ENNReal.toReal_nonneg
+    _ = (p a).toReal * Set.indicator S 1 a + (p a).toReal * Set.indicator T 1 a := by ring
+
+/-- For `x ≥ e` and `c > 0`, `x^{-c} ≤ (log x)^{-c}` (since `1 ≤ log x ≤ x`).  This is what lets the
+escape term's `x^{-c}` bound (`first_passage_nonescape`) fold into the `(log x)^{-c}` target. -/
+theorem escape_to_log {x c : ℝ} (hx : Real.exp 1 ≤ x) (hc : 0 < c) :
+    x ^ (-c) ≤ (Real.log x) ^ (-c) := by
+  have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 1) hx
+  have hlog1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hx
+  have hlogpos : 0 < Real.log x := lt_of_lt_of_le one_pos hlog1
+  have hle : Real.log x ≤ x := le_trans (Real.log_le_sub_one_of_pos hxpos) (by linarith)
+  rw [Real.rpow_neg hxpos.le, Real.rpow_neg hlogpos.le, inv_eq_one_div, inv_eq_one_div]
+  exact one_div_le_one_div_of_le (Real.rpow_pos_of_pos hlogpos c)
+    (Real.rpow_le_rpow hlogpos.le hle hc.le)
+
+/-- **Paper (5.16), window term** (owed — the integral-test piece).  On the event that `N_y` *does*
+pass, the passage time nonetheless lands outside `I_y` only with probability `≪ log^{-c} x`.
+Proof (owed): this is the integral test that `N_y` is not within `2 log^{0.8} x` of a window edge
+`[y + 2log^{0.8}x, y^α − 2log^{0.8}x]` (via (5.14)/(5.15)), plus the good-tuple event (5.12); reuse
+C7's `classMass`/`windowMass`/`intTest_*` machinery in `Sec5.FirstPassage`.  **Does not use C7's
+escape bound** — that is the *other* term of (5.16), discharged in `approx_passtime_window`. -/
+theorem passtime_window_inner :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1)
+          ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
 /-- **Paper (5.16)** — the passage time lands in the window `I_y` with probability `1 − O(log^{-c} x)`.
 Equivalently the complement `{N : ¬(passes ∧ T_x ∈ I_y)}` has probability `≪ log^{-c} x`.
 
-⚠️ **THIS is the C7 consumer.**  The complement event splits as `{¬ passes} ∪ {passes ∧ T_x ∉ I_y}`.
-The first term `ℙ(T_x(N_y) = ∞) = ℙ(¬ passes)` is bounded `≪ x^{-c} ≪ log^{-c} x` by
-`first_passage_nonescape` (C7, paper (1.19)/(5.5)).  The second term is the integral-test
-calculation over the log-uniform window using (5.14)/(5.15) and (5.12).  This is the whole of C8's
-dependence on C7. -/
+⚠️ **THIS is the C7 consumer.**  The complement event splits as the disjoint union
+`{¬ passes} ∪ {passes ∧ T_x ∉ I_y}`.  The first term `ℙ(T_x(N_y) = ∞) = ℙ(¬ passes) ≪ x^{-c}` is
+`first_passage_nonescape` (C7, paper (1.19)/(5.5), **proved axiom-clean**), folded into `log^{-c} x`
+via `escape_to_log`.  The second term is `passtime_window_inner` (the integral-test window piece).
+This lemma **wires C7 into C8** — the whole of C8's dependence on C7 — leaving only the window
+integral test open. -/
 theorem approx_passtime_window :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} 1)
           ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨c₁, C₁, x₁, hc₁, hC₁, hesc⟩ := first_passage_nonescape
+  obtain ⟨c₂, C₂, x₂, hc₂, hC₂, hwin⟩ := passtime_window_inner
+  refine ⟨min c₁ c₂, C₁ + C₂, max (max x₁ x₂) (Real.exp 1), lt_min hc₁ hc₂, by positivity,
+    fun x hx y hy => ?_⟩
+  have hx1 : x₁ ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+  have hx2 : x₂ ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
+  have hlog1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hxe
+  have hpw : ∀ N, Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} (1 : ℕ → ℝ) N ≤
+      Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1 N +
+      Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1 N := by
+    intro N
+    have h1 : (0 : ℝ) ≤ Set.indicator {N | ¬ passes ⌊x⌋₊ N} (1 : ℕ → ℝ) N :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    have h2 : (0 : ℝ) ≤ Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} (1 : ℕ → ℝ) N :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    by_cases hN : N ∈ {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)}
+    · rw [Set.indicator_of_mem hN, Pi.one_apply]
+      rcases Classical.em (passes ⌊x⌋₊ N) with hp | hp
+      · have hq : passTime ⌊x⌋₊ N ∉ Iy x y := fun hq => hN ⟨hp, hq⟩
+        have hmemT : N ∈ {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} := ⟨hp, hq⟩
+        rw [Set.indicator_of_mem hmemT, Pi.one_apply]; linarith
+      · have hmemS : N ∈ {N | ¬ passes ⌊x⌋₊ N} := hp
+        rw [Set.indicator_of_mem hmemS, Pi.one_apply]; linarith
+    · rw [Set.indicator_of_notMem hN]; linarith
+  have hA : x ^ (-c₁) ≤ (Real.log x) ^ (-(min c₁ c₂)) :=
+    le_trans (escape_to_log hxe hc₁)
+      (Real.rpow_le_rpow_of_exponent_le hlog1 (neg_le_neg (min_le_left c₁ c₂)))
+  have hB : (Real.log x) ^ (-c₂) ≤ (Real.log x) ^ (-(min c₁ c₂)) :=
+    Real.rpow_le_rpow_of_exponent_le hlog1 (neg_le_neg (min_le_right c₁ c₂))
+  calc (logUnifOdd y (y ^ alpha)).expect
+          (Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} 1)
+      ≤ (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
+          + (logUnifOdd y (y ^ alpha)).expect
+              (Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1) :=
+        expect_le_add_of_indicator_le _ _ _ _ hpw
+    _ ≤ C₁ * x ^ (-c₁) + C₂ * (Real.log x) ^ (-c₂) :=
+        add_le_add (hesc x hx1 y hy) (hwin x hx2 y hy)
+    _ ≤ C₁ * (Real.log x) ^ (-(min c₁ c₂)) + C₂ * (Real.log x) ^ (-(min c₁ c₂)) :=
+        add_le_add (mul_le_mul_of_nonneg_left hA hC₁.le) (mul_le_mul_of_nonneg_left hB hC₂.le)
+    _ = (C₁ + C₂) * (Real.log x) ^ (-(min c₁ c₂)) := by ring
 
 end TaoCollatz
