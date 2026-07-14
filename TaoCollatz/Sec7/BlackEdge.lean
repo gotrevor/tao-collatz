@@ -1,5 +1,6 @@
 import TaoCollatz.Sec7.Monotone
 import TaoCollatz.Sec7.Unroll
+import TaoCollatz.Sec7.FpLocation
 
 /-!
 # §7.4 Cases 2–3 of Proposition 7.8: the black-edge bound (nodes X8/X10/X11)
@@ -292,16 +293,23 @@ converging to `1`:
 Rationale: `E[exp(θ·e.1)] ≈ 1 + θ·E[e.1] + … ≤ 1 + (2A/m)·(s/4)+O = 1 + A·s/(2m)
 + … ≤ 1 + A/(2log²m) → 1` as `m → ∞`.
 
-ROUTE (renewal, off X6 — same toolbox as `fpDist_height_tail_le_sixteenth_sharp`):
-`fpDist_le_renewal_conv` bounds `fpDist` by the renewal measure `U` convolved with
-one `hold` step over the budget line; the column advance `e.1` accumulates
-mean-4 geometric (`Geom(4)`, first coord of `hold`) increments, whose *count* is
-capped because each renewal step raises the height by `Δl ≥ 3` and the budget is
-`s` (so `≤ ⌈s/3⌉` steps, each visited at most once — `renewal_level_le_one`).
-The per-step column MGF is `tiltZ_hold_fst`, finite and `≤ 1 + 4θ + 32θ²` on
-`|θ| ≤ 1/100` (`tiltZ_hold_fst_le`); the geometric level-sum contributes the
-`s/4`-scale mean.  At `θ = 2A/m ≤ 1/100` (i.e. `m ≥ 200A`) the product over
-`≤ ⌈s/3⌉` levels telescopes to `exp((s/3)·log(1+O(θ))) ≤ exp(O(A·s/m)) → 1`. -/
+ROUTE (mass-1 bulk + X6-lossy tail — NO renewal MGF needed; this is the simpler
+route that supersedes the earlier renewal plan).  Write
+`∑_e fpDist·exp(θ e.1) = 1 + ∑_e fpDist·(exp(θ e.1) − 1)` (`fpDist` mass 1,
+`θ = 2A/m`; the `−1` term is `≥ 0`).  Split the excess at a threshold
+`K = Θ(m/log)` (concretely `K = ⌊m·log(1+δ/2)/(2A)⌋`, so `θK ≤ log(1+δ/2)`):
+• **Bulk** `e.1 ≤ K`: `exp(θ e.1) − 1 ≤ exp(θK) − 1 ≤ δ/2`, and `∑ fpDist ≤ 1`,
+  so this part `≤ δ/2`.  Uses ONLY the probability normalisation — no envelope.
+• **Tail** `e.1 > K`: bound `fpDist` by X6 `fpDist_location_bound`
+  (`≤ C·e^{−c(l−s)}/√(1+s)·Gweight(1+s, c(j−s/4))`, available upstream in
+  `FpLocation`).  With `j = e.1 > K = Θ(m)` far in the Gaussian tail
+  (centre `s/4 ≤ m/(4log²m) ≪ K`), the super-exponential decay beats the linear
+  `exp(θ j)` weight (`θ j − c²j²/(1+s) → −∞` since `1+s ≤ m`), so even the lossy
+  `C` is harmless: the tail `≤ δ/2` for `m ≥ Cthr`.  Reuses the `Gweight`/geometric
+  summation toolbox (`sum_sqrt_exp_le`, `sum_range_exp_neg_sq_le`, `conv_Gweight_exp`)
+  plus the `l`-geometric `∑_{l>s} e^{−c(l−s)}`.
+The whole point: the SHARP `≤ 1+δ` comes from `fpDist` being a probability measure
+on the bulk; the envelope is used only where it is exponentially slack. -/
 theorem fpDist_fst_mgf_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
     ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →

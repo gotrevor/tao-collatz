@@ -15,13 +15,31 @@ region split (no Fubini/summability barrier). Main region `J ≤ m/2` uses the c
 Summing over `d` with `hold`, then over `e` with `fpDist`, the MGF term factors cleanly:
 `∑_e fpDist·edgeWeight ≤ m^{−A}·Z_{fp,fst}(2A/m)·Z_{hold,fst}(2A/m) + P(e₁+d₁ > m/2)`.
 
+**⚙️ ARCHITECTURE BLOCKER RESOLVED** (2026-07-14): all three X8 `BlackEdge.lean` sorries
+(`fpDist_edgeWeight_le`, `fpDist_white_exit`, `Q_black_edge_case2`) need the fp-concentration
+machinery (X6 `fpDist_location_bound`, `fpDist_col_le`, the `Gweight` toolbox) — which lived
+DOWNSTREAM in `FpLocation`/`ManyTriangles`, invisible to BlackEdge. Checked the Sec7 import DAG:
+`FpLocation`'s transitive closure never reaches `BlackEdge` (it only pulls `HoldLocal`+`Mgf`+
+`LocalInstances`), so **added `import TaoCollatz.Sec7.FpLocation` to `BlackEdge.lean`** — no
+cycle, full build green (3281 jobs). X6 + `Gweight` + `sum_sqrt_exp_le`/`conv_Gweight_exp` are
+now all available in BlackEdge. This unblocks the entire X8 Case-2 subtree without any lemma
+relocation. (The same import gives `fpDist_col_le` etc. once ManyTriangles-level lemmas are
+needed — though those are further downstream; X6 alone suffices for `fpDist_fst_mgf_le`.)
+
 **Named src sub-goal added** (`BlackEdge.lean`, compiler-checked disclosed `sorry`):
 `fpDist_fst_mgf_le` — the first-coordinate `fpDist` MGF `∑_e fpDist·exp(2A·e.1/m) ≤ 1+δ`
 for `m ≥ C`. This is THE genuinely-new analytic input; both the main MGF factor AND the tail
 of `fpDist_edgeWeight_le` reduce to it (the tail via a Chernoff of it on `e.1 > m/4` plus a
-`hold` Chernoff on `d.1 > m/4`). Full route in its docstring (renewal via `fpDist_le_renewal_conv`
-+ `renewal_level_le_one` level-cap + `tiltZ_hold_fst` per-step column MGF). **This is the crux's
-hardest-first target — attack it next.**
+`hold` Chernoff on `d.1 > m/4`). Full route in its docstring. **ROUTE CORRECTED** (2026-07-14): the renewal-MGF plan is overkill;
+the sharp `≤1+δ` follows from `∑_e fpDist·exp(θe.1) = 1 + ∑_e fpDist·(exp(θe.1)−1)` with the
+**bulk** (`e.1 ≤ K=Θ(m/log)`) bounded by mass-1 alone (`exp(θK)−1 ≤ δ/2`) and the **tail**
+(`e.1 > K`) by X6 `fpDist_location_bound` (available upstream in `FpLocation`), whose loss
+constant is harmless because `j > K` sits super-exponentially deep in the `s/4`-centred Gaussian
+(`θj − c²j²/(1+s) → −∞`). Reuses the `Gweight` toolbox (`sum_sqrt_exp_le`,
+`sum_range_exp_neg_sq_le`, `conv_Gweight_exp`) + the `l`-geometric `∑_{l>s} e^{−c(l−s)}`.
+**This is the crux's hardest-first target — attack it next** (the tail Gweight×exp half-line
+sum is the meat; the bulk is a few lines once summability from X6 is in hand). NB the mass-1
+reduction's summability entangles bulk and tail, so it's proved as one unit, not split.
 
 **NEXT for `fpDist_edgeWeight_le` (three remaining pieces, all now routed through the pointwise bound)**:
 1. **MGF factor** `Z_{fp,fst}(2A/m)·Z_{hold,fst}(2A/m) ≤ 1 + δ/2` for `m ≥ C`. `Z_{hold,fst}(θ)`
