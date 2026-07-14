@@ -2,7 +2,7 @@ import TaoCollatz.Sec6.MixingCore
 
 /-! The bad-event/error branch of the §6 conditioning proof. -/
 
-open scoped BigOperators
+open scoped BigOperators ENNReal
 
 namespace TaoCollatz
 
@@ -527,6 +527,210 @@ theorem globalGood_subset_mainEvent (A : ℝ) (n : ℕ) (a : Fin n → ℕ)
     exact ⟨hlow, hhigh⟩
   exact ⟨(k, sufSum a (k + 1)), hmem, hpiece⟩
 
+/-! ### Marginal infrastructure for the (6.3) union bound
+
+The complement `¬globalGood` is a finite union of one-sided large-deviation events on
+prefix sums (`pre a n`), suffix sums (`sufSum a r`) and single coordinates (`a i`) of the iid
+Geom(2) vector.  `geomHalf_tail_bound` controls each *once we know its marginal law*: under
+`geomHalf.iid n` a length-`r` block sum is distributed as `iidSum geomHalf r`.  These lemmas
+establish those marginals and the pushforward bridge that rewrites a masked probability into a
+masked `iidSum` tail. -/
+
+/-- `pre a r` as a sum over `Fin r` of the first-`r`-coordinate restriction (for `r ≤ n`). -/
+theorem pre_eq_fin_sum_castLE {n : ℕ} (a : Fin n → ℕ) {r : ℕ} (h : r ≤ n) :
+    pre a r = ∑ i : Fin r, a (Fin.castLE h i) := by
+  rw [pre, ← Fin.sum_univ_eq_sum_range (fun i => if hh : i < n then a ⟨i, hh⟩ else 0) r]
+  refine Finset.sum_congr rfl (fun i _ => ?_)
+  rw [dif_pos (lt_of_lt_of_le i.isLt h)]
+  rfl
+
+/-- **Iterated-iid collapses to the base at length 1.** -/
+theorem iidSum_one {M : Type*} [AddCommMonoid M] (p : PMF M) : iidSum p 1 = p := by
+  rw [iidSum_succ, iidSum_zero]
+  simp only [PMF.pure_map, add_zero, PMF.bind_pure]
+
+/-- **Prefix-block marginal** (the genuine (6.3) infrastructure): under `geomHalf.iid n`, the
+prefix sum `pre a r` is distributed as `iidSum geomHalf r`, for `r ≤ n`.  Proof: `pre a r` factors
+as `(∑ i, ·) ∘ (restrict to first r coords)`, and the prefix-restriction marginal `iid_map_castLE`
+sends `geomHalf.iid n` to `geomHalf.iid r`. -/
+theorem iidMap_pre (n r : ℕ) (h : r ≤ n) :
+    (geomHalf.iid n).map (fun a : Fin n → ℕ => pre a r) = iidSum geomHalf r := by
+  have hcomp : (fun a : Fin n → ℕ => pre a r)
+      = (fun w : Fin r → ℕ => ∑ i, w i) ∘ (fun a : Fin n → ℕ => a ∘ Fin.castLE h) := by
+    funext a
+    simp only [Function.comp_apply]
+    rw [pre_eq_fin_sum_castLE a h]
+  rw [hcomp, ← PMF.map_comp, iid_map_castLE geomHalf r n h]
+  rfl
+
+/-- **Coordinate marginal**: under `p.iid n`, each single coordinate `a i` is distributed as `p`.
+Proof: peel the head draw; coordinate `0` is the head (`pure`), coordinate `j+1` is the tail's
+coordinate `j` (induction). -/
+theorem iid_map_coord {α : Type*} (p : PMF α) :
+    ∀ (n : ℕ) (i : Fin n), (p.iid n).map (fun a : Fin n → α => a i) = p := by
+  intro n
+  induction n with
+  | zero => exact fun i => i.elim0
+  | succ n IH =>
+    intro i
+    rw [show p.iid (n + 1) = p.bind fun a0 => (p.iid n).map (Fin.cons a0) from rfl, PMF.map_bind]
+    refine Fin.cases ?_ (fun j => ?_) i
+    · have hpt : (fun a0 => ((p.iid n).map (Fin.cons a0)).map (fun a : Fin (n + 1) → α => a 0))
+          = fun a0 => PMF.pure a0 := by
+        funext a0
+        rw [PMF.map_comp, show ((fun a : Fin (n + 1) → α => a 0) ∘ Fin.cons a0)
+            = Function.const (Fin n → α) a0 from by funext w; simp, PMF.map_const]
+      rw [hpt, PMF.bind_pure]
+    · have hpt : (fun a0 => ((p.iid n).map (Fin.cons a0)).map (fun a : Fin (n + 1) → α => a j.succ))
+          = fun _ => p := by
+        funext a0
+        rw [PMF.map_comp, show ((fun a : Fin (n + 1) → α => a j.succ) ∘ Fin.cons a0)
+            = fun w : Fin n → α => w j from by funext w; simp, IH j]
+      rw [hpt, PMF.bind_const]
+
+/-- **Pushforward bridge for masked probabilities.** A `good?`-masked probability sum over the base
+space equals the corresponding masked sum over the pushforward `p.map φ`.  With `φ` a block sum and
+`p.map φ = iidSum geomHalf r`, this turns `P(bad event on a block)` into an `iidSum` tail that
+`geomHalf_tail_bound` dominates. -/
+theorem masked_tsum_map {α β : Type*} (p : PMF α) (φ : α → β)
+    (Q : β → Prop) [DecidablePred Q] :
+    (∑' a, if Q (φ a) then 0 else (p a).toReal)
+      = ∑' b, if Q b then 0 else ((p.map φ) b).toReal := by
+  have key := PMF.tsum_map_mul p φ (fun b => if Q b then 0 else 1)
+  -- convert both sides through `toReal_tsum_mul_ofReal`
+  have hg : ∀ x : β, (0 : ℝ) ≤ if Q x then 0 else 1 := fun x => by
+    by_cases h : Q x <;> simp [h]
+  have hbridge : (∑' a, (p a).toReal * (if Q (φ a) then 0 else 1))
+      = ∑' b, ((p.map φ) b).toReal * (if Q b then 0 else 1) := by
+    rw [← PMF.toReal_tsum_mul_ofReal p (fun a => if Q (φ a) then 0 else 1) (fun a => hg _),
+        ← PMF.toReal_tsum_mul_ofReal (p.map φ) (fun b => if Q b then 0 else 1) hg]
+    congr 1
+    rw [PMF.tsum_map_mul p φ (fun b => ENNReal.ofReal (if Q b then 0 else 1))]
+  calc (∑' a, if Q (φ a) then 0 else (p a).toReal)
+      = ∑' a, (p a).toReal * (if Q (φ a) then 0 else 1) := by
+        refine tsum_congr fun a => ?_; by_cases h : Q (φ a) <;> simp [h]
+    _ = ∑' b, ((p.map φ) b).toReal * (if Q b then 0 else 1) := hbridge
+    _ = ∑' b, if Q b then 0 else ((p.map φ) b).toReal := by
+        refine tsum_congr fun b => ?_; by_cases h : Q b <;> simp [h]
+
+/-! ### The (6.3) union decomposition and the three per-event masses
+
+`¬globalGood` fires only if one of its three deviation families fires: the total-mass deficit
+(G1), some coordinate overshoot (G2), or some suffix-window deficit (G3).  The pointwise lemma
+below dominates the `¬globalGood` indicator mass by the sum of the three indicator families; each
+family mass is then bounded by `geomHalf_tail_bound` through the marginal law. -/
+
+/-- **The (6.3) union bound, pointwise.** The mass an atom `a` contributes to `¬globalGood` is at
+most the mass it contributes across the three deviation families (G1, the per-coordinate G2's over
+`Fin n`, the per-scale G3's over `Icc 1 n`).  Every term is a nonnegative sub-mass of `P(a)`, and
+`¬globalGood` forces at least one family into its "bad" branch. -/
+theorem not_globalGood_pointwise_le (A : ℝ) (n : ℕ) (a : Fin n → ℕ) :
+    (if globalGood A n a then (0 : ℝ) else ((geomHalf.iid n) a).toReal)
+      ≤ (if caThr (caConst A) n < (pre a n : ℝ) then 0 else ((geomHalf.iid n) a).toReal)
+        + (∑ i : Fin n, if (a i : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ) then 0
+            else ((geomHalf.iid n) a).toReal)
+        + (∑ r ∈ Finset.Icc 1 n, if 2 * (r : ℝ) - caConst A *
+            (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) + Real.log (n : ℝ)) ≤ (sufSum a r : ℝ) then 0
+            else ((geomHalf.iid n) a).toReal) := by
+  classical
+  set P : ℝ := ((geomHalf.iid n) a).toReal with hP
+  have hP0 : 0 ≤ P := ENNReal.toReal_nonneg
+  set t1 : ℝ := if caThr (caConst A) n < (pre a n : ℝ) then 0 else P with ht1def
+  set g2 : Fin n → ℝ := fun i => if (a i : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ) then 0 else P
+    with hg2def
+  set g3 : ℕ → ℝ := fun r => if 2 * (r : ℝ) - caConst A *
+      (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) + Real.log (n : ℝ)) ≤ (sufSum a r : ℝ) then 0
+      else P with hg3def
+  have ht1 : 0 ≤ t1 := by rw [ht1def]; split <;> [rfl; exact hP0]
+  have hg2i : ∀ i, 0 ≤ g2 i := fun i => by rw [hg2def]; dsimp only; split <;> [rfl; exact hP0]
+  have hg3r : ∀ r, 0 ≤ g3 r := fun r => by rw [hg3def]; dsimp only; split <;> [rfl; exact hP0]
+  have hSt2 : 0 ≤ ∑ i : Fin n, g2 i := Finset.sum_nonneg fun i _ => hg2i i
+  have hSt3 : 0 ≤ ∑ r ∈ Finset.Icc 1 n, g3 r := Finset.sum_nonneg fun r _ => hg3r r
+  by_cases hgg : globalGood A n a
+  · rw [if_pos hgg]
+    exact add_nonneg (add_nonneg ht1 hSt2) hSt3
+  · rw [if_neg hgg]
+    by_cases h1 : caThr (caConst A) n < (pre a n : ℝ)
+    · by_cases h2 : ∀ i : Fin n, (a i : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ)
+      · -- G1, G2 hold ⇒ G3 must fail
+        have h3 : ¬ ∀ r, 1 ≤ r → r ≤ n →
+            2 * (r : ℝ) - caConst A * (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) +
+              Real.log (n : ℝ)) ≤ (sufSum a r : ℝ) := fun h3 => hgg ⟨h1, h2, h3⟩
+        push_neg at h3
+        obtain ⟨r, hr1, hrn, hr⟩ := h3
+        have hmem : r ∈ Finset.Icc 1 n := Finset.mem_Icc.mpr ⟨hr1, hrn⟩
+        have hval : g3 r = P := by rw [hg3def]; dsimp only; rw [if_neg (not_le.mpr hr)]
+        calc P = g3 r := hval.symm
+          _ ≤ ∑ r ∈ Finset.Icc 1 n, g3 r := Finset.single_le_sum (fun r _ => hg3r r) hmem
+          _ ≤ (t1 + ∑ i : Fin n, g2 i) + ∑ r ∈ Finset.Icc 1 n, g3 r :=
+              le_add_of_nonneg_left (add_nonneg ht1 hSt2)
+      · -- G2 fails
+        push_neg at h2
+        obtain ⟨i, hi⟩ := h2
+        have hval : g2 i = P := by rw [hg2def]; dsimp only; rw [if_neg (not_le.mpr hi)]
+        calc P = g2 i := hval.symm
+          _ ≤ ∑ i : Fin n, g2 i := Finset.single_le_sum (fun i _ => hg2i i) (Finset.mem_univ i)
+          _ ≤ t1 + ∑ i : Fin n, g2 i := le_add_of_nonneg_left ht1
+          _ ≤ (t1 + ∑ i : Fin n, g2 i) + ∑ r ∈ Finset.Icc 1 n, g3 r := le_add_of_nonneg_right hSt3
+    · -- G1 fails
+      have hval : t1 = P := by rw [ht1def]; rw [if_neg h1]
+      calc P = t1 := hval.symm
+        _ ≤ t1 + ∑ i : Fin n, g2 i := le_add_of_nonneg_right hSt2
+        _ ≤ (t1 + ∑ i : Fin n, g2 i) + ∑ r ∈ Finset.Icc 1 n, g3 r := le_add_of_nonneg_right hSt3
+
+/-- **(6.3) family G1 — the total-mass deficit.** `P(pre a n ≤ caThr)` is exponentially small: the
+prefix sum `pre a n` has mean `2n` while `caThr ≈ n·log₂3 ≈ 1.585 n`, a linear deviation.  Via
+`iidMap_pre` + `geomHalf_tail_bound` at `λ = 2n − caThr ≈ 0.415 n`, dominated by `n^{-(A+2)}`.
+TODO(prove): the marginal rewrite `masked_tsum_map` + `iidMap_pre n n` then `geomHalf_tail_bound`. -/
+theorem g1_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n →
+    (∑' a : Fin n → ℕ, if caThr (caConst A) n < (pre a n : ℝ) then 0
+      else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) := by
+  sorry
+
+/-- **(6.3) family G2 — the per-coordinate overshoot.** For each `i`, `P(a i > 2·C_A·log n)` is
+polynomially small: `a i` is a single Geom(2) draw (`iid_map_coord`, mean 2), and the deviation
+`λ ≈ 2·C_A·log n` gives `geomHalf_tail_bound ≈ n^{-c·2·C_A}` with `c·C_A ≥ A+3`.  Uniform in `i`. -/
+theorem g2_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → ∀ i : Fin n,
+    (∑' a : Fin n → ℕ, if (a i : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ) then 0
+      else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) := by
+  sorry
+
+/-- **(6.3) family G3 — the per-scale suffix-window deficit.** For each `r ∈ [1,n]`,
+`P(sufSum a r < 2r − C_A(√(r log n)+log n))` is polynomially small: `sufSum a r` is a length-`r`
+block sum (mean `2r`), the deviation is `λ = C_A(√(r log n)+log n)`.  The `√(r log n)` part feeds the
+Gaussian factor `≤ n^{−c²C_A²/2}`, the `+log n` part feeds `exp(−cλ) ≤ n^{−(A+3)}` (this is why the
+window carries the extra `log n`), so `Gweight ≤ 2 n^{−(A+2)}`.  Uniform in `r`.  Needs the SUFFIX
+marginal `(geomHalf.iid n).map (sufSum · r) = iidSum geomHalf r` (a last-`r`-block analogue of
+`iidMap_pre`, provable via `iid`'s exchangeability / `cexpect_iid_append` with trivial head). -/
+theorem g3_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → ∀ r, 1 ≤ r → r ≤ n →
+    (∑' a : Fin n → ℕ, if 2 * (r : ℝ) - caConst A *
+        (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) + Real.log (n : ℝ)) ≤ (sufSum a r : ℝ) then 0
+      else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) := by
+  sorry
+
+/-- **Large-`n` positivity of the (6.6) threshold.** `caThr C n = n·log₂3 − C²·log n ≥ 0` once
+`n·log₂3 ≥ C²·log n`, i.e. `n/log n ≥ C²·log2/log3`; a standard `log n = o(n)` threshold (via
+`log n ≤ 2√n`).  This is exactly the hypothesis `globalGood_subset_mainEvent` consumes. -/
+theorem caThr_nonneg_large (A : ℝ) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → 0 ≤ caThr (caConst A) n := by
+  set C := caConst A with hCdef
+  have hC : 30 ≤ C := caConst_ge_thirty A
+  have hD : 0 < C ^ 2 := by nlinarith
+  have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog23 : Real.log 2 ≤ Real.log 3 := Real.log_le_log (by norm_num) (by norm_num)
+  obtain ⟨n₀, hn₀⟩ := log_le_eps_mul_of_large (C ^ 2)⁻¹ (inv_pos.mpr hD)
+  refine ⟨n₀, fun n hn => ?_⟩
+  have hlog := hn₀ n hn
+  have hDn : C ^ 2 * Real.log (n : ℝ) ≤ (n : ℝ) := by
+    calc C ^ 2 * Real.log (n : ℝ) ≤ C ^ 2 * ((C ^ 2)⁻¹ * (n : ℝ)) :=
+          mul_le_mul_of_nonneg_left hlog hD.le
+      _ = (n : ℝ) := by rw [← mul_assoc, mul_inv_cancel₀ hD.ne', one_mul]
+  have hratio : (n : ℝ) ≤ (n : ℝ) * Real.log 3 / Real.log 2 := by
+    rw [le_div_iff₀ hlog2]
+    exact mul_le_mul_of_nonneg_left hlog23 (Nat.cast_nonneg n)
+  have hkey : C ^ 2 * Real.log (n : ℝ) ≤ (n : ℝ) * Real.log 3 / Real.log 2 := hDn.trans hratio
+  rw [caThr]
+  linarith
+
 /-- **The remaining C10 tail estimate — a pure probability bound (Tao (6.3)–(6.4)).**
 `P(¬globalGood) ≤ (C/2)·m^{-A}`, together with the large-`n` positivity `0 ≤ caThr` that the inclusion
 `globalGood_subset_mainEvent` consumes; both are delivered by the same `n₀`. The bound is a union over
@@ -540,7 +744,112 @@ theorem prob_not_globalGood_le (A : ℝ) (hA : 0 < A) :
       0 ≤ caThr (caConst A) n ∧
       2 * (∑' a : Fin n → ℕ, if globalGood A n a then 0 else ((geomHalf.iid n) a).toReal)
         ≤ C * (m : ℝ) ^ (-A) := by
-  sorry
+  classical
+  obtain ⟨nA, hpos⟩ := caThr_nonneg_large A
+  obtain ⟨n1, hg1⟩ := g1_mass_le A hA
+  obtain ⟨n2, hg2⟩ := g2_mass_le A hA
+  obtain ⟨n3, hg3⟩ := g3_mass_le A hA
+  refine ⟨6, by norm_num, max (max nA n1) (max n2 n3) + 1, fun n m hmn hn hreg => ?_⟩
+  -- unpack the combined threshold
+  have ha1 : nA ≤ max nA n1 := le_max_left _ _
+  have ha2 : n1 ≤ max nA n1 := le_max_right _ _
+  have ha3 : n2 ≤ max n2 n3 := le_max_left _ _
+  have ha4 : n3 ≤ max n2 n3 := le_max_right _ _
+  have hb1 : max nA n1 ≤ max (max nA n1) (max n2 n3) := le_max_left _ _
+  have hb2 : max n2 n3 ≤ max (max nA n1) (max n2 n3) := le_max_right _ _
+  have hn1le : n1 ≤ n := by omega
+  have hnAle : nA ≤ n := by omega
+  have hn2le : n2 ≤ n := by omega
+  have hn3le : n3 ≤ n := by omega
+  have hn1' : 1 ≤ n := by omega
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1'
+  have hnpos : (0 : ℝ) < (n : ℝ) := by linarith
+  have hm1 : 1 ≤ m := by omega
+  have hmR : (1 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm1
+  have hmpos : (0 : ℝ) < (m : ℝ) := by linarith
+  refine ⟨hpos n hnAle, ?_⟩
+  -- notation
+  set P : (Fin n → ℕ) → ℝ := fun a => ((geomHalf.iid n) a).toReal with hPdef
+  have hP0 : ∀ a, 0 ≤ P a := fun a => ENNReal.toReal_nonneg
+  have hPsum : Summable P := ENNReal.summable_toReal (geomHalf.iid n).tsum_coe_ne_top
+  -- the three families as summand functions
+  set f1 : (Fin n → ℕ) → ℝ := fun a =>
+    if caThr (caConst A) n < (pre a n : ℝ) then 0 else P a with hf1def
+  set g2 : Fin n → (Fin n → ℕ) → ℝ := fun i a =>
+    if (a i : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ) then 0 else P a with hg2def
+  set g3 : ℕ → (Fin n → ℕ) → ℝ := fun r a =>
+    if 2 * (r : ℝ) - caConst A * (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) + Real.log (n : ℝ))
+        ≤ (sufSum a r : ℝ) then 0 else P a with hg3def
+  -- summabilities
+  have hmask : ∀ (Q : (Fin n → ℕ) → Prop) [DecidablePred Q],
+      Summable (fun a => if Q a then (0 : ℝ) else P a) := by
+    intro Q _
+    exact Summable.of_nonneg_of_le (fun a => by by_cases h : Q a <;> simp [h, hP0 a])
+      (fun a => by by_cases h : Q a <;> simp [h, hP0 a]) hPsum
+  have hf1sum : Summable f1 := hmask _
+  have hg2sum : ∀ i, Summable (g2 i) := fun i => hmask _
+  have hg3sum : ∀ r, Summable (g3 r) := fun r => hmask _
+  have hf2sum : Summable (fun a => ∑ i : Fin n, g2 i a) := summable_sum fun i _ => hg2sum i
+  have hf3sum : Summable (fun a => ∑ r ∈ Finset.Icc 1 n, g3 r a) := summable_sum fun r _ => hg3sum r
+  -- pointwise union bound ⇒ M ≤ ∑'(f1 + Σg2 + Σg3)
+  have hMsum : Summable (fun a => if globalGood A n a then (0 : ℝ) else P a) := hmask _
+  have hRHSsum : Summable (fun a => f1 a + (∑ i, g2 i a) + ∑ r ∈ Finset.Icc 1 n, g3 r a) :=
+    (hf1sum.add hf2sum).add hf3sum
+  have hMle : (∑' a, if globalGood A n a then (0 : ℝ) else P a)
+      ≤ ∑' a, (f1 a + (∑ i, g2 i a) + ∑ r ∈ Finset.Icc 1 n, g3 r a) :=
+    hMsum.tsum_le_tsum (fun a => not_globalGood_pointwise_le A n a) hRHSsum
+  -- split the tsum
+  have hsplit : (∑' a, (f1 a + (∑ i, g2 i a) + ∑ r ∈ Finset.Icc 1 n, g3 r a))
+      = (∑' a, f1 a) + (∑ i, ∑' a, g2 i a) + ∑ r ∈ Finset.Icc 1 n, ∑' a, g3 r a := by
+    rw [(hf1sum.add hf2sum).tsum_add hf3sum, hf1sum.tsum_add hf2sum,
+      ← Summable.tsum_finsetSum (fun i _ => hg2sum i),
+      ← Summable.tsum_finsetSum (fun r _ => hg3sum r)]
+  -- per-family bounds
+  have hB1 : (∑' a, f1 a) ≤ (n : ℝ) ^ (-(A + 2)) := hg1 n hn1le
+  have hB2 : (∑ i : Fin n, ∑' a, g2 i a) ≤ (n : ℝ) * (n : ℝ) ^ (-(A + 2)) := by
+    calc (∑ i : Fin n, ∑' a, g2 i a) ≤ ∑ _i : Fin n, (n : ℝ) ^ (-(A + 2)) :=
+          Finset.sum_le_sum fun i _ => hg2 n hn2le i
+      _ = (n : ℝ) * (n : ℝ) ^ (-(A + 2)) := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hB3 : (∑ r ∈ Finset.Icc 1 n, ∑' a, g3 r a) ≤ (n : ℝ) * (n : ℝ) ^ (-(A + 2)) := by
+    calc (∑ r ∈ Finset.Icc 1 n, ∑' a, g3 r a)
+          ≤ ∑ _r ∈ Finset.Icc 1 n, (n : ℝ) ^ (-(A + 2)) :=
+          Finset.sum_le_sum fun r hr => by
+            rw [Finset.mem_Icc] at hr; exact hg3 n hn3le r hr.1 hr.2
+      _ = (n : ℝ) * (n : ℝ) ^ (-(A + 2)) := by
+          rw [Finset.sum_const, Nat.card_Icc, Nat.add_sub_cancel, nsmul_eq_mul]
+  -- assemble M ≤ n^{-(A+2)} + 2·n·n^{-(A+2)}
+  have hMfinal : (∑' a, if globalGood A n a then (0 : ℝ) else P a)
+      ≤ (n : ℝ) ^ (-(A + 2)) + 2 * ((n : ℝ) * (n : ℝ) ^ (-(A + 2))) := by
+    calc (∑' a, if globalGood A n a then (0 : ℝ) else P a)
+        ≤ (∑' a, f1 a) + (∑ i, ∑' a, g2 i a) + ∑ r ∈ Finset.Icc 1 n, ∑' a, g3 r a := by
+          rw [← hsplit]; exact hMle
+      _ ≤ (n : ℝ) ^ (-(A + 2)) + (n : ℝ) * (n : ℝ) ^ (-(A + 2))
+            + (n : ℝ) * (n : ℝ) ^ (-(A + 2)) := by
+          gcongr <;> first | exact hB1 | exact hB2 | exact hB3
+      _ = (n : ℝ) ^ (-(A + 2)) + 2 * ((n : ℝ) * (n : ℝ) ^ (-(A + 2))) := by ring
+  -- n·n^{-(A+2)} = n^{-(A+1)}, and the whole thing ≤ 6·n^{-A} ≤ 6·m^{-A}
+  have hnB : (n : ℝ) * (n : ℝ) ^ (-(A + 2)) = (n : ℝ) ^ (-(A + 1)) := by
+    rw [show (-(A + 1) : ℝ) = 1 + -(A + 2) from by ring, Real.rpow_add hnpos, Real.rpow_one]
+  have hexp1 : (n : ℝ) ^ (-(A + 2)) ≤ (n : ℝ) ^ (-(A + 1)) :=
+    Real.rpow_le_rpow_of_exponent_le hnR (by linarith)
+  have hexp2 : (n : ℝ) ^ (-(A + 1)) ≤ (n : ℝ) ^ (-A) :=
+    Real.rpow_le_rpow_of_exponent_le hnR (by linarith)
+  have hnm : (n : ℝ) ^ (-A) ≤ (m : ℝ) ^ (-A) := by
+    rw [Real.rpow_neg hnpos.le, Real.rpow_neg hmpos.le, inv_eq_one_div, inv_eq_one_div]
+    exact one_div_le_one_div_of_le (Real.rpow_pos_of_pos hmpos _)
+      (Real.rpow_le_rpow hmpos.le (by exact_mod_cast hmn) hA.le)
+  -- final chain
+  calc 2 * (∑' a, if globalGood A n a then (0 : ℝ) else P a)
+      ≤ 2 * ((n : ℝ) ^ (-(A + 2)) + 2 * ((n : ℝ) * (n : ℝ) ^ (-(A + 2)))) := by
+        linarith [hMfinal]
+    _ = 2 * (n : ℝ) ^ (-(A + 2)) + 4 * ((n : ℝ) * (n : ℝ) ^ (-(A + 2))) := by ring
+    _ = 2 * (n : ℝ) ^ (-(A + 2)) + 4 * (n : ℝ) ^ (-(A + 1)) := by rw [hnB]
+    _ ≤ 2 * (n : ℝ) ^ (-(A + 1)) + 4 * (n : ℝ) ^ (-(A + 1)) := by gcongr
+    _ = 6 * (n : ℝ) ^ (-(A + 1)) := by ring
+    _ ≤ 6 * (m : ℝ) ^ (-A) := by
+        have hchain : (n : ℝ) ^ (-(A + 1)) ≤ (m : ℝ) ^ (-A) := le_trans hexp2 hnm
+        linarith
 
 /-- **Obligation 1 (error term)**: the `L¹` mass of `syracZ − mainHigh` is polynomially small. Now a
 thin wrapper: `sum_abs_syracZ_sub_mainHigh_eq` turns the `L¹` sum into `P(¬mainEvent)`, the proved

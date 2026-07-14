@@ -33,7 +33,7 @@ private theorem pre_eq_sum_preNat {n : ℕ} (a : Fin n → ℕ) (m : ℕ) :
 
 /-- The prefix-`k` marginal of an iid vector is again iid: pushing `p.iid n` forward
 under restriction to the first `k` coordinates (`· ∘ Fin.castLE`) gives `p.iid k`. -/
-private theorem iid_map_castLE {α : Type*} (p : PMF α) :
+theorem iid_map_castLE {α : Type*} (p : PMF α) :
     ∀ (k n : ℕ) (h : k ≤ n),
       (p.iid n).map (fun a : Fin n → α => a ∘ Fin.castLE h) = p.iid k := by
   intro k

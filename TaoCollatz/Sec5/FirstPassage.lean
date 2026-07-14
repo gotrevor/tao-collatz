@@ -65,6 +65,36 @@ noncomputable def logUnifOdd (lo hi : ℝ) : PMF ℕ :=
 /-- Paper (1.18): the scaling exponent `α = 1.001`. -/
 def alpha : ℝ := 1.001
 
+-- RATIFY-C7: paper (1.19), §5 pp.20–21. Stated character-identically to the FIRST CONJUNCT of
+-- `stabilization` below, which is where this content had been absorbed. Judge against p.20.
+/-- **Paper (1.19)** — first-passage non-escape: a log-uniformly chosen odd `N_y` in the window
+`[y, y^α]` fails ever to descend to `≤ x` with probability `≪ x^{-c}`.
+
+This is node **C7**. It is stated here as its own theorem because Tao proves it separately
+(§5 pp.20–21) and **C8's proof consumes it** — it had previously existed *only* as the first
+conjunct of `stabilization`, i.e. absorbed into a downstream node's statement, which is precisely
+how a blueprint node ends up owing a proof while naming no theorem of its own.
+`stabilization` is WATCHED and is NOT touched; this sits beside it (always allowed).
+
+**Route** (Tao pp.20–21). Every step but the first runs over already-proved machinery:
+1. ⚠️ **The integral test** — `dTV(N_y mod 2^{n'}, unifOddMod n') ≪ 2^{-n'}` for the log-uniform
+   window. **Not in Lean yet.** It is exactly the hypothesis Prop 1.9 (`valuation_dist`) takes,
+   and it is the ONLY new analytic brick in this node. Tao: "a routine application of the
+   integral test" (with plenty of room to spare).
+2. Prop 1.9 (C5 ✅ axiom-clean) ⟹ `dTV(valVec N n₀, geomHalf.iid n₀) ≪ 2^{-c·n₀}`   — (5.4).
+3. Lemma 2.2 (S3 ✅ axiom-clean; `geomHalf_tail_bound` is TWO-SIDED, so it covers this LOWER
+   tail) ⟹ `P(|ā^{(n₀)}(N_y)| ≤ 1.9·n₀) ≪ 2^{-c·n₀} ≪ x^{-c}`   — (5.5).
+4. Descent arithmetic: if `|ā^{(n₀)}| > 1.9·n₀` then by (1.5)/(1.7)
+   `Syr^{n₀}(N_y) ≤ 3^{n₀}·2^{-1.9n₀}·x^{α³} + O(3^{n₀}) = O(x^{0.99}) ≤ x`, hence
+   `T_x(N_y) ≤ n₀ < ∞`. Here `n₀ := ⌊log x / (10·log 2)⌋` (5.1), so `2^{n₀} ≍ x^{0.1}`.
+-/
+theorem first_passage_nonescape :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
+          ≤ C * x ^ (-c) := by
+  sorry
+
 -- RATIFY-3: window endpoints spelled per the spec's guidance as `[x^α, x^{α²}]` and
 -- `[x^{α²}, x^{α³}]` (using `alpha^2`, `alpha^3`), which the SKELETON-SPEC flagged as the
 -- intended reading of its nested-pow shorthand. Judge against §5 pp.25–28.

@@ -366,25 +366,40 @@ over dyadic scales (§3).
 
 \section{First passage (§5)}
 
-\begin{lemma}[First-passage non-escape; (1.19)]\label{C7}
-  \lean{passes, passTime, passLoc}
-  \uses{C5, S2}
-  \notready
-% The three \lean{} names above are DEFS and they do exist. The node's CONTENT is the
-% estimate (1.19) below, and that is not in Lean yet — so this node is NOT \leanok.
-% It carried \leanok until 2026-07-14 (judge pass 29), which painted it GREEN in the
-% blueprint web while its theorem was absent, and a reader who trusted the border would
-% route around it. `blueprint_audit.py` now gates on exactly this (FALSE STATEMENT-GREEN).
-% Restore \leanok when (1.19) is stated in Lean; the judge flips the proof \leanok.
+\begin{definition}[First-passage data and the log-uniform window]\label{C7d}
+  \lean{passes, passTime, passLoc, logWindow, logUnifOdd, alpha}
+  \uses{C1}
+  \leanok
 The first-passage data: \(\mathrm{passes}(x,N)\) (\(=T_x(N)<\infty\), the orbit reaches
 \(\le x\)), the passage time \(\mathrm{passTime}\), and the passage location
-\(\mathrm{Pass}_x = \mathrm{passLoc}\) (with the convention \(\mathrm{Syr}^\infty := 1\)).
-Estimate (paper (1.19)): the probability that a log-uniformly chosen odd \(N_y\) in a window
-around \(y\) \emph{never} descends to \(\le x\) is small,
+\(\mathrm{Pass}_x = \mathrm{passLoc}\) (with the convention \(\mathrm{Syr}^\infty := 1\));
+plus the log-uniform law \(\mathbf{N}_y \equiv \mathbf{Log}(2\mathbb{N}+1 \cap [y,y^\alpha])\)
+(\(\mathrm{logWindow}\), \(\mathrm{logUnifOdd}\)) and the exponent \(\alpha = 1.001\) (paper (1.18)).
+\lapsrisk{0}{low}{100\%}
+\end{definition}
+
+% ONE NODE, ONE CLAIM (see blueprint_rules.md).  Until 2026-07-14 this lemma and the definition
+% node above were a SINGLE node: a \begin{lemma} whose \lean{} named three DEFS and which carried
+% \leanok.  The defs were done, so the node rendered GREEN and was rated "low / 5--10 laps" --
+% while its actual content, the estimate (1.19), was not in Lean at all.  Both halves of the
+% display were reporting on the half that was already finished.  Split at judge pass 29.
+\begin{lemma}[First-passage non-escape; (1.19)]\label{C7}
+  \lean{first_passage_nonescape}
+  \uses{C5, S2, C7d}
+  \leanok
+Paper (1.19): a log-uniformly chosen odd \(N_y\) in the window \([y,y^\alpha]\) fails ever to
+descend to \(\le x\) only with small probability,
 \[
   \mathbb{P}\bigl(T_x(N_y)=\infty\bigr) \ll x^{-c}.
 \]
-\lapsrisk{5--10}{low}{85\%}
+Tao's route (\S5 pp.20--21) runs entirely over proved machinery except for one new brick: the
+\textbf{integral test} \(d_{\mathrm{TV}}(\mathbf{N}_y \bmod 2^{n'}, \mathrm{Unif}) \ll 2^{-n'}\),
+which is exactly the hypothesis Proposition~1.9 (node C5) takes.  Given it, Prop~1.9 supplies
+(5.4), Lemma~2.2 (node S3, two-sided) supplies the lower-tail bound (5.5)
+\(\mathbb{P}(|\vec a^{(n_0)}(\mathbf{N}_y)| \le 1.9 n_0) \ll x^{-c}\), and an explicit descent
+computation gives \(\mathrm{Syr}^{n_0}(\mathbf{N}_y) = O(x^{0.99}) \le x\) on the complement,
+with \(n_0 := \lfloor \log x / (10\log 2)\rfloor\) (5.1).
+\lapsrisk{10--18}{medium}{75\%}
 \end{lemma}
 
 \begin{proposition}[Approximate first-passage formula; Prop 5.2]\label{C8}
