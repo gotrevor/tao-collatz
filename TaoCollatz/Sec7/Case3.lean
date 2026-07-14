@@ -1347,6 +1347,36 @@ theorem reaches_fewWhite_mass_le_ten :
   exact le_trans (hmass ε hεpos hεle n ξ hξ F R hR T q₀ K)
     (fewWhite_num_closure A ε (by linarith [hεle, hε₀le]) K R hRbound)
 
+open scoped Classical in
+/-- **The X11c geometry join** (contrapositive of `deterministic_encounter_claim`):
+for a deep in-strip few-white path, EITHER the fold reaches `R` encounters OR the path
+hits a big triangle (E∗) — i.e. at some `p ≤ T` the phase point `((pos p).1−1, (pos p).2)`
+lies in a family triangle of size `≥ 4^A(1+p)³`. This is the pointwise dichotomy the X11d
+white-count split rides on: {few white} ⊆ {reach R} ∪ {E∗}, given depth. The `∨`'s right
+disjunct is what `estar_union_le` bounds (up to X11d's phase/ceil reconciliation). -/
+theorem deterministic_encounter_or_bigTriangle {n ξ : ℕ} (F : TriangleFamily n ξ)
+    (g R K : ℕ) (A : ℝ) (hA : 1 ≤ A) :
+    ∃ P₀ : ℕ, ∀ T : ℕ, P₀ ≤ T → ∀ q₀ : ℕ × ℤ, 1 ≤ q₀.1 →
+      ∀ v : Fin T → ℕ × ℤ, (∀ i, v i ∈ hold.support) →
+      (∀ p, p ≤ T → (q₀ + pathSum v p).1 + g ≤ n / 2) →
+      ((Finset.range T).sum
+        (fun p => if q₀ + pathSum v (p + 1) ∈ whiteStrip n ξ then 1 else 0) ≤ K) →
+      R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
+      ∨ (∃ p, p ≤ T ∧ ∃ t ∈ F.T,
+          ((q₀ + pathSum v p).1 - 1, (q₀ + pathSum v p).2) ∈ triangle t.1 t.2.1 t.2.2
+          ∧ (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 ≤ t.2.2) := by
+  obtain ⟨P₀, hP₀⟩ := deterministic_encounter_claim n ξ F g R K A hA
+  refine ⟨P₀, ?_⟩
+  intro T hT q₀ hq₀ v hv hdepth hfew
+  by_cases hE : ∀ p, p ≤ T → ∀ t ∈ F.T,
+      ((q₀ + pathSum v p).1 - 1, (q₀ + pathSum v p).2) ∈ triangle t.1 t.2.1 t.2.2 →
+      t.2.2 < (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3
+  · exact Or.inl (hP₀ T hT q₀ hq₀ v hv hdepth hE hfew)
+  · refine Or.inr ?_
+    push_neg at hE
+    obtain ⟨p, hp, t, ht, hmem, hbig⟩ := hE
+    exact ⟨p, hp, t, ht, hmem, hbig⟩
+
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
 /-- **Case 3 of Proposition 7.8** ((7.53)–(7.67), paper pp.48–49 + Lemmas
