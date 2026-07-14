@@ -656,4 +656,40 @@ theorem syracZ_eq_rev_fnat (n : ℕ) :
   unfold syracZ
   rw [hGF, ← PMF.map_comp, iid_map_rev]
 
+/-- **The `ZMod (3ⁿ)` offset split** (finishing brick a for C10): the reduced Syracuse offset
+`Fnat_n(a)·2⁻ᵃ⁽¹˙ⁿ⁾` splits across a cut at `j` (with `n = j+p`) into
+
+`3^p · (head-offset · 2⁻ᵃ⁽¹ʲ⁾) · 2⁻ᵗᵃⁱˡ⁻ᵛᵃˡ  +  tail-offset`,
+
+where `head-offset = Fnat_j(first j coords)` and `tail-offset = Fnat_p(last p coords)·2⁻ᵗᵃⁱˡ⁻ᵛᵃˡ`
+is itself a level-`p` Syracuse offset. This is `fnat_split` reduced mod `3ⁿ` with the `2⁻¹` unit
+cancellation. The `3^p` on the first term is the KEY: mod `3ⁿ` it annihilates the low `j` ternary
+digits, so the head only feeds the *low* frequencies and the tail carries the *high* frequencies —
+the structural fact behind the §6 character-sum factorization. The residual coupling is the
+`2⁻ᵗᵃⁱˡ⁻ᵛᵃˡ` on the head term, which conditioning on the cut-valuation `a_{[1,j]}` removes. -/
+theorem syracZ_offset_split {j p : ℕ} (a : Fin (j + p) → ℕ) :
+    (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p)
+      = 3 ^ p * ((fnat j (fun i => a (Fin.castAdd p i)) : ZMod (3 ^ (j + p)))
+                  * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a j)
+                * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre (fun i => a (Fin.natAdd j i)) p
+        + (fnat p (fun i => a (Fin.natAdd j i)) : ZMod (3 ^ (j + p)))
+                * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre (fun i => a (Fin.natAdd j i)) p := by
+  have hunit : (2 : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ = 1 := by
+    apply ZMod.mul_inv_of_unit
+    rw [show (2 : ZMod (3 ^ (j + p))) = ((2 : ℕ) : ZMod (3 ^ (j + p))) from by norm_cast,
+      ZMod.isUnit_iff_coprime]
+    exact Nat.Coprime.pow_right (j + p) (by decide)
+  have hpre : pre a (j + p) = pre a j + pre (fun i => a (Fin.natAdd j i)) p :=
+    pre_natAdd_split a (le_refl p)
+  have hfnat : (fnat (j + p) a : ZMod (3 ^ (j + p)))
+      = 3 ^ p * (fnat j (fun i => a (Fin.castAdd p i)) : ZMod (3 ^ (j + p)))
+        + 2 ^ pre a j * (fnat p (fun i => a (Fin.natAdd j i)) : ZMod (3 ^ (j + p))) := by
+    rw [fnat_split]; push_cast; ring
+  have h2 : (2 : ZMod (3 ^ (j + p))) ^ pre a j * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a j = 1 := by
+    rw [← mul_pow, hunit, one_pow]
+  rw [hfnat, hpre]
+  linear_combination
+    ((fnat p (fun i => a (Fin.natAdd j i)) : ZMod (3 ^ (j + p)))
+      * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre (fun i => a (Fin.natAdd j i)) p) * h2
+
 end TaoCollatz

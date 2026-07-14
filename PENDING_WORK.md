@@ -30,17 +30,37 @@ whole for `m≤j`); second block factors `2^{pre a j}` with `pre_natAdd_split`
 (`pre a (j+m) = pre a j + pre(tail) m`). Both helper lemmas also proved + clean. This CONFIRMS the
 F-split route is viable at the algebra level — the char-sum factorization now has its foundation.
 
-**→ NEXT (finish brick a → brick b)**:
-1. **Reduce `fnat_split` mod `3ⁿ`** to the `ZMod (3^n)` character setting: `syracZ n` lives on
-   `ZMod (3^n)` and its offset is `fnat n (valVec ..) mod 3^n` (see `Syracuse/SyracRV.lean` for the
-   `Ghat`/`syracZ` encoding). On the event `Cₖ,ₗ` (stopping time `k`, level `l=a_{[1,k+1]}`), the cut
-   `j=k+1`, `p=n-k-1` gives `Xₙ ≡ F_{k+1}(head) + 3^{k+1}·2^{-l}·F_{n-k-1}(tail)`. The `3^{k+1}` factor
-   is the KEY: mod `3^n` it kills the low `k+1` 3-adic digits, so the 2nd summand only touches high
-   frequencies — exactly why the char sum's high-freq mass is controlled.
-2. **brick (b)**: independence of head/tail ⟹ character-sum factorization
-   `∑_Y g(Y)e(-ξY) = [E e(-ξ·head)·1_{event}]·[E e(-ξ·2^{-l}·tail)]` (D1 PMF product form,
-   `cexpect_mul` of independent factors). The 2nd factor is a level-`n-k-1` Syracuse char sum bounded
-   by `charFn_decay` (Prop 1.17, PROVED). See fruit-8 for the remaining conditioning-event apparatus.
+**Brick (a) FINISHED at the ZMod level** (build green, axiom-clean): `syracZ_offset_split` in
+`Syracuse/SyracRV.lean` — `fnat_split` reduced mod `3ⁿ` into the exact offset form the character sum
+uses (the map of `syracZ_eq_rev_fnat`). For `a : Fin (j+p) → ℕ`, in `ZMod (3^(j+p))`:
+```
+(fnat (j+p) a) · 2⁻ᵖʳᵉ⁽ᵃ,ʲ⁺ᵖ⁾
+  = 3^p · (fnat j head · 2⁻ᵖʳᵉ⁽ᵃ,ʲ⁾) · 2⁻ᵖʳᵉ⁽ᵗᵃⁱˡ,ᵖ⁾   -- head-offset, scaled by 3^p and tail-val
+  + (fnat p tail · 2⁻ᵖʳᵉ⁽ᵗᵃⁱˡ,ᵖ⁾)                       -- tail-offset (a level-p Syracuse offset)
+```
+Proof: `pre_natAdd_split` (split `pre a (j+p)`) + `fnat_split` (cast to ZMod) + `2·2⁻¹=1` unit
+cancellation via `linear_combination`. **The `3^p` on the head term is the structural crux**: mod
+`3ⁿ` it annihilates the low `j` ternary digits, so the head only feeds LOW frequencies and the tail
+carries the HIGH frequencies. The residual head↔tail coupling is exactly `2⁻ᵖʳᵉ⁽ᵗᵃⁱˡ,ᵖ⁾`, which
+conditioning on the cut-valuation `pre a j = l` removes.
+
+**→ NEXT (brick b — character-sum factorization, then the conditioning apparatus)**:
+1. **`char_of_offset_split`** (PROVABLE NOW, cheap): pointwise, `stdAddChar(ξ·X) =
+   stdAddChar(ξ·3^p·Hval·2⁻ᴹ) · stdAddChar(ξ·Tval)` for `X` = the split above, via
+   `AddChar.map_add_eq_mul` (as in `coset_char_sum`). This turns the additive split into a
+   multiplicative character factorization pointwise in `a`.
+2. **Expectation factorization** (the conditioning core): `𝓕(densC (syracZ n)) ξ = E_a[stdAddChar(ξ·X)]`.
+   Condition on `L := pre a j` (fix cut-valuation): on `{L = l}` the two factors depend on DISJOINT
+   coordinate blocks (head: first `j` coords; tail: last `p` coords), so by iid-independence the
+   conditional expectation FACTORS into `[E_head stdAddChar(ξ·3^p·Hval·2⁻ᵐ) 1_{L=l}]·[E_tail stdAddChar(ξ·Tval)]`.
+   Needs: a `PMF.iid` independence/product lemma splitting `Fin (j+p) → ℕ` as `Fin j × Fin p`
+   (`Fin.append`/`Fin.addCases`; cf. `iid_map_castLE` already here). This is the D1 product-form step.
+3. **Tail factor = level-`p` Syracuse char sum** ⟹ bounded by `charFn_decay` (Prop 1.17, PROVED
+   axiom-clean): `E_tail stdAddChar(ξ·Tval)` is the char fn of `syracZ p` at frequency `ξ` (mod the
+   `3^p`/reindex bookkeeping — cf. `syracZ_map_cast`). With `p = n-k-1 ≥ m`, decay `≤ Cₐ·p^{-A}`.
+4. **Conditioning events + reassembly**: the stopping time `k`, events `E/Eₖ/Bₖ/Cₖ,ₗ`, union bound
+   over `k,l`, triangle inequality over the events (paper (6.2)–(6.10)). See fruit-8 for the full
+   7-step plan. Decompose these into named `sorry`s in `Sec6/MixingFromDecay.lean` as they're built.
 
 ## Lap fruit-8 (2026-07-15): **C10 Cauchy–Schwarz bridge `osc_le_sqrt_highfreq` FULLY PROVED, axiom-clean**
 
