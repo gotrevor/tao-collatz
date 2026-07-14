@@ -1636,6 +1636,62 @@ theorem few_white_pointwise_split {n ξ : ℕ} (F : TriangleFamily n ξ)
   · rw [if_neg hfew, ENNReal.ofReal_zero]
     exact zero_le'
 
+open scoped Classical in
+/-- **(7.56) reach-`R` mass term.** The first-passage⊗walk mass of the reach-`R`/few-white
+event `{R ≤ count ∧ cumWhite ≤ K+1}` is `≤ 10^{−A−3}`. Wraps `reaches_fewWhite_mass_le_ten`
+(applied per-`e` at reaches-exponent `A+2` ⟹ `10^{−(A+3)}`, `K'=K+1`) with the `ℝ≥0∞`→`ℝ`
+bridge `PMF.toReal_tsum_mul_ofReal` and the `fpDist`-averaging (`Σ fpDist = 1`). Exposes the
+shared `ε₀, g` (from reaches) that X11d also feeds into `few_white_pointwise_split`. -/
+theorem few_white_reach_mass_le (A : ℝ) :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∃ g : ℕ, ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ (m : ℕ) (l : ℤ) (R : ℕ), 1 ≤ R → ∀ (K P : ℕ),
+      ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ ε₀ * R → ∀ s : ℕ,
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
+                (encInit (n / 2 - m + e.1) (l + e.2))).count
+              ∧ ((List.ofFn v).foldl (encStep F R g)
+                (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
+  obtain ⟨ε₀, hε₀pos, hε₀le, g, hreach⟩ := reaches_fewWhite_mass_le_ten
+  refine ⟨ε₀, hε₀pos, g, ?_⟩
+  intro n ξ hξ F m l R hR K P hRbound s
+  have hval : (0 : ℝ) ≤ (10 : ℝ) ^ (-A - 3) := Real.rpow_nonneg (by norm_num) _
+  have hexp : (10 : ℝ) ^ (-((A + 2) + 1)) = (10 : ℝ) ^ (-A - 3) := by
+    congr 1; ring
+  have hinner : ∀ e : ℕ × ℤ,
+      (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
+                (encInit (n / 2 - m + e.1) (l + e.2))).count
+              ∧ ((List.ofFn v).foldl (encStep F R g)
+                (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
+    intro e
+    set S : ℝ≥0∞ := ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+        ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
+              (encInit (n / 2 - m + e.1) (l + e.2))).count
+            ∧ ((List.ofFn v).foldl (encStep F R g)
+              (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+          then (1 : ℝ) else 0) with hSdef
+    have hSle1 : S ≤ 1 := by
+      rw [hSdef]
+      exact PMF.tsum_mul_ofReal_le_one (hold.iid P) _ (fun v => by split_ifs <;> norm_num)
+    have hSne : S ≠ ⊤ := ne_top_of_le_ne_top ENNReal.one_ne_top hSle1
+    have hbridge : S.toReal = ∑' v : Fin P → ℕ × ℤ, (hold.iid P v).toReal *
+        (if R ≤ ((List.ofFn v).foldl (encStep F R g)
+              (encInit (n / 2 - m + e.1) (l + e.2))).count
+            ∧ ((List.ofFn v).foldl (encStep F R g)
+              (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+          then (1 : ℝ) else 0) := by
+      rw [hSdef]; exact PMF.toReal_tsum_mul_ofReal (hold.iid P) _ (fun v => by split_ifs <;> norm_num)
+    have hr := hreach ε₀ hε₀pos le_rfl (A + 2) n ξ hξ F R hR P (n / 2 - m + e.1, l + e.2) (K + 1)
+      (by push_cast; nlinarith [hRbound])
+    rw [ENNReal.le_ofReal_iff_toReal_le hSne hval, hbridge, ← hexp]
+    exact hr
+  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_left' (hinner e) _) ?_
+  rw [ENNReal.tsum_mul_right, (fpDist s).tsum_coe, one_mul]
+
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
 /-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first
