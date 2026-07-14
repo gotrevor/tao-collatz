@@ -536,6 +536,29 @@ theorem tail_factor_eq_charFn {j p : ℕ} (ζ : ZMod (3 ^ (j + p))) :
       tail_cexpect_eq_syracZ]
   exact congrArg (PMF.cexpect (syracZ p)) (funext (fun Y => stdAddChar_mul_eq_eC _ Y))
 
+/-- **Brick (b), the tail-factor decay bound** (C10): the tail character factor over the
+`p`-coordinate block decays polynomially, `≤ Cₐ·p⁻ᴬ`, for every high frequency `ξ = 3ʲ·ζ` with
+`3∤(ζ mod 3^p).val`. Immediate from `tail_factor_eq_charFn` + `charFn_decay` (Prop 1.17). This is
+the high-entropy factor whose decay drives Prop 1.14. -/
+theorem tail_factor_norm_le (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∀ (j p : ℕ), 1 ≤ p → ∀ (ζ : ZMod (3 ^ (j + p))),
+      ¬ (3 ∣ (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) ζ).val) →
+      ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ((3 : ZMod (3 ^ (j + p))) ^ j * ζ))))‖
+        ≤ C * (p : ℝ) ^ (-A) := by
+  obtain ⟨C, hC0, hC⟩ := charFn_decay A hA
+  refine ⟨C, hC0, fun j p hp ζ hζ => ?_⟩
+  rw [tail_factor_eq_charFn]
+  exact hC p hp _ hζ
+
+/-- **Brick (b), the head-factor `≤ 1` bound** (C10): the head character factor is a character
+expectation, hence has norm `≤ 1` (`cexpect_norm_le` + `norm_stdAddChar`). The low-entropy factor. -/
+theorem head_factor_norm_le {j p : ℕ} (ξ : ZMod (3 ^ (j + p))) (l : ℕ) :
+    ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))‖ ≤ 1 := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  exact cexpect_norm_le _ _ (fun vh => le_of_eq (norm_stdAddChar _))
+
 /-- **Brick (b), step 3 — the conditional character factorization** (C10). Fix the cut
 `n = j + p` and the level `l`. Conditioning the character sum on the tail-valuation event
 `{pre(tail) = l}` makes the split character factor into a **pure head expectation** times a
