@@ -73,6 +73,21 @@ Cut `n = j + p`, tail = coords `1..k+1` (repo's LAST p coords via the `syracZ_eq
 set over (k,l), the decomposition identity `syracZ = ∑_{k,l} condDensW + errorₖ,ₗ`, and the error/telescope
 bookkeeping. `osc_windowed_conditioning_le` (DONE) is the inner loop; `osc_le_two_mul_l1` (DONE) the error tool.
 
+### ✅ UPDATE 4 (same lap, commits `cb100ca`, `4ec2d42`, `6f1f352`): events + per-conditioning bound DONE.
+- `stopEvent` (Bₖ) + `condWindowB` (Eₖ∧Bₖ) + `tailDensW_condWindowB_le` (`tailDensW…(condWindowB) ≤ 2⁻ˡ`).
+- **`condDensWB_osc_le`**: the fully-assembled single-conditioning bound `osc(condDensW…condWindowB) ≤ D·√(3ⁿ·2⁻ˡ)`
+  (= (6.10)+(6.11)+obl3, obl-3 fully discharged; only `hunif`+`hbudget` remain per term).
+- **`osc_windowedB_conditioning_le`**: the (6.8) l-union sum at a fixed cut `osc(∑ᵢ condDensW…) ≤ ∑ᵢ Dᵢ√(3ⁿ·2⁻ˡⁱ)`.
+**What's LEFT for `fine_scale_mixing`** (the genuinely hard remaining pieces):
+1. **The decomposition identity + k-sum** (obl 1 core): `syracZ n Y = ∑_{k} [∑_l condDensW (n−k−1) (k+1) l
+   (condWindowB…) Y] + error Y`. The k-sum varies the CUT `(j,p)=(n−k−1,k+1)`; each `condDensW (n−k−1)(k+1)…`
+   lives on `ZMod(3^((n−k−1)+(k+1)))` and needs CASTING to `ZMod(3ⁿ)` via `(n−k−1)+(k+1)=n` (k<n). This
+   dependent-index cast is the main new friction. Model the l-marginalization on `syracZ_eq_tsum_condDens`.
+2. **`hunif`** (obl 2) from `head_factor_norm_le_charFn` (PROVED) + valuation bookkeeping (ξ at level q≥n/10).
+3. **geometric l-sum** `∑_l √(2⁻ˡ)` + **k-count** (both polynomial) + **constant chase** (absorb n^{O(Cₐ²)}
+   into A′; take A large) + **obl 0** (6.1) regime telescope for m<0.9n + small-n via `osc ≤ 2`.
+4. Discharge **`hbudget`** from the (6.8) l-range (`l ≤ n log3/log2 − ½Cₐ²log n`) + `Cₐ≥10`, `n≥n₀`.
+
 ## Lap fruit-25 (2026-07-14, same session): **windowed single-point mass PROVED — `tailDensW ≤ 2⁻ˡ`**
 
 Build green 3285, all `#print axioms`-clean (believed clean, judge to verify). New
