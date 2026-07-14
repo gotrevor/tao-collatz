@@ -1,3 +1,26 @@
+## UPDATE (same lap, HEAD `8a6b7be`): **`hbudget` DISCHARGED from the tight window** — `lRange_hbudget`
+
+The judge's single load-bearing undischarged number (pass 28 tripwire #1) is machine-checked at
+`C_A = caConst = 30`. `lRange_hbudget`: for `l ∈ lRange caConst n`, the AM-GM budget inequality
+`condDensWB_osc_le` consumes holds; bounding `l` by the tight upper endpoint `n log₂3 − (C²−2C)log n`
+leaves the `log n` coefficient `L(1125L−810) < 0` (`L = log2 < 0.72`) — exactly where `C_A ≥ 23`
+bites. Axiom-clean. Only deferred: window non-degeneracy `hi ≥ 0` (clean `hwin` hyp = standard
+`n/log n → ∞` threshold; `osc_mainHigh_bound` supplies it via `n₀` — provable via `log n ≤ 2√n`,
+needs `n ≥ ~1.21e6`, i.e. `√n·log3 ≥ 1100·1.0986 > 1680·log2 ≥ (C²−2C)log2·(logn/√n)`; needs a
+`log 3 > 1.05` lower bound — `3 > exp(1.05)` numeric, or route via `log3 = log2 + log(3/2)`).
+
+**Remaining for `osc_mainHigh_bound`** (the frontier), hardest-first:
+1. **`hunif` (obl 2)** — the valuation bookkeeping: connect `ξ ∈ highFreq m (j+p)` to a reduced
+   frequency `η` at level `q` with `¬3∣η.val`, so `head_factor_norm_le_charFn` (PROVED) gives
+   `‖head‖ ≤ C_A·q⁻ᴬ'`. ⚠️ Use head decay at the SHIFTED exponent `A' = A + C_A²·log2 (≈ A+624)`,
+   NOT `A` — this is the judge-mandated **A′-absorption SHOW**: `√(3ⁿ·2⁻ˡ) = 3^{n/2}2^{-l/2} ≈
+   n^{C²log2/2}` (≈ n^312 at C=30), so the head must decay at `A' = A + C²log2` for the product
+   `C_A·q⁻ᴬ'·n^{C²log2/2} ≤ C·n^{-A}` (q ≈ n/10; charFn_decay holds for every A'). SHOW it, don't assert.
+2. **geometric l-sum** `∑_{l∈lRange} √(2⁻ˡ) = ∑ (1/√2)^l ≤ (√2/(√2−1))·(1/√2)^{l_lo}` (pure, provable).
+3. **k-count** (`range n`, ≤ n terms) + **constant chase** + `hwin` threshold (item above).
+Then wire: `osc_mainDensity_le` (DONE) feeds per-cut `condDensWB_osc_le` (DONE) with D from (1),
+`hbudget` from `lRange_hbudget` (DONE) ⇒ `∑∑ D√(3ⁿ2⁻ˡ) ≤ C·m^{-A}` via (2)+(3).
+
 # Lap (2026-07-14, HEAD `d24618b`): k-sum CAST CRACKED + `osc_syracZ_high_regime` DECOMPOSED
 
 **Absorbed judge pass 28 first**: `hbudget` from the **tight** window never (6.8); **C_A ≥ 23**
