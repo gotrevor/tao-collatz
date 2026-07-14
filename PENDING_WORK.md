@@ -1,5 +1,32 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-21 (2026-07-15, obligation-3): **`fnat_offset_zmod_inj` — Cor 6.3 wrapper (mod-3ⁿ injectivity)**
+
+Build green 3285, `#print axioms fnat_offset_zmod_inj = [propext, Classical.choice, Quot.sound]`.
+Commit `0f474c7`. New lemma (`Sec6/MixingFromDecay.lean`, after `tailDens_renyi_le`):
+- **`fnat_offset_zmod_inj`**: bridges the ℕ-native Lemma 6.2 (`fnat_inj_fixed_val`) to the mod-`3^{j+p}`
+  offset injectivity `tailDens` needs. Given two positive tuples of equal total valuation `l` with
+  offsets equal in `ZMod (3^{j+p})` and `fnat < 3^{j+p}` both (the window bound), the tuples are equal.
+  Cancels the unit `(2⁻¹)^l` → congruence mod `3^{j+p}` → (via both `< 3^{j+p}`) natural equality → 6.2.
+
+**This isolates the SOLE remaining analytic content of obligation 3 behind ONE hypothesis: the window
+bound `fnat p vt < 3^{j+p}`.** Everything else in the tail collision count is machine-checked.
+
+### → NEXT on obligation 3, hardest-first — the window bound `fnat p vt < 3^{j+p}`:
+This is Tao (6.14)→(6.15), the genuine geometric-sum estimate. It is NOT true for all positive tuples
+of valuation `l` (only on the sub-Gaussian window (6.12)) — so it REQUIRES the event `E`. Two ways to
+proceed, both real progress:
+  (a) **Scaffold-first**: define the window predicate `W j p l vt := ∀ i<i'≤p, |a_{[i,i']} − 2(i'−i)| ≤
+      Cₐ√((i'−i)log n)+log n` (6.12), then prove `W ⟹ fnat p vt < 3^{j+p}` — a self-contained
+      geometric-sum bound (`∑ 3^{p-1-m} 2^{pre m} < 3^{j+p}` given the window controls the `2`-powers).
+      This is the elementary estimate Tao spells out on p.32 (Young's-inequality bound). Feed it into
+      `fnat_offset_zmod_inj` to get the windowed single-point mass `tailDens^W Y ≤ 2^{-l}`.
+  (b) **Marginalization-first**: build the finite-`l`-window truncation of `syracZ_eq_tsum_condDens`
+      (fruit-19), where the `error` term absorbs `P(pre ∉ window)`; this is obligation 1's brick and
+      makes the `∑_l` finite for `osc_sum_le`.
+Recommend (a): it directly finishes obligation 3's last analytic gap and reuses the just-proved wrapper.
+The window predicate + geometric bound is self-contained arithmetic (no PMF/measure theory).
+
 ## Lap fruit-20 (2026-07-15, obligation-3 ATOM): **Lemma 6.2 (offset injectivity) PROVED — `fnat_inj_fixed_val`**
 
 Build green 3285, `#print axioms fnat_inj_fixed_val = [propext, Classical.choice, Quot.sound]`.
