@@ -1413,6 +1413,42 @@ theorem bigTriangle_of_encounter {n ξ : ℕ} (F : TriangleFamily n ξ) (A : ℝ
 
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
+/-- **X11d crux — the damped-walk expectation bound** (paper (7.54)–(7.67)).
+This is the pure integral estimate that remains once `Q_le_damped_iter` (7.53) has
+converted `Q` at the black edge into a first-passage ⊗ Hold-walk expectation. It states:
+for a suitable threshold `Cthr` and horizon `P` (both `A`-explicit, `n`-uniform), the
+damped walk expectation over the `P`-step Hold walk after first passage is
+`≤ m^{−A}·Q_{m−1}`.
+
+The remaining obligation decomposes (next laps) into the three attack-path pieces:
+- **(7.54) column split** — the end value `Q(end)` weight `max(1−j_end/m,1/m)^{−A}` and the
+  `O(e^{−cm})` mass of the bad column `j_end ≥ 0.9m` (`fpDistPlus_col_tail`,
+  `budget_le_of_mem_triangle`);
+- **damping split by white count** `K=⌈10A/ε³⌉`: on `{Nw>K}` the integrand is `≤ e^{−10A}`;
+- **few-white geometry** `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
+  (`deterministic_encounter_or_bigTriangle`, `encFold_cumWhite`), the two masses bounded by
+  `reaches_fewWhite_mass_le_ten` and `estar_union_le ∘ bigTriangle_of_encounter`
+  (the latter at the `j−1` phase shift), with `R=⌈(K+(A+3)log10+2)/ε⌉`.
+
+Kept in `ENNReal.ofReal`/tsum form so it composes verbatim with the RHS of
+`Q_le_damped_iter` at `half = n/2`, `W = whiteSet n ξ`, `ε = epsBW`, `j = n/2−m`. -/
+theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∃ P : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            Q (n / 2) (whiteSet n ξ) (epsBW : ℝ)
+              (n / 2 - m + e.1 + (pathSum v P).1) (l + e.2 + (pathSum v P).2)))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) := by
+  sorry
+
 /-- **Case 3 of Proposition 7.8** ((7.53)–(7.67), paper pp.48–49 + Lemmas
 7.9/7.10 pp.50–54): deep triangle start, `m/log²m < s ≤ O(m)`.
 
@@ -1430,7 +1466,21 @@ theorem Q_black_edge_case3 (A : ℝ) (hA : 0 < A) :
       (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
         ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
-  sorry
+  -- (7.53) entry via `Q_le_damped_iter`, then the crux expectation bound, then strip `ofReal`.
+  obtain ⟨Cthr, P, hbound⟩ := damped_iter_expectation_le A hA
+  refine ⟨Cthr, ?_⟩
+  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  have hentry := Q_le_damped_iter (n / 2) (whiteSet n ξ) (epsBW : ℝ) hε0 s P (n / 2 - m) l
+  have hexp := hbound n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hchain : ENNReal.ofReal (Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l)
+      ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :=
+    le_trans hentry hexp
+  have hRHSnn : (0 : ℝ) ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
+    mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg m) _) (Qm_nonneg _ _ _ _ _ _)
+  exact (ENNReal.ofReal_le_ofReal_iff hRHSnn).mp hchain
 
 /-- The black-edge case split, now fed by the sole downstream X11 gate. -/
 theorem Q_black_edge (A : ℝ) (hA : 0 < A) :

@@ -1,5 +1,29 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap X11d-decomp-1 (2026-07-14): **X11d ENTRY REDUCTION (7.53) PROVED — crux isolated as `damped_iter_expectation_le`**
+
+`Q_black_edge_case3` no longer has a raw `sorry`: it is now **kernel-checked assembly**
+from ONE named sub-lemma. The (7.53) entry (`Q_le_damped_iter`) + `ENNReal.ofReal` strip
+(`ofReal_le_ofReal_iff`, RHS-nonneg via `Real.rpow_nonneg`+`Qm_nonneg`) are proved. The
+SOLE remaining §7 sorry is now **`damped_iter_expectation_le`** (`Case3.lean:1435`), the pure
+first-passage⊗Hold-walk expectation estimate ≤ `m^{−A}·Q_{m−1}`, stated in `ofReal`/tsum
+form that composes verbatim with `Q_le_damped_iter`'s RHS (half=n/2, W=whiteSet, ε=epsBW,
+j=n/2−m). `#print axioms prop_7_8` still carries `sorryAx` solely via this one lemma.
+
+### NEXT — decompose `damped_iter_expectation_le` into the three attack-path pieces:
+1. **(7.54) column split**: end value `Q(end)` → weight `max(1−j_end/m,1/m)^{−A}·Q_{m−1}`;
+   bad column `j_end ≥ 0.9m` has mass `O(e^{−cm})` (`fpDistPlus_col_tail`,
+   `budget_le_of_mem_triangle`); on its complement weight ≤ 10^A.
+2. **damping split by white count** `K=⌈10A/ε³⌉`: `{Nw>K}` integrand ≤ `e^{−10A} ≤ 10^{−(A+1)}`.
+3. **few-white geometry** `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
+   (`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`); masses
+   bounded by `reaches_fewWhite_mass_le_ten` and `estar_union_le ∘ bigTriangle_of_encounter`
+   (latter at `j−1` phase shift). `R=⌈(K+(A+3)log10+2)/ε⌉`.
+Horizon `P` = the `deterministic_encounter_or_bigTriangle` `P₀` (needs g,R,K,A); `Cthr`
+large enough for regime plumbing (⌊4^A(1+p)³⌋ ≤ m^{0.4} for p≤P; X10 deep hyp at j−1).
+**Study first**: `encFold_cumWhite`, `fpDistPlus_col_tail`, `budget_le_of_mem_triangle`,
+and how `Q(end)`'s tsum indexes relate to `deterministic_encounter_or_bigTriangle`'s `v`.
+
 ## Lap review+X11a+X11c (2026-07-14): **X11a + ALL X11c sub-machinery PROVED (axiom-clean) — only the X11d body remains**
 
 **This lap landed 10 axiom-clean lemmas.** ALL X11 sub-machinery is now in place; the
