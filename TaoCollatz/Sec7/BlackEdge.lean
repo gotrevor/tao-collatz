@@ -283,6 +283,32 @@ theorem edgeWeight_summand_le {A : ℝ} (hA : 0 ≤ A) {m : ℕ} (hm : 2 ≤ m)
     have := mul_le_mul_of_nonneg_left hconc (Real.rpow_nonneg hmpos.le (-A))
     linarith
 
+/-- **Numeric core of `fpDist_fst_mgf_le`** — the explicit threshold `Cthr` and the
+per-`(m,s)` split point `K` bundling all the constant-juggling estimates that the
+mechanical Fubini/split assembly consumes.  With `θ = 2A/m` and
+`K = ⌊m·log(1+δ/2)/(2A)⌋` this asserts: (a) the tilt lands in `gaussExp_col_tail`'s
+range `θ ≤ ½·min(c, c²/20)`; (b) the `gaussExp` cutoff budget `s·log2 ≤ (K+2)·log9`
+(from `s ≤ m/log²m`, `K = Θ(m)`); (c) the bulk factor `exp(θK) ≤ 1+δ/2` (floor of
+`K`); (d) the `gaussExp` tail RHS at cutoff `K` is `≤ δ/2` (super-exponential decay
+`x₀ = K+1-s/4 = Θ(m)` beats the bounded prefactor `exp(θs/4) ≤ exp(A/2)`).
+
+OPEN (the analytic tail-threshold; route sound via `gaussExp_col_tail`).  The
+mechanical assembly `fpDist_fst_mgf_le` below is PROVED off this interface. -/
+theorem fpDist_fst_mgf_numeric {A δ c C' : ℝ} (hA : 0 < A) (hδ : 0 < δ)
+    (hc : 0 < c) (hC' : 0 < C') :
+    ∃ Cthr : ℕ, 25 ≤ Cthr ∧ ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      ∃ K : ℕ, 25 ≤ K ∧
+        2 * A / (m : ℝ) ≤ min c (c ^ 2 / 20) / 2 ∧
+        (s : ℝ) * Real.log 2 ≤ ((K : ℝ) + 2) * Real.log 9 ∧
+        Real.exp (2 * A / (m : ℝ) * (K : ℝ)) ≤ 1 + δ / 2 ∧
+        C' * Real.exp (2 * A / (m : ℝ) * ((s : ℝ) / 4))
+          * (Real.exp (-(c ^ 2 / 20 - 2 * A / (m : ℝ)) * (((K : ℝ) + 1) - (s : ℝ) / 4))
+                / (1 - Real.exp (-(c ^ 2 / 20 - 2 * A / (m : ℝ))))
+             + Real.exp (-(c - 2 * A / (m : ℝ)) * (((K : ℝ) + 1) - (s : ℝ) / 4))
+                / (1 - Real.exp (-(c - 2 * A / (m : ℝ))))) ≤ δ / 2 := by
+  sorry
+
 /-- **First-coordinate `fpDist` MGF bound** (node X8 sub-goal — the genuinely-new
 analytic input on which both the main term and the tail of `fpDist_edgeWeight_le`
 depend).  At the vanishing tilt `θ = 2A/m`, under the (7.52) budget
@@ -315,7 +341,118 @@ theorem fpDist_fst_mgf_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
       ∑' e : ℕ × ℤ, (fpDist s e).toReal * Real.exp (2 * A * (e.1 : ℝ) / (m : ℝ))
         ≤ 1 + δ := by
-  sorry
+  obtain ⟨c, hc, C', hC'pos, hcol⟩ := fpDist_col_le
+  obtain ⟨Cthr, hCthr25, hnum⟩ := fpDist_fst_mgf_numeric hA hδ hc hC'pos
+  refine ⟨Cthr, fun m hm s hs => ?_⟩
+  obtain ⟨K, hK25, hθle, hbud, hbulk, htail⟩ := hnum m hm s hs
+  have hmpos : (0 : ℝ) < m := by
+    have h25 : (25 : ℕ) ≤ m := le_trans hCthr25 hm
+    exact_mod_cast lt_of_lt_of_le (by norm_num) h25
+  set θ : ℝ := 2 * A / (m : ℝ) with hθdef
+  have hθ0 : (0 : ℝ) ≤ θ := by rw [hθdef]; positivity
+  -- rewrite the exponent `2A·e.1/m` as `θ·e.1`
+  have hexp : ∀ e : ℕ × ℤ, 2 * A * (e.1 : ℝ) / (m : ℝ) = θ * (e.1 : ℝ) := by
+    intro e; rw [hθdef]; ring
+  simp_rw [hexp]
+  -- abbreviations
+  set f : ℕ × ℤ → ℝ := fun e => (fpDist s e).toReal * Real.exp (θ * (e.1 : ℝ)) with hfdef
+  set M : ℕ → ℝ := fun j => ∑' l : ℤ, (fpDist s (j, l)).toReal with hMdef
+  have hMnn : ∀ j : ℕ, 0 ≤ M j := fun j => tsum_nonneg (fun _ => ENNReal.toReal_nonneg)
+  -- summability of the raw `fpDist` mass (2-D) and its column slices
+  have hfp2d : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal) :=
+    ENNReal.summable_toReal (by rw [(fpDist s).tsum_coe]; exact ENNReal.one_ne_top)
+  have hfpcol : ∀ j : ℕ, Summable (fun l : ℤ => (fpDist s (j, l)).toReal) :=
+    fun j => hfp2d.comp_injective (fun _ _ h => by simpa using h)
+  have hfcol : ∀ j : ℕ, Summable (fun l : ℤ => f (j, l)) := by
+    intro j; simp only [hfdef]; exact (hfpcol j).mul_right _
+  -- the column marginal of `f`
+  have hg_eq : ∀ j : ℕ, (∑' l : ℤ, f (j, l)) = M j * Real.exp (θ * (j : ℝ)) := by
+    intro j
+    have hcongr : ∀ l : ℤ, f (j, l) = (fpDist s (j, l)).toReal * Real.exp (θ * (j : ℝ)) :=
+      fun l => by simp only [hfdef]
+    rw [tsum_congr hcongr, tsum_mul_right, hMdef]
+  have hgnn : ∀ j : ℕ, 0 ≤ ∑' l : ℤ, f (j, l) :=
+    fun j => tsum_nonneg (fun l => mul_nonneg ENNReal.toReal_nonneg (Real.exp_pos _).le)
+  -- the dominating envelope `U = (bulk, capped at exp θK) + (gaussExp tail column)`
+  set U : ℕ → ℝ := fun j =>
+    (if j ≤ K then Real.exp (θ * (K : ℝ)) * M j else 0)
+      + (if K < j then Real.exp (θ * (j : ℝ)) *
+          (C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
+                  / Real.sqrt (1 + (s : ℝ)))) else 0) with hUdef
+  obtain ⟨hsumT, hleT⟩ := gaussExp_col_tail hc hC'pos.le hθ0 hθle s K hK25 hbud
+  have hbulksum : Summable
+      (fun j : ℕ => if j ≤ K then Real.exp (θ * (K : ℝ)) * M j else 0) := by
+    refine summable_of_ne_finset_zero (s := Finset.range (K + 1)) (fun j hj => ?_)
+    have hnle : ¬ j ≤ K := by simp only [Finset.mem_range, not_lt] at hj; omega
+    rw [if_neg hnle]
+  have hUsum : Summable U := hbulksum.add hsumT
+  -- `g ≤ U` pointwise
+  have hgU : ∀ j : ℕ, (∑' l : ℤ, f (j, l)) ≤ U j := by
+    intro j
+    rw [hg_eq j]
+    simp only [hUdef]
+    by_cases hjK : j ≤ K
+    · rw [if_pos hjK, if_neg (by omega : ¬ K < j), add_zero]
+      have hle : Real.exp (θ * (j : ℝ)) ≤ Real.exp (θ * (K : ℝ)) := by
+        apply Real.exp_le_exp.mpr
+        exact mul_le_mul_of_nonneg_left (by exact_mod_cast hjK) hθ0
+      calc M j * Real.exp (θ * (j : ℝ)) ≤ M j * Real.exp (θ * (K : ℝ)) :=
+            mul_le_mul_of_nonneg_left hle (hMnn j)
+        _ = Real.exp (θ * (K : ℝ)) * M j := mul_comm _ _
+    · rw [if_neg hjK, if_pos (by omega : K < j), zero_add]
+      have hMenv : M j ≤ C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
+          / Real.sqrt (1 + (s : ℝ))) := by rw [hMdef]; exact hcol s j
+      calc M j * Real.exp (θ * (j : ℝ)) = Real.exp (θ * (j : ℝ)) * M j := mul_comm _ _
+        _ ≤ Real.exp (θ * (j : ℝ)) * (C' * (Gweight (1 + (s : ℝ))
+              (c * ((j : ℝ) - (s : ℝ) / 4)) / Real.sqrt (1 + (s : ℝ)))) :=
+            mul_le_mul_of_nonneg_left hMenv (Real.exp_pos _).le
+  -- 2-D summability of `f` via Tonelli, then Fubini to the column marginals
+  have hfsum : Summable f :=
+    (summable_prod_of_nonneg
+        (fun e => mul_nonneg ENNReal.toReal_nonneg (Real.exp_pos _).le)).mpr
+      ⟨hfcol, Summable.of_nonneg_of_le hgnn hgU hUsum⟩
+  rw [Summable.tsum_prod' hfsum hfcol]
+  -- total `fpDist` mass and the marginal-mass facts for the bulk
+  have hMsum : Summable M :=
+    ((summable_prod_of_nonneg (fun _ => ENNReal.toReal_nonneg)).mp hfp2d).2
+  have hmassM : ∑' j : ℕ, M j = 1 := by
+    have hfpmass : ∑' e : ℕ × ℤ, (fpDist s e).toReal = 1 := by
+      rw [← ENNReal.tsum_toReal_eq (fun e => PMF.apply_ne_top _ _), (fpDist s).tsum_coe,
+        ENNReal.toReal_one]
+    simp only [hMdef]
+    rw [← Summable.tsum_prod' hfp2d hfpcol, hfpmass]
+  have hindsum : Summable (fun j : ℕ => if j ≤ K then M j else 0) := by
+    refine summable_of_ne_finset_zero (s := Finset.range (K + 1)) (fun j hj => ?_)
+    have hnle : ¬ j ≤ K := by simp only [Finset.mem_range, not_lt] at hj; omega
+    rw [if_neg hnle]
+  have hindptw : ∀ j : ℕ, (if j ≤ K then M j else 0) ≤ M j := by
+    intro j; by_cases h : j ≤ K
+    · rw [if_pos h]
+    · rw [if_neg h]; exact hMnn j
+  have hindle : (∑' j : ℕ, if j ≤ K then M j else 0) ≤ ∑' j : ℕ, M j :=
+    Summable.tsum_le_tsum hindptw hindsum hMsum
+  -- assemble: `∑ g ≤ ∑ U = bulk + tail ≤ (1+δ/2) + δ/2 = 1+δ`
+  calc ∑' (j : ℕ), ∑' (l : ℤ), f (j, l)
+      ≤ ∑' (j : ℕ), U j :=
+        Summable.tsum_le_tsum hgU (Summable.of_nonneg_of_le hgnn hgU hUsum) hUsum
+    _ = (∑' j : ℕ, if j ≤ K then Real.exp (θ * (K : ℝ)) * M j else 0)
+          + ∑' j : ℕ, if K < j then Real.exp (θ * (j : ℝ)) *
+              (C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
+                      / Real.sqrt (1 + (s : ℝ)))) else 0 := by
+        simp only [hUdef]; exact hbulksum.tsum_add hsumT
+    _ ≤ (1 + δ / 2) + δ / 2 := by
+        refine add_le_add ?_ (hleT.trans htail)
+        have hb1 : (fun j : ℕ => if j ≤ K then Real.exp (θ * (K : ℝ)) * M j else 0)
+            = fun j => Real.exp (θ * (K : ℝ)) * (if j ≤ K then M j else 0) := by
+          funext j; by_cases hjK : j ≤ K <;> simp [hjK]
+        rw [hb1, tsum_mul_left]
+        have hstep : (∑' j : ℕ, if j ≤ K then M j else 0) ≤ 1 := by rw [← hmassM]; exact hindle
+        calc Real.exp (θ * (K : ℝ)) * (∑' j : ℕ, if j ≤ K then M j else 0)
+            ≤ Real.exp (θ * (K : ℝ)) * 1 :=
+              mul_le_mul_of_nonneg_left hstep (Real.exp_pos _).le
+          _ = Real.exp (θ * (K : ℝ)) := mul_one _
+          _ ≤ 1 + δ / 2 := hbulk
+    _ = 1 + δ := by ring
 
 /-- **The (7.48)/(7.49) weight degradation, Case 2** (paper p.47). With budget
 `s ≤ m/log²m`, the first-passage endpoint's `j`-coordinate concentrates near

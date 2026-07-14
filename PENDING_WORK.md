@@ -1,6 +1,44 @@
 # PENDING WORK (kept current per lap; newest on top)
 
-## Lap D-box cont (2026-07-14): **X8 `edgeWeight_summand_le` PROVED** — the pointwise weight bound
+## Lap D-box cont2 (2026-07-14): **`fpDist_fst_mgf_le` mechanical spine PROVED** — crux reduced to one numeric obligation
+
+The X8 crux sub-goal `fpDist_fst_mgf_le` (`BlackEdge.lean`) is now **proved off a single
+clean interface** `fpDist_fst_mgf_numeric` (the only remaining `sorry`). `#print axioms
+fpDist_fst_mgf_le = [propext, sorryAx, Classical.choice, Quot.sound]` — the `sorryAx`
+traces *solely* to `fpDist_fst_mgf_numeric`. Full build green (3281 jobs).
+
+**What landed (mechanical, template = `fpDist_out_of_strip_le`):** the entire
+Fubini/split/mass spine of the first-coord `fpDist` MGF:
+- **Exponent rewrite** `2A·e.1/m = θ·e.1` (`θ := 2A/m`), then `set f, M`.
+- **Tonelli 2D-summability** via `summable_prod_of_nonneg`: column slices summable
+  (`hfp2d.comp_injective`) + the column-marginal series `∑'_j (∑'_l f)` summable by
+  domination `g(j) = M(j)·e^{θj} ≤ U(j)`.
+- **The dominating envelope** `U(j) = [j≤K] e^{θK}·M(j) + [K<j] e^{θj}·(fpDist_col_le env)`.
+  Bulk part finite-support-summable (`summable_of_ne_finset_zero`, `Finset.range (K+1)`);
+  tail part = `gaussExp_col_tail`'s summand verbatim ⟹ `hsumT`.
+- **`g ≤ U` pointwise** (two cases: `j≤K` uses `e^{θj} ≤ e^{θK}` + `M≥0`; `j>K` uses
+  `fpDist_col_le` = `M j ≤ env j`).
+- **Fubini** `Summable.tsum_prod'` collapses the 2D sum to `∑'_j g(j) ≤ ∑'_j U(j)`.
+- **Bulk ≤ 1+δ/2**: factor `e^{θK}` (`tsum_mul_left`), `∑'_j [j≤K] M(j) ≤ ∑'_j M(j) = 1`
+  (marginal mass via `summable_prod_of_nonneg` + `(fpDist s).tsum_coe`), cite `hbulk`.
+- **Tail ≤ δ/2**: `hleT.trans htail` (gaussExp RHS ≤ δ/2). Sum `(1+δ/2)+(δ/2) = 1+δ`.
+
+**NEXT — hardest-first: discharge `fpDist_fst_mgf_numeric`** (`BlackEdge.lean:~296`).
+This is the analytic tail-threshold — pure constant-juggling, route sound. With `c,C'`
+from `fpDist_col_le` (absolute), `θ = 2A/m`, `L := log(1+δ/2)`, `K := ⌊m·L/(2A)⌋`:
+1. `θ ≤ ½min(c,c²/20)`: needs `m ≥ 2A/(½min(c,c²/20))` =: m₁.
+2. bulk `e^{θK} ≤ 1+δ/2`: `θK = (2A/m)⌊m L/(2A)⌋ ≤ L`, so `e^{θK} ≤ e^L = 1+δ/2`. (floor)
+3. gaussExp budget `s·log2 ≤ (K+2)·log9` + `25 ≤ K`: from `s ≤ m/log²m` (≪ K = Θ(m)) for
+   `m ≥` some m₂ (needs `log²m ≥ A/L`-ish so `K ≫ s`).
+4. tail RHS `≤ δ/2`: `x₀ = K+1-s/4 ≥ m·L/(4A)` for `m ≥ exp(√(A/L))` =: m₃ (since
+   `s/4 ≤ m/(4log²m)`); prefactor `e^{θs/4} ≤ e^{A/(2log²m)} ≤ e^{A/2}`; rates
+   `a₂ = c²/20-θ ≥ c²/40`, `a₁ = c-θ ≥ c/2` (denominators bounded below); so
+   `RHS ≤ 2C'e^{A/2}·e^{-(c²/40)·mL/(4A)}/(1-e^{-c²/40}) → 0`, ≤ δ/2 for `m ≥ m₄`.
+   `Cthr = max(25, m₁, m₂, m₃, m₄)`. The `log²m → ∞` steps are the fiddly part.
+   TODO(alt): could weaken to `s ≤ m/log m` if `log²m` bookkeeping bites (still gives the
+   asymptotics; but the (7.52) hyp is `log²m`, keep it).
+
+## Lap D-box (2026-07-14): **X8 `edgeWeight_summand_le` PROVED** — the pointwise weight bound
 
 With the X9 kernel closed (below), moved to the non-gated X8 crux `fpDist_edgeWeight_le`
 (`BlackEdge.lean:407`, the (7.48) weight degradation). Landed the **uniform pointwise weight

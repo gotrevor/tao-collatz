@@ -116,6 +116,7 @@ fractal rule as the KB). Full text preserved verbatim — nothing was summarized
 - [Pass 19](judge/pass-19.md) — 2026-07-12, lap-58 boundary: **BOTH (7.61) TAILS + X10a PROVED & VERIFIED** ✅ — `fpDistPlus_height_tail`/`fpDistPlus_col_tail` now ratified+proved+clean; `encounter_apex_proximity` (X10a, the (7.63)→(7.65) confinement) **ratified vs p.53** + clean; engines (`fpDist_height_tail`, `fpDist_col_dev`, `holdSum_col_tail`) clean. **X10b pinned; committed form NOT ratified** — the lap-59 regime hypothesis `(s')² ≤ 1+s` is **pre-authorized** (pin false without it for s' ≫ √s; consumer-safe via `s' ≤ m^0.4` + `s > m/log²m`). X10 badge high/70% → **medium/80%**; headline = X10b + glue. `/lean-review`: 🟡 1 flag — X10a's local `maxHeartbeats 1600000` lacks the SKELETON-SPEC-required `-- HEARTBEAT:` comment (box's to fix). Also: **statement-faithfulness audit CLOSED** (Math Inc agrees on Thm 1.3; Thm 3.1 verbatim; Series β "Korec" label fixed — see endgame section).
 - **⚖️ Altitude ruling** (2026-07-12, Trevor, post-pass-20): **Remedy A at `epsBW = 10⁻⁹⁰`** — paper-faithful route restored; execution order + judge protocol in BLUEPRINT §2 and Live judge state below. X9 badge blocked/60% → 13–28 laps/70%.
 - [Pass 23](judge/pass-23.md) — 2026-07-13, external-contribution cross-check (working tree, not a lap): **D4 CHANGE + REAL LEMMA-7.4 SEPARATION EXECUTED** ✅ + **SECOND ALTITUDE-CLASS ESCALATION** ⚠️ — **OpenAI Codex** landed `epsBW = 10⁻⁹⁰` with all mechanical repairs; the armed ε-sweep FIRED and all seven items discharged (X2/X3/X10 re-verified clean at the new ε); Lemma 7.4 Claim (*) Cases 1–3 formalized as REAL separation (pass-18 vacuity closed for good; `black_structure` gained one additive construction conjunct — re-ratified). Every pinned statement character-preserved across a BlackEdge→Case3 reorganization; old 10⁻⁴-era white-count route lemmas deleted (consistent with the pass-18 withdrawal). **New escalation**: the blocked tail was reduced to `sep > √(X²+Y²)` for an explicit localization box — but X ≈ 2.6·10⁶ vs sep ≈ 20.7 (lossy `16j−5l` Chernoff); no feasible frozen ε closes it. Exits: tighten the localization (judge p.48 re-read first — recommended) or re-open D4 as a parameter. Suspensions persist. Sorry trail: same 5 crux statements; repo 17 → 14. Split still queued (ManyTriangles now ~5,200 lines).
+- [Pass 25](judge/pass-25.md) — 2026-07-13, lap boundary (treadmill laps 1–3, opus medium→high, 16 commits): 🏆 **X9 / LEMMA 7.9 COMPLETE** — the second pinnacle kernel is a theorem; **both are now done**. The tail blocked since pass 18 and escalated at pass 23, `fpDist_any_triangle_le`, is **PROVED axiom-clean**, and with it `fpDist_white_exit_deep` + `many_triangles_white`; `ManyTriangles.lean` has **zero sorries**. Pass-24's two constants landed inside the judge's envelope: `B` = **64** (exact `Hold` MGF, tilt freed 1/20000 → 1/16, **no `native_decide`**), `Y` = **150** (`renewal_level_le_one`, X6 left existential). Box `√(51²+150²) ≈ 158.4` < `sep ≈ 230.26` at the pre-authorized `epsBW = 10⁻¹⁰⁰⁰`. The D4 lap was dedicated and **all 12 pinned statements byte-identical** across it. 🔔 **ε-sweep FIRED + DISCHARGED** (X3/X2/X10 + 2 consumers re-verified clean at the new ε — ledger survives a 910-OOM drop; tripwire RE-ARMS). 🔓 **Zero open suspensions** for the first time since pass 13. Remaining trail = Case-2/Case-3 assembly (5 crux, all in BlackEdge/Case3).
 - [Pass 24](judge/pass-24.md) — 2026-07-13, judge homework (p.48 localization re-read; no worker output): **SECOND ESCALATION DOWNGRADED — NOT altitude-class** ✅. The paper's (7.50) O(1) is a distance **from Δ**, not from the start (drift slope 1/4 < edge slope log2/log9, so the walk drifts *along* Δ), and is explicitly ε-free; Codex's geometry already renders exactly that (top-projection into Δ + `F.separated`) — the route is sound. The entire blocker is **one lossy constant**: `fpDist_linear_tail` replaces the step law's exact MGF (`geomQuarter` × `pascalNe3`, mean (4,16), drift −16/step) with a quadratic bound that near-cancels the drift and caps the tilt at 1/20000 (true ceiling 0.213), shipping `B = 4·10⁷` where the honest optimum is **B ≈ 42** (~10⁶×; and 4·10⁷ is 167× above even its own bound's need). The *real* blocker is the other constant: `fpDist_height_tail`'s `Y` is **existential** (it sums X6's envelope), so the box is not a number at all — fixed without re-opening X6 by renewal-conv + **strictly increasing heights** (`Δl ≥ 3` ⟹ each level visited at most once ⟹ renewal mass per level ≤ 1) + `Δl`'s exact MGF ⟹ **`Y = 139`**. Box `= √(47²+139²) ≈ 147` **vs sep ≈ 20.72 — does not fit**, so ⚖️ **one cheap ruling is needed**: numeral re-freeze `10⁻⁹⁰ → 10⁻¹⁰⁰⁰` (sep ≈ 230; 1000-digit rational, `norm_num`-trivial; fires the armed ε-sweep, all 7 items monotone-good at smaller ε). Pass-23's "no feasible ε" (11-million-digit numeral) was an artifact of the garbage `B` — off by four orders of magnitude in the exponent. **D4-as-a-parameter is OFF the table.** Both lemmas are ε-free: land them first, then pick `d` from the constants actually proved. Two worker tasks issued (BLUEPRINT §2); numerics in `tools/tao_linear_tail.py` + `tools/tao_height_tail.py`.
 - [Pass 22](judge/pass-22.md) — 2026-07-13, external-contribution cross-check (working tree, not a lap): **C5 / PROP 1.9 + LEMMA 4.1 COMPLETE** ✅ — `valuation_dist` + `valuation_tail` proved by an **OpenAI Codex** session (+1,183 lines across ValuationDist/Valuation). Pinned statements character-untouched incl. constituent `unifOddMod`; fresh faithfulness read vs Prop 1.9 p.7 + Lemma 4.1 p.22 confirms the `∀c₀ K ∃c₁ C ∀n n' X` shape. **Dated run caught a laundered hole**: `valuation_tail` initially depended on `sorryAx` via the long-parked (1.10) `PMF.abs_expect_indicator_sub_le_dTV` (Prob/Basic.lean:154) — textually sorry-free file, transitively conditional; judge proved (1.10) same pass (tsum triangle inequality + summability bookkeeping). Re-run: all 7 decls exactly the clean triple. Route note: Lemma 4.1 *derived from* Prop 1.9 + geometric tail (reverse of the paper's order; sound, non-circular). `/lean-review` (1,183 added lines): ✅ CLEAN. **Ninth verified node**; pass-21's `valVec_pos` nit resolved by codex unprompted. Repo sorries 21 → 17.
 - [Pass 21](judge/pass-21.md) — 2026-07-13, external-contribution cross-check (working tree, not a lap): **C2 / LEMMA 2.1 COMPLETE** ✅ — `valVec_unique` proved by an **OpenAI Codex** session (uncommitted; judge committed after verification). Statement untouched by the proof landing AND newly **RATIFIED vs p.14** (the node's open RATIFY-2 resolved); route = the paper's own last-entry induction; dated runs (`syr_iterate_key`, `valVec_unique`, new `syr_iterate_odd`) all clean; `/lean-review` (148 added lines): ✅ CLEAN. Eighth verified node, first of the C-series. Nit armed: the paper's membership half (valVec entries ≥ 1) has no companion lemma — one-liner if a consumer needs it.
@@ -133,13 +134,18 @@ the full engine chain, the first of the two pinnacle kernels),
 Codex session, judge-ratified vs p.14 + verified; RATIFY-2 resolved),
 **C5** (pass 22 — Prop 1.9 `valuation_dist` + Lemma 4.1 `valuation_tail`,
 external Codex session; judge discharged the parked (1.10) PMF lemma the tail
-consumed).
+consumed),
+🏆 **X9** (pass 25, 2026-07-13 — **Lemma 7.9 end-to-end**: `many_triangles_white` +
+the kernel `fpDist_white_exit_deep` + the long-blocked tail `fpDist_any_triangle_le`,
+all clean; `ManyTriangles.lean` now has ZERO sorries. **The second pinnacle kernel —
+both are now complete.**).
 
 **Statements pinned + ratified**: every ledger node except **C8** (no pinned Lean
 statement yet — the last un-pinned node). Latest: X10 `∃A₀` re-pin + the two (7.61)
-tail pins (pass 18), X9 depth-gated re-pin (pass 14). ⚠️ **SUSPENDED**:
-`fpDist_white_exit_deep` (pass 18 — see the escalation bullet; the pin's text is
-unchanged, but its truth at the frozen ε is no longer judge-believed).
+tail pins (pass 18), X9 depth-gated re-pin (pass 14). 🔓 **ZERO OPEN SUSPENSIONS**
+(first time since pass 13): `fpDist_white_exit_deep`'s suspension (pass 18, re-grounded
+pass 23) is **lifted by proof** — it is now a theorem, axiom-clean (pass 25). A proof
+settles truth; nothing is left to believe.
 
 **Open riders / queued fronts**:
 - **⚖️ ALTITUDE RULING (Trevor, 2026-07-12): Remedy A at `epsBW = 10⁻⁹⁰` —
@@ -148,6 +154,21 @@ unchanged, but its truth at the frozen ε is no longer judge-believed).
   real Lemma-7.4 separation formalized (sep ≈ 20.7 genuine, vacuity closed;
   `black_structure` + additive construction conjunct, re-ratified). The 🗂️
   split (step 1) was skipped — still queued, more urgent (~5,200 lines).
+- **🏆 X9 COMPLETE + ε-SWEEP DISCHARGED (pass 25, 2026-07-13)**: pass-24's diagnosis
+  executed in three laps. `B`: 4·10⁷ → **64** (exact `Hold` MGF closed form
+  `tiltZ_hold_closed`; tilt freed 1/20000 → 1/16; **no `native_decide`**, as predicted).
+  `Y`: existential → **150** (`renewal_level_le_one` — strictly-increasing heights ⟹
+  renewal mass per level ≤ 1; **X6 NOT re-opened**). Box `√(51²+150²) ≈ 158.4` vs
+  `sep ≈ 230.26` at the pre-authorized `epsBW = 10⁻¹⁰⁰⁰` — fits, ~45% margin. The
+  D4-change lap was **dedicated** and **all 12 pinned statements are byte-identical
+  across it** (judge character-diff; `Triangles.lean`'s 120 changed lines are pure
+  proof-body arithmetic). 🔔 **ε-sweep FIRED and DISCHARGED**: X3/X2/X10 +
+  `white_gap_above_run_top` + `fpDist_out_of_strip_le` all re-verified exactly clean at
+  10⁻¹⁰⁰⁰ — the ledger survives a 910-order-of-magnitude ε drop. **Tripwire RE-ARMS**
+  for any future `epsBW` change. Sorry trail: `ManyTriangles.lean` **0**; the 5 crux are
+  now all Case-2/Case-3 assembly (`fpDist_fst_mgf_le` NEW, `fpDist_edgeWeight_le`,
+  `fpDist_white_exit`, `Q_black_edge_case2`, `Q_black_edge_case3`). Full record:
+  `judge/pass-25.md`.
 - **✅ SECOND ESCALATION DOWNGRADED (pass 24) — NOT altitude-class**: the p.48
   re-read settles it. The paper's localization is a distance **from Δ**, not from
   the start point (the drift slope 1/4 is shallower than the edge slope
