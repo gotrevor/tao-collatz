@@ -11,23 +11,23 @@ Paper anchor: Tao 2019 §6, Proposition 1.14 (deduced from Prop 1.17 via Planche
 
 `fine_scale_mixing` (Prop 1.14) is decomposed along the paper's Plancherel route.
 
-## Cauchy–Schwarz + Parseval bridge (`osc_le_sqrt_highfreq`)
+## Cauchy–Schwarz + Parseval bridge (`osc_le_sqrt_highfreq`) — PROVED, axiom-clean
 
 Write `N := 3ⁿ`, `c := densC n` the (real) density as a `ℂ`-valued function, and
 `devC Y := c Y − avg(Y)` where `avg(Y)` is the `3ᵐ`-scale conditional average (the mean of `c`
-over the `castHom`-fiber of `Y`). The proof splits into four machine-checked steps:
+over the `castHom`-fiber of `Y`). The proof is now fully machine-checked:
 
-* `osc_eq_sum_norm_devC` — `osc = ∑_Y ‖devC Y‖` (the `L¹` deviation; **proved**, a cast).
-* Cauchy–Schwarz `sq_sum_le_card_mul_sum_sq` — `(∑ ‖devC‖)² ≤ N·∑ ‖devC‖²` (**proved inline**).
-* `sum_norm_sq_devC_eq` — `∑_Y ‖devC Y‖² = N⁻¹·∑_{highFreq} ‖𝓕c(ξ)‖²` (**Parseval**, from the
-  inversion identity below; `sorry`).
-* `devC_eq_highfreq_invDFT` — `devC Y = N⁻¹ ∑_{ξ∈highFreq} 𝓕c(ξ)·e(ξ·Y)` (the genuine crux: the
-  `3ᵐ`-conditional average is the low-frequency projection, so the deviation is the high-frequency
-  inverse DFT; reduces to the coset character sum `coset_char_sum`; `sorry`).
+* `osc_eq_sum_norm_devC` — `osc = ∑_Y ‖devC Y‖` (the `L¹` deviation; a cast).
+* Cauchy–Schwarz `sq_sum_le_card_mul_sum_sq` — `(∑ ‖devC‖)² ≤ N·∑ ‖devC‖²` (inline).
+* `sum_norm_sq_devC_eq` — `∑_Y ‖devC Y‖² = N⁻¹·∑_{highFreq} ‖𝓕c(ξ)‖²` (Parseval, `devC = 𝓕⁻ g`).
+* `devC_eq_highfreq_invDFT` — `devC Y = N⁻¹ ∑_{ξ∈highFreq} 𝓕c(ξ)·e(ξ·Y)`, from `densC_inversion`
+  + `condAvgC_eq_lowSum` (the `3ᵐ`-conditional average is the low-frequency projection).
+* `condAvgC_eq_lowSum` ← `coset_char_sum` ← `fiber_char_reindex` + `geom_sum_root_of_pow_eq_one`
+  (fiber `= {Y+t·3ᵐ}`, additive character splits, geometric sum over `3^{n-m}`-th roots of unity).
 
 Then `osc = ∑‖devC‖ = √((∑‖devC‖)²) ≤ √(N·∑‖devC‖²) = √(N·N⁻¹·H) = √H`, i.e. `osc_le_sqrt_highfreq`.
 
-## High-frequency decay (`highfreq_l2_le`)
+## High-frequency decay (`highfreq_l2_le`) — the sole remaining C10 sorry
 
 `∑_{highFreq} ‖𝓕c(ξ)‖² ≤ C·m^{-A}` from Prop 1.17 (`charFn_decay`) via `syracZ_map_cast`; `sorry`.
 
@@ -109,7 +109,55 @@ theorem fiber_char_reindex (m n : ℕ) (hmn : m ≤ n) (ξ Y : ZMod (3 ^ n)) :
     ∑ Y' ∈ fiber m n hmn Y, ZMod.stdAddChar (ξ * Y')
       = ∑ t ∈ Finset.range (3 ^ (n - m)),
           ZMod.stdAddChar (ξ * (Y + (t : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n)))) := by
-  sorry
+  classical
+  have h3m : (3 ^ m : ZMod (3 ^ n)) = ((3 ^ m : ℕ) : ZMod (3 ^ n)) := by push_cast; ring
+  -- `castHom (3ᵐ) = 0`.
+  have hcast3m : ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) (3 ^ m : ZMod (3 ^ n)) = 0 := by
+    rw [h3m, map_natCast]; exact ZMod.natCast_self _
+  set g : ℕ → ZMod (3 ^ n) := fun t => Y + (t : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n)) with hg
+  -- `g` is injective on `range (3^{n-m})`.
+  have hginj : Set.InjOn g (Finset.range (3 ^ (n - m))) := by
+    intro t ht t' ht' heq
+    simp only [Finset.coe_range, Set.mem_Iio] at ht ht'
+    simp only [hg] at heq
+    have h2 : (t : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n))
+        = (t' : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n)) := add_left_cancel heq
+    rw [show (t : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n)) = ((t * 3 ^ m : ℕ) : ZMod (3 ^ n)) from by
+        push_cast; ring,
+      show (t' : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n)) = ((t' * 3 ^ m : ℕ) : ZMod (3 ^ n)) from by
+        push_cast; ring,
+      ZMod.natCast_eq_natCast_iff,
+      show (3 : ℕ) ^ n = 3 ^ (n - m) * 3 ^ m from by rw [← pow_add, Nat.sub_add_cancel hmn]] at h2
+    have h3 : t ≡ t' [MOD 3 ^ (n - m)] := Nat.ModEq.mul_right_cancel' (by positivity) h2
+    rwa [Nat.ModEq, Nat.mod_eq_of_lt ht, Nat.mod_eq_of_lt ht'] at h3
+  -- The fiber is exactly the image of `g`.
+  have hfib_eq : fiber m n hmn Y = (Finset.range (3 ^ (n - m))).image g := by
+    ext Y'
+    simp only [Finset.mem_image, Finset.mem_range]
+    constructor
+    · intro hY'
+      rw [fiber, Finset.mem_filter] at hY'
+      have hz : ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) (Y' - Y) = 0 := by
+        rw [map_sub, hY'.2, sub_self]
+      have hval0 : (((Y' - Y).val : ℕ) : ZMod (3 ^ m)) = 0 := by
+        rw [ZMod.castHom_apply] at hz
+        rw [ZMod.natCast_val]
+        exact hz
+      have hdvd : (3 ^ m : ℕ) ∣ (Y' - Y).val := (ZMod.natCast_eq_zero_iff _ _).mp hval0
+      refine ⟨(Y' - Y).val / 3 ^ m, ?_, ?_⟩
+      · rw [Nat.div_lt_iff_lt_mul (by positivity : 0 < 3 ^ m)]
+        calc (Y' - Y).val < 3 ^ n := ZMod.val_lt _
+          _ = 3 ^ (n - m) * 3 ^ m := by rw [← pow_add, Nat.sub_add_cancel hmn]
+      · simp only [hg]
+        have hmul : (((Y' - Y).val / 3 ^ m : ℕ) : ZMod (3 ^ n)) * (3 ^ m : ZMod (3 ^ n))
+            = Y' - Y := by
+          rw [h3m, ← Nat.cast_mul, Nat.div_mul_cancel hdvd, ZMod.natCast_zmod_val]
+        rw [hmul]; abel
+    · rintro ⟨t, _, rfl⟩
+      rw [fiber, Finset.mem_filter]
+      refine ⟨Finset.mem_univ _, ?_⟩
+      simp only [hg, map_add, map_mul, hcast3m, mul_zero, add_zero]
+  rw [hfib_eq, Finset.sum_image hginj]
 
 /-- **Coset character sum** (the number-theoretic heart of C10): the additive character summed
 over a `3ᵐ`-fiber vanishes unless `ξ` is a low frequency (`3^{n-m} ∣ ξ.val`), in which case it is
