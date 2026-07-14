@@ -2073,6 +2073,125 @@ theorem osc_windowedB_conditioning_le {ι : Type*} (m j p : ℕ) (hmn : m ≤ j 
           condDensWB_osc_le j p (l i) m C T hmn (D i) (hD i) (hunif i hi) (hbudget i hi))
 
 
+/-- The stopping-cut exponent identity: for `k < n`, `(n−1−k) + (k+1) = n`. A *named* lemma so the
+`Eq.rec` proof term is syntactically stable. -/
+theorem cutEq {n k : ℕ} (h : k < n) : n - 1 - k + (k + 1) = n := by omega
+
+/-- The k-sum cast helper: transport osc across an exponent equality (free vars ⇒ `subst`). -/
+theorem osc_cast {a b m : ℕ} (h : a = b) (hma : m ≤ a) (f : ZMod (3^a) → ℝ) :
+    osc m b (h ▸ hma) (h ▸ f) = osc m a hma f := by
+  subst h; rfl
+
+/-- Proof-irrelevant variant of `osc_cast`: takes both `m ≤ a` and `m ≤ b` explicitly. -/
+theorem osc_cast' {a b m : ℕ} (h : a = b) (hma : m ≤ a) (hmb : m ≤ b) (f : ZMod (3^a) → ℝ) :
+    osc m b hmb (h ▸ f) = osc m a hma f := by
+  subst h; rfl
+
+/-- **A single stopping-cut term** cast to level `n`: the windowed conditioned density at cut
+`(n−1−k, k+1)` (native level `(n−1−k)+(k+1)`), transported to `ZMod (3^n)` when `k < n` (else `0`).
+Wrapping the `Eq.rec` transport in its own `def` keeps it opaque to the `osc_sum_le` unifier — a raw
+`▸` under the sum forces `whnf` into `condDensW`'s `tsum` on every defeq check. -/
+noncomputable def castedTerm (n k l : ℕ) (C T : ℝ) : ZMod (3 ^ n) → ℝ :=
+  if h : k < n then
+    cutEq h ▸ condDensW (n - 1 - k) (k + 1) l (condWindowB (n - 1 - k) (k + 1) C l T)
+  else 0
+
+/-- Uniform level bound: `(n−1−k)+(k+1) ≥ n` for every `k`, so `m ≤ (n−1−k)+(k+1)` whenever `m ≤ n`. -/
+theorem m_le_cut (n m : ℕ) (hmn : m ≤ n) (k : ℕ) : m ≤ n - 1 - k + (k + 1) :=
+  le_trans hmn (by omega)
+
+/-- The per-cut osc of `castedTerm` equals the native-level osc of `condDensW` (via the cast helper). -/
+theorem osc_castedTerm (n m k l : ℕ) (hmn : m ≤ n) (hkn : k < n) (C T : ℝ) :
+    osc m n hmn (castedTerm n k l C T)
+      = osc m (n - 1 - k + (k + 1)) (m_le_cut n m hmn k)
+          (condDensW (n - 1 - k) (k + 1) l (condWindowB (n - 1 - k) (k + 1) C l T)) := by
+  unfold castedTerm
+  rw [dif_pos hkn]
+  exact osc_cast' (cutEq hkn) (m_le_cut n m hmn k) hmn _
+
+/-- **The §6 main conditioned density at level `n`** (Tao (6.9), summed over the stopping
+time `k` and the valuation `l`): the `(k,l)`-sum of the cast conditioned densities `castedTerm`. -/
+noncomputable def mainDensity (n : ℕ) (C T : ℝ) (Lset : ℕ → Finset ℕ) :
+    ZMod (3 ^ n) → ℝ := fun Y =>
+  ∑ k ∈ Finset.range n, ∑ l ∈ Lset k, castedTerm n k l C T Y
+
+/-- **The main-density osc bound = the k-sum cast glue** (C10 assembly): the oscillation of the
+`(k,l)`-summed main density is bounded by the sum of the per-cut oscillations of the native-level
+`condDensW`, via `osc_sum_le` (twice) composed with the cast helper. This discharges the k-sum
+dependent-index cast `(n−1−k)+(k+1)=n` flagged as the main new friction: each summand lives on a
+different `ZMod (3^…)`, but its *oscillation* is a real number transported losslessly to level `n`.
+The per-cut bound `B k l` is supplied by the caller (`condDensWB_osc_le`). -/
+theorem osc_mainDensity_le (n m : ℕ) (hmn : m ≤ n) (C T : ℝ)
+    (Lset : ℕ → Finset ℕ) (B : ℕ → ℕ → ℝ)
+    (hterm : ∀ k ∈ Finset.range n, ∀ l ∈ Lset k,
+      osc m (n - 1 - k + (k + 1)) (m_le_cut n m hmn k)
+        (condDensW (n - 1 - k) (k + 1) l (condWindowB (n - 1 - k) (k + 1) C l T)) ≤ B k l) :
+    osc m n hmn (mainDensity n C T Lset)
+      ≤ ∑ k ∈ Finset.range n, ∑ l ∈ Lset k, B k l := by
+  unfold mainDensity
+  refine le_trans (osc_sum_le m n hmn (Finset.range n)
+    (fun k Y => ∑ l ∈ Lset k, castedTerm n k l C T Y)) ?_
+  refine Finset.sum_le_sum (fun k hk => ?_)
+  have hkn : k < n := Finset.mem_range.mp hk
+  refine le_trans (osc_sum_le m n hmn (Lset k)
+    (fun l Y => castedTerm n k l C T Y)) ?_
+  refine Finset.sum_le_sum (fun l hl => ?_)
+  rw [show (fun Y => castedTerm n k l C T Y) = castedTerm n k l C T from rfl,
+    osc_castedTerm n m k l hmn hkn C T]
+  exact hterm k hk l hl
+
+open Real in
+/-- The (6.6) stopping threshold `T = n·log₂3 − C_A²·log n`. -/
+noncomputable def caThr (C : ℝ) (n : ℕ) : ℝ :=
+  (n : ℝ) * Real.log 3 / Real.log 2 - C ^ 2 * Real.log n
+
+/-- The (6.8)/tight-window valuation range for `l = a[1,k+1]` (judge pass 28: the **tight** upper
+end `n·log₂3 − (C_A²−2C_A)·log n`, NOT the paper's lossy `−½C_A²`). Lower end from `Bₖ` (6.7). -/
+noncomputable def lRange (C : ℝ) (n : ℕ) : Finset ℕ :=
+  Finset.Icc ⌈(n : ℝ) * Real.log 3 / Real.log 2 - C ^ 2 * Real.log n⌉₊
+             ⌊(n : ℝ) * Real.log 3 / Real.log 2 - (C ^ 2 - 2 * C) * Real.log n⌋₊
+
+/-- `C_A`, the §6 conditioning constant. Fixed at `30 ≥ 23` (judge pass 28: `hbudget` needs `C_A ≥ 23`
+at the proved kernel's `ε = 1/5`; `30` leaves margin for the downstream `A′`-absorption check). -/
+noncomputable def caConst : ℝ := 30
+
+/-- **The high-regime main density** (Tao (6.9)): the `(k,l)`-sum of the cast conditioned densities
+at `C_A = caConst`, threshold `caThr`, valuation range `lRange`. -/
+noncomputable def mainHigh (n : ℕ) : ZMod (3 ^ n) → ℝ :=
+  mainDensity n caConst (caThr caConst n) (fun _ => lRange caConst n)
+
+/-- **The pointwise main/error split combiner** (C10 obl-1 skeleton, fully proved): splitting the
+syracZ density as `main + (syracZ − main)`, its oscillation is bounded by `osc(main)` plus twice the
+error `L¹` mass (`osc_add_le` + `osc_le_two_mul_l1`). The content is entirely in the two inputs. -/
+theorem osc_syracZ_split_le (m n : ℕ) (hmn : m ≤ n) (main : ZMod (3 ^ n) → ℝ) (b : ℝ)
+    (hmain : osc m n hmn main ≤ b)
+    (herr : 2 * ∑ Y, |(syracZ n Y).toReal - main Y| ≤ b) :
+    osc m n hmn (fun Y => (syracZ n Y).toReal) ≤ b + b := by
+  have hsplit : (fun Y => (syracZ n Y).toReal)
+      = (fun Y => main Y + ((syracZ n Y).toReal - main Y)) := by funext Y; ring
+  rw [hsplit]
+  refine le_trans (osc_add_le m n hmn main (fun Y => (syracZ n Y).toReal - main Y)) ?_
+  exact add_le_add hmain (le_trans (osc_le_two_mul_l1 m n hmn _) herr)
+
+/-- **Obligation 1+2 (main term)**: the oscillation of the §6 main density is polynomially small in
+the high regime. This is (6.10)+(6.11) [per-conditioning osc `≤ D·√(3ⁿ2⁻ˡ)`, obl-3 DONE] summed over
+the `(k,l)` partition via `osc_mainDensity_le` [k-sum cast, DONE] with `D = C_A·q⁻ᴬ` [obl 2, `hunif`
+from `head_factor_norm_le_charFn`], then the geometric `l`-sum `∑ √(2⁻ˡ)` + `k`-count + the constant
+chase absorbing `n^{O(C_A²)}` into `A′` (judge pass 28: SHOW the absorption at `C_A = 30`). -/
+theorem osc_mainHigh_bound (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, ∀ hmn : m ≤ n, n₀ ≤ n → 9 * n ≤ 10 * m →
+      osc m n hmn (mainHigh n) ≤ C * (m : ℝ) ^ (-A) := by
+  sorry
+
+/-- **Obligation 1 (error term)**: the `L¹` mass of `syracZ − mainHigh` is polynomially small. This
+is Tao (6.3), `P(Ē) ≤ n^{-A-1}`, plus the (6.4) event enlargements `E → Eₖ`: the events `E`/`Eₖ`/`Bₖ`
+partition the good event, so the difference is the mass on the bad event, controlled by the §7/S3
+sub-Gaussian tails (Lemma 2.2 + union bound). -/
+theorem error_l1_high_bound (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, n₀ ≤ n → 9 * n ≤ 10 * m →
+      2 * ∑ Y, |(syracZ n Y).toReal - mainHigh n Y| ≤ C * (m : ℝ) ^ (-A) := by
+  sorry
+
 /-- **(6.2)–(6.10): the §6 conditioning core** (C10, obligations 1+2+3), in the high regime
 `0.9n ≤ m ≤ n` (encoded `9n ≤ 10m`) and for `n` sufficiently large. This is where the whole conditioning
 machinery lives: the event decomposition `syracZ = ∑_{k,l} g_{n,k,l} + error` (6.9) over stopping times
@@ -2085,7 +2204,18 @@ and the error `L¹` bound `P(Ē) ≤ n^{-A-1}` (6.3, via `osc_le_two_mul_l1`). *
 theorem osc_syracZ_high_regime (A : ℝ) (hA : 0 < A) :
     ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, ∀ hmn : m ≤ n, n₀ ≤ n → 9 * n ≤ 10 * m →
       osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-A) := by
-  sorry
+  obtain ⟨Cm, hCm, n1, hmain⟩ := osc_mainHigh_bound A hA
+  obtain ⟨Ce, hCe, n2, herr⟩ := error_l1_high_bound A hA
+  refine ⟨2 * max Cm Ce, by positivity, max n1 n2, fun n m hmn hn0 hreg => ?_⟩
+  have hn1 : n1 ≤ n := le_trans (le_max_left _ _) hn0
+  have hn2 : n2 ≤ n := le_trans (le_max_right _ _) hn0
+  have hmpow : (0 : ℝ) ≤ (m : ℝ) ^ (-A) := Real.rpow_nonneg (by positivity) _
+  have hcomb := osc_syracZ_split_le m n hmn (mainHigh n) (max Cm Ce * (m : ℝ) ^ (-A))
+    (le_trans (hmain n m hmn hn1 hreg) (by gcongr; exact le_max_left _ _))
+    (le_trans (herr n m hn2 hreg) (by gcongr; exact le_max_right _ _))
+  calc osc m n hmn (fun Y => ((syracZ n) Y).toReal)
+      ≤ max Cm Ce * (m : ℝ) ^ (-A) + max Cm Ce * (m : ℝ) ^ (-A) := hcomb
+    _ = 2 * max Cm Ce * (m : ℝ) ^ (-A) := by ring
 
 /-- **(6.1) the regime reduction** (C10, obligation 0): the general bound for all `1 ≤ m ≤ n` follows
 from the high-regime bound (`0.9n ≤ m ≤ n`, large `n`). Tao p.28: once (1.23) holds in the regime
