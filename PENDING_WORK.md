@@ -1,5 +1,30 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-3 (2026-07-14): **Syracuse (1.22) `syracZ_map_cast` PROVED (axiom-clean)** — SyracRV stub 2/3
+
+Objective-3 fruit, SyracRV stub 2 of 3. Closed `syracZ_map_cast` (`Syracuse/SyracRV.lean`): the
+paper-(1.22) projection compatibility — reducing `Syrac(ℤ/3ⁿℤ)` mod `3ᵏ` yields `Syrac(ℤ/3ᵏℤ)`.
+
+**Proof = truncation ∘ marginalization:**
+- **`iid_map_castLE`** (general, reusable, private): the prefix-`k` marginal of an iid vector is iid
+  — `(p.iid n).map (·∘Fin.castLE h) = p.iid k`. Induction on `k`, front-peel: `iid (m+1) =
+  bind a0, cons a0 (iid m)`; the restriction commutes with `Fin.cons` (`hcons`, via `Fin.cons_zero`
+  /`Fin.cons_succ` + castLE val-preservation); `PMF.map_bind` + `PMF.map_comp` + IH. Base `k=0` via
+  `PMF.map_const` (target `Fin 0 → α` is a subsingleton).
+- **truncation** `htrunc`: `castHom` (a ring hom) pushes through `F_n`'s sum; terms `j ≥ k` vanish
+  (`3^k = 0` in `ZMod 3ᵏ` via `ZMod.natCast_self`); `φ(3)=3`, `φ(2)=2` (`map_ofNat`), and
+  `φ(2⁻¹)=2⁻¹` by right-inverse uniqueness for the unit 2; prefix sums unchanged on first `k`
+  coords (`hpre`). So `φ∘F_n = F_k∘restrict`, then compose with the marginal.
+- `#print axioms syracZ_map_cast = [propext, Classical.choice, Quot.sound]`; full build green (3282).
+
+**NEXT — the last SyracRV stub, `syracZ_recursion` (Lemma 1.12):** the HARDEST of the three. It
+computes the pointwise mass of `syracZ (n+1) x` as a `(1-2^{-2·3ⁿ})⁻¹`-normalized sum over
+`a ∈ Icc 1 (2·3ⁿ)` with the divide-by-3 guard `(2^a·x.val)%3=1`. Needs: peel the first geometric
+coordinate `a0~Geom(2)` off `iid (n+1)` (`tsum_iid_succ_mul`), reduce the top digit of the offset
+`∑_j 3^j 2^{-pre}` mod `3^{n+1}`, isolate the `x`-fiber (the `2^{a0}·(rest) ≡ 3·(inner) + ...`
+congruence), and resum the geometric tail `a0 > 2·3ⁿ` giving the normalization. Route sketch above;
+expect multi-lap. The `iid_apply_eq_prod`/`iid_map_castLE`/`syracZ_eq_rev_fnat` machinery is reusable.
+
 ## Lap fruit-2 (2026-07-14): **Syracuse (1.21) `syracZ_eq_rev_fnat` PROVED (axiom-clean)** — SyracRV stub 1/3
 
 Objective-3 fruit, SyracRV stub 1 of 3. Closed `syracZ_eq_rev_fnat` (`Syracuse/SyracRV.lean`):
