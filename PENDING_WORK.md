@@ -1,5 +1,39 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box cont4 (2026-07-14): **`fpDist_edgeWeight_le` decomposed + ℝ hold-MGF bridge PROVED** — corrected the tail route
+
+Attacked the next X8 sorry `fpDist_edgeWeight_le` (the (7.48) weight degradation). Two
+outcomes: (1) **`hold_fst_mgf_le_real` PROVED** (axiom-clean) — the ℝ-valued first-coord
+`Hold` MGF `∑_d hold(d)·exp(θ d₁) ≤ 1+4θ+32θ²` for `|θ|≤1/100`, bridging the `ℝ≥0∞`
+`tiltZ_hold_fst_le` via `ENNReal.tsum_toReal_eq`+`toReal_mono`. This is the `Z_hold`
+factor of the MGF term. (2) **Route correction (the real finding).**
+
+**⚠️ CORRECTION — the tail is NOT pure glue.** The prior handoffs claimed the (7.48)
+tail `P(e₁+d₁>m/2) ≤ (δ/2)m^{−A}` is "a Chernoff of `fpDist_fst_mgf_le`". FALSE: a
+Chernoff at the `2A/m` tilt gives `e^{−(2A/m)(m/4)} = e^{−A/2}`, a NON-DECAYING constant,
+whereas we need decay `≪ m^{−A}` (since `m^{−A}→0`). The tail needs a **FIXED-tilt**
+Chernoff (`θ₀ = Θ(1)`), which is genuine new analytic input — not glue. Recorded in the
+lemma docstrings.
+
+**Decomposition (all in `BlackEdge.lean`):** `fpDist_edgeWeight_le` now reduces to
+- `fpDist_fst_mgf_le` (✓ PROVED last lap) — MGF factor `Z_fp(2A/m)`.
+- `hold_fst_mgf_le_real` (✓ PROVED this lap) — MGF factor `Z_hold(2A/m)`.
+- `fpDist_fst_tail_le` (OPEN, sorried, precise stmt): `∑_e fpDist·1_{m<4e₁} ≤ δ·m^{−A}`.
+  **The hardest remaining piece.** Route: Fubini + `fpDist_col_le` + `gaussExp_col_tail`
+  at cutoff `K'=Θ(s)` (budget `s·log2 ≤ (K'+2)log9`, ⌈s·log2/log9⌉) gives
+  `Z_fp(θ₀) ≤ exp(θ₀K') + gaussExp_RHS = exp(O(m/log²m))`; then Chernoff
+  `e^{−θ₀m/4}·Z_fp(θ₀) = exp(−θ₀m/4 + O(m/log²m)) ≪ m^{−A}` via `exp_neg_mul_le_of_large`.
+  ~150 lines reusing the `fpDist_fst_mgf_le` machinery (θ₀ = ½min(c,c²/20) from col_le).
+- `hold_fst_tail_le` (OPEN, sorried, precise stmt): `∑_d hold·1_{m<4d₁} ≤ δ·m^{−A}`.
+  Chernoff via `holdSum_halfspace_le` at `n=1` — needs `iidSum hold 1 = hold` first
+  (`iidSum_succ` + `iidSum_zero` + `pure_bind`/`map` cleanup).
+
+**NEXT (hardest-first): prove `fpDist_fst_tail_le`** (the fixed-tilt fp tail). Then
+`hold_fst_tail_le`, then the double-`tsum` glue for `fpDist_edgeWeight_le`:
+`∑_e fpDist·edgeWeight ≤ m^{−A}·Z_fp·Z_hold + P_fp(e₁>m/4) + P_hold(d₁>m/4)`
+(edgeWeight_summand_le summed over d, factor `exp(θ(e₁+d₁))=exp(θe₁)exp(θd₁)`, Fubini;
+1_{m<2(e₁+d₁)} ≤ 1_{4e₁>m} + 1_{4d₁>m}). Pick `δ` splits so `(1+δ/2)+(δ/2)=1+δ`.
+
 ## Lap D-box cont3 (2026-07-14): **`fpDist_fst_mgf_le` FULLY PROVED (axiom-clean)** — X8 first-coord MGF closed
 
 `fpDist_fst_mgf_numeric` (the analytic tail-threshold core) is now **PROVED**, so

@@ -693,6 +693,53 @@ theorem fpDist_fst_mgf_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
           _ ≤ 1 + δ / 2 := hbulk
     _ = 1 + δ := by ring
 
+/-- ℝ-valued first-coordinate `Hold` MGF bound (bridge from the `ℝ≥0∞` `tiltZ`):
+`∑_d hold(d)·exp(θ·d₁) ≤ 1 + 4θ + 32θ²` for `|θ| ≤ 1/100`.  This is the `Z_hold`
+factor of `fpDist_edgeWeight_le`'s MGF term, in ℝ (via `tiltZ_hold_fst_le` +
+`ENNReal.toReal`). -/
+theorem hold_fst_mgf_le_real {θ : ℝ} (hlo : -(1 / 100) ≤ θ) (hhi : θ ≤ 1 / 100) :
+    ∑' d : ℕ × ℤ, (hold d).toReal * Real.exp (θ * (d.1 : ℝ)) ≤ 1 + 4 * θ + 32 * θ ^ 2 := by
+  have hterm : ∀ d : ℕ × ℤ,
+      (hold d).toReal * Real.exp (θ * (d.1 : ℝ)) = (hold d * expW2 θ 0 d).toReal := by
+    intro d
+    rw [expW2, ENNReal.toReal_mul, ENNReal.toReal_ofReal (Real.exp_pos _).le]
+    congr 2; ring
+  calc ∑' d : ℕ × ℤ, (hold d).toReal * Real.exp (θ * (d.1 : ℝ))
+      = ∑' d : ℕ × ℤ, (hold d * expW2 θ 0 d).toReal := tsum_congr hterm
+    _ = (∑' d : ℕ × ℤ, hold d * expW2 θ 0 d).toReal :=
+        (ENNReal.tsum_toReal_eq
+          (fun d => ENNReal.mul_ne_top (PMF.apply_ne_top _ _) ENNReal.ofReal_ne_top)).symm
+    _ = (tiltZ hold (expW2 θ 0)).toReal := rfl
+    _ ≤ (ENNReal.ofReal (1 + 4 * θ + 32 * θ ^ 2)).toReal :=
+        ENNReal.toReal_mono ENNReal.ofReal_ne_top (tiltZ_hold_fst_le hlo hhi)
+    _ = 1 + 4 * θ + 32 * θ ^ 2 := ENNReal.toReal_ofReal (by nlinarith [sq_nonneg θ])
+
+/-- **Fixed-tilt `fpDist` first-coordinate right tail** (the large-deviation input to
+`fpDist_edgeWeight_le`'s tail).  `P(e₁ > m/4) ≤ δ·m^{−A}`.  ⚠️ The tilt MUST be a
+FIXED constant (`θ₀ = ½·min(c, c²/20)` from `fpDist_col_le`), NOT `2A/m`: the Chernoff
+`P(e₁>m/4) ≤ e^{−θ·m/4}·Z_fp(θ)` only decays like `m^{−A}` when `θ` is `Θ(1)` (at
+`θ = 2A/m` the factor is the non-decaying `e^{−A/2}`).  Route: Fubini + `fpDist_col_le`
++ `gaussExp_col_tail` at cutoff `K' = Θ(s)` (budget `s·log2 ≤ (K'+2)log9`), giving
+`Z_fp(θ₀) ≤ exp(O(m/log²m))`, so `e^{−θ₀m/4}·Z_fp(θ₀) = exp(−θ₀m/4 + o(m)) ≪ m^{−A}`.
+OPEN (node X8 — the genuinely-new tail input; ~150 lines reusing the MGF machinery). -/
+theorem fpDist_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      ∑' e : ℕ × ℤ, (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+        ≤ δ * (m : ℝ) ^ (-A) := by
+  sorry
+
+/-- **`Hold` first-coordinate right tail** (the hold half of `fpDist_edgeWeight_le`'s
+tail): `P_hold(d₁ > m/4) ≤ δ·m^{−A}`.  Fixed-tilt Chernoff via `holdSum_halfspace_le`
+(at `n = 1`, `iidSum hold 1 = hold`) with a `Θ(1)` first-coordinate tilt: the hold
+step has an `O(1)`-mean geometric first coordinate, so `P(d₁ > m/4) ≤ e^{−Θ(m)} ≪
+m^{−A}`. OPEN (node X8, mechanical once `iidSum hold 1 = hold` is discharged). -/
+theorem hold_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m →
+      ∑' d : ℕ × ℤ, (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)
+        ≤ δ * (m : ℝ) ^ (-A) := by
+  sorry
+
 /-- **The (7.48)/(7.49) weight degradation, Case 2** (paper p.47). With budget
 `s ≤ m/log²m`, the first-passage endpoint's `j`-coordinate concentrates near
 `s/4 ≪ m/log²m` (Lemma 7.7 = `fpDist_location_bound`, node X6), so the average
@@ -700,15 +747,17 @@ depth weight `E[edgeWeight]` exceeds `m^{-A}` only by `exp(O(A·log m/m ·
 m/log²m)) = 1 + O(A/log m) ≤ 1 + δ` once `m ≥ C_{A,δ}` ((7.42) concavity bound
 + Chernoff truncation of `j_{[1,k]} > m/log²m`).
 
-DECOMPOSITION (2026-07-14): the pointwise bound `edgeWeight_summand_le` reduces
-this to (i) the MGF factor `Z_{fp,fst}(2A/m)·Z_{hold,fst}(2A/m) ≤ 1 + δ/2` and
-(ii) the tail `P(e.1+d.1 > m/2) ≤ (δ/2)·m^{-A}`.  Both depend on the first-coord
-`fpDist` MGF `fpDist_fst_mgf_le` (the hold factors are `tiltZ_hold_fst_le`);
-`Z_{hold,fst}(2A/m) → 1` and the tail is a Chernoff of `fpDist_fst_mgf_le`
-(`e.1 > m/4`) + a `hold` Chernoff (`d.1 > m/4`, `holdSum_halfspace_le`).
+DECOMPOSITION (2026-07-14, corrected): `edgeWeight_summand_le` reduces this to
+(i) the MGF factor `m^{−A}·Z_fp(2A/m)·Z_hold(2A/m) ≤ (1+δ/2)m^{−A}`
+(`fpDist_fst_mgf_le` × `hold_fst_mgf_le_real`, both PROVED) plus (ii) the tail
+`P(e₁+d₁ > m/2) ≤ (δ/2)m^{−A}`, split as `P_fp(e₁>m/4) + P_hold(d₁>m/4)` via
+`fpDist_fst_tail_le` + `hold_fst_tail_le`.  ⚠️ CORRECTION: (ii) is NOT a Chernoff of
+`fpDist_fst_mgf_le` — the `2A/m` tilt gives only `e^{−A/2}` (non-decaying).  It needs
+FIXED-tilt tails (see `fpDist_fst_tail_le`); this is genuine new analytic input, not
+pure glue as the earlier note claimed.
 
-OPEN (node X8): reduces to `fpDist_fst_mgf_le` + `edgeWeight_summand_le` (proved)
-+ glue (double-`tsum` algebra, no new analytic content). -/
+OPEN (node X8): glue over `fpDist_fst_mgf_le` (✓) + `hold_fst_mgf_le_real` (✓) +
+`fpDist_fst_tail_le` (open) + `hold_fst_tail_le` (open). -/
 theorem fpDist_edgeWeight_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
     ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
