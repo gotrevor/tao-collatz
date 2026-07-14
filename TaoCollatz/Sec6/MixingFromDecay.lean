@@ -1238,6 +1238,47 @@ theorem tailDens_sum_le_one (j p l : ℕ) : ∑ Y, tailDens j p l Y ≤ 1 := by
           (fun vt => mul_nonneg ENNReal.toReal_nonneg (by split <;> norm_num)) hle hbase
     _ = 1 := hone
 
+/-- `pre vt p` over the full index range is the plain coordinate sum `∑ i, vt i`. -/
+theorem pre_self_eq_sum_univ {p : ℕ} (vt : Fin p → ℕ) : pre vt p = ∑ i, vt i := by
+  rw [pre, ← Fin.sum_univ_eq_sum_range (fun i => if h : i < p then vt ⟨i, h⟩ else 0) p]
+  exact Finset.sum_congr rfl fun i _ => by rw [dif_pos i.isLt]
+
+/-- **The windowed tail sub-density** (C10, obligation 3): `tailDens` carrying an additional
+tail-measurable conditioning event `W` — the sub-Gaussian window (6.12) + the tight `Bₖ` budget,
+per the 2026-07-14 reflection. The full §6 conditioning event `Eₖ ∧ Bₖ ∧ Cₖ,ₗ` depends only on
+the tail block, so it is a predicate of exactly this shape; `W := fun _ => True` recovers
+`tailDens`. -/
+noncomputable def tailDensW (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W] :
+    ZMod (3 ^ (j + p)) → ℝ := fun Y =>
+  ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal
+    * (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+          ∧ pre vt p = l ∧ W vt then (1 : ℝ) else 0)
+
+/-- The windowed tail sub-density is nonnegative. -/
+theorem tailDensW_nonneg (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W]
+    (Y : ZMod (3 ^ (j + p))) : 0 ≤ tailDensW j p l W Y := by
+  refine tsum_nonneg (fun vt => ?_)
+  exact mul_nonneg ENNReal.toReal_nonneg (by split <;> norm_num)
+
+/-- A tuple carrying nonzero `iid geomHalf` mass has all coordinates positive. -/
+theorem geomHalf_iid_pos_coords {p : ℕ} {vt : Fin p → ℕ}
+    (h : (geomHalf.iid p) vt ≠ 0) : ∀ i, 1 ≤ vt i := by
+  intro i
+  have hi := PMF.iid_support_coord geomHalf p vt (((geomHalf.iid p).mem_support_iff vt).mpr h) i
+  rw [geomHalf.mem_support_iff, geomHalf_apply] at hi
+  by_contra hcon
+  have h0 : vt i = 0 := by omega
+  rw [if_pos h0] at hi
+  exact hi rfl
+
+/-- The `iid geomHalf` mass of a positive tuple is exactly `2^{-(total valuation)}`. -/
+theorem geomHalf_iid_apply_pos {p : ℕ} (vt : Fin p → ℕ) (hpos : ∀ i, 1 ≤ vt i) :
+    (geomHalf.iid p) vt = (2 : ENNReal)⁻¹ ^ pre vt p := by
+  rw [PMF.iid_apply_eq_prod,
+    Finset.prod_congr rfl (fun i _ => by
+      rw [geomHalf_apply, if_neg (by have := hpos i; omega)]),
+    Finset.prod_pow_eq_pow_sum, pre_self_eq_sum_univ]
+
 /-- **The tail Rényi count reduces to the single-point mass bound** (C10, obligation 3 skeleton).
 Given a uniform bound `tailDens Y ≤ M` (the Syracuse near-uniformity / offset-injectivity of Lemma
 6.2, the one genuinely-remaining input), the tail collision entropy is `∑_Y (tailDens)² ≤ M`. Immediate
@@ -1479,6 +1520,65 @@ theorem fnat_offset_zmod_inj {j p l : ℕ} (vt vt' : Fin p → ℕ)
     have := (ZMod.natCast_eq_natCast_iff' _ _ _).mp hcast
     rwa [Nat.mod_eq_of_lt hb, Nat.mod_eq_of_lt hb'] at this
   exact fnat_inj_fixed_val p vt vt' hpos hpos' (by rw [hl, hl']) hnat
+
+/-- **The windowed single-point mass** (C10, obligation 3 — the Rényi numerator): if the window
+forces the offset below the modulus (`hwin`, supplied by `fnat_lt_of_suffix_window` from (6.12) +
+the tight budget), then each residue class `Y` carries at most ONE positive tuple of valuation
+`l` in the window (`fnat_offset_zmod_inj`), each of mass exactly `2⁻ˡ` — so `tailDensW Y ≤ 2⁻ˡ`.
+This is the single-point bound `M = 2⁻ˡ` that the collision-entropy count
+(`sum_sq_le_max_mul_sum`) feeds into `condDens_osc_le`'s `√`. -/
+theorem tailDensW_le_single_mass (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W]
+    (hwin : ∀ vt : Fin p → ℕ, (∀ i, 1 ≤ vt i) → pre vt p = l → W vt →
+      fnat p vt < 3 ^ (j + p))
+    (Y : ZMod (3 ^ (j + p))) :
+    tailDensW j p l W Y ≤ (2 : ℝ)⁻¹ ^ l := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  by_cases hex : ∃ vt₀ : Fin p → ℕ, (∀ i, 1 ≤ vt₀ i)
+      ∧ (fnat p vt₀ : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt₀ p = Y
+      ∧ pre vt₀ p = l ∧ W vt₀
+  · obtain ⟨vt₀, hpos₀, hoff₀, hl₀, hW₀⟩ := hex
+    have hsingle : ∀ vt : Fin p → ℕ, vt ≠ vt₀ →
+        ((geomHalf.iid p) vt).toReal
+          * (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+                ∧ pre vt p = l ∧ W vt then (1 : ℝ) else 0) = 0 := by
+      intro vt hne
+      by_cases hind : (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+          ∧ pre vt p = l ∧ W vt
+      · by_cases hz : (geomHalf.iid p) vt = 0
+        · rw [hz]; simp
+        · exact absurd
+            (fnat_offset_zmod_inj vt vt₀ (geomHalf_iid_pos_coords hz) hpos₀ hind.2.1 hl₀
+              (hwin vt (geomHalf_iid_pos_coords hz) hind.2.1 hind.2.2)
+              (hwin vt₀ hpos₀ hl₀ hW₀)
+              (by rw [hind.1, hoff₀])) hne
+      · rw [if_neg hind, mul_zero]
+    calc tailDensW j p l W Y
+        = ((geomHalf.iid p) vt₀).toReal
+          * (if (fnat p vt₀ : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt₀ p = Y
+                ∧ pre vt₀ p = l ∧ W vt₀ then (1 : ℝ) else 0) := by
+          simp only [tailDensW]
+          exact tsum_eq_single vt₀ hsingle
+      _ = ((2 : ENNReal)⁻¹ ^ l).toReal := by
+          rw [if_pos ⟨hoff₀, hl₀, hW₀⟩, mul_one, geomHalf_iid_apply_pos vt₀ hpos₀, hl₀]
+      _ ≤ (2 : ℝ)⁻¹ ^ l := by
+          rw [ENNReal.toReal_pow, ENNReal.toReal_inv]
+          norm_num
+  · have hall : ∀ vt : Fin p → ℕ,
+        ((geomHalf.iid p) vt).toReal
+          * (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+                ∧ pre vt p = l ∧ W vt then (1 : ℝ) else 0) = 0 := by
+      intro vt
+      by_cases hind : (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+          ∧ pre vt p = l ∧ W vt
+      · by_cases hz : (geomHalf.iid p) vt = 0
+        · rw [hz]; simp
+        · exact absurd ⟨vt, geomHalf_iid_pos_coords hz, hind.1, hind.2.1, hind.2.2⟩ hex
+      · rw [if_neg hind, mul_zero]
+    have hzero : tailDensW j p l W Y = 0 := by
+      simp only [tailDensW]
+      exact (tsum_congr hall).trans tsum_zero
+    rw [hzero]
+    positivity
 
 /-- **Brick (b), the tail/indicator-factor `≤ 1` bound** (C10): the tail character factor from
 `cond_char_factor` — which carries the conditioning indicator `1_{pre vt = l}` — is a character

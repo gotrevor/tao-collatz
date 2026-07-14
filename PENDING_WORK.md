@@ -1,5 +1,25 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-25 (2026-07-14, same session): **windowed single-point mass PROVED — `tailDensW ≤ 2⁻ˡ`**
+
+Build green 3285, all `#print axioms`-clean (believed clean, judge to verify). New
+(`Sec6/MixingFromDecay.lean`):
+- **`tailDensW`** (def): the windowed tail sub-density — `tailDens` carrying an arbitrary
+  tail-measurable conditioning event `W` (the (6.12)+Bₖ window; `Eₖ∧Bₖ∧Cₖ,ₗ` has this shape).
+- **`tailDensW_le_single_mass`**: THE obligation-3 collision bound — given
+  `hwin : window ⟹ fnat < 3^(j+p)` (supplied by `fnat_lt_of_suffix_window`), each `Y` carries
+  ≤ 1 positive valuation-`l` window tuple (`fnat_offset_zmod_inj`), of mass exactly `2⁻ˡ`
+  (`geomHalf_iid_apply_pos`), so `tailDensW Y ≤ 2⁻ˡ`. `tsum_eq_single` + case split.
+- Supporting: `pre_self_eq_sum_univ`, `geomHalf_iid_pos_coords` (nonzero iid mass ⟹ positive
+  coords), `geomHalf_iid_apply_pos` (positive tuple mass `= 2^{-pre}`), `tailDensW_nonneg`.
+
+**Obligation 3 status: the analytic content is DONE** (suffix-window kernel + injectivity +
+single-point mass, all machine-checked). What remains is plumbing: (i) `tailDensW_sum_le_one`
+(mirror of `tailDens_sum_le_one`, extra conjunct) → windowed Rényi `∑(tailDensW)² ≤ 2⁻ˡ` via
+`sum_sq_le_max_mul_sum`; (ii) the windowed `tail_factor_dft_eq`/`tail_factor_l2_eq` analogues
+(`dft_cond_density` at predicate `pre = l ∧ W` — one-liners); (iii) a windowed `condDens`
+variant + `condDens_osc_le` analogue so the osc chain consumes `W`. Then obligations 1/2/0.
+
 ## Lap fruit-24 (2026-07-14, same reflection session): **`fnat_lt_of_suffix_window` PROVED — the corrected obligation-3 kernel**
 
 Build green 3285, `#print axioms fnat_lt_of_suffix_window = [propext, Classical.choice,
