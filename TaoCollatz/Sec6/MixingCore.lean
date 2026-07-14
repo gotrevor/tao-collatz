@@ -344,6 +344,27 @@ theorem osc_le_two_mul_l1 (m n : ℕ) (hmn : m ≤ n) (c : ZMod (3 ^ n) → ℝ)
         add_le_add (le_of_eq (Finset.sum_congr rfl (fun Y _ => hdens Y))) hcond
     _ = 2 * ∑ Y, |c Y| := by ring
 
+/-- The real density of the finite Syracuse law has total mass one. -/
+theorem sum_syracZ_toReal_eq_one (n : ℕ) :
+    ∑ Y : ZMod (3 ^ n), ((syracZ n) Y).toReal = 1 := by
+  have h : ∑' Y : ZMod (3 ^ n), ((syracZ n) Y).toReal = 1 := by
+    rw [← ENNReal.tsum_toReal_eq (fun Y => (syracZ n).apply_ne_top Y),
+      (syracZ n).tsum_coe, ENNReal.toReal_one]
+  rw [tsum_eq_sum (s := (Finset.univ : Finset (ZMod (3 ^ n))))
+    (fun Y hY => absurd (Finset.mem_univ Y) hY)] at h
+  exact h
+
+/-- The probability-density oscillation is uniformly at most two. -/
+theorem osc_syracZ_le_two (m n : ℕ) (hmn : m ≤ n) :
+    osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ 2 := by
+  calc
+    osc m n hmn (fun Y => ((syracZ n) Y).toReal)
+        ≤ 2 * ∑ Y, |((syracZ n) Y).toReal| := osc_le_two_mul_l1 m n hmn _
+    _ = 2 * ∑ Y, ((syracZ n) Y).toReal := by
+      congr 1
+      exact Finset.sum_congr rfl (fun Y _ => abs_of_nonneg ENNReal.toReal_nonneg)
+    _ = 2 := by rw [sum_syracZ_toReal_eq_one, mul_one]
+
 /-- **Fourier inversion** for the density: `densC Y = N⁻¹ ∑_ξ 𝓕(densC)(ξ)·e(ξ·Y)`. Immediate
 from `densC = 𝓕⁻(𝓕 densC)` (`LinearEquiv.symm_apply_apply`) and `ZMod.invDFT_apply`. -/
 theorem densC_inversion (n : ℕ) (c : ZMod (3 ^ n) → ℝ) (Y : ZMod (3 ^ n)) :
