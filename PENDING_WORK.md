@@ -26,17 +26,29 @@ Integral test per odd class (AP with step `M`, `f=1/t` antitone): `S_r = (1/M)·
 over `M/2` odd classes: `∑_{r odd}|S_r−2D/M| ≤ C·M/y`. With `D ≥ c·(α−1)log y`: `dTV ≤ C·M/(y·log y) ≤ C·M/y`.
 **Numeric closure**: `M/y ≤ 2^{-n'} ⟺ 2^{2n'} ≤ y`. `2^{2n'}=2^{6n₀} ≤ x^{0.6}` and `y ≥ x^{1.001}` ⇒ closes with room.
 
-## Decomposition (named sub-sorries to write into FirstPassage.lean — raising the count is PROGRESS)
+## Status after the 2026-07-14 review lap (HEAD `061cc65`)
+`integral_test_logUnif` is now a machine-checked ASSEMBLY of two pieces (statement UNTOUCHED, RATIFY-C7):
+- **`intTest_numeric`** ✅ PROVED, axiom-clean: `2^{3n₀}/y ≤ 2^{-3n₀}` (the numeric closure). DONE.
+- **`intTest_error`** (`FirstPassage.lean:~138`) — the ONE remaining brick: `dTV ≤ K·(2^{3n₀}/y)`. This is
+  now the C7 crux. Decompose it further as below.
+
+## Decomposition of `intTest_error` (named sub-sorries — raising the count is PROGRESS)
 1. **`intTest_class_dev`** (THE analytic heart — the one real brick): `∑_{r odd mod M} |S_r − 2D/M| ≤ C·M/y`
    (or the cleaner per-class relative form `|(P.map res)(r) − 2/M| ≤ (K·M/y)·(2/M)`). This is where
-   `sum_le_integral`/`integral_le_sum` + `integral_inv` + the AP reindex live. Everything else is glue.
-2. **`intTest_D_lower`**: `D ≥ c·log y` (normalizer lower bound; a one-class `sum_le_integral` gives `D ≥ ∫/…`,
-   or crude: `D ≥ (#W)/(y^α) ≥ …`). Needed so `1/D` is controlled.
-3. **`intTest_numeric`** (PROVE FIRST — cheap, mirrors `descent_pow_bounds`): for large x, `y∈{x^α,x^{α²}}`,
-   `(2:ℝ)^(2*(3*nZero x)) ≤ y`, i.e. `2^{6n₀} ≤ x^{1.001}` via `2^{6n₀} ≤ x^{0.6}` (`6n₀·log2 ≤ 0.6 log x`
-   from `n₀·10log2 ≤ log x`) and `x^{0.6} ≤ x^{1.001}`.
-4. **dTV assembly**: `dTV = (1/D)∑_{r odd}|S_r−2D/M|` — needs `PMF.map_apply`, `logUnifOdd` support ⊆ odds,
-   `unifOddMod` residue values, `ENNReal.toReal` glue. Then (1)+(2)+(3) ⟹ target.
+   `sum_le_integral`/`integral_le_sum` + `integral_inv` + the AP reindex live. Per-class error is `O(1/y)`
+   with **NO log factor** (boundary term `≤ 1/(first element) ≤ 1/y`, plus `≤ 2M/y` from moving the
+   integral endpoints to `[y,y^α]`); summed over the `M/2` odd classes ⟹ `O(M/y)`. Everything else is glue.
+2. **`intTest_D_lower`**: **`D ≥ 1/2` (a POSITIVE CONSTANT suffices — corrected from the earlier `c·log y`)**.
+   Since `dTV = (1/D)·∑ ≤ (1/D)·C·M/y`, dividing by any constant `D ≥ c₀>0` keeps the `M/y` decay — no log
+   needed. (D actually `≍ log y`, but don't prove the sharp bound.) Crude route: `D ≥ (#odds in [y,y^α])·(1/y^α)`
+   and `#odds ≈ (y^α−y)/2` (via `Nat.Ioc_filter_modEq_card`) ⟹ `D ≥ (1−y^{1−α})/2 → 1/2`. Or even simpler,
+   a one-class `AntitoneOn.integral_le_sum` on the odds gives `D ≥ (1/2)∫ − O(1/y) = (α−1)/2·log y − O(1)`.
+3. **dTV assembly**: `dTV = ∑_{r:ZMod M} |(P.map res)(r).toReal − (unifOddMod)(r).toReal|` (finite sum,
+   `tsum_fintype`); `(P.map res)(r) = S_r/D` via `PMF.map_apply` + `logUnifOdd`/`ofFinset_apply`; even-`r`
+   terms vanish (W ⊆ odds ⇒ pushforward supported on odd residues; `unifOddMod` 0 on even) ⇒
+   `dTV = (1/D)∑_{r odd}|S_r−2D/M|`. Then (1)+(2) ⟹ `intTest_error`, and `intTest_numeric` ⟹ the target.
+   Useful existing API: `PMF.dTV_map_le`, `tsum_fintype` (`ValuationDist.lean:369`), the ZMod-dTV patterns
+   at `ValuationDist.lean:841–867`.
 
 ## Sub-sorry watch
 - `valSum_lower_tail` (:118) is DOWNSTREAM (consumes the crux via `valuation_dist`) + mechanical (clone
