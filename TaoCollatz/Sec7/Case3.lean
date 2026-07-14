@@ -1413,13 +1413,38 @@ theorem bigTriangle_of_encounter {n ξ : ℕ} (F : TriangleFamily n ξ) (A : ℝ
 
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
-/-- **(7.55)–(7.56) — the pure damping expectation.** After the (7.54) column split, on the
-good column `j_end < 0.9m` (weight `≤ 10^A·m^{−A}`) it suffices to bound the damping factor's
-expectation by the `A`-only constant `10^{−A−1}` (paper (7.55)). The horizon `P = O_{A,ε}(1)`
-is the `deterministic_encounter_or_bigTriangle` `P₀`. This is the deep piece the proved X11c
-machinery targets: `E[exp(−ε³Nw)] ≤ P(Nw≤K) + e^{−10A}` with `K=⌈10A/ε³⌉`, and
-`P(Nw≤K) ≤ P(reach R)+P(E∗)` via `deterministic_encounter_or_bigTriangle`, bounded by
-`reaches_fewWhite_mass_le_ten` + `estar_union_le ∘ bigTriangle_of_encounter`. -/
+/-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first
+passage encounters at most `K := ⌈(A+3)·log10/ε³⌉` whites with probability `≤ 10^{−(A+2)}`.
+This is where the proved X11c machinery plugs in: `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
+(`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`), and
+`P(reach R ∧ Nw≤K) + P(E∗) ≤ 10^{−(A+2)}` via `reaches_fewWhite_mass_le_ten` +
+`estar_union_le ∘ bigTriangle_of_encounter`.
+
+**Route (PENDING decomp-3 finding): the base-4 lemmas are used at a SCALED `A' := κ·A`**
+(`4^{κA}=(4^κ)^A`, effective base `4^κ ≈ 10^6`) so `P(E∗) ≤ 10^{−(A+3)}`, and
+`reaches_fewWhite_mass_le_ten` is applied at `A+2` giving `10^{−(A+3)}`; no reproving. Shared
+gate `g` obtained from `reaches_fewWhite_mass_le_ten` and passed into the geometry lemma. -/
+theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
+    ∃ P : ℕ, 1 ≤ P ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (∑ p ∈ Finset.range P,
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+              ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) := by
+  sorry
+
+/-- **(7.55) — the pure damping expectation.** After the (7.54) column split it suffices to
+bound `E[exp(−ε³Nw)] ≤ 10^{−A−1}`. Proved here from `few_white_mass_le` (7.56) by the paper's
+count split `exp(−ε³Nw) ≤ 1_{Nw≤K} + 10^{−(A+3)}` (with `K=⌈(A+3)log10/ε³⌉`, so a white excess
+`Nw>K` damps below `10^{−(A+3)}`), then `PMF`-averaging the constant tail (`Σfpdist=Σhold=1`)
+and the numeric `10^{−(A+2)} + 10^{−(A+3)} ≤ 10^{−(A+1)}`. -/
 theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
     ∃ P : ℕ, 1 ≤ P ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
       ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
@@ -1432,7 +1457,116 @@ theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
             Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
               (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))))
         ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) := by
-  sorry
+  obtain ⟨P, hP1, Cthr, hfew⟩ := few_white_mass_le A hA
+  refine ⟨P, hP1, Cthr, ?_⟩
+  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hεnn : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  have hεpos : (0 : ℝ) < (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) < epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  have hε3pos : (0 : ℝ) < (epsBW : ℝ) ^ 3 := by positivity
+  have hε3nn : (0 : ℝ) ≤ (epsBW : ℝ) ^ 3 := hε3pos.le
+  -- **(7.55) count split**, pointwise.
+  have hpoint : ∀ (e : ℕ × ℤ) (v : Fin P → ℕ × ℤ),
+      ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+          Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+            (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
+      ≤ ENNReal.ofReal (if (∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+            ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+          then (1 : ℝ) else 0)
+        + ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
+    intro e v
+    set NwE : ℝ := ∑ p ∈ Finset.range P,
+        Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+          (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2) with hNwEdef
+    have hNw0 : (0 : ℝ) ≤ NwE := by
+      rw [hNwEdef]; exact Finset.sum_nonneg fun p _ => Set.indicator_nonneg (fun _ _ => by norm_num) _
+    have hind0 : (0 : ℝ) ≤ (if NwE ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+        then (1 : ℝ) else 0) := by split_ifs <;> norm_num
+    rw [← ENNReal.ofReal_add hind0 (Real.rpow_nonneg (by norm_num) _)]
+    refine ENNReal.ofReal_le_ofReal ?_
+    by_cases h : NwE ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+    · rw [if_pos h]
+      have hle1 : Real.exp (-((epsBW : ℝ) ^ 3) * NwE) ≤ 1 := by
+        rw [Real.exp_le_one_iff]; nlinarith [mul_nonneg hε3nn hNw0]
+      linarith [hle1, Real.rpow_nonneg (by norm_num : (0 : ℝ) ≤ 10) (-A - 3)]
+    · rw [if_neg h]
+      have hKge : ((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3
+          ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ) := Nat.le_ceil _
+      have hbig : (A + 3) * Real.log 10 < NwE * (epsBW : ℝ) ^ 3 :=
+        (div_lt_iff₀ hε3pos).mp (lt_of_le_of_lt hKge (not_le.mp h))
+      have hexp : Real.exp (-((epsBW : ℝ) ^ 3) * NwE) ≤ (10 : ℝ) ^ (-A - 3) := by
+        rw [show (10 : ℝ) ^ (-A - 3) = Real.exp (Real.log 10 * (-A - 3)) from
+          Real.rpow_def_of_pos (by norm_num) _]
+        exact Real.exp_le_exp.mpr (by nlinarith [hbig])
+      linarith [hexp]
+  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_left'
+    (ENNReal.tsum_le_tsum fun v => mul_le_mul_left' (hpoint e v) _) _) ?_
+  -- Split the sum: few-white part + the (PMF-averaged) constant tail.
+  have key :
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+        (ENNReal.ofReal (if (∑ p ∈ Finset.range P,
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+              ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+            then (1 : ℝ) else 0)
+          + ENNReal.ofReal ((10 : ℝ) ^ (-A - 3))))
+      = (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (∑ p ∈ Finset.range P,
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+              ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        + ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
+    have inner : ∀ e : ℕ × ℤ,
+        (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          (ENNReal.ofReal (if (∑ p ∈ Finset.range P,
+                  Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                    (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+                ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+              then (1 : ℝ) else 0)
+            + ENNReal.ofReal ((10 : ℝ) ^ (-A - 3))))
+        = (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+            ENNReal.ofReal (if (∑ p ∈ Finset.range P,
+                  Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                    (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+                ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+              then (1 : ℝ) else 0))
+          + ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
+      intro e
+      rw [tsum_congr fun v => mul_add (hold.iid P v) _ _, ENNReal.tsum_add,
+        ENNReal.tsum_mul_right, (hold.iid P).tsum_coe, one_mul]
+    rw [tsum_congr fun e => by rw [inner e, mul_add (fpDist s e)], ENNReal.tsum_add,
+      ENNReal.tsum_mul_right, (fpDist s).tsum_coe, one_mul]
+  rw [key]
+  have hfew_app := hfew n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hnum : (10 : ℝ) ^ (-A - 2) + (10 : ℝ) ^ (-A - 3) ≤ (10 : ℝ) ^ (-A - 1) := by
+    have hb : (0 : ℝ) ≤ (10 : ℝ) ^ (-A - 1) := Real.rpow_nonneg (by norm_num) _
+    have e1 : (10 : ℝ) ^ (-A - 2) = (10 : ℝ) ^ (-A - 1) * (10 : ℝ) ^ (-1 : ℝ) := by
+      rw [← Real.rpow_add (by norm_num)]; congr 1; ring
+    have e2 : (10 : ℝ) ^ (-A - 3) = (10 : ℝ) ^ (-A - 1) * (10 : ℝ) ^ (-2 : ℝ) := by
+      rw [← Real.rpow_add (by norm_num)]; congr 1; ring
+    have h1 : (10 : ℝ) ^ (-1 : ℝ) = 1 / 10 := by
+      rw [Real.rpow_neg (by norm_num), Real.rpow_one]; norm_num
+    have h2 : (10 : ℝ) ^ (-2 : ℝ) = 1 / 100 := by
+      rw [show (-2 : ℝ) = ((-2 : ℤ) : ℝ) by norm_num, Real.rpow_intCast]; norm_num
+    rw [e1, e2, h1, h2]; nlinarith [hb]
+  calc (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (∑ p ∈ Finset.range P,
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+              ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        + ENNReal.ofReal ((10 : ℝ) ^ (-A - 3))
+      ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) + ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) :=
+        add_le_add hfew_app le_rfl
+    _ = ENNReal.ofReal ((10 : ℝ) ^ (-A - 2) + (10 : ℝ) ^ (-A - 3)) :=
+        (ENNReal.ofReal_add (Real.rpow_nonneg (by norm_num) _) (Real.rpow_nonneg (by norm_num) _)).symm
+    _ ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) := ENNReal.ofReal_le_ofReal hnum
 
 /-- **(7.54) bad-column tail** (paper: the `j_end ≥ 0.9m` contribution). The mass that the
 `P`-step walk after first passage advances past `0.9m` is `O(e^{−cm})` (Lemma 7.7 + Lemma 2.2:

@@ -1,5 +1,38 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap X11d-decomp-4 (2026-07-14): **(7.55) COUNT-SPLIT PROVED — crux down to `few_white_mass_le` (7.56) + `col_tail_mass_le`**
+
+`damping_expectation_le` (7.55) is now **kernel-checked assembly** from `few_white_mass_le`
+(7.56). Proved this lap (axiom-clean): the paper's count split
+`exp(−ε³Nw) ≤ 1_{Nw≤K} + 10^{−(A+3)}` with **`K := ⌈(A+3)·log10/ε³⌉`** (chosen so the tail
+`10^{−(A+3)}` fits for ALL A>0 — avoids the small-A failure of the paper's `e^{−10A}` tail),
+`PMF`-averaging the constant tail (`Σfpdist=Σhold=1` via `tsum_coe`+`tsum_mul_right`), and the
+numeric `10^{−(A+2)} + 10^{−(A+3)} ≤ 10^{−(A+1)}`.
+
+**The §7 crux is now TWO sorries (both `Case3.lean`):**
+1. **`few_white_mass_le`** (`:1427`) — **THE deepest leaf (7.56).** `P(Nw≤K) ≤ 10^{−(A+2)}` with
+   `K=⌈(A+3)log10/ε³⌉`. Execution plan (all machinery proved & axiom-clean, route validated
+   decomp-3): fix `e` (⟹ q₀=(n/2−m+e.1, l+e.2)); apply `deterministic_encounter_or_bigTriangle`
+   at `A':=κ·A` (κ=10, base 4^10) and gate `g` from `reaches_fewWhite_mass_le_ten` ⟹ pointwise
+   `{Nw≤K} ⊆ {reach R} ∪ {E∗}`; so `1_{Nw≤K} ≤ 1_{reach R ∧ Nw≤K} + 1_{E∗}`; average over e:
+   `P(Nw≤K) ≤ P(reach R ∧ Nw≤K) + P(E∗)`. Bound: reach-R via `reaches_fewWhite_mass_le_ten` at
+   `A+2` (⟹ 10^{−(A+3)}, needs `R=⌈(K+(A+5)log10+2)/ε⌉`); E∗ via `estar_union_le` at `A'=κA`
+   ∘ `bigTriangle_of_encounter` (⟹ ≤ 10^{−(A+3)} for A≥A₀). Sum `2·10^{−(A+3)} ≤ 10^{−(A+2)}`. ✓
+   **⚠ RECONCILIATIONS to nail (per decomp-2/3 notes):** (a) whiteStrip vs whiteSet∩strip and
+   the p vs p+1 index shift between my `Nw` and the deterministic claim's few-white sum
+   (`Σ_{p<T} 1_{q₀+pathSum(p+1)∈whiteStrip}`); (b) `cumWhite = Nw` via `encFold_cumWhite`; (c)
+   depth hyp `(q₀+pathSum p).1 + g ≤ n/2` from the regime (needs Cthr, deep start j−1); (d) the
+   fpDist-average of the per-e single-walk bounds (Σ_e fpDist·const ≤ const). ⚠ SMALL-A: the
+   estar/reaches A₀ thresholds mean this likely needs A≥A₀ (via A'=κA≥A₀_estar); if the
+   ∀A>0 statement can't be met for A<A₀ this route, FLAG for judge (don't weaken — Q_black_edge_case3
+   is frozen). Probe: does A<A₀ follow trivially / by A-monotonicity? Decompose further if needed.
+2. **`col_tail_mass_le`** (`:1577`) — standard Gaussian tail (7.54 bad column), unchanged from
+   decomp-3: `fpDist_walk_eq_fpDistPlus` → `fpDistPlus_col_tail` → `exp_neg_mul_le_of_large`.
+
+**NEXT: `few_white_mass_le`.** First move: decompose into the reach-R-mass + E∗-mass pieces
+(each fed by the named proved lemma at the scaled A), proving the pointwise `{Nw≤K}⊆{reach R}∪{E∗}`
+and the fpDist averaging; the index-shift/whiteStrip reconciliation is the fiddly kernel.
+
 ## Lap X11d-decomp-3 (2026-07-14): **(7.54) BRANCH SPLIT PROVED — crux down to the two paper atoms (7.55)/(7.54-tail)**
 
 `damping_column_mass_le` is now **kernel-checked assembly** from TWO sub-lemmas, following
