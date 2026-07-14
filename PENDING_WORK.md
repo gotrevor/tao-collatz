@@ -1,5 +1,37 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-11 (2026-07-14, brick b DFT bridge): **`dft_cond_density` + `condDens` bridge PROVED — 𝓕↔cexpect**
+
+Build green 3285, `#print axioms dft_cond_density = dft_condDens_eq_cond_char = [propext,
+Classical.choice, Quot.sound]`. Landed in `Sec6/MixingFromDecay.lean` (commit `aa0d08f`). This is the
+`𝓕(densC g)↔cexpect` seam that wires the proved Cauchy–Schwarz bridge `osc_le_sqrt_highfreq`
+(applied to the *conditioned* density) to the factorization `cond_char_factor`:
+- **`dft_cond_density`** (general engine, opaque `P`/`X`/`w` to dodge raw-expr matching): for any PMF
+  `P` on `Fin n→ℕ`, any RV `X : … → ZMod(3ⁿ)`, any event `w`,
+  `𝓕(densC n (fun Y => ∑'ₐ (P a).toReal·1_{X a=Y ∧ w a})) ξ = P.cexpect(fun a => stdAddChar(-(X a·ξ))·1_{w a})`.
+  Proof: `dft_apply` → `Complex.ofReal_tsum` push (per-`Y` `hterm`) → `Finset.sum_congr` +
+  `Summable.tsum_finsetSum` swap of the finite `∑_Y` with `∑'_a` (summability `hsum` from the iid
+  mass dominating the norm-≤1 observable, `Summable.of_norm_bounded hbase`) → `Finset.sum_ite_eq`
+  collapse `∑_Y stdAddChar(-(Y·ξ))·1_{X a=Y}=stdAddChar(-(X a·ξ))` (`hcore`, split on `w a`).
+- **`condDens j p l`** = the conditioned Syracuse density `Y↦P(Xₙ=Y ∧ pre(tail)=l)`;
+  **`dft_condDens_eq_cond_char`** = `dft_cond_density` at `P=iid geomHalf`, so its DFT is *exactly* the
+  cexpect that `cond_char_factor` factors into head × tail. The two halves of C10 now meet.
+
+**→ NEXT (C10 remaining, hardest-first)**:
+1. **[HARD, the crux's last novelty] tail factor ⟹ `charFn_decay`.** The pure-tail factor from
+   `cond_char_factor`, `E_vt[stdAddChar_{3^(j+p)}(-((Fnat_p(vt)·2⁻ᵖʳᵉ⁽ᵛᵗ,ᵖ⁾)·ξ))·1_{pre(vt)=l}]`, must be
+   shown equal (for high `ξ = 3ʲ·2ˡ·ξ'`, `3∤ξ'`) to a level-`p` Syracuse character sum at `ξ'`, so
+   `charFn_decay` (Prop 1.17, PROVED) bounds it `≤ Cₐ·p⁻ᴬ`. Needs a `syracZ_map_cast`-style reindex
+   tying the char at modulus `3^(j+p)` to the level-`p` char (the `3ʲ` factor in `ξ` and the mod-`3^p`
+   reduction of `Fnat_p`). `syracZ_eq_rev_fnat p` gives the pushforward form. Head factor: norm `≤1`
+   (`cexpect_norm_le` + `norm_stdAddChar`).
+2. **osc bound for `condDens`.** `osc_le_sqrt_highfreq` (general `c`, PROVED) on `condDens j p l`, then
+   `∑_{highFreq}‖𝓕(densC condDens)ξ‖²` via `dft_condDens_eq_cond_char` + `cond_char_factor` (‖head‖≤1,
+   ‖tail‖≤charFn bound) ⟹ small (needs the head ℓ²-mass / Renyi-2-entropy count over high `ξ`).
+3. **Conditioning events + reassembly** (stopping time `k`, E/Eₖ/Bₖ/Cₖ,ₗ, union over `k,l`, triangle
+   ineq; (6.2)–(6.10)); recover `osc(syracZ)` from `∑_{k,l} osc(condDens)`. Decompose into named
+   `sorry`s in `Sec6/MixingFromDecay.lean` as built. Full 7-step plan: fruit-8.
+
 ## Lap fruit-10 (2026-07-14, brick b step 3): **`cond_char_factor` PROVED — the conditional char factorization**
 
 Build green 3285, `#print axioms cond_char_factor = norm_stdAddChar = [propext, Classical.choice,
