@@ -12,17 +12,18 @@ of 6). Obl-3 analytic content DONE. The route-decisive *constant* risk is retire
 is now the **assembly**. No repetition/leaf-drift (recent laps all hit C10; the fruit-22/23 false
 summit was correctly diagnosed + re-aimed, then the corrected kernel landed).
 
+### ✅ UPDATE (same lap, commits `bfc1ed0`, `62bcc56`): **windowed obl-3 plumbing COMPLETE.**
+The full windowed osc chain is landed + axiom-clean: `tailDensW_sum_le_one`, `tailDensW_renyi_le`
+(`∑ (tailDensW)² ≤ 2⁻ˡ`), `condDensW` (def), `dft_condDensW_eq_cond_char`, `cond_char_factorW`,
+`tail_factor_dft_eqW`, `tail_factor_l2_eqW`, `condDensW_highfreq_l2_le`, **`condDensW_osc_le`**
+(`osc(condDensW) ≤ D·√(3^(j+p)·∑ (tailDensW)²)` = Tao (6.10) with window `W`). Composed on the window:
+`osc(condDensW) ≤ D·√(3^(j+p)·2⁻ˡ)`. **Obligation 3 is fully machine-checked end-to-end** (kernel →
+injectivity → single-point mass → Rényi → osc). Item 1 below is DONE; the next move is item 2 (assembly).
+
 **Mandated next moves (hardest-first, in order)** — mirrors DIRECTION.md review-lap update:
-1. **Windowed obl-3 plumbing** (immediate, on-path, mirrors the existing non-windowed lemmas at
-   `MixingFromDecay.lean` — extra `∧ W vt` conjunct):
-   - `tailDensW_sum_le_one` (mirror `tailDens_sum_le_one:1187`; the collapse
-     `∑_Y 1_{off=Y ∧ pre=l ∧ W} = 1_{pre=l ∧ W} ≤ 1`).
-   - windowed Rényi `∑ (tailDensW)² ≤ 2⁻ˡ` (mirror `tailDens_renyi_le:1288`; `sum_sq_le_max_mul_sum`
-     — already generic — + `tailDensW_sum_le_one` + `tailDensW_nonneg` + `tailDensW_le_single_mass`).
-   - windowed `tail_factor_dft_eq`/`tail_factor_l2_eq` (predicate `pre vt p = l ∧ W vt`; one-liners
-     off the general `dft_cond_density`), then a windowed `condDens`/`condDens_osc_le` analogue so
-     the single-point mass actually feeds the osc √.
-2. **THEN the assembly = obligation 1** (the hardest, most route-uncertain open piece): decompose
+1. ~~Windowed obl-3 plumbing~~ **DONE** (see UPDATE above).
+2. **THEN the assembly = obligation 1** (the hardest, most route-uncertain open piece; NOW the live
+   frontier): decompose
    `fine_scale_mixing:1711` into named obl-0/1/2/3 sub-`sorry`s in `src/`; define events
    `E`/`Eₖ`/`Bₖ`/`Cₖ,ₗ` as tail-measurable `DecidablePred`s (`Classical.dec`); state the (6.1)–(6.10)
    decomposition + triangle skeleton; discharge the window kernel's `hbudget`/`hsuf` from `Bₖ`/`Eₖ`
