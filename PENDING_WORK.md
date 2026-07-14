@@ -1,5 +1,47 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap X11d-decomp-6 (2026-07-14): **E∗ TERM `few_white_estar_mass_le` FULLY PROVED (axiom-clean) + route-decisive deep-hyp generalization**
+
+Two advances on the (7.56) crux `few_white_mass_le`, both axiom-clean, `lake build` green (3267 jobs):
+
+### 🔑 ROUTE-DECISIVE FINDING (corrects a prior-lap error): the deep-hyp reconciliation
+`m/log²m < s ⟹ (m+1)/log²(m+1) < s` is **FALSE**, NOT a "small gap bridgeable via Cthr" as
+decomp-5's handoff claimed. Counterexample: `x/log²x` is increasing, so for `s` = least nat `>
+m/log²m` and `m` chosen so `frac(m/log²m)` is within `1/log²m` of 1, `(m+1)/log²(m+1) ≥ s`. The
+E∗ term needs `estar_union_le` at depth `n/2−j = m+1` (triangle at `n/2−m−1`, phase `−1` shift),
+which the frozen regime `m/log²m < s` cannot supply in the strong `/log²` form.
+**FIX (legitimate generalization, NOT a weakening):** both consumers of the X10 deep hyp use only
+a WEAK power bound — `triangle_encounter_le` via `m^0.8 < s` (its `hsdeep`), `encounter_apex_proximity`
+via `m^0.4 ≤ 12s`. Generalized the deep hyp of `encounter_apex_proximity`, `triangle_encounter_le`
+(both `ManyTriangles.lean`), `bigTriangle_walk_le`, `estar_union_le` (both `Case3.lean`) from
+`(depth)/log²(depth) < s` to `(depth)^0.8 < s`. This IS bridgeable: `(m+1)^0.8 ≤ 2m^0.8 ≤ m/log²m < s`
+for `m ≥ Cthr` (proved inside few_white_estar via `log m ≤ 20m^0.05`, Cthr = 10^30). Commit `61f8e80`.
+
+### E∗ term `few_white_estar_mass_le` (`Case3.lean`, axiom-clean) — the middle term of the split
+`Σe fpDist Σv hold·(Σ_{p<P+1} indicator bigTri(⌊4^A'(1+p)³⌋)(n/2−m−1+…)) ≤ 10^{−A−3}`, with A' EXPOSED.
+- **Algebra** (`fbda427`): tsum↔finite-sum swap (`Summable.tsum_finsetSum`) turns inner `Σ_p` into the
+  outer union `estar_union_le` bounds at `j=n/2−m−1`, `T=P`, `A=A'`; `ENNReal.toReal_sum` bridge;
+  deep-hyp bridge above; `ENNReal.le_ofReal_iff_toReal_le`.
+- **Numeric** `estar_scaled_numeric` (`8edbdaa`): `C'·A'²·4^{−A'}+C'·exp(−c·A'²) ≤ 10^{−A−3}` ∀A>0 at
+  A'=2A+A₀. Two poly·geom domination helpers (`sq_mul_exp_neg_le`: `x²e^{−bx}≤4/b²`;
+  `sq_mul_exp_neg_le_inv`: `≤27/(b³x)`). term1: base-16-beats-10 (`4^{−A'}=4^{−A₀}·16^{−A}`, 16>10),
+  cleared-denominator linear-in-A₀ thresholds. term2: complete-the-square `(8cA−log10)²≥0` + `A₀≥√X2`.
+  A₀ = max(A₀e, 1, Kthr, √X2), all symbolic in C',c,log4,log10 (no numeral log bounds). HEARTBEAT bump
+  (justified, large single-shot chase).
+
+### NEXT — `few_white_mass_le` (7.56) ASSEMBLY, now that all three terms exist:
+- **reach term** `few_white_reach_mass_le` ✓ (≤10^{−A−3}), **E∗ term** `few_white_estar_mass_le` ✓
+  (≤10^{−A−3}, exposes A'), **bad-column** `col_tail_mass_le` (PROVED ≤m^{−A}/2; + numeric m^{−A}/2 ≤
+  10^{−A−3} for m≥Cthr). Pointwise split `few_white_pointwise_split` ✓.
+- Assembly: pick `A' = 2A+A₀` (from estar_scaled_numeric via few_white_estar_mass_le's exposed A'),
+  `K=⌈(A+3)log10/epsBW³⌉`, `R=⌈((K+1)+(A+5)log10+2)/ε₀⌉`, `P=encWindowIter A' (K+1) R`, Cthr = max of
+  the three terms' Cthrs + 10g (for `hg:(g:ℝ)≤0.1m`) + 10^30 (deep bridge). Apply
+  `few_white_pointwise_split` inside `Σe fpDist Σv hold·` (per-v support casing: v∉support ⟹ hold.iid=0),
+  tsum-linearity (model: `few_white_reach_mass_le`'s wrapping) → reach+E∗+bad, sum `3·10^{−(A+3)} ≤
+  10^{−(A+2)}`. ⚠ few_white_estar's `hreg` (∀p≤P, ⌊4^A'(1+p)³⌋ ≤ (m+1)^0.4) discharged since P=O(1) and
+  floors bounded by 4^A'(1+P)³ ≤ (m+1)^0.4 for m≥Cthr. ⚠ col_tail is AFTER few_white in the file —
+  reorder or forward-ref. Its integrand matches the split's 3rd term exactly.
+
 ## Lap X11d-decomp-5 (2026-07-14): **INDEX-SHIFT RECONCILIATION PROVED — `few_white_pointwise_dichotomy` (axiom-clean)**
 
 The "fiddly kernel" the crux `few_white_mass_le` rests on is now a proved, axiom-clean lemma
