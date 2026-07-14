@@ -950,6 +950,69 @@ theorem dft_condDens_eq_cond_char (j p l : ℕ) (ξ : ZMod (3 ^ (j + p))) :
     (fun a => (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p))
     (fun a => pre (fun i => a (Fin.natAdd j i)) p = l) ξ
 
+/-- **The `l`-marginalization of the conditioned density** (C10, the (6.9) innermost identity):
+summing `condDens j p l` over all tail-valuations `l ∈ ℕ` recovers the real Syracuse density at
+level `j + p`. This is `∑_l g_{n,k,l} = (marginal density)` — the identity on which the event
+telescope of `fine_scale_mixing` will rest (the partition `⨆_l {pre(tail) = l}` of the sample
+space is exhaustive, so conditioning on it loses no mass). Proof: `syracZ = (iid).map offset`
+(`syracZ_eq_rev_fnat`), lift both sides to `ENNReal`, Tonelli-swap `∑_l` inside the `iid`-tsum
+(`ENNReal.tsum_comm`), and collapse `∑_l 1_{pre(tail)=l} = 1` (single point). -/
+theorem syracZ_eq_tsum_condDens (j p : ℕ) (Y : ZMod (3 ^ (j + p))) :
+    ((syracZ (j + p)) Y).toReal = ∑' l : ℕ, condDens j p l Y := by
+  classical
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  -- each per-`l` indicator term of `condDens` is finite in `ENNReal`
+  have hGne : ∀ (a : Fin (j + p) → ℕ) (l : ℕ),
+      (geomHalf.iid (j + p)) a
+        * (if (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p) = Y
+              ∧ pre (fun i => a (Fin.natAdd j i)) p = l then (1 : ENNReal) else 0) ≠ ⊤ :=
+    fun a l => ENNReal.mul_ne_top ((geomHalf.iid (j + p)).apply_ne_top a) (by split <;> simp)
+  -- `condDens j p l Y` is the `toReal` of the ENNReal `a`-sum of that family
+  have hcond : ∀ l : ℕ, condDens j p l Y
+      = (∑' a, (geomHalf.iid (j + p)) a
+          * (if (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p) = Y
+                ∧ pre (fun i => a (Fin.natAdd j i)) p = l then (1 : ENNReal) else 0)).toReal := by
+    intro l
+    simp only [condDens]
+    rw [ENNReal.tsum_toReal_eq (fun a => hGne a l)]
+    refine tsum_congr (fun a => ?_)
+    rw [ENNReal.toReal_mul]
+    congr 1
+    split <;> simp
+  -- the `a`-sums are finite (bounded by `∑'_a iid a = 1`)
+  have hFne : ∀ l : ℕ, (∑' a, (geomHalf.iid (j + p)) a
+        * (if (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p) = Y
+              ∧ pre (fun i => a (Fin.natAdd j i)) p = l then (1 : ENNReal) else 0)) ≠ ⊤ := by
+    intro l
+    refine ne_top_of_le_ne_top (b := ∑' a, (geomHalf.iid (j + p)) a)
+      (by rw [(geomHalf.iid (j + p)).tsum_coe]; exact ENNReal.one_ne_top) ?_
+    refine ENNReal.tsum_le_tsum (fun a => ?_)
+    exact le_trans (mul_le_mul_left' (by split <;> simp) _) (le_of_eq (mul_one _))
+  -- collapse the `l`-sum of the tail-valuation indicator to the pure offset indicator
+  have hcollapse : ∀ a : Fin (j + p) → ℕ,
+      (∑' l : ℕ, (if (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p) = Y
+              ∧ pre (fun i => a (Fin.natAdd j i)) p = l then (1 : ENNReal) else 0))
+        = (if (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p) = Y
+            then (1 : ENNReal) else 0) := by
+    intro a
+    by_cases h : (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p) = Y
+    · simp only [h, true_and, if_true]
+      rw [tsum_eq_single (pre (fun i => a (Fin.natAdd j i)) p) (fun l' hl' => by
+        rw [if_neg]; exact fun hc => hl' hc.symm)]
+      simp
+    · simp only [h, false_and, if_false, tsum_zero]
+  -- assemble: rewrite RHS via `hcond`, pull `toReal` outside, swap sums, collapse, match syracZ
+  rw [tsum_congr hcond, ← ENNReal.tsum_toReal_eq hFne]
+  congr 1
+  rw [syracZ_eq_rev_fnat, PMF.map_apply, ENNReal.tsum_comm]
+  refine tsum_congr (fun a => ?_)
+  rw [ENNReal.tsum_mul_left, hcollapse a]
+  split_ifs with h1 h2 h2
+  · rw [mul_one]
+  · exact absurd h1.symm h2
+  · exact absurd h2.symm h1
+  · rw [mul_zero]
+
 /-- The **tail sub-density** `Y ↦ P(offset_p = Y ∧ pre = l)` at level `j+p`: the pushforward of the
 level-`p` Syracuse offset (embedded in `ZMod (3^(j+p))`) restricted to the tail-valuation event. Its
 DFT is the tail factor of `cond_char_factor` (`tail_factor_dft_eq`), so its collision entropy
