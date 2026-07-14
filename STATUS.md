@@ -2,28 +2,36 @@
 
 **First-anywhere Lean 4 formalization of Tao 2019 "Almost all Collatz orbits
  attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3285 jobs) ·
-**Updated**: review lap · 2026-07-14 · `1c3ee3d`
+**Updated**: deep reflection lap · 2026-07-14 · `f96a728`
 
 ## Where it stands
 
-**🏆 §7 — the campaign's stated 65–75% risk concentration ("the paper's
-pinnacle", X8/X9/X10/X11) — is CLOSED and axiom-clean.** Review-lap `#print
-axioms`: `prop_7_8`, `Q_black_edge`, `Q_polynomial_decay`, `charFn_decay`
-(Prop 1.17), `key_fourier_decay` (Prop 7.1) all = `[propext, choice, Quot.sound]`.
-All of SyracRV, S3, X1–X10, X11 done and clean. **The content spine now has
-EXACTLY TWO open heroic sorries** (+ 2 frozen headline stubs): C10
-`fine_scale_mixing` (Prop 1.14, §6, `MixingFromDecay.lean:377`) and C9
-`stabilization` (Prop 1.11, §5, `FirstPassage.lean:81`, consumes C10). The
-current crux is **C10** — upstream on the critical path `C10 → C9 → C6 →
-Statement`, and NOT a new kernel: its two hard ingredients (the CS/Parseval
-bridge `osc_le_sqrt_highfreq`, and `charFn_decay`) are already proved
-axiom-clean, so C10 is the §6 conditioning *assembly* that plugs decay into the
-bridge on a conditioned density `g`. **4 real proof `sorry`s remain total** (2
-headline + C10 + C9).
+**🏆 §7 (the campaign's stated 65–75% risk concentration) is CLOSED and
+axiom-clean**; all of SyracRV, S3, X1–X11 done and clean. **The content spine
+has EXACTLY TWO open heroic sorries** (+ 2 frozen headline stubs): C10
+`fine_scale_mixing` (Prop 1.14, §6, `MixingFromDecay.lean:1459`) and C9
+`stabilization` (Prop 1.11, §5, `FirstPassage.lean:81`, consumes C10). The crux
+is **C10** on the critical path `C10 → C9 → C6 → Statement`. Seventeen C10
+support bricks are banked axiom-clean (Plancherel chain, osc calculus, Lemma
+6.2 + mod-3ⁿ wrapper, marginalization, head-factor reindex onto `charFn_decay`).
+The 2026-07-14 deep reflection **refuted the recorded obligation-3 endgame**
+(the "window ⟹ per-prefix" implication is false in-regime) and re-aimed it at
+the suffix-form window kernel with the tight stopping-rule l-window — the
+paper's own (6.8) display is too lossy (hole #3, JUDGE-FLAGged); margins now
+verified numerically (0.4805 vs 0.693 per C_A²·log n, closes for C_A ≥ 10).
+**4 real proof `sorry`s remain total** (2 headline + C10 + C9).
 
 ## What's happened (newest first)
 
-- **review lap (2026-07-14)**: **§7 CROSSED** — inventory found only 4 live
+- **deep reflection (2026-07-14, `f96a728`)**: route CONTINUE (no trigger
+  fired; T3/T4 registered). **Caught a false summit**: fruit-23's "one
+  remaining analytic implication" for obligation 3 is unprovable — the
+  per-prefix hypothesis fails at `m=0` for `p ≈ 0.79n` (coeff 1.42 > 1.10).
+  Re-aimed at `fnat_lt_of_suffix_window` (suffix form + TIGHT l-window; paper's
+  (6.8) shown too lossy — source hole #3, documented in literature-review, judge
+  to ratify). Added missing obligation 0 (the (6.1)/(1.22) regime telescope for
+  `m < 0.9n`). Ledger re-run at `f96a728`: 4 `sorryAx` carriers exactly; all 18
+  checked support nodes trust-base clean.- **review lap (2026-07-14)**: **§7 CROSSED** — inventory found only 4 live
   sorries (2 headline + C10 + C9); `#print axioms` confirms `prop_7_8` +
   full §7 chain (Q_black_edge, Q_polynomial_decay, charFn_decay,
   key_fourier_decay) all trust-base clean. DIRECTION.md CURRENT DIRECTIVE +
@@ -93,71 +101,22 @@ headline + C10 + C9).
   the sole downstream gate directly. The gate owns the finite union/numerical
   join and depends on the single upstream geometry gate
   `fpDist_any_triangle_le`.
-- **lap 56 (2026-07-12, REVIEW + crux advance)**: verified X9 CLOSED modulo
-  exactly `fpDist_white_exit_deep`; route **CONTINUE**, no trigger; Aristotle
-  idle. Then **PROVED `fpDist_white_exit_deep`** from the (7.50)-geometry
-  decomposition: `endpoint_notMem_start_triangle` (overshoot clears the apex,
-  axiom-clean) + `outStripSet`/`phaseInFamily` complement split via
-  `white=¬black` + `F.cover` + axiom-clean tsum reduction glue; residual =
-  two named `≤ 1/8` analytic tails (`fpDist_out_of_strip_le`,
-  `fpDist_any_triangle_le`), both X6-Gaussian. `p₀ = 3/4`.
-- **lap 55 (2026-07-12, DEEP REFLECTION)**: route verdict **CONTINUE** (T1
-  cleared lap 52; T2 source-grounded as unlikely — the (7.65) separation comes
-  from Lemma 7.4 integer-disjointness, already proved as `apex_separation`).
-  Read pp.49–55 against the X9/X10/X11 pins. **Found the X9 near-edge
-  statement-truth risk** + two consumable fixes verified against the actual
-  p.49/p.55 consumer; **softened the p₀ > 1/2 burden** (paper only needs ≫1;
-  any certified c₀ > ~ε is consumable); re-rated X10 up (precedented volume).
-  Re-ran `#print axioms` on 16 headline decls — all clean. New directive:
-  X9 depth-gate → close 7.9 → white-exit kernel → X10. No prior art (re-checked).
-- **lap 54 cont (2026-07-12)**: **X2 CLOSED** — `white_cos_bound` proved;
-  `Sec7/White.lean` sorry-free. X9 assembly opened: chain arithmetic
-  (`encChainX` fixed point, `encounter_vertex_bound` LP), CLAIM-G coupling
-  (`encExpect_normalize(_init)`), gluing pieces (wander, edge freeze, two-mass)
-  all proved axiom-clean; `fpDist_white_exit_deep` pinned as X9's only external
-  input.
-- **lap 54 (2026-07-12)** `9321b5c`: **X5 CLOSED** — Lemma 7.6 (Hold basics,
-  p.42) fully machine-checked: mean (4,16) + aperiodicity proved axiom-clean in
-  new `Sec7/HoldBasics.lean`.
-- **lap 53 (2026-07-12)** `ade5d6d`: **X1 CLOSED** — `cexpect_pairing`
-  ((7.4)/(7.5)) proved axiom-clean; Prop 7.1 `key_fourier_decay` and Prop 1.17
-  `charFn_decay` now theorems over the Prop 7.8 chain. `Sec7/Reduction.lean`
-  sorry-free.
-- **lap 52 (cont)** `0ba065f`: **encExpect_block_le PROVED** (path→fpDist block
-  bridge) + **ROUTE FINDING**: the paper's Lemma 7.9 proof has a gap (p.51
-  banking display false on the min(r,R)=1 branch); pin corrected exp(ε)→exp(2ε),
-  judge-confirmed (pass 9), consumer-safe.
-- **lap 52 (2026-07-12)** `1c9b2c8`: **Lemma 7.9 (X9) PINNED, RED→YELLOW** —
-  `EncState`/`encStep` encounter fold, `many_triangles_white` (7.57) pin,
-  head-peel recursion proved. T1 does not fire.
-- **lap 51 (2026-07-12, review)**: course-correction; DIRECTION.md created; §7
-  tail de-risk directive set; X10 pinned with geometric core (`apex_gap`,
-  `apex_separation`) proved.
-- **lap 50 (2026-07-12)** `5f469e9`: **LEMMA 7.7 PROVED, X6 CLOSED** —
-  `fpDist_location_bound` axiom-clean (unconditional in `s`); both X8 Case-2
-  kernels unblocked.
-- **laps 46–49 (2026-07-12)**: X6 renewal machinery (`renewalMass_bound`,
-  Gaussian AP engine, first-passage renewal decomposition); X8/X10
-  `Q_black_edge` decomposed into 4 named sub-sorries.
-- **lap 45 (2026-07-12)**: **S3 FULLY GREEN** — all 8 Lemma 2.2 obligations
-  machine-checked (judge pass 5).
-- **laps 36–44**: the S3 analytic engine (2-D MGF/tilting, circle method,
-  tilted center bound).
-- **earlier**: X3 (Lemma 7.4 triangles, judge-verified), Q-recursion / Qstop /
-  fpDist D6 machinery, PMF/Fourier/tilting support layers.
+- **earlier (laps 36–56, 2026-07-12)**: X9/X10/X11 pins + kernels (laps 51–56,
+  incl. the lap-55 deep reflection's X9 near-edge finding and the 7.9
+  exp(ε)→exp(2ε) correction); X1/X2/X5/X6 closed; S3 fully green (laps 36–45,
+  2-D MGF/tilting + circle method); before that X3, Q-recursion/Qstop/fpDist
+  D6 machinery, PMF/Fourier/tilting support layers.
 
 ## Outstanding
 
-### Short-term (mirror PENDING_WORK top — C10 fruit-8 route)
-- **brick (d)** (START HERE, mechanical): generalize `osc_le_sqrt_highfreq` +
-  helpers (`densC`,`devC`,`condAvgC`,`sum_norm_sq_devC_eq`,…) from
-  `fun Y=>(syracZ n Y).toReal` to an arbitrary real `c : ZMod (3^n)→ℝ`
-  (proofs never used syracZ-ness) — unblocks applying the proved bridge to the
-  conditioned density `g`.
-- **brick (a)** the independent `F`-split `Xₙ = F_{k+1}(…) + 3^{k+1}2^{-l}F_{n-k-1}(…)`
-  on `Cₖ,ₗ` as a Lean identity ((1.5)/(1.26)); **brick (b)** independence ⟹
-  char-sum factorization; then the conditioning events + `charFn_decay` on the
-  2nd factor + triangle reassembly. See PENDING_WORK fruit-8.
+### Short-term (mirror PENDING_WORK top — Reflection 2026-07-14)
+- **`fnat_lt_of_suffix_window`** (START HERE, route-decisive): the corrected
+  obligation-3 kernel — tight l-window + suffix (6.12) bounds ⟹
+  `fnat p vt < 3^(j+p)`; ε=1/4 Young, explicit `C_A ≥ 10`, `n ≥ n₀`. Spec in
+  PENDING_WORK Reflection section. Do NOT attempt the refuted per-prefix form.
+- Then: windowed-indicator generalization of `condDens`/`tailDens` (serves
+  obligations 1+3) → windowed `tailDens ≤ 2^{-l}` (obl 3 CLOSED) → event
+  scaffold + `P(Ē)` (obl 1) → `hunif` (obl 2) → regime telescope (obl 0).
 
 ### Long-term
 - After C10 lands: attack C9 `stabilization` (Prop 1.11, §5) — consumes C10 —
@@ -173,12 +132,14 @@ Close C10 `fine_scale_mixing` → C9 `stabilization` → C6 → wire the two
 
 The two headline theorems are NOT yet assembled — the §1–§6 spine feeds into
 `Statement` only after C10/C9/C6 land. §7 (the crux) is fully closed. Ledger
-re-run this review lap (2026-07-14, real `#print axioms` at `1c3ee3d`):
+re-run this deep-reflection lap (2026-07-14, real `#print axioms` at `f96a728`;
+18 support nodes checked incl. all new C10 bricks — every completed node
+trust-base only):
 
 | headline / node | paper claim | `#print axioms` shows | status |
 |---|---|---|---|
 | `Statement` Thm 1.3 / Thm 3.1 | Thm 1.3 (uncond.) | `sorry` (spine not assembled) | 🔜 stub — discharges when C10/C9/C6 land |
-| C10 `fine_scale_mixing` (Prop 1.14) | §6 fine-scale mixing | trust base + `sorryAx` | 🟡 **current crux** — bridge+charFn_decay proved, needs §6 conditioning assembly |
+| C10 `fine_scale_mixing` (Prop 1.14) | §6 fine-scale mixing | trust base + `sorryAx` | 🟡 **current crux** — 17 bricks banked clean; obligations 0–3 scoped, obl-3 kernel re-aimed (suffix window, tight l-bound) by 07-14 reflection |
 | C9 `stabilization` (Prop 1.11) | §5 first-passage stab. | trust base + `sorryAx` | 🟡 downstream of C10; narrow only |
 | `charFn_decay` (Prop 1.17) | key char-sum decay | `[propext, choice, Quot.sound]` | 🟢 done, clean (C10's analytic input) |
 | `key_fourier_decay` (Prop 7.1) | (7.1) Fourier decay | `[propext, choice, Quot.sound]` | 🟢 done, clean |
@@ -193,7 +154,8 @@ cited. Remaining work is `sorry`-discharge (C10 crux + C9 + 2 headline), not
 axiom-discharge.
 
 ## Pointers
-DIRECTION.md (binding directive) · BLUEPRINT.md (frozen node ledger §2) ·
-newest `HANDOFF-2026-07-15-0300.md` · PENDING_WORK.md (fruit-8 C10 attack path,
-newest top) · papers/literature-review.md (route-facing source synthesis) ·
+DIRECTION.md (binding directive; reflection course-correction 2026-07-14) ·
+BLUEPRINT.md (frozen node ledger §2) · newest `HANDOFF-2026-07-15-1600.md` (reflection; real date 07-14) ·
+PENDING_WORK.md (Reflection 2026-07-14 top: obl-3 spec + triggers) ·
+papers/literature-review.md (source synthesis; Cor 6.3 hole #3) ·
 paper `papers/tao-2019-almost-all-orbits.pdf`.

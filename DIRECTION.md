@@ -54,7 +54,38 @@ C10 is the §6 **conditioning assembly** that plugs (ii) into (i) applied to a *
 density `g`, not raw `syracZ`. Risk = volume/bookkeeping, NOT novelty (the charter rates
 post-§7 at 75–95%). **Do not treat "HEROIC" as un-attackable and retreat.**
 
-### Mandated next move (REFRESHED at pass 27 — bricks d / a / b are DONE)
+### 🔄 REFLECTION COURSE-CORRECTION (deep reflection lap, 2026-07-14, HEAD `f96a728`) — BINDING
+
+The pass-27 objective (C10) and route (§6 conditioning) are CONFIRMED — route verdict
+**CONTINUE** — but the obligation-3 attack line the fruit-22/23 laps recorded is **REFUTED**:
+
+- **Do NOT attempt "window (6.12) ⟹ per-prefix hypothesis of `fnat_lt_of_prefix_bound`".**
+  That hypothesis is FALSE in the operating regime (`m=0` instance `3^(p-1)·2^p < 3^(j+p)` fails
+  at `p ≈ 0.7925n`: coefficient 1.42 > 1.10 — verified numerically). The lemma stays (true,
+  proved, harmless); the route around it is the SUFFIX form.
+- **THE mandated next brick**: `fnat_lt_of_suffix_window` — from the **tight** l-window
+  `l ≤ n·log3/log2 − (C²−2C)·log n − O(1)` (stopping rule Bₖ + one-step Eₖ bound — NOT the
+  paper's lossy (6.8), whose ½-budget provably cannot close the Young estimate: 0.347·C² vs
+  0.418·C² minimum cost) and the suffix-interval windows from (6.12), conclude
+  `fnat p vt < 3^(j+p)`. Young at `ε = 1/4`: cost `(ln2)²C² = 0.4805C²` vs budget
+  `ln2·(C²−2C) = 0.693(C²−2C)`; geometric rate `ln(4/3) − 1/4 = 0.0377`, sum ≤ 28; closes for
+  `C ≥ 10`, `n ≥ n₀` explicit. Full spec: PENDING_WORK "Reflection — 2026-07-14". It feeds the
+  proved `fnat_offset_zmod_inj` unchanged.
+- **JUDGE-FLAG (new, for pass 28)**: the Lean Cor-6.3 analogue will carry the tight l-window
+  instead of the paper's (6.8) — the paper's own display does not close as literally stated
+  (third documented source deviation, after the two 7.9 holes). Details + fidelity-ledger row:
+  `papers/literature-review.md` §Cor 6.3.
+- **Dashboard completeness**: obligation 0 (the (6.1) regime reduction / (1.22) telescope for
+  `m < 0.9n` + trivial `m < 10`) was missing — now named; low-risk volume, do NOT let it be
+  discovered at assembly time. The windowed-indicator generalization of `condDens`/`tailDens`
+  (hardwired `pre = l` → arbitrary tail-measurable decidable event) serves obligations 1 AND 3;
+  it touches only unwatched in-progress machinery (allowed; T4 below if that ever seems false).
+- **New route triggers**: **T3** — if the corrected window kernel isn't machine-checked within
+  ~6 grind laps, or Lean contradicts the 0.4805-vs-0.693 margin analysis → `ROUTE-ESCALATION`.
+  **T4** — if any of this seems to require editing `fine_scale_mixing`/`stabilization` or a
+  ratified pin → STOP + `JUDGE-FLAG:`, move to another brick.
+
+### Mandated next move (pass 27 — SUPERSEDED IN PART by the reflection block above; bricks d / a / b are DONE, and items 1–2 below have since landed as `head_factor_eq_charFn` / `condDens_osc_le`)
 The raw-density route is REFUTED (`scripts/syracZ_highfreq_l2.py`: raw high-freq L² mass GROWS
 ≈0.46·n) and remapped. The correct route (Tao §6, pdf pp.28–31) applies the bridge to
 `g_{n,k,l}(Y)=P(Xₙ=Y ∧ Eₖ∧Bₖ∧Cₖ,ₗ)`. **Landed + judge-verified axiom-clean this run**: brick (d)
@@ -97,6 +128,10 @@ analytic assembly over machinery that is *already proved*. Driving C10 → C9 �
 wiring is the last mile. No route trigger has fired; route = CONTINUE.
 
 ### Directive history (this section's entries; full campaign history below under SUPERSEDED)
+- **deep reflection (2026-07-14, `f96a728`)**: route CONTINUE; obligation-3 attack line
+  REFUTED (per-prefix hypothesis false at m=0 in-regime) and re-aimed at the suffix-form
+  window kernel with the TIGHT l-window (paper's (6.8) shown too lossy — JUDGE-FLAG); obligation
+  0 (regime telescope) added to the dashboard; triggers T3/T4 registered; ledger re-run clean.
 - **review lap (2026-07-14)**: §7 CROSSED — X8/X9/X10/X11 all axiom-clean; `prop_7_8`+chain clean;
   Judge Pass 26 (§7) FULFILLED and retired. Frontier → C10 `fine_scale_mixing` (Prop 1.14, §6)
   via the fruit-8 conditioning route; C9 downstream; no trigger fired.

@@ -77,10 +77,43 @@ by Lemma 7.4 the walk repeatedly sits in triangles, outside `E_*` those are smal
 — contradiction outside `E_* ∪ F_*`. All inputs are the already-pinned/proved nodes;
 the assembly lives inside the `Q_black_edge_case3` sorry.
 
+### Corollary 6.3 / the §6 window bound (C10) — pp.31–33 (read 2026-07-14 deep reflection)
+
+- **The §6 architecture is confirmed** and the repo's conditioning route renders it faithfully:
+  event E (6.2) → stopping time k (6.5)/(6.6) → Eₖ/Bₖ/Cₖ,ₗ → density g (6.9) → CS (6.10) →
+  Plancherel → independent split (1.5)/(1.26) → tail factor via Prop 1.17, head factor via
+  Lemma 6.2/Cor 6.3 Rényi count. Repo block orientation (head = decay block over
+  `j = n−k−1 ≈ 0.2075n` coords; tail = Rényi block over `p = k+1 ≈ 0.7925n` coords carrying
+  the conditioning) re-verified against pp.30–31.
+- **Confirmed hole #3 (Cor 6.3 window constant, found 2026-07-14, ~95% confidence — numerical)**:
+  Cor 6.3 hypothesizes l in the window (6.8), whose upper end is
+  `n·log3/log2 − (1/2)·C_A²·log n`. The proof's (6.14)→(6.15) upgrade needs
+  `Σ_j 3^(j-1)·2^(l−a_{[1,j]}) < 3^n`; with (6.12) the minimum possible Young cost is
+  `(ln2)²/(4·ln(4/3))·C_A² = 0.4176·C_A²` per log n in the e-exponent, but the ½-window's
+  budget is only `(ln2/2)·C_A² = 0.3466·C_A²`. **The display does not close as stated**, and an
+  extremal tuple (prefix deficit maxed at `j* = 1.45·C_A²·log n`, l at the ½-window top; checked
+  consistent with (6.12)) makes the intermediate `< 3^n` claim genuinely false, exceeding `3^n`
+  by `n^{0.07·C_A²}`. The paper's own "for a sufficiently small ε > 0" Young phrasing makes the
+  cost strictly worse — no ε works against the ½-budget.
+- **The fix is already implicit in the paper's event stack** (so Prop 1.14 is unaffected): the
+  §6 proof only ever invokes Cor 6.3 with `l = a_{[1,k+1]} ≤ T + a_{k+1}` where
+  `T = n·log3/log2 − C_A²·log n` is the stopping threshold and `a_{k+1} ≤ 2 + 2·C_A·log n` on
+  Eₖ — the TIGHT window `l ≤ n·log3/log2 − (C_A²−2C_A)·log n − O(1)`, budget
+  `ln2·(C_A²−2C_A) = 0.693·(C_A²−2C_A)`. Against Young at `ε = 1/4` (cost
+  `(ln2)²·C_A² = 0.4805·C_A²`, geometric rate `ln(4/3)−1/4 = 0.0377`, sum ≤ 28) this closes for
+  `C_A ≥ 10` with margin `0.213·C_A²·log n`. The Lean Cor-6.3 analogue therefore carries the
+  tight l-hypothesis, and the estimate is run in SUFFIX form
+  (`fnat = Σ_r 3^(r-1)·2^(l−suffix_r)`, suffix windows from (6.12)) — the prefix-indexed
+  factoring the repo briefly targeted (`fnat_lt_of_prefix_bound`'s hypothesis) is unsatisfiable
+  in-regime (its m=0 instance `3^(p-1)·2^p < 3^n` fails at `p ≈ 0.7925n`).
+- Consumability: unchanged downstream — the single-point mass uses the LOWER l-bound
+  (`2^{-l} = n^{O(C_A²)}·3^{-n}`), absorbed by taking A′ large exactly as the paper does.
+
 ## Standing deviations of the formalization from the source (fidelity ledger)
 
 | where | paper | ours | why | ratified |
 |---|---|---|---|---|
+| Cor 6.3 l-window | (6.8): `l ≤ nlog3/log2 − ½C_A²log n` | tight: `l ≤ nlog3/log2 − (C_A²−2C_A)log n − O(1)` | hole #3 above (½-window provably too lossy) | **JUDGE-FLAG pending, pass 28** |
 | Lemma 7.9 constant | `exp(ε)` | `exp(2ε)` (depth-gated fold pending, lap-55 directive) | holes #1, #2 above | pass 9; re-ratification due after gate |
 | Lemma 7.9 form | infinite renewal process, stopping times | finite-horizon encounter fold (D6) | D1 no measure theory | pass 8 |
 | white-exit mass | `≫ 1` | explicit `p₀ > 1/2` (may weaken to numeral `c₀`) | corrected ledger constant | pass 12 (pin) |

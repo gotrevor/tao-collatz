@@ -1,5 +1,108 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Reflection — 2026-07-14 (deep reflection lap, HEAD `f96a728`)
+
+**ROUTE VERDICT: CONTINUE, with one course-correction inside obligation 3.** No registered
+trigger fired (T1 resolved with X9; T2 re-armed, `epsBW` untouched). Destination unchanged and
+still right: first-anywhere Lean 4 Thm 1.3, §7 closed clean, critical path = C10 → C9 → C6 →
+Statement. The C10 conditioning route is confirmed against the source (pp.28–33 re-read this
+lap) and the banked machinery is real: fresh `#print axioms` at `f96a728` shows every C10 brick
+(`condDens_osc_le`, `tailDens_renyi_le`, `fnat_inj_fixed_val`, `fnat_offset_zmod_inj`,
+`syracZ_eq_tsum_condDens`, `head_factor_eq_charFn`, `osc_le_sqrt_highfreq`, `osc_le_two_mul_l1`)
+trust-base clean, and exactly 4 `sorryAx` carriers (2 headline + C10 + C9).
+
+### 🚨 THE CATCH — fruit-23's "one remaining analytic implication" is a FALSE SUMMIT
+
+The last two laps recorded obligation 3 as "fully reduced to one analytic implication:
+window (6.12) ⟹ `∀ m<p, 3^(p-1-m)·2^(pre vt m+(p-m)) < 3^(j+p)`". **That implication is FALSE
+— the target hypothesis is unsatisfiable in the operating regime.** At `m = 0` it reads
+`3^(p-1)·2^p < 3^(j+p)`; with `p = k+1 ≈ n·log3/(2log2) ≈ 0.7925n` (the real stopping-time
+location, (6.5)) the per-`n` log-coefficient is `0.7925·(ln3+ln2) = 1.420 > ln3 = 1.099`.
+Verified numerically this lap (`scripts`-level check, coefficient 1.42 vs 1.10; concrete
+n=1000, p=792 fails by e^319). `fnat_lt_of_prefix_bound` itself is a TRUE, proved, conditional
+lemma — but its hypothesis distributes the `2^p` room uniformly (`2^(p-m)` per term), and the
+small-`m` terms (tiny in value, `3^(p-1)` ≪ `3^n`) cannot afford that room. A grind lap driving
+at "window ⟹ per-prefix" would have burned laps on an unprovable goal or, worse, "fixed" it
+silently. Keep the lemma (proved code, harmless); route around it.
+
+### The corrected obligation-3 kernel — SUFFIX form, and it must carry the TIGHT l-window
+
+Two coupled fixes, both grounded in the source read + margin computations done this lap:
+
+1. **Suffix form.** Reindex `r := p−m`. Since `pre vt m = l − suffix_r` (suffix_r = sum of the
+   last `r` coords, on `pre vt p = l`), `fnat p vt = Σ_{r=1}^{p} 3^(r-1)·2^(l−suffix_r)`. The
+   window (6.12) applied to suffix intervals `[p−r+1, p]` (available: (6.12) quantifies over ALL
+   `1 ≤ i < j ≤ k+1`) gives `suffix_r ≥ 2r − C·(√(r·log n) + log n)`, so each term is
+   `≤ 2^l·(3/4)^r·3^{-1}·2^{C(√(r log n)+log n)}` — the geometric decay `(3/4)^r` now sits where
+   the fluctuation actually is. This is exactly the paper's own display (their `j` = our `r`);
+   the prefix form was a mis-factoring.
+2. **Tight l-window, NOT the paper's (6.8).** The paper's stated window
+   `l ≤ n·log3/log2 − (1/2)·C²·log n` is TOO LOSSY to close the bound: budget in the e-exponent
+   `= (ln2/2)·C² = 0.347·C²` per `log n`, but the optimal Young cost is
+   `(ln2)²/(4·ln(4/3))·C² = 0.418·C²` — **the paper's own intermediate display (6.8)+(6.14)→(6.15)
+   does not close as literally stated** (extremal tuple: prefix deficit maxed at
+   `j* = 1.45·C²·log n` exceeds `3^n` by `n^{0.07C²}`). The fix is already implicit in the paper's
+   event stack: the consumer only ever has `l = a_{[1,k+1]} ≤ T + a_{k+1}` with
+   `T = n·log3/log2 − C²·log n` (the stopping rule Bₖ) and `a_{k+1} ≤ 2 + 2C·log n` (on Eₖ) —
+   i.e. the TIGHT window `l ≤ n·log3/log2 − (C² − 2C)·log n − O(1)`, budget `0.693·(C²−2C)`.
+   Against Young at `ε = 1/4` (cost `(ln2)²·C² = 0.4805·C²`, remaining geometric rate
+   `ln(4/3) − 1/4 = 0.0377`, sum constant ≤ 28): closes for `C ≥ 10` with margin
+   `0.213·C²·log n`. **JUDGE-FLAG**: the Lean Cor-6.3 analogue will therefore carry the tight
+   l-hypothesis instead of transcribing (6.8) — a deviation from the paper's literal corollary
+   statement (its (6.8) form is likely false as stated), same class as the 7.9 exp(ε)→exp(2ε)
+   correction. Fidelity ledger updated in `papers/literature-review.md`; judge to ratify.
+
+**The mandated next brick (route-decisive, smallest compiler-grounded probe):**
+`fnat_lt_of_suffix_window` — real-valued: given `hl : (l:ℝ)·ln2 ≤ n·ln3 − (C²−2C)·(ln2)·ln n − 2·ln2`
+(tight window) and `hsuf : ∀ r ∈ [1,p], (2r : ℝ) − C·(√(r·ln n) + ln n) ≤ suffix_r`, with `C ≥ 10`,
+`n ≥ n₀` explicit, conclude `(fnat p vt : ℝ) < 3^(j+p)`. Proof skeleton: term bound → AM-GM
+`C·ln2·√(r·ln n) ≤ r/4 + (C·ln2)²·ln n` → geometric sum `Σ e^{−0.0377r} ≤ 28` → collect exponents,
+`0.693(C²−2C) − 0.4805C² − 0.693C − ln28/ln n > 0` for `C ≥ 10`, `n ≥ n₀`. Feeds the PROVED
+`fnat_offset_zmod_inj` unchanged (its `fnat < 3^(j+p)` interface survives; only the supplier changes).
+
+### Completeness sweep — what the dashboard was missing
+
+- **Obligation 0 (NEW, previously unscoped): the (6.1) regime reduction.** All C10 machinery
+  targets `0.9n ≤ m ≤ n` (high-freq valuation `j' < n−m ≤ 0.1n` is what makes the head level
+  `q ≥ m−k−1 ≈ 0.107n` large). The headline `fine_scale_mixing` quantifies over ALL `1 ≤ m ≤ n`.
+  Missing bricks: the (1.22)-consistency telescope across scales (SyracRV (1.22) is proved +
+  ratified; the osc-vs-marginal bridge lemma is new but mechanical) + trivial `m < 10` cases
+  (osc ≤ 2 ≤ C·m^{-A}). Low risk, real volume — must be named, not discovered later.
+- **Windowed-indicator generalization**: obligation 3's single-point mass and obligation 1's
+  decomposition both need `condDens`/`tailDens`/`cond_char_factor`/`tail_factor_l2_eq` to carry
+  an arbitrary tail-measurable decidable event (currently hardwired to `pre vt p = l`). One
+  generalization pass serves both: the full event `Eₖ∧Bₖ∧Cₖ,ₗ` IS tail-measurable (all of
+  (6.12) for `i<j≤k+1`, the stopping rule, and `a_{[1,k+1]}=l` depend only on the (k+1)-block),
+  so the factorization survives verbatim. Use `Classical.dec` for the window predicates (real-log
+  comparisons aren't computably decidable; nothing downstream computes on them).
+- **Margins elsewhere re-checked, no further traps found**: obl-2's head level
+  `q ≥ (0.9 − log3/(2log2))·n − O(C√(n log n)) ≥ n/10` — comfortable; obl-1's `P(Ē)`:
+  `n²·n^{−c·C}` with `c` absolute from proved S3 tails — needs `C ≥ c⁻¹(A+3)`, jointly
+  satisfiable with obl-3's `C ≥ 10` by taking max. C10's constants concentrate ONLY in the
+  obligation-3 window bound, and that margin is now verified (0.4805 vs 0.693).
+
+### KEEP / STOP / NEXT
+
+- **KEEP**: the C10 conditioning route (source-confirmed, margins now verified); the
+  brick-at-a-time axiom-clean discipline (17 clean C10 lemmas banked, all reusable — the
+  false summit cost a mis-aimed TARGET, not wasted code); hardest-first ordering.
+- **STOP**: driving at "window ⟹ per-prefix hypothesis" (REFUTED this lap — do not attempt);
+  trusting (6.8) as the l-window anywhere downstream.
+- **NEXT (single highest-value target)**: `fnat_lt_of_suffix_window` as specced above. It is
+  route-decisive: it is the one place §6 runs on critical constants, and closing it
+  machine-checks the margin story end-to-end. After it: windowed `tailDens ≤ 2^{-l}` →
+  obligation 3 CLOSED; then the event scaffold (obl 1) wiring, hunif (obl 2), regime
+  telescope (obl 0), in that order.
+
+### New route triggers registered (see DIRECTION.md)
+- **T3 (C10 window kernel)**: if `fnat_lt_of_suffix_window` (or an equivalent supplier of
+  `fnat < 3^(j+p)` on the tight window) is not machine-checked within ~6 grind laps, or a Lean
+  margin computation contradicts this lap's (0.4805 vs 0.693 · C≥10) analysis → escalate with a
+  `ROUTE-ESCALATION-<date>.md`; the conditioning route's constants would be in doubt.
+- **T4 (watched statements)**: if the windowed-indicator generalization appears to force an edit
+  to `fine_scale_mixing`/`stabilization` (watched) or any ratified pin → STOP, `JUDGE-FLAG:`,
+  work another brick. (Generalizing UNWATCHED in-progress machinery like `condDens` is fine.)
+
 ## Lap fruit-23 (2026-07-15, obligation-3): **`fnat_lt_of_prefix_bound` — window-bound geometric algebra**
 
 Build green 3285, `#print axioms`-clean. Commit `9913ad3`. New lemmas (`Sec6/MixingFromDecay.lean`,
