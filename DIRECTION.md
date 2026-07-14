@@ -7,7 +7,30 @@ PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ---
 
-## CURRENT DIRECTIVE (REVIEW LAP, 2026-07-14 — §7 CLOSED; frontier moves to C10)
+## CURRENT DIRECTIVE (JUDGE PASS 27, 2026-07-14 — §7 RATIFIED COMPLETE; the objective is C10)
+
+**⚖️ The review lap's C10 retarget below is RATIFIED.** The judge has now verified it
+independently (pass 27, worktree pinned at `8505bd4`, dated axiom runs): §7 is complete, the
+`Cthr` bridge is genuinely discharged in Lean, the statement differ reports **28/29
+byte-identical** across all 53 overnight commits, and the sorry census is **4** (C10, C9, 2
+headline stubs). Keep going exactly as directed below.
+
+### 🔴 HARD RAIL 6, EXTENDED — the open crux statements are now WATCHED
+
+`fine_scale_mixing` (C10) and `stabilization` (C9) are now in the differ's watch list
+(`tools/tao_stmt_diff.py`, 19 → 29 names; `Sec6/` and `Sec5/` added to its search path).
+
+**Do NOT edit the statement of `fine_scale_mixing` or `stabilization` — not to weaken it, not
+to strengthen it, not to "generalize" it, and above all not to make your own sorry closeable.**
+This is the single highest-value silent failure available to a lap right now: a green build, a
+clean `#print axioms`, and an unmoved sorry census **cannot see it**. Only the differ can, and
+until this pass it was not looking at these two names.
+
+You may always **decompose below** a crux statement into named sub-`sorry`s — that is progress
+and it is encouraged. What you may not do is move the goalposts. If the statement looks wrong
+against the paper, write **`JUDGE-FLAG:`** in `PENDING_WORK.md` + your handoff and move on.
+(Pass 26's lesson, and it was learned the expensive way: a lap that believes it is
+*strengthening* a statement will sail straight through a rail that only says "never weaken.")
 
 **🏆 MILESTONE.** The §7 crux — the campaign's stated 65–75% risk concentration, "the
 paper's pinnacle" (X8/X9/X10/X11) — is **DONE and axiom-clean.** Review-lap `#print axioms`
@@ -31,19 +54,33 @@ C10 is the §6 **conditioning assembly** that plugs (ii) into (i) applied to a *
 density `g`, not raw `syracZ`. Risk = volume/bookkeeping, NOT novelty (the charter rates
 post-§7 at 75–95%). **Do not treat "HEROIC" as un-attackable and retreat.**
 
-### Mandated next move (fruit-8 attack path, hardest-first)
-The raw-density route is REFUTED (last lap; `scripts/syracZ_highfreq_l2.py` proves the raw
-high-freq L² mass GROWS ≈0.46·n) and remapped. The correct route (Tao §6, pdf pp.28–31)
-applies the bridge to `g_{n,k,l}(Y)=P(Xₙ=Y ∧ Eₖ∧Bₖ∧Cₖ,ₗ)`:
-1. **(brick d, START HERE, mechanical)** Generalize `osc_le_sqrt_highfreq` + its helpers
-   (`densC`,`devC`,`condAvgC`,`sum_norm_sq_devC_eq`,…) from `fun Y=>(syracZ n Y).toReal` to an
-   arbitrary real `c : ZMod (3^n)→ℝ`. The proofs never used syracZ-ness. Unblocks the bridge on `g`.
-2. **(brick a)** The independent `F`-split
-   `Xₙ = F_{k+1}(a_{k+1..1}) + 3^{k+1}2^{-l}F_{n-k-1}(aₙ..a_{k+2})` on `Cₖ,ₗ` as a Lean identity
-   ((1.5)/(1.26); pieces in `Basic/`,`Syracuse/`).
-3. **(brick b)** Independence ⟹ character-sum factorization (D1 PMF product form, `cexpect_mul`).
-4. Conditioning events (E/Eₖ/Bₖ/Cₖ,ₗ, stopping time k) + `charFn_decay` on the 2nd factor +
-   triangle reassembly. Full plan: `PENDING_WORK.md` fruit-8.
+### Mandated next move (REFRESHED at pass 27 — bricks d / a / b are DONE)
+The raw-density route is REFUTED (`scripts/syracZ_highfreq_l2.py`: raw high-freq L² mass GROWS
+≈0.46·n) and remapped. The correct route (Tao §6, pdf pp.28–31) applies the bridge to
+`g_{n,k,l}(Y)=P(Xₙ=Y ∧ Eₖ∧Bₖ∧Cₖ,ₗ)`. **Landed + judge-verified axiom-clean this run**: brick (d)
+density-general `osc_le_sqrt_highfreq`; brick (a) `fnat_split` + `syracZ_offset_split`; brick (b)
+`char_offset_split` + `PMF.cexpect_iid_append` + `cond_char_factor` + `dft_cond_density`. The two
+halves of C10 now meet. **What remains, hardest-first:**
+1. **[THE LAST REAL NOVELTY] Tail factor ⟹ `charFn_decay`.** Reindex the tail character at
+   modulus `3^(j+p)` down to the level-`p` Syracuse char at `ξ'` (for high `ξ = 3ʲ·2ˡ·ξ'`,
+   `3∤ξ'`), then `charFn_decay` (Prop 1.17, PROVED) bounds it `≤ Cₐ·p⁻ᴬ`. ⚠️ **This is the step
+   most likely to be waved through with a plausible-looking cast — the judge will read it against
+   pp.28–31, not just check its axioms.** Head factor: norm `≤1`.
+2. **osc bound for `condDens`** — the proved general bridge on `condDens j p l`, then the
+   high-freq ℓ²-mass count (‖head‖≤1, ‖tail‖≤charFn bound).
+3. **Conditioning events + reassembly** ((6.2)–(6.10): stopping time `k`, E/Eₖ/Bₖ/Cₖ,ₗ, union over
+   `k,l`, triangle ineq). Decompose into named `sorry`s as you build. Plan: `PENDING_WORK.md`.
+
+### Two judge items (pass 27)
+- 🟡 **Pin C8 (§5) before any C9 work starts.** It is the last un-pinned node, and C9
+  `stabilization` lives in §5 directly downstream of C10. Mark `RATIFY-C8` in a comment + say so
+  in the handoff; **never set `\leanok` yourself** — ratification is the judge's.
+- 🗂️ **The `ManyTriangles` split is DROPPED from the directive.** It has been ordered and skipped
+  for **eight consecutive laps** — correctly, every time, because a crux always outranks hygiene.
+  Re-ordering it a ninth time would be a fake order. It is off the critical path, it is pure
+  hygiene, and splitting a 5,519-line file that holds the X9/X10 pins *during* the crux is churn
+  we do not want. It moves to post-§6 mop-up, batched with the 8 new `mul_le_mul_left'`
+  deprecations in `Case3.lean`. **Do not spend crux laps on it.**
 
 ### Forbidden drift
 - **Do NOT retreat to C9 `stabilization` as "easier"** — it is downstream of C10 and would only
