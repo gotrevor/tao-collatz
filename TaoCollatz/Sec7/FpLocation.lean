@@ -2703,4 +2703,165 @@ theorem hasSum_nat_tail_exp {γ : ℝ} (hγ : 0 < γ) (m : ℕ) (a : ℝ) :
   rw [← hasSum_nat_add_iff' (m + 1)]
   simpa [hfront] using h2
 
+/-- **Gaussian × growing-exponential column tail** (the X8 MGF core): the column
+bound `C'·Gweight(1+s, c(j-s/4))/√(1+s)`, weighted by the MGF tilt `e^{θ j}`
+(`0 ≤ θ ≤ ½·min(c, c²/20)`), summed over `j > m` is dominated by an explicit
+shifted geometric.  The tilt folds in exactly: `e^{θ j}·e^{-γ₂(j-s/4)} =
+e^{θ s/4}·e^{-(γ₂-θ)(j-s/4)}`, so the only change from `gaussian_col_tail` is the
+decay rates shift `γ₂,c ↦ γ₂-θ, c-θ` (still positive) and a bounded prefactor
+`e^{θ s/4}`.  Threshold `m ≥ 25` + the (7.52) budget give `t ≤ 20·x₀` for the
+Gaussian-to-geometric step (`x² ≥ x₀·x`). -/
+theorem gaussExp_col_tail {c C' θ : ℝ} (hc : 0 < c) (hC' : 0 ≤ C')
+    (hθ0 : 0 ≤ θ) (hθ : θ ≤ min c (c ^ 2 / 20) / 2) (s m : ℕ) (hm : 25 ≤ m)
+    (hbud : (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9) :
+    Summable (fun j : ℕ => if m < j then
+        Real.exp (θ * (j : ℝ)) * (C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
+                / Real.sqrt (1 + (s : ℝ)))) else 0) ∧
+    (∑' j : ℕ, (if m < j then
+        Real.exp (θ * (j : ℝ)) * (C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
+                / Real.sqrt (1 + (s : ℝ)))) else 0))
+      ≤ C' * Real.exp (θ * ((s : ℝ) / 4))
+          * (Real.exp (-(c ^ 2 / 20 - θ) * (((m : ℝ) + 1) - (s : ℝ) / 4))
+                / (1 - Real.exp (-(c ^ 2 / 20 - θ)))
+           + Real.exp (-(c - θ) * (((m : ℝ) + 1) - (s : ℝ) / 4))
+                / (1 - Real.exp (-(c - θ)))) := by
+  set γ₂ : ℝ := c ^ 2 / 20 with hγ₂def
+  have hγ₂ : (0 : ℝ) < γ₂ := by rw [hγ₂def]; positivity
+  have hθγ₂ : θ ≤ γ₂ / 2 := le_trans hθ (by apply div_le_div_of_nonneg_right (min_le_right _ _) ; norm_num)
+  have hθc : θ ≤ c / 2 := le_trans hθ (by apply div_le_div_of_nonneg_right (min_le_left _ _) ; norm_num)
+  set a₂ : ℝ := γ₂ - θ with ha₂def
+  set a₁ : ℝ := c - θ with ha₁def
+  have ha₂ : (0 : ℝ) < a₂ := by rw [ha₂def]; linarith
+  have ha₁ : (0 : ℝ) < a₁ := by rw [ha₁def]; linarith
+  -- budget ⇒ `s ≤ (16/5)(m+2)`  (via `9⁵ ≤ 2¹⁶`)
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos one_lt_two
+  have hlog9 : Real.log 9 ≤ 16 / 5 * Real.log 2 := by
+    have h : Real.log ((9 : ℝ) ^ 5) ≤ Real.log ((2 : ℝ) ^ 16) :=
+      Real.log_le_log (by norm_num) (by norm_num)
+    rw [Real.log_pow, Real.log_pow] at h
+    push_cast at h
+    linarith
+  have hsle : (s : ℝ) ≤ 16 / 5 * ((m : ℝ) + 2) := by
+    have h1 : (s : ℝ) * Real.log 2 ≤ (16 / 5 * ((m : ℝ) + 2)) * Real.log 2 := by
+      calc (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 := hbud
+        _ ≤ ((m : ℝ) + 2) * (16 / 5 * Real.log 2) :=
+            mul_le_mul_of_nonneg_left hlog9 (by positivity)
+        _ = (16 / 5 * ((m : ℝ) + 2)) * Real.log 2 := by ring
+    exact le_of_mul_le_mul_right h1 hlog2
+  set t : ℝ := 1 + (s : ℝ) with htdef
+  have ht1 : (1 : ℝ) ≤ t := by rw [htdef]; linarith [Nat.cast_nonneg (α := ℝ) s]
+  have ht0 : (0 : ℝ) < t := lt_of_lt_of_le one_pos ht1
+  have hm25 : (25 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm
+  set x₀ : ℝ := (m : ℝ) + 1 - (s : ℝ) / 4 with hx₀def
+  have hx₀lb : ((m : ℝ) - 3) / 5 ≤ x₀ := by rw [hx₀def]; linarith
+  have hx₀pos : (0 : ℝ) < x₀ :=
+    lt_of_lt_of_le (by linarith : (0 : ℝ) < ((m : ℝ) - 3) / 5) hx₀lb
+  have h20 : t ≤ 20 * x₀ := by rw [htdef, hx₀def]; linarith
+  -- dominators: shifted geometrics at the tilted rates
+  have hE₂ := hasSum_nat_tail_exp ha₂ m ((s : ℝ) / 4)
+  have hE₁ := hasSum_nat_tail_exp ha₁ m ((s : ℝ) / 4)
+  set κ : ℝ := C' * Real.exp (θ * ((s : ℝ) / 4)) with hκdef
+  have hκ0 : (0 : ℝ) ≤ κ := mul_nonneg hC' (Real.exp_pos _).le
+  have hg : HasSum (fun j : ℕ => if m < j then
+      κ * (Real.exp (-a₂ * ((j : ℝ) - (s : ℝ) / 4))
+          + Real.exp (-a₁ * ((j : ℝ) - (s : ℝ) / 4))) else 0)
+      (κ * (Real.exp (-a₂ * (((m : ℝ) + 1) - (s : ℝ) / 4)) / (1 - Real.exp (-a₂))
+           + Real.exp (-a₁ * (((m : ℝ) + 1) - (s : ℝ) / 4)) / (1 - Real.exp (-a₁)))) := by
+    have h := (hE₂.add hE₁).mul_left κ
+    have heq : (fun j : ℕ =>
+        κ * ((if m < j then Real.exp (-a₂ * ((j : ℝ) - (s : ℝ) / 4)) else 0)
+            + (if m < j then Real.exp (-a₁ * ((j : ℝ) - (s : ℝ) / 4)) else 0)))
+        = fun j : ℕ => if m < j then
+            κ * (Real.exp (-a₂ * ((j : ℝ) - (s : ℝ) / 4))
+                + Real.exp (-a₁ * ((j : ℝ) - (s : ℝ) / 4))) else 0 := by
+      funext j; by_cases hj : m < j
+      · simp [hj]
+      · simp [hj]
+    exact heq ▸ h
+  -- pointwise domination on the tail
+  have hfg : ∀ j : ℕ,
+      (if m < j then Real.exp (θ * (j : ℝ)) * (C' * (Gweight t (c * ((j : ℝ) - (s : ℝ) / 4))
+          / Real.sqrt t)) else 0)
+      ≤ (if m < j then
+          κ * (Real.exp (-a₂ * ((j : ℝ) - (s : ℝ) / 4))
+              + Real.exp (-a₁ * ((j : ℝ) - (s : ℝ) / 4))) else 0) := by
+    intro j
+    by_cases hj : m < j
+    · rw [if_pos hj, if_pos hj]
+      set X : ℝ := (j : ℝ) - (s : ℝ) / 4 with hX
+      have hjm : (m : ℝ) + 1 ≤ (j : ℝ) := by exact_mod_cast hj
+      have hXx₀ : x₀ ≤ X := by rw [hX, hx₀def]; linarith
+      have hX0 : (0 : ℝ) < X := lt_of_lt_of_le hx₀pos hXx₀
+      -- Gweight/√t ≤ exp(-γ₂X) + exp(-cX)
+      have hsq1 : (1 : ℝ) ≤ Real.sqrt t := by
+        rw [show (1 : ℝ) = Real.sqrt 1 by simp]
+        exact Real.sqrt_le_sqrt ht1
+      have hdiv : Gweight t (c * X) / Real.sqrt t ≤ Gweight t (c * X) :=
+        div_le_self (Gweight_nonneg _ _) hsq1
+      have hGb : Gweight t (c * X) / Real.sqrt t
+          ≤ Real.exp (-γ₂ * X) + Real.exp (-c * X) := by
+        refine hdiv.trans ?_
+        unfold Gweight
+        have habs : |c * X| = c * X := abs_of_nonneg (by positivity)
+        have hkey : γ₂ * X * t ≤ (c * X) ^ 2 := by
+          have h20X : t ≤ 20 * X := h20.trans (by linarith)
+          have hfac : 0 ≤ c ^ 2 * X * (20 * X - t) :=
+            mul_nonneg (mul_nonneg (sq_nonneg c) hX0.le) (by linarith)
+          rw [hγ₂def]; nlinarith [hfac]
+        have hgauss : Real.exp (-((c * X) ^ 2) / t) ≤ Real.exp (-γ₂ * X) := by
+          apply Real.exp_le_exp.mpr
+          have hge : γ₂ * X ≤ (c * X) ^ 2 / t := (le_div_iff₀ ht0).mpr hkey
+          have hnd : -((c * X) ^ 2) / t = -((c * X) ^ 2 / t) := neg_div _ _
+          rw [hnd, neg_mul]
+          linarith
+        have hexp2 : Real.exp (-|c * X|) ≤ Real.exp (-c * X) :=
+          le_of_eq (by rw [habs, neg_mul])
+        exact add_le_add hgauss hexp2
+      -- fold the tilt into the shifted geometrics
+      have hfold₂ : Real.exp (θ * (j : ℝ)) * Real.exp (-γ₂ * X)
+          = Real.exp (θ * ((s : ℝ) / 4)) * Real.exp (-a₂ * X) := by
+        rw [← Real.exp_add, ← Real.exp_add]
+        congr 1
+        rw [ha₂def, hX]; ring
+      have hfold₁ : Real.exp (θ * (j : ℝ)) * Real.exp (-c * X)
+          = Real.exp (θ * ((s : ℝ) / 4)) * Real.exp (-a₁ * X) := by
+        rw [← Real.exp_add, ← Real.exp_add]
+        congr 1
+        rw [ha₁def, hX]; ring
+      calc Real.exp (θ * (j : ℝ)) * (C' * (Gweight t (c * X) / Real.sqrt t))
+          ≤ Real.exp (θ * (j : ℝ)) * (C' * (Real.exp (-γ₂ * X) + Real.exp (-c * X))) := by
+            apply mul_le_mul_of_nonneg_left _ (Real.exp_pos _).le
+            exact mul_le_mul_of_nonneg_left hGb hC'
+        _ = κ * (Real.exp (-a₂ * X) + Real.exp (-a₁ * X)) := by
+            rw [hκdef]
+            have expand : Real.exp (θ * (j : ℝ)) * (C' * (Real.exp (-γ₂ * X) + Real.exp (-c * X)))
+                = C' * (Real.exp (θ * (j : ℝ)) * Real.exp (-γ₂ * X)
+                      + Real.exp (θ * (j : ℝ)) * Real.exp (-c * X)) := by ring
+            rw [expand, hfold₂, hfold₁]; ring
+    · rw [if_neg hj, if_neg hj]
+  have hfnn : ∀ j : ℕ, 0 ≤ (if m < j then
+      Real.exp (θ * (j : ℝ)) * (C' * (Gweight t (c * ((j : ℝ) - (s : ℝ) / 4))
+          / Real.sqrt t)) else 0) := by
+    intro j
+    by_cases hj : m < j
+    · rw [if_pos hj]
+      exact mul_nonneg (Real.exp_pos _).le
+        (mul_nonneg hC' (div_nonneg (Gweight_nonneg _ _) (Real.sqrt_nonneg _)))
+    · rw [if_neg hj]
+  have hsummf : Summable (fun j : ℕ => if m < j then
+      Real.exp (θ * (j : ℝ)) * (C' * (Gweight t (c * ((j : ℝ) - (s : ℝ) / 4))
+          / Real.sqrt t)) else 0) :=
+    Summable.of_nonneg_of_le hfnn hfg hg.summable
+  refine ⟨hsummf, ?_⟩
+  calc ∑' j : ℕ, (if m < j then
+      Real.exp (θ * (j : ℝ)) * (C' * (Gweight t (c * ((j : ℝ) - (s : ℝ) / 4))
+          / Real.sqrt t)) else 0)
+      ≤ ∑' j : ℕ, (if m < j then
+          κ * (Real.exp (-a₂ * ((j : ℝ) - (s : ℝ) / 4))
+              + Real.exp (-a₁ * ((j : ℝ) - (s : ℝ) / 4))) else 0) :=
+        hsummf.tsum_le_tsum hfg hg.summable
+    _ = κ * (Real.exp (-a₂ * (((m : ℝ) + 1) - (s : ℝ) / 4)) / (1 - Real.exp (-a₂))
+           + Real.exp (-a₁ * (((m : ℝ) + 1) - (s : ℝ) / 4)) / (1 - Real.exp (-a₁))) :=
+        hg.tsum_eq
+
 end TaoCollatz
