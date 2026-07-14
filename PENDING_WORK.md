@@ -1,5 +1,40 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box cont10 (2026-07-14): **`fstar_markov` PROVED (axiom-clean)** — X9-discharged (7.56) Markov bound; X11 crux now has its probabilistic input ready
+
+X8 is fully complete; the sole remaining §7 assembly sorry is X11 `Q_black_edge_case3`
+(`Case3.lean:955`), the (7.53)–(7.67) chain — a multi-lemma wall. This lap advanced it with
+a grounded, self-contained sub-lemma: **`fstar_markov`** (`Case3.lean`, axiom-clean).
+
+**What it does:** `fstar_markov_le` (proved) took Lemma 7.9's conclusion `encExpect ≤ e^{2ε}`
+as an UNPROVED hypothesis `hbound`. `many_triangles_white` (X9, proved) supplies exactly
+that. Composing them discharges the X9 dependency and FIXES the encoding gate `g` (from
+`many_triangles_white`), yielding the hypothesis-free (7.56) input: `∀ ε≤ε₀, R≥1, T, q₀, lam>0,
+∑_v (hold.iid T v)·1[lam ≤ encVal ε R (fold F R g q₀ v)] ≤ e^{2ε}/lam`.
+
+**X11 (`Q_black_edge_case3`) remaining decomposition** (documented plan, sub-lemmas NOT yet
+in `Case3.lean` — decompose next):
+- **X11a `estar_union_le`** (p.54): `∑_{p≤T}` of X10 `triangle_encounter_le` (proved) through
+  `iid_pathSum_law` (proved); the `1/s'` terms sum via `Σ(1+p)^{-2} ≤ 2`, exp terms geometric.
+  "No new analysis" — pure assembly. Most tractable next target.
+- **X11c `few_whites_le`** (7.56 join): `K = ⌈10A/epsBW³⌉` white cap; `R := ⌈(K+(A+3)log10+2)/ε⌉`
+  makes {fold reaches R} ⊆ F∗ via `encFold_banked_le` (proved) + `encVal` ≥ lam=e^{-K+εR};
+  then `fstar_markov` (NOW READY ✓) bounds F∗-mass; the deterministic (7.67) claim
+  `deterministic_encounter_claim` (proved) forces reaches-R on the non-few-white/deep branch.
+- **X11d assembly** = `Q_black_edge_case3` body: `Q_le_damped_iter` (proved) reduces `Q` to the
+  fpDist×iid-walk expectation with white-damping; (7.54) col split (`fpDistPlus_col_tail` at
+  D≈0.05m; `s/4 ≤ 0.79(m+2)` from (7.52) `budget_le_of_mem_triangle`); the few-white branch is
+  killed by the damping (weights ≤ m^A/10^A), the many-encounter branch by X11a+X11c.
+
+**Proved machinery ready for X11** (all axiom-clean): `Q_le_walk_damped`, `Q_le_damped_iter`,
+`iid_pathSum_law`, `fstar_markov_le`, **`fstar_markov`** (new), `deterministic_encounter_claim`
+(X11b), `triangle_encounter_le` (X10), `fpDistPlus_col_tail`, `encFold_banked_le`,
+`encFold_cumWhite`, `budget_le_of_mem_triangle`, `many_triangles_white` (X9).
+
+**NEXT: `estar_union_le` (X11a)** — state it (union-over-p of `bigTriangleSet` big-triangle
+events, bounded via `iid_pathSum_law` + `triangle_encounter_le` + `Σ(1+p)^{-2}`), prove it
+(no new analysis), then `few_whites_le` (X11c) using `fstar_markov`, then the X11d body.
+
 ## Lap D-box cont9 (2026-07-14): **`Q_black_edge_case2` PROVED (axiom-clean)** — X8 Case-2 (Prop 7.8 Case 2) is COMPLETE
 
 The (7.46)–(7.51) Case-2 assembly is a machine-checked theorem

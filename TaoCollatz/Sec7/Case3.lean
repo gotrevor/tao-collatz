@@ -459,6 +459,29 @@ theorem fstar_markov_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ) (ε :
         rw [hEE]
         gcongr
 
+/-- **The (7.56) `F∗` Markov bound, X9-discharged** (paper p.55): the `encExpect ≤
+e^{2ε}` hypothesis of `fstar_markov_le` is exactly Lemma 7.9's conclusion, now a
+theorem (`many_triangles_white`). Composing them fixes the encoding gate `g` (from
+`many_triangles_white`) and eliminates the hypothesis, giving the self-contained
+probabilistic input to the Case-3 assembly: for any tilt `ε ≤ ε₀`, encounter
+budget `R ≥ 1`, horizon `T` and start `q₀`, the walk-mass on which the (7.57)
+integrand `encVal` reaches `lam` is `≤ e^{2ε}/lam`. This is the (7.56) half of the
+`Q_black_edge_case3` join (the deterministic (7.67) claim supplies the other). -/
+theorem fstar_markov :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
+      ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (lam : ℝ), 0 < lam →
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if lam ≤ encVal ε R ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2))
+            then (1 : ℝ) else 0)
+        ≤ Real.exp (2 * ε) / lam := by
+  obtain ⟨ε₀, hε₀pos, hε₀100, g, hmany⟩ := many_triangles_white
+  refine ⟨ε₀, hε₀pos, hε₀100, g, ?_⟩
+  intro ε hε hεε₀ n ξ hξ F R hR T q₀ lam hlam
+  exact fstar_markov_le F R g ε hε.le T q₀
+    (hmany ε hε hεε₀ n ξ hξ F R hR T q₀.1 q₀.2) lam hlam
+
 /-! ### Machinery for the deterministic claim (7.67) -/
 
 /-- The first coordinate of any `hold`-atom is at least `1` (support form of
