@@ -1,5 +1,34 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-17 (2026-07-15, §6 Plancherel bricks): per-freq bound + both (6.11) collision-entropy halves
+
+Build green 3285, all `#print axioms`-clean. Commits `b92d1e5` (dft_condDens_norm_le), `d61dbc3`
+(highfreq_l2_le_collision), + this (tail Parseval). **The per-frequency and Plancherel ingredients of
+the C10 osc bound are now all proved.** New lemmas (`Sec6/MixingFromDecay.lean`):
+- **`dft_condDens_norm_le`**: per-`ξ` product bound `‖𝓕(densC condDens) ξ‖ = ‖head·tail‖ ≤ Cₐ·q⁻ᴬ`
+  (head decay × tail≤1); `tail_indicator_factor_norm_le` (the `≤1` Rényi block).
+- **`highfreq_l2_le_collision`**: `∑_{high ξ}‖𝓕(densC c)ξ‖² ≤ 3ⁿ·∑_Y(c Y)²` (highFreq⊆univ + `dft_parseval`).
+  General for any real density.
+- **`dft_cond_density` GENERALIZED** to an arbitrary index type `ι` (was `Fin n → ℕ`) — the proof
+  never used the index structure; needed because the tail expectation is over `p` coords but the
+  modulus is level `j+p`.
+- **`tailDens` + `tail_factor_dft_eq` + `tail_factor_l2_eq`**: the tail sub-density, its DFT = the
+  `cond_char_factor` tail factor, and the (6.11) tail collision-entropy Parseval
+  `∑_ξ‖tail‖² = 3^(j+p)·∑(tailDens)²`.
+
+### → NEXT — the two genuinely-remaining pieces (both need NEW infra; decompose into named `sorry`s):
+1. **The sharp ℓ²-refinement** `∑_{high ξ}‖𝓕(densC condDens)ξ‖² ≤ D²·∑_ξ‖tail‖²` where `D = Cₐ·(minq)⁻ᴬ`
+   is the UNIFORM head decay over high freq. Needs: (a) `𝓕 = head·tail` per ξ (have: cond_char_factor);
+   (b) `‖head(ξ)‖ ≤ D` UNIFORMLY over `ξ∈highFreq` — the valuation bookkeeping: each high ξ (valuation
+   `j'<n-m`) gives residual level `q ≥ (block size)-(n-m)`, so `q⁻ᴬ ≤ (minq)⁻ᴬ`. This couples ξ's
+   valuation to the `hfreq` decomposition — the messy per-ξ `j',η` construction. THEN
+   `tail_factor_l2_eq` bounds `∑‖tail‖²` = tail collision entropy (needs the Rényi/offset-injectivity
+   bound `∑(tailDens)² ≤ small`, Lemma 6.2 — also new).
+2. **Event assembly** (6.1)–(6.8): reduce raw `osc(syracZ)` to `∑_{k,l} osc(condDens)` via the
+   stopping time `k` + events E/Eₖ/Bₖ/Cₖ,ₗ + triangle/union. Needs the event & stopping-time
+   definitions in Lean (NOT yet present) — the largest remaining infra build. Decompose `fine_scale_mixing`
+   into named `sorry`s here once the event scaffold exists.
+
 ## Lap fruit-16 (2026-07-15, HEAD-block reindex COMPLETE): **`head_factor_eq_charFn` PROVED — head factor IS a `charFn_decay` char sum**
 
 Build green 3276→3285, all new lemmas `#print axioms`-clean. Commits after `06c02f3`. **The entire

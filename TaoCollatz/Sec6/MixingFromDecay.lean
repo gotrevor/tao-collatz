@@ -829,8 +829,8 @@ unfolds `𝓕` to `∑_Y stdAddChar(-(Y·ξ))·g(Y)`; push `Complex.ofReal_tsum`
 swap the finite `∑_Y` with `∑'_a` (`Summable.tsum_finsetSum`, summability from the iid mass
 dominating the bounded observable); collapse `∑_Y stdAddChar(-(Y·ξ))·1_{X=Y}=stdAddChar(-(X·ξ))`
 (`Finset.sum_ite_eq`). -/
-theorem dft_cond_density {n : ℕ} (P : PMF (Fin n → ℕ)) (X : (Fin n → ℕ) → ZMod (3 ^ n))
-    (w : (Fin n → ℕ) → Prop) [DecidablePred w] (ξ : ZMod (3 ^ n)) :
+theorem dft_cond_density {ι : Type*} {n : ℕ} (P : PMF ι) (X : ι → ZMod (3 ^ n))
+    (w : ι → Prop) [DecidablePred w] (ξ : ZMod (3 ^ n)) :
     ZMod.dft (densC n (fun Y =>
         ∑' a, (P a).toReal * (if X a = Y ∧ w a then (1 : ℝ) else 0))) ξ
       = P.cexpect (fun a => ZMod.stdAddChar (-(X a * ξ)) * (if w a then (1 : ℂ) else 0)) := by
@@ -852,7 +852,7 @@ theorem dft_cond_density {n : ℕ} (P : PMF (Fin n → ℕ)) (X : (Fin n → ℕ
         ≤ (P a).toReal * 1 := mul_le_mul_of_nonneg_left hle ENNReal.toReal_nonneg
       _ = (P a).toReal := mul_one _
   -- the inner finite sum over `Y` collapses onto `Y = X a`
-  have hcore : ∀ a : Fin n → ℕ, (∑ Y, ZMod.stdAddChar (-(Y * ξ))
+  have hcore : ∀ a : ι, (∑ Y, ZMod.stdAddChar (-(Y * ξ))
         * ((if X a = Y ∧ w a then (1 : ℝ) else 0 : ℝ) : ℂ))
       = ZMod.stdAddChar (-(X a * ξ)) * (if w a then (1 : ℂ) else 0) := by
     intro a
@@ -902,6 +902,48 @@ theorem dft_condDens_eq_cond_char (j p l : ℕ) (ξ : ZMod (3 ^ (j + p))) :
   dft_cond_density (geomHalf.iid (j + p))
     (fun a => (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p))
     (fun a => pre (fun i => a (Fin.natAdd j i)) p = l) ξ
+
+/-- The **tail sub-density** `Y ↦ P(offset_p = Y ∧ pre = l)` at level `j+p`: the pushforward of the
+level-`p` Syracuse offset (embedded in `ZMod (3^(j+p))`) restricted to the tail-valuation event. Its
+DFT is the tail factor of `cond_char_factor` (`tail_factor_dft_eq`), so its collision entropy
+`∑_Y (tailDens)²` controls the tail `ℓ²`-mass via Parseval (`tail_factor_l2_eq`). -/
+noncomputable def tailDens (j p l : ℕ) : ZMod (3 ^ (j + p)) → ℝ := fun Y =>
+  ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal
+    * (if (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p = Y
+          ∧ pre vt p = l then (1 : ℝ) else 0)
+
+/-- The tail factor of `cond_char_factor` is the DFT of the tail sub-density `tailDens` (general
+`dft_cond_density` at `P = iid geomHalf p`, `X = level-p offset`, `w = {pre = l}`; note the index `p`
+differs from the modulus level `j+p`, which is why `dft_cond_density` is stated for a general index). -/
+theorem tail_factor_dft_eq (j p l : ℕ) (ξ : ZMod (3 ^ (j + p))) :
+    ZMod.dft (densC (j + p) (tailDens j p l)) ξ
+      = (geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+          * (if pre vt p = l then 1 else 0)) :=
+  dft_cond_density (geomHalf.iid p)
+    (fun vt => (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p)
+    (fun vt => pre vt p = l) ξ
+
+/-- **(6.11) tail collision entropy** (C10): the total `ℓ²`-mass of the tail factor over all
+frequencies equals the tail collision entropy `3^(j+p)·∑_Y (tailDens)²`, by Parseval
+(`dft_parseval`) applied through `tail_factor_dft_eq`. This is the Rényi-2-entropy side of the C10
+bound; combined with the head-factor decay it drives `∑_{high ξ}‖𝓕(densC condDens)‖²` small. -/
+theorem tail_factor_l2_eq (j p l : ℕ) :
+    ∑ ξ, ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ)) * (if pre vt p = l then 1 else 0))‖ ^ 2
+      = (3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2 := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have h1 : ∀ ξ : ZMod (3 ^ (j + p)),
+      (geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ)) * (if pre vt p = l then 1 else 0))
+        = ZMod.dft (densC (j + p) (tailDens j p l)) ξ := fun ξ => (tail_factor_dft_eq j p l ξ).symm
+  have hnorm : ∀ Y : ZMod (3 ^ (j + p)),
+      ‖densC (j + p) (tailDens j p l) Y‖ ^ 2 = (tailDens j p l Y) ^ 2 := by
+    intro Y; rw [densC, Complex.norm_real, Real.norm_eq_abs, sq_abs]
+  simp_rw [h1]
+  rw [ZMod.dft_parseval (densC (j + p) (tailDens j p l))]
+  simp_rw [hnorm]
+  push_cast; ring
 
 /-- **Brick (b), the tail/indicator-factor `≤ 1` bound** (C10): the tail character factor from
 `cond_char_factor` — which carries the conditioning indicator `1_{pre vt = l}` — is a character
