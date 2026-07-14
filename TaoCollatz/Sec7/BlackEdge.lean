@@ -282,6 +282,33 @@ theorem edgeWeight_summand_le {A : ℝ} (hA : 0 ≤ A) {m : ℕ} (hm : 2 ≤ m)
     have := mul_le_mul_of_nonneg_left hconc (Real.rpow_nonneg hmpos.le (-A))
     linarith
 
+/-- **First-coordinate `fpDist` MGF bound** (node X8 sub-goal — the genuinely-new
+analytic input on which both the main term and the tail of `fpDist_edgeWeight_le`
+depend).  At the vanishing tilt `θ = 2A/m`, under the (7.52) budget
+`s ≤ m/log²m`, the first-passage column advance `e.1` (mean `≈ s/4`) has MGF
+converging to `1`:
+`∑_e fpDist(s,e)·exp(2A·e.1/m) ≤ 1 + δ` for `m ≥ C_{A,δ}`.
+
+Rationale: `E[exp(θ·e.1)] ≈ 1 + θ·E[e.1] + … ≤ 1 + (2A/m)·(s/4)+O = 1 + A·s/(2m)
++ … ≤ 1 + A/(2log²m) → 1` as `m → ∞`.
+
+ROUTE (renewal, off X6 — same toolbox as `fpDist_height_tail_le_sixteenth_sharp`):
+`fpDist_le_renewal_conv` bounds `fpDist` by the renewal measure `U` convolved with
+one `hold` step over the budget line; the column advance `e.1` accumulates
+mean-4 geometric (`Geom(4)`, first coord of `hold`) increments, whose *count* is
+capped because each renewal step raises the height by `Δl ≥ 3` and the budget is
+`s` (so `≤ ⌈s/3⌉` steps, each visited at most once — `renewal_level_le_one`).
+The per-step column MGF is `tiltZ_hold_fst`, finite and `≤ 1 + 4θ + 32θ²` on
+`|θ| ≤ 1/100` (`tiltZ_hold_fst_le`); the geometric level-sum contributes the
+`s/4`-scale mean.  At `θ = 2A/m ≤ 1/100` (i.e. `m ≥ 200A`) the product over
+`≤ ⌈s/3⌉` levels telescopes to `exp((s/3)·log(1+O(θ))) ≤ exp(O(A·s/m)) → 1`. -/
+theorem fpDist_fst_mgf_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      ∑' e : ℕ × ℤ, (fpDist s e).toReal * Real.exp (2 * A * (e.1 : ℝ) / (m : ℝ))
+        ≤ 1 + δ := by
+  sorry
+
 /-- **The (7.48)/(7.49) weight degradation, Case 2** (paper p.47). With budget
 `s ≤ m/log²m`, the first-passage endpoint's `j`-coordinate concentrates near
 `s/4 ≪ m/log²m` (Lemma 7.7 = `fpDist_location_bound`, node X6), so the average
@@ -289,8 +316,15 @@ depth weight `E[edgeWeight]` exceeds `m^{-A}` only by `exp(O(A·log m/m ·
 m/log²m)) = 1 + O(A/log m) ≤ 1 + δ` once `m ≥ C_{A,δ}` ((7.42) concavity bound
 + Chernoff truncation of `j_{[1,k]} > m/log²m`).
 
-OPEN (node X8): consumes `fpDist_location_bound` (X6) for the Gaussian
-`j`-concentration and the `Geom(4)` tail for the extra hold step. -/
+DECOMPOSITION (2026-07-14): the pointwise bound `edgeWeight_summand_le` reduces
+this to (i) the MGF factor `Z_{fp,fst}(2A/m)·Z_{hold,fst}(2A/m) ≤ 1 + δ/2` and
+(ii) the tail `P(e.1+d.1 > m/2) ≤ (δ/2)·m^{-A}`.  Both depend on the first-coord
+`fpDist` MGF `fpDist_fst_mgf_le` (the hold factors are `tiltZ_hold_fst_le`);
+`Z_{hold,fst}(2A/m) → 1` and the tail is a Chernoff of `fpDist_fst_mgf_le`
+(`e.1 > m/4`) + a `hold` Chernoff (`d.1 > m/4`, `holdSum_halfspace_le`).
+
+OPEN (node X8): reduces to `fpDist_fst_mgf_le` + `edgeWeight_summand_le` (proved)
++ glue (double-`tsum` algebra, no new analytic content). -/
 theorem fpDist_edgeWeight_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
     ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →

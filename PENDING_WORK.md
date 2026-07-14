@@ -15,6 +15,14 @@ region split (no Fubini/summability barrier). Main region `J ≤ m/2` uses the c
 Summing over `d` with `hold`, then over `e` with `fpDist`, the MGF term factors cleanly:
 `∑_e fpDist·edgeWeight ≤ m^{−A}·Z_{fp,fst}(2A/m)·Z_{hold,fst}(2A/m) + P(e₁+d₁ > m/2)`.
 
+**Named src sub-goal added** (`BlackEdge.lean`, compiler-checked disclosed `sorry`):
+`fpDist_fst_mgf_le` — the first-coordinate `fpDist` MGF `∑_e fpDist·exp(2A·e.1/m) ≤ 1+δ`
+for `m ≥ C`. This is THE genuinely-new analytic input; both the main MGF factor AND the tail
+of `fpDist_edgeWeight_le` reduce to it (the tail via a Chernoff of it on `e.1 > m/4` plus a
+`hold` Chernoff on `d.1 > m/4`). Full route in its docstring (renewal via `fpDist_le_renewal_conv`
++ `renewal_level_le_one` level-cap + `tiltZ_hold_fst` per-step column MGF). **This is the crux's
+hardest-first target — attack it next.**
+
 **NEXT for `fpDist_edgeWeight_le` (three remaining pieces, all now routed through the pointwise bound)**:
 1. **MGF factor** `Z_{fp,fst}(2A/m)·Z_{hold,fst}(2A/m) ≤ 1 + δ/2` for `m ≥ C`. `Z_{hold,fst}(θ)`
    at `θ = 2A/m → 0` → 1 (reuse `tiltZ_hold_fst`/`tiltZ_hold_fst_le`, `K = 32` quadratic bound
