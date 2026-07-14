@@ -1937,6 +1937,33 @@ theorem condDensW_osc_le (j p l m : ℕ) (W : (Fin p → ℕ) → Prop) [Decidab
     _ = D * Real.sqrt ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p l W Y) ^ 2) := by
         rw [Real.sqrt_mul (sq_nonneg D), Real.sqrt_sq hD]
 
+/-- **The §6 event-assembly inner loop** (C10, (6.10) telescoped over the conditioning partition).
+For a FINITE family of windowed conditionings `(l i, W i)` (Tao's `(k, l)` index set), the oscillation
+of the summed conditioned density is controlled by the per-conditioning osc bounds:
+`osc(∑ᵢ condDensW) ≤ ∑ᵢ Dᵢ·√(3^(j+p)·∑ (tailDensW)²)`. Pure composition of the proved
+`osc_sum_le` (subadditivity) with `condDensW_osc_le` (the per-conditioning Cauchy–Schwarz/Parseval
+bound). This is the reusable core of the `fine_scale_mixing` assembly: the remaining obligations are
+(i) exhibiting the decomposition `syracZ = ∑ condDensW + error` with tail-measurable events (obl 1),
+(ii) the head uniform-decay `hunif` giving `Dᵢ = Cₐ·q⁻ᴬ` (obl 2), and (iii) the geometric `l`-sum of
+`√(2⁻ˡ)` + the error `L¹` bound (obl 1 tail); the collision entropy inside the `√` is already
+`≤ 2⁻ˡ` (`tailDensW_renyi_le`, obl 3 DONE). -/
+theorem osc_windowed_conditioning_le {ι : Type*} (m j p : ℕ) (hmn : m ≤ j + p)
+    (s : Finset ι) (l : ι → ℕ) (W : ι → (Fin p → ℕ) → Prop) [∀ i, DecidablePred (W i)]
+    (D : ι → ℝ) (hD : ∀ i, 0 ≤ D i)
+    (hunif : ∀ i ∈ s, ∀ ξ ∈ highFreq m (j + p),
+      ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
+          (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ (l i)) * ξ)))‖ ≤ D i) :
+    osc m (j + p) hmn (fun Y => ∑ i ∈ s, condDensW j p (l i) (W i) Y)
+      ≤ ∑ i ∈ s, D i * Real.sqrt ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p (l i) (W i) Y) ^ 2) := by
+  calc osc m (j + p) hmn (fun Y => ∑ i ∈ s, condDensW j p (l i) (W i) Y)
+      ≤ ∑ i ∈ s, osc m (j + p) hmn (condDensW j p (l i) (W i)) :=
+        osc_sum_le m (j + p) hmn s (fun i => condDensW j p (l i) (W i))
+    _ ≤ ∑ i ∈ s, D i * Real.sqrt ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p (l i) (W i) Y) ^ 2) :=
+        Finset.sum_le_sum (fun i hi =>
+          condDensW_osc_le j p (l i) m (W i) hmn (D i) (hD i) (hunif i hi))
+
 
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
