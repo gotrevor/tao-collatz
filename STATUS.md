@@ -111,7 +111,7 @@ axiom-discharge.
 
 ## Pointers
 DIRECTION.md (binding directive; review-lap update 2026-07-14 on top) ·
-BLUEPRINT.md (frozen node ledger §2) · newest `HANDOFF-2026-07-14-2130.md` ·
+BLUEPRINT.md (frozen node ledger §2) · newest baton `HANDOFF-2026-07-14-2117.md` (HEAD `061cc65`) ·
 PENDING_WORK.md (review-lap 2026-07-14 top: C7 integral test attack plan) ·
 papers/literature-review.md (source synthesis) ·
 paper `papers/tao-2019-almost-all-orbits.pdf`.
