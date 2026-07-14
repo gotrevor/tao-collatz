@@ -1397,6 +1397,20 @@ theorem deterministic_encounter_or_bigTriangle {n ξ : ℕ} (F : TriangleFamily 
     obtain ⟨p, hp, t, ht, hmem, hbig⟩ := hE
     exact ⟨p, hp, t, ht, hmem, hbig⟩
 
+/-- **E∗ containment** (the floor bridge): a point in a family triangle of real size
+`≥ 4^A(1+p)³` lies in `bigTriangleSet F ⌊4^A(1+p)³⌋` — because `⌊x⌋ ≤ x ≤ t.2.2`. This
+turns the `deterministic_encounter_or_bigTriangle` right disjunct (real threshold, phase
+point) into a `bigTriangleSet` membership that `estar_union_le` bounds; the phase −1 shift
+is handled by X11d instantiating `estar_union_le` at `j−1`. -/
+theorem bigTriangle_of_encounter {n ξ : ℕ} (F : TriangleFamily n ξ) (A : ℝ) (p : ℕ)
+    (q : ℕ × ℤ) (t : ℕ × ℤ × ℝ) (ht : t ∈ F.T) (hmem : q ∈ triangle t.1 t.2.1 t.2.2)
+    (hbig : (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 ≤ t.2.2) :
+    q ∈ bigTriangleSet F ⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ := by
+  refine ⟨t, ht, ?_, hmem⟩
+  calc ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+      ≤ (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 := Nat.floor_le (by positivity)
+    _ ≤ t.2.2 := hbig
+
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
 /-- **Case 3 of Proposition 7.8** ((7.53)–(7.67), paper pp.48–49 + Lemmas
