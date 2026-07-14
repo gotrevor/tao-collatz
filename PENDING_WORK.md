@@ -1,5 +1,28 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-5 (2026-07-14): **Lemma 1.12 — FIVE cores PROVED, one hard fiber lemma left**
+
+Sustained narrowing of `syracZ_recursion` (`Syracuse/SyracRV.lean`, the last SyracRV stub).
+All the analytic / number-theoretic scaffolding is now machine-checked & axiom-clean (build 3282):
+1. `pre_succ_tail` — `pre a (m+1) = a 0 + pre (tail a) m`.
+2. `syracZ_offset_peel` — `Gₙ₊₁(a) = 2⁻ᵃ⁰·(1 + 3·Ĝ(tail a))` (head-peel of the offset).
+3. `geom_fold` — `∑'_a 2⁻ᵃ·g(a) = (1−2⁻ᴾ)⁻¹·∑_{r<P} 2⁻ʳ·g(r)` for P-periodic g.
+4. `two_pow_period` — `2^{2·3ⁿ} ≡ 1 (mod 3ⁿ⁺¹)` (ℤ-dvd induction, no LTE needed).
+5. `geom_fold_geomHalf` — the Geom(2)-weighted, Icc-form fold the theorem literally consumes.
+
+**ONLY remaining piece = the ZMod fiber lemma** (the genuinely hard core). Precise target:
+```
+∀ a0 x, ∑' w:Fin n→ℕ, (geomHalf.iid n) w * (if x = Gₙ₊₁(Fin.cons a0 w) then 1 else 0)
+      = if (2^a0·x.val)%3 = 1 then syracZ n (((2^a0·x.val−1)/3 : ℕ) : ZMod 3ⁿ) else 0
+```
+Route: (a) `syracZ_offset_peel` ⟹ condition `x = Gₙ₊₁(cons a0 w)` ⟺ `2^{a0}·x = 1 + 3·Ĝ(w)`
+(mult by the unit `2^{a0}`); (b) split on the guard `2^{a0}x ≡ 1 (mod 3)`; (c) when it holds,
+`1+3·Ĝ(w)=2^{a0}x` ⟺ `Ĝ(w) ≡ arg (mod 3ⁿ)` via the `3·ZMod 3ⁿ⁺¹ ≅ ZMod 3ⁿ` iso, and
+`Ĝ(w) mod 3ⁿ = Gₙ(w)` (the castHom truncation from `syracZ_map_cast`), so the w-sum = `syracZ n arg`
+by `map_apply`. This is the ZMod number-theory crux (~100+ lines). Then the FINAL assembly:
+`map_apply` + `tsum_iid_succ_mul` (peel a0) + fiber lemma + guard/arg periodicity (from
+`two_pow_period`) + `geom_fold_geomHalf`. All five cores above plug straight in.
+
 ## Lap fruit-4 (2026-07-14): **§5 `logUnifOdd` normalization PROVED** + **Lemma 1.12 decomposed**
 
 Two advances, both objective-3 fruit, both axiom-clean & build green (3282):
