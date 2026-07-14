@@ -163,6 +163,49 @@ theorem intTest_numeric :
     _ ≤ (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) * y :=
         mul_le_mul_of_nonneg_left h6y (Real.rpow_nonneg (by norm_num) _)
 
+/-- **L¹ normalization / telescope lemma** — the pure real-analysis core of the integral-test dTV
+reduction.  Let `O` be a finite index set (the odd residues mod `M`), `s r ≥ 0` the raw class masses
+`S_r = ∑_{N≡r} 1/N`, and `D = ∑_{r∈O} s r > 0` their total.  If every class mass is within `ε` of a
+COMMON target `t` (this is exactly what the per-class integral test supplies: `|S_r − L/M| ≤ ε`), then
+the L¹ distance between the normalized law `s r / D` and the UNIFORM law `1/|O|` on `O` is
+`≤ 2 ε |O| / D`.
+
+This is the step that turns per-class deviations into a total-variation bound: the shared target `t`
+cancels in the average, so `|s r/D − 1/|O|| = |s r − D/|O||/D` with `|s r − D/|O|| ≤ 2ε` (triangle:
+`ε` from `|s r − t|` and `ε` from `|D/|O| − t| = |avg deviation| ≤ ε`).  It needs neither the value of
+`t` nor the nonnegativity of `s` — only `D = ∑ s` and `D > 0`. -/
+theorem l1_normalize_telescope {ι : Type*} (O : Finset ι) (s : ι → ℝ) (D t ε : ℝ)
+    (hDpos : 0 < D) (hD : D = ∑ r ∈ O, s r)
+    (hdev : ∀ r ∈ O, |s r - t| ≤ ε) :
+    ∑ r ∈ O, |s r / D - ((O.card : ℝ))⁻¹| ≤ 2 * ε * (O.card : ℝ) / D := by
+  by_cases hcard : O.card = 0
+  · rw [Finset.card_eq_zero] at hcard
+    simp [hcard]
+  set c : ℝ := (O.card : ℝ) with hc
+  have hc0 : 0 < c := by rw [hc]; exact_mod_cast Nat.pos_of_ne_zero hcard
+  -- the average `D/c` is within `ε` of the shared target `t`
+  have hDavg : |D / c - t| ≤ ε := by
+    have heq : D / c - t = (∑ r ∈ O, (s r - t)) / c := by
+      rw [hD, Finset.sum_sub_distrib, Finset.sum_const, nsmul_eq_mul, ← hc]
+      field_simp
+    rw [heq, abs_div, abs_of_pos hc0, div_le_iff₀ hc0]
+    calc |∑ r ∈ O, (s r - t)| ≤ ∑ r ∈ O, |s r - t| := Finset.abs_sum_le_sum_abs _ _
+      _ ≤ ∑ _r ∈ O, ε := Finset.sum_le_sum hdev
+      _ = ε * c := by rw [Finset.sum_const, nsmul_eq_mul, ← hc]; ring
+  -- each class mass is within `2ε` of the average
+  have hterm : ∀ r ∈ O, |s r - D / c| ≤ 2 * ε := by
+    intro r hr
+    calc |s r - D / c| ≤ |s r - t| + |t - D / c| := _root_.abs_sub_le _ _ _
+      _ ≤ ε + ε := add_le_add (hdev r hr) (by rw [abs_sub_comm]; exact hDavg)
+      _ = 2 * ε := by ring
+  -- rewrite each normalized deviation and sum
+  have hrw : ∀ r ∈ O, |s r / D - c⁻¹| = |s r - D / c| / D := by
+    intro r _
+    rw [show s r / D - c⁻¹ = (s r - D / c) / D by field_simp, abs_div, abs_of_pos hDpos]
+  rw [Finset.sum_congr rfl hrw, ← Finset.sum_div, div_le_div_iff_of_pos_right hDpos]
+  calc ∑ r ∈ O, |s r - D / c| ≤ ∑ _r ∈ O, 2 * ε := Finset.sum_le_sum hterm
+    _ = 2 * ε * c := by rw [Finset.sum_const, nsmul_eq_mul, ← hc]; ring
+
 /-- **The integral-test error estimate** — the analytic heart of C7, and the ONE remaining new brick.
 For the log-uniform odd window `N_y ∈ [y, y^α]`, the total-variation distance of its reduction mod
 `2^{3n₀}` from the uniform law on odd residues is `≪ 2^{3n₀}/y` (the raw integral-test error, before the
