@@ -1,5 +1,38 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-15 (2026-07-15, HEAD-block novelty): **`syracZ_char_descent` PROVED — the Syracuse consistency descent (the last real novelty of C10)**
+
+Build green 3276, `#print axioms syracZ_char_descent = [propext, Classical.choice, Quot.sound]`.
+Landed in `Sec6/MixingFromDecay.lean` (after `tail_factor_norm_le`). **This is the crux step the
+judge flagged as "most likely to be waved through with a plausible-looking cast" (pass 27) — and it
+is now machine-checked, no cast fudge.** It is Tao's (1.22) applied to a character sum:
+```
+(syracZ (j'+q)).cexpect (Y ↦ stdAddChar(-(Y·(3^{j'}·η))))
+  = (syracZ q).cexpect (Y' ↦ stdAddChar(-(Y'·castHom η)))     -- castHom : ZMod 3^{j'+q} → ZMod 3^q
+```
+The `3^{j'}` factor of a high frequency `ξ = 3^{j'}·2ˡ·ξ'` **descends the whole Syracuse expectation
+by the valuation `j'`**: level `j'+q → q`, frequency `3^{j'}·η → castHom η`. This is exactly why
+`charFn_decay` (needs a 3-coprime freq) applies at level `q` even though the raw freq `3^{j'}·η` is
+divisible by 3. Proof: pointwise `stdAddChar_pow3_descent` (`3^{j'+q}→3^q`, `Y↦castHom Y`), then
+`cexpect_map` + **`syracZ_map_cast`** (the pre-existing (1.22) projection-compatibility lemma,
+`SyracRV.lean:77`) rewrites `(syracZ (j'+q)).map castHom = syracZ q`. No new mathematical debt.
+
+**→ NEXT (assemble `head_factor_eq_charFn`, then the osc bound)**:
+1. **`head_char_descent`** (pointwise, Stage A): the head factor from `cond_char_factor` carries a
+   `3^p` prefactor and the frozen `2⁻ˡ`. For `ξ = 3^{j'}·2ˡ·ξ'`: the head arg
+   `-(3^p·(Fnat_j·2⁻ᵖʳᵉ)·2⁻ˡ)·(3^{j'}·2ˡ·ξ')` → `2⁻ˡ·2ˡ=1` cancels → `-(3^{p+j'}·(Fnat_j·2⁻ᵖʳᵉ)·ξ')`.
+   Descend `3^p` (`stdAddChar_pow3_descent {j:=p,p:=j}`, needs `3^{j+p}↔3^{p+j}` comm) to modulus `3^j`
+   → level-`j` Syracuse offset over `iid j`. Then `syracZ_eq_rev_fnat`+`cexpect_map` → `(syracZ j).cexpect`
+   at freq `3^{j'}·castHom ξ'`.
+2. **`head_factor_eq_charFn`**: chain step-1 into **`syracZ_char_descent`** (j:=j, split j = j'+q,
+   q = j-j') → `(syracZ q).cexpect` at freq `castHom ξ'` → `stdAddChar_mul_eq_eC` → charFn_decay form.
+   ⚠️ the `j = j'+q` split needs care (avoid nat-subtraction: parametrize by `j', q` with head-block
+   size `j = j'+q`, OR feed `syracZ_char_descent` at `{j':=j', q:=j-j'}` with a `j'≤j` hyp).
+3. **`head_factor_norm_le`-via-charFn**: `‖head‖ ≤ Cₐ·q⁻ᴬ`; tail factor (the indicator/≤1 block) via
+   `head_factor_norm_le` (the current `≤1`). Product ⟹ `‖𝓕(densC condDens)ξ‖ ≤ decay` per high ξ.
+4. Rényi ℓ²-mass + Plancherel (6.11) + `osc_le_sqrt_highfreq` on `condDens` closes (6.10); then event
+   assembly (6.1)–(6.8). Decompose into named `sorry`s. Full plan: fruit-14, fruit-8.
+
 ## Lap fruit-14 (2026-07-14, §6 SOURCE-READ — orientation pinned + factor bounds): decisive route correction
 
 Build green 3285 (commit `c195d29`: `tail_factor_norm_le` + `head_factor_norm_le`, both axiom-clean).

@@ -551,6 +551,40 @@ theorem tail_factor_norm_le (A : ℝ) (hA : 0 < A) :
   rw [tail_factor_eq_charFn]
   exact hC p hp _ hζ
 
+/-- **The Syracuse consistency descent** (C10 head-block novelty, Tao's (1.22) applied to a
+character sum at a `3`-divisible frequency). For a level-`(j'+q)` Syracuse character sum at the
+frequency `3^{j'}·η`, the `3^{j'}` factor descends the whole expectation to the **level-`q`**
+Syracuse character sum at the reduced frequency `castHom η`. This is the exact step Tao performs
+when the decay block `Fₙ₋ₖ₋₁ mod 3^{n-k-j-1}` collapses to a lower-level Syracuse random variable:
+extract `3ʲ'` from the high frequency `ξ = 3ʲ'·2ˡ·ξ'`, and the level drops by the valuation `j'`.
+Proof: pointwise `stdAddChar_pow3_descent` drops the modulus `3^{j'+q}→3^q` (turning `Y` into
+`castHom Y`); then `cexpect_map` + `syracZ_map_cast` (the (1.22) projection compatibility) rewrites
+the pushforward `(syracZ (j'+q)).map castHom` as `syracZ q`. This is why `charFn_decay` (which needs
+a `3`-coprime frequency) applies at level `q` even though the raw frequency `3^{j'}·η` is divisible
+by `3`. -/
+theorem syracZ_char_descent {j' q : ℕ} (η : ZMod (3 ^ (j' + q))) :
+    (syracZ (j' + q)).cexpect (fun Y => ZMod.stdAddChar (-(Y *
+        ((3 : ZMod (3 ^ (j' + q))) ^ j' * η))))
+      = (syracZ q).cexpect (fun Y' => ZMod.stdAddChar (-(Y' *
+          ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) η))) := by
+  haveI : NeZero (3 ^ q) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have hpt : ∀ Y : ZMod (3 ^ (j' + q)),
+      ZMod.stdAddChar (-(Y * ((3 : ZMod (3 ^ (j' + q))) ^ j' * η)))
+        = ZMod.stdAddChar (-(ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) Y
+            * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) η)) := by
+    intro Y
+    rw [show -(Y * ((3 : ZMod (3 ^ (j' + q))) ^ j' * η))
+        = (3 : ZMod (3 ^ (j' + q))) ^ j' * (-(Y * η)) by ring,
+      stdAddChar_pow3_descent, map_neg, map_mul]
+  rw [show (fun Y : ZMod (3 ^ (j' + q)) => ZMod.stdAddChar (-(Y *
+        ((3 : ZMod (3 ^ (j' + q))) ^ j' * η))))
+      = (fun Y : ZMod (3 ^ (j' + q)) => ZMod.stdAddChar
+          (-(ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) Y
+            * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) η)))
+      from funext hpt,
+    ← syracZ_map_cast (Nat.le_add_left q j'),
+    cexpect_map _ _ _ (fun Y => le_of_eq (norm_stdAddChar _))]
+
 /-- **Brick (b), the head-factor `≤ 1` bound** (C10): the head character factor is a character
 expectation, hence has norm `≤ 1` (`cexpect_norm_le` + `norm_stdAddChar`). The low-entropy factor. -/
 theorem head_factor_norm_le {j p : ℕ} (ξ : ZMod (3 ^ (j + p))) (l : ℕ) :

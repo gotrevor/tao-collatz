@@ -95,36 +95,47 @@ sees that).
   `B ≤ 250`/`Y ≤ 200` envelope). `sep = 100·ln10 ≈ 230.26` vs box `≈ 158.4`.
   🔔 **ε-sweep tripwire RE-ARMED**: any future `epsBW` change fires a full
   re-ratification (list in `judge/pass-18.md`; it has fired and discharged twice).
-- 🔓 **ZERO open suspensions.**
-- **C8 (§5) is the last un-pinned node** — ratify vs pp.22–25 when statements land.
-- 🗂️ **The `ManyTriangles.lean` split is STILL queued** (now ~5,500 lines) — queued for
-  **seven laps**. It is now **objective 3** in DIRECTION, not a fallback. Pure moves;
-  verify via sorry census + name-based axiom runs.
+- 🔓 **ZERO open suspensions.** Zero `JUDGE-FLAG:`s outstanding.
+- 🟡 **C8 (§5) is the last un-pinned node — and it is now BLOCKING.** C9 `stabilization` lives
+  in §5, directly downstream of C10 on the critical path. **Pin it vs pp.22–25 before C9 work
+  starts**, or a lap will be proving toward an unratified target.
+- 🗂️ **The `ManyTriangles.lean` split is DROPPED from the directive (pass 27).** It was ordered
+  and skipped for **eight consecutive laps** — correctly every time, because a crux outranks
+  hygiene. Re-ordering it a ninth time would be a fake order. It is off the critical path, and
+  splitting the 5,519-line file that holds the X9/X10 pins *during* the crux is churn we do not
+  want. Moved to post-§6 mop-up, batched with the 8 new `mul_le_mul_left'` deprecations in
+  `Case3.lean`. 📌 *If you order something three times and it never happens, the order is wrong
+  — not the worker.*
 
-## 🌙 IN FLIGHT RIGHT NOW — overnight run #2 (2026-07-14 ~03:10 → ~10:45)
+## 🌙 IN FLIGHT RIGHT NOW — overnight run #2 (2026-07-14 ~03:10 → ~11:27)
 
 `lean-treadmill tao-collatz --max-duration 7h --effort high --model opus --review-every 5`
-(Trevor fired it; the judge never does.) `DIRECTION.md` carries **three objectives**:
+(Trevor fired it; the judge never does.) **Pass 27 judged laps 1–6 mid-run** (53 commits,
+`4f51542..8505bd4`) and rotated `DIRECTION.md` to a single objective:
 
-1. **Close the two §7 sorries** — `few_white_mass_le` (E∗ term + assembly, HANDOFF-h steps
-   3–5), then `col_tail_mass_le`. When both land, `Q_black_edge_case3 → Q_black_edge →
-   prop_7_8` go axiom-clean and **§7 monotonicity is DONE**.
-2. **The X10/X10a repair** — ✅ already discharged, first lap (`4f51542`).
-3. **🗂️ Burn down the fruit** — the `ManyTriangles` split, the 7 spine stubs, pin C8.
-   **This is an ORDER, not a fallback.** *Last night's lesson*: the fruit sat in an
-   "unstick ladder" reachable only when stuck; the box was never stuck, so it correctly
-   touched **none** of it. Fixed — but **verify it actually got done this time.**
+**🎯 THE ONE OBJECTIVE: prove C10 `fine_scale_mixing` (Prop 1.14, §6).** Not a new analytic
+kernel — both hard ingredients are proved and clean (the density-general CS/Parseval bridge
+`osc_le_sqrt_highfreq`, and `charFn_decay`). C10 is the §6 **conditioning assembly**. Bricks
+d/a/b all landed overnight and are judge-verified clean. **What remains** (per DIRECTION):
+1. **[the last real novelty] tail factor ⟹ `charFn_decay`** — reindex the tail char at modulus
+   `3^(j+p)` down to the level-`p` char at `ξ'`. ⚠️ *The step most likely to be waved through
+   with a plausible-looking cast. Read it against pp.28–31; do not just check its axioms.*
+2. **osc bound for `condDens`**; 3. **conditioning events + reassembly** ((6.2)–(6.10)).
 
-Plus **HARD RAIL 6** (new): *never EDIT a ratified pin — not to weaken, not to strengthen,
-not to generalize.* When a pin blocks a lap and no judge is awake, it writes a
-**`JUDGE-FLAG:`** in `PENDING_WORK.md` + its handoff and **moves on**. Adding a lemma
-*beside* a pin is always allowed (that is how the `*_rpow` engines were born). Grep for
-`JUDGE-FLAG:` first thing — it means a lap hit a wall it was forbidden to route around.
+**HARD RAIL 6, EXTENDED (pass 27)**: *never EDIT a ratified pin — not to weaken, not to
+strengthen, not to generalize* — **and that now covers the two OPEN crux statements**
+(`fine_scale_mixing`, `stabilization`), which are in the differ's watch list. When a pin blocks
+a lap and no judge is awake, it writes a **`JUDGE-FLAG:`** in `PENDING_WORK.md` + its handoff
+and **moves on**. Adding a lemma *beside* a pin is always allowed (that is how the `*_rpow`
+engines were born), and decomposing *below* a crux into named sub-`sorry`s is encouraged. Grep
+for `JUDGE-FLAG:` first thing — it means a lap hit a wall it was forbidden to route around.
 
-**FIRST THING IN THE MORNING — the boundary pass (pass 27):**
+**THE BOUNDARY PASS (pass 28) — the recipe, in order:**
 0. **Spin a pinned worktree** — the box is live in the shared tree:
-   `lean-create-worktree tao-collatz ~/src/tao-collatz-judge27 --start-point <HEAD>`
-   (CoW `.lake`, builds in ~2 min). Run every axiom check *there*.
+   `lean-create-worktree ~/src/tao-collatz ~/src/tao-collatz-judgeNN --start-point <HEAD>`
+   (note: **absolute path** for the base, CoW `.lake`, builds in ~2 min). Run every axiom check
+   *there*. ⚠️ A `judge/pass-NN` worktree may already exist from the prior pass — reuse it
+   (`git-safe -C <wt> checkout --detach <pin>`), don't fight it.
 1. `lean-treadmill status tao-collatz --commits 30` — read the night's commits.
 1b. **📖 READ THE LAPS' OWN HANDOFFS** — `ls -t HANDOFF-*.md | head -5`, plus
    `PENDING_WORK.md`'s top. **Do this BEFORE you rule on anything they did.** ⚠️ *This step
@@ -141,20 +152,28 @@ not to generalize.* When a pin blocks a lap and no judge is awake, it writes a
 2. **`./tools/tao_stmt_diff.py <last-judged> <HEAD>`** — **statement erosion is the #1
    unattended risk; it fired for real on pass 26.** A restricted theorem compiles green,
    keeps clean axioms, and never moves the sorry census. The differ is the ONLY instrument
-   that sees it. It takes the revs as argv and watches **19 pinned names across all files**
-   (so a relocation reports as a *move*, not a deletion).
+   that sees it. It takes the revs as argv and watches **29 names across 13 files** (so a
+   relocation reports as a *move*, not a deletion). ⚠️ **`fine_scale_mixing` (C10) is the
+   name to look at first** — it is the statement the box is under the most pressure to
+   quietly make provable.
 3. Dated `#print axioms` on everything it claims. **Worker claims are hypotheses.**
-4. ⚠️ **Verify the `Cthr ≥ 10^27` bridge** if `few_white_mass_le` landed (see above). This
-   is the one step most likely to be silently assumed.
+4. ⚠️ **Read the C10 tail-factor reindex against pp.28–31** (the `3^(j+p)` → level-`p` char
+   at `ξ'` step). By the box's own account it is C10's last real novelty, which makes it the
+   step most likely to be waved through with a plausible-looking cast. *This slot is where
+   pass 27 put the `Cthr` bridge — and the bridge checked out. Keep using the slot.*
 5. `lean-sorry TaoCollatz` — census; a count *rise* is honest decomposition (good), a crux
-   in `wip/` is fabricated progress (bad).
-6. **Did objective 3 happen?** `git log --oneline -- TaoCollatz/Syracuse TaoCollatz/Sec5
-   TaoCollatz/Sec6 TaoCollatz/Basic` and `wc -l TaoCollatz/Sec7/ManyTriangles.lean`.
-7. `/lean-review` over the whole range. (Standing nit: 7 local `maxHeartbeats` bumps in
-   Sec7 lack `-- HEARTBEAT:` comments. Trevor: low risk, mop up in post.)
-8. Record `judge/pass-27.md`, refresh Live judge state + Campaign log, rotate
+   in `wip/` is fabricated progress (bad). Baseline after pass 27: **4**.
+6. **Is C8 pinned yet?** (`grep -rn RATIFY-C8 TaoCollatz/`) — it blocks C9.
+7. `/lean-review` over the whole range. (Standing nits: 7 pre-existing `maxHeartbeats` bumps
+   in Sec7 lack `-- HEARTBEAT:` comments, + 8 `mul_le_mul_left'` deprecations in `Case3.lean`.
+   Trevor: low risk, mop up in post.)
+8. Record `judge/pass-NN.md`, refresh Live judge state + Campaign log, rotate
    `DIRECTION.md`'s CURRENT DIRECTIVE, **and add any newly-ratified statement to the
    differ's `PINNED_NAMES` in the same pass** (that list *is* the guard).
+   📌 **And check the guard still points at the frontier.** Pass 27's finding: the differ's
+   19 names were all §7 + `Statement` — correct for pass 26, *obsolete the moment §7 closed*,
+   leaving the two live sorries unwatched. **A guard that only covers completed nodes has
+   stopped working.** When the frontier moves, move the guard with it, in the same pass.
 
 ## Hard rules (host/human constraints, not repo facts)
 
@@ -196,5 +215,24 @@ reading the reasoning.** Verify with machines, but *understand* with the handoff
 worker's stated reasoning is evidence, and skipping it turns a sound-route-wrong-move into
 a rail violation you'd wrongly revert. Machine-check everything; read before you rule.
 
-*Judge passes 1–23 by Ren/Fable; 24–26 by Ren/Opus. Updated at the pass-26 boundary +
-addendum, 2026-07-14 (overnight run #2 in flight).*
+## The two lessons pass 27 bought
+
+**1. A guard that only covers completed nodes has stopped working.** Pass 26 fixed the differ's
+blind spot by growing its list to 19 names — every one of them §7 or `Statement`. That was
+right *that day*. But the moment §7 closed, the guard was pointing at the part of the proof
+nobody was editing any more, and was blind to the two live sorries — the statements a lap is
+under the most pressure to quietly make provable. **The guard must follow the frontier, and
+"ratify ⟹ watch" is only half the rule; the other half is "when the frontier moves, move the
+guard."** Watching an un-ratified statement is not a category error — it is how you *see* the
+frontier move.
+
+**2. A judge-supplied numeral is a hypothesis too.** Pass 26 handed the box `Cthr ≥ 10^27` as
+the constant that closes the depth-`m+1` bridge, and wrote it into the handoff in bold. It is
+**wrong** — the largeness is consumed at `800 ≤ m^0.1`, and `(10^27)^0.1 ≈ 501 < 800`. The box
+worked out that it needed `10^30` and used that instead. The judge's arithmetic got checked by
+the worker, which is exactly the right direction for it to fail in — but *only* because the
+proof was kernel-checked rather than accepted on the judge's say-so. **Hold your own numbers to
+the standard you hold theirs.**
+
+*Judge passes 1–23 by Ren/Fable; 24–27 by Ren/Opus. Updated at the pass-27 boundary,
+2026-07-14 (overnight run #2 still in flight, until ~11:27).*
