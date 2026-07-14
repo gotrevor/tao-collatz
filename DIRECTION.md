@@ -21,17 +21,15 @@ Two facts set it, and the second one is the subtle one:
 `./tools/blueprint_audit.py` prints them, with their blocking order:
 
 ```
-C7   passes (def), passTime (def), passLoc (def)
-     └─ blocks C6, C8 · ✅ deps met — ATTACKABLE NOW
 C8   — nothing claimed —
      └─ blocks C6, C9 · ⛔ PROOF needs C7 · 📌 statement PINNABLE NOW (their defs exist)
 ```
 
-⚠️ **C7 renders GREEN in the blueprint web and it is NOT DONE.** It carried a statement `\leanok`
-while its `\lean{}` named only three *defs*; its actual content, the estimate **(1.19)**
-`P(T_x(N_y) = ∞) ≪ x^{-c}`, was **nowhere in Lean**. Fixed 2026-07-14 (now `\notready`), and the
-audit gates on it (**FALSE STATEMENT-GREEN**). *If you were routing around C7 because it looked
-finished: it isn't.*
+✅ **C7 is no longer orange — the judge PINNED it** (`first_passage_nonescape`, a real theorem with a
+`sorry`). It had been a `lemma` node whose `\lean{}` named three *defs* and which carried a statement
+`\leanok`, so it rendered **GREEN while its content — the estimate (1.19) — was nowhere in Lean**.
+Split into `C7d` (the defs, done) + `C7` (the lemma, pinned). ⚠️ **And it is NOT low risk:** re-rated
+`low / 5–10 / 85%` → **`medium / 10–18 / 75%`**. The old badge had been earned by the defs.
 
 **2. STATEMENT-deps ≠ PROOF-deps.** C8's `\uses{C2, C5, C7}` is a dependency of its **proof**.
 C8's *statement* (Prop 5.2 / (5.8)) is written in terms of the first-passage **definitions**
@@ -118,21 +116,36 @@ It has been ordered pinned since pass 27 and never has been. **De-risk it before
 
 ---
 
-### 🥉 OBJECTIVE 3 — C7 (§5 pp.20–21): **prove (1.19) — the input C8's proof consumes**
+### 🥉 OBJECTIVE 3 — C7: **prove (1.19). It is PINNED for you — the brick is the INTEGRAL TEST.**
 
-**C7 has three definitions and NO theorem** (`Sec5/FirstPassage.lean:21–28`). ⚠️ **It renders GREEN
-in the blueprint web and it is not done** — that badge was a false statement-`\leanok`, fixed
-2026-07-14. What it owes:
+✅ **The judge pinned it (2026-07-14).** `first_passage_nonescape` (`Sec5/FirstPassage.lean`) is now a
+real Lean theorem carrying a `sorry`, stated **character-identically to the first conjunct of
+`stabilization`** — which is where this content had been absorbed. It is in the census. Ratified
+against p.20.
 
-> **(1.19)**: `P(T_x(N_y) = ∞) ≪ x^{-c}` — the first-passage time is finite but for `x^{-c}`.
+> **(1.19)**: `P(T_x(N_y) = ∞) ≪ x^{-c}` — a log-uniform odd `N_y ∈ [y, y^α]` fails ever to descend
+> to `≤ x` only with probability `≪ x^{-c}`.
 
-- **Both dependencies are green** (C5 = Prop 1.9 + Lemma 4.1, axiom-clean; S2 = the step laws).
-  Nothing is in your way. Diff 2, 5–10 laps, 85% — the cheapest real node left, and **two** nodes
-  (C8, C6) wait on it.
-- **State (1.19) verbatim against pp.20–21, mark it `RATIFY-C7`,** then prove it — a geometric
-  first-passage tail off the valuation law you already have.
-- **Prefer the form objective 2 asked for**, if they differ. C8 is the consumer; the consumer's need
-  is the spec.
+⚠️ **RE-RATED: `low / 5–10 / 85%` → `medium / 10–18 / 75%`.** The old badge was earned by the three
+*definitions* bundled into the node; the lemma alone had never been costed. **Do not treat this as
+the easy one.**
+
+**The route (Tao pp.20–21) — every step but the first runs over PROVED machinery:**
+
+1. ⚠️ **THE INTEGRAL TEST — the only new brick, and the whole risk of the node.**
+   `dTV(N_y mod 2^{n'}, unifOddMod n') ≪ 2^{-n'}` for the log-uniform window, at `n' = 3n₀`.
+   **It is exactly the hypothesis `valuation_dist` (Prop 1.9 / C5) takes** — which is *why* nothing
+   downstream can proceed without it. Tao: *"a routine application of the integral test"* (with
+   plenty of room to spare). It does not exist in Lean. **Build it first; it is the node.**
+2. Prop 1.9 (C5 ✅ axiom-clean) ⟹ `dTV(valVec N n₀, geomHalf.iid n₀) ≪ 2^{-c·n₀}` — (5.4).
+3. Lemma 2.2 (S3 ✅ axiom-clean). **`geomHalf_tail_bound` is TWO-SIDED** (`P(||Geom(2)ₙ| − 2n| ≥ λ)`),
+   so it already covers this **lower** tail: `P(|ā^{(n₀)}| ≤ 1.9·n₀) ≪ 2^{-c·n₀} ≪ x^{-c}` — (5.5).
+4. **Descent arithmetic**: if `|ā^{(n₀)}| > 1.9·n₀` then by (1.5)/(1.7)
+   `Syr^{n₀}(N_y) ≤ 3^{n₀}·2^{-1.9n₀}·x^{α³} + O(3^{n₀}) = O(x^{0.99}) ≤ x`, so `T_x(N_y) ≤ n₀ < ∞`.
+   Here `n₀ := ⌊log x / (10·log 2)⌋` (5.1), i.e. `2^{n₀} ≍ x^{0.1}`.
+
+🔒 **`stabilization` is WATCHED — do not touch it.** C9 will *cite* `first_passage_nonescape`; adding
+lemmas beside a pin is always allowed, editing the pin is not.
 
 ---
 
@@ -156,8 +169,9 @@ With (1.19) in hand, discharge C8's named sorries. **Then** C9: Lemma 5.3 (`c_n(
 
 ### 🚧 Forbidden drift
 
-- **Do NOT start C8, C7 or C9 while C10's single sorry is open.** C10 is one tail bound from complete
-  and it is upstream of all of them. Finish it.
+- **Do NOT start C8, C7 or C9 while C10's tail sorries are open.** `globalGood ⊆ mainEvent` is
+  PROVED and the (6.3) union bound is in; `error_l1_high_bound` is down to **3 named tail sorries**
+  (`MixingError.lean`). C10 is upstream of everything. **Finish it.**
 - **Do NOT grind C7 first because it is easy.** Cheap-first buys no information. The charter is
   *de-risk breadth-first*: **pin the 75% node, then feed it.**
 - **Do NOT try to CLOSE C8 before C7 exists.** Pin it, route it, probe it, and stop there. Its proof
@@ -171,10 +185,21 @@ With (1.19) in hand, discharge C8's named sorries. **Then** C9: Lemma 5.3 (`c_n(
   paper's (6.8) — it provably cannot close for ANY `C`), `epsBW = 1/10^1000`. All three are judge
   rulings backed by machine-checked lemmas. If one seems wrong: **`JUDGE-FLAG:`**, do not adjust.
 
-### 🕳️ Seam discipline — state remaining work as **"N sorries + M seams."**
-Baseline today: **4 sorries + 2 seams** (C10 `error_l1_high_bound`, C9 `stabilization`, 2 headline
-stubs; seams **C7** = defs only, **C8** = nothing at all). *The sorry census counts only the holes
-someone wrote down.* Never report "4 sorries" alone — it understates the distance to done.
+### 🗺️ BLUEPRINT RULES ARE BINDING — read `blueprint_rules.md`. "Seam" is retired vocabulary.
+
+**One node, one claim. Pinning a node means writing its Lean statement with `sorry`.** A **green
+border** on the dep-graph means *the statement is in Lean*, never *this is finished*; the **fill** is
+the proof. An **orange** border means the statement is not written yet — and **an orange node is the
+only work the sorry census cannot see.**
+
+- **Report remaining work as "N sorries + M orange nodes."** Today: **7 sorries + 1 orange** (C8).
+- **Never set a `\leanok` yourself** — statement or proof. Ratification is the judge's, and a
+  `\leanok` over a node with no theorem is a **FALSE GREEN** that now **fails the build**
+  (`./tools/blueprint_audit.py`).
+- **The fix for an orange node is not a report — it is a PIN.** That is objective 2.
+
+*(We spent months calling an orange node a "seam" and building apparatus to detect what the graph was
+already rendering in a color. Retired. Detail: `blueprint_architecture.md`.)*
 
 ### ✅ What pass 29 verified (so you don't re-open it)
 `lRange_hbudget` ✅ clean · `osc_mainHigh_bound` ✅ clean (**the `A′`-absorption at `C_A = 30` is

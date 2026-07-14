@@ -678,6 +678,61 @@ theorem not_globalGood_pointwise_le (A : ℝ) (n : ℕ) (a : Fin n → ℕ) :
         _ ≤ t1 + ∑ i : Fin n, g2 i := le_add_of_nonneg_right hSt2
         _ ≤ (t1 + ∑ i : Fin n, g2 i) + ∑ r ∈ Finset.Icc 1 n, g3 r := le_add_of_nonneg_right hSt3
 
+/-! ### Shared tail-bound machinery for the three per-event families -/
+
+/-- **Explicit-constant Geom(2) tail bound** (the `c = 1/400`, `C = 2` witness behind the
+existential `geomHalf_tail_bound`).  `caConst_tail_exponent` (`A+3 ≤ caConst/400`) is tuned to this
+`1/400`, so the concrete constant is what the per-event bounds consume. -/
+theorem geomHalf_tail_bound_explicit (n : ℕ) (lam : ℝ) (hlam : 0 ≤ lam) :
+    (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0)
+      ≤ 2 * Gweight (1 + n) (1 / 400 * lam) :=
+  iidSum_nat_tail_of_quad geomHalf 2 (by norm_num)
+    (fun t hlo hhi => le_trans (tiltZ_geomHalf_le_quad hlo hhi)
+      (ENNReal.ofReal_le_ofReal (by nlinarith [sq_nonneg t]))) n lam hlam
+
+/-- For `t ≤ x` (so `x ≥ t > 0`), the Gaussian weight collapses to twice a pure exponential:
+`exp(−x²/t) ≤ exp(−x)` since `x²/t ≥ x`, and `exp(−|x|) = exp(−x)`. -/
+theorem Gweight_le_two_exp (t x : ℝ) (ht : 0 < t) (hx : t ≤ x) :
+    Gweight t x ≤ 2 * Real.exp (-x) := by
+  have hx0 : 0 < x := lt_of_lt_of_le ht hx
+  have hgauss : Real.exp (-(x ^ 2) / t) ≤ Real.exp (-x) := by
+    apply Real.exp_le_exp.mpr
+    rw [neg_div, neg_le_neg_iff, le_div_iff₀ ht]
+    nlinarith [hx, hx0.le]
+  have habs : Real.exp (-|x|) = Real.exp (-x) := by rw [abs_of_pos hx0]
+  rw [Gweight, habs]; linarith [hgauss]
+
+/-- `exp(−k·log n) = n^{−k}` for `n > 0`. -/
+theorem exp_neg_mul_log_eq_rpow (n : ℕ) (k : ℝ) (hn : 0 < (n : ℝ)) :
+    Real.exp (-(k * Real.log (n : ℝ))) = (n : ℝ) ^ (-k) := by
+  rw [Real.rpow_def_of_pos hn]; congr 1; ring
+
+/-- `Real.log n` eventually exceeds any bound `L` (take `n ≥ exp L`). -/
+theorem log_ge_of_large (L : ℝ) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → L ≤ Real.log (n : ℝ) := by
+  refine ⟨⌈Real.exp L⌉₊ + 1, fun n hn => ?_⟩
+  have h1 : Real.exp L ≤ (n : ℝ) :=
+    le_trans (Nat.le_ceil _) (by exact_mod_cast (by omega : ⌈Real.exp L⌉₊ ≤ n))
+  calc L = Real.log (Real.exp L) := (Real.log_exp L).symm
+    _ ≤ Real.log (n : ℝ) := Real.log_le_log (Real.exp_pos L) h1
+
+/-- **Constant absorption**: a `κ·n^{−β}` bound with `β` at least a full unit above `A+2` is
+eventually below `n^{−(A+2)}`, since `n^{β−(A+2)} ≥ n → ∞` swallows the constant `κ`. -/
+theorem const_rpow_absorb (A κ β : ℝ) (hκ : 0 < κ) (hβ : A + 3 ≤ β) :
+    ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → κ * (n : ℝ) ^ (-β) ≤ (n : ℝ) ^ (-(A + 2)) := by
+  refine ⟨⌈κ⌉₊ + 1, fun n hn => ?_⟩
+  have hn1 : 1 ≤ n := by omega
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+  have hnpos : (0 : ℝ) < (n : ℝ) := by linarith
+  have hκn : κ ≤ (n : ℝ) := le_trans (Nat.le_ceil κ) (by exact_mod_cast (by omega : ⌈κ⌉₊ ≤ n))
+  have hnle : (n : ℝ) ≤ (n : ℝ) ^ (β - (A + 2)) := by
+    calc (n : ℝ) = (n : ℝ) ^ (1 : ℝ) := (Real.rpow_one _).symm
+      _ ≤ (n : ℝ) ^ (β - (A + 2)) := Real.rpow_le_rpow_of_exponent_le hnR (by linarith)
+  have hκle : κ ≤ (n : ℝ) ^ (β - (A + 2)) := le_trans hκn hnle
+  calc κ * (n : ℝ) ^ (-β) ≤ (n : ℝ) ^ (β - (A + 2)) * (n : ℝ) ^ (-β) :=
+        mul_le_mul_of_nonneg_right hκle (Real.rpow_nonneg hnpos.le _)
+    _ = (n : ℝ) ^ (-(A + 2)) := by
+        rw [← Real.rpow_add hnpos]; congr 1; ring
+
 /-- **(6.3) family G1 — the total-mass deficit.** `P(pre a n ≤ caThr)` is exponentially small: the
 prefix sum `pre a n` has mean `2n` while `caThr ≈ n·log₂3 ≈ 1.585 n`, a linear deviation.  Via
 `iidMap_pre` + `geomHalf_tail_bound` at `λ = 2n − caThr ≈ 0.415 n`, dominated by `n^{-(A+2)}`.
@@ -693,7 +748,75 @@ polynomially small: `a i` is a single Geom(2) draw (`iid_map_coord`, mean 2), an
 theorem g2_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → ∀ i : Fin n,
     (∑' a : Fin n → ℕ, if (a i : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ) then 0
       else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) := by
-  sorry
+  classical
+  have hC3000 : 3000 ≤ caConst A := by unfold caConst; nlinarith [le_max_right A 0]
+  have hCpos : 0 < caConst A := by linarith
+  have hCexp : A + 3 ≤ caConst A / 200 := by
+    have h := caConst_tail_exponent A; linarith
+  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A (4 * Real.exp (1 / 200)) (caConst A / 200)
+    (by positivity) hCexp
+  obtain ⟨nL, hL⟩ := log_ge_of_large 1
+  refine ⟨max (max nκ nL) 1, fun n hn i => ?_⟩
+  have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
+  have hnκle : nκ ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn
+  have hnLle : nL ≤ n := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn
+  have hnpos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
+  have hlogn1 : (1 : ℝ) ≤ Real.log (n : ℝ) := hL n hnLle
+  set lam : ℝ := 2 * caConst A * Real.log (n : ℝ) - 2 with hlamdef
+  have hlamge : (800 : ℝ) ≤ lam := by rw [hlamdef]; nlinarith [hC3000, hlogn1]
+  have hlam0 : (0 : ℝ) ≤ lam := by linarith
+  -- marginal rewrite: coordinate i has law geomHalf = iidSum geomHalf 1
+  rw [masked_tsum_map (geomHalf.iid n) (fun a => a i)
+        (fun x : ℕ => (x : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ)),
+      iid_map_coord geomHalf n i, ← iidSum_one geomHalf]
+  set g : ℕ → ℝ := fun b => ((iidSum geomHalf 1) b).toReal with hgdef
+  have hg0 : ∀ b, 0 ≤ g b := fun b => ENNReal.toReal_nonneg
+  have hgsum : Summable g := ENNReal.summable_toReal (iidSum geomHalf 1).tsum_coe_ne_top
+  have hmask1 : ∀ Q : ℕ → Prop, ∀ _ : DecidablePred Q,
+      Summable (fun b => if Q b then (0 : ℝ) else g b) := fun Q _ =>
+    Summable.of_nonneg_of_le (fun b => by by_cases h : Q b <;> simp [h, hg0 b])
+      (fun b => by by_cases h : Q b <;> simp [h, hg0 b]) hgsum
+  have hmask2 : ∀ Q : ℕ → Prop, ∀ _ : DecidablePred Q,
+      Summable (fun b => if Q b then g b else 0) := fun Q _ =>
+    Summable.of_nonneg_of_le (fun b => by by_cases h : Q b <;> simp [h, hg0 b])
+      (fun b => by by_cases h : Q b <;> simp [h, hg0 b]) hgsum
+  -- dominate the "good"-mask by the two-sided-deviation mask
+  have hdom : (∑' b : ℕ, if (b : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ) then 0 else g b)
+      ≤ ∑' b : ℕ, if lam ≤ |(b : ℝ) - 2 * (1 : ℕ)| then g b else 0 := by
+    refine Summable.tsum_le_tsum (fun b => ?_) (hmask1 _ _) (hmask2 _ _)
+    by_cases h : (b : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ)
+    · rw [if_pos h]
+      split
+      · exact hg0 b
+      · exact le_refl 0
+    · rw [if_neg h]
+      push_neg at h
+      have hb : lam ≤ |(b : ℝ) - 2 * (1 : ℕ)| := by
+        have : lam < (b : ℝ) - 2 * (1 : ℕ) := by push_cast; rw [hlamdef]; linarith
+        exact le_of_lt (lt_of_lt_of_le this (le_abs_self _))
+      rw [if_pos hb]
+  -- tail bound + Gweight collapse
+  have hxge : (2 : ℝ) ≤ 1 / 400 * lam := by linarith [hlamge]
+  have htail : (∑' b : ℕ, if lam ≤ |(b : ℝ) - 2 * (1 : ℕ)| then g b else 0)
+      ≤ 4 * Real.exp (-(1 / 400 * lam)) := by
+    refine le_trans (geomHalf_tail_bound_explicit 1 lam hlam0) ?_
+    have hGw : Gweight (1 + (1 : ℕ)) (1 / 400 * lam) ≤ 2 * Real.exp (-(1 / 400 * lam)) :=
+      Gweight_le_two_exp (1 + (1 : ℕ)) (1 / 400 * lam) (by norm_num) (by push_cast; linarith [hxge])
+    calc 2 * Gweight (1 + (1 : ℕ)) (1 / 400 * lam)
+        ≤ 2 * (2 * Real.exp (-(1 / 400 * lam))) := by
+          exact mul_le_mul_of_nonneg_left hGw (by norm_num)
+      _ = 4 * Real.exp (-(1 / 400 * lam)) := by ring
+  -- exp → rpow
+  have hexpval : Real.exp (-(1 / 400 * lam)) = Real.exp (1 / 200) * (n : ℝ) ^ (-(caConst A / 200)) := by
+    have hlamval : (1 / 400 : ℝ) * lam = caConst A / 200 * Real.log (n : ℝ) - 1 / 200 := by
+      rw [hlamdef]; ring
+    rw [hlamval, show -(caConst A / 200 * Real.log (n : ℝ) - 1 / 200)
+          = 1 / 200 + -(caConst A / 200 * Real.log (n : ℝ)) from by ring,
+      Real.exp_add, exp_neg_mul_log_eq_rpow n (caConst A / 200) hnpos]
+  calc (∑' b : ℕ, if (b : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ) then 0 else g b)
+      ≤ 4 * Real.exp (-(1 / 400 * lam)) := le_trans hdom htail
+    _ = (4 * Real.exp (1 / 200)) * (n : ℝ) ^ (-(caConst A / 200)) := by rw [hexpval]; ring
+    _ ≤ (n : ℝ) ^ (-(A + 2)) := hκ n hnκle
 
 /-- **(6.3) family G3 — the per-scale suffix-window deficit.** For each `r ∈ [1,n]`,
 `P(sufSum a r < 2r − C_A(√(r log n)+log n))` is polynomially small: `sufSum a r` is a length-`r`

@@ -1,5 +1,8 @@
 # Judge seat — start here 🪷⚖️
 
+## 1. Read `judge/JUDGE.md` — the standing brief (durable: rules, instruments, lessons).
+## 2. Then the newest timestamped handoff below — the live state (what changed, what to hunt).
+
 **The live handoff is the newest `judge/HANDOFF-JUDGE-<YYYY-MM-DD-HHMM>.md`.**
 
 ```bash

@@ -1,5 +1,16 @@
 # Repository agent policy
 
+## Blueprint rules — read `blueprint_rules.md` before touching a node
+
+**One node, one claim. Pinning a node means writing its Lean statement with `sorry`.**
+A green border on the dep-graph means *the statement is in Lean*, never *this is finished*;
+an **orange** border means the statement is not written yet, and an orange node is the **only**
+work the sorry census cannot see. So **report remaining work as "N sorries + M orange nodes."**
+**Never set a `\leanok` yourself** — ratification is the judge's, and a `\leanok` over a node with
+no theorem is a FALSE GREEN that fails the build (`./tools/blueprint_audit.py`).
+
+Full rules: `blueprint_rules.md` (brief, binding) · reasoning + how-to: `blueprint_architecture.md`.
+
 The reviewer-facing blueprint and campaign governance are coordinator-owned.
 Proof workers must treat the following paths as read-only:
 
