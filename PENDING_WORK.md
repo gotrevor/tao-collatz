@@ -1,5 +1,32 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box cont11 (2026-07-14): **`fpDist_walk_eq_fpDistPlus` PROVED (axiom-clean)** — the (7.53)→(7.54) walk→fpDistPlus bridge for X11
+
+Second grounded X11 sub-lemma landed (`Case3.lean`, axiom-clean). Building on `iid_pathSum_law`,
+it converts the `Q_le_damped_iter` walk expectation into `fpDistPlus s p`-marginal form — the
+exact law `triangle_encounter_le` (X10) bounds. Statement:
+`∑_e fpDist s e · ∑_v (hold.iid T v)·g(e + pathSum v p) = ∑_x fpDistPlus s p x · g x` (p ≤ T).
+Proof: `iid_pathSum_law` (prefix marginal = `iidSum hold p`) composed with the bind/map
+unfolding of `fpDistPlus` (`PMF.tsum_bind_mul`, `PMF.tsum_map_mul`); `congr 1` + `simpa` handles
+the beta-reduction. This is the conversion X11a (`estar_union_le`) and X11d both need to apply X10.
+
+**X11 (`Q_black_edge_case3`, `Case3.lean`) remaining — two probabilistic inputs now READY:**
+`fstar_markov` (7.56 Markov ✓) and `fpDist_walk_eq_fpDistPlus` (7.54 bridge ✓), plus X10
+`triangle_encounter_le`, `deterministic_encounter_claim` (7.67), `Q_le_damped_iter` (7.53), all
+proved. Decomposition to build next:
+- **X11a `estar_union_le`** (p.54): the E∗ union bound. Via `fpDist_walk_eq_fpDistPlus` (NOW ✓)
+  turn each per-`p` big-triangle event into `∑_x fpDistPlus s p x·1_{bigTriangleSet F s'}`, bound
+  by `triangle_encounter_le` at `s'=⌈4^A(1+p)³⌉`; sum over `p` via `Σ(1+p)^{-2} ≤ 2` (the `1/s'`
+  terms) + geometric (`exp` terms) ⟹ E∗-mass `≤ C·A²·4^{-A}`. No new analysis. **Next target.**
+- **X11c `few_whites_le`** (7.56 join): `fstar_markov` (✓) + `deterministic_encounter_claim` (✓);
+  `K=⌈10A/epsBW³⌉`, `R:=⌈(K+(A+3)log10+2)/ε⌉`, {reaches R} ⊆ F∗ via `encFold_banked_le`.
+- **X11d body** = `Q_black_edge_case3`: `Q_le_damped_iter` + (7.54) col split (`fpDistPlus_col_tail`,
+  `budget_le_of_mem_triangle`) + few-white damping (weights ≤ m^A/10^A) + X11a + X11c.
+
+**NEXT: `estar_union_le` (X11a).** Read `bigTriangleSet` def + the paper (7.54)–(7.55) union
+structure; state the E∗-mass bound over horizon `T`; prove via `fpDist_walk_eq_fpDistPlus` +
+`triangle_encounter_le` + `Σ(1+p)^{-2}`.
+
 ## Lap D-box cont10 (2026-07-14): **`fstar_markov` PROVED (axiom-clean)** — X9-discharged (7.56) Markov bound; X11 crux now has its probabilistic input ready
 
 X8 is fully complete; the sole remaining §7 assembly sorry is X11 `Q_black_edge_case3`

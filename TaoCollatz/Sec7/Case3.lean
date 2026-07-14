@@ -402,6 +402,30 @@ theorem iid_pathSum_law :
       rw [show 1 + q = q + 1 from by omega, iidSum_succ, PMF.tsum_bind_mul]
       exact tsum_congr fun d => by rw [PMF.tsum_map_mul]
 
+/-- **The `fpDistPlus` prefix marginal, in walk form** (paper (7.53)→(7.54) bridge):
+integrating an observable `g` of the position `e + (pathSum v p)` against
+`fpDist s ⊗ hold.iid T` (the first-passage endpoint `e` plus the `p`-step prefix of
+the `T`-step Hold walk, `p ≤ T`) equals integrating `g` against the convolution
+marginal `fpDistPlus s p`. This is precisely the law whose big-triangle-hitting
+probability `triangle_encounter_le` (X10) bounds, so it is the conversion that turns
+the `Q_le_damped_iter` walk expectation into `fpDistPlus`-form for the (7.54)–(7.55)
+E∗ union bound. Composes `iid_pathSum_law` (prefix marginal = `iidSum hold p`) with
+the `bind`/`map` unfolding of `fpDistPlus`. -/
+theorem fpDist_walk_eq_fpDistPlus (s : ℕ) {T p : ℕ} (hp : p ≤ T) (g : ℕ × ℤ → ℝ≥0∞) :
+    ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v * g (e + pathSum v p)
+      = ∑' x : ℕ × ℤ, fpDistPlus s p x * g x := by
+  have hRHS : ∑' x : ℕ × ℤ, fpDistPlus s p x * g x
+      = ∑' e : ℕ × ℤ, fpDist s e * ∑' d : ℕ × ℤ, iidSum hold p d * g (e + d) := by
+    have hdef : (∑' x : ℕ × ℤ, fpDistPlus s p x * g x)
+        = ∑' x : ℕ × ℤ,
+            ((fpDist s).bind (fun e => (iidSum hold p).map fun w => e + w)) x * g x := rfl
+    rw [hdef, PMF.tsum_bind_mul]
+    exact tsum_congr fun e => by rw [PMF.tsum_map_mul]
+  rw [hRHS]
+  refine tsum_congr fun e => ?_
+  congr 1
+  simpa only [] using iid_pathSum_law T p hp (fun d => g (e + d))
+
 /-! ### The proved (7.56) ingredients -/
 
 open scoped Classical in
