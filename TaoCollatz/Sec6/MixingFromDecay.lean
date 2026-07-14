@@ -111,7 +111,45 @@ theorem condAvgC_eq_lowSum (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) :
     condAvgC m n hmn Y
       = (3 ^ n : ℂ)⁻¹ * ∑ ξ ∈ lowFreq m n,
           ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y) := by
-  sorry
+  classical
+  have h3 : (3 : ℂ) ≠ 0 := by norm_num
+  -- `3^{m-n}·3^{n-m} = 1`.
+  have hcancel : (3 : ℂ) ^ ((m : ℤ) - (n : ℤ)) * (3 : ℂ) ^ (n - m) = 1 := by
+    rw [← zpow_natCast (3 : ℂ) (n - m), ← zpow_add₀ h3, Nat.cast_sub hmn,
+      show (m : ℤ) - (n : ℤ) + ((n : ℤ) - (m : ℤ)) = 0 from by ring, zpow_zero]
+  -- Substitute Fourier inversion into the fiber average and swap the sums.
+  have hfib : ∑ Y' ∈ fiber m n hmn Y, densC n Y'
+      = (3 ^ n : ℂ)⁻¹ * ∑ ξ, ZMod.dft (densC n) ξ
+          * ∑ Y' ∈ fiber m n hmn Y, ZMod.stdAddChar (ξ * Y') := by
+    calc ∑ Y' ∈ fiber m n hmn Y, densC n Y'
+        = ∑ Y' ∈ fiber m n hmn Y, (3 ^ n : ℂ)⁻¹
+            * ∑ ξ, ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y') :=
+          Finset.sum_congr rfl (fun Y' _ => densC_inversion n Y')
+      _ = (3 ^ n : ℂ)⁻¹ * ∑ Y' ∈ fiber m n hmn Y,
+            ∑ ξ, ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y') := by rw [Finset.mul_sum]
+      _ = (3 ^ n : ℂ)⁻¹ * ∑ ξ,
+            ∑ Y' ∈ fiber m n hmn Y, ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y') := by
+          rw [Finset.sum_comm]
+      _ = (3 ^ n : ℂ)⁻¹ * ∑ ξ, ZMod.dft (densC n) ξ
+            * ∑ Y' ∈ fiber m n hmn Y, ZMod.stdAddChar (ξ * Y') := by
+          refine congrArg _ (Finset.sum_congr rfl (fun ξ _ => ?_))
+          rw [Finset.mul_sum]
+  -- Collapse the coset character sum: only low frequencies survive.
+  have hcoset : ∀ ξ : ZMod (3 ^ n),
+      ZMod.dft (densC n) ξ * ∑ Y' ∈ fiber m n hmn Y, ZMod.stdAddChar (ξ * Y')
+        = if ξ ∈ lowFreq m n then
+            (3 : ℂ) ^ (n - m) * (ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y)) else 0 := by
+    intro ξ
+    rw [coset_char_sum m n hmn ξ Y]
+    split_ifs with h <;> ring
+  rw [condAvgC, hfib, Finset.sum_congr rfl (fun ξ (_ : ξ ∈ Finset.univ) => hcoset ξ),
+    Finset.sum_ite_mem_eq, ← Finset.mul_sum]
+  rw [show (3 : ℂ) ^ ((m : ℤ) - (n : ℤ)) * ((3 ^ n : ℂ)⁻¹
+        * ((3 : ℂ) ^ (n - m) * ∑ ξ ∈ lowFreq m n,
+            ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y)))
+      = ((3 : ℂ) ^ ((m : ℤ) - (n : ℤ)) * (3 : ℂ) ^ (n - m)) * ((3 ^ n : ℂ)⁻¹
+        * ∑ ξ ∈ lowFreq m n, ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y)) from by ring,
+    hcancel, one_mul]
 
 /-- **The Fourier-inversion crux** (Remark 1.18): the `3ᵐ`-scale deviation is the high-frequency
 inverse DFT. The conditional average is the projection onto the low frequencies (`condAvgC_eq_lowSum`),
