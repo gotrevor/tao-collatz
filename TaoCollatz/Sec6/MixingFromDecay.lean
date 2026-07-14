@@ -402,6 +402,35 @@ theorem stdAddChar_eq_eC {n : ℕ} (j : ZMod (3 ^ n)) :
   push_cast
   ring_nf
 
+/-- **Character level-descent** (C10 brick b, the tail-reindex crux): multiplying the argument of
+the standard additive character by `3ʲ` drops the modulus from `3^(j+p)` down to `3^p`:
+`stdAddChar_{3^(j+p)}(3ʲ·w) = stdAddChar_{3^p}(w mod 3^p)`. This is the arithmetic that turns the
+tail character factor — after pulling the `3ʲ` out of a high frequency `ξ = 3ʲ·2ˡ·ξ'` — into a
+genuine level-`p` Syracuse character sum, on which `charFn_decay` (Prop 1.17) delivers the decay.
+Proof: lift `w` to its `ℕ` value `m`, fold the LHS argument into a single `natCast (3ʲ·m)`, push
+both characters through `stdAddChar_coe` to `exp(2πi·(·)/·)`, and cancel `3ʲ/3^(j+p) = 1/3^p`. -/
+theorem stdAddChar_pow3_descent {j p : ℕ} (w : ZMod (3 ^ (j + p))) :
+    ZMod.stdAddChar ((3 : ZMod (3 ^ (j + p))) ^ j * w)
+      = ZMod.stdAddChar (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) w) := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  haveI : NeZero (3 ^ p) := ⟨pow_ne_zero _ (by norm_num)⟩
+  set m : ℕ := w.val with hmdef
+  have hw : w = ((m : ℕ) : ZMod (3 ^ (j + p))) := (ZMod.natCast_zmod_val w).symm
+  rw [hw]
+  have hL : (3 : ZMod (3 ^ (j + p))) ^ j * ((m : ℕ) : ZMod (3 ^ (j + p)))
+      = (((3 ^ j * m : ℕ)) : ZMod (3 ^ (j + p))) := by push_cast; ring
+  have hR : ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p))
+        ((m : ℕ) : ZMod (3 ^ (j + p))) = ((m : ℕ) : ZMod (3 ^ p)) := by rw [map_natCast]
+  rw [hL, hR,
+     show (((3 ^ j * m : ℕ)) : ZMod (3 ^ (j + p)))
+         = (((3 ^ j * m : ℕ) : ℤ) : ZMod (3 ^ (j + p))) by push_cast; ring,
+     show ((m : ℕ) : ZMod (3 ^ p)) = (((m : ℕ) : ℤ) : ZMod (3 ^ p)) by push_cast; ring,
+     ZMod.stdAddChar_coe, ZMod.stdAddChar_coe]
+  congr 1
+  push_cast
+  rw [pow_add]
+  field_simp
+
 /-- **Brick (b), step 3 — the conditional character factorization** (C10). Fix the cut
 `n = j + p` and the level `l`. Conditioning the character sum on the tail-valuation event
 `{pre(tail) = l}` makes the split character factor into a **pure head expectation** times a
