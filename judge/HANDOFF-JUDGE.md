@@ -47,16 +47,25 @@ sees that).
 
 - **TWELVE verified nodes** (dated runs): S3, X1, X2, X3, X5, X6, **X8** (new, pass 26),
   X9, X10*, C2, C5 (+ X4/X7 files sorry-free). 🏆 Both pinnacle kernels (X9, X10) are proved.
-- 🚨 **X10 + X10a ratifications are REVOKED (pass 26)** — `61f8e80` rewrote their deep
-  hypothesis `m/log²m < s` → `m^0.8 < s`. Still **proved and axiom-clean**, but Tao p.51
-  states Lemma 7.10 with `s > m/log²m` verbatim and the hypotheses are **incomparable**
-  (`m^0.8 ≤ m/log²m` only for `m ≳ 10^15.5`), so X10 no longer *is* Lemma 7.10. Blueprint
-  `\leanok` is down. **The repair is mandated in DIRECTION** (keep the four new lemmas as
-  `*_rpow` engines; restore the two pins as corollaries — `m ≥ 10^27` via `log_sq_le_rpow`,
-  `m < 10^27` trivial). **Check whether the box did it; re-ratify on byte-identity with
-  `e08871e` (the differ reports it).** This is the ONE open obligation outside the sorries.
+- ✅ **The X10/X10a deviation is CLOSED** (pass-26 finding → discharged same day, `4f51542`).
+  An unattended lap rewrote the deep hypothesis of the Lemma-7.10 pins `m/log²m < s` →
+  `m^0.8 < s`, calling it a "generalization." It is not one — the hypotheses are
+  **incomparable** (they cross at `m ≈ 10^15.5`; below that the new form covers *fewer* `s`)
+  and Tao p.51 states Lemma 7.10 with `s > m/log²m` verbatim. Repair = **split, don't
+  revert**: the four weaker-hypothesis lemmas live on as `*_rpow` **engines**, both pins were
+  **restored character-identically** and re-proved as corollaries. Differ: **19/19
+  byte-identical**; dated runs on both pins + all four engines clean. **Ratifications
+  RESTORED, `\leanok` back up.** Full story: `judge/pass-26.md` §2 + §4b.
 - **§7 now hinges on exactly TWO sorries**: `few_white_mass_le` (7.56) + `col_tail_mass_le`
   (both `Case3.lean`). Repo total 11 (2 crux + 2 headline stubs + 7 spine).
+- ⚠️ **THE ONE UNVERIFIED STEP — check this first.** The Case-3 consumer sits at depth
+  `m+1`, and `m/log²m < s ⟹ (m+1)/log²(m+1) < s` **genuinely fails** (`x/log²x` increasing;
+  fractional-part counterexample). The chain closes only by threading **`Cthr ≥ 10^27`**, so
+  that `(m+1)^0.8 ≤ 2·m^0.8 ≤ m/log²m < s` (≈65× slack). **That bridge is still UNPROVED** —
+  it lives inside `few_white_mass_le`, the sorry being assembled right now. It closes on the
+  judge's arithmetic, which is *not* the same as closing in Lean. It is exactly the kind of
+  step an assembly quietly assumes. **Do not accept `few_white_mass_le` without seeing the
+  `Cthr` largeness discharged.**
 - 🔒 **HARD RAIL 6 (new)**: *never EDIT a ratified pin — not to weaken, not to strengthen,
   not to generalize; flag the judge.* The 19-name pinned set is listed inline in DIRECTION
   and enforced by `tools/tao_stmt_diff.py` (which now takes revs as argv and searches
@@ -79,35 +88,54 @@ sees that).
   `B ≤ 250`/`Y ≤ 200` envelope). `sep = 100·ln10 ≈ 230.26` vs box `≈ 158.4`.
   🔔 **ε-sweep tripwire RE-ARMED**: any future `epsBW` change fires a full
   re-ratification (list in `judge/pass-18.md`; it has fired and discharged twice).
-- 🔓 **ZERO open suspensions** (first time since pass 13).
-- **Sorry trail: 14.** 5 crux, all now Case-2/Case-3 assembly:
-  `fpDist_fst_mgf_le`, `fpDist_edgeWeight_le`, `fpDist_white_exit`,
-  `Q_black_edge_case2` (BlackEdge), `Q_black_edge_case3` (Case3). Plus 9 spine stubs.
-  Remaining §7 work is **precedented volume, not novelty**.
+- 🔓 **ZERO open suspensions.**
 - **C8 (§5) is the last un-pinned node** — ratify vs pp.22–25 when statements land.
-- 🗂️ **The `ManyTriangles.lean` split is STILL queued** (5,204 lines) — the one
-  directive the box keeps ignoring. Pure moves; verify via sorry census + name-based
-  axiom runs.
+- 🗂️ **The `ManyTriangles.lean` split is STILL queued** (now ~5,500 lines) — queued for
+  **seven laps**. It is now **objective 3** in DIRECTION, not a fallback. Pure moves;
+  verify via sorry census + name-based axiom runs.
 
-## 🌙 IN FLIGHT RIGHT NOW (2026-07-13 ~22:00 → 06:37)
+## 🌙 IN FLIGHT RIGHT NOW — overnight run #2 (2026-07-14 ~03:10 → ~10:45)
 
-**A treadmill is running unattended overnight** (opus/high, review-every-5, ~11 laps,
-`until 06:37`). `DIRECTION.md` carries an **overnight clause**: the "no spine leaves"
-ban is LIFTED, an **unstick ladder** (2 failed attempts on a target ⟹ MOVE), and
-**hard rails** — never weaken a statement to make it provable (decompose or leave it
-sorried), never touch `Statement.lean`'s two headline sorries, never park a crux sorry
-in `wip/`, never self-declare a node verified.
+`lean-treadmill tao-collatz --max-duration 7h --effort high --model opus --review-every 5`
+(Trevor fired it; the judge never does.) `DIRECTION.md` carries **three objectives**:
 
-**FIRST THING IN THE MORNING — the boundary pass (pass 26):**
-1. `lean-treadmill status tao-collatz --commits 20` — read the night's commits.
-2. **`sandbox tao_stmt_diff.py`** (point `REV_OLD/REV_NEW` at the night's range) —
-   **statement erosion is the #1 unattended risk.** A weakened theorem compiles green.
-3. Dated `#print axioms` on everything it claims. Its claims are hypotheses.
-4. `lean-sorry TaoCollatz` — census; check that any count *rise* is honest decomposition
-   (good) and not a crux parked in `wip/` (fabricated progress).
-5. `/lean-review` over the whole range.
-6. Record `judge/pass-26.md`, refresh Live judge state + Campaign log, rotate
-   `DIRECTION.md`'s CURRENT DIRECTIVE.
+1. **Close the two §7 sorries** — `few_white_mass_le` (E∗ term + assembly, HANDOFF-h steps
+   3–5), then `col_tail_mass_le`. When both land, `Q_black_edge_case3 → Q_black_edge →
+   prop_7_8` go axiom-clean and **§7 monotonicity is DONE**.
+2. **The X10/X10a repair** — ✅ already discharged, first lap (`4f51542`).
+3. **🗂️ Burn down the fruit** — the `ManyTriangles` split, the 7 spine stubs, pin C8.
+   **This is an ORDER, not a fallback.** *Last night's lesson*: the fruit sat in an
+   "unstick ladder" reachable only when stuck; the box was never stuck, so it correctly
+   touched **none** of it. Fixed — but **verify it actually got done this time.**
+
+Plus **HARD RAIL 6** (new): *never EDIT a ratified pin — not to weaken, not to strengthen,
+not to generalize.* When a pin blocks a lap and no judge is awake, it writes a
+**`JUDGE-FLAG:`** in `PENDING_WORK.md` + its handoff and **moves on**. Adding a lemma
+*beside* a pin is always allowed (that is how the `*_rpow` engines were born). Grep for
+`JUDGE-FLAG:` first thing — it means a lap hit a wall it was forbidden to route around.
+
+**FIRST THING IN THE MORNING — the boundary pass (pass 27):**
+0. **Spin a pinned worktree** — the box is live in the shared tree:
+   `lean-create-worktree tao-collatz ~/src/tao-collatz-judge27 --start-point <HEAD>`
+   (CoW `.lake`, builds in ~2 min). Run every axiom check *there*.
+1. `lean-treadmill status tao-collatz --commits 30` — read the night's commits.
+2. **`./tools/tao_stmt_diff.py <last-judged> <HEAD>`** — **statement erosion is the #1
+   unattended risk; it fired for real on pass 26.** A restricted theorem compiles green,
+   keeps clean axioms, and never moves the sorry census. The differ is the ONLY instrument
+   that sees it. It takes the revs as argv and watches **19 pinned names across all files**
+   (so a relocation reports as a *move*, not a deletion).
+3. Dated `#print axioms` on everything it claims. **Worker claims are hypotheses.**
+4. ⚠️ **Verify the `Cthr ≥ 10^27` bridge** if `few_white_mass_le` landed (see above). This
+   is the one step most likely to be silently assumed.
+5. `lean-sorry TaoCollatz` — census; a count *rise* is honest decomposition (good), a crux
+   in `wip/` is fabricated progress (bad).
+6. **Did objective 3 happen?** `git log --oneline -- TaoCollatz/Syracuse TaoCollatz/Sec5
+   TaoCollatz/Sec6 TaoCollatz/Basic` and `wc -l TaoCollatz/Sec7/ManyTriangles.lean`.
+7. `/lean-review` over the whole range. (Standing nit: 7 local `maxHeartbeats` bumps in
+   Sec7 lack `-- HEARTBEAT:` comments. Trevor: low risk, mop up in post.)
+8. Record `judge/pass-27.md`, refresh Live judge state + Campaign log, rotate
+   `DIRECTION.md`'s CURRENT DIRECTIVE, **and add any newly-ratified statement to the
+   differ's `PINNED_NAMES` in the same pass** (that list *is* the guard).
 
 ## Hard rules (host/human constraints, not repo facts)
 
@@ -128,5 +156,21 @@ in `wip/`, never self-declare a node verified.
 - `Statement.lean` is the trusted base; its two sorries are the headline stubs, not
   holes to fix.
 
-*Judge passes 1–23 by Ren/Fable; 24–25 by Ren/Opus. Updated at the pass-25 boundary,
-2026-07-13.*
+## The one lesson pass 26 bought (do not re-learn it)
+
+**A green build cannot see a statement deviation.** A restricted theorem compiles. A
+weakened theorem compiles. A theorem that has quietly stopped matching the paper compiles,
+keeps a clean `#print axioms`, and never budges the sorry census — because `#print axioms`
+certifies the **proof**, never the **statement**.
+
+The only instruments are (a) a character-diff against a ratified baseline and (b) a human
+reading the PDF. **Both are yours.** And the differ only sees names that are *in its list* —
+pass 26's near-miss was `encounter_apex_proximity` being rewritten with the tool silent,
+because nobody had added it. **Ratify a statement ⟹ add it to `PINNED_NAMES` that same pass.**
+
+Corollary for directives: *"never weaken a statement"* is not a sufficient rail. A worker
+that believes it is **strengthening** will sail straight through it. Say **"never edit a
+ratified pin"** and give it somewhere to go instead (`JUDGE-FLAG:` + move on).
+
+*Judge passes 1–23 by Ren/Fable; 24–26 by Ren/Opus. Updated at the pass-26 boundary +
+addendum, 2026-07-14 (overnight run #2 in flight).*
