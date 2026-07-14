@@ -26,12 +26,44 @@ correct"; extract a pure-ℕ helper `∀ v, 3^n∣v*3^m ↔ 3^{n-m}∣v` so `3^n
 (3) `Complex.norm_real` (not `Complex.norm_ofReal`) + `Real.norm_eq_abs`. (4) `Finset.sum_ite_mem_eq`
 (additive of `prod_ite_mem_eq`) for `∑ if i∈s then f else 0 = ∑_{i∈s} f`.
 
-**NEXT (sole remaining C10 sorry)**: `highfreq_l2_le` — `∑_{highFreq m n}‖𝓕(densC n)ξ‖² ≤ C·m^{-A}`
-(∀A>0). This is the DECAY side: for `ξ=3ʲη` (`η` coprime to 3, `j<n-m`), `syracZ_map_cast` projects
-`ĉ_n(3ʲη)=ĉ_{n-j}(η)` to level `n-j≥m+1`, where Prop 1.17 `charFn_decay` (PROVED, axiom-clean) bounds
-`|ĉ_{n-j}(η)|≤C·(n-j)^{-A}≤C·m^{-A}`; per-level Parseval bounds the mode count, geometric sum over
-`j<n-m` scales. Need the `𝓕(densC n) ξ` ↔ `(syracZ n).cexpect (Y↦eC(-(ξ.val·Y.val)/3ⁿ))` sign bridge.
-Then C10 is DONE and only C9 (`stabilization`, §5) + headlines remain.
+### 🚨 ROUTE FINDING (refuted sub-approach — this is the lap's main result on the crux)
+
+`highfreq_l2_le` (∑_{highFreq}‖𝓕(densC n)ξ‖² ≤ C·m^{-A} for raw syracZ) is **FALSE** — DELETED.
+Proof it's false: by Parseval (`sum_norm_sq_devC_eq`), `∑_{highFreq m n}‖ĉ_n(ξ)‖² = Q(n)−Q(m)` where
+`Q(ℓ):=3^ℓ·∑_Y syracZ(ℓ,Y)² = 3^ℓ·P(X=X' at level ℓ)`. An **exact DP computation** of syracZ
+(`scripts/syracZ_highfreq_l2.py`, no deps) gives, for m=1: n=2→0.476, n=3→0.938, n=4→1.402,
+n=5→1.867 — i.e. `∑_high‖ĉ‖²` GROWS ≈ 0.46·(n−m), NOT ≤ C·m^{-A}. (The `=Q(n)−Q(m)` identity
+matches to full precision, so the Parseval reformulation is confirmed.)
+
+**Consequence**: `osc_le_sqrt_highfreq` (PROVED, axiom-clean, and CORRECT) is hopelessly lossy on the
+RAW density: `osc ≤ √(0.46·n)` → ∞. The Cauchy–Schwarz-on-raw-syracZ route CANNOT prove Prop 1.14.
+`fine_scale_mixing` reverted to a documented `sorry` (was resting on the false lemma).
+
+**The real route (Tao §6, paper lines 1920–2200, pdf pp.28–31)**: apply Cauchy–Schwarz to the
+CONDITIONED density `g_{n,k,l}(Y) = P((Xₙ=Y) ∧ Eₖ ∧ Bₖ ∧ Cₖ,ₗ)`, NOT raw syracZ. Steps:
+1. Reduce to `0.9n ≤ m ≤ n` (telescoping + triangle for general m; (6.1)).
+2. Condition on event `E` = the sub-Gaussian bounds (6.2) on all partial sums `a_{[i,j]}` (Lemma 2.2
+   + union bound ⟹ `P(Ē) ≪ n^{-A-1}`); triangle-inequality it off.
+3. Stopping time `k` (unique with `a_{[1,k]} ≤ n·log3/log2 − Cₐ²log n < a_{[1,k+1]}`), then the level
+   `l = a_{[1,k+1]}`; union-bound over `k` (≈ n·log3/(2log2)) and `l` (a `Cₐ²log n`-window).
+4. **Independent split** (1.5)/(1.26): on `Cₖ,ₗ`, `Xₙ = F_{k+1}(a_{k+1},…,a₁) + 3^{k+1}2^{-l}F_{n-k-1}(aₙ,…,a_{k+2}) mod 3ⁿ`,
+   2nd summand independent of `a₁..a_{k+1},Eₖ,Bₖ,Cₖ,ₗ` ⟹ char sum FACTORS:
+   `∑_Y g(Y)e(-ξY/3ⁿ) = [E e(-ξ F_{k+1})1_{Eₖ∧Bₖ∧Cₖ,ₗ}] · [E e(-ξ2^{-l}F_{n-k-1}/3^{n-k-1})]`.
+5. For high `ξ = 3ʲ2ˡξ'` (`0≤j<n-m`, `3∤ξ'`), the 2nd factor is a level-`n-k-1` Syracuse char sum at
+   `ξ'` ⟹ `charFn_decay` (Prop 1.17, PROVED axiom-clean) bounds it `≤ Cₐ(n-k-1)^{-A}`. 1st factor `≤1`.
+6. `osc_le_sqrt_highfreq` (GENERALIZE to arbitrary real `c` first — proof never used syracZ-ness) on `g`,
+   then Plancherel/geometric sum over high `ξ` ⟹ `∑_high‖ĝ‖² ≪ (n-k-1)^{-2A}·(count)` — now SMALL
+   because the 1st-factor ℓ² mass is bounded (F_{k+1} lives in k+1 coords: Renyi-2-entropy point).
+7. Reassemble by triangle inequality over `k,l` and the event differences.
+
+**Prerequisite bricks to build (next laps, hardest-first)**: (a) the `Fₖ`/`F`-splitting as a Lean
+identity on `Xₙ` conditioned on `Cₖ,ₗ` (needs `pre`/`fnat` (1.5),(1.26) — some in `Basic/`, `Syracuse/`);
+(b) independence of the two summands ⟹ char-sum factorization (D1 PMF product form, `cexpect_mul` of
+independent factors); (c) the event `E` sub-Gaussian bound from Lemma 2.2 (already have `Gj`/`Geom`
+machinery in §2); (d) generalize `osc_le_sqrt_highfreq` to arbitrary `c`. **Start with (d)** (mechanical,
+unblocks applying the bridge to `g`) then (a).
+
+Then C10 is done and only C9 (`stabilization`, §5) + headlines remain.
 
 ## Lap fruit-7 (2026-07-14): **Parseval on `ZMod N` PROVED (S4 brick) + full C10 route mapped**
 

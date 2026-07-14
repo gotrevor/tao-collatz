@@ -27,11 +27,11 @@ over the `castHom`-fiber of `Y`). The proof is now fully machine-checked:
 
 Then `osc = ∑‖devC‖ = √((∑‖devC‖)²) ≤ √(N·∑‖devC‖²) = √(N·N⁻¹·H) = √H`, i.e. `osc_le_sqrt_highfreq`.
 
-## High-frequency decay (`highfreq_l2_le`) — the sole remaining C10 sorry
+## High-frequency decay — REFUTED for raw `syracZ` (see the route-finding block below)
 
-`∑_{highFreq} ‖𝓕c(ξ)‖² ≤ C·m^{-A}` from Prop 1.17 (`charFn_decay`) via `syracZ_map_cast`; `sorry`.
-
-Route: `PENDING_WORK` fruit-8.
+The naive `∑_{highFreq} ‖𝓕c(ξ)‖² ≤ C·m^{-A}` is FALSE for the raw density (it equals
+`Q(n)−Q(m)` which grows ≈ `0.46·(n−m)`, verified by exact DP). `fine_scale_mixing` must go
+through Tao's §6 conditioning; `sorry` pending that apparatus. Route: `PENDING_WORK` fruit-8.
 -/
 
 open scoped BigOperators
@@ -340,34 +340,40 @@ theorem osc_le_sqrt_highfreq (m n : ℕ) (hmn : m ≤ n) :
   calc D = Real.sqrt (D ^ 2) := (Real.sqrt_sq hnn).symm
     _ ≤ Real.sqrt H := Real.sqrt_le_sqrt key
 
-/-- **§6 high-frequency decay**: the high-frequency `L²` Fourier mass of the Syracuse density
-decays faster than any polynomial in `m`. For `ξ = 3ʲ·η` (`η` coprime to 3, `j < n - m`) the
-projection compatibility `syracZ_map_cast` reduces `ĉₙ(ξ)` to level `n - j ≥ m + 1`, where
-Prop 1.17 (`charFn_decay`) supplies the decay; summing over the `< n - m` scales (Parseval per
-level bounding the count) gives the bound. (Genuine §6 content; route in `PENDING_WORK` fruit-7.) -/
-theorem highfreq_l2_le (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∀ n m : ℕ, ∀ hmn : m ≤ n, 1 ≤ m →
-      (∑ ξ ∈ highFreq m n, ‖ZMod.dft (densC n) ξ‖ ^ 2) ≤ C * (m : ℝ) ^ (-A) := by
-  sorry
+/-! ## ⚠️ ROUTE FINDING (2026-07-15): the raw-`syracZ` high-frequency `L²` mass is NOT small
+
+The naive plan — bound `∑_{ξ∈highFreq} ‖𝓕(densC n) ξ‖²` directly from `charFn_decay` — is
+**REFUTED**. By Parseval (`sum_norm_sq_devC_eq` / `dft_parseval`),
+`∑_{highFreq m n} ‖ĉ_n(ξ)‖² = 3ⁿ‖syracZ(n)‖₂² − 3ᵐ‖syracZ(m)‖₂² =: Q(n) − Q(m)`,
+and an exact DP computation of `syracZ` (scratch `syrac2.py`) shows this **GROWS ≈ 0.46·(n−m)**,
+so it is emphatically **not** `≤ C·m^{-A}`. Hence `osc_le_sqrt_highfreq` applied to the *raw*
+density is a true but hopelessly lossy inequality (`osc ≤ √(0.46·n)`), and the former
+`highfreq_l2_le` was a FALSE lemma — now deleted.
+
+**Why**: `osc_le_sqrt_highfreq` is correct and reusable, but Tao's §6 applies Cauchy–Schwarz to a
+*conditioned* density `g_{n,k,l}(Y) = P((Xₙ=Y) ∧ Eₖ ∧ Bₖ ∧ Cₖ,ₗ)`, whose small high-frequency `L²`
+mass comes from the **independent split** `Xₙ = F_{k+1}(a_{k+1},…,a₁) + 3^{k+1}2^{-l}F_{n-k-1}(aₙ,…,a_{k+2})`
+(1.5)/(1.26): the character sum FACTORS, and the second factor is a Syracuse char sum at level
+`n−k−1` that `charFn_decay` (Prop 1.17) bounds. `osc(syracZ)` is recovered from `∑_{k,l} osc(g_{n,k,l})`
+by the triangle inequality over the conditioning events (paper (6.2)–(6.10)).
+
+**How to apply**: (1) generalize `osc_le_sqrt_highfreq` to an arbitrary real density `c` (the proof
+never used `syracZ`-ness); (2) build the §6 conditioning apparatus (stopping time `k`, events
+`E,Eₖ,Bₖ,Cₖ,ₗ`, the `F`-splitting independence); (3) bound `∑_{highFreq}‖ĝ_{n,k,l}‖²` via the
+factored char sum + `charFn_decay`; (4) reassemble by triangle inequality. See `PENDING_WORK` fruit-8.
+-/
 
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
-Proved from `osc_le_sqrt_highfreq` + `highfreq_l2_le` (the latter at exponent `2A`). -/
+
+The Cauchy–Schwarz/Parseval bridge `osc_le_sqrt_highfreq` is proved (axiom-clean), but the naive
+`highfreq_l2_le` route is REFUTED (see the route finding above): the raw high-frequency `L²` mass
+grows, so the bound must go through Tao's §6 **conditioning** of the density (independent `F`-split
++ `charFn_decay` on the high-entropy factor + triangle inequality over the events). This is the
+genuine heroic §6 core; `sorry` pending that apparatus. -/
 theorem fine_scale_mixing (A : ℝ) (hA : 0 < A) :
     ∃ C > 0, ∀ n m : ℕ, ∀ hmn : m ≤ n, 1 ≤ m →
       osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-A) := by
-  obtain ⟨C, hC, hB⟩ := highfreq_l2_le (2 * A) (by positivity)
-  refine ⟨Real.sqrt C, Real.sqrt_pos.mpr hC, fun n m hmn hm => ?_⟩
-  have hm0 : (0 : ℝ) ≤ (m : ℝ) := by positivity
-  have hsqrt_pow : Real.sqrt ((m : ℝ) ^ (-(2 * A))) = (m : ℝ) ^ (-A) := by
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_mul hm0]
-    congr 1
-    ring
-  calc osc m n hmn (fun Y => ((syracZ n) Y).toReal)
-      ≤ Real.sqrt (∑ ξ ∈ highFreq m n, ‖ZMod.dft (densC n) ξ‖ ^ 2) :=
-        osc_le_sqrt_highfreq m n hmn
-    _ ≤ Real.sqrt (C * (m : ℝ) ^ (-(2 * A))) := Real.sqrt_le_sqrt (hB n m hmn hm)
-    _ = Real.sqrt C * Real.sqrt ((m : ℝ) ^ (-(2 * A))) := Real.sqrt_mul hC.le _
-    _ = Real.sqrt C * (m : ℝ) ^ (-A) := by rw [hsqrt_pow]
+  sorry
 
 end TaoCollatz
