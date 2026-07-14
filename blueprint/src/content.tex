@@ -456,8 +456,23 @@ Deduced from the \textbf{character-sum decay} Prop~1.17 (node~\ref{X11}, the hea
 crux ``X-chain'') by Plancherel on \(\mathbb{Z}/3^n\mathbb{Z}\).  The §6 machinery around it:
 Lemma~6.2 (\(F_n\) injective), Cor~6.3 (\(3\)-adic separation of the offsets), the event \(E\)
 (6.2), the stopping time \(k\), and the Plancherel step.
-\lapsrisk{15--30}{medium}{75\%}
+\lapsrisk{0}{done}{100\%}
 \end{proposition}
+\begin{proof}
+  \leanok
+  \uses{X11}
+  🏆 \textbf{COMPLETE and judge-verified} (2026-07-14, HEAD \texttt{49b32c7}):
+  \texttt{\#print axioms fine\_scale\_mixing} \(= [\texttt{propext}, \texttt{Classical.choice},
+  \texttt{Quot.sound}]\), no \texttt{sorryAx}.  The node collapsed to a single tail estimate via two
+  machine-checked identities — \texttt{mainHigh\_eq\_restrictedDensity} (\texttt{mainHigh} \emph{is}
+  the Syracuse pushforward restricted to \texttt{mainEvent}) and
+  \texttt{sum\_abs\_syracZ\_sub\_mainHigh\_eq} (\(\sum_Y|\texttt{syracZ}-\texttt{mainHigh}| =
+  \mathbb{P}(\neg\texttt{mainEvent})\), an \emph{equality}) — after which \(\texttt{globalGood}
+  \subseteq \texttt{mainEvent}\) and the (6.3) union bound over the three deviation tails
+  (\(g_1,g_2,g_3\)) closed \texttt{error\_l1\_high\_bound}, itself axiom-clean.  \texttt{hbudget}
+  discharged from the tight window (\texttt{lRange\_hbudget}); the \(A'\)-absorption at \(C_A=30\)
+  \emph{shown}, not asserted (\texttt{osc\_mainHigh\_bound}).
+\end{proof}
 
 
 \chapter{The crux: character decay via renewal versus triangles (§7)}\label{chp:crux}

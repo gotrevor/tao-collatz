@@ -19,10 +19,11 @@ Trust base = `[propext, Classical.choice, Quot.sound]`.
 | `C4` | 📐 definitions + lemma, axiom-clean | `syracZ`, `syracZ_map_cast` |
 | `C5` | 🟢 **proved, axiom-clean** | `valuation_dist`, `valuation_tail`, `unifOddMod`, `valVec_pos` |
 | `C6` | 🟡 open (`sorryAx`) | `tao_collatz`, `tao_collatz_quantitative` |
-| `C7` | 🕳️ **seam** (no theorem — zero sorries, unfinished) | `passes`, `passTime`, `passLoc` |
-| `C8` | 🕳️ **seam** (no theorem — zero sorries, unfinished) | — |
+| `C7d` | 📐 definitions | `passes`, `passTime`, `passLoc`, `logWindow`, `logUnifOdd`, `alpha` |
+| `C7` | 🟡 open (`sorryAx`) | `first_passage_nonescape` |
+| `C8` | 🟡 open (`sorryAx`) | `first_passage_approx` |
 | `C9` | 🟡 open (`sorryAx`) | `stabilization` |
-| `C10` | 🟡 open (`sorryAx`) | `fine_scale_mixing` |
+| `C10` | 🟢 **proved, axiom-clean** | `fine_scale_mixing` |
 | `X1` | 📐 definitions + lemma, axiom-clean | `fCond`, `xArg`, `cexpect_pairing` |
 | `X2` | 🟢 **proved, axiom-clean** | `sfrac`, `θq`, `θq_succ_j`, `θq_pred_l`, `black`, `fCond_three_norm`, `white_cos_bound` |
 | `X3` | 🟢 **proved, axiom-clean** | `triangle`, `black_structure` |
