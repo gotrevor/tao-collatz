@@ -740,7 +740,111 @@ TODO(prove): the marginal rewrite `masked_tsum_map` + `iidMap_pre n n` then `geo
 theorem g1_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n →
     (∑' a : Fin n → ℕ, if caThr (caConst A) n < (pre a n : ℝ) then 0
       else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) := by
-  sorry
+  classical
+  set C := caConst A with hCdef
+  have hApos : (0 : ℝ) < A + 3 := by linarith
+  have hcge : 1000 * (A + 3) ≤ C := by rw [hCdef]; unfold caConst; nlinarith [le_max_left A 0]
+  have hCpos : 0 < C := by nlinarith [hApos]
+  have hC2big : 400 * (A + 3) ≤ C ^ 2 := by nlinarith [hcge, hApos]
+  have hlog2pos : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog3lt : Real.log 3 < 2 * Real.log 2 := by
+    rw [← show Real.log 4 = 2 * Real.log 2 by
+      rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.log_pow]; norm_num]
+    exact Real.log_lt_log (by norm_num) (by norm_num)
+  set δ : ℝ := 2 - Real.log 3 / Real.log 2 with hδdef
+  have hδpos : 0 < δ := by rw [hδdef, sub_pos, div_lt_iff₀ hlog2pos]; linarith
+  set ε : ℝ := δ ^ 2 / (320000 * (A + 3)) with hεdef
+  have hεpos : 0 < ε := by rw [hεdef]; positivity
+  have hεcancel : (A + 3) * ε = δ ^ 2 / 320000 := by rw [hεdef]; field_simp
+  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A 4 (A + 3) (by norm_num) (le_refl _)
+  obtain ⟨nε, hεle⟩ := log_le_eps_mul_of_large ε hεpos
+  refine ⟨max (max nκ nε) 1, fun n hn => ?_⟩
+  have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
+  have hnκle : nκ ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn
+  have hnεle : nε ≤ n := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn
+  have hnpos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
+  have hlogn0 : 0 ≤ Real.log (n : ℝ) := Real.log_nonneg (by exact_mod_cast hn1)
+  -- lam = 2n − caThr = nδ + C²·log n
+  set lam : ℝ := 2 * (n : ℝ) - caThr C n with hlamdef
+  have hlam_eq : lam = (n : ℝ) * δ + C ^ 2 * Real.log (n : ℝ) := by
+    rw [hlamdef]; simp only [caThr, hδdef]; ring
+  have hC2logn : 0 ≤ C ^ 2 * Real.log (n : ℝ) := mul_nonneg (sq_nonneg C) hlogn0
+  have hnδ : 0 ≤ (n : ℝ) * δ := mul_nonneg hnpos.le hδpos.le
+  have hlam_C2 : C ^ 2 * Real.log (n : ℝ) ≤ lam := by rw [hlam_eq]; linarith
+  have hlam_nδ : (n : ℝ) * δ ≤ lam := by rw [hlam_eq]; linarith
+  have hlam0 : 0 ≤ lam := le_trans hC2logn hlam_C2
+  have hcaThr_le : caThr C n ≤ 2 * (n : ℝ) := by rw [hlamdef] at hlam0; linarith
+  -- marginal rewrite: pre a n has law iidSum geomHalf n
+  rw [masked_tsum_map (geomHalf.iid n) (fun a => pre a n)
+        (fun x : ℕ => caThr C n < (x : ℝ)),
+      iidMap_pre n n (le_refl n)]
+  set g : ℕ → ℝ := fun b => ((iidSum geomHalf n) b).toReal with hgdef
+  have hg0 : ∀ b, 0 ≤ g b := fun b => ENNReal.toReal_nonneg
+  have hgsum : Summable g := ENNReal.summable_toReal (iidSum geomHalf n).tsum_coe_ne_top
+  have hmask1 : ∀ Q : ℕ → Prop, ∀ _ : DecidablePred Q,
+      Summable (fun b => if Q b then (0 : ℝ) else g b) := fun Q _ =>
+    Summable.of_nonneg_of_le (fun b => by by_cases h : Q b <;> simp [h, hg0 b])
+      (fun b => by by_cases h : Q b <;> simp [h, hg0 b]) hgsum
+  have hmask2 : ∀ Q : ℕ → Prop, ∀ _ : DecidablePred Q,
+      Summable (fun b => if Q b then g b else 0) := fun Q _ =>
+    Summable.of_nonneg_of_le (fun b => by by_cases h : Q b <;> simp [h, hg0 b])
+      (fun b => by by_cases h : Q b <;> simp [h, hg0 b]) hgsum
+  -- dominate the good-mask by the deviation mask
+  have hdom : (∑' b : ℕ, if caThr C n < (b : ℝ) then 0 else g b)
+      ≤ ∑' b : ℕ, if lam ≤ |(b : ℝ) - 2 * (n : ℕ)| then g b else 0 := by
+    refine Summable.tsum_le_tsum (fun b => ?_) (hmask1 _ _) (hmask2 _ _)
+    by_cases h : caThr C n < (b : ℝ)
+    · rw [if_pos h]; split
+      · exact hg0 b
+      · exact le_refl 0
+    · rw [if_neg h]
+      push_neg at h
+      have hb : lam ≤ |(b : ℝ) - 2 * (n : ℕ)| := by
+        have h1 : (b : ℝ) ≤ 2 * (n : ℝ) - lam := by rw [hlamdef]; push_cast; linarith
+        have h2 : lam ≤ 2 * (n : ℝ) - (b : ℝ) := by push_cast; linarith
+        calc lam ≤ 2 * (n : ℝ) - (b : ℝ) := h2
+          _ = -((b : ℝ) - 2 * (n : ℕ)) := by push_cast; ring
+          _ ≤ |(b : ℝ) - 2 * (n : ℕ)| := neg_le_abs _
+      rw [if_pos hb]
+  -- tail bound + split Gweight
+  refine le_trans hdom (le_trans (geomHalf_tail_bound_explicit n lam hlam0) ?_)
+  rw [Gweight, abs_of_nonneg (by positivity : (0 : ℝ) ≤ 1 / 400 * lam)]
+  -- bound each term by n^{-(A+3)}
+  have hGexp : Real.exp (-(1 / 400 * lam)) ≤ (n : ℝ) ^ (-(A + 3)) := by
+    refine le_trans (Real.exp_le_exp.mpr ?_)
+      (le_of_eq (exp_neg_mul_log_eq_rpow n (A + 3) hnpos))
+    have : 400 * (A + 3) * Real.log (n : ℝ) ≤ lam := by
+      nlinarith [mul_le_mul_of_nonneg_right hC2big hlogn0, hlam_C2]
+    have hd : (A + 3) * Real.log (n : ℝ) ≤ 1 / 400 * lam := by linarith
+    simpa using neg_le_neg hd
+  have hGgauss : Real.exp (-(1 / 400 * lam) ^ 2 / (1 + (n : ℕ))) ≤ (n : ℝ) ^ (-(A + 3)) := by
+    refine le_trans (Real.exp_le_exp.mpr ?_)
+      (le_of_eq (exp_neg_mul_log_eq_rpow n (A + 3) hnpos))
+    rw [neg_div, neg_le_neg_iff]
+    rw [le_div_iff₀ (by positivity : (0 : ℝ) < 1 + (n : ℕ))]
+    have hn1R : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+    -- (A+3)·log n ≤ δ²·n/320000
+    have hAe : (A + 3) * Real.log (n : ℝ) ≤ δ ^ 2 * (n : ℝ) / 320000 := by
+      have h := hεle n hnεle
+      have hcanc : (A + 3) * (ε * (n : ℝ)) = δ ^ 2 * (n : ℝ) / 320000 := by
+        rw [← mul_assoc, hεcancel]; ring
+      have := mul_le_mul_of_nonneg_left h hApos.le
+      linarith [this, hcanc]
+    have hlamsq : (n : ℝ) ^ 2 * δ ^ 2 ≤ lam ^ 2 := by nlinarith [hlam_nδ, hnδ, hlam0]
+    have hlhs : (A + 3) * Real.log (n : ℝ) * (1 + (n : ℝ))
+        ≤ δ ^ 2 * (n : ℝ) / 320000 * (1 + (n : ℝ)) :=
+      mul_le_mul_of_nonneg_right hAe (by positivity)
+    have hrhs : δ ^ 2 * (n : ℝ) / 320000 * (1 + (n : ℝ)) ≤ (1 / 400 * lam) ^ 2 := by
+      have hstep : (0 : ℝ) ≤ δ ^ 2 * (n : ℝ) * ((n : ℝ) - 1) :=
+        mul_nonneg (mul_nonneg (sq_nonneg δ) hnpos.le) (by linarith)
+      nlinarith [hlamsq, hstep]
+    push_cast
+    linarith [hlhs, hrhs]
+  calc 2 * (Real.exp (-(1 / 400 * lam) ^ 2 / (1 + (n : ℕ))) + Real.exp (-(1 / 400 * lam)))
+      ≤ 2 * ((n : ℝ) ^ (-(A + 3)) + (n : ℝ) ^ (-(A + 3))) := by
+        gcongr
+    _ = 4 * (n : ℝ) ^ (-(A + 3)) := by ring
+    _ ≤ (n : ℝ) ^ (-(A + 2)) := hκ n hnκle
 
 /-- **(6.3) family G2 — the per-coordinate overshoot.** For each `i`, `P(a i > 2·C_A·log n)` is
 polynomially small: `a i` is a single Geom(2) draw (`iid_map_coord`, mean 2), and the deviation
