@@ -3,6 +3,7 @@ import TaoCollatz.Fourier.Parseval
 import TaoCollatz.Syracuse.SyracRV
 import TaoCollatz.Sec7.Decay
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Algebra.Order.Chebyshev
 
 /-!
@@ -1265,10 +1266,13 @@ from its analytic input: given, for each prefix `m`, `3^{p-1-m}·2^{a_{[1,m]}+(p
 statement that the prefix valuation `a_{[1,m]}` is not too large, which the **sub-Gaussian window
 (6.12)** delivers (via `a_{[1,m]} ≥ 2m − Cₐ√(m log n) − log n` and Young's inequality) — the offset
 `fnat p vt` stays below the modulus `3^{j+p}`. Proof: multiply by `2ᵖ`, split `2ᵖ = 2ᵐ·2^{p-m}` per
-term, apply the hypothesis, and sum the geometric `∑2ᵐ < 2ᵖ`. This is exactly the `< 3ⁿ` bound that
-`fnat_offset_zmod_inj` (below) consumes to turn Lemma 6.2 into mod-`3ⁿ` offset injectivity; what
-remains of obligation 3 is the single analytic implication **window (6.12) ⟹ this per-prefix
-hypothesis** (the √/log/Young estimate). -/
+term, apply the hypothesis, and sum the geometric `∑2ᵐ < 2ᵖ`.
+
+⚠️ **NOTE (deep reflection 2026-07-14): the per-prefix hypothesis here is UNSATISFIABLE in the §6
+operating regime** (`p = k+1 ≈ 0.79·(j+p)`): its `m = 0` instance reads `3^(p-1)·2^p < 3^(j+p)`,
+which fails (per-`n` coefficient `0.79·(ln3+ln2) ≈ 1.42 > ln3 ≈ 1.10`). The lemma is kept as a
+true conditional statement, but the consumable supplier of `fnat < 3^(j+p)` is
+`fnat_lt_of_suffix_window` below (suffix form + tight `l`-window). Do not route through this. -/
 theorem fnat_lt_of_prefix_bound {j p : ℕ} (vt : Fin p → ℕ)
     (H : ∀ m, m < p → 3 ^ (p - 1 - m) * 2 ^ (pre vt m + (p - m)) < 3 ^ (j + p)) :
     fnat p vt < 3 ^ (j + p) := by
@@ -1291,6 +1295,157 @@ theorem fnat_lt_of_prefix_bound {j p : ℕ} (vt : Fin p → ℕ)
       _ = (∑ m ∈ Finset.range p, 2 ^ m) * 3 ^ (j + p) := by rw [Finset.sum_mul]
       _ < 2 ^ p * 3 ^ (j + p) := mul_lt_mul_of_pos_right (sum_two_pow_lt p) (by positivity)
   exact Nat.lt_of_mul_lt_mul_left hmul
+
+/-- `exp(1/5) < 16/13` — the numeric seed for the corrected §6 window ratio `q = (3/4)·e^{1/5}`:
+fifth powers reduce it to `e < (16/13)⁵ = 1048576/371293 ≈ 2.824`, within `exp_one_lt_d9`. -/
+theorem exp_fifth_lt : Real.exp (1 / 5) < 16 / 13 := by
+  have h5 : Real.exp (1 / 5) ^ (5 : ℕ) = Real.exp 1 := by
+    rw [← Real.exp_nat_mul]; norm_num
+  refine lt_of_pow_lt_pow_left₀ 5 (by norm_num) ?_
+  rw [h5]
+  calc Real.exp 1 < 2.7182818286 := Real.exp_one_lt_d9
+    _ < (16 / 13 : ℝ) ^ (5 : ℕ) := by norm_num
+
+/-- **The corrected window bound (C10, obligation 3; deep reflection 2026-07-14)** — the
+SUFFIX-form geometric estimate for Tao (6.14)→(6.15). Hypotheses:
+
+* `hsuf` — the sub-Gaussian window (6.12) applied to **suffix** intervals of the tail block:
+  `l − a_{[1,p−r]} = a_{[p−r+1,p]} ≥ 2r − C(√(r·log n) + log n)` for `1 ≤ r ≤ p`;
+* `hbudget` — the **tight** `l`-budget `l·ln2 + (C·ln2 + (5/4)(C·ln2)²)·log n + ln4 < n·ln3`,
+  which the stopping rule `Bₖ` + the one-step `Eₖ` bound deliver (`l ≤ n·log₂3 − (C²−2C)·log n
+  − O(1)`, coefficient `ln2·(C²−2C) ≈ 0.693C²` vs cost `≈ 0.601C²` — closes for `C ≳ 23`).
+  ⚠️ The paper's own window (6.8) (upper end `n·log₂3 − ½C²·log n`) is provably TOO LOSSY here
+  (budget `0.347C²` < the minimal Young cost `0.418C²`); see `papers/literature-review.md`,
+  source hole #3. Do NOT weaken this hypothesis toward (6.8).
+
+Conclusion: the Syracuse offset stays below the modulus, `fnat p vt < 3^(j+p)` — exactly what
+`fnat_offset_zmod_inj` consumes. Proof: reflect the sum (`r := p−m`), bound each term
+`3^(r−1)·2^(l−suffix_r) ≤ B·q^r` with `q = (3/4)·e^{1/5} ≤ 12/13` via AM-GM at `ε = 1/5`
+(`(C·ln2)·√(rL) ≤ r/5 + (5/4)(C·ln2)²·L`), sum the geometric series (`≤ 12·B`), and close the
+exponent comparison with `hbudget` (`ln12 = ln4 + ln3`). Replaces the in-regime-unusable
+`fnat_lt_of_prefix_bound` route. -/
+theorem fnat_lt_of_suffix_window {j p : ℕ} (vt : Fin p → ℕ) (l : ℕ) (C : ℝ)
+    (hl : pre vt p = l)
+    (hsuf : ∀ r : ℕ, 1 ≤ r → r ≤ p →
+      2 * (r : ℝ) - C * (Real.sqrt (r * Real.log ((j + p : ℕ) : ℝ))
+          + Real.log ((j + p : ℕ) : ℝ))
+        ≤ (l : ℝ) - (pre vt (p - r) : ℝ))
+    (hbudget : (l : ℝ) * Real.log 2
+        + (C * Real.log 2 + 5 / 4 * (C * Real.log 2) ^ 2) * Real.log ((j + p : ℕ) : ℝ)
+        + Real.log 4 < ((j + p : ℕ) : ℝ) * Real.log 3) :
+    fnat p vt < 3 ^ (j + p) := by
+  rcases Nat.eq_zero_or_pos p with hp0 | hp
+  · subst hp0
+    simp only [fnat, Finset.range_zero, Finset.sum_empty]
+    positivity
+  set L : ℝ := Real.log ((j + p : ℕ) : ℝ) with hLdef
+  have hL0 : 0 ≤ L := Real.log_nonneg (by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (by omega))
+  have hln2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hln3 : (0 : ℝ) < Real.log 3 := Real.log_pos (by norm_num)
+  set δ : ℝ := 2 * Real.log 2 - Real.log 3 - 1 / 5 with hδdef
+  set q : ℝ := Real.exp (-δ) with hqdef
+  have hq0 : (0 : ℝ) < q := Real.exp_pos _
+  have hq_eq : q = 3 / 4 * Real.exp (1 / 5) := by
+    rw [hqdef, hδdef, show -(2 * Real.log 2 - Real.log 3 - 1 / 5)
+        = Real.log 3 - (Real.log 2 + Real.log 2) + 1 / 5 by ring,
+      Real.exp_add, Real.exp_sub, Real.exp_add,
+      Real.exp_log (by norm_num : (0:ℝ) < 3), Real.exp_log (by norm_num : (0:ℝ) < 2)]
+    ring
+  have hq1 : q ≤ 12 / 13 := by
+    rw [hq_eq]
+    have h := exp_fifth_lt
+    nlinarith [Real.exp_pos (1 / 5 : ℝ)]
+  have hq_lt_one : q < 1 := lt_of_le_of_lt hq1 (by norm_num)
+  set E : ℝ := (l : ℝ) * Real.log 2
+      + (C * Real.log 2 + 5 / 4 * (C * Real.log 2) ^ 2) * L - Real.log 3 with hEdef
+  set B : ℝ := Real.exp E with hBdef
+  have hB0 : (0 : ℝ) < B := Real.exp_pos _
+  -- per-term bound: `3^i · 2^(pre vt (p−1−i)) ≤ B·q^(i+1)`
+  have hterm : ∀ i ∈ Finset.range p,
+      (3 : ℝ) ^ i * 2 ^ pre vt (p - 1 - i) ≤ B * q ^ (i + 1) := by
+    intro i hi
+    rw [Finset.mem_range] at hi
+    have hs := hsuf (i + 1) (by omega) (by omega)
+    rw [show p - (i + 1) = p - 1 - i by omega] at hs
+    have hi1 : (0 : ℝ) ≤ ((i + 1 : ℕ) : ℝ) := by positivity
+    have hsplit : Real.sqrt (((i + 1 : ℕ) : ℝ) * L)
+        = Real.sqrt ((i + 1 : ℕ) : ℝ) * Real.sqrt L := Real.sqrt_mul hi1 L
+    have hamgm : (C * Real.log 2) * (Real.sqrt ((i + 1 : ℕ) : ℝ) * Real.sqrt L)
+        ≤ ((i + 1 : ℕ) : ℝ) / 5 + 5 / 4 * (C * Real.log 2) ^ 2 * L := by
+      nlinarith [sq_nonneg (2 * Real.sqrt ((i + 1 : ℕ) : ℝ)
+          - 5 * (C * Real.log 2) * Real.sqrt L),
+        Real.sq_sqrt hi1, Real.sq_sqrt hL0]
+    have hpre : (pre vt (p - 1 - i) : ℝ)
+        ≤ (l : ℝ) - 2 * ((i + 1 : ℕ) : ℝ)
+          + C * (Real.sqrt (((i + 1 : ℕ) : ℝ) * L) + L) := by linarith
+    have h1 : (pre vt (p - 1 - i) : ℝ) * Real.log 2
+        ≤ ((l : ℝ) - 2 * ((i + 1 : ℕ) : ℝ)
+          + C * (Real.sqrt (((i + 1 : ℕ) : ℝ) * L) + L)) * Real.log 2 :=
+      mul_le_mul_of_nonneg_right hpre hln2.le
+    have hexp : (i : ℝ) * Real.log 3 + (pre vt (p - 1 - i) : ℝ) * Real.log 2
+        ≤ E + ((i : ℝ) + 1) * (-δ) := by
+      rw [hEdef, hδdef]
+      rw [hsplit] at h1
+      push_cast at h1 hamgm ⊢
+      nlinarith [h1, hamgm]
+    calc (3 : ℝ) ^ i * 2 ^ pre vt (p - 1 - i)
+        = Real.exp ((i : ℝ) * Real.log 3 + (pre vt (p - 1 - i) : ℝ) * Real.log 2) := by
+          rw [Real.exp_add, Real.exp_nat_mul, Real.exp_nat_mul,
+            Real.exp_log (by norm_num : (0:ℝ) < 3), Real.exp_log (by norm_num : (0:ℝ) < 2)]
+      _ ≤ Real.exp (E + ((i : ℝ) + 1) * (-δ)) := Real.exp_le_exp.mpr hexp
+      _ = B * q ^ (i + 1) := by
+          rw [Real.exp_add, ← hBdef, show ((i : ℝ) + 1) * (-δ) = ((i + 1 : ℕ) : ℝ) * (-δ) by
+            push_cast; ring, Real.exp_nat_mul, ← hqdef]
+  -- cast + reflect the sum
+  have hcast : ((fnat p vt : ℕ) : ℝ)
+      = ∑ m ∈ Finset.range p, (3 : ℝ) ^ (p - 1 - m) * 2 ^ pre vt m := by
+    simp only [fnat]
+    push_cast
+    rfl
+  have hrefl : ∑ m ∈ Finset.range p, (3 : ℝ) ^ (p - 1 - m) * 2 ^ pre vt m
+      = ∑ i ∈ Finset.range p, (3 : ℝ) ^ i * 2 ^ pre vt (p - 1 - i) := by
+    rw [← Finset.sum_range_reflect (fun i => (3 : ℝ) ^ i * 2 ^ pre vt (p - 1 - i)) p]
+    refine Finset.sum_congr rfl fun m hm => ?_
+    rw [Finset.mem_range] at hm
+    rw [show p - 1 - (p - 1 - m) = m by omega]
+  have hsum : ((fnat p vt : ℕ) : ℝ) ≤ B * ∑ i ∈ Finset.range p, q ^ (i + 1) := by
+    rw [hcast, hrefl, Finset.mul_sum]
+    exact Finset.sum_le_sum hterm
+  -- geometric series: `∑_{i<p} q^(i+1) ≤ 12`
+  have hgeo : ∑ i ∈ Finset.range p, q ^ (i + 1) ≤ 12 := by
+    have hqp : (0 : ℝ) ≤ q ^ p := (pow_pos hq0 p).le
+    have hgs : ∑ i ∈ Finset.range p, q ^ i ≤ 13 := by
+      rw [geom_sum_eq (ne_of_lt hq_lt_one)]
+      rw [div_le_iff_of_neg (by linarith : q - 1 < 0)]
+      nlinarith
+    have hsum_nonneg : (0 : ℝ) ≤ ∑ i ∈ Finset.range p, q ^ i :=
+      Finset.sum_nonneg fun i _ => (pow_pos hq0 i).le
+    calc ∑ i ∈ Finset.range p, q ^ (i + 1)
+        = q * ∑ i ∈ Finset.range p, q ^ i := by
+          rw [Finset.mul_sum]
+          exact Finset.sum_congr rfl fun i _ => pow_succ' q i
+      _ ≤ (12 / 13) * 13 := mul_le_mul hq1 hgs hsum_nonneg (by norm_num)
+      _ = 12 := by norm_num
+  -- close: `12·B < 3^n` from the budget
+  have h3n : ((3 ^ (j + p) : ℕ) : ℝ) = Real.exp (((j + p : ℕ) : ℝ) * Real.log 3) := by
+    rw [Real.exp_nat_mul, Real.exp_log (by norm_num : (0:ℝ) < 3)]
+    push_cast
+    ring
+  have hlt : ((fnat p vt : ℕ) : ℝ) < ((3 ^ (j + p) : ℕ) : ℝ) := by
+    have hb12 : B * 12 < ((3 ^ (j + p) : ℕ) : ℝ) := by
+      rw [h3n, hBdef, show (12 : ℝ) = Real.exp (Real.log 12) from
+        (Real.exp_log (by norm_num)).symm, ← Real.exp_add]
+      apply Real.exp_lt_exp.mpr
+      have hlog12 : Real.log 12 = Real.log 4 + Real.log 3 := by
+        rw [← Real.log_mul (by norm_num) (by norm_num)]
+        norm_num
+      rw [hEdef]
+      linarith
+    calc ((fnat p vt : ℕ) : ℝ)
+        ≤ B * ∑ i ∈ Finset.range p, q ^ (i + 1) := hsum
+      _ ≤ B * 12 := mul_le_mul_of_nonneg_left hgeo hB0.le
+      _ < _ := hb12
+  exact_mod_cast hlt
 
 /-- **Corollary 6.3 wrapper** (C10, obligation 3): the mod-`3^{j+p}` injectivity of the Syracuse
 offset that `tailDens`'s single-point mass rests on, reduced to the **window bound** `fnat < 3^{j+p}`.

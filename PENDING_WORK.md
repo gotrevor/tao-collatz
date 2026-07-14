@@ -1,5 +1,32 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-24 (2026-07-14, same reflection session): **`fnat_lt_of_suffix_window` PROVED — the corrected obligation-3 kernel**
+
+Build green 3285, `#print axioms fnat_lt_of_suffix_window = [propext, Classical.choice,
+Quot.sound]` (believed clean, judge to verify). New lemmas (`Sec6/MixingFromDecay.lean`, after
+`fnat_lt_of_prefix_bound`):
+- **`fnat_lt_of_suffix_window`**: the reflection's re-aimed window bound. From the tight
+  l-budget `l·ln2 + (C·ln2 + (5/4)(C·ln2)²)·log n + ln4 < n·ln3` and the suffix-interval (6.12)
+  windows `2r − C(√(r·log n)+log n) ≤ l − a_{[1,p−r]}`, concludes `fnat p vt < 3^(j+p)` — the
+  exact hypothesis `fnat_offset_zmod_inj` consumes. Proof as specced: `sum_range_reflect`,
+  per-term `exp`-bound with AM-GM at ε=1/5 (`nlinarith` + `sq_nonneg (2√r − 5(C·ln2)√L)`),
+  ratio `q = (3/4)e^{1/5} ≤ 12/13`, `geom_sum_eq` telescope `≤ 12`, budget closes via
+  `ln12 = ln4 + ln3`. **The one place §6 runs on critical constants is now machine-checked**
+  (trigger T3 de-risked at lap 1 of ~6).
+- **`exp_fifth_lt`**: `exp(1/5) < 16/13` (fifth powers → `exp_one_lt_d9`).
+- `fnat_lt_of_prefix_bound` docstring now carries the ⚠️ in-regime-unusable warning.
+- New import: `Mathlib.Analysis.Complex.ExponentialBounds`.
+
+### → NEXT (per the reflection plan, in order):
+1. **Windowed `tailDens ≤ 2^{-l}`**: generalize the conditioning indicator (`pre vt p = l` →
+   arbitrary tail-measurable `DecidablePred`) in `condDens`/`tailDens`/`cond_char_factor`/
+   `tail_factor_l2_eq`; then single-point mass via `fnat_offset_zmod_inj` + this kernel ⟹
+   obligation 3 CLOSED (M = 2^{-l}, windowed).
+2. Event scaffold (obl 1): `E`/`Eₖ`/`Bₖ`/`Cₖ,ₗ` as tail-tuple predicates (Classical.dec fine),
+   decomposition + `P(Ē) ≤ n^{-A-1}` via S3 tails; the discharge of this kernel's `hbudget`
+   from `Bₖ` (numeric: `0.693(C²−2C) > 0.6006C² + …`, C ≥ 23) and `hsuf` from `Eₖ`.
+3. `hunif` (obl 2), regime telescope (obl 0).
+
 ## Reflection — 2026-07-14 (deep reflection lap, HEAD `f96a728`)
 
 **ROUTE VERDICT: CONTINUE, with one course-correction inside obligation 3.** No registered
