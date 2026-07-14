@@ -553,7 +553,7 @@ theorem syracZ_recursion (n : ℕ) (x : ZMod (3 ^ (n + 1))) :
 
 /-- Reversal splits a prefix sum: the first `m` reversed coordinates plus the first
 `n - m` forward coordinates cover the whole vector. (Exchangeability's ℕ backbone.) -/
-private theorem pre_comp_rev {n : ℕ} (a : Fin n → ℕ) {m : ℕ} (hm : m ≤ n) :
+theorem pre_comp_rev {n : ℕ} (a : Fin n → ℕ) {m : ℕ} (hm : m ≤ n) :
     pre (a ∘ Fin.rev) m + pre a (n - m) = pre a n := by
   rw [pre_eq_sum_preNat, pre_eq_sum_preNat, pre_eq_sum_preNat]
   -- Rewrite the reversed summand into `preNat a (n-1-i)`.
@@ -589,7 +589,7 @@ private theorem pre_comp_rev {n : ℕ} (a : Fin n → ℕ) {m : ℕ} (hm : m ≤
     Finset.sum_Ico_consecutive _ (Nat.zero_le _) (Nat.sub_le n m), Finset.range_eq_Ico]
 
 /-- The reversal map on `iid` vectors preserves the law (exchangeability of iid). -/
-private theorem iid_map_rev {α : Type*} (p : PMF α) (n : ℕ) :
+theorem iid_map_rev {α : Type*} (p : PMF α) (n : ℕ) :
     (p.iid n).map (fun a => a ∘ Fin.rev) = p.iid n := by
   classical
   ext v

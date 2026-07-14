@@ -563,6 +563,21 @@ theorem iidMap_pre (n r : ℕ) (h : r ≤ n) :
   rw [hcomp, ← PMF.map_comp, iid_map_castLE geomHalf r n h]
   rfl
 
+/-- **Suffix-block marginal** (the (6.3) infrastructure for family G3): under `geomHalf.iid n`, the
+suffix sum `sufSum a r` (the sum of the last `r` coordinates) is distributed as `iidSum geomHalf r`,
+for `r ≤ n`.  Proof: `sufSum a r = pre (a ∘ Fin.rev) r` (`pre_comp_rev`), so it factors as
+`(pre · r) ∘ (· ∘ Fin.rev)`; reversal preserves the iid law (`iid_map_rev`), then `iidMap_pre`. -/
+theorem iidMap_suffix (n r : ℕ) (h : r ≤ n) :
+    (geomHalf.iid n).map (fun a : Fin n → ℕ => sufSum a r) = iidSum geomHalf r := by
+  have hsuf : (fun a : Fin n → ℕ => sufSum a r)
+      = (fun b : Fin n → ℕ => pre b r) ∘ (fun a : Fin n → ℕ => a ∘ Fin.rev) := by
+    funext a
+    simp only [Function.comp_apply]
+    rw [sufSum]
+    have hrev := pre_comp_rev a h
+    omega
+  rw [hsuf, ← PMF.map_comp, iid_map_rev, iidMap_pre n r h]
+
 /-- **Coordinate marginal**: under `p.iid n`, each single coordinate `a i` is distributed as `p`.
 Proof: peel the head draw; coordinate `0` is the head (`pure`), coordinate `j+1` is the tail's
 coordinate `j` (induction). -/
@@ -933,7 +948,103 @@ theorem g3_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
     (∑' a : Fin n → ℕ, if 2 * (r : ℝ) - caConst A *
         (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) + Real.log (n : ℝ)) ≤ (sufSum a r : ℝ) then 0
       else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) := by
-  sorry
+  classical
+  set C := caConst A with hCdef
+  have hApos : (0 : ℝ) < A + 3 := by linarith
+  have hcge : 1000 * (A + 3) ≤ C := by rw [hCdef]; unfold caConst; nlinarith [le_max_left A 0]
+  have hCpos : 0 < C := by nlinarith [hApos]
+  have hC400 : 400 * (A + 3) ≤ C := by linarith [hcge]
+  have hCsq : (1000 * (A + 3)) ^ 2 ≤ C ^ 2 := by
+    have := mul_le_mul hcge hcge (by positivity) (by linarith)
+    nlinarith [this]
+  have hC2_320 : 320000 * (A + 3) ≤ C ^ 2 := by nlinarith [hCsq, hApos]
+  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A 4 (A + 3) (by norm_num) (le_refl _)
+  obtain ⟨nL, hL⟩ := log_ge_of_large 1
+  refine ⟨max (max nκ nL) 1, fun n hn r hr1 hrn => ?_⟩
+  have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
+  have hnκle : nκ ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn
+  have hnLle : nL ≤ n := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn
+  have hnpos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
+  have hLn1 : (1 : ℝ) ≤ Real.log (n : ℝ) := hL n hnLle
+  have hLn0 : (0 : ℝ) ≤ Real.log (n : ℝ) := by linarith
+  have hrR1 : (1 : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr1
+  have hrR0 : (0 : ℝ) ≤ (r : ℝ) := by linarith
+  have hrL0 : (0 : ℝ) ≤ (r : ℝ) * Real.log (n : ℝ) := mul_nonneg hrR0 hLn0
+  set S : ℝ := Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) with hSdef
+  have hS0 : (0 : ℝ) ≤ S := Real.sqrt_nonneg _
+  have hS2 : S ^ 2 = (r : ℝ) * Real.log (n : ℝ) := Real.sq_sqrt hrL0
+  set lam : ℝ := C * (S + Real.log (n : ℝ)) with hlamdef
+  have hlam0 : (0 : ℝ) ≤ lam := by
+    rw [hlamdef]; exact mul_nonneg hCpos.le (add_nonneg hS0 hLn0)
+  -- marginal rewrite: sufSum · r has law iidSum geomHalf r
+  rw [masked_tsum_map (geomHalf.iid n) (fun a => sufSum a r)
+        (fun x : ℕ => 2 * (r : ℝ) - lam ≤ (x : ℝ)),
+      iidMap_suffix n r hrn]
+  set g : ℕ → ℝ := fun b => ((iidSum geomHalf r) b).toReal with hgdef
+  have hg0 : ∀ b, 0 ≤ g b := fun b => ENNReal.toReal_nonneg
+  have hgsum : Summable g := ENNReal.summable_toReal (iidSum geomHalf r).tsum_coe_ne_top
+  have hmask1 : ∀ Q : ℕ → Prop, ∀ _ : DecidablePred Q,
+      Summable (fun b => if Q b then (0 : ℝ) else g b) := fun Q _ =>
+    Summable.of_nonneg_of_le (fun b => by by_cases h : Q b <;> simp [h, hg0 b])
+      (fun b => by by_cases h : Q b <;> simp [h, hg0 b]) hgsum
+  have hmask2 : ∀ Q : ℕ → Prop, ∀ _ : DecidablePred Q,
+      Summable (fun b => if Q b then g b else 0) := fun Q _ =>
+    Summable.of_nonneg_of_le (fun b => by by_cases h : Q b <;> simp [h, hg0 b])
+      (fun b => by by_cases h : Q b <;> simp [h, hg0 b]) hgsum
+  -- dominate the good-mask by the two-sided deviation mask
+  have hdom : (∑' b : ℕ, if 2 * (r : ℝ) - lam ≤ (b : ℝ) then 0 else g b)
+      ≤ ∑' b : ℕ, if lam ≤ |(b : ℝ) - 2 * (r : ℕ)| then g b else 0 := by
+    refine Summable.tsum_le_tsum (fun b => ?_) (hmask1 _ _) (hmask2 _ _)
+    by_cases h : 2 * (r : ℝ) - lam ≤ (b : ℝ)
+    · rw [if_pos h]; split
+      · exact hg0 b
+      · exact le_refl 0
+    · rw [if_neg h]
+      push_neg at h
+      have hb : lam ≤ |(b : ℝ) - 2 * (r : ℕ)| := by
+        have h2 : lam ≤ 2 * (r : ℝ) - (b : ℝ) := by linarith
+        calc lam ≤ 2 * (r : ℝ) - (b : ℝ) := h2
+          _ = -((b : ℝ) - 2 * (r : ℕ)) := by push_cast; ring
+          _ ≤ |(b : ℝ) - 2 * (r : ℕ)| := neg_le_abs _
+      rw [if_pos hb]
+  refine le_trans hdom (le_trans (geomHalf_tail_bound_explicit r lam hlam0) ?_)
+  rw [Gweight, abs_of_nonneg (mul_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 400) hlam0)]
+  -- exp term (from the `+ log n` part): exp(−λ/400) ≤ n^{−(A+3)}
+  have hCS0 : (0 : ℝ) ≤ C * S := mul_nonneg hCpos.le hS0
+  have hGexp : Real.exp (-(1 / 400 * lam)) ≤ (n : ℝ) ^ (-(A + 3)) := by
+    refine le_trans (Real.exp_le_exp.mpr ?_)
+      (le_of_eq (exp_neg_mul_log_eq_rpow n (A + 3) hnpos))
+    have hd : (A + 3) * Real.log (n : ℝ) ≤ 1 / 400 * lam := by
+      rw [hlamdef]; nlinarith [hC400, hLn0, hCS0]
+    simpa using neg_le_neg hd
+  -- Gaussian term (from the `√(r log n)` part): exp(−(λ/400)²/(1+r)) ≤ n^{−(A+3)}
+  have hGgauss : Real.exp (-(1 / 400 * lam) ^ 2 / (1 + (r : ℕ))) ≤ (n : ℝ) ^ (-(A + 3)) := by
+    refine le_trans (Real.exp_le_exp.mpr ?_)
+      (le_of_eq (exp_neg_mul_log_eq_rpow n (A + 3) hnpos))
+    rw [neg_div, neg_le_neg_iff, le_div_iff₀ (by positivity : (0 : ℝ) < 1 + (r : ℕ))]
+    -- λ² ≥ C²·r·log n  (drop the head `log n` from `S + log n`)
+    have hlamsq : C ^ 2 * ((r : ℝ) * Real.log (n : ℝ)) ≤ lam ^ 2 := by
+      rw [hlamdef, mul_pow]
+      nlinarith [hS2, mul_nonneg (sq_nonneg C) (mul_nonneg hS0 hLn0),
+        mul_nonneg (sq_nonneg C) (sq_nonneg (Real.log (n : ℝ)))]
+    -- (A+3)·log n·(1+r) ≤ C²·r·log n/160000 ≤ λ²/160000 = (λ/400)²
+    have hAL0 : (0 : ℝ) ≤ (A + 3) * Real.log (n : ℝ) := mul_nonneg hApos.le hLn0
+    have hstep : (A + 3) * Real.log (n : ℝ) * (1 + (r : ℝ))
+        ≤ C ^ 2 * ((r : ℝ) * Real.log (n : ℝ)) / 160000 := by
+      have hA : (A + 3) * Real.log (n : ℝ) * (1 + (r : ℝ))
+          ≤ 2 * ((A + 3) * Real.log (n : ℝ)) * (r : ℝ) := by nlinarith [hAL0, hrR1]
+      have hB : 2 * ((A + 3) * Real.log (n : ℝ)) * (r : ℝ)
+          ≤ C ^ 2 * ((r : ℝ) * Real.log (n : ℝ)) / 160000 := by nlinarith [hC2_320, hrL0]
+      linarith [hA, hB]
+    have hkey : (A + 3) * Real.log (n : ℝ) * (1 + (r : ℝ)) ≤ (1 / 400 * lam) ^ 2 := by
+      have hlhs2 : (1 / 400 * lam) ^ 2 = lam ^ 2 / 160000 := by ring
+      rw [hlhs2]; linarith [hstep, hlamsq]
+    push_cast
+    linarith [hkey]
+  calc 2 * (Real.exp (-(1 / 400 * lam) ^ 2 / (1 + (r : ℕ))) + Real.exp (-(1 / 400 * lam)))
+      ≤ 2 * ((n : ℝ) ^ (-(A + 3)) + (n : ℝ) ^ (-(A + 3))) := by gcongr
+    _ = 4 * (n : ℝ) ^ (-(A + 3)) := by ring
+    _ ≤ (n : ℝ) ^ (-(A + 2)) := hκ n hnκle
 
 /-- **Large-`n` positivity of the (6.6) threshold.** `caThr C n = n·log₂3 − C²·log n ≥ 0` once
 `n·log₂3 ≥ C²·log n`, i.e. `n/log n ≥ C²·log2/log3`; a standard `log n = o(n)` threshold (via
