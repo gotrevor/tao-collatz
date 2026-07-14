@@ -330,6 +330,93 @@ theorem fnat_split {j p : ℕ} (a : Fin (j + p) → ℕ) :
     have hexp : j + p - 1 - (j + m) = p - 1 - m := by omega
     rw [hexp]; ring
 
+/-- Elementary 2-adic fact: `2ˢ·u = 2ᵗ·v` with `u,v` odd forces `s = t` and `u = v`. The atom of
+the `Fnat` injectivity peel (each peel strips a `2^{a₀}` off an odd `Fnat` core). -/
+theorem two_pow_odd_eq {s t u v : ℕ} (hu : ¬ 2 ∣ u) (hv : ¬ 2 ∣ v)
+    (h : 2 ^ s * u = 2 ^ t * v) : s = t ∧ u = v := by
+  wlog hst : s ≤ t generalizing s t u v
+  · obtain ⟨h1, h2⟩ := this hv hu h.symm (not_le.mp hst).le
+    exact ⟨h1.symm, h2.symm⟩
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hst
+  rw [pow_add, mul_assoc] at h
+  have hcancel : u = 2 ^ d * v := Nat.eq_of_mul_eq_mul_left (pow_pos (by norm_num) s) h
+  rcases Nat.eq_zero_or_pos d with hd | hd
+  · subst hd; simp at hcancel; exact ⟨rfl, hcancel⟩
+  · exact absurd (by rw [hcancel]; exact Dvd.dvd.mul_right (dvd_pow_self 2 hd.ne') v) hu
+
+/-- First-coordinate prefix-sum peel: `a_{[1,m+1]} = a₀ + (tail a)_{[1,m]}`. -/
+theorem pre_cons_head {n : ℕ} (a : Fin (n + 1) → ℕ) {m : ℕ} (hm : m ≤ n) :
+    pre a (m + 1) = a 0 + pre (Fin.tail a) m := by
+  unfold pre
+  rw [Finset.sum_range_succ']
+  have hf0 : (if h : (0:ℕ) < n + 1 then a ⟨0, h⟩ else 0) = a 0 := by
+    rw [dif_pos (Nat.succ_pos n), Fin.zero_eta]
+  rw [hf0, add_comm]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro i hi
+  rw [Finset.mem_range] at hi
+  have hin : i < n := lt_of_lt_of_le hi hm
+  rw [dif_pos (by omega : i + 1 < n + 1), dif_pos hin]
+  rfl
+
+/-- **Paper (1.5), first-coordinate form**: the `Fnat` offset peels off its first coordinate as
+`Fnat_{n+1}(a) = 3ⁿ + 2^{a₀}·Fnat_n(tail a)`. The repo mirror of Tao's
+`F_n(a₁,…,aₙ) = 3ⁿ2^{-a_{[1,n]}} + F_{n-1}(a₂,…,aₙ)` (cleared of `ℤ[1/2]`). Drives Lemma 6.2. -/
+theorem fnat_cons {n : ℕ} (a : Fin (n + 1) → ℕ) :
+    fnat (n + 1) a = 3 ^ n + 2 ^ (a 0) * fnat n (Fin.tail a) := by
+  unfold fnat
+  rw [Finset.sum_range_succ', Nat.add_sub_cancel]
+  rw [add_comm]
+  congr 1
+  · rw [show pre a 0 = 0 from by simp [pre], pow_zero, mul_one, Nat.sub_zero]
+  · rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro m hm
+    rw [Finset.mem_range] at hm
+    have hexp : n - (m + 1) = n - 1 - m := by omega
+    rw [hexp, pre_cons_head a (le_of_lt hm), pow_add]
+    ring
+
+/-- **Lemma 6.2 (Injectivity of offsets), repo form on fixed total valuation.** Tao's key elementary
+number-theory observation (paper Lemma 6.2: `Fₙ : (ℕ+1)ⁿ → ℤ[1/2]` injective), specialized to the
+form the §6 Rényi/collision bound consumes: among positive-coordinate vectors with a *fixed* total
+valuation `a_{[1,n]}`, the integer offset `Fnat n` determines the vector. (On `{pre = l}` the offset
+`Fnat n a · 2⁻ˡ` used by `syracZ`/`tailDens` is injective iff `Fnat n` is; and Corollary 6.3's proof
+invokes Lemma 6.2 exactly at equal valuations, via (6.13) `a_{[1,k+1]} = l`.) Proof: induct, peeling
+the first coordinate with `fnat_cons`; the `2^{a₀}·(odd Fnat core)` factorization pins `a₀` and the
+core via `two_pow_odd_eq` (`fnat_mod_two_of_pos`), and the fixed-valuation hypothesis discharges the
+length-1 base. No `ℤ[1/2]` / 2-adic-valuation machinery: entirely `ℕ`-native. -/
+theorem fnat_inj_fixed_val : ∀ (n : ℕ) (a a' : Fin n → ℕ),
+    (∀ i, 1 ≤ a i) → (∀ i, 1 ≤ a' i) → pre a n = pre a' n → fnat n a = fnat n a' → a = a' := by
+  intro n
+  induction n with
+  | zero => intro a a' _ _ _ _; exact funext (fun i => i.elim0)
+  | succ n ih =>
+      intro a a' ha ha' hpre hfnat
+      rw [fnat_cons, fnat_cons] at hfnat
+      have hFF : 2 ^ (a 0) * fnat n (Fin.tail a) = 2 ^ (a' 0) * fnat n (Fin.tail a') := by omega
+      rcases Nat.eq_zero_or_pos n with hn | hn
+      · subst hn
+        have h00 : a 0 = a' 0 := by
+          have e1 : pre a 1 = a 0 := by simp [pre]
+          have e2 : pre a' 1 = a' 0 := by simp [pre]
+          rw [e1, e2] at hpre; exact hpre
+        exact funext (fun i => by have hi : i = 0 := Fin.fin_one_eq_zero i; rw [hi]; exact h00)
+      · have hodd : ∀ (b : Fin (n + 1) → ℕ), (∀ i, 1 ≤ b i) → ¬ 2 ∣ fnat n (Fin.tail b) := by
+          intro b hb
+          have hh := fnat_mod_two_of_pos (Fin.tail b) (fun i => hb i.succ)
+          rw [if_neg (show n ≠ 0 by omega)] at hh
+          omega
+        obtain ⟨h0eq, hFeq⟩ := two_pow_odd_eq (hodd a ha) (hodd a' ha') hFF
+        have hpretail : pre (Fin.tail a) n = pre (Fin.tail a') n := by
+          have ea := pre_cons_head a (le_refl n)
+          have ea' := pre_cons_head a' (le_refl n)
+          rw [ea, ea', h0eq] at hpre; omega
+        have htail := ih (Fin.tail a) (Fin.tail a') (fun i => ha i.succ) (fun i => ha' i.succ)
+          hpretail hFeq
+        exact funext (fun i => Fin.cases h0eq (fun j => congrFun htail j) i)
+
 /-- Every Syracuse iterate of an odd natural number is odd. -/
 theorem syr_iterate_odd (N n : ℕ) (hN : N % 2 = 1) : syr^[n] N % 2 = 1 := by
   induction n with
