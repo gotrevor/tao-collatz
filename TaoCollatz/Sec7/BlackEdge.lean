@@ -1032,6 +1032,178 @@ theorem hold_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
     _ ≤ Real.exp (-ρ * m) := Real.exp_le_exp.mpr hexp_le
     _ ≤ δ * (m : ℝ) ^ (-A) := hclose
 
+/-- **Fubini split of the (7.48) double sum** — the mechanical heart of
+`fpDist_edgeWeight_le`.  Summing the pointwise `edgeWeight_summand_le` over the hold
+step `d` (with `hold`) and the first-passage step `e` (with `fpDist`), and splitting
+the joint tail via `1_{m<2(e₁+d₁)} ≤ 1_{m<4e₁} + 1_{m<4d₁}`, the average depth weight
+factors into `m^{−A}·Z_fp(θ)·Z_hold(θ)` (θ = 2A/m) plus the two one-sided first-coord
+tails.  Takes the two MGF summabilities as hypotheses (the callers supply them). -/
+theorem fpDist_edgeWeight_split {A : ℝ} (hA : 0 ≤ A) {m : ℕ} (hm : 2 ≤ m) (s : ℕ)
+    (hZf : Summable (fun e : ℕ × ℤ =>
+      (fpDist s e).toReal * Real.exp (2 * A / (m : ℝ) * (e.1 : ℝ))))
+    (hZh : Summable (fun d : ℕ × ℤ =>
+      (hold d).toReal * Real.exp (2 * A / (m : ℝ) * (d.1 : ℝ)))) :
+    ∑' e : ℕ × ℤ, (fpDist s e).toReal * edgeWeight A m e
+      ≤ (m : ℝ) ^ (-A)
+          * (∑' e : ℕ × ℤ, (fpDist s e).toReal * Real.exp (2 * A / (m : ℝ) * (e.1 : ℝ)))
+          * (∑' d : ℕ × ℤ, (hold d).toReal * Real.exp (2 * A / (m : ℝ) * (d.1 : ℝ)))
+        + (∑' e : ℕ × ℤ, (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0))
+        + (∑' d : ℕ × ℤ, (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)) := by
+  have hmpos : (0 : ℝ) < m := by exact_mod_cast (by omega : 0 < m)
+  set θ : ℝ := 2 * A / (m : ℝ) with hθdef
+  have hθnn : 0 ≤ θ := by rw [hθdef]; positivity
+  set mA : ℝ := (m : ℝ) ^ (-A) with hmAdef
+  have hmA0 : 0 < mA := Real.rpow_pos_of_pos hmpos _
+  set Zf : ℝ := ∑' e : ℕ × ℤ, (fpDist s e).toReal * Real.exp (θ * (e.1 : ℝ)) with hZfdef
+  set Zh : ℝ := ∑' d : ℕ × ℤ, (hold d).toReal * Real.exp (θ * (d.1 : ℝ)) with hZhdef
+  set Tf : ℝ := ∑' e : ℕ × ℤ, (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+    with hTfdef
+  set Th : ℝ := ∑' d : ℕ × ℤ, (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)
+    with hThdef
+  -- PMF facts
+  have hholdsum : Summable (fun d : ℕ × ℤ => (hold d).toReal) := hold_summable_toReal
+  have hholdmass : ∑' d : ℕ × ℤ, (hold d).toReal = 1 := hold_tsum_toReal
+  have hfpsum : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal) :=
+    ENNReal.summable_toReal (by rw [(fpDist s).tsum_coe]; exact ENNReal.one_ne_top)
+  have hfpmass : ∑' e : ℕ × ℤ, (fpDist s e).toReal = 1 := by
+    rw [← ENNReal.tsum_toReal_eq (fun e => PMF.apply_ne_top _ _), (fpDist s).tsum_coe,
+      ENNReal.toReal_one]
+  -- "(sub-)probability × [0,1] weight is summable" helpers
+  have hsum_hold_le : ∀ f : ℕ × ℤ → ℝ, (∀ d, 0 ≤ f d) → (∀ d, f d ≤ 1) →
+      Summable (fun d => (hold d).toReal * f d) := by
+    intro f hf0 hf1
+    refine Summable.of_nonneg_of_le (fun d => mul_nonneg ENNReal.toReal_nonneg (hf0 d))
+      (fun d => ?_) hholdsum
+    calc (hold d).toReal * f d ≤ (hold d).toReal * 1 :=
+          mul_le_mul_of_nonneg_left (hf1 d) ENNReal.toReal_nonneg
+      _ = (hold d).toReal := mul_one _
+  have hsum_fp_le : ∀ f : ℕ × ℤ → ℝ, (∀ e, 0 ≤ f e) → (∀ e, f e ≤ 1) →
+      Summable (fun e => (fpDist s e).toReal * f e) := by
+    intro f hf0 hf1
+    refine Summable.of_nonneg_of_le (fun e => mul_nonneg ENNReal.toReal_nonneg (hf0 e))
+      (fun e => ?_) hfpsum
+    calc (fpDist s e).toReal * f e ≤ (fpDist s e).toReal * 1 :=
+          mul_le_mul_of_nonneg_left (hf1 e) ENNReal.toReal_nonneg
+      _ = (fpDist s e).toReal := mul_one _
+  have hrpow01 : ∀ e d : ℕ × ℤ, ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) ≤ 1 :=
+    fun e d => Real.rpow_le_one_of_one_le_of_nonpos
+      (by exact_mod_cast Nat.le_max_right _ _) (by linarith)
+  have hrpow0 : ∀ e d : ℕ × ℤ, (0 : ℝ) ≤ ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) :=
+    fun e d => Real.rpow_nonneg (by positivity) _
+  have hind0 : ∀ (P : Prop) [Decidable P], (0 : ℝ) ≤ (if P then (1 : ℝ) else 0) := by
+    intro P _; split_ifs <;> norm_num
+  have hind1 : ∀ (P : Prop) [Decidable P], (if P then (1 : ℝ) else 0) ≤ 1 := by
+    intro P _; split_ifs <;> norm_num
+  -- per-`e` bound: `edgeWeight A m e ≤ mA·exp(θe₁)·Zh + 1_{m<4e₁} + Th`
+  have hpere : ∀ e : ℕ × ℤ, edgeWeight A m e
+      ≤ mA * Real.exp (θ * (e.1 : ℝ)) * Zh + (if m < 4 * e.1 then (1 : ℝ) else 0) + Th := by
+    intro e
+    have hEWsum : Summable (fun d : ℕ × ℤ =>
+        (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)) :=
+      hsum_hold_le _ (hrpow0 e) (hrpow01 e)
+    have ht1 : Summable (fun d : ℕ × ℤ =>
+        mA * Real.exp (θ * (e.1 : ℝ)) * ((hold d).toReal * Real.exp (θ * (d.1 : ℝ)))) :=
+      hZh.mul_left _
+    have ht2 : Summable (fun d : ℕ × ℤ =>
+        (hold d).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)) :=
+      hsum_hold_le _ (fun _ => hind0 _) (fun _ => hind1 _)
+    have ht3 : Summable (fun d : ℕ × ℤ =>
+        (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)) :=
+      hsum_hold_le _ (fun _ => hind0 _) (fun _ => hind1 _)
+    have hptw : ∀ d : ℕ × ℤ,
+        (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)
+        ≤ mA * Real.exp (θ * (e.1 : ℝ)) * ((hold d).toReal * Real.exp (θ * (d.1 : ℝ)))
+          + (hold d).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+          + (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0) := by
+      intro d
+      have hsummand := edgeWeight_summand_le hA hm e d
+      have hexpsplit : mA * Real.exp (2 * A * ((e.1 + d.1 : ℕ) : ℝ) / (m : ℝ))
+          = mA * Real.exp (θ * (e.1 : ℝ)) * Real.exp (θ * (d.1 : ℝ)) := by
+        rw [show 2 * A * ((e.1 + d.1 : ℕ) : ℝ) / (m : ℝ) = θ * (e.1 : ℝ) + θ * (d.1 : ℝ) by
+              rw [hθdef]; push_cast; ring, Real.exp_add]; ring
+      have hind : (if m < 2 * (e.1 + d.1) then (1 : ℝ) else 0)
+          ≤ (if m < 4 * e.1 then (1 : ℝ) else 0) + (if m < 4 * d.1 then (1 : ℝ) else 0) := by
+        by_cases h2 : m < 2 * (e.1 + d.1)
+        · rw [if_pos h2]
+          rcases (by omega : m < 4 * e.1 ∨ m < 4 * d.1) with h | h
+          · rw [if_pos h]; linarith [hind0 (m < 4 * d.1)]
+          · rw [if_pos h]; linarith [hind0 (m < 4 * e.1)]
+        · rw [if_neg h2]; linarith [hind0 (m < 4 * e.1), hind0 (m < 4 * d.1)]
+      have hhn : (0 : ℝ) ≤ (hold d).toReal := ENNReal.toReal_nonneg
+      calc (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)
+          ≤ (hold d).toReal * ((m : ℝ) ^ (-A)
+              * Real.exp (2 * A * ((e.1 + d.1 : ℕ) : ℝ) / (m : ℝ))
+              + (if m < 2 * (e.1 + d.1) then (1 : ℝ) else 0)) :=
+            mul_le_mul_of_nonneg_left hsummand hhn
+        _ = (hold d).toReal * (mA * Real.exp (θ * (e.1 : ℝ)) * Real.exp (θ * (d.1 : ℝ)))
+              + (hold d).toReal * (if m < 2 * (e.1 + d.1) then (1 : ℝ) else 0) := by
+            rw [← hmAdef, hexpsplit]; ring
+        _ ≤ mA * Real.exp (θ * (e.1 : ℝ)) * ((hold d).toReal * Real.exp (θ * (d.1 : ℝ)))
+            + (hold d).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+            + (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0) := by
+              have := mul_le_mul_of_nonneg_left hind hhn
+              nlinarith [this]
+    have hsub1 : ∑' d : ℕ × ℤ,
+        mA * Real.exp (θ * (e.1 : ℝ)) * ((hold d).toReal * Real.exp (θ * (d.1 : ℝ)))
+        = mA * Real.exp (θ * (e.1 : ℝ)) * Zh := by rw [tsum_mul_left, ← hZhdef]
+    have hsub2 : ∑' d : ℕ × ℤ, (hold d).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+        = (if m < 4 * e.1 then (1 : ℝ) else 0) := by
+      rw [tsum_mul_right, hholdmass, one_mul]
+    calc edgeWeight A m e
+        = ∑' d : ℕ × ℤ, (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) := rfl
+      _ ≤ ∑' d : ℕ × ℤ, (mA * Real.exp (θ * (e.1 : ℝ))
+              * ((hold d).toReal * Real.exp (θ * (d.1 : ℝ)))
+            + (hold d).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+            + (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)) :=
+          hEWsum.tsum_le_tsum hptw ((ht1.add ht2).add ht3)
+      _ = mA * Real.exp (θ * (e.1 : ℝ)) * Zh
+            + (if m < 4 * e.1 then (1 : ℝ) else 0) + Th := by
+          rw [(ht1.add ht2).tsum_add ht3, ht1.tsum_add ht2, hsub1, hsub2, ← hThdef]
+  -- sum the per-`e` bound over `e` with `fpDist`
+  have hEWfpsum : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal * edgeWeight A m e) := by
+    refine hsum_fp_le _ (fun e => edgeWeight_nonneg A m e) (fun e => ?_)
+    calc edgeWeight A m e
+        = ∑' d : ℕ × ℤ, (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) := rfl
+      _ ≤ ∑' d : ℕ × ℤ, (hold d).toReal := by
+          refine (hsum_hold_le _ (hrpow0 e) (hrpow01 e)).tsum_le_tsum (fun d => ?_) hholdsum
+          calc (hold d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)
+              ≤ (hold d).toReal * 1 := mul_le_mul_of_nonneg_left (hrpow01 e d) ENNReal.toReal_nonneg
+            _ = (hold d).toReal := mul_one _
+      _ = 1 := hholdmass
+  have hFF1 : Summable (fun e : ℕ × ℤ =>
+      mA * Zh * ((fpDist s e).toReal * Real.exp (θ * (e.1 : ℝ)))) := hZf.mul_left _
+  have hFF2 : Summable (fun e : ℕ × ℤ =>
+      (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)) :=
+    hsum_fp_le _ (fun _ => hind0 _) (fun _ => hind1 _)
+  have hFF3 : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal * Th) := hfpsum.mul_right _
+  have hFsum : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal
+      * (mA * Real.exp (θ * (e.1 : ℝ)) * Zh + (if m < 4 * e.1 then (1 : ℝ) else 0) + Th)) := by
+    have heq : (fun e : ℕ × ℤ => (fpDist s e).toReal
+        * (mA * Real.exp (θ * (e.1 : ℝ)) * Zh + (if m < 4 * e.1 then (1 : ℝ) else 0) + Th))
+        = fun e => mA * Zh * ((fpDist s e).toReal * Real.exp (θ * (e.1 : ℝ)))
+            + (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+            + (fpDist s e).toReal * Th := by
+      funext e; ring
+    rw [heq]; exact (hFF1.add hFF2).add hFF3
+  have hgsub1 : ∑' e : ℕ × ℤ, mA * Zh * ((fpDist s e).toReal * Real.exp (θ * (e.1 : ℝ)))
+      = mA * Zh * Zf := by rw [tsum_mul_left, ← hZfdef]
+  have hgsub3 : ∑' e : ℕ × ℤ, (fpDist s e).toReal * Th = Th := by
+    rw [tsum_mul_right, hfpmass, one_mul]
+  calc ∑' e : ℕ × ℤ, (fpDist s e).toReal * edgeWeight A m e
+      ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
+          * (mA * Real.exp (θ * (e.1 : ℝ)) * Zh
+             + (if m < 4 * e.1 then (1 : ℝ) else 0) + Th) :=
+        hEWfpsum.tsum_le_tsum
+          (fun e => mul_le_mul_of_nonneg_left (hpere e) ENNReal.toReal_nonneg) hFsum
+    _ = ∑' e : ℕ × ℤ, (mA * Zh * ((fpDist s e).toReal * Real.exp (θ * (e.1 : ℝ)))
+            + (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+            + (fpDist s e).toReal * Th) := by
+        refine tsum_congr (fun e => ?_); ring
+    _ = mA * Zh * Zf + Tf + Th := by
+        rw [(hFF1.add hFF2).tsum_add hFF3, hFF1.tsum_add hFF2, hgsub1, hgsub3, ← hTfdef]
+    _ = mA * Zf * Zh + Tf + Th := by ring
+
+set_option maxHeartbeats 1000000 in
 /-- **The (7.48)/(7.49) weight degradation, Case 2** (paper p.47). With budget
 `s ≤ m/log²m`, the first-passage endpoint's `j`-coordinate concentrates near
 `s/4 ≪ m/log²m` (Lemma 7.7 = `fpDist_location_bound`, node X6), so the average
@@ -1048,14 +1220,122 @@ DECOMPOSITION (2026-07-14, corrected): `edgeWeight_summand_le` reduces this to
 FIXED-tilt tails (see `fpDist_fst_tail_le`); this is genuine new analytic input, not
 pure glue as the earlier note claimed.
 
-OPEN (node X8): glue over `fpDist_fst_mgf_le` (✓) + `hold_fst_mgf_le_real` (✓) +
-`fpDist_fst_tail_le` (open) + `hold_fst_tail_le` (open). -/
+PROVED (node X8): glue over `fpDist_edgeWeight_split` (Fubini heart) + the four
+inputs `fpDist_fst_mgf_le` (Z_fp ≤ 1+ε), `hold_fst_mgf_le_real` (Z_hold ≤ 1+4θ+32θ²
+≤ 1+ε), `fpDist_fst_tail_le` (T_fp ≤ (δ/4)m^{−A}), `hold_fst_tail_le` (T_hold ≤
+(δ/4)m^{−A}), all axiom-clean.  With `ε = min(δ/8, 2)`: MGF term `≤ m^{−A}(1+ε)² ≤
+(1+δ/2)m^{−A}`, tail `≤ (δ/2)m^{−A}`, sum `= (1+δ)m^{−A}`. -/
 theorem fpDist_edgeWeight_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
     ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
       ∑' e : ℕ × ℤ, (fpDist s e).toReal * edgeWeight A m e
         ≤ (1 + δ) * (m : ℝ) ^ (-A) := by
-  sorry
+  obtain ⟨c, hc, C', hC'pos, hcol⟩ := fpDist_col_le
+  set ε : ℝ := min (δ / 8) 2 with hεdef
+  have hεpos : 0 < ε := by rw [hεdef]; exact lt_min (by positivity) (by norm_num)
+  have hεle2 : ε ≤ 2 := min_le_right _ _
+  have hε8 : ε ≤ δ / 8 := min_le_left _ _
+  have hminpos : 0 < min c (c ^ 2 / 20) := lt_min hc (by positivity)
+  obtain ⟨Cf, hCf⟩ := fpDist_fst_mgf_le A hA ε hεpos
+  obtain ⟨Ctf, hCtf⟩ := fpDist_fst_tail_le A hA (δ / 4) (by positivity)
+  obtain ⟨Cth, hCth⟩ := hold_fst_tail_le A hA (δ / 4) (by positivity)
+  refine ⟨Cf + Ctf + Cth + ⌈200 * A⌉₊ + ⌈10 * A / ε⌉₊
+      + ⌈4 * A / min c (c ^ 2 / 20)⌉₊ + 2, fun m hm s hs => ?_⟩
+  have hmCf : Cf ≤ m := by omega
+  have hmCtf : Ctf ≤ m := by omega
+  have hmCth : Cth ≤ m := by omega
+  have hm2 : 2 ≤ m := by omega
+  have hmpos : (0 : ℝ) < m := by exact_mod_cast (by omega : 0 < m)
+  have hθnn : (0 : ℝ) ≤ 2 * A / (m : ℝ) := by positivity
+  -- tilt smallness
+  have h200 : (200 : ℝ) * A ≤ m :=
+    le_trans (Nat.le_ceil _) (by exact_mod_cast (show ⌈200 * A⌉₊ ≤ m by omega))
+  have h10 : (10 : ℝ) * A / ε ≤ m :=
+    le_trans (Nat.le_ceil _) (by exact_mod_cast (show ⌈10 * A / ε⌉₊ ≤ m by omega))
+  have hNc : (4 : ℝ) * A / min c (c ^ 2 / 20) ≤ m :=
+    le_trans (Nat.le_ceil _)
+      (by exact_mod_cast (show ⌈4 * A / min c (c ^ 2 / 20)⌉₊ ≤ m by omega))
+  have hθ100 : 2 * A / (m : ℝ) ≤ 1 / 100 := by rw [div_le_iff₀ hmpos]; nlinarith [h200]
+  have hθε : 2 * A / (m : ℝ) ≤ ε / 5 := by
+    rw [div_le_iff₀ hmpos]
+    have h' : 10 * A ≤ ε * m := by rw [div_le_iff₀ hεpos] at h10; linarith
+    nlinarith [h']
+  have hθmin : 2 * A / (m : ℝ) ≤ min c (c ^ 2 / 20) / 2 := by
+    rw [div_le_iff₀ hmpos]
+    have h' : 4 * A ≤ min c (c ^ 2 / 20) * m := by rw [div_le_iff₀ hminpos] at hNc; linarith
+    nlinarith [h']
+  -- cutoff `K` and budget for the fp-MGF summability
+  have hlogm_pos : 0 < Real.log m := Real.log_pos (by exact_mod_cast (by omega : 1 < m))
+  have hlogsq_pos : 0 < Real.log m ^ 2 := by positivity
+  set κ : ℝ := (m : ℝ) / Real.log m ^ 2 with hκdef
+  have hκnn : 0 ≤ κ := by rw [hκdef]; positivity
+  have hsκ : (s : ℝ) ≤ κ := hs
+  set K : ℕ := ⌊κ⌋₊ + 25 with hKdef
+  have hK25 : 25 ≤ K := by omega
+  have hKlb : κ + 24 ≤ (K : ℝ) := by
+    rw [hKdef]; push_cast; linarith [Nat.lt_floor_add_one κ]
+  have hbud : (s : ℝ) * Real.log 2 ≤ ((K : ℝ) + 2) * Real.log 9 := by
+    have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos one_lt_two
+    have hlog9 : (0 : ℝ) < Real.log 9 := Real.log_pos (by norm_num)
+    have hlog29 : Real.log 2 ≤ Real.log 9 := Real.log_le_log (by norm_num) (by norm_num)
+    calc (s : ℝ) * Real.log 2 ≤ κ * Real.log 2 := mul_le_mul_of_nonneg_right hsκ hlog2.le
+      _ ≤ κ * Real.log 9 := mul_le_mul_of_nonneg_left hlog29 hκnn
+      _ ≤ ((K : ℝ) + 2) * Real.log 9 :=
+          mul_le_mul_of_nonneg_right (by linarith [hKlb]) hlog9.le
+  -- the two MGF summabilities that `fpDist_edgeWeight_split` needs
+  have hZf_sum : Summable (fun e : ℕ × ℤ =>
+      (fpDist s e).toReal * Real.exp (2 * A / (m : ℝ) * (e.1 : ℝ))) :=
+    (fpDist_fst_mgf_general hc hC'pos hcol hθnn hθmin s K hK25 hbud).1
+  have hZh_sum : Summable (fun d : ℕ × ℤ =>
+      (hold d).toReal * Real.exp (2 * A / (m : ℝ) * (d.1 : ℝ))) := by
+    have hne : ∑' d : ℕ × ℤ, hold d * expW2 (2 * A / (m : ℝ)) 0 d ≠ ∞ := by
+      rw [← tiltZ]
+      exact tiltZ_hold_ne_top (by linarith [hθnn]) (by linarith [hθ100]) (by norm_num) (by norm_num)
+    refine (ENNReal.summable_toReal hne).congr (fun d => ?_)
+    rw [expW2, ENNReal.toReal_mul, ENNReal.toReal_ofReal (Real.exp_pos _).le]
+    congr 2; push_cast; ring
+  -- apply the Fubini split, then bound each piece
+  refine le_trans (fpDist_edgeWeight_split hA.le hm2 s hZf_sum hZh_sum) ?_
+  set mA : ℝ := (m : ℝ) ^ (-A) with hmAdef
+  have hmA0 : 0 < mA := by rw [hmAdef]; exact Real.rpow_pos_of_pos hmpos _
+  set Zf : ℝ := ∑' e : ℕ × ℤ, (fpDist s e).toReal * Real.exp (2 * A / (m : ℝ) * (e.1 : ℝ))
+    with hZfdef
+  set Zh : ℝ := ∑' d : ℕ × ℤ, (hold d).toReal * Real.exp (2 * A / (m : ℝ) * (d.1 : ℝ))
+    with hZhdef
+  set Tf : ℝ := ∑' e : ℕ × ℤ, (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+    with hTfdef
+  set Th : ℝ := ∑' d : ℕ × ℤ, (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)
+    with hThdef
+  have hZh0 : 0 ≤ Zh := by
+    rw [hZhdef]; exact tsum_nonneg fun d => mul_nonneg ENNReal.toReal_nonneg (Real.exp_pos _).le
+  -- `Z_fp ≤ 1+ε`
+  have hZfb : Zf ≤ 1 + ε := by
+    rw [hZfdef]
+    refine le_trans (le_of_eq (tsum_congr (fun e => ?_))) (hCf m hmCf s hs)
+    rw [show 2 * A / (m : ℝ) * (e.1 : ℝ) = 2 * A * (e.1 : ℝ) / (m : ℝ) by ring]
+  -- `Z_hold ≤ 1+4θ+32θ² ≤ 1+ε`
+  have hZhb : Zh ≤ 1 + ε := by
+    rw [hZhdef]
+    refine le_trans (hold_fst_mgf_le_real (by linarith [hθnn]) hθ100) ?_
+    nlinarith [hθε, hθ100, hθnn, mul_le_mul_of_nonneg_left hθ100 hθnn]
+  -- the two tails
+  have hTfb : Tf ≤ δ / 4 * mA := by rw [hTfdef, hmAdef]; exact hCtf m hmCtf s hs
+  have hThb : Th ≤ δ / 4 * mA := by rw [hThdef, hmAdef]; exact hCth m hmCth
+  -- MGF term `≤ (1+δ/2)m^{−A}`
+  have hquad : 2 * ε + ε ^ 2 ≤ δ / 2 := by nlinarith [hεle2, hε8, hεpos]
+  have hMGF : mA * Zf * Zh ≤ (1 + δ / 2) * mA := by
+    have h1 : mA * Zf * Zh ≤ mA * (1 + ε) * (1 + ε) :=
+      mul_le_mul (mul_le_mul_of_nonneg_left hZfb hmA0.le) hZhb hZh0 (by positivity)
+    have h2 : mA * (1 + ε) * (1 + ε) ≤ (1 + δ / 2) * mA := by
+      have hh := mul_le_mul_of_nonneg_left hquad hmA0.le
+      calc mA * (1 + ε) * (1 + ε) = mA + mA * (2 * ε + ε ^ 2) := by ring
+        _ ≤ mA + mA * (δ / 2) := by linarith [hh]
+        _ = (1 + δ / 2) * mA := by ring
+    linarith [h1, h2]
+  calc mA * Zf * Zh + Tf + Th
+      ≤ (1 + δ / 2) * mA + δ / 4 * mA + δ / 4 * mA :=
+        add_le_add (add_le_add hMGF hTfb) hThb
+    _ = (1 + δ) * mA := by ring
 
 /-- **The (7.50)/(7.51) white-exit bound** (paper p.48): starting the renewal
 walk at a black edge point `(⌊n/2⌋-m, l)` whose phase point `(⌊n/2⌋-m-1, l)`
