@@ -2677,4 +2677,30 @@ theorem fpDist_col_le :
     _ = C * (Real.exp (-c) / (1 - Real.exp (-c))) * (G / Real.sqrt (1 + (s : ℝ))) := by
         rw [hA]; ring
 
+/-- **ℕ-tail shifted geometric** (companion of `hasSum_int_shift_exp`): the
+exponential `e^{-γ(j-a)}` restricted to the tail `j > m` sums to
+`e^{-γ(m+1-a)}/(1-e^{-γ})`.  Reusable engine for the Gaussian column tails. -/
+theorem hasSum_nat_tail_exp {γ : ℝ} (hγ : 0 < γ) (m : ℕ) (a : ℝ) :
+    HasSum (fun j : ℕ => if m < j then Real.exp (-γ * ((j : ℝ) - a)) else 0)
+      (Real.exp (-γ * (((m : ℝ) + 1) - a)) / (1 - Real.exp (-γ))) := by
+  have he1 : Real.exp (-γ) < 1 := by rw [Real.exp_lt_one_iff]; linarith
+  have he0 : (0 : ℝ) < Real.exp (-γ) := Real.exp_pos _
+  set f : ℕ → ℝ := fun j => if m < j then Real.exp (-γ * ((j : ℝ) - a)) else 0 with hf
+  set E : ℝ := Real.exp (-γ * (((m : ℝ) + 1) - a)) with hE
+  have hgeom : HasSum (fun k : ℕ => E * Real.exp (-γ) ^ k)
+      (E / (1 - Real.exp (-γ))) := by
+    have h := (hasSum_geometric_of_lt_one he0.le he1).mul_left E
+    rwa [← div_eq_mul_inv] at h
+  have h2 : HasSum (fun k : ℕ => f (k + (m + 1))) (E / (1 - Real.exp (-γ))) := by
+    have he : (fun k : ℕ => f (k + (m + 1))) = fun k : ℕ => E * Real.exp (-γ) ^ k := by
+      funext k; rw [hf]; dsimp only
+      rw [if_pos (by omega), hE, ← Real.exp_nat_mul, ← Real.exp_add]
+      congr 1; push_cast; ring
+    rw [he]; exact hgeom
+  have hfront : ∑ i ∈ Finset.range (m + 1), f i = 0 := by
+    apply Finset.sum_eq_zero; intro i hi; rw [hf]; dsimp only
+    rw [if_neg (by have := Finset.mem_range.mp hi; omega)]
+  rw [← hasSum_nat_add_iff' (m + 1)]
+  simpa [hfront] using h2
+
 end TaoCollatz

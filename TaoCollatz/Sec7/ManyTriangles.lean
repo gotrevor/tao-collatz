@@ -1716,29 +1716,6 @@ the common prefactor `e^{-γ·x₀}` with `x₀ ≥ (m-3)/5` is pushed below `1/
 by the threshold. Its geometric engine, the ℕ-tail analogue of
 `hasSum_int_shift_exp`: `e^{-γ(j-a)}` restricted to `j > m` sums to
 `e^{-γ(m+1-a)}/(1-e^{-γ})` (shifted geometric). -/
-theorem hasSum_nat_tail_exp {γ : ℝ} (hγ : 0 < γ) (m : ℕ) (a : ℝ) :
-    HasSum (fun j : ℕ => if m < j then Real.exp (-γ * ((j : ℝ) - a)) else 0)
-      (Real.exp (-γ * (((m : ℝ) + 1) - a)) / (1 - Real.exp (-γ))) := by
-  have he1 : Real.exp (-γ) < 1 := by rw [Real.exp_lt_one_iff]; linarith
-  have he0 : (0 : ℝ) < Real.exp (-γ) := Real.exp_pos _
-  set f : ℕ → ℝ := fun j => if m < j then Real.exp (-γ * ((j : ℝ) - a)) else 0 with hf
-  set E : ℝ := Real.exp (-γ * (((m : ℝ) + 1) - a)) with hE
-  have hgeom : HasSum (fun k : ℕ => E * Real.exp (-γ) ^ k)
-      (E / (1 - Real.exp (-γ))) := by
-    have h := (hasSum_geometric_of_lt_one he0.le he1).mul_left E
-    rwa [← div_eq_mul_inv] at h
-  have h2 : HasSum (fun k : ℕ => f (k + (m + 1))) (E / (1 - Real.exp (-γ))) := by
-    have he : (fun k : ℕ => f (k + (m + 1))) = fun k : ℕ => E * Real.exp (-γ) ^ k := by
-      funext k; rw [hf]; dsimp only
-      rw [if_pos (by omega), hE, ← Real.exp_nat_mul, ← Real.exp_add]
-      congr 1; push_cast; ring
-    rw [he]; exact hgeom
-  have hfront : ∑ i ∈ Finset.range (m + 1), f i = 0 := by
-    apply Finset.sum_eq_zero; intro i hi; rw [hf]; dsimp only
-    rw [if_neg (by have := Finset.mem_range.mp hi; omega)]
-  rw [← hasSum_nat_add_iff' (m + 1)]
-  simpa [hfront] using h2
-
 theorem gaussian_col_tail {c C' : ℝ} (hc : 0 < c) (hC' : 0 ≤ C') :
     ∃ Cthr : ℕ, ∀ s m : ℕ, Cthr ≤ m →
       (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
