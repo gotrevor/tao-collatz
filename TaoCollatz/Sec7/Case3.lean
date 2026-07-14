@@ -1034,24 +1034,23 @@ barrier is cleared; (c) among the following `K+2` positions one is black
 (≤ K whites total on the whole path, and every deep in-strip position is
 white-or-black via `whiteSet`/`black` complementarity at the phase point);
 (d) the first such position triggers `encStep`'s encounter branch (all four
-conditions hold), incrementing the count. -/
-theorem deterministic_encounter_claim (n ξ : ℕ) (F : TriangleFamily n ξ)
-    (g R K : ℕ) (A : ℝ) (hA : 1 ≤ A) :
-    ∃ P₀ : ℕ, ∀ T : ℕ, P₀ ≤ T → ∀ q₀ : ℕ × ℤ, 1 ≤ q₀.1 →
-      ∀ v : Fin T → ℕ × ℤ, (∀ i, v i ∈ hold.support) →
-      -- (i) depth: every visited position is ≥ g-deep in the strip, col ≥ 1
-      (∀ p, p ≤ T → (q₀ + pathSum v p).1 + g ≤ n / 2) →
-      -- (ii) outside E∗: every covering triangle met at time p is small
-      (∀ p, p ≤ T → ∀ t ∈ F.T,
+conditions hold), incrementing the count.
+
+**Explicit-threshold form** (exposes the concrete horizon witness `encWindowIter A K R`);
+the `∃ P₀` version `deterministic_encounter_claim` delegates to this. X11d's
+`few_white_mass_le` needs the explicit `P₀` so it can pick a *uniform* horizon `P`
+(chosen before `∀ n ξ F`, since `encWindowIter A K R` depends only on `A, K, R`). -/
+theorem deterministic_encounter_claim_at (n ξ : ℕ) (F : TriangleFamily n ξ)
+    (g R K : ℕ) (A : ℝ) (hA : 1 ≤ A) (T : ℕ) (hT : encWindowIter A K R ≤ T)
+    (q₀ : ℕ × ℤ) (hq₀ : 1 ≤ q₀.1) (v : Fin T → ℕ × ℤ) (hv : ∀ i, v i ∈ hold.support)
+    (hdepth : ∀ p, p ≤ T → (q₀ + pathSum v p).1 + g ≤ n / 2)
+    (hsmall : ∀ p, p ≤ T → ∀ t ∈ F.T,
         ((q₀ + pathSum v p).1 - 1, (q₀ + pathSum v p).2) ∈ triangle t.1 t.2.1 t.2.2 →
-        t.2.2 < (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3) →
-      -- (iii) few whites along the path
-      ((Finset.range T).sum
-        (fun p => if q₀ + pathSum v (p + 1) ∈ whiteStrip n ξ then 1 else 0) ≤ K) →
-      R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count := by
+        t.2.2 < (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3)
+    (hfew : (Finset.range T).sum
+        (fun p => if q₀ + pathSum v (p + 1) ∈ whiteStrip n ξ then 1 else 0) ≤ K) :
+    R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count := by
   classical
-  refine ⟨encWindowIter A K R, ?_⟩
-  intro T hT q₀ hq₀ v hv hdepth hsmall hfew
   -- the iterated window bound reaches count i by time encWindowIter A K i
   have key : ∀ i, i ≤ R → i ≤ (encFoldAt F R g q₀ v (encWindowIter A K i)).count := by
     intro i
@@ -1069,6 +1068,23 @@ theorem deterministic_encounter_claim (n ξ : ℕ) (F : TriangleFamily n ξ)
   have hmono := encFoldAt_count_mono F R g q₀ v hT (le_refl T)
   rw [encFoldAt_top] at hmono
   exact le_trans (key R (le_refl R)) hmono
+
+open scoped Classical in
+/-- The (7.67) deterministic-encounter claim, `∃ P₀` form (delegates to
+`deterministic_encounter_claim_at` at the explicit witness `encWindowIter A K R`). -/
+theorem deterministic_encounter_claim (n ξ : ℕ) (F : TriangleFamily n ξ)
+    (g R K : ℕ) (A : ℝ) (hA : 1 ≤ A) :
+    ∃ P₀ : ℕ, ∀ T : ℕ, P₀ ≤ T → ∀ q₀ : ℕ × ℤ, 1 ≤ q₀.1 →
+      ∀ v : Fin T → ℕ × ℤ, (∀ i, v i ∈ hold.support) →
+      (∀ p, p ≤ T → (q₀ + pathSum v p).1 + g ≤ n / 2) →
+      (∀ p, p ≤ T → ∀ t ∈ F.T,
+        ((q₀ + pathSum v p).1 - 1, (q₀ + pathSum v p).2) ∈ triangle t.1 t.2.1 t.2.2 →
+        t.2.2 < (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3) →
+      ((Finset.range T).sum
+        (fun p => if q₀ + pathSum v (p + 1) ∈ whiteStrip n ξ then 1 else 0) ≤ K) →
+      R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count :=
+  ⟨encWindowIter A K R, fun T hT q₀ hq₀ v hv hdepth hsmall hfew =>
+    deterministic_encounter_claim_at n ξ F g R K A hA T hT q₀ hq₀ v hv hdepth hsmall hfew⟩
 
 /-! ### X11a analytic helpers — the two convergent series behind the E∗ union -/
 
@@ -1451,23 +1467,21 @@ including the start `q₀`) and the fold's `cumWhite = Σ_{p<P} 1_{q₀+pathSum 
 (positions `pathSum 1..P`, `encFold_cumWhite`): the two counts differ only in the boundary
 terms `1_{q₀∈WS}` (dropped) and `1_{q₀+pathSum P∈WS}` (added), so `cumWhite ≤ myNw + 1`. This
 is exactly the reconciliation X11d's `few_white_mass_le` needs to feed
-`reaches_fewWhite_mass_le_ten` (`cumWhite ≤ K+1`) and `estar_union_le` (the E∗ branch). -/
+`reaches_fewWhite_mass_le_ten` (`cumWhite ≤ K+1`) and `estar_union_le` (the E∗ branch).
+Stated at the **explicit uniform horizon** `encWindowIter A (K+1) R ≤ P` (not `∃ P₀`) so
+`few_white_mass_le` can fix one `P` before `∀ n ξ F`. -/
 theorem few_white_pointwise_dichotomy {n ξ : ℕ} (F : TriangleFamily n ξ)
-    (g R K : ℕ) (A : ℝ) (hA : 1 ≤ A) :
-    ∃ P₀ : ℕ, ∀ P : ℕ, P₀ ≤ P → ∀ q₀ : ℕ × ℤ, 1 ≤ q₀.1 →
-      ∀ v : Fin P → ℕ × ℤ, (∀ i, v i ∈ hold.support) →
-      (∀ p, p ≤ P → (q₀ + pathSum v p).1 + g ≤ n / 2) →
-      (∑ p ∈ Finset.range P,
-          (if q₀ + pathSum v p ∈ whiteStrip n ξ then (1 : ℕ) else 0)) ≤ K →
-      (R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
-          ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K + 1)
-      ∨ (∃ p, p ≤ P ∧ ∃ t ∈ F.T,
-          ((q₀ + pathSum v p).1 - 1, (q₀ + pathSum v p).2) ∈ triangle t.1 t.2.1 t.2.2
-          ∧ (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 ≤ t.2.2) := by
+    (g R K : ℕ) (A : ℝ) (hA : 1 ≤ A) (P : ℕ) (hP : encWindowIter A (K + 1) R ≤ P)
+    (q₀ : ℕ × ℤ) (hq₀ : 1 ≤ q₀.1) (v : Fin P → ℕ × ℤ) (hv : ∀ i, v i ∈ hold.support)
+    (hdepth : ∀ p, p ≤ P → (q₀ + pathSum v p).1 + g ≤ n / 2)
+    (hmyNw : (∑ p ∈ Finset.range P,
+        (if q₀ + pathSum v p ∈ whiteStrip n ξ then (1 : ℕ) else 0)) ≤ K) :
+    (R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
+        ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K + 1)
+    ∨ (∃ p, p ≤ P ∧ ∃ t ∈ F.T,
+        ((q₀ + pathSum v p).1 - 1, (q₀ + pathSum v p).2) ∈ triangle t.1 t.2.1 t.2.2
+        ∧ (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 ≤ t.2.2) := by
   classical
-  obtain ⟨P₀, hP₀⟩ := deterministic_encounter_or_bigTriangle F g R (K + 1) A hA
-  refine ⟨P₀, ?_⟩
-  intro P hP q₀ hq₀ v hv hdepth hmyNw
   -- `cumWhite = Σ_{p<P} 1_{q₀+pathSum v (p+1)∈whiteStrip}` (start count 0, position `q₀`).
   have hpos : (encInit q₀.1 q₀.2).pos = q₀ := rfl
   have hcum : ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite
@@ -1493,13 +1507,18 @@ theorem few_white_pointwise_dichotomy {n ξ : ℕ} (F : TriangleFamily n ξ)
     have hb : (if q₀ + pathSum v P ∈ whiteStrip n ξ then (1 : ℕ) else 0) ≤ 1 := by
       split_ifs <;> omega
     omega
-  -- Feed the deterministic dichotomy at `K+1`.
   have hcumK : ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K + 1 := by
     rw [hcum]; exact hSple
-  have hdich := hP₀ P hP q₀ hq₀ v hv hdepth (by rw [← hcum]; exact hcumK)
-  rcases hdich with hreach | hEstar
-  · exact Or.inl ⟨hreach, hcumK⟩
-  · exact Or.inr hEstar
+  -- Dichotomy: either all covering triangles are small (⟹ reach `R`) or one is big (E∗).
+  by_cases hE : ∀ p, p ≤ P → ∀ t ∈ F.T,
+      ((q₀ + pathSum v p).1 - 1, (q₀ + pathSum v p).2) ∈ triangle t.1 t.2.1 t.2.2 →
+      t.2.2 < (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3
+  · exact Or.inl ⟨deterministic_encounter_claim_at n ξ F g R (K + 1) A hA P hP q₀ hq₀ v hv
+      hdepth hE hSple, hcumK⟩
+  · refine Or.inr ?_
+    push_neg at hE
+    obtain ⟨p, hp, t, ht, hmem, hbig⟩ := hE
+    exact ⟨p, hp, t, ht, hmem, hbig⟩
 
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
