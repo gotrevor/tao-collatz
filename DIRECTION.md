@@ -7,7 +7,66 @@ PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ---
 
-## CURRENT DIRECTIVE (JUDGE PASS 26, 2026-07-14 — 🌙 OVERNIGHT RUN #2, ~03:10 → ~10:10)
+## CURRENT DIRECTIVE (REVIEW LAP, 2026-07-14 — §7 CLOSED; frontier moves to C10)
+
+**🏆 MILESTONE.** The §7 crux — the campaign's stated 65–75% risk concentration, "the
+paper's pinnacle" (X8/X9/X10/X11) — is **DONE and axiom-clean.** Review-lap `#print axioms`
+(HEAD `1c3ee3d`, build green, 3285 jobs): `prop_7_8`, `Q_black_edge`, `Q_polynomial_decay`,
+`charFn_decay` (Prop 1.17), `key_fourier_decay` (Prop 7.1) **all** = `[propext,
+Classical.choice, Quot.sound]`. Judge Pass 26's three §7 objectives are FULFILLED (X11
+`Q_black_edge_case3` closed; the two Case-3 sorries proved; the X10 `_rpow` split landed).
+**That directive is retired** — grind laps had already correctly moved past it to §6.
+
+**The content spine now has EXACTLY TWO open heroic sorries** (+ the two frozen headline stubs):
+- C10 `fine_scale_mixing` (Prop 1.14, §6, `Sec6/MixingFromDecay.lean:377`) — `sorryAx`.
+- C9 `stabilization` (Prop 1.11, §5, `Sec5/FirstPassage.lean:81`) — `sorryAx`, **consumes C10**.
+
+### 🎯 THE ONE OBJECTIVE: prove C10 `fine_scale_mixing` (Prop 1.14).
+
+It is the crux: hardest open node AND upstream of C9 on the critical path
+`C10 → C9 → C6 → Statement`. **It is NOT a new analytic kernel** — both hard ingredients are
+already proved axiom-clean: (i) the Cauchy–Schwarz/Parseval bridge `osc_le_sqrt_highfreq`
+(8 lemmas, `MixingFromDecay.lean`); (ii) `charFn_decay` (Prop 1.17, the character-sum decay).
+C10 is the §6 **conditioning assembly** that plugs (ii) into (i) applied to a *conditioned*
+density `g`, not raw `syracZ`. Risk = volume/bookkeeping, NOT novelty (the charter rates
+post-§7 at 75–95%). **Do not treat "HEROIC" as un-attackable and retreat.**
+
+### Mandated next move (fruit-8 attack path, hardest-first)
+The raw-density route is REFUTED (last lap; `scripts/syracZ_highfreq_l2.py` proves the raw
+high-freq L² mass GROWS ≈0.46·n) and remapped. The correct route (Tao §6, pdf pp.28–31)
+applies the bridge to `g_{n,k,l}(Y)=P(Xₙ=Y ∧ Eₖ∧Bₖ∧Cₖ,ₗ)`:
+1. **(brick d, START HERE, mechanical)** Generalize `osc_le_sqrt_highfreq` + its helpers
+   (`densC`,`devC`,`condAvgC`,`sum_norm_sq_devC_eq`,…) from `fun Y=>(syracZ n Y).toReal` to an
+   arbitrary real `c : ZMod (3^n)→ℝ`. The proofs never used syracZ-ness. Unblocks the bridge on `g`.
+2. **(brick a)** The independent `F`-split
+   `Xₙ = F_{k+1}(a_{k+1..1}) + 3^{k+1}2^{-l}F_{n-k-1}(aₙ..a_{k+2})` on `Cₖ,ₗ` as a Lean identity
+   ((1.5)/(1.26); pieces in `Basic/`,`Syracuse/`).
+3. **(brick b)** Independence ⟹ character-sum factorization (D1 PMF product form, `cexpect_mul`).
+4. Conditioning events (E/Eₖ/Bₖ/Cₖ,ₗ, stopping time k) + `charFn_decay` on the 2nd factor +
+   triangle reassembly. Full plan: `PENDING_WORK.md` fruit-8.
+
+### Forbidden drift
+- **Do NOT retreat to C9 `stabilization` as "easier"** — it is downstream of C10 and would only
+  cite it as a sorry. C10 first. (If genuinely blocked on C10 after real attempts, DECOMPOSE it
+  into named sub-`sorry`s in `src/` — that is progress — not switch nodes.)
+- **Do NOT touch the two `Statement.lean` headline sorries** (hard rail 2) — they discharge only
+  when the whole chain C10→C9→C6 lands.
+- **Do NOT resurrect the refuted raw-syracZ CS route** — conditioning is mandatory.
+- **Do NOT edit any ratified §7 pin** (hard rail 6) — §7 is frozen and clean; leave it be.
+
+### Why
+§7 was the campaign's concentrated risk and it is discharged clean. What remains is the §6/§5
+analytic assembly over machinery that is *already proved*. Driving C10 → C9 → the C6→headline
+wiring is the last mile. No route trigger has fired; route = CONTINUE.
+
+### Directive history (this section's entries; full campaign history below under SUPERSEDED)
+- **review lap (2026-07-14)**: §7 CROSSED — X8/X9/X10/X11 all axiom-clean; `prop_7_8`+chain clean;
+  Judge Pass 26 (§7) FULFILLED and retired. Frontier → C10 `fine_scale_mixing` (Prop 1.14, §6)
+  via the fruit-8 conditioning route; C9 downstream; no trigger fired.
+
+---
+
+## SUPERSEDED — JUDGE PASS 26 (2026-07-14, §7 objectives — FULFILLED & retired; §7 now axiom-clean)
 
 **Last night's work is ACCEPTED and it was excellent.** Judge-dated `#print axioms`
 (worktree pinned at `61f8e80`): **20 decls exactly `[propext, Classical.choice, Quot.sound]`**

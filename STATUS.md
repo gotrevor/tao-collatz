@@ -1,30 +1,48 @@
 # STATUS — tao-collatz 📊
 
 **First-anywhere Lean 4 formalization of Tao 2019 "Almost all Collatz orbits
- attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3282 jobs) ·
-**Updated**: review lap · 2026-07-14 · `7e2398f`
+ attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3285 jobs) ·
+**Updated**: review lap · 2026-07-14 · `1c3ee3d`
 
 ## Where it stands
 
-Multi-month campaign; the §7 crux (Prop 1.17) is the risk concentration and is
-under active assault. **Both pinnacle kernels are done and axiom-clean**: X9
-(Lemma 7.9 `many_triangles_white`) and X10 (Lemma 7.10 `triangle_encounter_le`),
-alongside S3, X3, X6, X1, X2, X5, X4/X7. **X8 / Case-2 is now COMPLETE and
-axiom-clean** — both kernels (`fpDist_edgeWeight_le`, `fpDist_white_exit`) and the
-assembly `Q_black_edge_case2` verify `[propext, choice, Quot.sound]`. The §7
-monotonicity chain now hinges on **EXACTLY ONE sorry**: X11 `Q_black_edge_case3`
-(`Case3.lean:1062`) — confirmed the sole `sorryAx` carrier under `prop_7_8`.
-Its three bridges (`fstar_markov`, `fpDist_walk_eq_fpDistPlus`,
-`bigTriangle_walk_le`) are all proved and axiom-clean; the remaining assembly is
-X11a `estar_union_le` (sum the per-`p` bridge over the horizon) → X11c
-`few_whites_le` → the X11d body. Beyond §7: 6 deliberate spine stubs
-(`SyracRV` ×3, `FirstPassage` ×2, `MixingFromDecay` ×1, `Collatz` ×1) plus the
-2 headline sorries in `Statement.lean`. **9 actual proof `sorry`s remain in
-`TaoCollatz/` total** (2 headline + 1 crux + 6 spine).
+**🏆 §7 — the campaign's stated 65–75% risk concentration ("the paper's
+pinnacle", X8/X9/X10/X11) — is CLOSED and axiom-clean.** Review-lap `#print
+axioms`: `prop_7_8`, `Q_black_edge`, `Q_polynomial_decay`, `charFn_decay`
+(Prop 1.17), `key_fourier_decay` (Prop 7.1) all = `[propext, choice, Quot.sound]`.
+All of SyracRV, S3, X1–X10, X11 done and clean. **The content spine now has
+EXACTLY TWO open heroic sorries** (+ 2 frozen headline stubs): C10
+`fine_scale_mixing` (Prop 1.14, §6, `MixingFromDecay.lean:377`) and C9
+`stabilization` (Prop 1.11, §5, `FirstPassage.lean:81`, consumes C10). The
+current crux is **C10** — upstream on the critical path `C10 → C9 → C6 →
+Statement`, and NOT a new kernel: its two hard ingredients (the CS/Parseval
+bridge `osc_le_sqrt_highfreq`, and `charFn_decay`) are already proved
+axiom-clean, so C10 is the §6 conditioning *assembly* that plugs decay into the
+bridge on a conditioned density `g`. **4 real proof `sorry`s remain total** (2
+headline + C10 + C9).
 
 ## What's happened (newest first)
 
-- **review lap (2026-07-14)**: direction confirmed sound — recent laps drove
+- **review lap (2026-07-14)**: **§7 CROSSED** — inventory found only 4 live
+  sorries (2 headline + C10 + C9); `#print axioms` confirms `prop_7_8` +
+  full §7 chain (Q_black_edge, Q_polynomial_decay, charFn_decay,
+  key_fourier_decay) all trust-base clean. DIRECTION.md CURRENT DIRECTIVE +
+  STATUS were stale (pointed at the now-closed X11); both rewritten. New
+  frontier = C10 `fine_scale_mixing` via the fruit-8 conditioning route.
+- **lap fruit-8 (2026-07-15)**: C10 Cauchy–Schwarz/Parseval bridge
+  `osc_le_sqrt_highfreq` FULLY PROVED, axiom-clean (8 reusable lemmas). Naive
+  `highfreq_l2_le` route REFUTED (raw high-freq L² mass GROWS ≈0.46n, exact DP)
+  → remapped to Tao's §6 conditioning of the density; `fine_scale_mixing`
+  reverted to a documented `sorry` on the correct route.
+- **lap fruit-7 (2026-07-14)**: Parseval on `ZMod N` PROVED (`Fourier/Parseval.lean`,
+  node S4); full C10 route mapped; `fine_scale_mixing` decomposed into
+  `osc_le_sqrt_highfreq` + `highfreq_l2_le`.
+- **lap fruit-6 (2026-07-14)**: Lemma 1.12 `syracZ_recursion` PROVED — **all of
+  SyracRV closed**, axiom-clean.
+- **§7 close-out (2026-07-14)**: X11 `Q_black_edge_case3` + the two Case-3
+  sorries (`few_white_mass_le`, `col_tail_mass_le`) proved; X10 `_rpow` split
+  landed; `prop_7_8` → `Q_polynomial_decay` axiom-clean.
+- **review lap (2026-07-14, earlier)**: direction confirmed sound — recent laps drove
   straight at the X11 crux, not side-leaves. `#print axioms` re-run: X8
   `Q_black_edge_case2`/`fpDist_white_exit`, X9 `many_triangles_white`, X10
   `triangle_encounter_le`, and all three X11 bridges verify trust-base-only;
@@ -130,57 +148,52 @@ X11a `estar_union_le` (sum the per-`p` bridge over the horizon) → X11c
 
 ## Outstanding
 
-### Short-term (mirror PENDING_WORK top)
-- **X11a `estar_union_le`** (NEXT crux sub-lemma): sum the proved per-`p`
-  `bigTriangle_walk_le` over `p ∈ range(T+1)` at `s'=⌈4^A(1+p)³⌉`. Needs
-  `Σ_p (1+p)^{-2} ≤ 2` (telescoping) for the `1/s'` terms + geometric
-  `Σ_p exp(−c·A²(1+p))` with the comparison `exp(−cA²) ≤ const·A²·4^{-A}` for
-  `A ≥ A₀`. Net E∗-mass `≤ C'·A²·4^{-A}`.
-- **X11c `few_whites_le`**, then **X11d body** `Q_black_edge_case3` — see
-  PENDING_WORK top for the full X11 attack path.
+### Short-term (mirror PENDING_WORK top — C10 fruit-8 route)
+- **brick (d)** (START HERE, mechanical): generalize `osc_le_sqrt_highfreq` +
+  helpers (`densC`,`devC`,`condAvgC`,`sum_norm_sq_devC_eq`,…) from
+  `fun Y=>(syracZ n Y).toReal` to an arbitrary real `c : ZMod (3^n)→ℝ`
+  (proofs never used syracZ-ness) — unblocks applying the proved bridge to the
+  conditioned density `g`.
+- **brick (a)** the independent `F`-split `Xₙ = F_{k+1}(…) + 3^{k+1}2^{-l}F_{n-k-1}(…)`
+  on `Cₖ,ₗ` as a Lean identity ((1.5)/(1.26)); **brick (b)** independence ⟹
+  char-sum factorization; then the conditioning events + `charFn_decay` on the
+  2nd factor + triangle reassembly. See PENDING_WORK fruit-8.
 
 ### Long-term
-- After X11 lands: `Q_black_edge → prop_7_8 → Q_polynomial_decay` go clean and
-  §7 monotonicity is done; assemble Prop 1.17 → C10 → C9 → C6 → headline.
+- After C10 lands: attack C9 `stabilization` (Prop 1.11, §5) — consumes C10 —
+  then assemble C6 → the two `Statement.lean` headlines.
 - 🗂️ `ManyTriangles.lean` split (BLUEPRINT §2, 5k+ lines) — queued, pure moves;
-  do only when off the X11 critical path.
-- C8 pin (Prop 5.2, §5) — the last RED statement-less node; opportunistic.
-- Spine stubs: `SyracRV` ×3, `FirstPassage` ×2, `MixingFromDecay` ×1,
-  `Collatz` ×1 (6 stub sorries, downstream of the crux, deliberately deferred).
+  off the critical path, opportunistic only.
 
 ### To completion
-Close X11 `Q_black_edge_case3` → §7 crux assembles → Prop 1.17 → Prop 1.14 →
-C10 → C9 → C6 → Thm 1.3; discharge the 6 spine `sorry`s; `#print axioms` on the
-`Statement` headline = trust base only.
+Close C10 `fine_scale_mixing` → C9 `stabilization` → C6 → wire the two
+`Statement.lean` headlines; `#print axioms tao_collatz` = trust base only.
 
 ## Axiom ledger (fidelity spine)
 
-The headline theorems are NOT yet assembled — the spine (§1–§6) is stubbed while
-the §7 crux is built bottom-up. Ledger re-run this review lap (2026-07-14, real
-`#print axioms` at `7e2398f`):
+The two headline theorems are NOT yet assembled — the §1–§6 spine feeds into
+`Statement` only after C10/C9/C6 land. §7 (the crux) is fully closed. Ledger
+re-run this review lap (2026-07-14, real `#print axioms` at `1c3ee3d`):
 
 | headline / node | paper claim | `#print axioms` shows | status |
 |---|---|---|---|
-| `Statement` Thm 1.3 / Thm 3.1 | Thm 1.3 (uncond.) | `sorry` (spine not assembled) | 🔜 stub — downstream of crux |
-| S3 `hold_local_bound` / `hold_tail_bound` | Lemma 2.2(i)(ii) Hold | `[propext, choice, Quot.sound]` | 🟢 done, clean |
-| X3 `black_structure` | Lemma 7.4 | `[propext, choice, Quot.sound]` | 🟢 done, clean |
-| X6 `fpDist_location_bound` | Lemma 7.7 | `[propext, choice, Quot.sound]` | 🟢 done, clean |
-| X1 `cexpect_pairing` | (7.4)/(7.5) | `[propext, choice, Quot.sound]` | 🟢 done, clean |
-| X2 `white_cos_bound` / `fCond_three_norm` | Lemma 7.2 | `[propext, choice, Quot.sound]` | 🟢 done, clean |
-| X5 `hold_mean_fst` / `hold_aperiodic` | Lemma 7.6 | `[propext, choice, Quot.sound]` | 🟢 done, clean |
-| X9 `many_triangles_white` (Lemma 7.9) | (7.57) pp.50–51 | `[propext, choice, Quot.sound]` | 🟢 CLOSED, clean |
-| X10 `triangle_encounter_le` (Lemma 7.10) | (7.65) pp.52–54 | `[propext, choice, Quot.sound]` | 🟢 CLOSED, clean |
-| X8 `Q_black_edge_case2` (Prop 7.8 Case 2) | (7.46)–(7.51) | `[propext, choice, Quot.sound]` | 🟢 CLOSED, clean |
-| X11 `Q_black_edge_case3` (Prop 7.8 Case 3) | (7.53)–(7.67) | `sorry` (3 bridges clean) | 🟡 sole open §7 crux |
-| `prop_7_8` (Prop 7.8 Monotonicity) | §7 headline | trust base + `sorryAx` | 🟡 theorem over the single open X11 sorry |
+| `Statement` Thm 1.3 / Thm 3.1 | Thm 1.3 (uncond.) | `sorry` (spine not assembled) | 🔜 stub — discharges when C10/C9/C6 land |
+| C10 `fine_scale_mixing` (Prop 1.14) | §6 fine-scale mixing | trust base + `sorryAx` | 🟡 **current crux** — bridge+charFn_decay proved, needs §6 conditioning assembly |
+| C9 `stabilization` (Prop 1.11) | §5 first-passage stab. | trust base + `sorryAx` | 🟡 downstream of C10; narrow only |
+| `charFn_decay` (Prop 1.17) | key char-sum decay | `[propext, choice, Quot.sound]` | 🟢 done, clean (C10's analytic input) |
+| `key_fourier_decay` (Prop 7.1) | (7.1) Fourier decay | `[propext, choice, Quot.sound]` | 🟢 done, clean |
+| `prop_7_8` / `Q_black_edge` / `Q_polynomial_decay` | Prop 7.8 monotonicity | `[propext, choice, Quot.sound]` | 🟢 **§7 CLOSED, clean** |
+| X8/X9/X10/X11 kernels | Lemmas 7.6–7.10, (7.46)–(7.67) | `[propext, choice, Quot.sound]` | 🟢 all CLOSED, clean |
+| S3/X1/X2/X3/X5/X6 + all SyracRV | Lemma 2.2, 7.2, 7.4, 7.6, 7.7, 1.12 | `[propext, choice, Quot.sound]` | 🟢 done, clean |
 
 Math-axiom count on every completed node = **0** (trust base only). No 🔴
 (open-conjecture) axioms anywhere — correct, since Thm 1.3 is unconditional. No
-🟡/🟠 *cited* axioms in use: the crux is being PROVED, not cited. The remaining
-work is `sorry`-discharge (1 crux + 6 spine + 2 headline), not axiom-discharge.
+🟡/🟠 *cited* axioms: the two remaining nodes (C10, C9) are being PROVED, not
+cited. Remaining work is `sorry`-discharge (C10 crux + C9 + 2 headline), not
+axiom-discharge.
 
 ## Pointers
 DIRECTION.md (binding directive) · BLUEPRINT.md (frozen node ledger §2) ·
-newest `HANDOFF-2026-07-14-e.md` · PENDING_WORK.md (X11 attack path, newest top) ·
-papers/literature-review.md (route-facing source synthesis) ·
+newest `HANDOFF-2026-07-15-0300.md` · PENDING_WORK.md (fruit-8 C10 attack path,
+newest top) · papers/literature-review.md (route-facing source synthesis) ·
 paper `papers/tao-2019-almost-all-orbits.pdf`.
