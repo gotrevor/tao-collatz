@@ -967,15 +967,70 @@ theorem fpDist_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
     _ ≤ δ * (m : ℝ) ^ (-A) := hfin
 
 /-- **`Hold` first-coordinate right tail** (the hold half of `fpDist_edgeWeight_le`'s
-tail): `P_hold(d₁ > m/4) ≤ δ·m^{−A}`.  Fixed-tilt Chernoff via `holdSum_halfspace_le`
-(at `n = 1`, `iidSum hold 1 = hold`) with a `Θ(1)` first-coordinate tilt: the hold
-step has an `O(1)`-mean geometric first coordinate, so `P(d₁ > m/4) ≤ e^{−Θ(m)} ≪
-m^{−A}`. OPEN (node X8, mechanical once `iidSum hold 1 = hold` is discharged). -/
+tail): `P_hold(d₁ > m/4) ≤ δ·m^{−A}`.  `hold`'s first marginal is EXACTLY the geometric
+`geomQuarter` (`hold_map_fst`), so this reduces via `hold_tsum_fst` to the closed-form
+geometric tail `geomQuarter_tail`: `∑_{k>m/4} geomQuarter(k) = (3/4)^{⌊m/4⌋}`.  Then
+`(3/4)^{⌊m/4⌋} = exp(−log(4/3)·⌊m/4⌋) ≤ exp(−(log(4/3)/8)·m) ≤ δ·m^{−A}` for `m` large
+(`⌊m/4⌋ ≥ m/8`; polynomial `m^A` beaten by `exp(−ρm)` via `log_le_eps_mul_of_large`
++ `exp_neg_mul_le_of_large`).  No Fubini / MGF needed — the geometric marginal is closed
+form.  PROVED, axiom-clean. -/
 theorem hold_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
     ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m →
       ∑' d : ℕ × ℤ, (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)
         ≤ δ * (m : ℝ) ^ (-A) := by
-  sorry
+  set ρ : ℝ := Real.log (4 / 3) / 8 with hρdef
+  have hlog43pos : 0 < Real.log (4 / 3) := Real.log_pos (by norm_num)
+  have hρpos : 0 < ρ := by rw [hρdef]; positivity
+  obtain ⟨Nlog, hNlog⟩ := log_le_eps_mul_of_large (ρ / (2 * A)) (by positivity)
+  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_of_large (ρ / 2) (by positivity) δ hδ
+  refine ⟨400 + Nlog + Nexp, fun m hm => ?_⟩
+  have hm400 : 400 ≤ m := by omega
+  have hmNlog : Nlog ≤ m := by omega
+  have hmNexp : Nexp ≤ m := by omega
+  have hmpos : (0 : ℝ) < m := by exact_mod_cast (by omega : 0 < m)
+  -- reduce the hold tail to the closed-form geometric tail
+  have hf : ∀ k : ℕ, (0 : ℝ) ≤ (if m < 4 * k then (1 : ℝ) else 0) := by
+    intro k; split_ifs <;> norm_num
+  have hstep : ∀ k : ℕ, (geomQuarter k).toReal * (if m < 4 * k then (1 : ℝ) else 0)
+      = (if m / 4 < k then (geomQuarter k).toReal else 0) := by
+    intro k
+    by_cases h : m < 4 * k
+    · rw [if_pos h, mul_one, if_pos (by omega)]
+    · rw [if_neg h, mul_zero, if_neg (by omega)]
+  have hred : ∑' d : ℕ × ℤ, (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)
+      = (3 / 4 : ℝ) ^ (m / 4) := by
+    rw [show (∑' d : ℕ × ℤ, (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0))
+          = ∑' k : ℕ, (geomQuarter k).toReal * (if m < 4 * k then (1 : ℝ) else 0)
+        from hold_tsum_fst (fun k => if m < 4 * k then (1 : ℝ) else 0) hf,
+      tsum_congr hstep, geomQuarter_tail]
+  rw [hred]
+  -- `(3/4)^{⌊m/4⌋} = exp(log(3/4)·⌊m/4⌋)`
+  have h34 : (3 / 4 : ℝ) ^ (m / 4) = Real.exp (Real.log (3 / 4) * ((m / 4 : ℕ) : ℝ)) := by
+    rw [← Real.rpow_natCast (3 / 4 : ℝ) (m / 4), Real.rpow_def_of_pos (by norm_num)]
+  have hm4lb : (m : ℝ) / 8 ≤ ((m / 4 : ℕ) : ℝ) := by
+    have hnat : m ≤ 4 * (m / 4) + 3 := by omega
+    have hh : (m : ℝ) ≤ 4 * ((m / 4 : ℕ) : ℝ) + 3 := by exact_mod_cast hnat
+    have h400 : (400 : ℝ) ≤ m := by exact_mod_cast hm400
+    linarith
+  have hexp_le : Real.log (3 / 4) * ((m / 4 : ℕ) : ℝ) ≤ -ρ * m := by
+    have hlog34 : Real.log (3 / 4) = -Real.log (4 / 3) := by
+      rw [show (3 / 4 : ℝ) = (4 / 3)⁻¹ by norm_num, Real.log_inv]
+    rw [hlog34, hρdef]
+    nlinarith [mul_le_mul_of_nonneg_left hm4lb hlog43pos.le]
+  -- `exp(-ρm) ≤ δ·m^{-A}` (polynomial beaten by super-exponential decay)
+  have hclose : Real.exp (-ρ * m) ≤ δ * (m : ℝ) ^ (-A) := by
+    rw [Real.rpow_neg hmpos.le, ← div_eq_mul_inv,
+      le_div_iff₀ (Real.rpow_pos_of_pos hmpos A), Real.rpow_def_of_pos hmpos A, ← Real.exp_add]
+    have hAlog : A * Real.log m ≤ ρ / 2 * m := by
+      have h := hNlog m hmNlog
+      have h2 : A * Real.log m ≤ A * (ρ / (2 * A) * (m : ℝ)) := mul_le_mul_of_nonneg_left h hA.le
+      have h3 : A * (ρ / (2 * A) * (m : ℝ)) = ρ / 2 * m := by field_simp
+      linarith [h2, h3.le, h3.ge]
+    have hexparg : -ρ * (m : ℝ) + Real.log m * A ≤ -(ρ / 2) * m := by nlinarith [hAlog]
+    exact le_trans (Real.exp_le_exp.mpr hexparg) (hNexp m hmNexp)
+  calc (3 / 4 : ℝ) ^ (m / 4) = Real.exp (Real.log (3 / 4) * ((m / 4 : ℕ) : ℝ)) := h34
+    _ ≤ Real.exp (-ρ * m) := Real.exp_le_exp.mpr hexp_le
+    _ ≤ δ * (m : ℝ) ^ (-A) := hclose
 
 /-- **The (7.48)/(7.49) weight degradation, Case 2** (paper p.47). With budget
 `s ≤ m/log²m`, the first-passage endpoint's `j`-coordinate concentrates near
