@@ -768,6 +768,10 @@ theorem hold_fst_mgf_le_real {θ : ℝ} (hlo : -(1 / 100) ≤ θ) (hhi : θ ≤ 
         ENNReal.toReal_mono ENNReal.ofReal_ne_top (tiltZ_hold_fst_le hlo hhi)
     _ = 1 + 4 * θ + 32 * θ ^ 2 := ENNReal.toReal_ofReal (by nlinarith [sq_nonneg θ])
 
+-- HEARTBEAT: the fixed-tilt Chernoff assembles the reusable MGF envelope, a
+-- pointwise Chernoff, and a polynomial-vs-exponential closeout in one declaration;
+-- the nested `Real.exp` atoms make `isDefEq`/`nlinarith` costly. 2M covers it.
+set_option maxHeartbeats 2000000 in
 /-- **Fixed-tilt `fpDist` first-coordinate right tail** (the large-deviation input to
 `fpDist_edgeWeight_le`'s tail).  `P(e₁ > m/4) ≤ δ·m^{−A}`.  ⚠️ The tilt MUST be a
 FIXED constant (`θ₀ = ½·min(c, c²/20)` from `fpDist_col_le`), NOT `2A/m`: the Chernoff
@@ -781,7 +785,186 @@ theorem fpDist_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
       ∑' e : ℕ × ℤ, (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
         ≤ δ * (m : ℝ) ^ (-A) := by
-  sorry
+  obtain ⟨c, hc, C', hC'pos, hcol⟩ := fpDist_col_le
+  -- FIXED tilt `θ₀ = ½·min(c, c²/20)` (Θ(1); NOT `2A/m`)
+  set θ₀ : ℝ := min c (c ^ 2 / 20) / 2 with hθ₀def
+  have hθ₀pos : 0 < θ₀ := by
+    rw [hθ₀def]; have : 0 < min c (c ^ 2 / 20) := lt_min hc (by positivity); linarith
+  have hθ₀nn : 0 ≤ θ₀ := hθ₀pos.le
+  have hθ₀le : θ₀ ≤ min c (c ^ 2 / 20) / 2 := le_refl _
+  have hθ₀c : θ₀ ≤ c / 2 := by rw [hθ₀def]; gcongr; exact min_le_left _ _
+  have hθ₀c2 : θ₀ ≤ c ^ 2 / 40 := by
+    rw [hθ₀def]; have : min c (c ^ 2 / 20) ≤ c ^ 2 / 20 := min_le_right _ _; linarith
+  have hcsq : (0 : ℝ) < c ^ 2 := by positivity
+  have ha2pos : 0 < c ^ 2 / 20 - θ₀ := by nlinarith [hθ₀c2, hcsq]
+  have ha1pos : 0 < c - θ₀ := by linarith [hθ₀c]
+  -- geometric denominators and the envelope constant `B`
+  set d₂ : ℝ := 1 - Real.exp (-(c ^ 2 / 20 - θ₀)) with hd2def
+  set d₁ : ℝ := 1 - Real.exp (-(c - θ₀)) with hd1def
+  have hd2 : 0 < d₂ := by
+    rw [hd2def]; have : Real.exp (-(c ^ 2 / 20 - θ₀)) < 1 := by
+      rw [Real.exp_lt_one_iff]; linarith [ha2pos]
+    linarith
+  have hd1 : 0 < d₁ := by
+    rw [hd1def]; have : Real.exp (-(c - θ₀)) < 1 := by
+      rw [Real.exp_lt_one_iff]; linarith [ha1pos]
+    linarith
+  set B : ℝ := 1 + C' * (1 / d₂ + 1 / d₁) with hBdef
+  have hBpos : 0 < B := by
+    rw [hBdef]; have : 0 < C' * (1 / d₂ + 1 / d₁) := by positivity
+    linarith
+  -- thresholds
+  obtain ⟨Nlog, hNlog⟩ := log_le_eps_mul_of_large (θ₀ / (16 * A)) (by positivity)
+  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_of_large (θ₀ / 16) (by positivity) (δ / B) (by positivity)
+  obtain ⟨N16, hN16⟩ := log_sq_ge_of_large 16
+  refine ⟨400 + Nlog + Nexp + N16, fun m hm s hs => ?_⟩
+  have hm400 : 400 ≤ m := by omega
+  have hmNlog : Nlog ≤ m := by omega
+  have hmNexp : Nexp ≤ m := by omega
+  have hmN16 : N16 ≤ m := by omega
+  have hmpos : (0 : ℝ) < m := by exact_mod_cast (by omega : 0 < m)
+  have hm1 : 1 < m := by omega
+  have hlogm_pos : 0 < Real.log m := Real.log_pos (by exact_mod_cast hm1)
+  have hlogsq_pos : 0 < Real.log m ^ 2 := by positivity
+  have hlog16 : (16 : ℝ) ≤ Real.log m ^ 2 := hN16 m hmN16
+  -- cutoff `K = ⌊m/log²m⌋ + 25`
+  set κ : ℝ := (m : ℝ) / Real.log m ^ 2 with hκdef
+  have hκnn : 0 ≤ κ := by rw [hκdef]; positivity
+  have hsκ : (s : ℝ) ≤ κ := hs
+  set K : ℕ := ⌊κ⌋₊ + 25 with hKdef
+  have hK25 : 25 ≤ K := by omega
+  have hKle : (K : ℝ) ≤ κ + 25 := by rw [hKdef]; push_cast; linarith [Nat.floor_le hκnn]
+  have hKlb : κ + 24 ≤ (K : ℝ) := by
+    rw [hKdef]; push_cast; linarith [Nat.lt_floor_add_one κ]
+  have hsK : (s : ℝ) / 4 ≤ (K : ℝ) := by
+    have hsleK : (s : ℝ) ≤ (K : ℝ) := le_trans hsκ (by linarith [hKlb])
+    linarith [Nat.cast_nonneg (α := ℝ) s]
+  have hKx0 : 0 ≤ (K : ℝ) + 1 - (s : ℝ) / 4 := by linarith [hsK]
+  -- budget `s·log2 ≤ (K+2)·log9`
+  have hbud : (s : ℝ) * Real.log 2 ≤ ((K : ℝ) + 2) * Real.log 9 := by
+    have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos one_lt_two
+    have hlog9 : (0 : ℝ) < Real.log 9 := Real.log_pos (by norm_num)
+    have hlog29 : Real.log 2 ≤ Real.log 9 := Real.log_le_log (by norm_num) (by norm_num)
+    calc (s : ℝ) * Real.log 2 ≤ κ * Real.log 2 := mul_le_mul_of_nonneg_right hsκ hlog2.le
+      _ ≤ κ * Real.log 9 := mul_le_mul_of_nonneg_left hlog29 hκnn
+      _ ≤ ((K : ℝ) + 2) * Real.log 9 :=
+          mul_le_mul_of_nonneg_right (by linarith [hKlb]) hlog9.le
+  -- `K ≤ m/8`, so `K - m/4 ≤ -m/8`
+  have hKupper : (K : ℝ) ≤ (m : ℝ) / 8 := by
+    have h1 : κ ≤ (m : ℝ) / 16 := by
+      rw [hκdef, div_le_div_iff₀ hlogsq_pos (by norm_num)]
+      nlinarith [hlog16, hmpos.le]
+    have h2 : (25 : ℝ) ≤ (m : ℝ) / 16 := by
+      rw [le_div_iff₀ (by norm_num)]; have : (400 : ℝ) ≤ m := by exact_mod_cast hm400
+      linarith
+    linarith [hKle, h1, h2]
+  have hKm4 : (K : ℝ) - (m : ℝ) / 4 ≤ -((m : ℝ) / 8) := by linarith [hKupper]
+  -- the MGF envelope at the fixed tilt: `Z ≤ exp(θ₀K) + gaussExp_RHS`
+  obtain ⟨hZsum, hZle⟩ := fpDist_fst_mgf_general hc hC'pos hcol hθ₀nn hθ₀le s K hK25 hbud
+  -- collapse the envelope to `Z ≤ B·exp(θ₀K)`
+  have hZB : ∑' e : ℕ × ℤ, (fpDist s e).toReal * Real.exp (θ₀ * (e.1 : ℝ))
+      ≤ B * Real.exp (θ₀ * (K : ℝ)) := by
+    refine le_trans hZle ?_
+    have hE2 : Real.exp (-(c ^ 2 / 20 - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4)) ≤ 1 := by
+      rw [Real.exp_le_one_iff]; nlinarith [ha2pos, hKx0]
+    have hE1 : Real.exp (-(c - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4)) ≤ 1 := by
+      rw [Real.exp_le_one_iff]; nlinarith [ha1pos, hKx0]
+    have hpre : Real.exp (θ₀ * ((s : ℝ) / 4)) ≤ Real.exp (θ₀ * (K : ℝ)) :=
+      Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hsK hθ₀nn)
+    have hterm2 :
+        Real.exp (-(c ^ 2 / 20 - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4)) / d₂ ≤ 1 / d₂ := by
+      rw [div_le_div_iff₀ hd2 hd2]; nlinarith [hE2, hd2.le]
+    have hterm1 :
+        Real.exp (-(c - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4)) / d₁ ≤ 1 / d₁ := by
+      rw [div_le_div_iff₀ hd1 hd1]; nlinarith [hE1, hd1.le]
+    have hgaussle : C' * Real.exp (θ₀ * ((s : ℝ) / 4))
+          * (Real.exp (-(c ^ 2 / 20 - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4))
+                / (1 - Real.exp (-(c ^ 2 / 20 - θ₀)))
+             + Real.exp (-(c - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4))
+                / (1 - Real.exp (-(c - θ₀))))
+        ≤ C' * Real.exp (θ₀ * (K : ℝ)) * (1 / d₂ + 1 / d₁) := by
+      rw [← hd2def, ← hd1def]
+      have hinner : Real.exp (-(c ^ 2 / 20 - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4)) / d₂
+            + Real.exp (-(c - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4)) / d₁
+          ≤ 1 / d₂ + 1 / d₁ := add_le_add hterm2 hterm1
+      have hcoef : 0 ≤ C' * Real.exp (θ₀ * ((s : ℝ) / 4)) := by positivity
+      calc C' * Real.exp (θ₀ * ((s : ℝ) / 4))
+              * (Real.exp (-(c ^ 2 / 20 - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4)) / d₂
+                 + Real.exp (-(c - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4)) / d₁)
+            ≤ C' * Real.exp (θ₀ * ((s : ℝ) / 4)) * (1 / d₂ + 1 / d₁) :=
+              mul_le_mul_of_nonneg_left hinner hcoef
+        _ ≤ C' * Real.exp (θ₀ * (K : ℝ)) * (1 / d₂ + 1 / d₁) := by
+              apply mul_le_mul_of_nonneg_right _ (by positivity)
+              exact mul_le_mul_of_nonneg_left hpre hC'pos.le
+    calc Real.exp (θ₀ * (K : ℝ))
+          + C' * Real.exp (θ₀ * ((s : ℝ) / 4))
+            * (Real.exp (-(c ^ 2 / 20 - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4))
+                  / (1 - Real.exp (-(c ^ 2 / 20 - θ₀)))
+               + Real.exp (-(c - θ₀) * (((K : ℝ) + 1) - (s : ℝ) / 4))
+                  / (1 - Real.exp (-(c - θ₀))))
+        ≤ Real.exp (θ₀ * (K : ℝ)) + C' * Real.exp (θ₀ * (K : ℝ)) * (1 / d₂ + 1 / d₁) :=
+          add_le_add (le_refl _) hgaussle
+      _ = B * Real.exp (θ₀ * (K : ℝ)) := by rw [hBdef]; ring
+  -- Chernoff at the fixed tilt: `T ≤ exp(-θ₀m/4)·Z`
+  have hfp2d : Summable (fun e : ℕ × ℤ => (fpDist s e).toReal) :=
+    ENNReal.summable_toReal (by rw [(fpDist s).tsum_coe]; exact ENNReal.one_ne_top)
+  have hLHSsum : Summable
+      (fun e : ℕ × ℤ => (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)) := by
+    refine Summable.of_nonneg_of_le (fun e => ?_) (fun e => ?_) hfp2d
+    · positivity
+    · by_cases h : m < 4 * e.1
+      · rw [if_pos h, mul_one]
+      · rw [if_neg h, mul_zero]; exact ENNReal.toReal_nonneg
+  have hcher : ∑' e : ℕ × ℤ, (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+      ≤ Real.exp (-θ₀ * (m : ℝ) / 4)
+        * ∑' e : ℕ × ℤ, (fpDist s e).toReal * Real.exp (θ₀ * (e.1 : ℝ)) := by
+    rw [← tsum_mul_left]
+    refine Summable.tsum_le_tsum (fun e => ?_) hLHSsum (hZsum.mul_left _)
+    by_cases hcond : m < 4 * e.1
+    · rw [if_pos hcond, mul_one]
+      have h4 : (m : ℝ) < 4 * (e.1 : ℝ) := by exact_mod_cast hcond
+      have hexp1 : (1 : ℝ) ≤ Real.exp (θ₀ * (e.1 : ℝ) - θ₀ * (m : ℝ) / 4) := by
+        rw [← Real.exp_zero]; apply Real.exp_le_exp.mpr; nlinarith [hθ₀nn, h4]
+      calc (fpDist s e).toReal = (fpDist s e).toReal * 1 := (mul_one _).symm
+        _ ≤ (fpDist s e).toReal * Real.exp (θ₀ * (e.1 : ℝ) - θ₀ * (m : ℝ) / 4) :=
+            mul_le_mul_of_nonneg_left hexp1 ENNReal.toReal_nonneg
+        _ = Real.exp (-θ₀ * (m : ℝ) / 4) * ((fpDist s e).toReal * Real.exp (θ₀ * (e.1 : ℝ))) := by
+            rw [show θ₀ * (e.1 : ℝ) - θ₀ * (m : ℝ) / 4
+                  = θ₀ * (e.1 : ℝ) + (-θ₀ * (m : ℝ) / 4) by ring, Real.exp_add]; ring
+    · rw [if_neg hcond, mul_zero]
+      exact mul_nonneg (Real.exp_pos _).le (mul_nonneg ENNReal.toReal_nonneg (Real.exp_pos _).le)
+  -- final numeric: `B·exp(-θ₀m/8) ≤ δ·m^{-A}`
+  have hAlog : A * Real.log m ≤ θ₀ * (m : ℝ) / 16 := by
+    have h := hNlog m hmNlog
+    have h2 : A * Real.log m ≤ A * (θ₀ / (16 * A) * (m : ℝ)) := mul_le_mul_of_nonneg_left h hA.le
+    have h3 : A * (θ₀ / (16 * A) * (m : ℝ)) = θ₀ * (m : ℝ) / 16 := by
+      field_simp
+    linarith [h2, h3.le, h3.ge]
+  have hfin : B * Real.exp (-θ₀ * (m : ℝ) / 8) ≤ δ * (m : ℝ) ^ (-A) := by
+    rw [Real.rpow_neg hmpos.le, ← div_eq_mul_inv,
+      le_div_iff₀ (Real.rpow_pos_of_pos hmpos A), Real.rpow_def_of_pos hmpos A,
+      mul_assoc, ← Real.exp_add]
+    have hexparg : -θ₀ * (m : ℝ) / 8 + Real.log m * A ≤ -(θ₀ / 16) * (m : ℝ) := by
+      nlinarith [hAlog]
+    calc B * Real.exp (-θ₀ * (m : ℝ) / 8 + Real.log m * A)
+        ≤ B * Real.exp (-(θ₀ / 16) * (m : ℝ)) :=
+          mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr hexparg) hBpos.le
+      _ ≤ B * (δ / B) := mul_le_mul_of_nonneg_left (hNexp m hmNexp) hBpos.le
+      _ = δ := by field_simp
+  -- chain: `T ≤ exp(-θ₀m/4)·Z ≤ B·exp(θ₀K - θ₀m/4) ≤ B·exp(-θ₀m/8) ≤ δ·m^{-A}`
+  calc ∑' e : ℕ × ℤ, (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+      ≤ Real.exp (-θ₀ * (m : ℝ) / 4)
+          * ∑' e : ℕ × ℤ, (fpDist s e).toReal * Real.exp (θ₀ * (e.1 : ℝ)) := hcher
+    _ ≤ Real.exp (-θ₀ * (m : ℝ) / 4) * (B * Real.exp (θ₀ * (K : ℝ))) :=
+        mul_le_mul_of_nonneg_left hZB (Real.exp_pos _).le
+    _ = B * Real.exp (θ₀ * (K : ℝ) - θ₀ * (m : ℝ) / 4) := by
+        rw [show θ₀ * (K : ℝ) - θ₀ * (m : ℝ) / 4
+              = (-θ₀ * (m : ℝ) / 4) + θ₀ * (K : ℝ) by ring, Real.exp_add]; ring
+    _ ≤ B * Real.exp (-θ₀ * (m : ℝ) / 8) := by
+        apply mul_le_mul_of_nonneg_left _ hBpos.le
+        apply Real.exp_le_exp.mpr
+        nlinarith [mul_le_mul_of_nonneg_left hKm4 hθ₀nn]
+    _ ≤ δ * (m : ℝ) ^ (-A) := hfin
 
 /-- **`Hold` first-coordinate right tail** (the hold half of `fpDist_edgeWeight_le`'s
 tail): `P_hold(d₁ > m/4) ≤ δ·m^{−A}`.  Fixed-tilt Chernoff via `holdSum_halfspace_le`
