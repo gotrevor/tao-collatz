@@ -1,4 +1,4 @@
-import TaoCollatz.Sec7.ManyTriangles
+import TaoCollatz.Sec7.BlackEdgeQ
 
 /-!
 # §7.4 Case 3 of Proposition 7.8 — the X11 assembly ((7.53)–(7.67), pp.48–49, 54–55)

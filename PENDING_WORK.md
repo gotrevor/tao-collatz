@@ -1,5 +1,38 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box cont8 (2026-07-14): **`fpDist_white_exit` PROVED (axiom-clean)** — the (7.50)/(7.51) Case-2 white-exit crux is DONE via kernel-merge
+
+The DIRECTION-mandated next move is discharged. `fpDist_white_exit` is now a machine-checked
+theorem (`#print axioms = [propext, Classical.choice, Quot.sound]`, no `sorryAx`).
+
+**The structural finding (why "derive from deep" needed a relocation, not an in-place proof):**
+`fpDist_white_exit_deep` (`ManyTriangles.lean`) is STRICTLY STRONGER than `fpDist_white_exit`
+— identical tsum conclusion, *no* `s ≤ m/log²m` budget hypothesis, mass sharpened to
+`51/100 ≤ p₀`. So Case-2 white-exit is a trivial weakening (drop the extra hyp, `p₀>0` from
+`51/100≤p₀`). BUT `ManyTriangles` imports `BlackEdge`, so `BlackEdge` could NOT see the deep
+kernel (circular). The geometry genuinely lives downstream.
+
+**The fix (statements FROZEN verbatim, only relocation + the one `sorry`→proof):** created
+`TaoCollatz/Sec7/BlackEdgeQ.lean` (imports `ManyTriangles`) and moved the Q-assembly tail of
+`BlackEdge.lean` there — `fpDist_white_exit`, `Q_black_edge_case2`, `Q_black_edge_of_case3`,
+`prop_7_8_of_black_edge`, `Q_polynomial_decay_of_prop_7_8`. This tail was consumed ONLY by
+`Case3.lean` (which imports the new file now) and `ManyTriangles` does not depend on it, so the
+move is cycle-free. `budget_le_of_mem_triangle` STAYED in `BlackEdge` (ManyTriangles uses it).
+`fpDist_white_exit` proof = `obtain ⟨p₀,hp₀,Cthr,h⟩ := fpDist_white_exit_deep; exact ⟨p₀, by
+linarith, Cthr, fun … _hbudget => h …⟩`. Full build green (3282 jobs).
+
+**X8 Case-2 remaining: exactly ONE sorry — `Q_black_edge_case2` (`BlackEdgeQ.lean:64`).**
+Both its kernels are now proved: `fpDist_edgeWeight_le` ✓ (7.48) + `fpDist_white_exit` ✓
+(7.50/7.51). Per its docstring the assembly is "mechanical … `ℝ≥0∞`→`ℝ` bookkeeping across the
+fpDist tsum": (7.45) entry `Q_le_fpDist_expect` + `Q_fp_endpoint_le` per endpoint, then the
+(7.47) split `E[(1-(1-e^{-ε³})·1_W)·w] ≤ E[w] - (1-e^{-ε³})·m^{-A}·P(W)` (uses `w ≥ m^{-A}`
+pointwise), bounded via `fpDist_edgeWeight_le` (δ := `(1-e^{-ε³})·p₀/2`) and `fpDist_white_exit`
+(p₀), giving `Q ≤ ((1+δ)-(1-e^{-ε³})·p₀)·m^{-A}·Q_{m-1} ≤ m^{-A}·Q_{m-1}`.
+
+**NEXT: `Q_black_edge_case2` (`BlackEdgeQ.lean`).** First move: read `Q_le_fpDist_expect`,
+`Q_fp_endpoint_le`, `fpDist_edgeWeight_le`, `fpDist_white_exit` statements; the (7.47) split is
+where the two kernels combine. Then X11 `Q_black_edge_case3` (`Case3.lean`, still sorry).
+
 ## Lap D-box cont7 (2026-07-14): **`fpDist_edgeWeight_le` PROVED (axiom-clean)** — the (7.48) Case-2 crux glue is DONE
 
 The (7.48)/(7.49) weight degradation is a machine-checked theorem. Decomposed into:
