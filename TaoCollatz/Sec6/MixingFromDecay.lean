@@ -431,6 +431,52 @@ theorem stdAddChar_pow3_descent {j p : ℕ} (w : ZMod (3 ^ (j + p))) :
   rw [pow_add]
   field_simp
 
+/-- `castHom` sends the level-`(j+p)` inverse of `2` to the level-`p` inverse of `2` (both are the
+unique inverse of the unit `2` under the ring hom). Used to reduce the Syracuse offset mod `3^p`. -/
+theorem castHom_two_inv {j p : ℕ} :
+    ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) (2 : ZMod (3 ^ (j + p)))⁻¹
+      = (2 : ZMod (3 ^ p))⁻¹ := by
+  set F := ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) with hF
+  have h2 : (2 : ZMod (3 ^ p)) * (2 : ZMod (3 ^ p))⁻¹ = 1 := by
+    apply ZMod.mul_inv_of_unit
+    rw [show (2 : ZMod (3 ^ p)) = ((2 : ℕ) : ZMod (3 ^ p)) by norm_cast, ZMod.isUnit_iff_coprime]
+    exact Nat.Coprime.pow_right _ (by decide)
+  have h1 : (2 : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ = 1 := by
+    apply ZMod.mul_inv_of_unit
+    rw [show (2 : ZMod (3 ^ (j + p))) = ((2 : ℕ) : ZMod (3 ^ (j + p))) by norm_cast,
+      ZMod.isUnit_iff_coprime]
+    exact Nat.Coprime.pow_right _ (by decide)
+  have hF2 : F (2 : ZMod (3 ^ (j + p))) = (2 : ZMod (3 ^ p)) := by
+    rw [hF, show (2 : ZMod (3 ^ (j + p))) = ((2 : ℕ) : ZMod (3 ^ (j + p))) by norm_cast,
+      map_natCast]; norm_cast
+  have hc : (2 : ZMod (3 ^ p)) * F (2 : ZMod (3 ^ (j + p)))⁻¹ = 1 := by
+    have := congrArg F h1; rwa [map_mul, map_one, hF2] at this
+  calc F (2 : ZMod (3 ^ (j + p)))⁻¹
+      = (2 : ZMod (3 ^ p))⁻¹ * ((2 : ZMod (3 ^ p)) * F (2 : ZMod (3 ^ (j + p)))⁻¹) := by
+        rw [← mul_assoc, mul_comm ((2 : ZMod (3 ^ p))⁻¹) 2, h2, one_mul]
+    _ = (2 : ZMod (3 ^ p))⁻¹ := by rw [hc, mul_one]
+
+/-- **Brick (b), the tail-factor reindex** (C10): for a frequency of the form `ξ = 3ʲ·ζ`, the tail
+character factor `stdAddChar_{3^(j+p)}(-(offset(vt)·ξ))` — with `offset(vt) = Fnat_p(vt)·2⁻ᵖʳᵉ⁽ᵛᵗ,ᵖ⁾`
+the reduced Syracuse offset — descends to the **level-`p` Syracuse character** at `castHom ζ`. Proof:
+factor `3ʲ` out of the argument (`ring`), apply `stdAddChar_pow3_descent`, then push `castHom`
+through the offset (`map_mul`/`map_pow`/`map_natCast` + `castHom_two_inv`). Combined with
+`syracZ_eq_rev_fnat` + `cexpect_map`, this turns the tail expectation into a `syracZ p`-cexpect that
+`stdAddChar_eq_eC` matches to `charFn_decay`'s `eC` form. -/
+theorem tail_char_descent {j p : ℕ} (ζ : ZMod (3 ^ (j + p))) (vt : Fin p → ℕ) :
+    ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ((3 : ZMod (3 ^ (j + p))) ^ j * ζ)))
+      = ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ p))
+        * (2 : ZMod (3 ^ p))⁻¹ ^ pre vt p)
+        * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) ζ)) := by
+  have harg : -(((fnat p vt : ZMod (3 ^ (j + p)))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ((3 : ZMod (3 ^ (j + p))) ^ j * ζ))
+      = (3 : ZMod (3 ^ (j + p))) ^ j * (-(((fnat p vt : ZMod (3 ^ (j + p)))
+        * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ζ)) := by ring
+  rw [harg, stdAddChar_pow3_descent]
+  congr 1
+  rw [map_neg, map_mul, map_mul, map_pow, map_natCast, castHom_two_inv]
+
 /-- **Brick (b), step 3 — the conditional character factorization** (C10). Fix the cut
 `n = j + p` and the level `l`. Conditioning the character sum on the tail-valuation event
 `{pre(tail) = l}` makes the split character factor into a **pure head expectation** times a
