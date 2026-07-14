@@ -1,3 +1,31 @@
+# 🎯 C7 integral test — SCAFFOLDING DONE; 3 analytic holes remain (2026-07-14, HEAD `b4870c5`)
+
+**The `intTest_error` crux is now fully decomposed and its interface machine-verified.** All mechanical
+glue is PROVED axiom-clean this run:
+- `l1_normalize_telescope` — pure L¹ core: per-class dev `|S_r−t|≤ε` ⟹ `∑|s_r/D−1/|O|| ≤ 2ε|O|/D`.
+- `map_res_apply_toReal` — pushforward mass `(P.map res)(r).toReal = S_r/D` (`classMass`/`windowMass`).
+- `windowMass_eq_sum_classMass` — partition identity `D = ∑_{r odd} S_r` (`sum_fiberwise_of_maps_to`).
+- `intTest_dTV_le` — dTV even/odd split: even residues vanish, odd collapse via telescope ⟹
+  `dTV ≤ 2ε·2^{n'-1}/D`.
+- `nZero_pos_of_large`, and `intTest_error` itself — the final `2·(c/y)·2^{n'-1}/D ≤ (c/D₀)·2^{3n₀}/y`
+  arithmetic (npow↔rpow). `intTest_error` `#print axioms` = `[propext, sorryAx, choice, Quot.sound]`
+  (only the 3 holes below).
+
+**The 3 REMAINING holes (all in `Sec5/FirstPassage.lean`, precisely stated, attackable):**
+1. **`intTest_class_dev`** (:~366) — THE analytic brick. `∃ t, ∀ r odd, |classMass y (y^α) (3n₀) r − t| ≤ c/y`.
+   The per-class integral test: `S_r = ∑_{N∈W, N≡r} 1/N` over an AP with step `M=2^{n'}`; compare to
+   `∫ dt/t` via `AntitoneOn.sum_le_integral`/`AntitoneOn.integral_le_sum_Ico` on `t↦1/t` + `integral_inv`.
+   Common target `t = L/M`, `L = ∫_y^{y^α} dt/t = (α−1)log y`. Errors: discretization ≤ 1/N_min ≤ 1/y;
+   endpoint-alignment ≤ (1/M)·(M/y) = 1/y. So per-class `O(1/y)`, `c` universal (~3). **Hardest; attack next.**
+2. **`intTest_D_lower`** (:~376) — `∃ D₀>0, D₀ ≤ windowMass y (y^α)`. `D ≍ (α−1)/2·log y → ∞`; a constant
+   suffices. Crude: one odd point gives `D ≥ 1/y^α`; better one-class `integral_le_sum` gives `D ≥ c·log y`.
+3. **`logWindow_nonempty_of_large`** (:~383) — an odd integer in `[y, y^α]` (length →∞). Explicit witness
+   `2⌊y/2⌋+1` or `2⌈y/2⌉+1`; needs `y^α − y ≥ 2` for large x. Mechanical.
+
+Then `valSum_lower_tail` (:~465, downstream/mechanical) → C7 done → close C8 → C9.
+
+---
+
 # 🎯 C7 integral test — attack plan (2026-07-14 review lap, HEAD `e0913ce`)
 
 **Frontier**: C10 ✅ done (axiom-clean), C8 ✅ pinned. Live target = **C7 = `first_passage_nonescape`**,
