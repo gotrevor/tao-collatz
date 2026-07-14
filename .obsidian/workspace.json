@@ -185,6 +185,12 @@
   },
   "active": "c4b72140923c6227",
   "lastOpenFiles": [
+    "TaoCollatz/Prob/Tilt.lean",
+    "HANDOFF-2026-07-10-e.md",
+    "TaoCollatz/Prob/CharFn.lean",
+    "TaoCollatz/Sec7/Unroll.lean.tmp.7.57289be08740",
+    "TaoCollatz/Prob/LocalBound.lean",
+    "HANDOFF-2026-07-10-d.md",
     "TaoCollatz/Prob/Basic.lean.tmp.7.de2f79b37713",
     "HANDOFF-2026-07-10-c.md",
     "TaoCollatz/Sec7/Bridge.lean",
@@ -194,8 +200,6 @@
     "HANDOFF-2026-07-10.md",
     "blueprint/build.sh",
     "blueprint/annotate_dep_graph.py",
-    "PENDING_WORK.md",
-    "tao-2019-almost-all-orbits-SUMMARY.pdf",
-    "tao-2019-almost-all-orbits.pdf"
+    "PENDING_WORK.md"
   ]
 }

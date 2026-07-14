@@ -1054,6 +1054,365 @@ theorem iidSum_one_apply (p : ℕ × ℤ) : iidSum hold 1 p = hold p := by
   rw [tsum_eq_single p (fun d hd => by rw [if_neg (fun h => hd h.symm), mul_zero]),
     if_pos rfl, mul_one]
 
+/-! ### Single-step height Chernoff and the explicit overshoot radius `Y` (node X11)
+
+The (7.61)-type height tail `P(endpoint height ≥ s + Y) ≤ 1/16` is made EXPLICIT
+(`Y = 150`) via the renewal decomposition instead of X6's existential envelope.
+Ingredients: (i) `renewal_level_le_one` — heights strictly increase, so each level
+carries renewal mass `≤ 1`; (ii) a single-step positive-tilt Chernoff bound on the
+`hold` height increment, using the exact `Hold` MGF closed form at tilt `μ = 1/20`
+(outside the `|μ| ≤ 1/50` polynomial box, so a fresh large-tilt numeric bound
+`tiltZ_hold_snd_num` is proved, mirroring `tiltZ_hold_le_num` for `B`); (iii) a
+geometric sum over the levels below the budget line. -/
+
+/-- **Large-tilt numeric bound on the `pascalNe3` MGF** at the positive tilt
+`λ = 1/20`: `Z_{ne3}(1/20) ≤ 1252/1000`.  Same atom-split as
+`tiltZ_pascalNe3_le_num` (the `B` analogue at `-5/16`), here at the height-tail
+tilt `μ = 1/20 ≈ 0.05`; the `Geom(2)` factor is bounded through
+`e^{1/20} ≤ 1.05128` and the removed `b=3` atom below through `e^{3/20} ≥ 1.1618`
+(both `Real.exp_bound`). -/
+theorem tiltZ_pascalNe3_le_num_snd :
+    tiltZ pascalNe3 (expW (1 / 20)) ≤ ENNReal.ofReal (1252 / 1000) := by
+  have hlam_up : Real.exp (1 / 20) ≤ 105128 / 100000 := by
+    have h := Real.exp_bound (x := 1 / 20)
+      (by rw [abs_le]; constructor <;> norm_num) (n := 6) (by norm_num)
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+    norm_num [Nat.factorial] at h
+    rw [abs_le] at h; nlinarith [h.1, h.2]
+  have h3lam_lo : (11618 / 10000 : ℝ) ≤ Real.exp (3 / 20) := by
+    have h := Real.exp_bound (x := 3 / 20)
+      (by rw [abs_le]; constructor <;> norm_num) (n := 7) (by norm_num)
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+    norm_num [Nat.factorial] at h
+    rw [abs_le] at h; nlinarith [h.1, h.2]
+  have hexp2 : Real.exp (1 / 20) < 2 := lt_of_le_of_lt hlam_up (by norm_num)
+  -- `Geom(2)` factor: closed form ≤ ofReal((52564/100000)/(1-52564/100000))
+  have hgh : tiltZ geomHalf (expW (1 / 20))
+      ≤ ENNReal.ofReal ((52564 / 100000) / (1 - 52564 / 100000)) := by
+    rw [tiltZ_geomHalf]
+    exact geom_closed_le (by positivity) (by linarith) (by norm_num)
+  have hZp : tiltZ pascal (expW (1 / 20))
+      ≤ ENNReal.ofReal (((52564 / 100000) / (1 - 52564 / 100000)) ^ 2) := by
+    rw [tiltZ_pascal hexp2, ENNReal.ofReal_pow (by norm_num)]
+    exact pow_le_pow_left' hgh 2
+  -- removed `b=3` atom, bounded below
+  have he3 : ENNReal.ofReal ((1 / 3) * (11618 / 10000)) ≤ 3⁻¹ * expW (1 / 20) 3 := by
+    rw [expW, show ((3 : ℝ≥0∞))⁻¹ = ENNReal.ofReal (1 / 3) from by
+        rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_one,
+          ENNReal.ofReal_ofNat, one_div],
+      ← ENNReal.ofReal_mul (by norm_num)]
+    apply ENNReal.ofReal_le_ofReal
+    have harg : (1 / 20 : ℝ) * (3 : ℕ) = 3 / 20 := by push_cast; ring
+    rw [harg]
+    nlinarith [h3lam_lo]
+  have hfin : (3 : ℝ≥0∞)⁻¹ * expW (1 / 20) 3 ≠ ∞ :=
+    ENNReal.mul_ne_top (by finiteness) ENNReal.ofReal_ne_top
+  have hmain : tiltZ pascalNe3 (expW (1 / 20)) + 3⁻¹ * expW (1 / 20) 3
+      ≤ ENNReal.ofReal (1252 / 1000) + 3⁻¹ * expW (1 / 20) 3 := by
+    rw [tiltZ_pascalNe3_add (1 / 20)]
+    calc (4 / 3 : ℝ≥0∞) * tiltZ pascal (expW (1 / 20))
+        ≤ (4 / 3 : ℝ≥0∞) * ENNReal.ofReal (((52564 / 100000) / (1 - 52564 / 100000)) ^ 2) := by
+          gcongr
+      _ = ENNReal.ofReal ((4 / 3) * (((52564 / 100000) / (1 - 52564 / 100000)) ^ 2)) := by
+          rw [show (4 / 3 : ℝ≥0∞) = ENNReal.ofReal (4 / 3) from by
+              rw [ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_ofNat,
+                ENNReal.ofReal_ofNat],
+            ← ENNReal.ofReal_mul (by norm_num)]
+      _ ≤ ENNReal.ofReal (1252 / 1000) + ENNReal.ofReal ((1 / 3) * (11618 / 10000)) := by
+          rw [← ENNReal.ofReal_add (by norm_num) (by norm_num)]
+          exact ENNReal.ofReal_le_ofReal (by norm_num)
+      _ ≤ ENNReal.ofReal (1252 / 1000) + 3⁻¹ * expW (1 / 20) 3 := by gcongr
+  exact (ENNReal.add_le_add_iff_right hfin).mp hmain
+
+/-- **Large-tilt numeric bound on the second-coordinate `Hold` MGF** at
+`μ = 1/20`: `Z(0, 1/20) ≤ 48/10`.  Via the exact closed form `tiltZ_hold_closed`
+(so the tilt lives outside the `|μ| ≤ 1/50` box of `tiltZ_hold_snd`), with
+`e^{3/20} ≤ 1.1619` (`Real.exp_bound`) and `tiltZ_pascalNe3_le_num_snd`; the
+geometric ratio `(3/4)·1.252 = 0.939 < 1`.  Feeds the single-step height
+Chernoff. -/
+theorem tiltZ_hold_snd_num :
+    tiltZ hold (expW2 0 (1 / 20)) ≤ ENNReal.ofReal (48 / 10) := by
+  have hZt : tiltZ pascalNe3 (expW (1 / 20)) ≠ ∞ :=
+    ne_top_of_le_ne_top ENNReal.ofReal_ne_top tiltZ_pascalNe3_le_num_snd
+  rw [tiltZ_hold_closed hZt]
+  have hnum_up : Real.exp (0 + 3 * (1 / 20)) ≤ 11619 / 10000 := by
+    have harg : (0 + 3 * (1 / 20) : ℝ) = 3 / 20 := by norm_num
+    rw [harg]
+    have h := Real.exp_bound (x := 3 / 20)
+      (by rw [abs_le]; constructor <;> norm_num) (n := 7) (by norm_num)
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+    norm_num [Nat.factorial] at h
+    rw [abs_le] at h; nlinarith [h.1, h.2]
+  have he0 : (3 * Real.exp (0 : ℝ) / 4 : ℝ) = 3 / 4 := by rw [Real.exp_zero]; norm_num
+  set rval : ℝ := (3 / 4) * (1252 / 1000) with hrval
+  have hrval1 : rval < 1 := by rw [hrval]; norm_num
+  have hS : ENNReal.ofReal (3 * Real.exp 0 / 4) * tiltZ pascalNe3 (expW (1 / 20))
+      ≤ ENNReal.ofReal rval := by
+    rw [he0]
+    calc ENNReal.ofReal (3 / 4) * tiltZ pascalNe3 (expW (1 / 20))
+        ≤ ENNReal.ofReal (3 / 4) * ENNReal.ofReal (1252 / 1000) :=
+          mul_le_mul' le_rfl tiltZ_pascalNe3_le_num_snd
+      _ = ENNReal.ofReal rval := by
+          rw [← ENNReal.ofReal_mul (by norm_num), hrval]
+  calc ENNReal.ofReal (Real.exp (0 + 3 * (1 / 20)) / 4)
+        * (1 - ENNReal.ofReal (3 * Real.exp 0 / 4)
+            * tiltZ pascalNe3 (expW (1 / 20)))⁻¹
+      ≤ ENNReal.ofReal (Real.exp (0 + 3 * (1 / 20)) / 4)
+          * (1 - ENNReal.ofReal rval)⁻¹ := by
+        gcongr
+    _ ≤ ENNReal.ofReal ((11619 / 10000 / 4) / (1 - rval)) := by
+        exact frac_closed_le (a := Real.exp (0 + 3 * (1 / 20)) / 4)
+          (a' := 11619 / 10000 / 4) (r := rval) (r' := rval)
+          (by positivity) (by linarith) (le_of_lt (by rw [hrval]; positivity))
+          le_rfl hrval1
+    _ ≤ ENNReal.ofReal (48 / 10) := ENNReal.ofReal_le_ofReal (by rw [hrval]; norm_num)
+
+/-- **Single-step height Chernoff.**  For an integer threshold `T`, the `hold`
+step's height mass above `T` decays as `e^{-μT}` at tilt `μ = 1/20`:
+`∑_{d : d.2 ≥ T} hold d ≤ e^{-T/20}·(48/10)`.  Markov-under-tilt in the second
+coordinate (`holdSum_halfspace_le_of_mgf` at `n = 1`, `iidSum hold 1 = hold`), with
+the MGF supplied by `tiltZ_hold_snd_num`. -/
+theorem holdStep_height_tail (T : ℤ) :
+    (∑' d : ℕ × ℤ, if T ≤ d.2 then hold d else 0)
+      ≤ ENNReal.ofReal (Real.exp (-(1 / 20) * (T : ℝ))) * ENNReal.ofReal (48 / 10) := by
+  have h := holdSum_halfspace_le_of_mgf (l1 := 0) (l2 := 1 / 20) (M := 48 / 10)
+    tiltZ_hold_snd_num 1 (fun d => T ≤ d.2) ((1 / 20 : ℝ) * (T : ℝ))
+    (fun d hd => by
+      have hTd : ((T : ℝ)) ≤ (d.2 : ℝ) := by exact_mod_cast hd
+      simp only [zero_mul, zero_add]
+      nlinarith [hTd])
+  simp only [pow_one] at h
+  rw [show -(1 / 20) * (T : ℝ) = -((1 / 20 : ℝ) * (T : ℝ)) by ring]
+  refine le_trans (le_of_eq ?_) h
+  exact tsum_congr fun d => by rw [iidSum_one_apply]
+
+/-- **Geometric sum over the levels below the budget line** (ℝ form).  Summing the
+single-step tail prefactor `e^{-(1/20)(s+150-u)}` over all integer levels `u ≤ s`
+gives the geometric total `e^{-(1/20)·150}/(1-e^{-1/20})`.  Reflection `u ↦ s-u`
+turns the `u ≤ s` tail into the `k ≥ 0` half-line, then `of_nat_of_neg_add_one`
+sums the resulting `ℕ`-geometric. -/
+theorem hasSum_int_level_geom (s : ℕ) :
+    HasSum (fun u : ℤ =>
+        if u ≤ (s : ℤ) then Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (u : ℝ))) else 0)
+      (Real.exp (-(1 / 20) * 150) / (1 - Real.exp (-(1 / 20)))) := by
+  have he0 : (0 : ℝ) < Real.exp (-(1 / 20)) := Real.exp_pos _
+  have he1 : Real.exp (-(1 / 20)) < 1 := by rw [Real.exp_lt_one_iff]; norm_num
+  rw [← (Equiv.subLeft (s : ℤ)).hasSum_iff]
+  have hfun : ((fun u : ℤ =>
+        if u ≤ (s : ℤ) then Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (u : ℝ))) else 0)
+        ∘ (Equiv.subLeft (s : ℤ)))
+      = fun k : ℤ => if 0 ≤ k then Real.exp (-(1 / 20) * (150 + (k : ℝ))) else 0 := by
+    funext k
+    simp only [Function.comp_apply, Equiv.subLeft_apply]
+    by_cases hk : 0 ≤ k
+    · rw [if_pos (by omega), if_pos hk]; congr 1; push_cast; ring
+    · rw [if_neg (by omega), if_neg hk]
+  rw [hfun]
+  have hnat : HasSum (fun n : ℕ =>
+        if 0 ≤ ((n : ℤ)) then Real.exp (-(1 / 20) * (150 + (((n : ℤ)) : ℝ))) else 0)
+      (Real.exp (-(1 / 20) * 150) / (1 - Real.exp (-(1 / 20)))) := by
+    have hgeo := (hasSum_geometric_of_lt_one he0.le he1).mul_left (Real.exp (-(1 / 20) * 150))
+    rw [← div_eq_mul_inv] at hgeo
+    have hrw : (fun n : ℕ =>
+          if 0 ≤ ((n : ℤ)) then Real.exp (-(1 / 20) * (150 + (((n : ℤ)) : ℝ))) else 0)
+        = fun n : ℕ => Real.exp (-(1 / 20) * 150) * Real.exp (-(1 / 20)) ^ n := by
+      funext n
+      rw [if_pos (by positivity), ← Real.exp_nat_mul, ← Real.exp_add]
+      congr 1; push_cast; ring
+    rw [hrw]; exact hgeo
+  have hneg : HasSum (fun n : ℕ =>
+        if 0 ≤ (-((n : ℤ) + 1)) then Real.exp (-(1 / 20) * (150 + ((-((n : ℤ) + 1)) : ℝ))) else 0)
+      0 := by
+    have hz : (fun n : ℕ =>
+          if 0 ≤ (-((n : ℤ) + 1)) then Real.exp (-(1 / 20) * (150 + ((-((n : ℤ) + 1)) : ℝ))) else 0)
+        = fun _ : ℕ => (0 : ℝ) := by
+      funext n; rw [if_neg (by omega)]
+    rw [hz]; exact hasSum_zero
+  have hcombine := HasSum.of_nat_of_neg_add_one
+    (f := fun k : ℤ => if 0 ≤ k then Real.exp (-(1 / 20) * (150 + (k : ℝ))) else 0)
+    hnat hneg
+  rwa [add_zero] at hcombine
+
+/-- The `ℝ≥0∞` form of `hasSum_int_level_geom`, ready to feed the level-grouped
+renewal sum. -/
+theorem geom_level_sum_le (s : ℕ) :
+    (∑' u : ℤ, if u ≤ (s : ℤ)
+        then ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (u : ℝ)))) else 0)
+      ≤ ENNReal.ofReal (Real.exp (-(1 / 20) * 150) / (1 - Real.exp (-(1 / 20)))) := by
+  have hsum := hasSum_int_level_geom s
+  have hnn : ∀ u : ℤ,
+      0 ≤ (if u ≤ (s : ℤ) then Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (u : ℝ))) else 0) := by
+    intro u; split <;> [positivity; rfl]
+  refine le_of_eq ?_
+  rw [← hsum.tsum_eq, ENNReal.ofReal_tsum_of_nonneg hnn hsum.summable]
+  refine tsum_congr fun u => ?_
+  split_ifs with h
+  · rfl
+  · exact (ENNReal.ofReal_zero).symm
+
+/-- **Explicit (7.61) height tail** (node X11, `Y = 150`).  Apart from mass `1/16`,
+a first-passage endpoint overshoots the start height `s` by at most `150`.  Unlike
+`fpDist_height_tail_le_sixteenth` (whose radius is X6-existential), the radius here
+is a numeral, so it feeds the localization-box inequality directly.  Route:
+`fpDist_le_renewal_conv` (endpoint = a pre-passage point below the budget line plus
+one `hold` step) + `renewal_level_le_one` (heights strictly increase ⟹ ≤ 1 renewal
+mass per level) + `holdStep_height_tail` (single-step Chernoff at tilt `1/20`) +
+`geom_level_sum_le` (geometric sum over the levels `u ≤ s`). -/
+theorem fpDist_height_tail_le_sixteenth_sharp (s : ℕ) :
+    (∑' e : ℕ × ℤ, if (s : ℝ) + 150 ≤ (e.2 : ℝ) then fpDist s e else 0)
+      ≤ (1 : ℝ≥0∞) / 16 := by
+  classical
+  -- switch the real threshold for the integer one
+  have hpred : ∀ e : ℕ × ℤ, ((s : ℝ) + 150 ≤ (e.2 : ℝ)) ↔ ((s : ℤ) + 150 ≤ e.2) := by
+    intro e; constructor <;> intro h <;> exact_mod_cast h
+  simp only [hpred]
+  -- notation
+  set C : ℝ≥0∞ := ENNReal.ofReal (48 / 10) with hC
+  -- Step 1: renewal-convolution upper bound
+  have hstep1 : (∑' e : ℕ × ℤ, if (s : ℤ) + 150 ≤ e.2 then fpDist s e else 0)
+      ≤ ∑' e : ℕ × ℤ, if (s : ℤ) + 150 ≤ e.2
+          then (∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+            * ∑' d : ℕ × ℤ, (if e = p + d then hold d else 0)) else 0 := by
+    refine ENNReal.tsum_le_tsum fun e => ?_
+    by_cases he : (s : ℤ) + 150 ≤ e.2
+    · rw [if_pos he, if_pos he]; exact fpDist_le_renewal_conv s e
+    · rw [if_neg he, if_neg he]
+  -- Step 2: swap the endpoint sum inward
+  have hswap : (∑' e : ℕ × ℤ, if (s : ℤ) + 150 ≤ e.2
+        then (∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+          * ∑' d : ℕ × ℤ, (if e = p + d then hold d else 0)) else 0)
+      = ∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+          * ∑' d : ℕ × ℤ, (if (s : ℤ) + 150 ≤ (p + d).2 then hold d else 0) := by
+    have e1 : (∑' e : ℕ × ℤ, if (s : ℤ) + 150 ≤ e.2
+          then (∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+            * ∑' d : ℕ × ℤ, (if e = p + d then hold d else 0)) else 0)
+        = ∑' e : ℕ × ℤ, ∑' p : ℕ × ℤ, ∑' d : ℕ × ℤ,
+            (if (s : ℤ) + 150 ≤ e.2
+              then (if p.2 ≤ (s : ℤ) then renewalMass p else 0) * (if e = p + d then hold d else 0)
+              else 0) := by
+      refine tsum_congr fun e => ?_
+      by_cases he : (s : ℤ) + 150 ≤ e.2
+      · rw [if_pos he]
+        refine tsum_congr fun p => ?_
+        rw [← ENNReal.tsum_mul_left]
+        exact tsum_congr fun d => (if_pos he).symm
+      · simp only [if_neg he, tsum_zero]
+    have e2 : (∑' e : ℕ × ℤ, ∑' p : ℕ × ℤ, ∑' d : ℕ × ℤ,
+            (if (s : ℤ) + 150 ≤ e.2
+              then (if p.2 ≤ (s : ℤ) then renewalMass p else 0) * (if e = p + d then hold d else 0)
+              else 0))
+        = ∑' p : ℕ × ℤ, ∑' d : ℕ × ℤ, ∑' e : ℕ × ℤ,
+            (if (s : ℤ) + 150 ≤ e.2
+              then (if p.2 ≤ (s : ℤ) then renewalMass p else 0) * (if e = p + d then hold d else 0)
+              else 0) := by
+      rw [ENNReal.tsum_comm]
+      exact tsum_congr fun p => ENNReal.tsum_comm
+    have e3 : (∑' p : ℕ × ℤ, ∑' d : ℕ × ℤ, ∑' e : ℕ × ℤ,
+            (if (s : ℤ) + 150 ≤ e.2
+              then (if p.2 ≤ (s : ℤ) then renewalMass p else 0) * (if e = p + d then hold d else 0)
+              else 0))
+        = ∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+            * ∑' d : ℕ × ℤ, (if (s : ℤ) + 150 ≤ (p + d).2 then hold d else 0) := by
+      refine tsum_congr fun p => ?_
+      rw [← ENNReal.tsum_mul_left]
+      refine tsum_congr fun d => ?_
+      rw [tsum_eq_single (p + d) (fun e' he' => by rw [if_neg he', mul_zero, ite_self]),
+        if_pos rfl, mul_ite, mul_zero]
+    rw [e1, e2, e3]
+  -- now bound the swapped sum
+  refine le_trans (hstep1.trans_eq hswap) ?_
+  -- Step 3: single-step Chernoff on the inner hold tail
+  have hstep3 : (∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+        * ∑' d : ℕ × ℤ, (if (s : ℤ) + 150 ≤ (p + d).2 then hold d else 0))
+      ≤ ∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+          * (ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (p.2 : ℝ)))) * C) := by
+    refine ENNReal.tsum_le_tsum fun p => ?_
+    gcongr
+    have hcond : (∑' d : ℕ × ℤ, (if (s : ℤ) + 150 ≤ (p + d).2 then hold d else 0))
+        = ∑' d : ℕ × ℤ, (if (s : ℤ) + 150 - p.2 ≤ d.2 then hold d else 0) := by
+      refine tsum_congr fun d => ?_
+      by_cases hc : (s : ℤ) + 150 ≤ (p + d).2
+      · rw [if_pos hc, if_pos (by simp only [Prod.snd_add] at hc ⊢; omega)]
+      · rw [if_neg hc, if_neg (by simp only [Prod.snd_add] at hc ⊢; omega)]
+    rw [hcond, hC]
+    refine (holdStep_height_tail ((s : ℤ) + 150 - p.2)).trans_eq ?_
+    congr 2
+    push_cast; ring
+  refine le_trans hstep3 ?_
+  -- Step 4: pull out the constant `C`
+  have hstep4 : (∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+        * (ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (p.2 : ℝ)))) * C))
+      = C * ∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+          * ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (p.2 : ℝ)))) := by
+    rw [← ENNReal.tsum_mul_left]
+    exact tsum_congr fun p => by ring
+  rw [hstep4]
+  -- Step 5: group by height level and apply `renewal_level_le_one`
+  have hstep5 : (∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+        * ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (p.2 : ℝ)))))
+      ≤ ∑' u : ℤ, if u ≤ (s : ℤ)
+          then ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (u : ℝ)))) else 0 := by
+    have hgroup : (∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMass p else 0)
+          * ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (p.2 : ℝ)))))
+        = ∑' u : ℤ, ∑' j : ℕ, (if ((j, u) : ℕ × ℤ).2 ≤ (s : ℤ) then renewalMass (j, u) else 0)
+            * ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - ((u : ℝ))))) := by
+      rw [ENNReal.tsum_prod']; exact ENNReal.tsum_comm
+    rw [hgroup]
+    refine ENNReal.tsum_le_tsum fun u => ?_
+    rw [ENNReal.tsum_mul_right]
+    by_cases hu : u ≤ (s : ℤ)
+    · have hle : (∑' j : ℕ, (if ((j, u) : ℕ × ℤ).2 ≤ (s : ℤ) then renewalMass (j, u) else 0))
+          ≤ 1 := by
+        simp only [if_pos hu]; exact renewal_level_le_one u
+      calc (∑' j : ℕ, (if ((j, u) : ℕ × ℤ).2 ≤ (s : ℤ) then renewalMass (j, u) else 0))
+            * ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (u : ℝ))))
+          ≤ 1 * ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (u : ℝ)))) := by gcongr
+        _ = ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (u : ℝ)))) := one_mul _
+        _ = if u ≤ (s : ℤ)
+              then ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (u : ℝ)))) else 0 :=
+            (if_pos hu).symm
+    · simp only [if_neg hu, tsum_zero, zero_mul, le_refl]
+  refine le_trans (mul_le_mul_left' hstep5 C) ?_
+  -- Step 6: geometric sum
+  refine le_trans (mul_le_mul_left' (geom_level_sum_le s) C) ?_
+  -- Step 7: the numeric bound
+  rw [hC, ← ENNReal.ofReal_mul (by norm_num),
+    show (1 : ℝ≥0∞) / 16 = ENNReal.ofReal (1 / 16) from by
+      rw [ENNReal.ofReal_div_of_pos (by norm_num)]; norm_num]
+  refine ENNReal.ofReal_le_ofReal ?_
+  have he1lo : Real.exp (-(1 / 20)) ≤ 9513 / 10000 := by
+    have h := Real.exp_bound (x := -(1 / 20))
+      (by rw [abs_le]; constructor <;> norm_num) (n := 6) (by norm_num)
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+    norm_num [Nat.factorial] at h
+    rw [abs_le] at h; nlinarith [h.1, h.2]
+  have he0 : (0 : ℝ) < Real.exp (-(1 / 20)) := Real.exp_pos _
+  have hden : (0 : ℝ) < 1 - Real.exp (-(1 / 20)) := by
+    have : Real.exp (-(1 / 20)) < 1 := by rw [Real.exp_lt_one_iff]; norm_num
+    linarith
+  -- upper bound on `exp(-7.5)` via `exp(7.5) = exp(3/4)^10 ≥ (211/100)^10 ≥ 1667`
+  have h075 : (211 / 100 : ℝ) ≤ Real.exp (3 / 4) := by
+    have h := Real.exp_bound (x := 3 / 4)
+      (by rw [abs_le]; constructor <;> norm_num) (n := 6) (by norm_num)
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+    norm_num [Nat.factorial] at h
+    rw [abs_le] at h; nlinarith [h.1, h.2]
+  have h75 : (1667 : ℝ) ≤ Real.exp (15 / 2) := by
+    rw [show (15 / 2 : ℝ) = (3 / 4) * 10 from by norm_num, Real.exp_mul,
+      show ((10 : ℝ)) = ((10 : ℕ) : ℝ) from by norm_num, Real.rpow_natCast]
+    calc (1667 : ℝ) ≤ (211 / 100) ^ 10 := by norm_num
+      _ ≤ Real.exp (3 / 4) ^ 10 := by gcongr
+  have he75 : Real.exp (-(1 / 20) * 150) ≤ 1 / 1667 := by
+    rw [show (-(1 / 20) * 150 : ℝ) = -(15 / 2) from by norm_num, Real.exp_neg, inv_eq_one_div]
+    exact one_div_le_one_div_of_le (by norm_num) h75
+  -- combine
+  rw [← mul_div_assoc, div_le_iff₀ hden]
+  have hA : 48 / 10 * Real.exp (-(1 / 20) * 150) ≤ 48 / 10 * (1 / 1667) :=
+    mul_le_mul_of_nonneg_left he75 (by norm_num)
+  have hB : 1 / 16 * (1 - 9513 / 10000) ≤ 1 / 16 * (1 - Real.exp (-(1 / 20))) :=
+    mul_le_mul_of_nonneg_left (by linarith [he1lo]) (by norm_num)
+  linarith [hA, hB]
+
 /-- **Gweight factorization** for the renewal `k`-sum: peel a Gaussian ×
 exponential weight in the height offset `z` off the target weight in `x`, at
 half the decay constant (`AB + CD ≤ (A+C)(B+D)`). The hypothesis

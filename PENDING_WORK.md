@@ -1,5 +1,49 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap C part 2 (2026-07-14): **constant `Y` MADE EXPLICIT (existential → `Y = 150`)** — axiom-clean
+
+Directive step 3 (judge pass 24) is **DONE**. `fpDist_height_tail_le_sixteenth_sharp`
+(`Sec7/FpLocation.lean`) proves, at the **numeral** radius `Y₀ = 150`:
+`∀ s, ∑_e [s+150 ≤ e.2] fpDist s e ≤ 1/16`, machine-verified
+`[propext, Classical.choice, Quot.sound]`. This kills the last *existential* in the
+localization box (the old `fpDist_height_tail_le_sixteenth` summed X6's `∃`-bound
+envelope, so the box was not a number). The existential form is left in place;
+Lap D rewires.
+
+**What landed** (this commit), all axiom-clean, off X6 (renewal route, judge pass 24):
+- `tiltZ_pascalNe3_le_num_snd` : `Z_ne3(1/20) ≤ 1252/1000` — large-tilt numeric MGF
+  bound at the positive height tilt `μ = 1/20` (mirrors `tiltZ_pascalNe3_le_num` at
+  `-5/16`; `e^{1/20} ≤ 1.05128`, `e^{3/20} ≥ 1.1618` via `Real.exp_bound`).
+- `tiltZ_hold_snd_num` : `Z(0,1/20) ≤ 48/10` — via the exact closed form
+  `tiltZ_hold_closed` (tilt outside the `|μ|≤1/50` box of `tiltZ_hold_snd`).
+- `holdStep_height_tail (T:ℤ)` : single-step Chernoff `∑_d [T≤d.2] hold d ≤
+  e^{-T/20}·(48/10)` (`holdSum_halfspace_le_of_mgf` at `n=1`, `iidSum hold 1 = hold`).
+- `hasSum_int_level_geom` / `geom_level_sum_le` : the geometric sum
+  `∑_{u≤s} e^{-(1/20)(s+150-u)} = e^{-7.5}/(1-e^{-1/20})` (reflection `u↦s-u` +
+  `of_nat_of_neg_add_one`; ℝ→ℝ≥0∞ via `ENNReal.ofReal_tsum_of_nonneg`).
+- `fpDist_height_tail_le_sixteenth_sharp` : the assembly.
+  `fpDist_le_renewal_conv` → swap endpoint sum inward (tsum_comm) → single-step
+  Chernoff on the `hold` tail → group by level `u=p.2` and apply
+  `renewal_level_le_one` (mass ≤1/level) → geometric sum. Final numeric margin:
+  `(48/10)·e^{-7.5}/(1-e^{-1/20}) ≈ 0.0545 ≤ 1/16` (`e^{7.5}=e^{3/4·10}≥(2.11)^{10}≥1667`).
+
+**Constants now BOTH explicit**: `B = 64` (Lap B), `Y = 150`. Box
+`= √(⌈(5·150+64)/16⌉² + 150²) = √(⌈814/16⌉² + 150²) = √(51² + 150²) ≈ 158.4`.
+(Directive target was `Y≈139`→box≈147; `Y=150` is well within the "`Y≤~250` fine"
+budget. Judge re-freezes `epsBW` regardless — needs `10⁻⁹⁰→~10⁻⁷⁰⁰`, sep≈161.)
+
+**NEXT — Lap D (epsBW-gated — JUDGE's call, do NOT touch epsBW)**: wire `64` and
+`150` into the `ManyTriangles.lean` localization box (numeral `40000000` at
+~1618/2706/2728; existential `Y` at 2708). `fpDist_localization_le_eighth` currently
+consumes the existential `fpDist_height_tail_le_sixteenth`; swap for
+`fpDist_height_tail_le_sixteenth_sharp` (real-threshold form, drop-in) + the sharp
+linear tail, then feed `exists_fpDist_localization_box` + the box inequality into
+`fpDist_any_triangle_le_of_localization_box`. Report the real box `√(52²+150²)` to the
+judge; the `epsBW` re-freeze lands after (box `√(51²+150²)≈158.4` needs sep≥159 ⟹
+`(1/10)ln(1/epsBW)≥159` ⟹ `epsBW ≤ 10^{-690}` ish). Until then
+`fpDist_any_triangle_le` stays sorried. (`ManyTriangles.lean` BLUEPRINT §2 split still
+queued — do it before editing that 5.2k-line file.)
+
 ## Lap B (2026-07-13): **constant `B` DISCHARGED 4·10⁷ → 64** (X11 localization) — axiom-clean
 
 Directive step 2 (judge pass 24 / HANDOFF-2026-07-13-e) is **DONE**. The throwaway
