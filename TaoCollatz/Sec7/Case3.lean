@@ -1411,6 +1411,66 @@ theorem bigTriangle_of_encounter {n ξ : ℕ} (F : TriangleFamily n ξ) (A : ℝ
       ≤ (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 := Nat.floor_le (by positivity)
     _ ≤ t.2.2 := hbig
 
+open scoped Classical in
+/-- **The pointwise dichotomy for the (7.56) white-count split** (the index-shift
+reconciliation). For a deep in-strip walk whose *`P`-step forward* white count
+`myNw := Σ_{p<P} 1_{q₀+pathSum v p ∈ whiteStrip}` is `≤ K`, EITHER the encounter fold
+reaches `R` (with its running white count `cumWhite ≤ K+1`) OR the path hits a big
+triangle (E∗). The `+1` slack absorbs the shift between `myNw` (positions `pathSum 0..P−1`,
+including the start `q₀`) and the fold's `cumWhite = Σ_{p<P} 1_{q₀+pathSum v (p+1)∈whiteStrip}`
+(positions `pathSum 1..P`, `encFold_cumWhite`): the two counts differ only in the boundary
+terms `1_{q₀∈WS}` (dropped) and `1_{q₀+pathSum P∈WS}` (added), so `cumWhite ≤ myNw + 1`. This
+is exactly the reconciliation X11d's `few_white_mass_le` needs to feed
+`reaches_fewWhite_mass_le_ten` (`cumWhite ≤ K+1`) and `estar_union_le` (the E∗ branch). -/
+theorem few_white_pointwise_dichotomy {n ξ : ℕ} (F : TriangleFamily n ξ)
+    (g R K : ℕ) (A : ℝ) (hA : 1 ≤ A) :
+    ∃ P₀ : ℕ, ∀ P : ℕ, P₀ ≤ P → ∀ q₀ : ℕ × ℤ, 1 ≤ q₀.1 →
+      ∀ v : Fin P → ℕ × ℤ, (∀ i, v i ∈ hold.support) →
+      (∀ p, p ≤ P → (q₀ + pathSum v p).1 + g ≤ n / 2) →
+      (∑ p ∈ Finset.range P,
+          (if q₀ + pathSum v p ∈ whiteStrip n ξ then (1 : ℕ) else 0)) ≤ K →
+      (R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
+          ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K + 1)
+      ∨ (∃ p, p ≤ P ∧ ∃ t ∈ F.T,
+          ((q₀ + pathSum v p).1 - 1, (q₀ + pathSum v p).2) ∈ triangle t.1 t.2.1 t.2.2
+          ∧ (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3 ≤ t.2.2) := by
+  classical
+  obtain ⟨P₀, hP₀⟩ := deterministic_encounter_or_bigTriangle F g R (K + 1) A hA
+  refine ⟨P₀, ?_⟩
+  intro P hP q₀ hq₀ v hv hdepth hmyNw
+  -- `cumWhite = Σ_{p<P} 1_{q₀+pathSum v (p+1)∈whiteStrip}` (start count 0, position `q₀`).
+  have hpos : (encInit q₀.1 q₀.2).pos = q₀ := rfl
+  have hcum : ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite
+      = ∑ p ∈ Finset.range P,
+          (if q₀ + pathSum v (p + 1) ∈ whiteStrip n ξ then (1 : ℕ) else 0) := by
+    rw [encFold_cumWhite F R g P v (encInit q₀.1 q₀.2), hpos]
+    simp only [encInit, zero_add]
+  -- The `S_P ≤ myNw + 1` count reconciliation via the two range-succ splits.
+  have hSple : (∑ p ∈ Finset.range P,
+      (if q₀ + pathSum v (p + 1) ∈ whiteStrip n ξ then (1 : ℕ) else 0)) ≤ K + 1 := by
+    have e1 : (∑ p ∈ Finset.range (P + 1),
+          (if q₀ + pathSum v p ∈ whiteStrip n ξ then (1 : ℕ) else 0))
+        = (∑ p ∈ Finset.range P,
+            (if q₀ + pathSum v (p + 1) ∈ whiteStrip n ξ then (1 : ℕ) else 0))
+          + (if q₀ + pathSum v 0 ∈ whiteStrip n ξ then (1 : ℕ) else 0) :=
+      Finset.sum_range_succ' _ P
+    have e2 : (∑ p ∈ Finset.range (P + 1),
+          (if q₀ + pathSum v p ∈ whiteStrip n ξ then (1 : ℕ) else 0))
+        = (∑ p ∈ Finset.range P,
+            (if q₀ + pathSum v p ∈ whiteStrip n ξ then (1 : ℕ) else 0))
+          + (if q₀ + pathSum v P ∈ whiteStrip n ξ then (1 : ℕ) else 0) :=
+      Finset.sum_range_succ _ P
+    have hb : (if q₀ + pathSum v P ∈ whiteStrip n ξ then (1 : ℕ) else 0) ≤ 1 := by
+      split_ifs <;> omega
+    omega
+  -- Feed the deterministic dichotomy at `K+1`.
+  have hcumK : ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K + 1 := by
+    rw [hcum]; exact hSple
+  have hdich := hP₀ P hP q₀ hq₀ v hv hdepth (by rw [← hcum]; exact hcumK)
+  rcases hdich with hreach | hEstar
+  · exact Or.inl ⟨hreach, hcumK⟩
+  · exact Or.inr hEstar
+
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
 /-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first

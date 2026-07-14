@@ -1,5 +1,46 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap X11d-decomp-5 (2026-07-14): **INDEX-SHIFT RECONCILIATION PROVED — `few_white_pointwise_dichotomy` (axiom-clean)**
+
+The "fiddly kernel" the crux `few_white_mass_le` rests on is now a proved, axiom-clean lemma
+`few_white_pointwise_dichotomy` (`Case3.lean`, right above the crux). It discharges reconciliations
+(a)+(b) from decomp-4's note in one clean combinatorial statement:
+- **(a) whiteStrip vs whiteSet∩strip**: NON-issue — `whiteSet n ξ ∩ {q.1≤n/2}` IS `whiteStrip n ξ`
+  by definition (`whiteStrip := {p | p.1≤n/2 ∧ p∈whiteSet}`), so the crux's `Set.indicator
+  (whiteSet∩{q.1≤n/2})` and the fold's `whiteStrip` membership are the same set (just prove set-eq
+  when wiring the tsum).
+- **(b) cumWhite = Nw index shift**: SETTLED. With walk dimension `T=P` (forced so the `Fin P→ℕ×ℤ`
+  vector types match `estar_union_le`/`reaches_fewWhite_mass_le_ten`), the crux's forward count
+  `myNw = Σ_{p<P} 1_{q₀+pathSum v p∈WS}` (positions `pathSum 0..P−1`, includes start `q₀`) and the
+  fold's `cumWhite = Σ_{p<P} 1_{q₀+pathSum v (p+1)∈WS}` (`encFold_cumWhite`, positions `1..P`)
+  differ ONLY in boundary terms: `cumWhite + 1_{q₀∈WS} = myNw + 1_{q₀+pathSum P∈WS}` (two
+  range-succ splits: `sum_range_succ'` + `sum_range_succ`), so **`cumWhite ≤ myNw + 1`**. Hence the
+  clean route: feed `deterministic_encounter_or_bigTriangle` at **`K' := K+1`** — its few-white
+  hypothesis `cumWhite ≤ K+1` follows from `myNw ≤ K`; `reaches_fewWhite_mass_le_ten` is likewise
+  used at `K+1` (its R-bound `K'+(A+3)log10+2 ≤ εR` just needs `R` a bit bigger; the 10^{−(A+1)}
+  bound is K-independent). encInit gives `.pos=q₀`, `.cumWhite=0` (`rfl`+`simp[encInit]`).
+
+The lemma output: `myNw ≤ K ⟹ (R ≤ count ∧ cumWhite ≤ K+1) ∨ (∃p≤P, ∃t∈F.T, phase pt ∈ triangle t
+∧ 4^A(1+p)³ ≤ t.2.2)`. **NOTE**: it takes the depth hyp `∀p≤P, (q₀+pathSum v p).1+g ≤ n/2` as a
+PARAMETER (reconciliation (c) — sourcing it from the Case-3 regime deferred to the tsum assembly),
+and takes `A` free (so instantiate at `A'=κA` for the E∗ base-scaling of decomp-3).
+
+### NEXT — the tsum assembly of `few_white_mass_le` (the remaining crux work):
+1. **Split the integrand pointwise** via `ofReal_le`: `ofReal(1_{myNw≤K}) ≤ ofReal(1_{reach R ∧
+   cumWhite≤K+1}) + Σ_{p∈range(P+1)} indicator(bigTriangleSet F ⌊4^{κA}(1+p)³⌋)(phase pt)`, using
+   `few_white_pointwise_dichotomy` at `A'=κA` and `bigTriangle_of_encounter` to turn the E∗ triangle
+   into a bigTriangleSet membership (indicator ≥1 at the witnessing p ⟹ sum ≥1). Depth hyp (c): the
+   walk stays in-strip because `v i ∈ hold.support` bounds steps and `m≤n/2` deep start (Cthr) — the
+   regime plumbing; likely needs `hold.support` step bound + `pathSum` telescoping.
+2. **reach term** ≤ 10^{−(A+3)}: fix `e` ⟹ q₀=(n/2−m+e.1, l+e.2); apply
+   `reaches_fewWhite_mass_le_ten` at `A+2`, `K'=K+1` (⟹ `R=⌈(K+1+(A+5)log10+2)/ε⌉`); average over e
+   (`Σfpdist=1`) exactly like `damping_expectation_le`'s constant-tail averaging.
+3. **E∗ term** ≤ 10^{−(A+3)}: `estar_union_le` at `A'=κA`, `j=n/2−m−1` (phase −1 shift; needs
+   `1≤n/2−m` from hpos), `T=P`; its bound `C'(κA)²(4^κ)^{−A}+C'exp(−c(κA)²) ≤ 10^{−(A+3)}` for A≥A₀
+   (pick κ, absorb A₀ into Cthr/require A≥A₀). ⚠ SMALL-A `A<A₀`: FLAG for judge if unmet (frozen stmt).
+4. Sum `2·10^{−(A+3)} = 0.02·10^{−(A+1)} ≤ 10^{−(A+2)}`. Also need `P ≥ P₀` (dichotomy) AND `P ≥`
+   estar/reaches horizon needs — take `P := max` of the required P₀'s; `Cthr` for the regime facts.
+
 ## Lap X11d-decomp-4 (2026-07-14): **(7.55) COUNT-SPLIT PROVED — crux down to `few_white_mass_le` (7.56) + `col_tail_mass_le`**
 
 `damping_expectation_le` (7.55) is now **kernel-checked assembly** from `few_white_mass_le`
