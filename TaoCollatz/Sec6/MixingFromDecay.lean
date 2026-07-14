@@ -99,7 +99,36 @@ From `devC_eq_highfreq_invDFT` (`devC = 𝓕⁻ g`, `g` the high-frequency restr
 theorem sum_norm_sq_devC_eq (m n : ℕ) (hmn : m ≤ n) :
     ∑ Y, ‖devC m n hmn Y‖ ^ 2
       = (3 ^ n : ℝ)⁻¹ * ∑ ξ ∈ highFreq m n, ‖ZMod.dft (densC n) ξ‖ ^ 2 := by
-  sorry
+  classical
+  -- `g` = the high-frequency restriction of the DFT of the density.
+  set g : ZMod (3 ^ n) → ℂ :=
+    fun ξ => if ξ ∈ highFreq m n then ZMod.dft (densC n) ξ else 0 with hg
+  have hNcast : ((3 ^ n : ℕ) : ℂ) = (3 ^ n : ℂ) := by push_cast; ring
+  have hRcast : ((3 ^ n : ℕ) : ℝ) = (3 ^ n : ℝ) := by push_cast; ring
+  have hN : (3 ^ n : ℝ) ≠ 0 := by positivity
+  -- Step A: the deviation is the inverse DFT of `g`.
+  have hsum : ∀ Y : ZMod (3 ^ n), (∑ ξ, ZMod.stdAddChar (ξ * Y) • g ξ)
+      = ∑ ξ ∈ highFreq m n, ZMod.dft (densC n) ξ * ZMod.stdAddChar (ξ * Y) := by
+    intro Y
+    simp only [hg, smul_eq_mul, mul_ite, mul_zero]
+    rw [Finset.sum_ite_mem_eq]
+    exact Finset.sum_congr rfl (fun ξ _ => mul_comm _ _)
+  have hdev : ∀ Y : ZMod (3 ^ n), devC m n hmn Y = ZMod.dft.symm g Y := by
+    intro Y
+    rw [devC_eq_highfreq_invDFT m n hmn Y, ZMod.invDFT_apply, smul_eq_mul, hNcast, hsum Y]
+  -- Step B: the `g`-mass equals the high-frequency mass.
+  have hgpt : ∀ ξ, ‖g ξ‖ ^ 2
+      = if ξ ∈ highFreq m n then ‖ZMod.dft (densC n) ξ‖ ^ 2 else 0 := by
+    intro ξ; simp only [hg]; split_ifs <;> simp
+  have hgsum : ∑ ξ, ‖g ξ‖ ^ 2 = ∑ ξ ∈ highFreq m n, ‖ZMod.dft (densC n) ξ‖ ^ 2 := by
+    rw [Finset.sum_congr rfl (fun ξ _ => hgpt ξ), Finset.sum_ite_mem_eq]
+  -- Step C: Parseval on `𝓕⁻ g`.
+  have hpars := ZMod.dft_parseval (ZMod.dft.symm g)
+  rw [LinearEquiv.apply_symm_apply, hgsum, hRcast] at hpars
+  -- hpars : ∑ξ∈highFreq, ‖𝓕(densC)ξ‖² = (3^n:ℝ) * ∑ j, ‖𝓕⁻ g j‖²
+  have hLHS : ∑ Y, ‖devC m n hmn Y‖ ^ 2 = ∑ Y, ‖ZMod.dft.symm g Y‖ ^ 2 :=
+    Finset.sum_congr rfl (fun Y _ => by rw [hdev Y])
+  rw [hLHS, hpars, ← mul_assoc, inv_mul_cancel₀ hN, one_mul]
 
 /-- **§6 Cauchy–Schwarz + Parseval bridge** (Remark 1.18 route): the `3ᵐ`-scale oscillation of
 the Syracuse density is at most the `√` of its high-frequency `L²` Fourier mass. Proved from
