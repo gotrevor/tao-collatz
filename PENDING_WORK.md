@@ -1,10 +1,52 @@
 # PENDING WORK (kept current per lap; newest on top)
 
-## Lap review+X11a+X11c-Markov (2026-07-14): **X11a `estar_union_le` + X11c Markov/F∗ side PROVED (axiom-clean)**
+## Lap review+X11a+X11c (2026-07-14): **X11a + ALL X11c sub-machinery PROVED (axiom-clean) — only the X11d body remains**
 
-**This lap landed 7 axiom-clean lemmas** (review housekeeping + X11a + the entire X11c
-Markov/F∗ side). Remaining X11: the E∗↔deterministic-claim join (X11c geometry side) + the
-X11d body `Q_black_edge_case3`.
+**This lap landed 10 axiom-clean lemmas.** ALL X11 sub-machinery is now in place; the
+SOLE remaining piece is the X11d body assembling `Q_black_edge_case3`. **⚠ estar_union_le
+was FLOOR-corrected** (was ceil — wrong threshold; ceil gives a set that does NOT contain
+the geometry-join E∗). Now `bigTriangleSet ⌊4^A(1+p)³⌋` CONTAINS the E∗ event.
+
+### X11 sub-machinery inventory (all axiom-clean, `Case3.lean`) — READY for X11d:
+- **X11a `estar_union_le`** (FLOOR): `Σ_p (E∗ walk mass at ⌊4^A(1+p)³⌋).toReal
+  ≤ 4C·A²·4^{−A} + 4C·exp(−cA²)`. Helpers `sum_inv_sq_le_two`, `sum_geom_pow_le`.
+- **X11c Markov**: `reaches_fewWhite_mass_le_ten` — mass of {reach R ∧ ≤K whites}
+  ≤ 10^{−(A+1)} when `εR ≥ K+(A+3)log10+2`. (Chain: `encVal_ge_of_reaches` →
+  `reaches_fewWhite_mass_le` (via `fstar_markov`) → `fewWhite_num_closure`.)
+- **X11c geometry**: `deterministic_encounter_or_bigTriangle` — pointwise
+  {depth}∩{few white} ⟹ {reach R} ∨ {∃p≤T, phase point ((pos p).1−1,·) ∈ triangle t
+  with real size ≥ 4^A(1+p)³}.
+- **X11c bridge**: `bigTriangle_of_encounter` — that E∗ disjunct (real threshold) ⟹
+  `phase point ∈ bigTriangleSet F ⌊4^A(1+p)³⌋` (`⌊x⌋≤x≤t.2.2`). Feeds `estar_union_le`.
+
+### THE remaining piece: **X11d body** = `Q_black_edge_case3` (`Case3.lean` ~line 1290)
+This is the full (7.53)–(7.67) assembly. Attack path:
+1. **Entry**: `Q_le_damped_iter (n/2) (whiteSet n ξ) epsBW _ s P (n/2−m) l` gives
+   `ofReal(Q …) ≤ Σ_e fpDist s e · Σ_v hold.iid P v · ofReal(exp(−ε³·Nw(e,v))·Q(end))`,
+   where `Nw(e,v) = Σ_{p<P} 1_{whiteSet∩strip}(pos p)`, `pos p = (n/2−m)+e.1+pathSum.1, …`.
+   Choose `P = encWindowIter epsBW K R`-ish (the deterministic-claim horizon `P₀`), and
+   `K=⌈10A/epsBW³⌉`, `R=⌈(K+(A+3)log10+2)/epsBW⌉` (matches `fewWhite_num_closure` hyp).
+2. **(7.54) end-value**: `Q(end) → m^{−A}·Q_{m−1}·max(1−j_end/m,1/m)^{−A}` via `Q_le_Qm`/(7.38);
+   the event `j_end ≥ 0.9m` has mass `O(e^{−cm})` (`fpDistPlus_col_tail` at dev ≍ m, using
+   `budget_le_of_mem_triangle`: `s·log2 ≤ (m+2)log9`); on its complement weight ≤ 10^A.
+3. **Damping bound** (the heart): `E[exp(−ε³ Nw)] ≤ 10^{−(A+1)}·(1+…)`. Split by white count:
+   - {Nw > K}: integrand < exp(−ε³K) ≤ exp(−10A) ≤ 10^{−(A+1)} (K=⌈10A/ε³⌉). Contributes ≤ that.
+   - {Nw ≤ K} (few white, cumWhite=Nw via `encFold_cumWhite`): use
+     `deterministic_encounter_or_bigTriangle` (needs depth — from the good column branch,
+     `j_end<0.9m` ⟹ depth ≥ 0.1m ≥ g): {few white} ⊆ {reach R} ∪ {E∗}. Then
+     {reach R ∧ few white} mass ≤ 10^{−(A+1)} (`reaches_fewWhite_mass_le_ten`); {E∗} mass ≤
+     `estar_union_le` (via `bigTriangle_of_encounter`, applied at `j−1` for the phase point).
+   Sum the three ≤ (const)·10^{−(A+1)} ≤ 10^{−A−1}, giving `Q ≤ m^{−A}·Q_{m−1}`.
+4. **Regime plumbing**: `Cthr` large enough that `⌊4^A(1+p)³⌋ ≤ (n/2−(m+1))^{0.4}` for all p≤P
+   (horizon P=O_{A,ε}(1), so O(1) ≤ m^{0.4}); `s>m/log²m` ⟹ X10 deep hyp at j−1 (m+1/log²(m+1)).
+
+**Study first for X11d**: `Q_le_damped_iter` exact form (done — see above), `Q_le_Qm`/(7.38),
+`fpDistPlus_col_tail`, `budget_le_of_mem_triangle`, `encFold_cumWhite` (cumWhite=Nw link),
+and the `hold.support` depth facts. This is a LARGE integration — decompose into named
+sub-`sorry`s in `Case3.lean` (raising the src count is PROGRESS) rather than one monolith.
+
+**NEXT: X11d body.** First move: decompose `Q_black_edge_case3` into named sub-lemmas
+(entry reduction, column split, damping split), each a `sorry`, then discharge the tractable ones.
 
 **X11c Markov/F∗ side — COMPLETE (all axiom-clean, `Case3.lean`):**
 - **`encVal_ge_of_reaches`**: `{R ≤ count ∧ cumWhite ≤ K} → encVal ε R ≥ e^{−K+εR}`
