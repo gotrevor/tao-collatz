@@ -29,6 +29,6 @@ little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`. 
 theorem fine_scale_mixing (A : ℝ) (hA : 0 < A) :
     ∃ C > 0, ∀ n m : ℕ, ∀ hmn : m ≤ n, 1 ≤ m →
       osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-A) :=
-  osc_syracZ_regime_telescope A hA (osc_syracZ_high_regime A hA)
+  osc_syracZ_regime_telescope A hA (fun B hB => osc_syracZ_high_regime B hB)
 
 end TaoCollatz
