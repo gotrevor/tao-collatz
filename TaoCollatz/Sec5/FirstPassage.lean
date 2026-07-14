@@ -722,7 +722,39 @@ length `y^α − y → ∞`).  Owed: an explicit odd point, e.g. `2⌊y/2⌋+1`.
 theorem logWindow_nonempty_of_large :
     ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       (logWindow y (y ^ alpha)).Nonempty := by
-  sorry
+  obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
+  refine ⟨max x₀z ((2:ℝ) ^ (2000:ℝ)), fun x hx y hy => ?_⟩
+  have hxz : x₀z ≤ x := le_trans (le_max_left _ _) hx
+  have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_max_right _ _) hx
+  have hnz : 0 < nZero x := hzpos x hxz
+  have hyset : y = x ^ alpha ∨ y = x ^ alpha ^ 2 := by simpa [Set.mem_insert_iff] using hy
+  obtain ⟨hMy, h2y⟩ := window_arith hx2000 hyset
+  have hM2 : (2:ℝ) ≤ ((2 ^ (3 * nZero x) : ℕ) : ℝ) := by
+    have hnat : (2:ℕ) ≤ 2 ^ (3 * nZero x) := by
+      calc 2 = 2 ^ 1 := (pow_one 2).symm
+        _ ≤ 2 ^ (3 * nZero x) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    exact_mod_cast hnat
+  have hy2 : (2:ℝ) ≤ y := le_trans hM2 hMy
+  have hy0 : (0:ℝ) < y := by linarith
+  have hgap : y + 2 ≤ y ^ alpha := by nlinarith [h2y, hy2]
+  -- witness: least odd ≥ ⌈y⌉₊
+  set k : ℕ := ⌈y⌉₊ with hkdef
+  have hk_ge : y ≤ (k : ℝ) := Nat.le_ceil y
+  have hk_lt : (k : ℝ) < y + 1 := Nat.ceil_lt_add_one hy0.le
+  set N : ℕ := k + (k + 1) % 2 with hNdef
+  have hN_odd : N % 2 = 1 := by omega
+  have hN_ge : k ≤ N := by omega
+  have hN_le : N ≤ k + 1 := by omega
+  have hNy : y ≤ (N : ℝ) := le_trans hk_ge (by exact_mod_cast hN_ge)
+  have hNyα : (N : ℝ) ≤ y ^ alpha := by
+    have : (N : ℝ) ≤ (k : ℝ) + 1 := by exact_mod_cast hN_le
+    linarith [hk_lt, hgap]
+  refine ⟨N, ?_⟩
+  simp only [logWindow, Finset.mem_filter, Finset.mem_range, Nat.lt_add_one_iff]
+  refine ⟨?_, hN_odd, hNy, hNyα⟩
+  have h1 : N ≤ ⌊y ^ alpha⌋₊ := Nat.le_floor hNyα
+  have h2 : ⌊y ^ alpha⌋₊ ≤ ⌈y ^ alpha⌉₊ := Nat.floor_le_ceil _
+  omega
 
 theorem intTest_error :
     ∃ K : ℝ, 0 < K ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
