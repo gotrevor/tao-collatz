@@ -34,12 +34,31 @@ noncomputable def logWindow (lo hi : ℝ) : Finset ℕ :=
 /-- Log-uniform distribution on the odd numbers in `[lo, hi]` (mass `∝ 1/N`);
 falls back to `pure 1` when the window is empty. -/
 noncomputable def logUnifOdd (lo hi : ℝ) : PMF ℕ :=
-  if (logWindow lo hi).Nonempty then
+  if h : (logWindow lo hi).Nonempty then
     PMF.ofFinset
       (fun N => if N ∈ logWindow lo hi then
           (N : ℝ≥0∞)⁻¹ / ∑ M ∈ logWindow lo hi, (M : ℝ≥0∞)⁻¹ else 0)
       (logWindow lo hi)
-      (by sorry)
+      (by
+        -- denominator `D = ∑_{M∈W} M⁻¹` is positive (nonempty window) and finite (odd ⇒ M≠0),
+        -- so `∑_{N∈W} N⁻¹/D = D/D = 1`.
+        have hnetop : (∑ M ∈ logWindow lo hi, (M : ℝ≥0∞)⁻¹) ≠ ∞ := by
+          rw [ENNReal.sum_ne_top]
+          intro M hM
+          rw [ENNReal.inv_ne_top]
+          simp only [logWindow, Finset.mem_filter] at hM
+          have : M % 2 = 1 := hM.2.1
+          simp only [ne_eq, Nat.cast_eq_zero]; omega
+        have hne0 : (∑ M ∈ logWindow lo hi, (M : ℝ≥0∞)⁻¹) ≠ 0 := by
+          obtain ⟨M₀, hM₀⟩ := h
+          intro hsum0
+          rw [Finset.sum_eq_zero_iff] at hsum0
+          have h0 := hsum0 M₀ hM₀
+          rw [ENNReal.inv_eq_zero] at h0
+          exact ENNReal.natCast_ne_top M₀ h0
+        rw [Finset.sum_congr rfl (fun N hN => if_pos hN)]
+        simp_rw [div_eq_mul_inv]
+        rw [← Finset.sum_mul, ENNReal.mul_inv_cancel hne0 hnetop])
       (by intro a ha; rw [if_neg ha])
   else PMF.pure 1
 
