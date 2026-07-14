@@ -1992,6 +1992,36 @@ theorem tailDensW_condWindow_le (j p l : ℕ) (C : ℝ)
   tailDensW_le_single_mass j p l (condWindow j p C l)
     (fun vt _ hl hW => fnat_lt_of_suffix_window vt l C hl hW hbudget) Y
 
+/-- **The stopping event `Bₖ`** (Tao (6.6)) on the tail block: `a[1,k] ≤ T < a[1,k+1]`, i.e.
+`pre vt (p−1) ≤ T ∧ T < pre vt p` with `p = k+1` and threshold `T = n·log3/log2 − Cₐ²·log n`. This is
+the predicate that `k` is the stopping value; the events `Bₖ` (as `k` varies) partition the good event.
+Real threshold; decidable classically. -/
+def stopEvent (p : ℕ) (T : ℝ) : (Fin p → ℕ) → Prop := fun vt =>
+  (pre vt (p - 1) : ℝ) ≤ T ∧ T < (pre vt p : ℝ)
+
+/-- **The full §6 conditioning window `Eₖ ∧ Bₖ`** on the tail block (Tao (6.9), minus `Cₖ,ₗ = {pre = l}`
+which `tailDensW`/`condDensW` bake in): the (6.2) window `condWindow` together with the stopping event
+`stopEvent`. This is the tail-measurable `W` that the (6.9) density `g_{n,k,l} = condDensW … W` carries,
+and the exact event over which the decomposition identity `syracZ = ∑_{k,l} g_{k,l} + error` sums. -/
+def condWindowB (j p : ℕ) (C : ℝ) (l : ℕ) (T : ℝ) : (Fin p → ℕ) → Prop := fun vt =>
+  condWindow j p C l vt ∧ stopEvent p T vt
+
+noncomputable instance condWindowB_decidablePred (j p : ℕ) (C : ℝ) (l : ℕ) (T : ℝ) :
+    DecidablePred (condWindowB j p C l T) := Classical.decPred _
+
+/-- **Obligation 3 at the full window `Eₖ ∧ Bₖ`**: `tailDensW … (condWindowB) Y ≤ 2⁻ˡ`, given the same
+numeric `hbudget`. The extra stopping conjunct `Bₖ` only shrinks the event, so the suffix-window
+hypothesis of `fnat_lt_of_suffix_window` is still supplied by the `condWindow` component. This is the
+obligation-3 output at the exact `W` the decomposition consumes. -/
+theorem tailDensW_condWindowB_le (j p l : ℕ) (C T : ℝ)
+    (hbudget : (l : ℝ) * Real.log 2
+        + (C * Real.log 2 + 5 / 4 * (C * Real.log 2) ^ 2) * Real.log ((j + p : ℕ) : ℝ)
+        + Real.log 4 < ((j + p : ℕ) : ℝ) * Real.log 3)
+    (Y : ZMod (3 ^ (j + p))) :
+    tailDensW j p l (condWindowB j p C l T) Y ≤ (2 : ℝ)⁻¹ ^ l :=
+  tailDensW_le_single_mass j p l (condWindowB j p C l T)
+    (fun vt _ hl hW => fnat_lt_of_suffix_window vt l C hl hW.1 hbudget) Y
+
 
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
