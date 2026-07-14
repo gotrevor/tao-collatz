@@ -1,5 +1,37 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap D-box cont (2026-07-14): **X8 `edgeWeight_summand_le` PROVED** — the pointwise weight bound
+
+With the X9 kernel closed (below), moved to the non-gated X8 crux `fpDist_edgeWeight_le`
+(`BlackEdge.lean:407`, the (7.48) weight degradation). Landed the **uniform pointwise weight
+bound** `edgeWeight_summand_le` (axiom-clean `[propext, Classical.choice, Quot.sound]`):
+
+> `∀ A ≥ 0, m ≥ 2, e d`, with `J = e₁ + d₁`:
+> `max(m − J, 1)^{−A} ≤ m^{−A}·exp(2A·J/m) + 1_{m < 2J}`.
+
+**Why this is the right shape**: it dominates `edgeWeight` WITHOUT an inner `[J ≤ m/2]`
+region split (no Fubini/summability barrier). Main region `J ≤ m/2` uses the concavity core
+`one_sub_rpow_neg_le_exp` (`x = J/m ≤ 1/2`); tail `J > m/2` uses weight `≤ 1 ≤` indicator.
+Summing over `d` with `hold`, then over `e` with `fpDist`, the MGF term factors cleanly:
+`∑_e fpDist·edgeWeight ≤ m^{−A}·Z_{fp,fst}(2A/m)·Z_{hold,fst}(2A/m) + P(e₁+d₁ > m/2)`.
+
+**NEXT for `fpDist_edgeWeight_le` (three remaining pieces, all now routed through the pointwise bound)**:
+1. **MGF factor** `Z_{fp,fst}(2A/m)·Z_{hold,fst}(2A/m) ≤ 1 + δ/2` for `m ≥ C`. `Z_{hold,fst}(θ)`
+   at `θ = 2A/m → 0` → 1 (reuse `tiltZ_hold_fst`/`tiltZ_hold_fst_le`, `K = 32` quadratic bound
+   in `Prob/Mgf.lean:637`). `Z_{fp,fst}(θ) = ∑_e fpDist·exp(θ e₁) ≤ exp(θ·s/4 + …)`: need a
+   first-coordinate fpDist MGF/Chernoff. `e₁` mean ≈ `s/4 ≤ m/(4log²m)`, so
+   `Z_{fp,fst}(2A/m) ≤ exp(A·s/(2m)) ≤ exp(A/(2log²m)) → 1`. The fp first-coord MGF bound is
+   the one genuinely-new analytic input (X6 `fpDist_col_le`/`fpDist_location_bound` centre it at
+   `s/4`; or a direct Chernoff via the Gweight row engine).
+2. **Tail** `∑_e fpDist·∑_d hold·1_{m < 2(e₁+d₁)} = P(e₁+d₁ > m/2) ≤ (δ/2)·m^{−A}` for `m ≥ C`.
+   Large deviation: `e₁+d₁` concentrated at `s/4 + 4 ≪ m/2`; Chernoff at a fixed first-coord
+   tilt (`holdSum_halfspace_le` at `(θ,0)` for the hold part; fp first-coord Chernoff for `e₁`).
+3. **Glue**: sum `edgeWeight_summand_le` over `d` (inner tsum, `hold`-summability of the exp term
+   from `tiltZ_hold_fst` finiteness + the indicator ≤ 1), then over `e` with `fpDist` (mass 1);
+   the exp factor separates `exp(2A(e₁+d₁)/m) = exp(2A e₁/m)·exp(2A d₁/m)`; combine 1+2 with
+   `Cthr = max` of the two regions' thresholds and `(1+δ/2) + (δ/2) = 1+δ`.
+
+
 ## Lap D-box (2026-07-14): **`fpDist_any_triangle_le` PROVED — X9 white-exit kernel CLOSED** — axiom-clean
 
 Commit `94444b9`. The last route-decisive blocker on the X9 white-exit kernel is discharged.

@@ -229,6 +229,59 @@ theorem one_sub_rpow_neg_le_exp {A x : ℝ} (hA : 0 ≤ A) (hx0 : 0 ≤ x) (hx :
     linarith
   nlinarith [mul_le_mul_of_nonneg_left hlog hA]
 
+/-- **The (7.48) pointwise weight bound** (uniform, no region split).  For every
+first-passage step `e` and hold step `d`, writing `J = e₁ + d₁` for the total
+`j`-advance, the depth weight is dominated by an MGF term plus a hard tail:
+`max(m − J, 1)^{−A} ≤ m^{−A}·exp(2A·J/m) + 1_{m < 2J}`.
+
+This is the key that lets the double sum `∑ fpDist·edgeWeight` factor into an MGF
+`m^{−A}·Z_{fp,fst}(2A/m)·Z_{hold,fst}(2A/m)` plus a large-deviation tail
+`P(J > m/2)`, WITHOUT an inner `[J ≤ m/2]` region split (which would need a
+Fubini/summability barrier).  In the main region `J ≤ m/2` (so `x = J/m ≤ 1/2`),
+the concavity core `one_sub_rpow_neg_le_exp` gives the MGF term; in the tail the
+weight is `≤ 1 ≤` the indicator.  Requires `m ≥ 2`. -/
+theorem edgeWeight_summand_le {A : ℝ} (hA : 0 ≤ A) {m : ℕ} (hm : 2 ≤ m)
+    (e d : ℕ × ℤ) :
+    ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)
+      ≤ (m : ℝ) ^ (-A) * Real.exp (2 * A * ((e.1 + d.1 : ℕ) : ℝ) / (m : ℝ))
+        + (if m < 2 * (e.1 + d.1) then (1 : ℝ) else 0) := by
+  set J : ℕ := e.1 + d.1 with hJ
+  have hmm : m - e.1 - d.1 = m - J := by rw [hJ, Nat.sub_sub]
+  rw [hmm]
+  have hmpos : (0 : ℝ) < (m : ℝ) := by exact_mod_cast (by omega : 0 < m)
+  have hexp_nonneg : (0 : ℝ) ≤ (m : ℝ) ^ (-A) * Real.exp (2 * A * (J : ℝ) / (m : ℝ)) :=
+    mul_nonneg (Real.rpow_nonneg hmpos.le _) (Real.exp_pos _).le
+  by_cases hbig : m < 2 * J
+  · rw [if_pos hbig]
+    have hle1 : ((max (m - J) 1 : ℕ) : ℝ) ^ (-A) ≤ 1 :=
+      Real.rpow_le_one_of_one_le_of_nonpos
+        (by exact_mod_cast Nat.le_max_right (m - J) 1) (by linarith)
+    linarith
+  · rw [if_neg hbig]
+    push_neg at hbig  -- `2 * J ≤ m`
+    have hJm : J ≤ m := by omega
+    have hmax : max (m - J) 1 = m - J := max_eq_left (by omega : (1 : ℕ) ≤ m - J)
+    rw [hmax]
+    have hcast : ((m - J : ℕ) : ℝ) = (m : ℝ) - (J : ℝ) := by
+      rw [Nat.cast_sub hJm]
+    have hx0 : (0 : ℝ) ≤ (J : ℝ) / m := by positivity
+    have hx : (J : ℝ) / m ≤ 1 / 2 := by
+      rw [div_le_iff₀ hmpos]
+      have : (2 : ℝ) * J ≤ m := by exact_mod_cast hbig
+      linarith
+    have h1x : (0 : ℝ) ≤ 1 - (J : ℝ) / m := by linarith
+    have hfactor : ((m : ℝ) - J) = (m : ℝ) * (1 - (J : ℝ) / m) := by
+      field_simp
+    have hsplit : ((m - J : ℕ) : ℝ) ^ (-A)
+        = (m : ℝ) ^ (-A) * (1 - (J : ℝ) / m) ^ (-A) := by
+      rw [hcast, hfactor, Real.mul_rpow hmpos.le h1x]
+    rw [hsplit]
+    have hconc := one_sub_rpow_neg_le_exp hA hx0 hx
+    have hearg : 2 * A * ((J : ℝ) / m) = 2 * A * (J : ℝ) / m := by ring
+    rw [hearg] at hconc
+    have := mul_le_mul_of_nonneg_left hconc (Real.rpow_nonneg hmpos.le (-A))
+    linarith
+
 /-- **The (7.48)/(7.49) weight degradation, Case 2** (paper p.47). With budget
 `s ≤ m/log²m`, the first-passage endpoint's `j`-coordinate concentrates near
 `s/4 ≪ m/log²m` (Lemma 7.7 = `fpDist_location_bound`, node X6), so the average
