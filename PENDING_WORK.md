@@ -1,5 +1,27 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap X11d-repair (2026-07-14): **JUDGE PASS 26 REPAIR DONE — `_rpow` engines split out, Lemma 7.10/X10a pins RESTORED byte-identical (`4f51542`, green 3282 jobs)**
+
+Executed the judge-mandated repair of `61f8e80` (which had edited four ratified pins). Now HARD RAIL 6
+compliant: ratified pins are immutable. All seven touched decls `#print axioms` clean (believed clean,
+judge to verify), both pin statements verified **byte-identical to `e08871e`** (re-ratifies X10/X10a).
+
+- **Engine layer** (deep hyp `(depth)^0.8 < s`, proofs unchanged, just renamed): `triangle_encounter_le_rpow`,
+  `encounter_apex_proximity_rpow` (ManyTriangles), `bigTriangle_walk_le_rpow`, `estar_union_le_rpow` (Case3).
+  The Case-3 chain (`bigTriangle→estar→few_white_estar_mass_le`) consumes these `_rpow` forms.
+- **Pin layer** (deep hyp `m/log²m < s`, e08871e statements): `encounter_apex_proximity` = e08871e proof
+  VERBATIM (its deep-hyp use derives `m^0.4 ≤ 12s` directly for all m — a `_rpow` corollary would fail on
+  small m where `m^0.8 > m/log²m`). `triangle_encounter_le` = thin corollary of `_rpow` (LHS is a
+  sub-probability): m ≥ 10^27 bridges via `log_sq_le_rpow`; m < 10^27 gives `LHS ≤ 1 ≤ maxC/s'` with
+  `maxC := max C_eng 10^11 > m^0.4 ≥ s'`.
+- These pins are STANDALONE (nothing consumes them) — they formalize the paper's Lemma 7.10 / (7.63)–(7.65).
+
+### NEXT (unchanged crux) — `few_white_mass_le` (7.56) ASSEMBLY (all 3 terms + split exist, `_rpow` chain wired)
+See the decomp-6 assembly recipe below. Cthr must include `10^27` so the depth-`m+1` bridge
+`(m+1)^0.8 ≤ 2m^0.8 ≤ m/log²m < s` closes (judge pass 26 step 3, still unproved, lives in the two Case3
+sorries `few_white_mass_le`@2111, `col_tail_mass_le`@2258). `few_white_estar_mass_le` already bakes
+Cthr=10^30 for its own bridge; thread ≥10^27 through the outer assembly + col_tail.
+
 ## Lap X11d-decomp-6 (2026-07-14): **E∗ TERM `few_white_estar_mass_le` FULLY PROVED (axiom-clean) + route-decisive deep-hyp generalization**
 
 Two advances on the (7.56) crux `few_white_mass_le`, both axiom-clean, `lake build` green (3267 jobs):
