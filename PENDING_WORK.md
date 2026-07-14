@@ -1,5 +1,34 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap X11d-DONE (2026-07-14): **🏆🏆 §7 MONOTONICITY COMPLETE — `prop_7_8` AXIOM-CLEAN, Case3.lean SORRY-FREE**
+
+The sole remaining §7 leaf `col_tail_mass_le` (7.54 bad-column Gaussian tail) is PROVED and
+axiom-clean. **`Case3.lean` is now SORRY-FREE.** The whole §7 spine goes axiom-clean
+(`[propext, Classical.choice, Quot.sound]`, judge-to-verify):
+`col_tail_mass_le → few_white_mass_le → Q_black_edge_case3 → prop_7_8`. `lake build` green (3282).
+Commit `b0ea748`. **This is the campaign's spine — the §7 crux (X8/X10/X11, "the paper's pinnacle",
+the 65–75% risk concentration) is DONE.**
+
+### col_tail proof (standard super-exponential tail, `Case3.lean`)
+- Walk→fpDistPlus marginal via `fpDist_walk_eq_fpDistPlus` at `p=P`.
+- Containment `{0.9m ≤ x.1} ⊆ {2D ≤ |x.1−s/4|}` with `D=m/40`, using budget `s < 3.2(m+2)`
+  (from `s·log2 ≤ (m+2)log9` [=hs2] and `log9 < 3.2·log2` via `9^5 < 2^16`).
+- `fpDistPlus_col_tail` gives `C(exp(−cD²/(1+s))+exp(−cD))`; both `≤ exp(−(c/16960)m)` since
+  `1+s ≤ 10.6m`; closed by NEW helper `exp_neg_mul_le_rpow_neg` (poly beaten by super-exp,
+  extracted from `hold_fst_tail_le`'s `hclose`) → `≤ m^{−A}/2`.
+
+### NEXT — §7 is done, so PIVOT TO OBJECTIVE 3 (DIRECTION.md): burn down the fruit
+Now that the campaign's hardest crux is closed, DIRECTION objective 3 is the order:
+1. **The `ManyTriangles.lean` split** (5,519 lines; queued 6+ laps). Pure moves, verbatim names,
+   thin re-export shim. Zero mathematical risk.
+2. **The spine stubs** (downstream, cheap): `Syracuse/SyracRV.lean` (sorries), `Sec5/FirstPassage.lean`,
+   `Sec6/MixingFromDecay.lean`, `Basic/Collatz.lean`. Also `Sec7/White.lean`, `Sec7/Reduction.lean`,
+   `Sec7/BlackEdgeQ.lean`, `Prob/Basic.lean` each carry a sorry — inventory and attack the on-path ones.
+3. **Pin C8** (§5 first-passage, the last un-pinned node) — mark `RATIFY-C8`, never `\leanok`.
+The remaining `sorry` census (src): Statement.lean(2 headlines, GATED), SyracRV, FirstPassage,
+MixingFromDecay, Collatz, White, Reduction, BlackEdgeQ, Prob/Basic. Check the critical path
+`S3 → X6 → {X8,X10} → X11 → C10 → C9 → C6 → Statement` — which downstream nodes now unblock.
+
 ## Lap X11d-assembly (2026-07-14): **🏆 (7.56) CRUX `few_white_mass_le` ASSEMBLED — §7 crux now hinges on ONE leaf**
 
 The deepest leaf `few_white_mass_le` (7.56) is now **kernel-checked assembly** from its three proved
