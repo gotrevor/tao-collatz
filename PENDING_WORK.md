@@ -1,5 +1,33 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap C part 2b (2026-07-14): started X8 `fpDist_edgeWeight_le` — concavity core landed
+
+With Lap C/D done/gated (below), moved to the non-gated X8 crux
+`fpDist_edgeWeight_le` (`Sec7/BlackEdge.lean:216`, the (7.48) weight degradation —
+off X6, NOT the gated separation fight). Landed the reusable **(7.42) concavity
+core** `one_sub_rpow_neg_le_exp : 0≤A → 0≤x → x≤1/2 → (1-x)^{-A} ≤ exp(2Ax)`
+(axiom-clean); this is the pointwise bound that turns the depth weight
+`(m-J)^{-A} = m^{-A}(1-J/m)^{-A}` into `m^{-A}·exp(2A·J/m)`.
+
+**Decomposition plan for `fpDist_edgeWeight_le`** (next lap; `J := e.1+d.1` = total
+`j`-advance = first-passage `j` + one hold `j`):
+1. **Main region** (`J ≤ m/2`): pointwise `one_sub_rpow_neg_le_exp` ⟹
+   `∑_e fpDist·∑_d hold·[J≤m/2]·max(m-J,1)^{-A} ≤ m^{-A}·E[exp(2A·J/m)]`. The MGF
+   `E[exp(2A(e.1+d.1)/m)] = Z_fp,fst(2A/m)·Z_hold,fst(2A/m)` (first-coord tilt).
+   `e.1` has mean ≈ s/4 ≤ m/(4log²m), `d.1` mean 4 ⟹ MGF ≤ exp(2A/m·(s/4+4)+O(1/m²))
+   ≤ exp(A·s/(2m)) ≤ exp(A/(2log²m)) → 1, so `≤ (1+δ/2)` for `m ≥ C`.
+   Needs: a first-coordinate fpDist MGF/Chernoff bound (reuse `tiltZ_hold_fst`,
+   `holdSum_halfspace_le`, and X6's `fpDist_col_le`/`fpDist_location_bound` for the
+   `e.1` mean — the col marginal is centered at s/4).
+2. **Tail** (`J > m/2`): weight ≤ 1 (max ≥1), so `≤ P(e.1+d.1 > m/2)`; large
+   deviation (J concentrated at s/4 ≪ m/2) ⟹ `≤ exp(-c·m) ≤ (δ/2)·m^{-A}` for `m≥C`.
+   Chernoff at a fixed first-coord tilt; reuse the same MGF machinery.
+3. **Glue**: split the double-`∑` by `[J≤m/2]`, add the two (ℝ tsum summability from
+   `edgeWeight`/`fpDist` finiteness). `Cthr = max` of the two regions' thresholds.
+NB `fpDist_white_exit` and `Q_black_edge_case2` (the other listed X8 sorries) route
+through the gated `fpDist_any_triangle_le` separation fight, so they stay blocked;
+`fpDist_edgeWeight_le` is the genuinely non-gated on-path X8 leaf.
+
 ## Lap C part 2 (2026-07-14): **constant `Y` MADE EXPLICIT (existential → `Y = 150`)** — axiom-clean
 
 Directive step 3 (judge pass 24) is **DONE**. `fpDist_height_tail_le_sixteenth_sharp`

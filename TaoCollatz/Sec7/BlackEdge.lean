@@ -204,6 +204,27 @@ theorem Q_fp_endpoint_le (n ξ : ℕ) (ε A : ℝ) (hA : 0 ≤ A) (hε : 0 ≤ �
             * Set.indicator (whiteStrip n ξ) 1 (j', l + e.2))
             * (edgeWeight A m e * QM) := by rw [hdamp]
 
+/-- **(7.42) concavity core**: for `A ≥ 0` and `0 ≤ x ≤ 1/2`,
+`(1-x)^{-A} ≤ exp(2Ax)`.  This is the pointwise weight-degradation bound behind
+`fpDist_edgeWeight_le`: with `x = J/m` the total `j`-advance fraction, the depth
+weight `(m-J)^{-A} = m^{-A}(1-x)^{-A} ≤ m^{-A}·exp(2A·J/m)`, turning the average
+depth weight into an MGF of `J` at tilt `2A/m`.  Route: `log(1-x) ≥ 1 - 1/(1-x)`
+(`log_le_sub_one_of_pos` at `1/(1-x)`) gives `-log(1-x) ≤ x/(1-x) ≤ 2x`. -/
+theorem one_sub_rpow_neg_le_exp {A x : ℝ} (hA : 0 ≤ A) (hx0 : 0 ≤ x) (hx : x ≤ 1 / 2) :
+    (1 - x) ^ (-A) ≤ Real.exp (2 * A * x) := by
+  have h1x : (0 : ℝ) < 1 - x := by linarith
+  rw [Real.rpow_def_of_pos h1x]
+  apply Real.exp_le_exp.mpr
+  have hlog : -Real.log (1 - x) ≤ 2 * x := by
+    have hy : Real.log (1 / (1 - x)) ≤ 1 / (1 - x) - 1 :=
+      Real.log_le_sub_one_of_pos (by positivity)
+    rw [Real.log_div one_ne_zero (by linarith), Real.log_one, zero_sub] at hy
+    have hle : 1 / (1 - x) - 1 ≤ 2 * x := by
+      rw [div_sub_one (by linarith)]
+      rw [div_le_iff₀ h1x]; nlinarith
+    linarith
+  nlinarith [mul_le_mul_of_nonneg_left hlog hA]
+
 /-- **The (7.48)/(7.49) weight degradation, Case 2** (paper p.47). With budget
 `s ≤ m/log²m`, the first-passage endpoint's `j`-coordinate concentrates near
 `s/4 ≪ m/log²m` (Lemma 7.7 = `fpDist_location_bound`, node X6), so the average
