@@ -2022,6 +2022,31 @@ theorem tailDensW_condWindowB_le (j p l : ℕ) (C T : ℝ)
   tailDensW_le_single_mass j p l (condWindowB j p C l T)
     (fun vt _ hl hW => fnat_lt_of_suffix_window vt l C hl hW.1 hbudget) Y
 
+/-- **The fully-assembled single-conditioning osc bound** (C10, Tao (6.10)+(6.11) with obligation 3
+discharged): for one conditioning `(k, l)` — cut `(j, p) = (n−k−1, k+1)`, window `Eₖ ∧ Bₖ` — the
+oscillation of the conditioned density is `≤ D·√(3^(j+p)·2⁻ˡ)`, where `D` is the head uniform-decay
+bound (`hunif`, obligation 2) and the `2⁻ˡ` is the discharged tail collision entropy. This composes
+`condDensW_osc_le` (the Cauchy–Schwarz/Parseval bridge) with `tailDensW_renyi_le ∘ tailDensW_condWindowB_le`
+(the Rényi count `∑ (tailDensW)² ≤ 2⁻ˡ`). It is the exact per-term bound the (6.4)/(6.8) union sum over
+`(k, l)` adds up (via `osc_windowed_conditioning_le`); the only remaining inputs are `hunif` (obligation
+2) and `hbudget` (the (6.8) `l`-range numeric, obligation 1). -/
+theorem condDensWB_osc_le (j p l m : ℕ) (C T : ℝ) (hmn : m ≤ j + p) (D : ℝ) (hD : 0 ≤ D)
+    (hunif : ∀ ξ ∈ highFreq m (j + p),
+      ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
+          (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))‖ ≤ D)
+    (hbudget : (l : ℝ) * Real.log 2
+        + (C * Real.log 2 + 5 / 4 * (C * Real.log 2) ^ 2) * Real.log ((j + p : ℕ) : ℝ)
+        + Real.log 4 < ((j + p : ℕ) : ℝ) * Real.log 3) :
+    osc m (j + p) hmn (condDensW j p l (condWindowB j p C l T))
+      ≤ D * Real.sqrt ((3 ^ (j + p) : ℝ) * (2 : ℝ)⁻¹ ^ l) := by
+  refine le_trans (condDensW_osc_le j p l m (condWindowB j p C l T) hmn D hD hunif) ?_
+  refine mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt ?_) hD
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  exact tailDensW_renyi_le j p l (condWindowB j p C l T) ((2 : ℝ)⁻¹ ^ l)
+    (tailDensW_condWindowB_le j p l C T hbudget)
+
 
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
