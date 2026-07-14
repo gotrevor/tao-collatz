@@ -1,5 +1,28 @@
 # PENDING WORK (kept current per lap; newest on top)
 
+## Lap fruit-4 (2026-07-14): **§5 `logUnifOdd` normalization PROVED** + **Lemma 1.12 decomposed**
+
+Two advances, both objective-3 fruit, both axiom-clean & build green (3282):
+
+**(a) `logUnifOdd` normalization** (`Sec5/FirstPassage.lean`) — closed the `PMF.ofFinset`
+normalization sorry (a real on-path spine stub). Refactored the outer `if → dite` so
+window-nonemptiness is in scope, then `∑_{N∈W} N⁻¹/D = D/D = 1` with `D = ∑_{M∈W} M⁻¹` finite
+(odd ⇒ `M≠0`, `ENNReal.sum_ne_top`) and nonzero (`Finset.sum_eq_zero_iff` + nonempty).
+FirstPassage now carries ONLY the heroic `stabilization` (Prop 1.11) sorry.
+
+**(b) `syracZ_recursion` (Lemma 1.12) DECOMPOSED** (`Syracuse/SyracRV.lean`) — proved the
+algebraic core as reusable sub-lemmas: `pre_succ_tail` (`pre a (m+1) = a 0 + pre (tail a) m`)
+and `syracZ_offset_peel` (`Gₙ₊₁(a) = 2⁻ᵃ⁰·(1 + 3·Ĝ(tail a))` in `ZMod 3ⁿ⁺¹`). Full remaining
+probabilistic route written into the sorry (peel a₀ → mod-3 guard + divide-by-3 → castHom
+truncation → geometric fold via `orderOf(2 : ZMod 3ⁿ⁺¹) = 2·3ⁿ`). See its route comment.
+
+### Remaining non-headline sorries (post-lap inventory):
+- `Syracuse/SyracRV.lean` `syracZ_recursion` — DOABLE, core proved; next: step (1) tsum-peel of
+  the fiber mass + step (4) `orderOf(2 : ZMod 3ⁿ⁺¹) = 2·3ⁿ` (number theory) + geometric resum.
+- `Sec5/FirstPassage.lean` `stabilization` (Prop 1.11) — HEROIC analytic (multi-lap, narrow only).
+- `Sec6/MixingFromDecay.lean` `fine_scale_mixing` — HEROIC analytic §6 (multi-lap, narrow only).
+- `Statement.lean` — the two headlines (discharge only when the whole chain lands; DO NOT TOUCH).
+
 ## Lap fruit-3 (2026-07-14): **Syracuse (1.22) `syracZ_map_cast` PROVED (axiom-clean)** — SyracRV stub 2/3
 
 Objective-3 fruit, SyracRV stub 2 of 3. Closed `syracZ_map_cast` (`Syracuse/SyracRV.lean`): the
