@@ -883,6 +883,54 @@ theorem dft_condDens_eq_cond_char (j p l : ℕ) (ξ : ZMod (3 ^ (j + p))) :
     (fun a => (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p))
     (fun a => pre (fun i => a (Fin.natAdd j i)) p = l) ξ
 
+/-- **Brick (b), the tail/indicator-factor `≤ 1` bound** (C10): the tail character factor from
+`cond_char_factor` — which carries the conditioning indicator `1_{pre vt = l}` — is a character
+expectation of a norm-`≤1` observable, so `‖tail factor‖ ≤ 1` (`cexpect_norm_le`). This is the
+low-entropy (Rényi) block; its `ℓ²`-mass is controlled separately by the collision-entropy count. -/
+theorem tail_indicator_factor_norm_le {j p : ℕ} (ξ : ZMod (3 ^ (j + p))) (l : ℕ) :
+    ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
+        * (if pre vt p = l then 1 else 0))‖ ≤ 1 := by
+  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  refine cexpect_norm_le _ _ (fun vt => ?_)
+  by_cases h : pre vt p = l
+  · rw [if_pos h, mul_one]; exact le_of_eq (norm_stdAddChar _)
+  · rw [if_neg h, mul_zero, norm_zero]; exact zero_le_one
+
+/-- **Brick (b), the per-frequency DFT decay of the conditioned density** (C10). For a high
+frequency `ξ` (level `(j'+q)+p`) whose reduced frequency factors as `3ʲ'·η` (encoded by `hfreq`) with
+`3`-coprime cofactor after the descent (`hη`), the DFT of the conditioned density decays
+`≤ Cₐ·q⁻ᴬ`. This is the product bound `‖𝓕(densC condDens) ξ‖ = ‖head · tail‖ ≤ (Cₐ·q⁻ᴬ)·1`:
+`dft_condDens_eq_cond_char` + `cond_char_factor` split it into the decaying head factor
+(`head_factor_norm_le_charFn`, the DECAY block) and the `≤1` tail/indicator factor
+(`tail_indicator_factor_norm_le`, the Rényi block). It is the per-`ξ` input to the `ℓ²`-mass count. -/
+theorem dft_condDens_norm_le (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∀ (j' q p l : ℕ), 1 ≤ q → ∀ (ξ : ZMod (3 ^ ((j' + q) + p)))
+      (η : ZMod (3 ^ (j' + q))),
+      (2 : ZMod (3 ^ (j' + q)))⁻¹ ^ l
+          * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right (j' + q) p)) (ZMod (3 ^ (j' + q))) ξ
+        = (3 : ZMod (3 ^ (j' + q))) ^ j' * η →
+      ¬ (3 ∣ (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) η).val) →
+      ‖ZMod.dft (densC ((j' + q) + p) (condDens (j' + q) p l)) ξ‖ ≤ C * (q : ℝ) ^ (-A) := by
+  obtain ⟨C, hC0, hC⟩ := head_factor_norm_le_charFn A hA
+  refine ⟨C, hC0, fun j' q p l hq ξ η hfreq hη => ?_⟩
+  rw [dft_condDens_eq_cond_char, cond_char_factor, norm_mul]
+  have hCq : (0 : ℝ) ≤ C * (q : ℝ) ^ (-A) :=
+    mul_nonneg hC0.le (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+  calc ‖(geomHalf.iid (j' + q)).cexpect (fun vh => ZMod.stdAddChar
+            (-((3 ^ p * ((fnat (j' + q) vh : ZMod (3 ^ ((j' + q) + p)))
+              * (2 : ZMod (3 ^ ((j' + q) + p)))⁻¹ ^ pre vh (j' + q))
+              * (2 : ZMod (3 ^ ((j' + q) + p)))⁻¹ ^ l) * ξ)))‖
+        * ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar
+            (-(((fnat p vt : ZMod (3 ^ ((j' + q) + p)))
+              * (2 : ZMod (3 ^ ((j' + q) + p)))⁻¹ ^ pre vt p) * ξ))
+            * (if pre vt p = l then 1 else 0))‖
+      ≤ (C * (q : ℝ) ^ (-A)) * 1 :=
+        mul_le_mul (hC j' q p l hq ξ η hfreq hη) (tail_indicator_factor_norm_le ξ l)
+          (norm_nonneg _) hCq
+    _ = C * (q : ℝ) ^ (-A) := mul_one _
+
+
 /-- **Proposition 1.14** (fine-scale mixing): the `Syrac(ℤ/3ⁿℤ)` density oscillates
 little at scale `3ᵐ`, uniformly with polynomial decay `m^{-A}` for every `A`.
 
