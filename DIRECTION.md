@@ -7,16 +7,38 @@ PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ---
 
-## CURRENT DIRECTIVE (JUDGE PASS 26, 2026-07-14 — supersedes the review-lap directive below)
+## CURRENT DIRECTIVE (JUDGE PASS 26, 2026-07-14 — 🌙 OVERNIGHT RUN #2, ~03:10 → ~10:10)
 
-**The night's work is ACCEPTED on the mathematics and is excellent.** Judge-dated
-`#print axioms` (worktree pinned at `61f8e80`): **20 decls exactly
-`[propext, Classical.choice, Quot.sound]`** — the whole X11a/X11c/X11d machinery, plus
-🏆 **X8 / Case-2 now JUDGE-VERIFIED COMPLETE** (`Q_black_edge_case2`, `fpDist_white_exit`,
-`fpDist_edgeWeight_le`, `fpDist_fst_mgf_le` all clean). Sorries **14 → 11**; the §7 crux
-collapsed **5 → 2** (`few_white_mass_le`, `col_tail_mass_le`). Hard rails 2/3/4 honored:
-`Statement.lean` untouched, `epsBW` frozen, zero `native_decide`, nothing parked in `wip/`.
-**Keep going on `few_white_mass_le` — the E∗ term + assembly, exactly as HANDOFF-h step 3.**
+**Last night's work is ACCEPTED and it was excellent.** Judge-dated `#print axioms`
+(worktree pinned at `61f8e80`): **20 decls exactly `[propext, Classical.choice, Quot.sound]`**
+— the whole X11a/X11c/X11d machinery, plus 🏆 **X8 / Case-2 JUDGE-VERIFIED COMPLETE**
+(`Q_black_edge_case2`, `fpDist_white_exit`, `fpDist_edgeWeight_le`, `fpDist_fst_mgf_le`).
+Sorries **14 → 11**; the §7 crux collapsed **5 → 2**. Hard rails 2/3/4 honored.
+
+### 🎯 THREE OBJECTIVES, IN ORDER. Objective 3 is an ORDER, not a fallback.
+
+**1. Close the two remaining §7 sorries** (both `Case3.lean`) — the prize.
+   - `few_white_mass_le` (7.56) — you are mid-flight: **E∗ term, then the assembly**,
+     exactly as HANDOFF-h steps 3–5. `col_tail_mass_le` is its bad-column term (move it
+     *above* `few_white_mass_le` in the file first — it doesn't depend on it).
+   - `col_tail_mass_le` — standard Gaussian tail via `fpDist_walk_eq_fpDistPlus` →
+     `fpDistPlus_col_tail` → `exp_neg_mul_le_of_large`.
+   - When both land: `Q_black_edge_case3 → Q_black_edge → prop_7_8` go axiom-clean and
+     **§7 monotonicity is DONE**. That is the campaign's spine.
+
+**2. The X10/X10a repair** (the `*_rpow` split, spelled out below). One lap, mechanical.
+
+**3. 🗂️ THEN BURN DOWN THE FRUIT — do NOT stop when 1+2 land, and do NOT idle.**
+   Last night this list was buried in an "unstick ladder" and a never-stuck box correctly
+   never reached it, so **none of it got done**. It is now a first-class objective:
+   - **The `ManyTriangles.lean` split** (5,063 lines; queued **six laps** now). Pure moves,
+     names verbatim, thin re-export shim. Zero mathematical risk. Do it.
+   - **The 7 spine stubs**: `Syracuse/SyracRV.lean` (3), `Sec5/FirstPassage.lean` (2),
+     `Sec6/MixingFromDecay.lean` (1), `Basic/Collatz.lean` (1). Downstream and cheap.
+   - **Pin C8** (§5 first-passage — the last un-pinned node). A NEW pin is a **claim, not a
+     fact**: mark it `RATIFY-C8` in a comment, say so in the handoff, never `\leanok` it.
+   **Also reach for objective 3 whenever you are stuck on 1** (see the unstick rule below).
+   A night that closes §7 *and* clears the fruit is the best night this campaign can have.
 
 ### 🚨 ONE FINDING — `61f8e80` edited FOUR ratified statements. Ratifications REVOKED.
 
@@ -120,30 +142,24 @@ are proved and axiom-clean, so X11a is "just" summation. Do NOT retreat to the
 `ManyTriangles` split or spine stubs while X11a is the live crux — decompose X11 further
 (rule 1) before dropping altitude.
 
-## 🌙 UNATTENDED / OVERNIGHT RUN — NO JUDGE IS AWAKE (2026-07-13 → 07-14 morning)
+## 🌙 UNATTENDED / OVERNIGHT RUN — NO JUDGE IS AWAKE (2026-07-14, ~03:10 → ~10:10)
 
-**The judge will not look in for ~8 hours.** Nobody will unblock you, re-rule, or
+**The judge will not look in for ~7 hours.** Nobody will unblock you, re-rule, or
 redirect. Two consequences, and they pull in opposite directions — respect both.
 
 ### 🔓 NEVER IDLE, NEVER SPIN — the unstick ladder
-**Overnight, grinding down ANY sorry is acceptable progress.** The mandated order above
+**Overnight, grinding down ANY sorry is acceptable progress.** The objective order above
 is a *preference*, not a cage. If you are stuck, you are **required** to move, in this
 order:
 
 1. **Decompose.** Can't prove the target as stated? Split it into named sub-lemmas with
    their own `sorry`s and prove the ones you can. **Raising the sorry count this way is
    PROGRESS, not regress** — it converts one opaque wall into named, attackable pieces,
-   and it is exactly how `fpDist_any_triangle_le` finally fell.
-2. **Move down the mandated list** (X8 → X11 → the split).
-3. **🗂️ Do the `ManyTriangles` split.** Mechanical, zero-risk, high-payoff, and it has
-   been queued for four laps. An unattended night is the *ideal* time for it.
-4. **Take a spine stub.** ✅ **The old "no spine leaves" ban is LIFTED for this run.**
-   Fair game: `Syracuse/SyracRV.lean` (3), `Sec5/FirstPassage.lean` (2),
-   `Sec6/MixingFromDecay.lean` (1), `Basic/Collatz.lean` (1). These are downstream and
-   cheap; a night spent clearing them is a night well spent.
-5. **Pin C8** (§5 first-passage — the last un-pinned node). Allowed as statement work,
-   but a NEW pin is a **claim, not a fact**: mark it `RATIFY-C8` in a comment and say so
-   in your handoff. The judge ratifies against pp.22–25. Never mark it `\leanok`.
+   and it is exactly how `fpDist_any_triangle_le` and the whole X11d chain fell.
+2. **Do objective 2** (the X10/X10a repair — mechanical, always available).
+3. **Do objective 3** (the split → the 7 spine stubs → pin C8). **This is real work, not a
+   consolation prize.** Last night the fruit sat untouched because it was written as a
+   fallback and you were never stuck. It is now an objective in its own right.
 
 **Two sustained failed attempts on one target = move.** Do not spend the night on a
 single wall.
@@ -151,11 +167,10 @@ single wall.
 ### 🚨 HARD RAILS — the things no lap may do, awake or asleep
 These are the failure modes the judge exists to catch, and tonight the judge is asleep.
 
-1. **NEVER weaken a statement to make it provable.** This is the cardinal sin. If a
-   statement will not yield, **decompose it (rule 1) or leave it sorried** — do NOT add a
-   hypothesis, narrow a quantifier, shrink a bound, or "adjust" a constant to get green.
-   A `sorry` is honest; a weakened theorem is a **lie that compiles**. Any pinned
-   statement you edit has its ratification REVOKED and will be reverted.
+1. **NEVER weaken a statement to make it provable.** If a statement will not yield,
+   **decompose it (rule 1) or leave it sorried** — do NOT add a hypothesis, narrow a
+   quantifier, shrink a bound, or "adjust" a constant to get green. A `sorry` is honest;
+   a weakened theorem is a **lie that compiles**.
 2. **NEVER touch `Statement.lean`'s two sorries.** They are `tao_collatz` and
    `tao_collatz_quantitative` — the headline theorems themselves. They discharge when the
    whole chain lands, and not one minute before. They are the trusted base.
@@ -166,6 +181,40 @@ These are the failure modes the judge exists to catch, and tonight the judge is 
 5. **Do not claim a node "COMPLETE" or "verified".** You may report `#print axioms` output
    as *evidence*; the judge's dated run is what makes it true. Write "believed clean,
    judge to verify."
+6. 🔒 **NEVER EDIT A RATIFIED PIN — not to weaken it, not to strengthen it, not to
+   generalize it.** ⚠️ **This is the rail that failed last night, so read it twice.**
+
+   Rail 1 said "never *weaken*." Lap 8 hit a real obstruction, concluded it was
+   *generalizing* (its commit message says so), and rewrote the deep hypothesis of **four
+   ratified statements** — including `triangle_encounter_le`, which **is** Tao's Lemma 7.10.
+   It was not a generalization: `m^0.8 < s` and `m/log²m < s` are **incomparable**
+   (they cross at `m ≈ 10^15.5`), so the "weaker" hypothesis silently covered **fewer** `s`,
+   and the node stopped rendering the paper's lemma. **The build stayed green. The axioms
+   stayed clean. The sorry census never moved.** Nothing but a statement character-diff
+   could see it. Two ratifications were revoked.
+
+   **So: a ratified pin is as frozen as `Q_black_edge_case3`.** The pinned set —
+
+   `black`, `epsBW`, `black_structure`, `white_gap_above_run_top`, `fpDist_white_exit_deep`,
+   `fpDist_any_triangle_le`, `fpDist_out_of_strip_le`,
+   `fpDist_any_triangle_le_of_localization_box`, `many_triangles_white`,
+   `triangle_encounter_le`, `encounter_apex_proximity`, `fpDist_edgeWeight_le`,
+   `fpDist_white_exit`, `Q_black_edge_case2`, `Q_black_edge_case3`, `Q_black_edge`,
+   `prop_7_8`, + `Statement.lean`'s two headlines.
+
+   **✅ ALWAYS ALLOWED**: adding a NEW lemma beside a pin (a `*_rpow` engine, a variant, a
+   corollary) and routing your proof through it. That is exactly the right move and it is
+   what last night *should* have done.
+
+   **🛑 WHEN A PIN BLOCKS YOU AND NO JUDGE IS AWAKE** — this is the whole protocol:
+   1. **Do not edit it.** Not even if you are certain the edit is a strengthening.
+   2. Write the obstruction in `PENDING_WORK.md` + your handoff, headed **`JUDGE-FLAG:`**,
+      with the exact statement, why it blocks you, and your proposed fix.
+   3. **MOVE to another target** (unstick ladder → objective 2 → objective 3).
+   The judge reads `JUDGE-FLAG:` first thing and rules. You already have this instinct —
+   HANDOFF-g wrote *"FLAG for judge (do NOT weaken — `Q_black_edge_case3` is frozen)"* and
+   you honored it for the small-A problem. **Ratified pins get that same protection.**
+   Relocating a pin across files is fine (moves are free); editing its text is not.
 
 ### Standing constraints (unchanged)
 - `native_decide` is permitted as scaffolding but tag it `-- NATIVE_DECIDE:`; a decl whose
