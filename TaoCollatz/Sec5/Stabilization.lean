@@ -212,6 +212,60 @@ noncomputable def perNTerm (x : ℝ) (E : Set ℕ) (y : ℝ) (n : ℕ) : ℝ :=
 theorem approxMainTerm_eq_sum_perNTerm (x : ℝ) (E : Set ℕ) (y : ℝ) :
     approxMainTerm x E y = ∑ n ∈ Iy x y, perNTerm x E y n := rfl
 
+/-- **Affine single-point selection** — the ENNReal core of Tao's (5.19).  The affine equation
+`a·N + b = c` in `N` has at most one solution when `a > 0` (the map `N ↦ a·N + b` is injective), so if
+`N₀` solves it the masked tsum collapses to the single mass `g N₀`. -/
+theorem tsum_ite_affine_of_sol (a b c N₀ : ℕ) (ha : 0 < a) (hsol : a * N₀ + b = c)
+    (g : ℕ → ℝ≥0∞) :
+    (∑' N, if a * N + b = c then g N else 0) = g N₀ := by
+  rw [tsum_eq_single N₀, if_pos hsol]
+  intro N hN
+  rw [if_neg]
+  intro h
+  exact hN (Nat.eq_of_mul_eq_mul_left ha (by omega))
+
+/-- **Affine no-solution collapse** — if the affine equation `a·N + b = c` has no solution in `N`, the
+masked tsum vanishes.  (Companion of `tsum_ite_affine_of_sol`.) -/
+theorem tsum_ite_affine_of_nosol (a b c : ℕ) (g : ℕ → ℝ≥0∞)
+    (hns : ∀ N, ¬ (a * N + b = c)) :
+    (∑' N, if a * N + b = c then g N else 0) = 0 := by
+  rw [tsum_congr (fun N => if_neg (hns N)), tsum_zero]
+
+open Classical in
+/-- **(5.19) single-value reduction of `perNTerm`.**  The inner affine mass
+`ℙ(Aff_ā(N_y)=M) = ∑' N, if 3^{n−m₀}·N + fnat = M·2^{pre ā} then logUnifOdd N else 0` collapses to the
+mass at the unique solving `N` — which exists exactly when `3^{n−m₀} ∣ (M·2^{pre ā} − fnat)` with
+`fnat ≤ M·2^{pre ā}`, and then equals `N* = (M·2^{pre ā} − fnat)/3^{n−m₀}`.  So `perNTerm` is a double
+sum of point masses.  This is the first step of `perNTerm_eval`: it discharges the affine reindex,
+leaving the harmonic-mass evaluation of `logUnifOdd(N*)` (5.19 tail) and the `Z`-reduction (5.20). -/
+theorem perNTerm_pointmass (x : ℝ) (E : Set ℕ) (y : ℝ) (n : ℕ) :
+    perNTerm x E y n
+      = ∑' (ā : Fin (n - mZero x) → ℕ), ∑' (M : ℕ),
+          if goodTuple x (n - mZero x) ā ∧ Eprime x E M then
+            (if 3 ^ (n - mZero x) ∣ (M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā)
+                ∧ fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x) then
+              (logUnifOdd y (y ^ alpha)
+                ((M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā) / 3 ^ (n - mZero x))).toReal
+            else 0)
+          else 0 := by
+  unfold perNTerm
+  set k := n - mZero x with hk
+  refine tsum_congr fun ā => tsum_congr fun M => ?_
+  by_cases hcond : goodTuple x k ā ∧ Eprime x E M
+  · rw [if_pos hcond, if_pos hcond]
+    set b := fnat k ā with hb
+    set c := M * 2 ^ pre ā k with hc
+    by_cases hsolv : 3 ^ k ∣ (c - b) ∧ b ≤ c
+    · rw [if_pos hsolv]
+      obtain ⟨hdvd, hle⟩ := hsolv
+      congr 1
+      refine tsum_ite_affine_of_sol (3 ^ k) b c ((c - b) / 3 ^ k) (by positivity) ?_ _
+      rw [Nat.mul_div_cancel' hdvd]; omega
+    · rw [if_neg hsolv,
+          tsum_ite_affine_of_nosol (3 ^ k) b c _ (fun N hN => hsolv ⟨⟨N, by omega⟩, by omega⟩)]
+      simp
+  · rw [if_neg hcond, if_neg hcond]
+
 /-- **Per-`n` evaluation (5.19)+(5.20).**  For each `n ∈ I_y`, the per-`n` term equals the
 window-independent `mainZ x E` divided by the harmonic normaliser `((α−1)/2)·log y`, up to a *relative*
 `O(log^{-c} x)` error.  Combines the single-value mass (5.19)

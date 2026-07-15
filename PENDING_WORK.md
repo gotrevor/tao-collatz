@@ -1,3 +1,36 @@
+## Grind lap — 2026-07-15 — ✅ `perNTerm_pointmass` PROVED — (5.19) affine reindex discharged (crux advance)
+
+**First kernel-checked sub-step of `perNTerm_eval` (the C10-consumer crux).** Landed in
+`Sec5/Stabilization.lean`, all axiom-clean `[propext, Classical.choice, Quot.sound]`:
+- **`tsum_ite_affine_of_sol` / `tsum_ite_affine_of_nosol`** — the ENNReal single-point selection bricks:
+  the affine equation `a·N + b = c` (a>0) has ≤1 solution in `N`, so a masked tsum `∑' N, if a·N+b=c
+  then g N else 0` collapses to `g N₀` (or 0). Reusable.
+- **`perNTerm_pointmass`** — rewrites `perNTerm x E y n` as a double sum over (ā,M) of the SINGLE point
+  mass `logUnifOdd y (y^α) (N*)`, where `N* = (M·2^{pre ā} − fnat)/3^{n−m₀}` and the mass is nonzero
+  exactly when `3^{n−m₀} ∣ (M·2^{pre ā} − fnat) ∧ fnat ≤ M·2^{pre ā}` (Tao's (5.18) integrality guard).
+  This is the FIRST of the 3 sub-steps of `perNTerm_eval`: it discharges the affine reindex, leaving
+  (a) the harmonic-mass evaluation `logUnifOdd(N*) = (1/N*)/D_y` with `1/N* ≈ 3^{n−m₀}/(M·2^{pre ā})`
+  and `D_y = (1+O)(α−1)/2·log y` [5.19 tail], and (b) the Z-reduction (5.20) [the `fine_scale_mixing`
+  consumer].
+
+**Census: still 5 sorries + 0 orange** (perNTerm_pointmass is a *proved* helper, not a new hole). Full
+lake build green (3316).
+
+**Next attack on `perNTerm_eval` (continue hardest-first):** with `perNTerm_pointmass` in hand, the
+remaining chain is:
+1. **(5.19) tail** — evaluate `logUnifOdd y (y^α) N* = (N*)⁻¹ / windowMass y (y^α)` (via
+   `logUnifOdd_apply_of_nonempty` + N*∈window) and `(N*)⁻¹ = 3^{n−m₀}/(M·2^{pre ā} − fnat) ≈
+   3^{n−m₀}/(M·2^{pre ā})` (relative error `fnat/(M·2^{pre}) = O(x^{-c})`, since `fnat < 3^{n−m₀}·2^{pre}`
+   is lower-order vs `M·2^{pre}` with `M ≍ (4/3)^{m₀}x`). Bank `windowMass y (y^α) = (1+O)(α−1)/2·log y`
+   as its own lemma (harmonic sum over odds — reuse C7 `intTest_D_lower`/`harmonic_ap_integral_bound`).
+2. **(5.20) → Z, the C10 seam** — `3^{n−m₀}·∑_ā 2^{-pre ā}[good]·∑_{M∈E',≡} 1/M = mainZ + O(log^{-c})`.
+   `∑_ā 2^{-pre ā}[good, F_{n−m₀}(ā)≡r]` is the Syracuse density mod 3^{m₀} at residue r; **`osc`-bound
+   from `fine_scale_mixing` collapses the ā-sum to the `syracZ (mZero x)` weight in `mainZ`.** SEAM-PROBE
+   the `osc m n (syracZ n).toReal` interface here FIRST — route-decisive C9 unknown.
+- `Iy_count_ratio` + `mainZ_bound` remain self-contained banks for when `perNTerm_eval` stalls.
+
+---
+
 ## Grind lap — 2026-07-15 — ✅ C9 crux DECOMPOSED + ASSEMBLY PROVED — down to 3 faithful analytic leaves
 
 **`approxMainTerm_to_Z` is now PROVED** from three faithful sub-lemmas — the full (5.19)+(5.20)+(5.9)
