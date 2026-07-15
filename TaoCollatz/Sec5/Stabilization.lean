@@ -295,19 +295,114 @@ theorem perNTerm_pointmass (x : ℝ) (E : Set ℕ) (y : ℝ) (n : ℕ) :
       simp
   · rw [if_neg hcond, if_neg hcond]
 
+/-- **`mainZ` is `O(1)`** — the y-free quantity `Z` (5.21) is bounded uniformly (it is a probability-
+weighted harmonic average over `E'`, and `#E'·(mass/M)` telescopes to `O(1)`; equivalently `Z ≍
+(log(4/3)/2)·ℙ(Pass∈E) = O(1)`).  Needed so the multiplicative `(5.19)`/`(5.9)` errors on `mainZ` stay
+`O(log^{-c})`. -/
+theorem mainZ_bound :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C := by
+  sorry
+
+open Classical in
+/-- **The window-free harmonic content of the per-`n` term (5.20 LHS).**
+`perNHarmonic x E n = 3^{n−m₀}·∑_ā∑_{M} [good ∧ E' ∧ affine-solvable] 2^{−a_{[1,n−m₀]}}/M`.  This is the
+`perNTerm` numerator after the (5.19) single-value + harmonic-mass reduction, stripped of the
+`1/windowMass = 1/D_y` normaliser.  By the (5.20) reduction it is `≈ mainZ` (window-independent): the
+`2^{−pre ā}` weight IS the `iid geomHalf` mass, so `∑_ā[good, F(ā)≡M] 2^{−pre ā} = syracZ(n−m₀)(M) + whp`,
+and `fine_scale_mixing` bridges `3^{n−m₀}·syracZ(n−m₀) ≈ 3^{m₀}·syracZ(m₀)` (Lemma 5.3, C10). -/
+noncomputable def perNHarmonic (x : ℝ) (E : Set ℕ) (n : ℕ) : ℝ :=
+  (3 : ℝ) ^ (n - mZero x) * ∑' (ā : Fin (n - mZero x) → ℕ), ∑' (M : ℕ),
+    if goodTuple x (n - mZero x) ā ∧ Eprime x E M
+        ∧ 3 ^ (n - mZero x) ∣ (M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā)
+        ∧ fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x)
+    then ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ / (M : ℝ) else 0
+
+/-- **(5.19) harmonic reduction of `perNTerm`** — sub-lemma A of `perNTerm_eval`.  Each per-`n` term
+equals its harmonic content divided by the harmonic normaliser `norm = ((α−1)/2)·log y`, up to a
+*relative* `O(log^{-c}x)/norm` error.  Combines `perNTerm_pointmass` (affine → single point),
+`logUnifOdd_apply_toReal` (point mass `= (N*)⁻¹/D_y`), `windowMass_estimate` (`D_y = norm + O(1)`, the
+`1/D_y → 1/norm` swap), the `N* ∈ window` membership, and the `(N*)⁻¹ = 3^{n−m₀}/(M·2^{pre ā}−fnat) ≈
+3^{n−m₀}/(M·2^{pre ā})` relative error (`fnat_lt_pow_mul`).
+**[C9 leaf A — pure (5.19) analytic layer; does NOT consume C10.]** -/
+theorem perNTerm_harmonic_approx :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNTerm x E y n - perNHarmonic x E n / ((alpha - 1) / 2 * Real.log y)|
+            ≤ C * (Real.log x) ^ (-c) / ((alpha - 1) / 2 * Real.log y) := by
+  sorry
+
+/-- **(5.20) harmonic → `Z` reduction** — sub-lemma B of `perNTerm_eval`, **the sole C10 consumer**.
+The window-free harmonic content agrees with Tao's `Z` (5.21) up to `O(log^{-c}x)`.  This is where
+Lemma 5.3 (`c_n(X) ≪ 1`) and Prop 1.14 (`fine_scale_mixing`, C10) enter: the `2^{−pre ā}` weight is the
+`iid geomHalf` mass, so `∑_ā[good, F_{n−m₀}(ā)≡M] 2^{−pre ā} = syracZ(n−m₀)(M mod 3^{n−m₀})` up to the
+good-tuple whp error, and `fine_scale_mixing`'s `osc` bound collapses
+`3^{n−m₀}·syracZ(n−m₀)(M) ≈ 3^{m₀}·syracZ(m₀)(M mod 3^{m₀})`, summing over `M ∈ E'` to `mainZ`.
+**[C9 leaf B — the C10 seam.]** -/
+theorem harmonic_to_Z :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNHarmonic x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
 /-- **Per-`n` evaluation (5.19)+(5.20).**  For each `n ∈ I_y`, the per-`n` term equals the
 window-independent `mainZ x E` divided by the harmonic normaliser `((α−1)/2)·log y`, up to a *relative*
-`O(log^{-c} x)` error.  Combines the single-value mass (5.19)
-`ℙ(Aff_ā(N_y)=M) = (1+O(x^{-c}))·2^{-|ā|}·3^{n−m₀}/(((α−1)/2)·log y·M)` with the harmonic→`Z` reduction
-(5.20) `3^{n−m₀}∑_ā 2^{-|ā|}∑_{M∈E',≡} 1/M = mainZ + O(log^{-c})`.  **[C9 sub-crux — this is where
-Lemma 5.3 (`c_n≪1`) and Prop 1.14 (`fine_scale_mixing`, C10) are consumed.]** -/
+`O(log^{-c} x)` error.  **PROVED** from the (5.19) harmonic reduction `perNTerm_harmonic_approx` (leaf A),
+the (5.20) `Z`-reduction `harmonic_to_Z` (leaf B, the C10 seam), and `windowMass_estimate`
+(`D_y = (α−1)/2·log y + O(1)`): the harmonic content `perNHarmonic ≈ mainZ` and dividing by
+`windowMass ≈ norm` gives `perNTerm ≈ mainZ/norm` (the `windowMass`↔`norm` swap costs only
+`O(1/norm²) = O(L^{-2}) ≤ L^{-1-c}`). -/
 theorem perNTerm_eval :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |perNTerm x E y n - mainZ x E / ((alpha - 1) / 2 * Real.log y)|
             ≤ C * (Real.log x) ^ (-c) / ((alpha - 1) / 2 * Real.log y) := by
-  sorry
+  obtain ⟨cA, CA, xA, hcA, hCA, hA⟩ := perNTerm_harmonic_approx
+  obtain ⟨cB, CB, xB, hcB, hCB, hB⟩ := harmonic_to_Z
+  refine ⟨min cA cB, CA + CB, max (max xA xB) (Real.exp 1),
+    lt_min hcA hcB, by positivity, fun x hx E hE y hy n hn => ?_⟩
+  have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
+  have hxA : xA ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+  have hxB : xB ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 1) hxe
+  have hL1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hxe
+  have hL0 : 0 < Real.log x := by linarith
+  set L := Real.log x with hLdef
+  have halpha0 : (0 : ℝ) < alpha := by norm_num [alpha]
+  have hLy : 0 < Real.log y := by
+    rcases hy with rfl | rfl
+    · rw [Real.log_rpow hxpos]; exact mul_pos halpha0 hL0
+    · rw [Real.log_rpow hxpos]; exact mul_pos (pow_pos halpha0 2) hL0
+  have hnormpos : 0 < (alpha - 1) / 2 * Real.log y := mul_pos (by norm_num [alpha]) hLy
+  set c := min cA cB with hcdef
+  have hccA : c ≤ cA := min_le_left _ _
+  have hccB : c ≤ cB := min_le_right _ _
+  have hLcA : L ^ (-cA) ≤ L ^ (-c) := Real.rpow_le_rpow_of_exponent_le hL1 (neg_le_neg hccA)
+  have hLcB : L ^ (-cB) ≤ L ^ (-c) := Real.rpow_le_rpow_of_exponent_le hL1 (neg_le_neg hccB)
+  have hApiece := hA x hxA E hE y hy n hn
+  have hBpiece := hB x hxB E hE y hy n hn
+  set norm := (alpha - 1) / 2 * Real.log y with hnormdef
+  -- clean two-term split through the shared harmonic content
+  have hsplit : perNTerm x E y n - mainZ x E / norm
+      = (perNTerm x E y n - perNHarmonic x E n / norm)
+        + (perNHarmonic x E n - mainZ x E) / norm := by
+    field_simp; ring
+  calc |perNTerm x E y n - mainZ x E / norm|
+      ≤ |perNTerm x E y n - perNHarmonic x E n / norm|
+        + |(perNHarmonic x E n - mainZ x E) / norm| := by rw [hsplit]; exact abs_add_le _ _
+    _ ≤ CA * L ^ (-cA) / norm + CB * L ^ (-cB) / norm := by
+        refine add_le_add hApiece ?_
+        rw [abs_div, abs_of_pos hnormpos]
+        exact div_le_div_of_nonneg_right hBpiece hnormpos.le
+    _ ≤ CA * L ^ (-c) / norm + CB * L ^ (-c) / norm := by
+        refine add_le_add ?_ ?_
+        · exact div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hLcA hCA.le) hnormpos.le
+        · exact div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hLcB hCB.le) hnormpos.le
+    _ = (CA + CB) * L ^ (-c) / norm := by ring
 
 /-- **Interval count (5.9).**  `#I_y = (1+O(log^{-c}x))·(α−1)/log(4/3)·log y`, rendered as the ratio to
 the harmonic normaliser: `#I_y / (((α−1)/2)·log y) = 2/log(4/3) + O(log^{-c}x)`.  This is the pure
@@ -318,15 +413,6 @@ theorem Iy_count_ratio :
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         |((Iy x y).card : ℝ) / ((alpha - 1) / 2 * Real.log y) - 2 / Real.log (4 / 3)|
           ≤ C * (Real.log x) ^ (-c) := by
-  sorry
-
-/-- **`mainZ` is `O(1)`** — the y-free quantity `Z` (5.21) is bounded uniformly (it is a probability-
-weighted harmonic average over `E'`, and `#E'·(mass/M)` telescopes to `O(1)`; equivalently `Z ≍
-(log(4/3)/2)·ℙ(Pass∈E) = O(1)`).  Needed so the multiplicative `(5.19)`/`(5.9)` errors on `mainZ` stay
-`O(log^{-c})`. -/
-theorem mainZ_bound :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
-      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C := by
   sorry
 
 /-- **(5.18)–(5.21) + (5.9) evaluation of the affine main term.**  For `y ∈ {x^α, x^{α²}}`,

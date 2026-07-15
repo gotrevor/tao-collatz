@@ -1,3 +1,28 @@
+## Grind lap — 2026-07-15 — ✅ `perNTerm_eval` DECOMPOSED + PROVED from 2 named sub-sorries (C10 seam ISOLATED)
+
+**The C10-consumer crux `perNTerm_eval` is now PROVED** from two named sub-lemmas + the (5.19) bricks:
+- **`perNHarmonic x E n`** (def) — the window-free harmonic content `3^{n−m₀}·∑_ā∑_M[good∧E'∧solvable]
+  2^{−pre ā}/M` (the (5.20) LHS). New internal def below the `stabilization` pin.
+- **`perNTerm_harmonic_approx`** (sub-sorry A, :334) — (5.19): `|perNTerm − perNHarmonic/norm| ≤
+  CA·L^{-cA}/norm`, `norm = (α−1)/2·log y`. Pure (5.19) analytic layer (pointmass + apply_toReal +
+  windowMass_estimate + N*∈window + fnat_lt_pow_mul). **Does NOT consume C10.**
+- **`harmonic_to_Z`** (sub-sorry B, :348) — (5.20): `|perNHarmonic − mainZ| ≤ CB·L^{-cB}`. **THE SOLE
+  C10 CONSUMER** — `fine_scale_mixing`'s `osc` bridges `3^{n−m₀}·syracZ(n−m₀) ≈ 3^{m₀}·syracZ(m₀)`.
+- **`perNTerm_eval` PROVED** (axiom trace = sorryAx via A,B only): clean two-term triangle through the
+  shared `perNHarmonic/norm` — `|perNTerm − mainZ/norm| ≤ |perNTerm − perNHarmonic/norm| + |perNHarmonic
+  − mainZ|/norm ≤ (CA+CB)·L^{-c}/norm`. The windowMass↔norm swap is absorbed INTO A (stated over `norm`).
+
+**Census: 6 sorries + 0 orange** (2 headlines + mainZ_bound + Iy_count_ratio + A + B; up from 5 — the
+decomposition of the crux, PROGRESS). Full lake build green (3324). **C10 is now isolated to ONE hole**
+(`harmonic_to_Z`); everything else in C9 is either proved or pure (5.19)/(5.9) analytic layer.
+
+**Next attack (hardest-first):** `harmonic_to_Z` (the C10 seam) — needs the geomHalf-mass identity
+(`syracZ_eq_rev_fnat`) to rewrite `∑_ā[good,congr] 2^{−pre ā}` as `syracZ(n−m₀)(M)` (mod good-tuple whp
+`approx_good_tuple_whp`), then `fine_scale_mixing` + `syracZ_map_cast` for the scale bridge. Then A
+(`perNTerm_harmonic_approx`), then the two self-contained leaves `Iy_count_ratio`, `mainZ_bound`.
+
+---
+
 ## Grind lap — 2026-07-15 — ✅ `perNTerm_pointmass` PROVED — (5.19) affine reindex discharged (crux advance)
 
 **First kernel-checked sub-step of `perNTerm_eval` (the C10-consumer crux).** Landed in
