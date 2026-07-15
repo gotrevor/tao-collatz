@@ -793,19 +793,156 @@ theorem approx_good_tuple_whp :
         expect_le_sum_of_indicator_le _ _ _ _ hpw2
     _ ≤ C * (Real.log x) ^ (-c) := hsum x hx0 y hy
 
-/-- **Paper (5.16), window term** (owed — the integral-test piece).  On the event that `N_y` *does*
-pass, the passage time nonetheless lands outside `I_y` only with probability `≪ log^{-c} x`.
-Proof (owed): this is the integral test that `N_y` is not within `2 log^{0.8} x` of a window edge
-`[y + 2log^{0.8}x, y^α − 2log^{0.8}x]` (via (5.14)/(5.15)), plus the good-tuple event (5.12); reuse
-C7's `classMass`/`windowMass`/`intTest_*` machinery in `Sec5.FirstPassage`.  **Does not use C7's
-escape bound** — that is the *other* term of (5.16), discharged in `approx_passtime_window`. -/
+/-- **(5.16) edge half-width** `s(x) := log^{0.8} x`.  This is the multiplicative log-scale radius
+around the window endpoints inside which the passage-time estimate (5.15) can push `T_x(N)` out of
+`I_y`.  On the good event (5.15) gives `T_x(N) = log(N/x)/log(4/3) + O(log^{0.6}x)`, so `T_x(N) < IyLo`
+forces `log(N/y) < log(4/3)·log^{0.8}x + O(log^{0.6}x) ≤ log^{0.8}x = s` (as `log(4/3) < 1`), and
+symmetrically `T_x(N) > IyHi` forces `log(y^α/N) < s`. -/
+noncomputable def sEdge (x : ℝ) : ℝ := Real.log x ^ (0.8 : ℝ)
+
+/-- **(5.16) edge window** — the odd `N` within a multiplicative factor `exp(s x)` of an endpoint of
+the log-uniform window `[y, y^α]`: either `N ≤ y·exp(s)` (lower edge) or `y^α·exp(−s) ≤ N` (upper
+edge).  Off the support (`N > y^α`) the upper disjunct holds trivially, so `Edge` also absorbs the
+"beyond the window" tail; the log-uniform mass of `Edge` is the integral-test quantity `≍ log^{-0.2}x`
+(`passtime_edge_mass`). -/
+noncomputable def Edge (x y : ℝ) : Set ℕ :=
+  {N | (N : ℝ) ≤ y * Real.exp (sEdge x) ∨ y ^ alpha * Real.exp (- sEdge x) ≤ (N : ℝ)}
+
+/-- **(5.16) passage-time inclusion — the (5.15) estimate, owed.**  On the good-tuple event, if `N`
+passes but its passage time lands outside `I_y`, then `N` is within a factor `exp(s x)` of a window
+endpoint, i.e. `N ∈ Edge x y`.  This is the pointwise heart of (5.16): the orbit estimate (proved,
+`syr_iterate_good_bracket'`) gives `T_x(N) = log(N/x)/log(4/3) + O(log^{0.6}x)` (5.15), and the two
+endpoint inequalities `T_x < IyLo`, `T_x > IyHi` translate into the two edge disjuncts.
+Route (owed): from `syr_iterate_good_bracket'` derive (a) `T_x(N) ≥ (log(N/x) − log2·log^{0.6}x)/log(4/3)`
+(lower orbit bound ⇒ `Syr^{T} ≤ x` forces `T` large), and (b) `T_x(N) ≤ n*` for the explicit
+`n* = ⌈(log(N/x) + O(log^{0.6}x))/log(4/3)⌉ ≤ nZero x` witnessing `Syr^{n*} ≤ x` (upper orbit bound,
+absorbing the `+3^{n*}` rounding since `3^{n*} ≤ x/2` in range); then rearrange against `IyLo`/`IyHi`
+(`log(4/3) > 0`) and `log(4/3)·log^{0.8}x + O(log^{0.6}x) ≤ log^{0.8}x` for `x` large. -/
+theorem passtime_edge_of_good :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ N : ℕ, N % 2 = 1 →
+        goodTuple x (nZero x) (valVec N (nZero x)) →
+        passes ⌊x⌋₊ N → passTime ⌊x⌋₊ N ∉ Iy x y → N ∈ Edge x y := by
+  sorry
+
+/-- **(5.16) integral-test edge mass — owed.**  The log-uniform mass of the edge window `Edge x y` is
+`≪ log^{-c} x`.  This is Tao's "straightforward calculation using the integral test": the log-uniform
+law puts mass `≈ log(b/a)/((α−1)log y)` on a sub-interval `[a,b] ⊂ [y, y^α]`, and each edge slab has
+`log-width = s x = log^{0.8}x` while the normalizer is `(α−1)log y ≍ log x`, giving mass `≍ log^{-0.2}x`.
+Route (owed): reuse `Sec5.FirstPassage`'s `windowMass`/`logUnifOdd_apply_of_nonempty`; bound the
+edge-slab partial sum `∑_{N∈slab} 1/N` above by `log((b/a)) + O(1)` (sum ↔ integral, `AntitoneOn.sum_le_integral`
+on `t ↦ 1/t`, `integral_inv`) and the full `windowMass` below by `(α−1)log y − O(1)`. -/
+theorem passtime_edge_mass :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator (Edge x y) 1)
+          ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
+/-- **Paper (5.16), window term.**  On the event that `N_y` *does* pass, the passage time nonetheless
+lands outside `I_y` only with probability `≪ log^{-c} x`.  Reduction (proved here): the event
+`{passes ∧ T_x ∉ I_y}` is contained (up to the even-support null set) in `{¬ good tuple} ∪ Edge`, so
+its mass is bounded by the good-tuple union bound (5.12, `approx_good_tuple_whp`) plus the integral-test
+edge mass (`passtime_edge_mass`); the containment on the good event is `passtime_edge_of_good` (the
+(5.15) estimate).  **Does not use C7's escape bound** — that is the *other* term of (5.16), discharged
+in `approx_passtime_window`. -/
 theorem passtime_window_inner :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1)
           ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  classical
+  obtain ⟨c1, C1, x1, hc1, hC1, hgoodwhp⟩ := approx_good_tuple_whp
+  obtain ⟨c2, C2, x2, hc2, hC2, hmass⟩ := passtime_edge_mass
+  obtain ⟨x3, hx3one, hincl⟩ := passtime_edge_of_good
+  refine ⟨min c1 c2, C1 + C2, max (max (max x1 x2) x3) (Real.exp 1),
+    lt_min hc1 hc2, by positivity, fun x hx y hy => ?_⟩
+  have hx1 : x1 ≤ x :=
+    le_trans (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) (le_max_left _ _)) hx
+  have hx2 : x2 ≤ x :=
+    le_trans (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) (le_max_left _ _)) hx
+  have hx3 : x3 ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
+  have hlog1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos _) hxe
+  -- `1 ≤ y^α` (log-uniform support needs the upper endpoint `≥ 1`)
+  have hx1le : (1 : ℝ) ≤ x := le_trans (Real.one_le_exp (by norm_num)) hxe
+  have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
+    have hy1 : (1 : ℝ) ≤ y := by
+      rcases hy with h | h <;> rw [h] <;>
+        · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
+          exact Real.rpow_le_rpow (by norm_num) hx1le (by unfold alpha <;> positivity)
+    rw [show (1 : ℝ) = (1 : ℝ) ^ alpha from (Real.one_rpow _).symm]
+    exact Real.rpow_le_rpow (by norm_num) hy1 (by unfold alpha; positivity)
+  set P := logUnifOdd y (y ^ alpha) with hPdef
+  -- the even set carries no `logUnifOdd`-mass
+  have heven0 : P.expect (Set.indicator {N : ℕ | ¬ (N % 2 = 1)} 1) = 0 := by
+    have hzero : ∀ a, (P a).toReal * Set.indicator {N : ℕ | ¬ (N % 2 = 1)} (1 : ℕ → ℝ) a = 0 := by
+      intro a
+      by_cases ha : P a = 0
+      · rw [ha]; simp
+      · have hmem : a ∈ P.support := ha
+        have hodd : a % 2 = 1 := (logUnifOdd_support_le hyα1 hmem).1
+        rw [Set.indicator_of_notMem (by simp only [Set.mem_setOf_eq, not_not]; exact hodd)]; ring
+    show ∑' a, (P a).toReal * Set.indicator {N : ℕ | ¬ (N % 2 = 1)} 1 a = 0
+    simp_rw [hzero]; exact tsum_zero
+  -- the "bad" set: not a good tuple, or in the edge window
+  set Sgood : Set ℕ := {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} with hSgood
+  set T : Set ℕ := {N | N ∈ Sgood ∨ N ∈ Edge x y} with hT
+  -- pointwise: the target event is dominated by `¬odd ∪ T`
+  have hpwUT : ∀ N, Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} (1 : ℕ → ℝ) N
+      ≤ Set.indicator {N : ℕ | ¬ (N % 2 = 1)} 1 N + Set.indicator T 1 N := by
+    intro N
+    have h0odd : (0 : ℝ) ≤ Set.indicator {N : ℕ | ¬ (N % 2 = 1)} (1 : ℕ → ℝ) N :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    have h0T : (0 : ℝ) ≤ Set.indicator T (1 : ℕ → ℝ) N :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    by_cases hU : N ∈ {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y}
+    · rw [Set.indicator_of_mem hU, Pi.one_apply]
+      by_cases hodd : N % 2 = 1
+      · have hNT : N ∈ T := by
+          by_cases hg : goodTuple x (nZero x) (valVec N (nZero x))
+          · exact Or.inr (hincl x hx3 y hy N hodd hg hU.1 hU.2)
+          · exact Or.inl hg
+        rw [Set.indicator_of_mem hNT, Pi.one_apply]; linarith
+      · rw [Set.indicator_of_mem (show N ∈ {N : ℕ | ¬ (N % 2 = 1)} from hodd), Pi.one_apply]; linarith
+    · rw [Set.indicator_of_notMem hU]; linarith
+  -- pointwise: `T` is dominated by `¬good ∪ Edge`
+  have hpwT : ∀ N, Set.indicator T (1 : ℕ → ℝ) N
+      ≤ Set.indicator Sgood 1 N + Set.indicator (Edge x y) 1 N := by
+    intro N
+    have h0g : (0 : ℝ) ≤ Set.indicator Sgood (1 : ℕ → ℝ) N :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    have h0e : (0 : ℝ) ≤ Set.indicator (Edge x y) (1 : ℕ → ℝ) N :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    by_cases hNT : N ∈ T
+    · rw [Set.indicator_of_mem hNT, Pi.one_apply]
+      rcases hNT with hg | he
+      · rw [Set.indicator_of_mem hg, Pi.one_apply]; linarith
+      · rw [Set.indicator_of_mem he, Pi.one_apply]; linarith
+    · rw [Set.indicator_of_notMem hNT]; linarith
+  -- exponent-monotonicity closers
+  have hmono1 : C1 * (Real.log x) ^ (-c1) ≤ C1 * (Real.log x) ^ (-(min c1 c2)) :=
+    mul_le_mul_of_nonneg_left
+      (Real.rpow_le_rpow_of_exponent_le hlog1 (by simp [neg_le_neg_iff, min_le_left])) hC1.le
+  have hmono2 : C2 * (Real.log x) ^ (-c2) ≤ C2 * (Real.log x) ^ (-(min c1 c2)) :=
+    mul_le_mul_of_nonneg_left
+      (Real.rpow_le_rpow_of_exponent_le hlog1 (by simp [neg_le_neg_iff, min_le_right])) hC2.le
+  calc P.expect (Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1)
+      ≤ P.expect (Set.indicator {N : ℕ | ¬ (N % 2 = 1)} 1) + P.expect (Set.indicator T 1) :=
+        expect_le_add_of_indicator_le _ _ _ _ hpwUT
+    _ = P.expect (Set.indicator T 1) := by rw [heven0]; ring
+    _ ≤ P.expect (Set.indicator Sgood 1) + P.expect (Set.indicator (Edge x y) 1) :=
+        expect_le_add_of_indicator_le _ _ _ _ hpwT
+    _ ≤ C1 * (Real.log x) ^ (-c1) + C2 * (Real.log x) ^ (-c2) := by
+        have hg := hgoodwhp x hx1 y hy
+        have hm := hmass x hx2 y hy
+        rw [← hPdef] at hg hm
+        exact add_le_add hg hm
+    _ ≤ C1 * (Real.log x) ^ (-(min c1 c2)) + C2 * (Real.log x) ^ (-(min c1 c2)) :=
+        add_le_add hmono1 hmono2
+    _ = (C1 + C2) * (Real.log x) ^ (-(min c1 c2)) := by ring
 
 /-- **Paper (5.16)** — the passage time lands in the window `I_y` with probability `1 − O(log^{-c} x)`.
 Equivalently the complement `{N : ¬(passes ∧ T_x ∈ I_y)}` has probability `≪ log^{-c} x`.
