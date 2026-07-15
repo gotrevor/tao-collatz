@@ -1,3 +1,29 @@
+## 2026-07-15 — 📌 C6 INTERMEDIATES PINNED (directive step 2 DONE). Census 10 sorries + 0 orange.
+
+**Advance on the crux:** the last un-pinned structural surface (the §3 reduction, the headline seam)
+is now VISIBLE. New `TaoCollatz/Sec3/Reduction.lean` (all sorried statements, copy-not-compose vs
+§1.2 pp.4–5 / §3 pp.16–18): `tao_syracuse_quantitative_sum` + `tao_syracuse_quantitative` (Thm 3.1
+Syracuse, both paper displays), `tao_syracuse` (Thm 1.6), `logSum_oddPart_pullback` +
+`almostAllPos_oddPart_of_almostAllOdd` (the (1.2) bridges, worker-authored decomposition), and the
+spine `tao_collatz_spine` / `tao_collatz_quantitative_spine` (byte-identical to the frozen
+`Statement.lean` headlines — those discharge by `exact` when the spine closes). Numeric traps
+`check14` (odd-window normalizer exact; display equivalence Fraction-exact) + `check15` ((1.2)
+pullback constant 2 exact and >1.8-tight, kills a constant-1 mis-rendering) PASS. Blueprint nodes
+`C6a/C6b/C6c/C6s` added, all `\notready`. `blueprint_audit`: 0 drift, 0 false-green. Commit `3431731`.
+
+**JUDGE-FLAG: ratify-on-pin owed for C6a/C6b/C6c/C6s** (directive event-trigger (a)). Faithfulness
+choices flagged in the module docstring: (i) `tao_syracuse` hypothesizes `Tendsto f atTop atTop`
+over all ℕ where the paper's f lives on 2ℕ+1 (equivalent by extension; mirrors the frozen
+`tao_collatz` rendering); (ii) both Thm 3.1 displays pinned as one node (paper: "or equivalently").
+Do not build heavily on these pins until ratified.
+
+**Next attack: `Iy_count_ratio` (Stabilization.lean ~2546) — the LAST C9 hole** (now unblocked, the
+C6-pins-first gate is satisfied). From banked `Iy_card_bracket`: ratio = 2/log(4/3) −
+(2log^{0.8}x ± 1)/norm; error ≤ (4/(α−1))·log^{-0.2}x, take c = 0.2. Then C9 axiom-clean → judge
+pass (event-trigger (b)) → C6 proof from the freshly pinned intermediates.
+
+---
+
 ## 2026-07-15 — ✅ `cn_bound` PROVED (crude `c_n ≤ 4·log^{0.7}x`) — axiom-clean. Census 7 sorries + 0 orange.
 
 **Advance on the crux:** the shared B1+B2 prerequisite `cn_bound` is CLOSED (`30c5f68`, believed
