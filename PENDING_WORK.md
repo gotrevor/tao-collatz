@@ -35,14 +35,18 @@ in `k`** (k=8,N=101: 19 135 tuples → ~4 distinct `Aff` values); adding the exa
 asymptotically, so the real regime is worse. ⟹ `approxMainTerm − steppedMid` is super-polylog, **not**
 `O(log^{-c}x)`.
 
-**✅ EXECUTED (2026-07-15, commit `8dcabb2`, build green).** The re-pin is DONE: `approxMainTerm`
-is now on the exact `{N : 3^{n−m₀}N + Fnat = M·2^{|ā|}}` guard; `truncation_error_bound` is PROVED
-(excess ≡ 0); the false hole is replaced by the honest **`approxMainTerm_eq_steppedMid`**
-(`ApproxFormula.lean:1100`, sorry) — the exact-reindex equality, now **THE C8 reindex crux**, provable
-from `valVec_unique` (Lemma 2.1) + `Eprime`-oddness + `aff_valVec_eq_syr`. **Remaining C8 = 3 sorries**:
-`approxMainTerm_eq_steppedMid` (:1100, the reindex), `first_passage_stepback_reduce` (:1134, (5.17)),
-`passtime_window_inner` (:808, (5.16)). Next-lap target: prove `approxMainTerm_eq_steppedMid` (reorder
-`∑'_ā ∑'_M ∑'_N → ∑'_N`, apply `valVec_unique` to collapse to the diagonal = `steppedMid`).
+**✅ EXECUTED + REINDEX PROVED (2026-07-15, commits `8dcabb2` re-pin, `dbdd742` reindex; build green).**
+The re-pin is DONE and the route-decisive crux is CLOSED: `approxMainTerm` is on the exact
+`{N : 3^{n−m₀}N + Fnat = M·2^{|ā|}}` guard, and **`approxMainTerm_eq_steppedMid` is PROVED axiom-clean**
+(`[propext, Classical.choice, Quot.sound]`) — `valVec_unique` (Lemma 2.1) + `Eprime`-oddness +
+`syr_iterate_key` collapse the `(ā,M)` double sum to `steppedMid`'s diagonal, so
+`approxMainTerm = steppedMid` EXACTLY. `truncation_error_bound` is now also axiom-clean (consumes the
+reindex). **Remaining C8 = 2 sorries** (both source-backed, genuinely provable):
+`first_passage_stepback_reduce` (`ApproxFormula.lean:1258`, (5.17) event reduction — needs the `E'`
+size window from the proved orbit estimate `syr_iterate_good_bracket'` + reverse inclusion) and
+`passtime_window_inner` (`:808`, (5.16) window term — integral test reusing C7's proved
+`classMass`/`windowMass`/`intTest_*`). Then C9 `stabilization` (`FirstPassage.lean:1399`).
+Next-lap target: `passtime_window_inner` (most self-contained) or `first_passage_stepback_reduce`.
 
 **Fix (faithful to (5.8)) — the plan that was executed:**
 1. **Re-pin `approxMainTerm` (RATIFY-C8-v2):** guard the pushforward by `3^{n−m₀}N + fnat (n−m₀) ā =
