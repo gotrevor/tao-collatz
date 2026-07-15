@@ -1,3 +1,45 @@
+## Review lap — 2026-07-15 (`bb0c567`) — C8 (5.17) reverse-leg STRUCTURAL REDUCTION PROVED; one whp core left
+
+**`steppedMid_le_firstPassMid_add` is now machine-checked down to ONE narrow whp sorry.** The whole
+event algebra + the ¬good (Case A) whp bound are PROVEN axiom-clean. The only C8 hole left is the
+isolated early-return core `reverse_early_return_whp` (`ApproxFormula.lean:2663`).
+
+**What was proved this lap (all axiom-clean):**
+- Pointwise ternary domination, per `n ∈ I_y` (so `1 ≤ m₀ ≤ n`):
+  `𝟙_{T_n} ≤ 𝟙_{S_n} + 𝟙_{¬good⁽ⁿ⁰⁾ ∧ T_x N = n} + 𝟙_{E′(Syr^{n−m₀}N) ∧ T_x N < n−m₀}`.
+  Case split on `T_x N < n−m₀` vs `≥`: in the `≥` (Case A) branch, `passes_of_eprime` +
+  `eprime_forces_passTime` + `passTime_stepback` give `T_x N = n ∧ passLoc N ∈ E`, landing `N` in `S_n`
+  (if `good⁽ⁿ⁰⁾`) or the middle set (else).
+- **Middle collapse (Case A, EXACT)**: `∑_n 𝟙_{¬good⁽ⁿ⁰⁾ ∧ T_x N=n} ≤ 𝟙_{¬good⁽ⁿ⁰⁾}` (the `T_x N=n`
+  are disjoint in `n`), so `∑_n E[·] ≤ E[𝟙_{¬good}] ≤ C log^{-c}` (`approx_good_tuple_whp`). No `I_y`
+  blow-up. New reusable helper `sum_expect_le_of_indicator_ge` (reverse finite union bound for expect).
+- New helper `passes_of_eprime`: `E′(Syr^{k}N)` (with `1 ≤ m₀`) ⟹ `passes N`.
+
+**⚠ ROADMAP CORRECTION** (the old entry below claimed Case B is bounded "via `approx_passtime_window`"
+— that is FALSE): `eprime_forces_passTime`'s disjointness needs `n−m₀ ≤ T_x N` (Case A only). Case B
+(`T_x N < n−m₀`) is a genuine **return** event; different `n` can coexist (returns spaced `> m₀` apart),
+and `approx_passtime_window` only bounds `{T_x N ∉ I_y}`, whereas an early-return may have `T_x N ∈ I_y`.
+So it is NOT a single `P(·)` and NOT covered by (5.16) alone.
+
+**Next-lap attack — prove `reverse_early_return_whp`:**
+`∑_{n∈I_y} E[𝟙_{E′(Syr^{n−m₀}N) ∧ T_x N < n−m₀}] ≤ C log^{-c}`. This is the union over `n` of return
+events. Approach options, hardest-first:
+  1. **Orbit-floor contradiction.** On `{T_x N < n−m₀}`, `N` already passed: `syr^[T_x N] N ≤ ⌊x⌋`. `E′`
+     forces `Syr^{n−m₀}N ≥ exp(−log^{0.7}x)(4/3)^{m₀}x` (the (5.10) lower floor) and `passTime = m₀`.
+     Quantify the mass that climbs from `≤ ⌊x⌋` back above that floor and re-descends in exactly `m₀`
+     steps — reuse the (5.13)–(5.16) orbit bracket (`syr_iterate_good_bracket'`, `stepback_passage_scale`).
+  2. **Reduce to a per-`n` return probability × geometric decay in the return gap**, then sum the
+     geometric series (this is where the `log^{-c}` — not `log^{+1}` — comes from; the return gap
+     `> m₀` gives exponential suppression).
+  3. If it resists after ~2 laps, decompose into (a) a single-return whp bound and (b) the summable
+     gap structure, as named sub-sorries.
+Closing it makes `first_passage_approx` (C8) axiom-clean → campaign advances to C9 `stabilization`
+(`FirstPassage.lean:1399`).
+
+**State: 4 sorries + 0 orange** (2 headline stubs, C9 `stabilization`, C8 `reverse_early_return_whp`).
+
+---
+
 ## Grind lap — 2026-07-15 (cont.) — C8 (5.17) FORWARD LEG CLOSED; reverse-leg key proved; 4 sorries
 
 **The (5.17) forward inclusion `firstPassMid ≤ steppedMid` is PROVED axiom-clean** — the structurally
