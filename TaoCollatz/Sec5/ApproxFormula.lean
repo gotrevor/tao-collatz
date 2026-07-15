@@ -825,6 +825,38 @@ theorem passtime_edge_of_good :
         passes ⌊x⌋₊ N → passTime ⌊x⌋₊ N ∉ Iy x y → N ∈ Edge x y := by
   sorry
 
+open Classical in
+/-- **Log-uniform indicator expectation as a window-mass ratio.**  For a nonempty window, the
+`logUnifOdd` expectation of `𝟙_S` equals the `S`-restricted reciprocal sum over the window divided by
+the total window mass `D = windowMass`.  This is the plumbing that turns a `Log`-scale probability into
+the integral-test quantity `(∑_{N ∈ W ∩ S} 1/N)/D`. -/
+theorem logUnifOdd_expect_indicator_eq {lo hi : ℝ} (h : (logWindow lo hi).Nonempty) (S : Set ℕ) :
+    (logUnifOdd lo hi).expect (Set.indicator S 1)
+      = (∑ N ∈ (logWindow lo hi).filter (fun N => N ∈ S), (N : ℝ)⁻¹) / windowMass lo hi := by
+  classical
+  -- every window element is a nonzero natural (odd), so `(N:ℝ≥0∞)⁻¹ ≠ ⊤`
+  have hne : ∀ N ∈ logWindow lo hi, (N : ℝ≥0∞) ≠ 0 := by
+    intro N hN
+    simp only [logWindow, Finset.mem_filter] at hN
+    have : N % 2 = 1 := hN.2.1
+    simp only [ne_eq, Nat.cast_eq_zero]; omega
+  -- `D.toReal = windowMass`
+  have hD : (∑ M ∈ logWindow lo hi, (M : ℝ≥0∞)⁻¹).toReal = windowMass lo hi := by
+    rw [ENNReal.toReal_sum (fun M hM => ENNReal.inv_ne_top.mpr (hne M hM))]
+    refine Finset.sum_congr rfl fun M hM => ?_
+    rw [ENNReal.toReal_inv, ENNReal.toReal_natCast]
+  -- reduce the `tsum` to the finite window
+  unfold PMF.expect
+  rw [tsum_eq_sum (s := logWindow lo hi) (fun N hN => by
+    rw [logUnifOdd_apply_of_nonempty h, if_neg hN, ENNReal.toReal_zero, zero_mul])]
+  rw [Finset.sum_div, Finset.sum_filter]
+  refine Finset.sum_congr rfl fun N hN => ?_
+  have hPN : ((logUnifOdd lo hi) N).toReal = (N : ℝ)⁻¹ / windowMass lo hi := by
+    rw [logUnifOdd_apply_of_nonempty h, if_pos hN, ENNReal.toReal_div, ENNReal.toReal_inv,
+      ENNReal.toReal_natCast, hD]
+  rw [hPN, Set.indicator_apply]
+  by_cases hS : N ∈ S <;> simp [hS]
+
 /-- **(5.16) integral-test edge mass — owed.**  The log-uniform mass of the edge window `Edge x y` is
 `≪ log^{-c} x`.  This is Tao's "straightforward calculation using the integral test": the log-uniform
 law puts mass `≈ log(b/a)/((α−1)log y)` on a sub-interval `[a,b] ⊂ [y, y^α]`, and each edge slab has
