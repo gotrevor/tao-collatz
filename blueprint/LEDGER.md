@@ -18,11 +18,18 @@ Trust base = `[propext, Classical.choice, Quot.sound]`.
 | `C3` | 📐 definitions | `logProb`, `posInterval`, `HasLogDensity`, `AlmostAllPos`, `AlmostAllOdd` |
 | `C4` | 📐 definitions + lemma, axiom-clean | `syracZ`, `syracZ_map_cast` |
 | `C5` | 🟢 **proved, axiom-clean** | `valuation_dist`, `valuation_tail`, `unifOddMod`, `valVec_pos` |
-| `C6` | 🟡 open (`sorryAx`) | `tao_collatz`, `tao_collatz_quantitative` |
+| `C6` | 🟢 **proved, axiom-clean** | `tao_collatz`, `tao_collatz_quantitative` |
+| `C6a` | 🟢 **proved, axiom-clean** | `tao_syracuse_quantitative_sum`, `tao_syracuse_quantitative` |
+| `C6b` | 🟢 **proved, axiom-clean** | `tao_syracuse` |
+| `C6c` | 🟢 **proved, axiom-clean** | `logSum_oddPart_pullback`, `almostAllPos_oddPart_of_almostAllOdd` |
+| `C6s` | 🟢 **proved, axiom-clean** | `tao_collatz_spine`, `tao_collatz_quantitative_spine` |
 | `C7d` | 📐 definitions | `passes`, `passTime`, `passLoc`, `logWindow`, `logUnifOdd`, `alpha` |
-| `C7` | 🟡 open (`sorryAx`) | `first_passage_nonescape` |
-| `C8` | 🟡 open (`sorryAx`) | `first_passage_approx` |
-| `C9` | 🟡 open (`sorryAx`) | `stabilization` |
+| `C7` | 🟢 **proved, axiom-clean** | `first_passage_nonescape` |
+| `C8` | 🟢 **proved, axiom-clean** | `first_passage_approx` |
+| `C9` | 🟢 **proved, axiom-clean** | `stabilization` |
+| `C9B1` | 🟢 **proved, axiom-clean** | `perNHarmonic_eq_harmZfine_approx` |
+| `C9B2` | 🟢 **proved, axiom-clean** | `harmZfine_to_mainZ` |
+| `C9A` | 🟢 **proved, axiom-clean** | `perNTerm_harmonic_approx` |
 | `C10` | 🟢 **proved, axiom-clean** | `fine_scale_mixing` |
 | `X1` | 📐 definitions + lemma, axiom-clean | `fCond`, `xArg`, `cexpect_pairing` |
 | `X2` | 🟢 **proved, axiom-clean** | `sfrac`, `θq`, `θq_succ_j`, `θq_pred_l`, `black`, `fCond_three_norm`, `white_cos_bound` |
