@@ -68,7 +68,62 @@ most twice the odd-window log-mass of the set (geometric series over `ν₂`). F
 Colmin forms of Thm 3.1 from the Syracuse forms. -/
 theorem logSum_oddPart_pullback (A : Set ℕ) (x : ℕ) :
     logSum {N | oddPart N ∈ A} (posInterval x) ≤ 2 * logSum A (oddInterval x) := by
-  sorry
+  classical
+  unfold logSum
+  set S := (posInterval x).filter (· ∈ {N | oddPart N ∈ A}) with hSdef
+  set T := (oddInterval x).filter (· ∈ A) with hTdef
+  have hmem : ∀ N ∈ S, 1 ≤ N ∧ N ≤ x ∧ oddPart N ∈ A := by
+    intro N hN
+    simp only [hSdef, posInterval, Finset.mem_filter, Finset.mem_range,
+      Set.mem_setOf_eq, ge_iff_le] at hN
+    exact ⟨hN.1.2, by omega, hN.2⟩
+  -- reindex `N ↦ (ν₂ N, oddPart N)`; recover `N` via `2^{ν₂ N}·oddPart N = N`
+  have hinj : ∀ a ∈ S, ∀ b ∈ S,
+      (fun N => (padicValNat 2 N, oddPart N)) a
+        = (fun N => (padicValNat 2 N, oddPart N)) b → a = b := by
+    intro a _ b _ hab
+    simp only [Prod.mk.injEq] at hab
+    rw [← two_pow_mul_oddPart a, ← two_pow_mul_oddPart b, hab.1, hab.2]
+  have hmaps : ∀ N ∈ S, (padicValNat 2 N, oddPart N) ∈ Finset.range (x + 1) ×ˢ T := by
+    intro N hN
+    obtain ⟨h1, hxle, hA⟩ := hmem N hN
+    have h0 : 0 < N := h1
+    have hMle : oddPart N ≤ x := le_trans (Nat.div_le_self _ _) hxle
+    have hvle : padicValNat 2 N ≤ x := by
+      have h2 : 2 ^ padicValNat 2 N ≤ N := Nat.le_of_dvd h0 (pow_padicValNat_two_dvd N)
+      have h3 : padicValNat 2 N < 2 ^ padicValNat 2 N := Nat.lt_two_pow_self
+      omega
+    simp only [Finset.mem_product, Finset.mem_range, hTdef, oddInterval,
+      Finset.mem_filter, Set.mem_setOf_eq]
+    exact ⟨by omega, ⟨by omega, oddPart_odd h0⟩, hA⟩
+  have hTnn : (0 : ℝ) ≤ ∑ M ∈ T, (1 : ℝ) / M :=
+    Finset.sum_nonneg fun M _ => by positivity
+  calc ∑ N ∈ S, (1 : ℝ) / N
+      = ∑ p ∈ S.image fun N => (padicValNat 2 N, oddPart N),
+          (1 : ℝ) / ((2 : ℝ) ^ p.1 * p.2) := by
+        rw [Finset.sum_image hinj]
+        refine Finset.sum_congr rfl fun N hN => ?_
+        have hNR : (N : ℝ) = (2 : ℝ) ^ padicValNat 2 N * (oddPart N : ℝ) := by
+          exact_mod_cast (two_pow_mul_oddPart N).symm
+        rw [hNR]
+    _ ≤ ∑ p ∈ Finset.range (x + 1) ×ˢ T, (1 : ℝ) / ((2 : ℝ) ^ p.1 * p.2) := by
+        refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun p _ _ => by positivity
+        intro p hp
+        obtain ⟨N, hN, rfl⟩ := Finset.mem_image.mp hp
+        exact hmaps N hN
+    _ = (∑ a ∈ Finset.range (x + 1), (1 / 2 : ℝ) ^ a) * ∑ M ∈ T, (1 : ℝ) / M := by
+        rw [Finset.sum_product, Finset.sum_mul]
+        refine Finset.sum_congr rfl fun a _ => ?_
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun M _ => ?_
+        rw [div_pow, one_pow]; field_simp
+    _ ≤ 2 * ∑ M ∈ T, (1 : ℝ) / M := by
+        refine mul_le_mul_of_nonneg_right ?_ hTnn
+        rw [geom_sum_eq (by norm_num : (1 / 2 : ℝ) ≠ 1)]
+        have hpnn : (0 : ℝ) ≤ (1 / 2 : ℝ) ^ (x + 1) := by positivity
+        have hid : ((1 / 2 : ℝ) ^ (x + 1) - 1) / (1 / 2 - 1)
+            = 2 - 2 * (1 / 2 : ℝ) ^ (x + 1) := by ring
+        rw [hid]; linarith
 
 /-- Qualitative (1.2) reduction (paper p.5, ¶ after Thm 1.6): an almost-all-odd property
 pulls back along `oddPart` to an almost-all property on `ℕ+`. -/
