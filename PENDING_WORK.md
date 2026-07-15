@@ -1,3 +1,41 @@
+## Review lap — 2026-07-15 — ✅ `harmonic_to_Z` (the C10 seam) DECOMPOSED + PROVED from B1+B2
+
+**Review outcome:** route CONTINUE, no trigger fired (T5 RESOLVED by the C8 re-pin; C8 now CLOSED +
+axiom-clean, kernel-verified `[propext, choice, Quot.sound]`). DIRECTION/STATUS were stale (C8-worded) →
+refreshed; directive retargeted from C8's closed reverse leg to **C9 `harmonic_to_Z` (the C10 seam),
+hardest-first.** Build green (3324), census now **7 sorries + 0 orange**.
+
+**`harmonic_to_Z` (5.20) DECOMPOSED + PROVED** (`Stabilization.lean`) from two named sub-sorries via
+the triangle through a new intermediate `harmZfine` (the fine-scale harmonic content, `syracZ(n−m₀)`
+mass — same shape as `mainZ` but at scale `n−m₀` instead of `m₀`):
+- **`perNHarmonic_eq_harmZfine_approx`** (B1, :359) — geomHalf→`syracZ` reindex. `|perNHarmonic −
+  harmZfine| ≤ C·log^{-c}`. Rewrites the inner `∑_ā[good∧congr] 2^{−pre ā}` as `(syracZ(n−m₀))(M).toReal`
+  via `syracZ_eq_rev_fnat` (map `ā ↦ fnat·2^{−pre ā} mod 3^{n−m₀}`), good-tuple residual = whp
+  (`approx_good_tuple_whp`), `ℕ`-subtraction guard automatic (`fnat_lt_pow_mul` + `3^{n−m₀}≤M`).
+  **Does NOT consume C10.**
+- **`harmZfine_to_mainZ`** (B2, :374) — **THE C10 SEAM.** `|harmZfine − mainZ| ≤ C·log^{-c}`.
+  `fine_scale_mixing`'s `osc m₀ (n−m₀)` bounds `L¹`-deviation of `3^{n−m₀}·syracZ(n−m₀)` from its
+  `3^{m₀}`-fiber average `3^{m₀}·syracZ(m₀)(·mod 3^{m₀})` (`syracZ_map_cast` = marginal); summed over
+  `M∈E'` with `1/M` weight → `mainZ`.  All C10 involvement in C9 now isolated HERE.
+- **`harmonic_to_Z` PROVED** (axiom trace = trust base + sorryAx via B1,B2 only): clean triangle
+  `perNHarmonic ≈ harmZfine ≈ mainZ` (mirrors the `perNTerm_eval` assembly).
+
+**Next attack (hardest-first):** `harmZfine_to_mainZ` (B2, the C10 seam) — the genuine unknown-unknown.
+Key sub-steps to pin next: (i) per-`M` osc application: apply `fine_scale_mixing A` with `(n:=n−m₀,
+m:=m₀)`, needs `m₀ ≤ n−m₀` (holds since `n∈Iy` ⟹ `n ≥ 2m₀`-ish; CHECK against `mZero`/`Iy` defs) and
+`1 ≤ m₀`; (ii) `syracZ_map_cast` to identify the `3^{m₀}`-fiber average as `syracZ(m₀)(M mod 3^{m₀})`;
+(iii) the `∑_M[E'] 1/M·(osc-controlled deviation)` bound — the deviation is L¹-total over residues, so
+group `M∈E'` by residue class mod `3^{n−m₀}` and use `1/M ≈ 1/x` + near-uniform hit count (this is the
+`(5.9)`-flavored M-equidistribution; may want its own sub-sorry). Then B1 (reindex, no C10), then the
+2 self-contained leaves `Iy_count_ratio` (5.9), `mainZ_bound`.
+
+⚠ OPEN QUESTION for B2 (record before grinding): does `n ∈ Iy x y` guarantee `m₀ ≤ n−m₀`? `Iy` is the
+first-passage window `[IyLo, IyHi]`; `n−m₀ ≥ m₀` ⟺ `n ≥ 2·mZero x`. Verify from `Iy`/`nZero`/`mZero`
+defs — if it can fail for small `n∈Iy`, B2 needs a low-`n` sub-case (likely negligible: `syracZ` on a
+tiny finer scale). This is the route-decisive check; the SMALLEST probe that tests B2's feasibility.
+
+---
+
 ## Grind lap — 2026-07-15 — ✅ `perNTerm_eval` DECOMPOSED + PROVED from 2 named sub-sorries (C10 seam ISOLATED)
 
 **The C10-consumer crux `perNTerm_eval` is now PROVED** from two named sub-lemmas + the (5.19) bricks:

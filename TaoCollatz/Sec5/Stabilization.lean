@@ -333,19 +333,85 @@ theorem perNTerm_harmonic_approx :
             ≤ C * (Real.log x) ^ (-c) / ((alpha - 1) / 2 * Real.log y) := by
   sorry
 
+open Classical in
+/-- **Fine-scale harmonic content** — the intermediate between `perNHarmonic` and `mainZ` in the
+(5.20) reduction.  It replaces `perNHarmonic`'s inner `2^{−pre ā}` good-tuple sum by the exact
+`Syrac(ℤ/3^{n−m₀}ℤ)` mass at residue `M`:
+`harmZfine x E n = ∑_{M∈E'} 3^{n−m₀}·ℙ(Syrac(ℤ/3^{n−m₀}ℤ) = M mod 3^{n−m₀}) / M`.
+This is `perNHarmonic` *after* the geomHalf→`syracZ` reindex (sub-lemma B1) and *before* the
+`fine_scale_mixing` scale-collapse to `mainZ` (sub-lemma B2).  Note it has the same shape as `mainZ`
+but at the finer scale `n−m₀` in place of `m₀`. -/
+noncomputable def harmZfine (x : ℝ) (E : Set ℕ) (n : ℕ) : ℝ :=
+  ∑' M : ℕ, if Eprime x E M then
+      (3 : ℝ) ^ (n - mZero x)
+        * ((syracZ (n - mZero x)) (M : ZMod (3 ^ (n - mZero x)))).toReal / (M : ℝ)
+    else 0
+
+/-- **(5.20) sub-lemma B1 — geomHalf → `syracZ` reindex.**  `perNHarmonic` (whose inner weight is the
+`2^{−pre ā}` iid-geomHalf mass over *good, affine-solvable* tuples) agrees with `harmZfine` (the exact
+`Syrac(ℤ/3^{n−m₀}ℤ)` mass) up to `O(log^{-c}x)`.  Content: `syracZ_eq_rev_fnat` writes `syracZ(n−m₀)`
+as the pushforward of `iid geomHalf` under `ā ↦ fnat·2^{−pre ā} mod 3^{n−m₀}`, so the affine congruence
+`3^{n−m₀} ∣ M·2^{pre ā}−fnat` is exactly `(map value of ā) = (M : ZMod 3^{n−m₀})`; and for good `ā`,
+`M ∈ E'` the `ℕ`-subtraction guard `fnat ≤ M·2^{pre ā}` is automatic
+(`fnat < 3^{n−m₀}·2^{pre ā} ≤ M·2^{pre ā}` via `fnat_lt_pow_mul` and `3^{n−m₀} ≤ M`).  The residual over
+*non-good* tuples is the good-tuple whp error `approx_good_tuple_whp`.
+**[C9 leaf B1 — pure reindex + whp; does NOT consume C10.]** -/
+theorem perNHarmonic_eq_harmZfine_approx :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNHarmonic x E n - harmZfine x E n| ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
+/-- **(5.20) sub-lemma B2 — the `fine_scale_mixing` scale bridge (THE C10 SEAM).**  The fine-scale
+harmonic content `harmZfine` (indexed by `Syrac(ℤ/3^{n−m₀}ℤ)`) agrees with `mainZ` (indexed by
+`Syrac(ℤ/3^{m₀}ℤ)`) up to `O(log^{-c}x)`.  This is the sole place Prop 1.14 (`fine_scale_mixing`,
+C10) and Lemma 5.3 (`c_n(X)≪1`) enter C9: `osc m₀ (n−m₀)` bounds the `L¹` deviation of
+`3^{n−m₀}·syracZ(n−m₀)` from its `3^{m₀}`-fiber average `3^{m₀}·syracZ(m₀)(· mod 3^{m₀})`
+(`syracZ_map_cast` is the marginal/projection identity), and summing that deviation over `M ∈ E'` with
+the `1/M` weight collapses `harmZfine` to the window-free `mainZ`.
+**[C9 leaf B2 — the C10 seam.]** -/
+theorem harmZfine_to_mainZ :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |harmZfine x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
 /-- **(5.20) harmonic → `Z` reduction** — sub-lemma B of `perNTerm_eval`, **the sole C10 consumer**.
-The window-free harmonic content agrees with Tao's `Z` (5.21) up to `O(log^{-c}x)`.  This is where
-Lemma 5.3 (`c_n(X) ≪ 1`) and Prop 1.14 (`fine_scale_mixing`, C10) enter: the `2^{−pre ā}` weight is the
-`iid geomHalf` mass, so `∑_ā[good, F_{n−m₀}(ā)≡M] 2^{−pre ā} = syracZ(n−m₀)(M mod 3^{n−m₀})` up to the
-good-tuple whp error, and `fine_scale_mixing`'s `osc` bound collapses
-`3^{n−m₀}·syracZ(n−m₀)(M) ≈ 3^{m₀}·syracZ(m₀)(M mod 3^{m₀})`, summing over `M ∈ E'` to `mainZ`.
-**[C9 leaf B — the C10 seam.]** -/
+The window-free harmonic content agrees with Tao's `Z` (5.21) up to `O(log^{-c}x)`.  **PROVED** from the
+geomHalf→`syracZ` reindex `perNHarmonic_eq_harmZfine_approx` (B1) and the `fine_scale_mixing` scale
+bridge `harmZfine_to_mainZ` (B2, the C10 seam) via the triangle through the shared `harmZfine`:
+`perNHarmonic ≈ harmZfine ≈ mainZ`.  All of C10's involvement in C9 is now isolated to B2. -/
 theorem harmonic_to_Z :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |perNHarmonic x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨c1, C1, x1, hc1, hC1, h1⟩ := perNHarmonic_eq_harmZfine_approx
+  obtain ⟨c2, C2, x2, hc2, hC2, h2⟩ := harmZfine_to_mainZ
+  refine ⟨min c1 c2, C1 + C2, max (max x1 x2) (Real.exp 1),
+    lt_min hc1 hc2, by positivity, fun x hx E hE y hy n hn => ?_⟩
+  have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
+  have hx1 : x1 ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+  have hx2 : x2 ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hL1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hxe
+  set L := Real.log x with hLdef
+  have hLc1 : L ^ (-c1) ≤ L ^ (-(min c1 c2)) :=
+    Real.rpow_le_rpow_of_exponent_le hL1 (neg_le_neg (min_le_left _ _))
+  have hLc2 : L ^ (-c2) ≤ L ^ (-(min c1 c2)) :=
+    Real.rpow_le_rpow_of_exponent_le hL1 (neg_le_neg (min_le_right _ _))
+  have hp1 := h1 x hx1 E hE y hy n hn
+  have hp2 := h2 x hx2 E hE y hy n hn
+  calc |perNHarmonic x E n - mainZ x E|
+      ≤ |perNHarmonic x E n - harmZfine x E n| + |harmZfine x E n - mainZ x E| :=
+        abs_sub_le _ _ _
+    _ ≤ C1 * L ^ (-c1) + C2 * L ^ (-c2) := add_le_add hp1 hp2
+    _ ≤ C1 * L ^ (-(min c1 c2)) + C2 * L ^ (-(min c1 c2)) :=
+        add_le_add (mul_le_mul_of_nonneg_left hLc1 hC1.le)
+          (mul_le_mul_of_nonneg_left hLc2 hC2.le)
+    _ = (C1 + C2) * L ^ (-(min c1 c2)) := by ring
 
 /-- **Per-`n` evaluation (5.19)+(5.20).**  For each `n ∈ I_y`, the per-`n` term equals the
 window-independent `mainZ x E` divided by the harmonic normaliser `((α−1)/2)·log y`, up to a *relative*

@@ -7,7 +7,7 @@ PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ---
 
-## CURRENT DIRECTIVE (JUDGE PASS 30, 2026-07-14 evening) — **close C8 → C9 → C6 → headline**
+## CURRENT DIRECTIVE (JUDGE PASS 30 + review 2026-07-15) — **C8 ✅; close C9 (`harmonic_to_Z` = C10 seam) → C6 → headline**
 
 *Written after a full independent audit — paper vs blueprint vs Lean — by 5 parallel auditors + a
 judge verbatim re-read of §5 (5.8)/(5.18)/(5.19) against PDF pp.22–25. Supersedes the pass-29
@@ -16,26 +16,33 @@ binds unless restated here. `blueprint_rules.md` is BINDING: one node, one claim
 means the STATEMENT exists, never "finished"; never set a `\leanok` yourself. Report work as
 **"N sorries + M orange."***
 
-> ### 🔄 REVIEW-LAP REFRESH (2026-07-15, post-`fef0c38`) — objective NARROWED to C8's last hole
-> **State advanced past the pass-30 snapshot:** `passtime_window_inner` (5.16) is CLOSED, and the (5.17)
-> **forward** leg `firstPassMid_le_steppedMid` is PROVED axiom-clean. **C8 (`first_passage_approx`) now
-> rests on exactly ONE sorry** (kernel-checked this lap): the (5.17) **reverse** leg
-> `steppedMid_le_firstPassMid_add` (`ApproxFormula.lean`). Census = **4 sorries + 0 orange** (reverse leg,
-> C9 `stabilization`, 2 `Statement.lean` headlines).
-> - **THE single objective:** close `steppedMid_le_firstPassMid_add`. **Mandated move:** the reverse defect
->   `∑_{n∈Iy} E[𝟙_{T_n∖S_n}]` splits pointwise into **Case A** (`n−m₀ ≤ T_x N`) and **Case B**
->   (`n−m₀ > T_x N`). Case A collapses EXACTLY (via `passTime_stepback`: `T_x N = n`, disjoint across `n`)
->   to `E[𝟙_{¬good⁽ⁿ⁰⁾}] ≤ C log^{-c}` by PROVED `approx_good_tuple_whp` — **prove this half now.** Case B is
->   the genuine **early-return** event (orbit dips ≤x, rises, dips again) — isolate it as a named sorry
->   `reverse_early_return_whp`; **do NOT** claim it follows from `approx_passtime_window` alone.
-> - **⚠ ROADMAP CORRECTION (supersedes handoff step 2b):** the handoff/`eprime_forces_passTime` disjointness
->   only holds on Case A (its hypothesis `n−m₀ ≤ T_x N`). Case B N can lie in several `T_n` (returns spaced
->   >m₀ apart), so `approx_passtime_window` (which needs `T_x N ∉ Iy`) does NOT cover early-returns with
->   `T_x N ∈ Iy`. The early-return bound is a real union-of-returns whp estimate — its own named sorry.
-> - **Forbidden drift (unchanged):** do NOT retreat to C9/C6 while C8's hole is open; do NOT touch a ratified
->   pin or frozen constant. Decomposing the reverse leg into named sub-sorries in `src/` is PROGRESS.
-> - **Why:** C8 is one hole from done; closing it completes Prop 5.2 and fires judge-trigger (b) → C9 may then
->   *use* C8's theorem, not just cite it. This is hardest-first: the reverse leg is the route-decisive blocker.
+> ### 🔄 REVIEW-LAP REFRESH (2026-07-15, post-`5514f13`) — **C8 CLOSED; objective now C9's C10 seam**
+> **State advanced past the pass-30 / prior-refresh snapshot:** **C8 (`first_passage_approx`, Prop 5.2)
+> is CLOSED and axiom-clean** — the (5.17) reverse leg (early-return event proved EMPTY) landed at
+> `0bea9d1`. C9's route-decisive leaf `perNTerm_eval` (the sole C10 consumer of the affine main term) is
+> now **PROVED** from two named sub-sorries, isolating all of C10's C9-involvement to ONE hole. Census =
+> **6 sorries + 0 orange** — 4 C9 holes in `Sec5/Stabilization.lean` + the 2 frozen `Statement.lean`
+> headlines. Campaign order `C10 ✅ → C8 ✅ → C7 ✅ → C9 (live) → C6 → headline` STANDS.
+> - **THE single objective: close `harmonic_to_Z` (`Stabilization.lean:348`, Tao (5.20)) — THE SOLE C10
+>   CONSUMER, hence hardest-first.** `|perNHarmonic x E n − mainZ x E| ≤ C·log^{-c}`. Every other C9 hole
+>   (`perNTerm_harmonic_approx` = pure (5.19) analytic; `Iy_count_ratio` = (5.9) lattice count; `mainZ_bound`)
+>   is self-contained and route-safe — do those AFTER, not before.
+> - **Mandated move:** decompose `harmonic_to_Z` into named sub-sorries in `src/` (raising the count is
+>   PROGRESS). The seam has two genuine pieces: **(B1) the geomHalf→syracZ reindex** — rewrite the ā-sum
+>   `∑_ā[good ∧ congr(ā,M)] 2^{−pre ā} = (syracZ(n−m₀))(M mod 3^{n−m₀}).toReal` up to the good-tuple whp
+>   error, via `syracZ_eq_rev_fnat` (the map `a ↦ fnat·2^{−pre a} mod 3^{n−m₀}`) + `approx_good_tuple_whp`
+>   (PROVED); and **(B2) the scale bridge** — `3^{n−m₀}·syracZ(n−m₀)(M) ≈ 3^{m₀}·syracZ(m₀)(M mod 3^{m₀})`
+>   via `fine_scale_mixing`'s `osc` (Lemma 5.3, C10) + `syracZ_map_cast`, summed over `M∈E'` with 1/M weight
+>   to `mainZ`. Pin B1/B2 as separate sorries; prove the assembly triangle from them.
+> - **Forbidden drift:** do NOT retreat to `perNTerm_harmonic_approx`/`Iy_count_ratio`/`mainZ_bound`/C6 while
+>   `harmonic_to_Z` is un-decomposed — those are the tractable leaves, and closing them first is exactly the
+>   crux-neglect the charter warns against. Do NOT touch a ratified pin or frozen constant. Do NOT edit the
+>   `harmonic_to_Z`/`perNHarmonic`/`mainZ` statements (internal decompositions below the `stabilization` pin,
+>   judge-cross-read pending).
+> - **Why:** `harmonic_to_Z` is the one place C10's mixing must actually compose with §5's harmonic sum at
+>   scale m₀ — the last genuine unknown-unknown in C9. Settling whether the geomHalf-mass identity + osc
+>   bridge go through *in Lean* is worth more than the three known-doable leaves combined. Once it lands, C9
+>   is pure analytic/combinatorial clean-up → C6 (§3 reduction) → headline.
 
 ### State (kernel-verified this pass; `blueprint_audit.py` → 15 proved, 0 orange, 0 drift, 0 false-green)
 - **15 nodes proved + axiom-clean**: all of §7 (X2–X11), **C10** (Prop 1.14), C5, C2, S3, C4, **C7** (just flipped).
@@ -938,6 +945,13 @@ machinery. The campaign's risk is no longer concentrated in a kernel — it is n
   → write `ROUTE-ESCALATION-<date>.md` and re-cost §5.
 
 ### Directive history
+- **review lap (2026-07-15, `5514f13`)**: route CONTINUE, no trigger fired (T5 RESOLVED — C8 re-pin
+  yielded the exact reindex; C8 now CLOSED). Kernel-verified: build green (3324), 6 sorries + 0 orange
+  (4 C9 holes in `Stabilization.lean` + 2 headline stubs). C8's reverse leg landed (early-return event
+  proved empty, `0bea9d1`); C9's `perNTerm_eval` PROVED from 2 sub-sorries, isolating C10 to one hole.
+  **Directive retargeted from C8's (closed) reverse leg to C9's `harmonic_to_Z` (the C10 seam, 5.20) —
+  hardest-first.** Mandated the B1 (geomHalf→syracZ reindex) / B2 (fine_scale_mixing scale bridge)
+  decomposition; forbade dropping to the 3 tractable C9 leaves first. STATUS + PENDING refreshed.
 - **deep reflection (2026-07-15, `95436f9`)**: route CONTINUE-with-correction; **T5 FIRED** — caught a
   false summit: the ratified `approxMainTerm` uses the ℕ-truncating `Aff` unguarded, so
   `truncation_error_bound` is FALSE (source pp.22–25 + `tao_c8_truncation_probe.py`). Directive: RE-PIN
