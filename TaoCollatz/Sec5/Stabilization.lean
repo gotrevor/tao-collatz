@@ -950,6 +950,37 @@ theorem iid_fiber_summable (k : ℕ) (P : (Fin k → ℕ) → Prop) [DecidablePr
   · exact le_rfl
   · exact ENNReal.toReal_nonneg
 
+/-- `2` is a unit mod `3^k` (coprime), so `2·2⁻¹ = 1` there. -/
+theorem two_mul_inv_zmod_three_pow (k : ℕ) :
+    (2 : ZMod (3 ^ k)) * (2 : ZMod (3 ^ k))⁻¹ = 1 := by
+  apply ZMod.mul_inv_of_unit
+  rw [show (2 : ZMod (3 ^ k)) = ((2 : ℕ) : ZMod (3 ^ k)) from by norm_cast,
+    ZMod.isUnit_iff_coprime]
+  exact Nat.Coprime.pow_right k (by decide)
+
+/-- **The `ℕ`-affine guard is exactly the `ZMod` fiber condition** (Lemma 2.1 reindex, pointwise).
+Given the size guard `fnat ≤ M·2^{pre ā}` (automatic for good `ā`, `M ∈ E'`), the exact affine
+divisibility `3^k ∣ (M·2^{pre ā} − fnat ā)` holds iff `M mod 3^k` equals the reversed-`fnat` map value
+`F ā = (fnat ā)·2^{−pre ā}`.  This is the bridge that turns `perNHarmonic`'s inner solvability mask into
+`perNGoodMass`'s residue-class fiber. -/
+theorem solvable_iff_fmapZ (k : ℕ) [NeZero (3 ^ k)] (ā : Fin k → ℕ) (M : ℕ)
+    (hguard : fnat k ā ≤ M * 2 ^ pre ā k) :
+    (3 ^ k ∣ (M * 2 ^ pre ā k - fnat k ā))
+      ↔ (M : ZMod (3 ^ k))
+          = (fnat k ā : ZMod (3 ^ k)) * (2 : ZMod (3 ^ k))⁻¹ ^ pre ā k := by
+  have hunit := two_mul_inv_zmod_three_pow k
+  -- divisibility ↔ ZMod equality of the naturals
+  have hdvd_iff : (3 ^ k ∣ (M * 2 ^ pre ā k - fnat k ā))
+      ↔ (fnat k ā : ZMod (3 ^ k)) = ((M * 2 ^ pre ā k : ℕ) : ZMod (3 ^ k)) := by
+    rw [ZMod.natCast_eq_natCast_iff, Nat.modEq_iff_dvd' hguard]
+  rw [hdvd_iff, Nat.cast_mul, Nat.cast_pow, Nat.cast_ofNat]
+  -- `(fnat) = (M)·2^pre  ↔  (M) = (fnat)·(2⁻¹)^pre`
+  constructor
+  · intro h
+    rw [h, mul_assoc, ← mul_pow, hunit, one_pow, mul_one]
+  · intro h
+    rw [h, mul_assoc, ← mul_pow, mul_comm (2 : ZMod (3 ^ k))⁻¹ 2, hunit, one_pow, mul_one]
+
 /-- **B1 rib 1 — the `(5.22)` fiber identity (harm side, good-restricted).**  `perNHarmonic` regroups by
 residue class `X = M mod 3^{n−m₀}` exactly as `harmZfine` does, but with the good-restricted pushforward
 mass `perNGoodMass` in place of the full `syracZ(n−m₀)` mass:
