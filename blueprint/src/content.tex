@@ -348,7 +348,10 @@ Dated runs 2026-07-13 on both headliners + \texttt{valVec\_pos},
 
 \begin{theorem}[Main theorem: Thm 1.3, Thm 1.6, quantitative Thm 3.1]\label{C6}
   \lean{tao_collatz, tao_collatz_quantitative}
-  \uses{C3, C7, C8, C9}
+  % C6s added 2026-07-15 (operator layer): the headline stubs discharge by `exact` from the
+  % spine theorems, so the spine is C6's direct proof-dep.  The coarse pre-decomposition
+  % edges (C7/C8/C9) are kept until the judge pass prunes; redundant, not wrong.
+  \uses{C3, C7, C8, C9, C6s}
   \leanok
 \textbf{Theorem 1.3} (the summit): for every \(f:\mathbb{N}\to\mathbb{R}\) with
 \(f(N)\to\infty\), \(\mathrm{Colmin}(N)<f(N)\) for almost all \(N\) in logarithmic density.
@@ -479,10 +482,20 @@ statistics.
 % pp.22--25.  The v1 pin (N-truncating Aff, unguarded) over-counted (5.8) by a super-polylog
 % factor and made truncation_error_bound FALSE; v2 guards the pushforward by the EXACT affine
 % relation 3^{n-m0}*N + fnat = M*2^{|a|} (= the (5.18) congruence + (5.19) value), so Lemma 2.1
-% makes the reindex exact (approxMainTerm_eq_steppedMid, PROVED axiom-clean).  This \leanok is the
-% STATEMENT flip (green border); the PROOF is still owed (holes: (5.16) window + (5.17) stepback).
-\lapsrisk{15--30}{medium}{75\%}
+% makes the reindex exact (approxMainTerm_eq_steppedMid, PROVED axiom-clean).  The statement
+% \leanok is RATIFY-C8-v2 (judge pass 30); the proof \leanok below is the 2026-07-15 flip.
+\lapsrisk{0}{done}{100\%}
 \end{proposition}
+\begin{proof}
+  \leanok
+  \uses{C7}
+  🏆 \textbf{COMPLETE} (2026-07-15 overnight): the (5.16) window term closed via the integral
+  test over C7's \texttt{classMass}/\texttt{windowMass} machinery; the (5.17) stepback closed
+  by the forward/reverse-leg split with the early-return event proved \emph{empty}
+  (\texttt{0bea9d1}).  Kernel-checked axiom-clean by \texttt{blueprint\_audit} 2026-07-15
+  (MISSED FLIP list, twice).  Statement pre-ratified (pass 30), so this flip is the mechanical
+  half — done by the operator layer per the DIRECTION.md operator note.
+\end{proof}
 
 \begin{proposition}[Stabilization across scales; Prop 1.11]\label{C9}
   \lean{stabilization}
