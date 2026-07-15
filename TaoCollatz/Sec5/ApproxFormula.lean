@@ -244,11 +244,13 @@ The proof of (5.8) reindexes `ℙ((Syr^{n-m₀}N_y ∈ E') ∧ good)` into `∑_
 Tao's Lemma 2.1 (`valVec_unique`, `Basic/Valuation.lean`).  Two facts drive the **main** (exact)
 contribution `ā = valVec N k`; both are proved axiom-clean below.
 
-⚠️ **The reindex is APPROXIMATE, not exact.**  Our `Aff` uses truncating ℕ-division while Tao's
-`Aff_ā` (1.3) uses exact division.  The count `#{ā good : Aff N k ā ∈ E'}` can exceed 1 on the
-truncation set (`2^{pre ā k} ∤ 3^k N + fnat k ā`, where `valVec_unique`'s guard fails).  Tao absorbs
-this in the `O(log^{-c} x)` / `O(3^{n-m₀})` errors of (5.18)–(5.19); it is consistent with the
-`≤ C·(log x)^{-c}` error of `first_passage_approx`.  **Do not attempt an exact `=` reindex.** -/
+✅ **The reindex is EXACT under RATIFY-C8-v2** (`approxMainTerm_eq_steppedMid`, axiom-clean).  Tao's
+`ℙ(Aff_ā(N_y)=M)` is the mass of the EXACT-affine event `{N : 3^{n−m₀}N + fnat = M·2^{pre ā}}`, whose
+divisibility guard (`2^{pre ā k} ∣ 3^k N + fnat k ā`) is precisely `valVec_unique`'s hypothesis; on it
+`Aff N k ā = M` holds without truncation.  So `approxMainTerm = steppedMid` on the nose — the exact
+`=` reindex is PROVED below.  (Historical: the v1 pin used the truncating `Aff` pushforward UNGUARDED,
+over-counting (5.8) super-polylog — probe `19135→0–3`, `tools/sandbox/tao_c8_truncation_probe.py`; the
+guarded re-pin repaired it.  Do NOT re-seed that truncating route.) -/
 
 /-- **Lemma 2.1, generating direction.**  For odd `N`, the affine map at the true valuation vector
 recovers the Syracuse iterate: `Aff N k (valVec N k) = syr^[k] N`.  (The guarded ℕ-division is exact
@@ -2128,19 +2130,78 @@ theorem steppedMid_le_approxMainTerm (x : ℝ) (E : Set ℕ) (y : ℝ)
     steppedMid x E y ≤ approxMainTerm x E y :=
   le_of_eq (approxMainTerm_eq_steppedMid x E y hy1).symm
 
-/-- **(5.17) event reduction leg** (owed) — `|firstPassMid − steppedMid| ≤ O(log^{-c}x)`.  Passing
-from the `T_x=n`-partitioned good event to its stepped-back diagonal form costs `O(log^{-c}x)`.  The
-`T_x`/`Pass`/oddness half of `Eprime(Syr^{n−m₀}N)` is EXACT given `T_x N = n` (proved:
-`firstPass_event_stepback_subset`); the remaining content is the reverse inclusion and the `E'`
-*size* window `exp(±log^{0.7}x)(4/3)^{m₀}x`, i.e. the (5.13)/(5.14) orbit estimate
-`Syr^{n−m₀}N ≈ (3/4)^{n−m₀}N_y`, plus the nested good-tuple relation `𝒜⁽ⁿ⁰⁾ ⊂ 𝒜⁽ⁿ⁻ᵐ⁰⁾`. -/
+/-- **Good-tuple nesting** `𝒜⁽ⁿ²⁾ ⊂ 𝒜⁽ⁿ¹⁾` for `n₁ ≤ n₂` (paper's observation after (5.11)).  A
+good valuation tuple of length `n₂` restricts to a good tuple of length `n₁ ≤ n₂`: entries and prefix
+sums agree on the common prefix (`valVec`, `pre_valVec`), and the prefix constraint at each `k ≤ n₁`
+is one of the constraints at `k ≤ n₂`.  This is exactly the `good⁽ⁿ⁰⁾ ⟹ good⁽ⁿ⁻ᵐ⁰⁾` drop used in the
+(5.17) step-back forward inclusion. -/
+theorem good_nested {x : ℝ} {N n₁ n₂ : ℕ} (hn : n₁ ≤ n₂)
+    (hg : goodTuple x n₂ (valVec N n₂)) : goodTuple x n₁ (valVec N n₁) := by
+  refine ⟨fun i => ?_, fun k hk => ?_⟩
+  · exact hg.1 ⟨(i : ℕ), lt_of_lt_of_le i.isLt hn⟩
+  · have hk2 : k ≤ n₂ := le_trans hk hn
+    have h := hg.2 k hk2
+    rw [pre_valVec hk2] at h
+    rwa [pre_valVec hk]
+
+/-- `I_y ⊂ [0, n₀]`: any summation index is `≤ n₀` (immediate from the `range (n₀+1)` filter). -/
+theorem mem_Iy_le_nZero {x y : ℝ} {n : ℕ} (hn : n ∈ Iy x y) : n ≤ nZero x := by
+  rw [Iy, Finset.mem_filter, Finset.mem_range] at hn; omega
+
+/-- Real-interval bounds carried by any `n ∈ I_y`: `IyLo ≤ n ≤ IyHi` (the filter predicate). -/
+theorem mem_Iy_bounds {x y : ℝ} {n : ℕ} (hn : n ∈ Iy x y) :
+    IyLo x y ≤ (n : ℝ) ∧ (n : ℝ) ≤ IyHi x y := by
+  rw [Iy, Finset.mem_filter] at hn; exact hn.2
+
+/-- **(5.17) forward leg** — `firstPassMid ≤ steppedMid`, a deterministic event inclusion with NO
+error.  For each `n ∈ I_y` the good-passage event
+`S_n = {T_x N = n ∧ Pass_x N ∈ E ∧ good⁽ⁿ⁰⁾(N)}` embeds into the stepped-back diagonal event
+`T_n = {good⁽ⁿ⁻ᵐ⁰⁾(N) ∧ E'(Syr^{n−m₀}N)}`:
+* the `T_x`/`Pass`/oddness half of `E'` is EXACT given `T_x N = n` (`firstPass_event_stepback_subset`
+  plus `syr` oddness on the odd support of `logUnifOdd`);
+* the good-tuple index drops by `good_nested` (`n − m₀ ≤ n ≤ n₀`);
+* the `E'` *size* window `exp(±log^{0.7}x)·(4/3)^{m₀}·x` is FORCED, not whp: `M = Syr^{n−m₀}N` has
+  passage time `m₀` (from `passTime_stepback`), so the good bracket `syr_iterate_good_bracket'` pins
+  `M ≈ (4/3)^{m₀}·Syr^n N` with `Syr^n N ≍ x`, and `two_rpow_slack_le_exp` absorbs the `2^{±log^{0.6}}`
+  slack inside `exp(±log^{0.7}x)`.
+Hence `S_n ⊆ T_n` pointwise and the finite `I_y`-sum is monotone. -/
+theorem firstPassMid_le_steppedMid :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          firstPassMid x E y ≤ steppedMid x E y := by
+  sorry
+
+/-- **(5.17) reverse leg** — `steppedMid ≤ firstPassMid + O(log^{-c}x)`.  The reverse defect
+`T_n ∖ S_n`: an `N` carrying `good⁽ⁿ⁻ᵐ⁰⁾` and `Syr^{n−m₀}N ∈ E'` need not carry `T_x N = n` with the
+FULL `good⁽ⁿ⁰⁾`.  The discrepancy lives in the good-tuple tail `good⁽ⁿ⁻ᵐ⁰⁾ ∖ good⁽ⁿ⁰⁾` and the
+passage-window complement, each `≪ log^{-c}x` by the PROVED whp bounds (`approx_good_tuple_whp` (5.12),
+`approx_passtime_window` (5.16)), summed over the `O(log x)` indices `n ∈ I_y`. -/
+theorem steppedMid_le_firstPassMid_add :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          steppedMid x E y ≤ firstPassMid x E y + C * (Real.log x) ^ (-c) := by
+  sorry
+
+/-- **(5.17) event reduction leg** — `|firstPassMid − steppedMid| ≤ O(log^{-c}x)`.  Assembled from the
+two directional legs: the forward inclusion `firstPassMid ≤ steppedMid` (`firstPassMid_le_steppedMid`,
+exact) and the reverse defect `steppedMid ≤ firstPassMid + O(log^{-c}x)`
+(`steppedMid_le_firstPassMid_add`).  Since the forward gap is `0`, the absolute value collapses to the
+reverse error. -/
 theorem first_passage_stepback_reduce :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |firstPassMid x E y - steppedMid x E y|
             ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨x₁, _hx₁, hfwd⟩ := firstPassMid_le_steppedMid
+  obtain ⟨c, C, x₂, hc, hC, hrev⟩ := steppedMid_le_firstPassMid_add
+  refine ⟨c, C, max x₁ x₂, hc, hC, fun x hx E hE y hy => ?_⟩
+  have h1 := hfwd x (le_trans (le_max_left _ _) hx) E hE y hy
+  have h2 := hrev x (le_trans (le_max_right _ _) hx) E hE y hy
+  rw [abs_le]
+  exact ⟨by linarith, by linarith⟩
 
 /-- **(5.19) truncation error bound** — NOW TRIVIAL under RATIFY-C8-v2.  With the exact
 divisibility-guarded `approxMainTerm`, `approxMainTerm = steppedMid` (`approxMainTerm_eq_steppedMid`),
