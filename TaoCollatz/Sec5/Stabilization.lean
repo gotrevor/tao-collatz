@@ -231,6 +231,35 @@ theorem tsum_ite_affine_of_nosol (a b c : ℕ) (g : ℕ → ℝ≥0∞)
     (∑' N, if a * N + b = c then g N else 0) = 0 := by
   rw [tsum_congr (fun N => if_neg (hns N)), tsum_zero]
 
+/-- **Point-mass value of `logUnifOdd`** (real form).  On the window, `logUnifOdd lo hi` puts real
+mass `(N)⁻¹ / windowMass lo hi` at `N` (`windowMass = ∑_{M∈W} 1/M`, the harmonic normaliser `D`); off
+the window the mass is `0`.  This is the (5.19) evaluation of the single point mass produced by
+`perNTerm_pointmass`. -/
+theorem logUnifOdd_apply_toReal {lo hi : ℝ} (h : (logWindow lo hi).Nonempty) (N : ℕ) :
+    (logUnifOdd lo hi N).toReal
+      = if N ∈ logWindow lo hi then (N : ℝ)⁻¹ / windowMass lo hi else 0 := by
+  rw [logUnifOdd_apply_of_nonempty h]
+  by_cases hN : N ∈ logWindow lo hi
+  · rw [if_pos hN, if_pos hN, ENNReal.toReal_div, ENNReal.toReal_inv, ENNReal.toReal_natCast,
+        windowMass]
+    have hne : ∀ M ∈ logWindow lo hi, (M : ℝ≥0∞) ≠ 0 := by
+      intro M hM
+      simp only [logWindow, Finset.mem_filter] at hM
+      have : M % 2 = 1 := hM.2.1
+      simp only [ne_eq, Nat.cast_eq_zero]; omega
+    congr 1
+    rw [ENNReal.toReal_sum fun M hM => by
+      rw [ne_eq, ENNReal.inv_eq_top, Nat.cast_eq_zero]; exact fun h0 => hne M hM (by simp [h0])]
+    refine Finset.sum_congr rfl fun M _ => ?_
+    rw [ENNReal.toReal_inv, ENNReal.toReal_natCast]
+  · rw [if_neg hN, if_neg hN]; simp
+
+/-- Point-mass value on the window (the `if_pos` case of `logUnifOdd_apply_toReal`). -/
+theorem logUnifOdd_apply_toReal_of_mem {lo hi : ℝ} (h : (logWindow lo hi).Nonempty)
+    {N : ℕ} (hN : N ∈ logWindow lo hi) :
+    (logUnifOdd lo hi N).toReal = (N : ℝ)⁻¹ / windowMass lo hi := by
+  rw [logUnifOdd_apply_toReal h, if_pos hN]
+
 open Classical in
 /-- **(5.19) single-value reduction of `perNTerm`.**  The inner affine mass
 `ℙ(Aff_ā(N_y)=M) = ∑' N, if 3^{n−m₀}·N + fnat = M·2^{pre ā} then logUnifOdd N else 0` collapses to the

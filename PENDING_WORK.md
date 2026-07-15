@@ -13,8 +13,21 @@
   and `D_y = (1+O)(α−1)/2·log y` [5.19 tail], and (b) the Z-reduction (5.20) [the `fine_scale_mixing`
   consumer].
 
-**Census: still 5 sorries + 0 orange** (perNTerm_pointmass is a *proved* helper, not a new hole). Full
-lake build green (3316).
+- **`logUnifOdd_apply_toReal`** (+ `_of_mem`) — evaluates the point mass: `(logUnifOdd lo hi N).toReal
+  = if N∈window then (N:ℝ)⁻¹/windowMass lo hi else 0`. This is (5.19) step 2: it turns each
+  `perNTerm_pointmass` mass into `(N*)⁻¹/D_y`. Composes directly with `perNTerm_pointmass`.
+
+**Census: still 5 sorries + 0 orange** (these are *proved* helpers, not new holes). Full lake build
+green (3316).
+
+**Remaining (5.19)/(5.20) chain now needs** (with the two bricks above in hand):
+- `windowMass y (y^α) = (1+O)(α−1)/2·log y` — the harmonic normaliser two-sided estimate. Infrastructure
+  READY: `harmonic_ap_integral_bound` (general AP integral test, `FirstPassage.lean:414`), the logWindow
+  = odd-AP identity + `count` (in `intTest_D_lower`'s proof, `FirstPassage.lean:823`), `intTest_D_lower`
+  (lower bound only, needs upgrade to two-sided). This is the next self-contained analytic brick.
+- `N* ∈ logWindow y (y^α)` for good (ā,M): from the `E'` size window + good-tuple orbit bracket
+  (`syr_iterate_good_bracket`, `ApproxFormula.lean`), N* ≍ (4/3)^{m₀}x·2^{-|ā|}·... lands in [y,y^α].
+- `(N*)⁻¹ = 3^{n−m₀}/(M·2^{pre ā}−fnat) ≈ 3^{n−m₀}/(M·2^{pre ā})` — relative error `O(x^{-c})`.
 
 **Next attack on `perNTerm_eval` (continue hardest-first):** with `perNTerm_pointmass` in hand, the
 remaining chain is:
