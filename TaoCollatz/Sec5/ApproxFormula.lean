@@ -43,6 +43,37 @@ namespace TaoCollatz
 def goodTuple (x : ℝ) (n' : ℕ) (a : Fin n' → ℕ) : Prop :=
   (∀ i, 1 ≤ a i) ∧ ∀ n, n ≤ n' → |(pre a n : ℝ) - 2 * n| < Real.log x ^ (0.6 : ℝ)
 
+/-- Each entry of a vector is bounded by its full prefix sum: `a i ≤ pre a n'`. -/
+theorem entry_le_pre {n' : ℕ} (a : Fin n' → ℕ) (i : Fin n') : a i ≤ pre a n' := by
+  have h := Finset.single_le_sum (f := fun m => if h : m < n' then a ⟨m, h⟩ else 0)
+    (fun m _ => Nat.zero_le _) (Finset.mem_range.mpr i.isLt)
+  simpa [pre, i.isLt] using h
+
+/-- **Good tuples form a finite set** (paper (5.11)).  The prefix constraint at `n = n'` forces
+`pre a n' < 2n' + log^{0.6} x`, so every entry `a i ≤ pre a n'` is bounded by a fixed `K`; the good
+set therefore injects into `Fin n' → Fin (K+1)`, a `Fintype`.  This underwrites the `∑'_ā`
+summability used by the (5.18) reindex (`approxMainTerm`'s per-term `.toReal` sums correctly). -/
+theorem goodTuple_finite (x : ℝ) (n' : ℕ) : {a : Fin n' → ℕ | goodTuple x n' a}.Finite := by
+  classical
+  set K : ℕ := ⌈(2 * n' : ℝ) + Real.log x ^ (0.6 : ℝ)⌉₊ with hK
+  have hbound : ∀ a : Fin n' → ℕ, goodTuple x n' a → ∀ i, a i ≤ K := by
+    intro a ha i
+    have hg := ha.2 n' (le_refl n')
+    have h1 : (pre a n' : ℝ) < 2 * n' + Real.log x ^ (0.6 : ℝ) := by
+      have := (abs_lt.mp hg).2; linarith
+    have h2 : (a i : ℝ) ≤ (pre a n' : ℝ) := by exact_mod_cast entry_le_pre a i
+    have h4 : (a i : ℝ) ≤ (K : ℝ) := le_trans (le_of_lt (lt_of_le_of_lt h2 h1)) (Nat.le_ceil _)
+    exact_mod_cast h4
+  have hfin : Finite {a : Fin n' → ℕ // goodTuple x n' a} := by
+    apply Finite.of_injective (β := Fin n' → Fin (K + 1))
+      (fun a i => ⟨a.1 i, Nat.lt_succ_of_le (hbound a.1 a.2 i)⟩)
+    intro a b hab
+    apply Subtype.ext
+    funext i
+    have := congrFun hab i
+    exact (Fin.mk.injEq _ _ _ _).mp this
+  exact Set.finite_coe_iff.mp hfin
+
 /-- Lower endpoint of the interval `I_y` (5.9): `log(y/x)/log(4/3) + log^{0.8} x`. -/
 noncomputable def IyLo (x y : ℝ) : ℝ :=
   Real.log (y / x) / Real.log (4 / 3) + Real.log x ^ (0.8 : ℝ)
