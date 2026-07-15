@@ -891,6 +891,87 @@ theorem tao_syracuse_quantitative_sum :
     have hCK : 4 * K1 ≤ C := le_max_right _ _
     nlinarith [h4, hLK, hlogx0, hK11, hLc0.le, hC0]
 
+/-- The odd-window normalizer `D = logSum univ (oddInterval x)` is at least the `N = 1` term. -/
+theorem one_le_logSum_univ_oddInterval {x : ℕ} (hx2 : 2 ≤ x) :
+    (1 : ℝ) ≤ logSum Set.univ (oddInterval x) := by
+  unfold logSum
+  rw [Finset.filter_congr_decidable]
+  have h1mem : 1 ∈ (oddInterval x).filter (· ∈ Set.univ) := by
+    rw [Finset.mem_filter]
+    refine ⟨?_, Set.mem_univ 1⟩
+    rw [oddInterval, Finset.mem_filter, Finset.mem_range]
+    omega
+  calc (1 : ℝ) = (1 : ℝ) / ((1 : ℕ) : ℝ) := by norm_num
+    _ ≤ ∑ N ∈ (oddInterval x).filter (· ∈ Set.univ), (1 : ℝ) / N :=
+        Finset.single_le_sum (f := fun N : ℕ => (1 : ℝ) / N)
+          (fun i _ => by positivity) h1mem
+
+/-- **Odd-window harmonic lower bound**: `log x ≤ 8·D` where `D` is the odd-window normalizer.
+Via the AP integral test on `logWindow 1 x` (whose first term `a ≤ 3`). -/
+theorem log_le_eight_logSum_univ_oddInterval {x : ℕ} (hx2 : 2 ≤ x) :
+    Real.log x ≤ 8 * logSum Set.univ (oddInterval x) := by
+  have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
+  have hx0 : (0 : ℝ) < (x : ℝ) := by linarith
+  have hD1 := one_le_logSum_univ_oddInterval hx2
+  set D := logSum Set.univ (oddInterval x) with hDdef
+  -- `D` is the odd-window mass of `[1, x]`
+  have hwm_eq : D = windowMass 1 (x : ℝ) := by
+    rw [hDdef]; unfold logSum windowMass
+    simp_rw [one_div]
+    rw [Finset.filter_congr_decidable]
+    refine Finset.sum_congr ?_ fun _ _ => rfl
+    ext N
+    rw [Finset.mem_filter, oddInterval, Finset.mem_filter, Finset.mem_range,
+      mem_logWindow_iff]
+    constructor
+    · rintro ⟨⟨hlt, hodd⟩, -⟩
+      have h1 : 1 ≤ N := by omega
+      have h2 : N ≤ x := by omega
+      exact ⟨hodd, by exact_mod_cast h1, by exact_mod_cast h2⟩
+    · rintro ⟨hodd, h1, h2⟩
+      have h2' : N ≤ x := by exact_mod_cast h2
+      exact ⟨⟨by omega, hodd⟩, Set.mem_univ N⟩
+  rcases le_or_gt (Real.log x) 8 with h8 | h8
+  · linarith
+  · have hne : (logWindow 1 (x : ℝ)).Nonempty := by
+      refine ⟨1, ?_⟩
+      rw [mem_logWindow_iff]
+      exact ⟨by omega, by norm_num, by exact_mod_cast (by linarith : (1 : ℝ) ≤ (x : ℝ))⟩
+    obtain ⟨a, count, hcount0, hloa, halt, hxlt, hxle, hFeq⟩ :=
+      logWindow_odd_ap one_pos hne
+    have hinj : ∀ i ∈ Finset.range count, ∀ j ∈ Finset.range count,
+        a + 2 * i = a + 2 * j → i = j := by intro i _ j _ h; omega
+    have ha0 : (0 : ℝ) < (a : ℝ) := lt_of_lt_of_le one_pos hloa
+    have ha3 : (a : ℝ) < 4 := by linarith
+    have hharm := (abs_le.mp (harmonic_ap_integral_bound ha0 two_pos count)).1
+    have hmass := windowMass_eq_ap_sum hFeq hinj
+    have hac0 : (0 : ℝ) < (a : ℝ) + 2 * (count : ℝ) := by positivity
+    have hlog_ge : Real.log x - Real.log 4
+        ≤ Real.log (((a : ℝ) + 2 * (count : ℝ)) / (a : ℝ)) := by
+      rw [Real.log_div hac0.ne' ha0.ne']
+      have h1 : Real.log x ≤ Real.log ((a : ℝ) + 2 * (count : ℝ)) :=
+        Real.log_le_log hx0 hxlt.le
+      have h2 : Real.log (a : ℝ) ≤ Real.log 4 := Real.log_le_log ha0 ha3.le
+      linarith
+    have hlog4 : Real.log 4 < 2 := by
+      have h2 : (2.7 : ℝ) < Real.exp 1 := by
+        have := Real.exp_one_gt_d9
+        linarith
+      have h3 : Real.exp 2 = Real.exp 1 * Real.exp 1 := by
+        rw [← Real.exp_add]; norm_num
+      have h1 : (4 : ℝ) < Real.exp 2 := by nlinarith
+      calc Real.log 4 < Real.log (Real.exp 2) := Real.log_lt_log (by norm_num) h1
+        _ = 2 := Real.log_exp 2
+    have hainv : (a : ℝ)⁻¹ ≤ 1 := by
+      rw [inv_le_one_iff₀]; right; exact hloa
+    have hD_ge : (1/2) * (Real.log x - 2) - 1 ≤ D := by
+      rw [hwm_eq, hmass]
+      have hkey : (2 : ℝ)⁻¹ * Real.log (((a : ℝ) + 2 * (count : ℝ)) / (a : ℝ)) - (a : ℝ)⁻¹
+          ≤ ∑ i ∈ Finset.range count, ((a : ℝ) + 2 * (i : ℝ))⁻¹ := by linarith
+      refine le_trans ?_ hkey
+      nlinarith [hlog_ge, hlog4]
+    linarith
+
 /-- **Theorem 3.1, Syracuse probability form** (Tao 2019 p.16, second display):
 `ℙ(Syrmin(Log(2ℕ+1 ∩ [1,x])) ≤ N₀) ≥ 1 − O(log^{-c} N₀)`. -/
 -- RATIFY-C6b
@@ -927,79 +1008,9 @@ theorem tao_syracuse_quantitative :
   have hB0 : (0 : ℝ) ≤ B := by
     rw [hBdef]; unfold logSum
     exact Finset.sum_nonneg fun N _ => by positivity
-  -- `D ≥ 1` (the `N = 1` term)
-  have hD1 : (1 : ℝ) ≤ D := by
-    rw [hDdef]; unfold logSum
-    rw [Finset.filter_congr_decidable]
-    have h1mem : 1 ∈ (oddInterval x).filter (· ∈ Set.univ) := by
-      rw [Finset.mem_filter]
-      refine ⟨?_, Set.mem_univ 1⟩
-      rw [oddInterval, Finset.mem_filter, Finset.mem_range]
-      omega
-    calc (1 : ℝ) = (1 : ℝ) / ((1 : ℕ) : ℝ) := by norm_num
-      _ ≤ ∑ N ∈ (oddInterval x).filter (· ∈ Set.univ), (1 : ℝ) / N :=
-          Finset.single_le_sum (f := fun N : ℕ => (1 : ℝ) / N)
-            (fun i _ => by positivity) h1mem
+  have hD1 : (1 : ℝ) ≤ D := one_le_logSum_univ_oddInterval hx2
   have hD0 : (0 : ℝ) < D := lt_of_lt_of_le one_pos hD1
-  -- `D` is the odd-window mass of `[1, x]`
-  have hwm_eq : D = windowMass 1 (x : ℝ) := by
-    rw [hDdef]; unfold logSum windowMass
-    simp_rw [one_div]
-    rw [Finset.filter_congr_decidable]
-    refine Finset.sum_congr ?_ fun _ _ => rfl
-    ext N
-    rw [Finset.mem_filter, oddInterval, Finset.mem_filter, Finset.mem_range,
-      mem_logWindow_iff]
-    constructor
-    · rintro ⟨⟨hlt, hodd⟩, -⟩
-      have h1 : 1 ≤ N := by omega
-      have h2 : N ≤ x := by omega
-      exact ⟨hodd, by exact_mod_cast h1, by exact_mod_cast h2⟩
-    · rintro ⟨hodd, h1, h2⟩
-      have h2' : N ≤ x := by exact_mod_cast h2
-      exact ⟨⟨by omega, hodd⟩, Set.mem_univ N⟩
-  -- odd-window harmonic lower bound: `log x ≤ 8 D`
-  have hDlog : Real.log x ≤ 8 * D := by
-    rcases le_or_gt (Real.log x) 8 with h8 | h8
-    · linarith
-    · have hne : (logWindow 1 (x : ℝ)).Nonempty := by
-        refine ⟨1, ?_⟩
-        rw [mem_logWindow_iff]
-        exact ⟨by omega, by norm_num, by exact_mod_cast (by linarith : (1 : ℝ) ≤ (x : ℝ))⟩
-      obtain ⟨a, count, hcount0, hloa, halt, hxlt, hxle, hFeq⟩ :=
-        logWindow_odd_ap one_pos hne
-      have hinj : ∀ i ∈ Finset.range count, ∀ j ∈ Finset.range count,
-          a + 2 * i = a + 2 * j → i = j := by intro i _ j _ h; omega
-      have ha0 : (0 : ℝ) < (a : ℝ) := lt_of_lt_of_le one_pos hloa
-      have ha3 : (a : ℝ) < 4 := by linarith
-      have hharm := (abs_le.mp (harmonic_ap_integral_bound ha0 two_pos count)).1
-      have hmass := windowMass_eq_ap_sum hFeq hinj
-      have hac0 : (0 : ℝ) < (a : ℝ) + 2 * (count : ℝ) := by positivity
-      have hlog_ge : Real.log x - Real.log 4
-          ≤ Real.log (((a : ℝ) + 2 * (count : ℝ)) / (a : ℝ)) := by
-        rw [Real.log_div hac0.ne' ha0.ne']
-        have h1 : Real.log x ≤ Real.log ((a : ℝ) + 2 * (count : ℝ)) :=
-          Real.log_le_log hx0 hxlt.le
-        have h2 : Real.log (a : ℝ) ≤ Real.log 4 := Real.log_le_log ha0 ha3.le
-        linarith
-      have hlog4 : Real.log 4 < 2 := by
-        have h2 : (2.7 : ℝ) < Real.exp 1 := by
-          have := Real.exp_one_gt_d9
-          linarith
-        have h3 : Real.exp 2 = Real.exp 1 * Real.exp 1 := by
-          rw [← Real.exp_add]; norm_num
-        have h1 : (4 : ℝ) < Real.exp 2 := by nlinarith
-        calc Real.log 4 < Real.log (Real.exp 2) := Real.log_lt_log (by norm_num) h1
-          _ = 2 := Real.log_exp 2
-      have hainv : (a : ℝ)⁻¹ ≤ 1 := by
-        rw [inv_le_one_iff₀]; right; exact hloa
-      have hD_ge : (1/2) * (Real.log x - 2) - 1 ≤ D := by
-        rw [hwm_eq, hmass]
-        have hkey : (2 : ℝ)⁻¹ * Real.log (((a : ℝ) + 2 * (count : ℝ)) / (a : ℝ)) - (a : ℝ)⁻¹
-            ≤ ∑ i ∈ Finset.range count, ((a : ℝ) + 2 * (i : ℝ))⁻¹ := by linarith
-        refine le_trans ?_ hkey
-        nlinarith [hlog_ge, hlog4]
-      linarith
+  have hDlog : Real.log x ≤ 8 * D := log_le_eight_logSum_univ_oddInterval hx2
   -- the C6a bad-sum bound, converted through `D`
   have hB8 : B ≤ 8 * Ca * D / (Real.log N₀) ^ c := by
     calc B ≤ Ca * Real.log x / (Real.log N₀) ^ c := hsum N₀ x hN₀2 hx2
@@ -1021,7 +1032,110 @@ theorem tao_syracuse_quantitative :
 -- RATIFY-C6c (domain-of-`f` rendering flagged in the module docstring)
 theorem tao_syracuse (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
     AlmostAllOdd fun N => (syrMin N : ℝ) < f N := by
-  sorry
+  obtain ⟨cb, Cb, hcb, hCb, hq⟩ := tao_syracuse_quantitative
+  unfold AlmostAllOdd
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  -- pick a fixed `N₀` with `Cb/(log N₀)^cb < ε/3`
+  have hlogto : Tendsto (fun n : ℕ => Real.log n) atTop atTop :=
+    Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
+  have hrpowto : Tendsto (fun n : ℕ => (Real.log n) ^ cb) atTop atTop :=
+    (tendsto_rpow_atTop hcb).comp hlogto
+  have h0 : Tendsto (fun n : ℕ => Cb / (Real.log n) ^ cb) atTop (nhds 0) :=
+    Tendsto.div_atTop tendsto_const_nhds hrpowto
+  have hev : ∀ᶠ n : ℕ in atTop, Cb / (Real.log n) ^ cb < ε / 3 :=
+    (tendsto_order.1 h0).2 (ε / 3) (by linarith)
+  obtain ⟨N₀, hN₀2, hN₀ε⟩ : ∃ N₀ : ℕ, 2 ≤ N₀ ∧ Cb / (Real.log N₀) ^ cb < ε / 3 := by
+    obtain ⟨n, hn⟩ := (hev.and (eventually_ge_atTop 2)).exists
+    exact ⟨n, hn.2, hn.1⟩
+  -- pick `M` past which `f > N₀`
+  obtain ⟨M, hM⟩ := eventually_atTop.mp (hf.eventually_gt_atTop (N₀ : ℝ))
+  set SM := logSum Set.univ (oddInterval M) with hSMdef
+  have hSM0 : (0 : ℝ) ≤ SM := by
+    rw [hSMdef]; unfold logSum
+    exact Finset.sum_nonneg fun N _ => by positivity
+  -- eventual threshold in `x`
+  obtain ⟨X, hX⟩ := eventually_atTop.mp
+    ((hlogto.eventually_gt_atTop (24 * SM / ε)).and (eventually_ge_atTop 2))
+  refine ⟨X, fun x hx => ?_⟩
+  obtain ⟨hlogx_big, hx2⟩ := hX x hx
+  -- per-`x` objects
+  set D := logSum Set.univ (oddInterval x) with hDdef
+  set Sgood := logSum {N | (syrMin N : ℝ) < f N} (oddInterval x) with hSgooddef
+  set S1 := logSum {N | syrMin N ≤ N₀} (oddInterval x) with hS1def
+  set S2 := logSum {N | N < M} (oddInterval x) with hS2def
+  have hD1 : (1 : ℝ) ≤ D := one_le_logSum_univ_oddInterval hx2
+  have hD0 : (0 : ℝ) < D := lt_of_lt_of_le one_pos hD1
+  have hDlog : Real.log x ≤ 8 * D := log_le_eight_logSum_univ_oddInterval hx2
+  have hSgood0 : (0 : ℝ) ≤ Sgood := by
+    rw [hSgooddef]; unfold logSum
+    exact Finset.sum_nonneg fun N _ => by positivity
+  have hS20 : (0 : ℝ) ≤ S2 := by
+    rw [hS2def]; unfold logSum
+    exact Finset.sum_nonneg fun N _ => by positivity
+  -- `Sgood ≤ D`
+  have hSgoodD : Sgood ≤ D := by
+    rw [hSgooddef, hDdef]; unfold logSum
+    rw [Finset.sum_filter, Finset.sum_filter]
+    refine Finset.sum_le_sum fun N _ => ?_
+    rw [if_pos (Set.mem_univ N)]
+    have h0 : (0 : ℝ) ≤ 1 / (N : ℝ) := by positivity
+    split_ifs <;> linarith
+  -- the split: `{syrMin ≤ N₀} ⊆ {good} ∪ {N < M}` termwise
+  have hkey : S1 ≤ Sgood + S2 := by
+    rw [hS1def, hSgooddef, hS2def]; unfold logSum
+    rw [Finset.sum_filter, Finset.sum_filter, Finset.sum_filter,
+      ← Finset.sum_add_distrib]
+    refine Finset.sum_le_sum fun N _ => ?_
+    by_cases h1 : N ∈ {N | syrMin N ≤ N₀}
+    · rw [if_pos h1]
+      have h1' : syrMin N ≤ N₀ := h1
+      rcases le_or_gt M N with h2 | h2
+      · have hgood : N ∈ {N | (syrMin N : ℝ) < f N} := by
+          simp only [Set.mem_setOf_eq]
+          have hs : (syrMin N : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast h1'
+          exact lt_of_le_of_lt hs (hM N h2)
+        rw [if_pos hgood]
+        have h0 : (0 : ℝ) ≤ 1 / (N : ℝ) := by positivity
+        split_ifs <;> linarith
+      · have hsmall : N ∈ {N | N < M} := h2
+        rw [if_pos hsmall]
+        have h0 : (0 : ℝ) ≤ 1 / (N : ℝ) := by positivity
+        split_ifs <;> linarith
+    · rw [if_neg h1]
+      have h0 : (0 : ℝ) ≤ 1 / (N : ℝ) := by positivity
+      split_ifs <;> linarith
+  -- `S2 ≤ SM` (the small terms live in `oddInterval M`)
+  have hS2SM : S2 ≤ SM := by
+    rw [hS2def, hSMdef]; unfold logSum
+    refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun N _ _ => by positivity
+    intro N hN
+    simp only [Finset.mem_filter] at hN ⊢
+    obtain ⟨hNi, hNM⟩ := hN
+    have hNM' : N < M := hNM
+    simp only [oddInterval, Finset.mem_filter, Finset.mem_range] at hNi ⊢
+    exact ⟨⟨by omega, hNi.2⟩, Set.mem_univ N⟩
+  -- `S2/D < ε/3` from `24·SM/ε < log x ≤ 8D`
+  have hS2D : S2 / D < ε / 3 := by
+    have h1 : 24 * SM / ε < 8 * D := lt_of_lt_of_le hlogx_big hDlog
+    have h2 : 24 * SM < 8 * D * ε := (div_lt_iff₀ hε).mp h1
+    rw [div_lt_iff₀ hD0]
+    nlinarith [hS2SM]
+  -- quantitative bound at `N₀`
+  have hq' : 1 - Cb / (Real.log N₀) ^ cb ≤ S1 / D := hq N₀ x hN₀2 hx2
+  -- assemble
+  have hp_eq : logProb {N | (syrMin N : ℝ) < f N} (oddInterval x) = Sgood / D := rfl
+  have h2 : S1 / D ≤ Sgood / D + S2 / D := by
+    rw [← add_div]
+    gcongr
+  have hp_ge : 1 - 2 * ε / 3 < Sgood / D := by
+    have := hN₀ε
+    linarith
+  have hp_le : Sgood / D ≤ 1 := by
+    rw [div_le_one hD0]
+    exact hSgoodD
+  rw [hp_eq, Real.dist_eq, abs_of_nonpos (by linarith)]
+  linarith
 
 /-! ## The (1.2) odd-part reduction — bridge lemmas
 
