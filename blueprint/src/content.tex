@@ -364,8 +364,18 @@ values) which in turn follows from the \textbf{quantitative Theorem 3.1}: there 
 \]
 Thm~3.1 is obtained from the stabilization estimate Prop~1.11 (node~\ref{C9}) by iterating
 over dyadic scales (§3).
-\lapsrisk{8--15}{low}{85\%}
+\lapsrisk{0}{done}{100\%}
 \end{theorem}
+\begin{proof}
+  \leanok
+  \uses{C6s}
+  🏔️ \textbf{THE SUMMIT} (2026-07-15, \texttt{8ccd1a2}/\texttt{9f17733}): both frozen
+  \texttt{Statement.lean} stubs discharged by \texttt{exact} from the C6s spine — the only
+  edit that file ever receives.  Kernel-checked axiom-clean host-side, 114 declarations
+  (\texttt{blueprint\_audit} 2026-07-15, 0 drift, 0 false-green).  Judge ratification reads
+  still owed on the C6 pins (ratify-on-pin flags stand); flips under the trust-the-treadmill
+  ruling.
+\end{proof}
 
 % ---- C6 intermediates, pinned 2026-07-15 (directive step 2: the §3 reduction chain) ----
 % All \notready pending judge ratification (rule 1: never self-\leanok).  Statements live in
@@ -417,8 +427,13 @@ qualitatively, an almost-all-odd property pulls back along \(\mathrm{oddPart}\) 
 almost-all on \(\mathbb{N}+1\).  Rests on the proved \(\mathrm{Colmin}=
 \mathrm{Syrmin}\circ\mathrm{oddPart}\) (node~\ref{C1}).  Trap: check15 (constant 2 exact
 and \(>1.8\)-tight, so a constant-1 mis-rendering fails).
-\lapsrisk{2--4}{low}{90\%}
+\lapsrisk{0}{done}{100\%}
 \end{lemma}
+\begin{proof}
+  \leanok
+  Kernel-clean, both forms (\texttt{42fb97c} half 1, \texttt{3de7831} half 2;
+  \texttt{blueprint\_audit} 2026-07-15).  Trust-the-treadmill flip; judge flip-back allowed.
+\end{proof}
 
 \begin{theorem}[Headline spine: Thm 1.3 and Thm 3.1-Colmin from the intermediates]\label{C6s}
   \lean{tao_collatz_spine, tao_collatz_quantitative_spine}
@@ -429,8 +444,14 @@ close, the frozen sorries discharge by \texttt{exact} (the only edit
 \texttt{Statement.lean} ever receives).  Quantitative route: C6a(sum form) + C6c +
 harmonic-mass bounds on the full window.  Headline route: C6b at \(\tilde f\) + C6c +
 \(\mathrm{oddPart}(N)\le N\).
-\lapsrisk{2--5}{low}{85\%}
+\lapsrisk{0}{done}{100\%}
 \end{theorem}
+\begin{proof}
+  \leanok
+  Kernel-clean, both spines (\texttt{8ccd1a2}; \texttt{blueprint\_audit} 2026-07-15).
+  Statements byte-identical to the frozen headlines, so the stubs discharged by
+  \texttt{exact}.  Trust-the-treadmill flip; judge flip-back allowed.
+\end{proof}
 
 \section{First passage (§5)}
 
