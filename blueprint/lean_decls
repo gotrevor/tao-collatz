@@ -41,6 +41,13 @@ unifOddMod
 valVec_pos
 tao_collatz
 tao_collatz_quantitative
+tao_syracuse_quantitative_sum
+tao_syracuse_quantitative
+tao_syracuse
+logSum_oddPart_pullback
+almostAllPos_oddPart_of_almostAllOdd
+tao_collatz_spine
+tao_collatz_quantitative_spine
 passes
 passTime
 passLoc
@@ -50,6 +57,9 @@ alpha
 first_passage_nonescape
 first_passage_approx
 stabilization
+perNHarmonic_eq_harmZfine_approx
+harmZfine_to_mainZ
+perNTerm_harmonic_approx
 fine_scale_mixing
 fCond
 xArg
