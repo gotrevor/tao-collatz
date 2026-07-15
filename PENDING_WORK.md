@@ -1,3 +1,34 @@
+## 2026-07-15 — ✅ `cn_bound` PROVED (crude `c_n ≤ 4·log^{0.7}x`) — axiom-clean. Census 7 sorries + 0 orange.
+
+**Advance on the crux:** the shared B1+B2 prerequisite `cn_bound` is CLOSED (`30c5f68`, believed
+axiom-clean `[propext, Classical.choice, Quot.sound]`). New self-contained helper `cn_window_size`
+(Stabilization.lean, before `cn_bound`): for `x ≥ exp(1024)`, fine scale `k ≤ n₀`, the (5.10) window
+`[lo,hi] = [exp(∓log^{0.7}x)(4/3)^m x]` satisfies `2·3^k+2 ≤ lo`, `2·lo ≤ hi`, `hi = exp(2 log^{0.7}x)·lo`.
+Core: `3^k ≤ x^{1/5}` (`three_pow_nZero_le`) + sub-linear gain `log^{0.7}x ≤ (1/8)log x` (from
+`log^{0.3}x ≥ 1024^{0.3}=8`) ⟹ `log^{0.7}x + log4 ≤ (4/5)log x` ⟹ `4·x^{1/5} ≤ exp(−log^{0.7}x)·x ≤ lo`.
+`cn_bound` = Eprime-mask ≤ window-mask termwise (`Summable.tsum_le_tsum`) → `harmonic_class_window_bound`
+(the proved integral-test core) → `×3^{n−m₀}` → `log((hi+q)/lo)+q/lo ≤ log2 + 2log^{0.7}x + 1 ≤ 4log^{0.7}x`.
+
+**Next attack (hardest-first): B2 `harmZfine_to_mainZ` (Stabilization.lean ~725) — THE C10 SEAM.**
+Now unblocked (`cn_bound` available). Pin its two sub-sorries: (a) the osc-identity
+`harmZfine − mainZ = ∑_X [syracZ(n−m₀)(X) − fiber_avg(X)]·c_n(X)` (via `syracZ_map_cast`,
+`fiber_avg(X)=3^{m₀−(n−m₀)}·syracZ(m₀)(X mod 3^{m₀})`), (b) the L¹×L∞ Hölder step
+`|·| ≤ (sup_X c_n)·osc ≤ cn_bound × fine_scale_mixing`. Then B1 `perNHarmonic_eq_harmZfine_approx`
+(~705): `𝔼[1_{¬good}·c_n] ≤ (sup c_n)·ℙ(¬good) ≤ cn_bound × approx_good_tuple_whp`. Then cheap leaves
+`Iy_count_ratio` (~828), `mainZ_bound` (~305), `perNTerm_harmonic_approx` (~334) → C9 axiom-clean → C6.
+
+**Corpus-worthy gotchas this lap:** (i) `set a := e` is NOT reliably defeq to `e` — a later `show`/`rw`
+against the unfolded def (`rw [cn]`) FAILS ("pattern not found" / "not defeq"); keep the shared subterm
+(`n − mZero x`, `3^{n−mZero x}`) EXPLICIT so the unfolded goal matches, and bridge same-Prop `if`
+Decidable instances via `le_trans` (defeq by `Decidable` subsingleton) rather than folding. (ii)
+`rw [← hkdef]` folding a subterm that occurs in a DEPENDENT type (`X : ZMod (3^(n−mZero x))`) → "motive
+is not type correct"; don't fold it. (iii) A multi-line `if … then … else 0` as a `calc` first term
+mis-parses (`else (0 ≤ …)`); parenthesize the `∑'`/`if`. (iv) `1 = 1^(1/5)` via `rw` rewrites the `1`
+inside `1/5` too — use `calc` with `(Real.one_rpow _).symm` instead. (v) `1024^{0.3}=8` cleanly:
+`rw [show 0.3=3/10, show 1024=2^(10:ℕ), ← Real.rpow_natCast, ← Real.rpow_mul, show (10:ℕ)*(3/10)=(3:ℕ), Real.rpow_natCast]; norm_num`.
+
+---
+
 ## Review lap (cont.) — 2026-07-15 — ✅ SOURCE READ pp.25–27: B2 route CORRECTED + Lemma 5.3 pinned
 
 **Read Tao pp.25–27 (PDF) for the (5.20)/(5.21) `Z`-reduction — the C10 seam.** This CORRECTS the B2
