@@ -2648,7 +2648,106 @@ orbit that already passed (`≤ x`, decreasing) can NEVER re-attain the `(4/3)^{
 theorem earlyReturn_size_contra : ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
     (3 / 4 : ℝ) * x * (2 : ℝ) ^ (2 * Real.log x ^ (0.6 : ℝ)) + x ^ ((1 : ℝ) / 5)
       < Real.exp (-Real.log x ^ (0.7 : ℝ)) * (4 / 3 : ℝ) ^ mZero x * x := by
-  sorry
+  have hβpos : (0 : ℝ) < (alpha - 1) / 100 := by unfold alpha; norm_num
+  have hlg43pos : (0 : ℝ) < Real.log (4 / 3) := Real.log_pos (by norm_num)
+  have hlg2pos : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hlg2le1 : Real.log 2 ≤ 1 := by
+    have : Real.log 2 ≤ Real.log (Real.exp 1) :=
+      Real.log_le_log (by norm_num) (by linarith [Real.add_one_le_exp (1 : ℝ)])
+    rwa [Real.log_exp] at this
+  have hlg43le1 : Real.log (4 / 3) ≤ 1 := by
+    have : Real.log (4 / 3) ≤ Real.log (Real.exp 1) :=
+      Real.log_le_log (by norm_num) (by linarith [Real.add_one_le_exp (1 : ℝ)])
+    rwa [Real.log_exp] at this
+  set θ := 5 / ((alpha - 1) / 100 * Real.log (4 / 3)) with hθdef
+  have hθpos : 0 < θ := by rw [hθdef]; positivity
+  refine ⟨Real.exp (max 1 ((θ + 1) ^ (10 / 3 : ℝ))),
+    Real.one_le_exp_iff.mpr (le_trans zero_le_one (le_max_left _ _)), fun x hx => ?_⟩
+  have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hx
+  have hx1 : (1 : ℝ) ≤ x :=
+    le_trans (Real.one_le_exp_iff.mpr (le_trans zero_le_one (le_max_left _ _))) hx
+  have hLge : max 1 ((θ + 1) ^ (10 / 3 : ℝ)) ≤ Real.log x := by
+    have := Real.log_le_log (Real.exp_pos _) hx
+    rwa [Real.log_exp] at this
+  have hL1 : (1 : ℝ) ≤ Real.log x := le_trans (le_max_left _ _) hLge
+  have hLpos : (0 : ℝ) < Real.log x := lt_of_lt_of_le zero_lt_one hL1
+  set L06 := Real.log x ^ (0.6 : ℝ) with hL06def
+  set L07 := Real.log x ^ (0.7 : ℝ) with hL07def
+  have hL07pos : (0 : ℝ) < L07 := Real.rpow_pos_of_pos hLpos _
+  have h1L07 : (1 : ℝ) ≤ L07 := Real.one_le_rpow hL1 (by norm_num)
+  have hL06nn : (0 : ℝ) ≤ L06 := (Real.rpow_pos_of_pos hLpos _).le
+  have hL0607 : L06 ≤ L07 := Real.rpow_le_rpow_of_exponent_le hL1 (by norm_num)
+  have hm0R : (alpha - 1) / 100 * Real.log x - 1 < (mZero x : ℝ) := by
+    have h := Nat.lt_floor_add_one ((alpha - 1) / 100 * Real.log x)
+    have heq : (mZero x : ℝ) = (⌊(alpha - 1) / 100 * Real.log x⌋₊ : ℝ) := rfl
+    rw [heq]; linarith
+  have h43m0 : Real.exp (Real.log (4 / 3) * ((alpha - 1) / 100 * Real.log x - 1))
+      ≤ (4 / 3 : ℝ) ^ mZero x := by
+    rw [← Real.rpow_natCast (4 / 3 : ℝ) (mZero x),
+      ← Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 4 / 3)]
+    exact Real.rpow_le_rpow_of_exponent_le (by norm_num : (1 : ℝ) ≤ 4 / 3) hm0R.le
+  -- master polynomial inequality: sublinear LHS < linear RHS
+  have hmaster : Real.log 2 + 2 * L06 * Real.log 2 + L07 + Real.log (4 / 3)
+      < (alpha - 1) / 100 * Real.log (4 / 3) * Real.log x := by
+    have hupper : Real.log 2 + 2 * L06 * Real.log 2 + L07 + Real.log (4 / 3) ≤ 5 * L07 := by
+      nlinarith [hlg2le1, hlg43le1, hL0607, h1L07, hL06nn, hlg2pos.le,
+        mul_le_mul_of_nonneg_left hlg2le1 hL06nn]
+    have hL03 : θ < Real.log x ^ (0.3 : ℝ) := by
+      have hpow : ((θ + 1) ^ (10 / 3 : ℝ)) ^ (0.3 : ℝ) = θ + 1 := by
+        rw [← Real.rpow_mul (by positivity), show (10 / 3 : ℝ) * 0.3 = 1 by norm_num, Real.rpow_one]
+      have hmono : ((θ + 1) ^ (10 / 3 : ℝ)) ^ (0.3 : ℝ) ≤ Real.log x ^ (0.3 : ℝ) :=
+        Real.rpow_le_rpow (by positivity) (le_trans (le_max_right _ _) hLge) (by norm_num)
+      rw [hpow] at hmono; linarith
+    have hLsplit : L07 * Real.log x ^ (0.3 : ℝ) = Real.log x := by
+      rw [hL07def, ← Real.rpow_add hLpos, show (0.7 : ℝ) + 0.3 = 1 by norm_num, Real.rpow_one]
+    have hkey : θ * ((alpha - 1) / 100 * Real.log (4 / 3)) = 5 := by
+      rw [hθdef]; exact div_mul_cancel₀ 5 (by positivity)
+    have hstepb : 5 * L07 < (alpha - 1) / 100 * Real.log (4 / 3) * Real.log x := by
+      have hpos : (0 : ℝ) < (alpha - 1) / 100 * Real.log (4 / 3) := by positivity
+      have h5 : 5 < Real.log x ^ (0.3 : ℝ) * ((alpha - 1) / 100 * Real.log (4 / 3)) := by
+        nlinarith [mul_lt_mul_of_pos_right hL03 hpos, hkey]
+      rw [← hLsplit]
+      nlinarith [mul_lt_mul_of_pos_right h5 hL07pos]
+    linarith [hupper, hstepb]
+  -- exp conversions
+  have hxexp : x = Real.exp (Real.log x) := (Real.exp_log hxpos).symm
+  have hLHS : (3 / 4 : ℝ) * x * (2 : ℝ) ^ (2 * L06) + x ^ ((1 : ℝ) / 5)
+      ≤ Real.exp (Real.log x + Real.log 2 + 2 * L06 * Real.log 2) := by
+    have h2pos : (0 : ℝ) < (2 : ℝ) ^ (2 * L06) := Real.rpow_pos_of_pos (by norm_num) _
+    have h2ge1 : (1 : ℝ) ≤ (2 : ℝ) ^ (2 * L06) := Real.one_le_rpow (by norm_num) (by positivity)
+    have hx15 : x ^ ((1 : ℝ) / 5) ≤ x := by
+      have := Real.rpow_le_rpow_of_exponent_le hx1 (by norm_num : (1 : ℝ) / 5 ≤ 1)
+      rwa [Real.rpow_one] at this
+    have hstep1 : (3 / 4 : ℝ) * x * (2 : ℝ) ^ (2 * L06) + x ^ ((1 : ℝ) / 5)
+        ≤ 2 * x * (2 : ℝ) ^ (2 * L06) := by
+      have hxx : x ^ ((1 : ℝ) / 5) ≤ x * (2 : ℝ) ^ (2 * L06) :=
+        le_trans hx15 (le_mul_of_one_le_right hxpos.le h2ge1)
+      nlinarith [hxx, mul_nonneg hxpos.le h2pos.le]
+    have hexpeq : 2 * x * (2 : ℝ) ^ (2 * L06)
+        = Real.exp (Real.log x + Real.log 2 + 2 * L06 * Real.log 2) := by
+      have ha : (2 : ℝ) * (2 : ℝ) ^ (2 * L06) = (2 : ℝ) ^ (1 + 2 * L06) := by
+        rw [Real.rpow_add (by norm_num : (0 : ℝ) < 2), Real.rpow_one]
+      calc 2 * x * (2 : ℝ) ^ (2 * L06)
+          = x * ((2 : ℝ) * (2 : ℝ) ^ (2 * L06)) := by ring
+        _ = x * (2 : ℝ) ^ (1 + 2 * L06) := by rw [ha]
+        _ = Real.exp (Real.log x) * Real.exp (Real.log 2 * (1 + 2 * L06)) := by
+            rw [Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 2), ← hxexp]
+        _ = Real.exp (Real.log x + Real.log 2 * (1 + 2 * L06)) := (Real.exp_add _ _).symm
+        _ = Real.exp (Real.log x + Real.log 2 + 2 * L06 * Real.log 2) := by congr 1; ring
+    exact le_trans hstep1 hexpeq.le
+  have hRHS : Real.exp (Real.log x + Real.log (4 / 3) * ((alpha - 1) / 100 * Real.log x - 1) - L07)
+      ≤ Real.exp (-L07) * (4 / 3 : ℝ) ^ mZero x * x := by
+    have key : Real.exp (-L07)
+          * Real.exp (Real.log (4 / 3) * ((alpha - 1) / 100 * Real.log x - 1))
+          * Real.exp (Real.log x)
+        = Real.exp (Real.log x + Real.log (4 / 3) * ((alpha - 1) / 100 * Real.log x - 1) - L07) := by
+      rw [← Real.exp_add, ← Real.exp_add]; congr 1; ring
+    rw [← key]
+    exact mul_le_mul (mul_le_mul_of_nonneg_left h43m0 (Real.exp_pos _).le) hxexp.ge
+      (Real.exp_pos _).le (by positivity)
+  refine lt_of_le_of_lt hLHS (lt_of_lt_of_le ?_ hRHS)
+  rw [Real.exp_lt_exp]
+  nlinarith [hmaster]
 
 open Classical in
 /-- **(5.17) reverse leg — the early-return event is EMPTY for large `x`** (PROVED modulo the analytic
