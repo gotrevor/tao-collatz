@@ -295,14 +295,9 @@ theorem perNTerm_pointmass (x : ℝ) (E : Set ℕ) (y : ℝ) (n : ℕ) :
       simp
   · rw [if_neg hcond, if_neg hcond]
 
-/-- **`mainZ` is `O(1)`** — the y-free quantity `Z` (5.21) is bounded uniformly (it is a probability-
-weighted harmonic average over `E'`, and `#E'·(mass/M)` telescopes to `O(1)`; equivalently `Z ≍
-(log(4/3)/2)·ℙ(Pass∈E) = O(1)`).  Needed so the multiplicative `(5.19)`/`(5.9)` errors on `mainZ` stay
-`O(log^{-c})`. -/
-theorem mainZ_bound :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
-      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C := by
-  sorry
+-- **`mainZ` is `O(1)`** (`mainZ_bound`): stated and PROVED *below*, after `harmonic_to_Z` —
+-- its proof runs Tao's a-posteriori route `Z ≍ (log(4/3)/2)·ℙ(Pass∈E) = O(1)` (p.26) through the
+-- (5.19)/(5.20) reductions and Prop 5.2, all of which live later in this file.
 
 open Classical in
 /-- **The window-free harmonic content of the per-`n` term (5.20 LHS).**
@@ -2169,6 +2164,318 @@ theorem harmonic_to_Z :
         add_le_add (mul_le_mul_of_nonneg_left hLc1 hC1.le)
           (mul_le_mul_of_nonneg_left hLc2 hC2.le)
     _ = (C1 + C2) * L ^ (-(min c1 c2)) := by ring
+
+/-- An indicator expectation is at most the total mass `1`. -/
+theorem PMF.expect_indicator_le_one {α : Type*} (p : PMF α) (S : Set α) :
+    p.expect (Set.indicator S 1) ≤ 1 := by
+  have hsum1 : Summable (fun a => (p a).toReal) :=
+    ENNReal.summable_toReal (by rw [p.tsum_coe]; exact ENNReal.one_ne_top)
+  have htot : ∑' a, (p a).toReal = 1 := by
+    rw [← ENNReal.tsum_toReal_eq (fun a => p.apply_ne_top a), p.tsum_coe]; simp
+  have hterm : ∀ a, (p a).toReal * Set.indicator S 1 a ≤ (p a).toReal := by
+    intro a
+    by_cases h : a ∈ S
+    · rw [Set.indicator_of_mem h]; simp
+    · rw [Set.indicator_of_notMem h]; simp
+  have htermnn : ∀ a, 0 ≤ (p a).toReal * Set.indicator S 1 a := fun a =>
+    mul_nonneg ENNReal.toReal_nonneg (Set.indicator_nonneg (fun _ _ => zero_le_one) a)
+  have hfs : Summable (fun a => (p a).toReal * Set.indicator S 1 a) :=
+    Summable.of_nonneg_of_le htermnn hterm hsum1
+  calc p.expect (Set.indicator S 1) = ∑' a, (p a).toReal * Set.indicator S 1 a := rfl
+    _ ≤ ∑' a, (p a).toReal := hfs.tsum_le_tsum hterm hsum1
+    _ = 1 := htot
+
+-- HEARTBEAT: floor/ceiling lattice count over rpow window endpoints; many small linarith calls
+-- over rpow atoms exhaust the default per-declaration budget cumulatively.
+set_option maxHeartbeats 800000 in
+/-- **`#I_y` lattice bracket** — the integer count of the (5.9) interval is its real length
+`(α−1)·log y/log(4/3) − 2·log^{0.8}x` up to `±1`.  Elementary floor/ceiling count once the window
+is wide (`≥ 0.002·log x`) and sits inside `[0, n₀]`.  Lower half feeds `mainZ_bound` (via the
+a-posteriori `Z ≪ 1`); both halves are the lattice core of `Iy_count_ratio` (5.9). -/
+theorem Iy_card_bracket :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      (alpha - 1) * Real.log y / Real.log (4 / 3) - 2 * Real.log x ^ (0.8 : ℝ) - 1
+          ≤ ((Iy x y).card : ℝ)
+        ∧ ((Iy x y).card : ℝ)
+          ≤ (alpha - 1) * Real.log y / Real.log (4 / 3) - 2 * Real.log x ^ (0.8 : ℝ) + 1 := by
+  refine ⟨Real.exp ((2000 : ℝ) ^ (5 : ℕ)), fun x hx y hy => ?_⟩
+  have hyval : y = x ^ alpha ∨ y = x ^ alpha ^ 2 := by simpa [Set.mem_insert_iff] using hy
+  have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hx
+  have hLT5 : (2000 : ℝ) ^ (5 : ℕ) ≤ Real.log x := by
+    rw [← Real.log_exp ((2000 : ℝ) ^ (5 : ℕ))]
+    exact Real.log_le_log (Real.exp_pos _) hx
+  have hLbig : (3.2e16 : ℝ) ≤ Real.log x := by
+    rw [show (3.2e16 : ℝ) = (2000 : ℝ) ^ (5 : ℕ) by norm_num]; exact hLT5
+  have hLpos : (0 : ℝ) < Real.log x := by linarith
+  have hy0 : (0 : ℝ) < y := by
+    rcases hyval with h | h <;> rw [h] <;> exact Real.rpow_pos_of_pos hxpos _
+  have halpha1 : (0 : ℝ) < alpha - 1 := by norm_num [alpha]
+  have hly_ge : Real.log x ≤ Real.log y := by
+    rcases hyval with h | h
+    · rw [h, Real.log_rpow hxpos]
+      nlinarith [mul_nonneg (show (0 : ℝ) ≤ alpha - 1 by norm_num [alpha]) hLpos.le]
+    · rw [h, Real.log_rpow hxpos]
+      nlinarith [mul_nonneg (show (0 : ℝ) ≤ alpha ^ 2 - 1 by norm_num [alpha]) hLpos.le]
+  have hlynn : (0 : ℝ) ≤ Real.log y := le_trans hLpos.le hly_ge
+  have hly_le : Real.log y ≤ alpha ^ 2 * Real.log x := by
+    rcases hyval with h | h
+    · rw [h, Real.log_rpow hxpos]
+      nlinarith [mul_nonneg (show (0 : ℝ) ≤ alpha ^ 2 - alpha by norm_num [alpha]) hLpos.le]
+    · rw [h, Real.log_rpow hxpos]
+  have hlog43pos : (0 : ℝ) < Real.log (4 / 3) := Real.log_pos (by norm_num)
+  have hlog43_ub : Real.log (4 / 3) ≤ 1 / 3 := by
+    have := Real.log_le_sub_one_of_pos (show (0 : ℝ) < 4 / 3 by norm_num); linarith
+  have hlog43_lb : (1 / 4 : ℝ) ≤ Real.log (4 / 3) := by
+    have h34 : Real.log (3 / 4) ≤ 3 / 4 - 1 :=
+      Real.log_le_sub_one_of_pos (by norm_num)
+    have hinv : Real.log (4 / 3) = -Real.log (3 / 4) := by
+      rw [show (3 : ℝ) / 4 = (4 / 3)⁻¹ by norm_num, Real.log_inv, neg_neg]
+    linarith [hinv]
+  -- `log^{0.8}x ≤ log x/2000`
+  have h02 : (2000 : ℝ) ≤ Real.log x ^ (0.2 : ℝ) := by
+    have hcomp : ((2000 : ℝ) ^ (5 : ℕ)) ^ (0.2 : ℝ) = 2000 := by
+      rw [← Real.rpow_natCast (2000 : ℝ) 5, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2000),
+        show ((5 : ℕ) : ℝ) * (0.2 : ℝ) = 1 by norm_num, Real.rpow_one]
+    calc (2000 : ℝ) = ((2000 : ℝ) ^ (5 : ℕ)) ^ (0.2 : ℝ) := hcomp.symm
+      _ ≤ Real.log x ^ (0.2 : ℝ) := Real.rpow_le_rpow (by positivity) hLT5 (by norm_num)
+  have hsplit : Real.log x ^ (0.2 : ℝ) * Real.log x ^ (0.8 : ℝ) = Real.log x := by
+    rw [← Real.rpow_add hLpos, show (0.2 : ℝ) + 0.8 = 1 by norm_num, Real.rpow_one]
+  have h08nn : (0 : ℝ) ≤ Real.log x ^ (0.8 : ℝ) := Real.rpow_nonneg hLpos.le _
+  have hL08 : Real.log x ^ (0.8 : ℝ) ≤ Real.log x / 2000 := by
+    rw [le_div_iff₀ (by norm_num : (0 : ℝ) < 2000)]
+    nlinarith [mul_le_mul_of_nonneg_right h02 h08nn, hsplit]
+  -- endpoint values and the width
+  have hIyHi_eq : IyHi x y
+      = (alpha * Real.log y - Real.log x) / Real.log (4 / 3) - Real.log x ^ (0.8 : ℝ) := by
+    rw [IyHi, Real.log_div (Real.rpow_pos_of_pos hy0 alpha).ne' hxpos.ne', Real.log_rpow hy0]
+  have hIyLo_eq : IyLo x y
+      = (Real.log y - Real.log x) / Real.log (4 / 3) + Real.log x ^ (0.8 : ℝ) := by
+    rw [IyLo, Real.log_div hy0.ne' hxpos.ne']
+  have hW : IyHi x y - IyLo x y
+      = (alpha - 1) * Real.log y / Real.log (4 / 3) - 2 * Real.log x ^ (0.8 : ℝ) := by
+    rw [hIyHi_eq, hIyLo_eq]; ring
+  -- width lower bound `≥ 0.002·log x`
+  have hwidth_term : 3 * ((alpha - 1) * Real.log y)
+      ≤ (alpha - 1) * Real.log y / Real.log (4 / 3) := by
+    rw [le_div_iff₀ hlog43pos]
+    have h3nn : (0 : ℝ) ≤ 3 * ((alpha - 1) * Real.log y) :=
+      mul_nonneg (by norm_num) (mul_nonneg halpha1.le hlynn)
+    nlinarith [mul_le_mul_of_nonneg_left hlog43_ub h3nn]
+  have hkey1 : 0.003 * Real.log x ≤ 3 * ((alpha - 1) * Real.log y) := by
+    nlinarith [mul_le_mul_of_nonneg_left hly_ge
+        (show (0 : ℝ) ≤ 3 * (alpha - 1) by norm_num [alpha]),
+      mul_le_mul_of_nonneg_right (show (0.003 : ℝ) ≤ 3 * (alpha - 1) by norm_num [alpha])
+        hLpos.le]
+  have hwidth : 0.002 * Real.log x ≤ IyHi x y - IyLo x y := by
+    rw [hW]; linarith [hwidth_term, hL08, hkey1]
+  -- endpoints sit in `[0, n₀]`
+  have hIyLo_nn : (0 : ℝ) ≤ IyLo x y := by
+    rw [hIyLo_eq]
+    have : (0 : ℝ) ≤ (Real.log y - Real.log x) / Real.log (4 / 3) :=
+      div_nonneg (by linarith [hly_ge]) hlog43pos.le
+    linarith [h08nn]
+  have hIyHi_nn : (0 : ℝ) ≤ IyHi x y := by linarith [hwidth, hIyLo_nn, hLpos]
+  have hIyHi_le_nZ : IyHi x y ≤ (nZero x : ℝ) := by
+    have hann : (0 : ℝ) ≤ alpha * Real.log y - Real.log x := by
+      have h := mul_le_mul_of_nonneg_right (show (1 : ℝ) ≤ alpha by norm_num [alpha]) hlynn
+      rw [one_mul] at h
+      linarith [hly_ge]
+    have hup : alpha * Real.log y - Real.log x ≤ 0.0031 * Real.log x := by
+      have h1 := mul_le_mul_of_nonneg_left hly_le (show (0 : ℝ) ≤ alpha by norm_num [alpha])
+      have h2 := mul_le_mul_of_nonneg_right
+        (show alpha * alpha ^ 2 ≤ 1.0031 by norm_num [alpha]) hLpos.le
+      nlinarith [h1, h2]
+    have hdiv4 : (alpha * Real.log y - Real.log x) / Real.log (4 / 3)
+        ≤ 4 * (alpha * Real.log y - Real.log x) := by
+      rw [div_le_iff₀ hlog43pos]
+      nlinarith [mul_le_mul_of_nonneg_left hlog43_lb hann]
+    have hlog2ub : Real.log 2 < 0.6931471808 := Real.log_two_lt_d9
+    have hnZ : Real.log x / 7 - 1 ≤ (nZero x : ℝ) := by
+      have hlog2pos : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+      have hfl := Nat.lt_floor_add_one (Real.log x / (10 * Real.log 2))
+      have h7 : Real.log x / 7 ≤ Real.log x / (10 * Real.log 2) := by
+        rw [div_le_div_iff₀ (by norm_num) (by positivity)]
+        nlinarith [hLpos.le, hlog2ub]
+      rw [nZero]
+      linarith [hfl, h7]
+    rw [hIyHi_eq]
+    linarith [hdiv4, hup, hnZ, hLbig, h08nn]
+  -- the integer interval
+  have haR_lt : ((⌈IyLo x y⌉₊ : ℝ)) < IyLo x y + 1 := Nat.ceil_lt_add_one hIyLo_nn
+  have haR_ge : IyLo x y ≤ ((⌈IyLo x y⌉₊ : ℝ)) := Nat.le_ceil _
+  have hbR_gt : IyHi x y - 1 < ((⌊IyHi x y⌋₊ : ℝ)) := by
+    have := Nat.lt_floor_add_one (IyHi x y); linarith
+  have hbR_le : ((⌊IyHi x y⌋₊ : ℝ)) ≤ IyHi x y := Nat.floor_le hIyHi_nn
+  have hab : ⌈IyLo x y⌉₊ ≤ ⌊IyHi x y⌋₊ := by
+    have : ((⌈IyLo x y⌉₊ : ℝ)) < ((⌊IyHi x y⌋₊ : ℝ)) := by linarith [hwidth, hLbig]
+    exact_mod_cast this.le
+  have hsub1 : Finset.Icc ⌈IyLo x y⌉₊ ⌊IyHi x y⌋₊ ⊆ Iy x y := by
+    intro n hn
+    rw [Finset.mem_Icc] at hn
+    rw [Iy, Finset.mem_filter, Finset.mem_range]
+    have h1 : IyLo x y ≤ (n : ℝ) := le_trans haR_ge (by exact_mod_cast hn.1)
+    have h2 : (n : ℝ) ≤ IyHi x y := le_trans (by exact_mod_cast hn.2) hbR_le
+    have h4 : n ≤ nZero x := by exact_mod_cast le_trans h2 hIyHi_le_nZ
+    exact ⟨by omega, h1, h2⟩
+  have hsub2 : Iy x y ⊆ Finset.Icc ⌈IyLo x y⌉₊ ⌊IyHi x y⌋₊ := by
+    intro n hn
+    rw [Iy, Finset.mem_filter] at hn
+    rw [Finset.mem_Icc]
+    exact ⟨Nat.ceil_le.mpr hn.2.1, Nat.le_floor hn.2.2⟩
+  have hcardR : ((Finset.Icc ⌈IyLo x y⌉₊ ⌊IyHi x y⌋₊).card : ℝ)
+      = ((⌊IyHi x y⌋₊ : ℝ)) + 1 - ((⌈IyLo x y⌉₊ : ℝ)) := by
+    rw [Nat.card_Icc, Nat.cast_sub (by omega : ⌈IyLo x y⌉₊ ≤ ⌊IyHi x y⌋₊ + 1)]
+    push_cast; ring
+  have hle1 : ((Finset.Icc ⌈IyLo x y⌉₊ ⌊IyHi x y⌋₊).card : ℝ) ≤ ((Iy x y).card : ℝ) := by
+    exact_mod_cast Finset.card_le_card hsub1
+  have hle2 : ((Iy x y).card : ℝ) ≤ ((Finset.Icc ⌈IyLo x y⌉₊ ⌊IyHi x y⌋₊).card : ℝ) := by
+    exact_mod_cast Finset.card_le_card hsub2
+  constructor
+  · rw [← hW]; linarith [hle1, hcardR, haR_lt, hbR_gt]
+  · rw [← hW]; linarith [hle2, hcardR, haR_ge, hbR_le]
+
+-- HEARTBEAT: assembles four ∃-lemmas and a lattice count; the cumulative linarith/nlinarith
+-- budget exceeds the default.
+set_option maxHeartbeats 800000 in
+/-- **`mainZ` is `O(1)`** — via Tao's a-posteriori route (p.26): `Z ≍ (log(4/3)/2)·ℙ(Pass∈E) = O(1)`.
+Non-circular assembly from PROVED pieces: for every `n ∈ I_y` (at `y = x^α`),
+`perNTerm ≥ (mainZ − O(1))/norm` by the (5.19) reduction (`perNTerm_harmonic_approx`) and the
+(5.20) `Z`-reduction (`harmonic_to_Z`); summing over the `≥ 0.001·log x` values of `n`
+(`Iy_card_bracket`) gives `#I_y·(mainZ − O(1))/norm ≤ approxMainTerm ≤ 1 + O(log^{-c}x)` by
+Prop 5.2 (`first_passage_approx`, C8) and `ℙ ≤ 1`; since `#I_y/norm ≫ 1`, `mainZ ≪ 1`. -/
+theorem mainZ_bound :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C := by
+  classical
+  obtain ⟨cA, CA, xA, hcA, hCA, hA⟩ := perNTerm_harmonic_approx
+  obtain ⟨cB, CB, xB, hcB, hCB, hB⟩ := harmonic_to_Z
+  obtain ⟨c8, C8, x8, hc8, hC8, h8⟩ := first_passage_approx
+  obtain ⟨xI, hIcard⟩ := Iy_card_bracket
+  refine ⟨CA + CB + 1000 * (1 + C8), max (max xA xB)
+      (max x8 (max xI (Real.exp ((2000 : ℝ) ^ (5 : ℕ))))),
+    by positivity, fun x hx E hE => ?_⟩
+  simp only [max_le_iff] at hx
+  obtain ⟨⟨hxA, hxB⟩, hx8, hxI, hxT⟩ := hx
+  have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hxT
+  have hLT5 : (2000 : ℝ) ^ (5 : ℕ) ≤ Real.log x := by
+    rw [← Real.log_exp ((2000 : ℝ) ^ (5 : ℕ))]
+    exact Real.log_le_log (Real.exp_pos _) hxT
+  have hLbig : (3.2e16 : ℝ) ≤ Real.log x := by
+    rw [show (3.2e16 : ℝ) = (2000 : ℝ) ^ (5 : ℕ) by norm_num]; exact hLT5
+  have hLpos : (0 : ℝ) < Real.log x := by linarith
+  have hL1 : (1 : ℝ) ≤ Real.log x := by linarith
+  -- work in the window `y = x^α`
+  have hy : (x ^ alpha) ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ) := Set.mem_insert _ _
+  have hlogy : Real.log (x ^ alpha) = alpha * Real.log x := Real.log_rpow hxpos alpha
+  have hnrmpos : (0 : ℝ) < (alpha - 1) / 2 * Real.log (x ^ alpha) := by
+    rw [hlogy]
+    exact mul_pos (by norm_num [alpha]) (mul_pos (by norm_num [alpha]) hLpos)
+  have hnrm_le_L : (alpha - 1) / 2 * Real.log (x ^ alpha) ≤ Real.log x := by
+    rw [hlogy]
+    nlinarith [mul_nonneg (show (0 : ℝ) ≤ 1 - (alpha - 1) / 2 * alpha by norm_num [alpha])
+      hLpos.le]
+  -- `mainZ ≥ 0`
+  have hZnn : 0 ≤ mainZ x E := by
+    rw [mainZ]
+    refine tsum_nonneg fun M => ?_
+    split_ifs
+    · exact div_nonneg (mul_nonneg (by positivity) ENNReal.toReal_nonneg) (Nat.cast_nonneg M)
+    · exact le_rfl
+  -- per-`n` lower bound: `mainZ − (CA + CB) ≤ perNTerm·norm`
+  have hLcA : Real.log x ^ (-cA) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos hL1 (by linarith)
+  have hLcB : Real.log x ^ (-cB) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos hL1 (by linarith)
+  have hLc8 : Real.log x ^ (-c8) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos hL1 (by linarith)
+  have hlow : ∀ n ∈ Iy x (x ^ alpha),
+      mainZ x E - (CA + CB)
+        ≤ perNTerm x E (x ^ alpha) n * ((alpha - 1) / 2 * Real.log (x ^ alpha)) := by
+    intro n hn
+    have h1 := (abs_le.mp (hA x hxA E hE _ hy n hn)).1
+    have h2 := (abs_le.mp (hB x hxB E hE _ hy n hn)).1
+    -- clear the divisions in `h1` by multiplying through `norm > 0`
+    have h1' : perNHarmonic x E n - CA * Real.log x ^ (-cA)
+        ≤ perNTerm x E (x ^ alpha) n * ((alpha - 1) / 2 * Real.log (x ^ alpha)) := by
+      have hmul := mul_le_mul_of_nonneg_right h1 hnrmpos.le
+      rw [sub_mul, div_mul_cancel₀ _ hnrmpos.ne', neg_mul,
+        div_mul_cancel₀ _ hnrmpos.ne'] at hmul
+      linarith
+    have hCAle : CA * Real.log x ^ (-cA) ≤ CA :=
+      mul_le_of_le_one_right hCA.le hLcA
+    have hCBle : CB * Real.log x ^ (-cB) ≤ CB :=
+      mul_le_of_le_one_right hCB.le hLcB
+    linarith
+  -- sum over `I_y`, compare with the (5.8) formula and `ℙ ≤ 1`
+  have hsum : ((Iy x (x ^ alpha)).card : ℝ) * (mainZ x E - (CA + CB))
+      ≤ approxMainTerm x E (x ^ alpha) * ((alpha - 1) / 2 * Real.log (x ^ alpha)) := by
+    have h := Finset.card_nsmul_le_sum (Iy x (x ^ alpha))
+      (fun n => perNTerm x E (x ^ alpha) n * ((alpha - 1) / 2 * Real.log (x ^ alpha)))
+      (mainZ x E - (CA + CB)) hlow
+    rw [nsmul_eq_mul] at h
+    rw [approxMainTerm_eq_sum_perNTerm, Finset.sum_mul]
+    exact h
+  have h8x := (abs_le.mp (h8 x hx8 E hE _ hy)).1
+  have hexp1 : (logUnifOdd (x ^ alpha) ((x ^ alpha) ^ alpha)).expect
+      (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1) ≤ 1 :=
+    PMF.expect_indicator_le_one _ _
+  have hAMT : approxMainTerm x E (x ^ alpha) ≤ 1 + C8 := by
+    have hC8le : C8 * Real.log x ^ (-c8) ≤ C8 := mul_le_of_le_one_right hC8.le hLc8
+    linarith
+  -- the count lower bound `0.001·log x ≤ #I_y`
+  have hcard : 0.001 * Real.log x ≤ ((Iy x (x ^ alpha)).card : ℝ) := by
+    have hbr := (hIcard x hxI _ hy).1
+    have hlog43pos : (0 : ℝ) < Real.log (4 / 3) := Real.log_pos (by norm_num)
+    have hlog43_ub : Real.log (4 / 3) ≤ 1 / 3 := by
+      have := Real.log_le_sub_one_of_pos (show (0 : ℝ) < 4 / 3 by norm_num); linarith
+    have hlynn : (0 : ℝ) ≤ Real.log (x ^ alpha) := by
+      rw [hlogy]; exact mul_nonneg (by norm_num [alpha]) hLpos.le
+    have hwt : 3 * ((alpha - 1) * Real.log (x ^ alpha))
+        ≤ (alpha - 1) * Real.log (x ^ alpha) / Real.log (4 / 3) := by
+      rw [le_div_iff₀ hlog43pos]
+      have h3nn : (0 : ℝ) ≤ 3 * ((alpha - 1) * Real.log (x ^ alpha)) :=
+        mul_nonneg (by norm_num)
+          (mul_nonneg (show (0 : ℝ) ≤ alpha - 1 by norm_num [alpha]) hlynn)
+      nlinarith [mul_le_mul_of_nonneg_left hlog43_ub h3nn]
+    have h02 : (2000 : ℝ) ≤ Real.log x ^ (0.2 : ℝ) := by
+      have hcomp : ((2000 : ℝ) ^ (5 : ℕ)) ^ (0.2 : ℝ) = 2000 := by
+        rw [← Real.rpow_natCast (2000 : ℝ) 5, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2000),
+          show ((5 : ℕ) : ℝ) * (0.2 : ℝ) = 1 by norm_num, Real.rpow_one]
+      calc (2000 : ℝ) = ((2000 : ℝ) ^ (5 : ℕ)) ^ (0.2 : ℝ) := hcomp.symm
+        _ ≤ Real.log x ^ (0.2 : ℝ) := Real.rpow_le_rpow (by positivity) hLT5 (by norm_num)
+    have hsplit : Real.log x ^ (0.2 : ℝ) * Real.log x ^ (0.8 : ℝ) = Real.log x := by
+      rw [← Real.rpow_add hLpos, show (0.2 : ℝ) + 0.8 = 1 by norm_num, Real.rpow_one]
+    have h08nn : (0 : ℝ) ≤ Real.log x ^ (0.8 : ℝ) := Real.rpow_nonneg hLpos.le _
+    have hL08 : Real.log x ^ (0.8 : ℝ) ≤ Real.log x / 2000 := by
+      rw [le_div_iff₀ (by norm_num : (0 : ℝ) < 2000)]
+      nlinarith [mul_le_mul_of_nonneg_right h02 h08nn, hsplit]
+    have hgrow : 0.003 * Real.log x ≤ 3 * ((alpha - 1) * Real.log (x ^ alpha)) := by
+      rw [hlogy]
+      nlinarith [mul_le_mul_of_nonneg_right
+        (show (0.003 : ℝ) ≤ 3 * ((alpha - 1) * alpha) by norm_num [alpha]) hLpos.le]
+    linarith [hbr, hwt, hL08, hgrow, hLbig]
+  -- collapse
+  rw [abs_of_nonneg hZnn]
+  by_cases hZsmall : mainZ x E ≤ CA + CB
+  · nlinarith [hC8.le]
+  · push_neg at hZsmall
+    have hpos : (0 : ℝ) < mainZ x E - (CA + CB) := by linarith
+    have hA1 : (0.001 * Real.log x) * (mainZ x E - (CA + CB))
+        ≤ ((Iy x (x ^ alpha)).card : ℝ) * (mainZ x E - (CA + CB)) :=
+      mul_le_mul_of_nonneg_right hcard hpos.le
+    have hA2 : approxMainTerm x E (x ^ alpha) * ((alpha - 1) / 2 * Real.log (x ^ alpha))
+        ≤ (1 + C8) * Real.log x := by
+      have h1 : approxMainTerm x E (x ^ alpha) * ((alpha - 1) / 2 * Real.log (x ^ alpha))
+          ≤ (1 + C8) * ((alpha - 1) / 2 * Real.log (x ^ alpha)) :=
+        mul_le_mul_of_nonneg_right hAMT hnrmpos.le
+      have h2 : (1 + C8) * ((alpha - 1) / 2 * Real.log (x ^ alpha)) ≤ (1 + C8) * Real.log x :=
+        mul_le_mul_of_nonneg_left hnrm_le_L (by linarith)
+      linarith
+    have hfin : 0.001 * (mainZ x E - (CA + CB)) ≤ 1 + C8 := by
+      have hchain : (0.001 * Real.log x) * (mainZ x E - (CA + CB)) ≤ (1 + C8) * Real.log x := by
+        linarith [hA1, hsum, hA2]
+      nlinarith [hchain, hLpos, hpos]
+    linarith
 
 /-- **Per-`n` evaluation (5.19)+(5.20).**  For each `n ∈ I_y`, the per-`n` term equals the
 window-independent `mainZ x E` divided by the harmonic normaliser `((α−1)/2)·log y`, up to a *relative*
