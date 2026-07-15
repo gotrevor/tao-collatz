@@ -394,11 +394,17 @@ telescoping of \S3 (pp.17--18).
   \lean{tao_syracuse}
   \uses{C1, C3, C6a}
   \leanok
+% Proof flipped same pass: went kernel-clean while the 2a01077 flip pass was being written.
 Paper p.4: for \(f\) with \(f(N)\to\infty\), almost all odd \(N\) (log density on the odd
 window) satisfy \(\mathrm{Syrmin}(N)<f(N)\).  From Thm~3.1 at \(N_0:=\tilde f(x)=
 \inf_{N\ge x}f(N)\) (p.18).
-\lapsrisk{1--3}{low}{90\%}
+\lapsrisk{0}{done}{100\%}
 \end{theorem}
+\begin{proof}
+  \leanok
+  Kernel-clean (\texttt{blueprint\_audit} 2026-07-15, MISSED-FLIP roll).  Trust-the-treadmill
+  flip (operator layer); judge flip-back allowed.
+\end{proof}
 
 \begin{lemma}[The (1.2) odd-part reduction, both forms]\label{C6c}
   \lean{logSum_oddPart_pullback, almostAllPos_oddPart_of_almostAllOdd}
