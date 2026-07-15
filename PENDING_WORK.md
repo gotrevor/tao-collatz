@@ -1,8 +1,23 @@
 # 🎯 C8 close — attack plan (updated 2026-07-15, HEAD after step-back kernel)
 
-**Frontier**: C10 ✅ done · C7 ✅ **DONE + axiom-clean** · C8 = live target, **2 sorries**
-(`first_passage_affine_reindex`, `passtime_window_inner`).
+**Frontier**: C10 ✅ done · C7 ✅ **DONE + axiom-clean** · C8 = live target, **3 sorries**
+(`first_passage_stepback_reduce`, `first_passage_truncation_reindex`, `passtime_window_inner`).
+`first_passage_affine_reindex` itself is now **PROVED** as a triangle through the `steppedMid`
+diagonal bridge (was a sorry; decomposing it into 2 named legs +1'd the count = PROGRESS).
 **C8 = `first_passage_approx`** (Prop 5.2 / (5.8), `Sec5/ApproxFormula.lean`).
+
+## ✅ ADVANCED THIS LAP #2 — `first_passage_affine_reindex` DECOMPOSED via `steppedMid` bridge
+The route-decisive leg is now a proved triangle `|firstPassMid−approxMainTerm| ≤ |firstPassMid−steppedMid|
++ |steppedMid−approxMainTerm|` (`#print axioms` = trust base + sorryAx from the 2 legs). New def
+`steppedMid` = the DIAGONAL (`ā = valVec N (n−m₀)`) contribution: `∑_{n∈Iy} P{good⁽ⁿ⁻ᵐ⁰⁾(valVec N (n−m₀))
+∧ Syr^{n−m₀}N ∈ E'}`. The two owed legs:
+1. **`first_passage_truncation_reindex`** (`|steppedMid−approxMainTerm|`) — HARDEST/next. Reorder
+   `approxMainTerm`'s fixed-ā tsum → `∑_N (P N)·#{ā good : Aff N (n−m₀) ā ∈ E'}`; diagonal ā=valVec term
+   = `steppedMid` (via `aff_valVec_eq_syr` + `valVec_unique`), truncation ā's = nonneg error ≤ O(log^{-c}).
+   Mechanical tsum reorder (Fubini/tsum_comm + toReal/summability) + the truncation count bound.
+2. **`first_passage_stepback_reduce`** (`|firstPassMid−steppedMid|`) — the (5.17) event reduction.
+   Forward inclusion EXACT (`firstPass_event_stepback_subset` ✅); remaining = reverse inclusion + `E'`
+   size window `exp(±log^{0.7}x)(4/3)^{m₀}x` (orbit estimate (5.13)/(5.14)) + nested `𝒜⁽ⁿ⁰⁾⊂𝒜⁽ⁿ⁻ᵐ⁰⁾`.
 
 ## ✅ ADVANCED THIS LAP — (5.17) step-back EXACT core proved, axiom-clean (route-decisive leg)
 The route-decisive leg `first_passage_affine_reindex` was attacked at its EXACT sub-part per the

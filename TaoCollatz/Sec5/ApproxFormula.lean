@@ -882,25 +882,85 @@ theorem firstPass_event_stepback_subset (x' : ℕ) (E : Set ℕ) (n m : ℕ) (hm
   · rw [hTM, hT]; omega
   · rw [hLM]; exact hL
 
-/-- **(5.17) `B_{n,y}` event chain + (5.18) Lemma 2.1 affine reindexing** (owed) — the second,
-route-decisive leg of (5.8).  For each `n ∈ I_y`, the event `{T_x(N_y)=n ∧ Pass∈E ∧ good}` equals
-(step back `m₀` steps, (5.17)) `{Syr^{n-m₀}(N_y) ∈ E' ∧ good}`, whose probability the Lemma 2.1
-affine bijection reindexes to `∑_{ā∈𝒜⁽ⁿ⁻ᵐ⁰⁾} ∑_{M∈E'} ℙ(Aff_ā(N_y)=M)` — the summand of
-`approxMainTerm`.  The reindex is APPROXIMATE (`Aff` uses truncating ℕ-division; the truncation
-coincidences are absorbed in `O(log^{-c}x)`, see the module docstring), so this is the `≤`/error
-form, NOT an exact identity.  Kernels `aff_valVec_eq_syr` + `valVec_unique` drive the main term.
+open Classical in
+/-- **The diagonal (`ā = valVec`) bridge for the (5.18) reindex.**  For each `n ∈ I_y`, the
+`P`-probability of the stepped-back event `{good⁽ⁿ⁻ᵐ⁰⁾(valVec N (n−m₀)) ∧ Syr^{n−m₀}N ∈ E'}`.  This
+is precisely the *main* (`ā = valVec N (n−m₀)`) contribution to `approxMainTerm`: by
+`aff_valVec_eq_syr`, `Aff N (n−m₀) (valVec N (n−m₀)) = Syr^{n−m₀}N`, and by `valVec_unique` that ā is
+the unique good vector making the affine value land oddly at `M = Syr^{n−m₀}N`.  `steppedMid` sits
+between `firstPassMid` (the (5.17) event side) and `approxMainTerm` (the fixed-ā `tsum` side); it
+splits the route-decisive leg into an *event* reduction and a *reindex* error. -/
+noncomputable def steppedMid (x : ℝ) (E : Set ℕ) (y : ℝ) : ℝ :=
+  ∑ n ∈ Iy x y,
+    (logUnifOdd y (y ^ alpha)).expect
+      (Set.indicator {N | goodTuple x (n - mZero x) (valVec N (n - mZero x)) ∧
+        Eprime x E (syr^[n - mZero x] N)} 1)
 
-The forward step-back inclusion `firstPass_event_stepback_subset` (EXACT) is proved; the remaining
-holes in this leg are (a) the reverse inclusion / `E'` *size* window (the (5.13)/(5.14) orbit
-estimate `Syr^{n-m₀}N ≈ (3/4)^{n-m₀}N_y`) and (b) the affine pushforward count via `valVec_unique`
-(the truncation-absorbed reindex). -/
+/-- **(5.17) event reduction leg** (owed) — `|firstPassMid − steppedMid| ≤ O(log^{-c}x)`.  Passing
+from the `T_x=n`-partitioned good event to its stepped-back diagonal form costs `O(log^{-c}x)`.  The
+`T_x`/`Pass`/oddness half of `Eprime(Syr^{n−m₀}N)` is EXACT given `T_x N = n` (proved:
+`firstPass_event_stepback_subset`); the remaining content is the reverse inclusion and the `E'`
+*size* window `exp(±log^{0.7}x)(4/3)^{m₀}x`, i.e. the (5.13)/(5.14) orbit estimate
+`Syr^{n−m₀}N ≈ (3/4)^{n−m₀}N_y`, plus the nested good-tuple relation `𝒜⁽ⁿ⁰⁾ ⊂ 𝒜⁽ⁿ⁻ᵐ⁰⁾`. -/
+theorem first_passage_stepback_reduce :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |firstPassMid x E y - steppedMid x E y|
+            ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
+/-- **(5.18) affine truncation reindex leg** (owed) — `|steppedMid − approxMainTerm| ≤ O(log^{-c}x)`.
+Reordering `approxMainTerm`'s fixed-ā `tsum` to a sum over `N` gives
+`∑_N (P N)·#{ā good : Aff N (n−m₀) ā ∈ E'}`; the diagonal `ā = valVec N (n−m₀)` term is exactly
+`steppedMid` (via `aff_valVec_eq_syr` + `valVec_unique`), and the truncation vectors `ā ≠ valVec`
+(where `2^{|ā|} ∤ 3^{n−m₀}N + Fnat ā`, so `Aff` rounds) contribute the nonneg error absorbed in
+`O(log^{-c}x)` (module docstring, ROUTE-DECISIVE INSIGHT).  This is an `≤`/error bound, NOT an exact
+identity. -/
+theorem first_passage_truncation_reindex :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |steppedMid x E y - approxMainTerm x E y|
+            ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
+/-- **(5.17) `B_{n,y}` event chain + (5.18) Lemma 2.1 affine reindexing** — the second,
+route-decisive leg of (5.8).  For each `n ∈ I_y`, the event `{T_x(N_y)=n ∧ Pass∈E ∧ good}` equals
+(step back `m₀` steps, (5.17)) `{Syr^{n−m₀}(N_y) ∈ E' ∧ good}`, whose probability the Lemma 2.1
+affine bijection reindexes to `∑_{ā∈𝒜⁽ⁿ⁻ᵐ⁰⁾} ∑_{M∈E'} ℙ(Aff_ā(N_y)=M)` — the summand of
+`approxMainTerm`.  Decomposed through the diagonal bridge `steppedMid`: the (5.17) event reduction
+`first_passage_stepback_reduce` then the (5.18) truncation reindex `first_passage_truncation_reindex`
+(APPROXIMATE — `Aff` uses truncating ℕ-division; truncation coincidences absorbed in `O(log^{-c}x)`,
+module docstring).  The forward step-back inclusion `firstPass_event_stepback_subset` (EXACT) is the
+proved core of the first leg. -/
 theorem first_passage_affine_reindex :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |firstPassMid x E y - approxMainTerm x E y|
             ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨c₁, C₁, x₁, hc₁, hC₁, hsr⟩ := first_passage_stepback_reduce
+  obtain ⟨c₂, C₂, x₂, hc₂, hC₂, htr⟩ := first_passage_truncation_reindex
+  refine ⟨min c₁ c₂, C₁ + C₂, max (max x₁ x₂) (Real.exp 1), lt_min hc₁ hc₂, by positivity,
+    fun x hx E hE y hy => ?_⟩
+  have hx1 : x₁ ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+  have hx2 : x₂ ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
+  have hlog1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hxe
+  have hA : (Real.log x) ^ (-c₁) ≤ (Real.log x) ^ (-(min c₁ c₂)) :=
+    Real.rpow_le_rpow_of_exponent_le hlog1 (neg_le_neg (min_le_left c₁ c₂))
+  have hB : (Real.log x) ^ (-c₂) ≤ (Real.log x) ^ (-(min c₁ c₂)) :=
+    Real.rpow_le_rpow_of_exponent_le hlog1 (neg_le_neg (min_le_right c₁ c₂))
+  calc |firstPassMid x E y - approxMainTerm x E y|
+      ≤ |firstPassMid x E y - steppedMid x E y|
+          + |steppedMid x E y - approxMainTerm x E y| := abs_sub_le _ _ _
+    _ ≤ C₁ * (Real.log x) ^ (-c₁) + C₂ * (Real.log x) ^ (-c₂) :=
+        add_le_add (hsr x hx1 E hE y hy) (htr x hx2 E hE y hy)
+    _ ≤ C₁ * (Real.log x) ^ (-(min c₁ c₂)) + C₂ * (Real.log x) ^ (-(min c₁ c₂)) :=
+        add_le_add (mul_le_mul_of_nonneg_left hA hC₁.le) (mul_le_mul_of_nonneg_left hB hC₂.le)
+    _ = (C₁ + C₂) * (Real.log x) ^ (-(min c₁ c₂)) := by ring
 
 -- RATIFY-C8: paper Proposition 5.2 / (5.8), §5 pp.22–25.  Rendered against the numbered display;
 -- the `O(log^{-c} x)` error is spelled as an explicit `∃ c C x₀` bound (design invariant D3).
