@@ -155,13 +155,19 @@ Plus the **reduction floor**: `colMin_eq_syrMin_oddPart` (paper (1.2)) + the Syr
 identities (Lemma 1.12, (1.21), (1.22)), and §7's two exports `charFn_decay` (Prop 1.17) +
 `key_fourier_decay` (Prop 7.1).
 
-🔬 **C10 — verified DOWN TO ONE TAIL BOUND** (pass 29, 2026-07-14): `lRange_hbudget`,
-`osc_mainHigh_bound` (**the `A′`-absorption at `C_A = 30` is SHOWN, not asserted**),
-`mainHigh_eq_restrictedDensity`, `sum_abs_syracZ_sub_mainHigh_eq`, `tailDensW_condWindowB_le`
-— all clean. `fine_scale_mixing` still carries `sorryAx`, through **exactly one** named lemma:
-`error_l1_high_bound` = **`P(¬mainEvent) ≤ (C/2)·m^{-A}`**. Both pass-28 tripwires discharged.
+🏆 **C10 COMPLETE** (2026-07-14, HEAD `49b32c7`): `fine_scale_mixing` (Prop 1.14 — the node this
+run was aimed at) = `[propext, Classical.choice, Quot.sound]`, no `sorryAx`. `error_l1_high_bound`
+closed axiom-clean via `globalGood ⊆ mainEvent` + the (6.3) union bound over three deviation tails.
+Both pass-28 tripwires (`hbudget` → `lRange_hbudget`; the `A′`-absorption at `C_A = 30`, **shown**
+not asserted via `osc_mainHigh_bound`) discharged and machine-checked. Blueprint flipped to proved.
 
-**Statements pinned + ratified**: every ledger node except **C8** (no pinned Lean
+🔬 **C7 pinned + ratified vs p.20** as `first_passage_nonescape` (§5, medium/10–18/75%); box proving
+it, integral-test core `harmonic_ap_integral_bound` axiom-clean.
+🚨 **C8 pinned as `first_passage_approx` but the pin is DEFECTIVE** — the reflection lap (2026-07-14)
+caught the ℕ-truncating `Aff` renders (5.8) unfaithfully; `truncation_error_bound` is FALSE. RE-PIN
+owed (`RATIFY-C8-v2`, exact Lemma-2.1 reindex). See `judge/HANDOFF-JUDGE-2026-07-14-1905.md`.
+
+**Statements pinned + ratified**: every ledger node except **C8** (pinned but defective, re-pin owed)
 statement yet — the last un-pinned node; **it is a SEAM: zero theorems, zero sorries,
 invisible to the census, and it BLOCKS C9**). Latest: X10 `∃A₀` re-pin + the two (7.61)
 tail pins (pass 18), X9 depth-gated re-pin (pass 14). 🔓 **ZERO OPEN SUSPENSIONS**:
