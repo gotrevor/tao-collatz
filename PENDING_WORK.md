@@ -1,3 +1,40 @@
+## Grind lap — 2026-07-15 — ✅ rib 2 PROVED (mod deep sorry) — C9 crux isolated as y-free `approxMainTerm_to_Z`
+
+**Source-grounded the Prop 1.11 mechanism (PDF pp.25–27) and refactored the C9 crux to the paper's
+actual argument.** Tao's chain: `ℙ(Pass∈E) = (1+O(log^{-c}))·(2/log(4/3))·Z + O(log^{-c})` where
+**`Z` (5.21) does NOT depend on the window `y`** — the `log y` and `(α−1)` normalisers cancel against
+`#I_y` (5.9). That cancellation IS the stabilization.
+
+Landed (`Sec5/Stabilization.lean`):
+- **`mainZ x E`** — Tao's `Z` (5.21) = `∑_{M∈E'} 3^{m₀}·(syracZ (mZero x))(M)/M`, manifestly y-free.
+- **`approxMainTerm_to_Z`** (sorried) — `|approxMainTerm x E y − (2/log(4/3))·mainZ x E| ≤ C log^{-c}`
+  for `y∈{x^α,x^{α²}}`. Subsumes (5.19) single-value mass + (5.20) harmonic→Z reduction **(where
+  Lemma 5.3 `c_n(X)≪1` + C10 `fine_scale_mixing` are consumed)** + (5.9) `#I_y`. **This is the sole
+  remaining C9 hole and the sole C10 consumer.**
+- **`approxMainTerm_window_stable` (rib 2) NOW PROVED** — a 6-line triangle through the shared `mainZ`.
+
+`#print axioms`: `approxMainTerm_window_stable`/`stabilization` sorryAx now trace to `approxMainTerm_to_Z`
+ALONE. **Census still 3 sorries + 0 orange** (2 headlines + `approxMainTerm_to_Z`), but the crux is now
+stated with the RIGHT (y-independent) target — the difference between "stabilise somehow" and "= a
+manifestly-window-free `Z` + error." Full lake build green (3324).
+
+**Next attack — decompose `approxMainTerm_to_Z` into its 3 named sub-pieces (paper pp.25–27):**
+1. **(5.19) single-value mass**: `ℙ(Aff_ā(N_y)=M) = (1+O(x^{-c}))·2^{-|ā|}·3^{n−m₀}/(((α−1)/2)·log y·M)`
+   when the (5.18) congruence `M ≡ F_{n−m₀}(ā) mod 3^{n−m₀}` holds (else 0). Uses the harmonic sum
+   `∑_{N∈2ℕ+1∩[y,y^α]} 1/N = (1+O(1/x))·(α−1)/2·log y` and (5.19)'s RHS-in-[y,y^α] + odd-integer facts.
+2. **(5.20) harmonic→Z**: `3^{n−m₀}∑_ā 2^{-|ā|}∑_{M∈E',M≡F mod 3^{n−m₀}} 1/M = Z + O(log^{-c})` for each
+   `n∈I_y`. Rewrites LHS as `𝔼_{ā∼Geom(2)^{n−m₀}} c_n(F_{n−m₀}(ā) mod 3^{n−m₀})` (5.22)–(5.23); **C10
+   makes the residue-class-restricted harmonic sum ≈ the Syrac-law-weighted `Z`**. Lemma 5.3 bounds
+   `c_n≪1` (proof pp.26–27 via integral test (5.25)/(5.26) + CRT — much of that machinery, `intTest_*`,
+   is already proved for C7). THE hard sub-piece.
+3. **(5.9) `#I_y` + assembly**: `#I_y=(1+O(log^{-c}))·(α−1)/log(4/3)·log y`; combine 1+2, cancel `log y`.
+   Start here (cheapest, banks the cancellation that makes the target y-free).
+
+⚠ `mainZ`/`approxMainTerm_to_Z` are internal decompositions BELOW the ratified `stabilization` pin
+(allowed). Not blueprint nodes; no numeric trap owed. C10 (`fine_scale_mixing`) is proved+available.
+
+---
+
 ## Grind lap — 2026-07-15 — ✅ C9 rib 1 CLOSED (axiom-clean) — C9 down to ONE crux (rib 2)
 
 **`dTV_passLoc_event_witness` (C9 rib 1) PROVED axiom-clean** (`[propext, Classical.choice, Quot.sound]`).

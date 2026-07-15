@@ -187,19 +187,60 @@ theorem dTV_passLoc_event_witness (x : ℝ) (hx : 1 ≤ x) :
                   (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)| := by
             gcongr; exact le_abs_self _
 
-/-- **Lemma 5.3 + (5.18)–(5.21)** — window-stability of the affine main term.  `approxMainTerm x E y`
-depends on the window `y` only through the single-value `logUnifOdd`-masses `ℙ(Aff_ā(N_y) = M)` (and the
-range `I_y`); across the two nested windows `y = x^α` and `y = x^{α²}` these agree up to `O(log^{-c} x)`.
+open Classical in
+/-- Tao's window-independent quantity **`Z` (5.21)**:
+`∑_{M∈E'} 3^{m₀}·ℙ(M = Syrac(ℤ/3^{m₀}ℤ) mod 3^{m₀}) / M`, where `E' = Eprime x E` and the Syracuse
+law mod `3^{m₀}` is `syracZ (mZero x)`.  Crucially this depends only on `x` and `E` — **NOT on the
+window `y`** (the paper, p.26: "`Z` does not depend on whether `y` equals `x^α` or `x^{α²}`").  That
+`y`-independence is the entire content of the stabilization (Prop 1.11). -/
+noncomputable def mainZ (x : ℝ) (E : Set ℕ) : ℝ :=
+  ∑' M : ℕ, if Eprime x E M then
+      (3 : ℝ) ^ mZero x * ((syracZ (mZero x)) (M : ZMod (3 ^ mZero x))).toReal / (M : ℝ)
+    else 0
 
-This is the rib where **Prop 1.14 (`fine_scale_mixing`, C10)** enters: fine-scale mixing of the affine
-images makes the per-value mass window-independent, so the `c_n(X) ≪ 1` normalising factors (5.18)–(5.21)
-telescope.  **[C9 SEAM PROBE — sorried rib; C10 consumed here when filled.]** -/
+/-- **(5.18)–(5.21) + (5.9) evaluation of the affine main term.**  For `y ∈ {x^α, x^{α²}}`,
+`approxMainTerm x E y = (2 / log(4/3))·mainZ x E + O(log^{-c} x)`.  This subsumes Tao's pp.25–27
+chain: the single-value mass formula (5.19)
+`ℙ(Aff_ā(N_y)=M) = (1+O(x^{-c}))·2^{-|ā|}·3^{n−m₀} / (((α−1)/2)·log y · M)`; the harmonic-sum reduction
+(5.20)→`Z` — **where Lemma 5.3 (`c_n(X)≪1`) and Prop 1.14 (`fine_scale_mixing`, C10) are consumed**;
+and the interval count `#I_y` (5.9) `= (1+O(log^{-c}x))·(α−1)/log(4/3)·log y`, whose ratio to the
+`((α−1)/2)·log y` normaliser telescopes to the **window-free** `2/log(4/3)`.
+
+**[C9 CRUX — the sole remaining C9 hole; this is where C10 enters.]**  Target is `y`-independent (`Z`),
+which is the faithful rendering of the paper's cancellation; `approxMainTerm_window_stable` below is a
+one-line triangle over this. -/
+theorem approxMainTerm_to_Z :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |approxMainTerm x E y - 2 / Real.log (4 / 3) * mainZ x E|
+            ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
+/-- **Lemma 5.3 + (5.18)–(5.21)** — window-stability of the affine main term.  `approxMainTerm x E y`
+agrees across the two nested windows `y = x^α` and `y = x^{α²}` up to `O(log^{-c} x)`.  PROVED from
+`approxMainTerm_to_Z` by the triangle inequality through the window-independent `mainZ x E`: both
+windows evaluate to `(2/log(4/3))·mainZ x E + O(log^{-c} x)` with the **same** `mainZ`, so their
+difference is `O(log^{-c} x)`. -/
 theorem approxMainTerm_window_stable :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         |approxMainTerm x E (x ^ alpha) - approxMainTerm x E (x ^ alpha ^ 2)|
           ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨c, C, x₀, hc, hC, hZ⟩ := approxMainTerm_to_Z
+  refine ⟨c, 2 * C, x₀, hc, by positivity, fun x hx E hE => ?_⟩
+  have hmem1 : (x ^ alpha) ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ) := Set.mem_insert _ _
+  have hmem2 : (x ^ alpha ^ 2) ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ) :=
+    Set.mem_insert_of_mem _ rfl
+  have h1 := hZ x hx E hE (x ^ alpha) hmem1
+  have h2 := hZ x hx E hE (x ^ alpha ^ 2) hmem2
+  calc |approxMainTerm x E (x ^ alpha) - approxMainTerm x E (x ^ alpha ^ 2)|
+      ≤ |approxMainTerm x E (x ^ alpha) - 2 / Real.log (4 / 3) * mainZ x E|
+        + |2 / Real.log (4 / 3) * mainZ x E - approxMainTerm x E (x ^ alpha ^ 2)| :=
+        abs_sub_le _ _ _
+    _ ≤ C * (Real.log x) ^ (-c) + C * (Real.log x) ^ (-c) := by
+        rw [abs_sub_comm (2 / Real.log (4 / 3) * mainZ x E)]; exact add_le_add h1 h2
+    _ = 2 * C * (Real.log x) ^ (-c) := by ring
 
 -- RATIFY-3: window endpoints spelled per the spec's guidance as `[x^α, x^{α²}]` and
 -- `[x^{α²}, x^{α³}]` (using `alpha^2`, `alpha^3`), which the SKELETON-SPEC flagged as the
