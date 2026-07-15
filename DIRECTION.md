@@ -7,7 +7,119 @@ PENDING_WORK.md and the judge pass records (`judge/pass-NN.md`).*
 
 ---
 
-## CURRENT DIRECTIVE (JUDGE PASS 29, 2026-07-14) — **C10 → C8 (pin) → C7 (prove) → C8 (close) → C9**
+## CURRENT DIRECTIVE (JUDGE PASS 30, 2026-07-14 evening) — **close C8 → C9 → C6 → headline**
+
+*Written after a full independent audit — paper vs blueprint vs Lean — by 5 parallel auditors + a
+judge verbatim re-read of §5 (5.8)/(5.18)/(5.19) against PDF pp.22–25. Supersedes the pass-29
+directive below, whose order is FULFILLED through C7. Every hard rail in the superseded blocks still
+binds unless restated here. `blueprint_rules.md` is BINDING: one node, one claim; a green border
+means the STATEMENT exists, never "finished"; never set a `\leanok` yourself. Report work as
+**"N sorries + M orange."***
+
+### State (kernel-verified this pass; `blueprint_audit.py` → 15 proved, 0 orange, 0 drift, 0 false-green)
+- **15 nodes proved + axiom-clean**: all of §7 (X2–X11), **C10** (Prop 1.14), C5, C2, S3, C4, **C7** (just flipped).
+- **C8 (Prop 5.2) RATIFIED v2** (statement faithful; exact reindex `approxMainTerm_eq_steppedMid` PROVED
+  axiom-clean) — **2 proof holes left**: `first_passage_stepback_reduce` (5.17) + `passtime_window_inner` (5.16).
+- **C9 `stabilization`** pinned (1 sorry), consumes C8 + C10 (both available). Judge-verified faithful to Prop 1.11.
+- **C6** = the §3 reduction (Thm 1.3⟸1.6⟸3.1⟸Prop 1.11) — currently ONLY the two `Statement.lean` headline
+  stubs; the intermediates are NOT pinned (see the C6 forward item).
+- **Census ≈ 5 sorries + 0 orange** (C8×2, C9×1, 2 headline stubs). Report "N sorries + 0 orange," never N alone.
+
+### Ratifications this pass (JUDGE — do not re-litigate)
+- ✅ **C7 `first_passage_nonescape` FLIPPED** — kernel-clean, faithful to (1.19); the pass-29 missed flip is cleared. WATCHED.
+- ✅ **C8 `first_passage_approx` STATEMENT RATIFIED (RATIFY-C8-v2)** — read VERBATIM vs Prop 5.2
+  (5.8)/(5.9)/(5.10)/(5.11)/(5.18)/(5.19), PDF pp.22–25. The exact affine guard `3^{n−m₀}N + fnat = M·2^{|ā|}`
+  IS Tao's (5.18)/(5.19) reindex; the v1 truncating-`Aff` defect is genuinely repaired (probe 19135→0–3).
+  Statement `\leanok` set (green border); PROOF still owed. WATCHED.
+
+### 🎯 THE PLAN — front-load discovery, THEN burn down (de-risk breadth-first; NOT linear)
+
+*Cross-checked against an independent Fable strategy review (2026-07-14) and adopted. Why not linear
+C8→C9→C6: C8's statement is pinned + FROZEN, so C9's assembly and C6's intermediates consume C8's
+**statement**, not its proof — they are safe to work NOW, before C8's proof holes close. Sequencing all
+C9/C6 learning behind C8's grind would surface the last nodes' surprises with the fewest laps left. So
+spend the first 1–2 laps flushing the seams, then grind. This is the charter's own de-risk-breadth-first
+rule (pin the scary node, learn what it needs, before polishing the cheap one).*
+
+**Overnight lap order:**
+1. **C9 assembly-spine PROBE — do this FIRST; it is the single highest de-risk move.** In
+   `Sec5/FirstPassage.lean` / `Stabilization.lean`, state Lemma 5.3 (`c_n(X) ≪ 1`) and (5.18)–(5.21) as
+   **sorried local lemmas**, and make the Prop 1.11 (`stabilization`) assembly **compile** using
+   `first_passage_approx` (C8) and `fine_scale_mixing` (C10) as **black boxes** (both statements exist —
+   cite the sorried theorems). This is a **SEAM TEST, ~1–2 laps, NOT a proof.** It answers the campaign's
+   biggest unknown-unknown: *do C8's formula and C10's mixing actually compose at scale m₀?* If the
+   assembly compiles, C9 reduces to filling known ribs. ⚠️ **If the C8/C10 interfaces do NOT fit
+   (quantifier order, uniformity in n, normalization) → `JUDGE-FLAG:` and report the exact mismatch. Do
+   NOT edit the ratified C8/C10 pins to force a fit.** Decomposing *below* `stabilization` is allowed; the pin is WATCHED.
+2. **PIN the C6 reduction intermediates** (cheap, statement-only; the only remaining un-pinned structural
+   surface, and it sits at the worst seam — the headline). Write, copy-not-compose vs §3: **Thm 1.6** (over
+   the currently-dead-but-correct `AlmostAllOdd`), the **Thm 3.1-Syracuse** form, and the **(1.2)
+   log-density reduction** lemmas — each a sorried statement — then a sorried headline-from-intermediates
+   spine wiring them to `tao_collatz`. **PIN ONLY — do NOT `\leanok` them** (the judge ratifies vs §3 next
+   pass; ratify ⟹ watch). §3 is "elementary but fiddly" (log-density conversion, the Thm 1.6⟹1.3 bridge,
+   dyadic iteration); pinning now flushes any interface surprise while laps are plentiful, and stops an
+   eventual C6 proof from routing around faithful intermediates (the "lie that compiles," in its most dangerous seat).
+3. **CLOSE C8 hole (5.17) `first_passage_stepback_reduce` — HARDEST-FIRST.** `|firstPassMid − steppedMid| ≤
+   O(log^{−c}x)`: needs the reverse inclusion + the **E′ size window** from the proved orbit estimate
+   `Syr^{n−m₀}N = exp(O(log^{0.6}x))·(3/4)^{n−m₀}N` (`syr_iterate_good_bracket'`, `two_rpow_slack_le_exp`).
+   The interval algebra `n∈I_y ⟹ window` is faithful to pp.23–24 (5.13)–(5.16); the `y^{α−1}` factor that
+   once looked "too wide" is the log-uniform NORMALIZER (paper p.25, judge-verbatim-checked) — do NOT
+   re-open that worry. **STALL-SWITCH: on any lap that makes NO measurable (5.17) progress, bank (5.16)
+   that lap instead of spinning** — (5.16) is bankable machinery whose value does not decay; (5.17)'s value
+   is route-information, which does. ⚠️ If closing (5.17) seems to need touching a ratified statement or a
+   frozen constant → `JUDGE-FLAG:`, do not improvise near a goalpost.
+4. **Close C8 hole (5.16) `passtime_window_inner`** — the (5.16) window term via the integral test over
+   C7's PROVED `classMass`/`windowMass`/`intTest_*`. (The box has banked much of this already; finish it.)
+5. **Fill C9 ribs** — Lemma 5.3, then (5.18)–(5.21); the assembly is already proved if step 1 succeeded.
+6. **Prove C6** from the pinned intermediates (dyadic scale iteration + log-density splitting).
+
+**⚡ Judge cadence — EVENT triggers on top of every-9 reflect / every-3 review (which stays as the fallback
+heartbeat).** STOP and `JUDGE-FLAG:` for a ratification/judge pass on: (a) **any new pinned statement** (C6
+intermediates, C9 locals) — ratify-on-pin, and do NOT build heavily on an unratified pin; (b) **the lap C8's
+last hole closes**, before C9 switches from *citing* C8's statement to *using* its theorem; (c) any
+**goalpost-pressure** from (5.17)'s E′ window or the C9 seam.
+
+📈 **Steps 1–2 RAISE the sorry census (sorried spines + intermediates) — that is PROGRESS, not regression.**
+It converts invisible structural risk into visible, attackable holes; the self-stop gate simply stays blocked
+until they close. Do not read the bump as a stall.
+
+### 🚨 DOC-HAZARD RAIL (new — read before touching `ApproxFormula.lean`)
+The (5.18)/(5.19) reindex is **EXACT and PROVED** (`approxMainTerm_eq_steppedMid`, axiom-clean). A stale v1 code
+comment at **`ApproxFormula.lean:247–251`** still says *"the reindex is APPROXIMATE, not exact … Do NOT attempt an
+exact `=` reindex"* — that is **dead v1 residue, now provably FALSE**. **FIX IT EARLY: delete/correct that comment in
+a lap — it is a comment, NOT a ratified statement, so correcting it is safe and cheap, and an unattended worker reads
+the file, not this directive.** Until it's gone, do NOT let it steer you back onto the truncating route. Likewise the `Aff` docstring (`Basic/Valuation.lean:152`)
+says "guarded by the divisibility" while the body floors — correct the prose (or split an exact guarded def) if you
+touch Valuation. Every remaining `Aff` use is separately divisibility-guarded, so the floor is harmless — but the docstring lies.
+
+### 🔒 Inherited hard rails (STILL BIND)
+- **Rail 6 — never EDIT a ratified pin's statement** (not to weaken, strengthen, or generalize). The ratified set now
+  adds **`first_passage_approx` (C8)** + **`first_passage_nonescape` (C7)** to the §7 set + `fine_scale_mixing`/
+  `stabilization` + the two `Statement.lean` headlines. Decompose BELOW a pin freely; move a goalpost never → `JUDGE-FLAG:`.
+- **WATCHED (`tao_stmt_diff.py`):** the full ratified set + both open cruxes. A watched-statement drift is the #1 silent failure.
+- **Constants FROZEN (judge rulings, backed by proved lemmas):** `epsBW = 1/10^1000`, `caConst = 30` (`C_A ≥ 23`
+  budget floor met). Do NOT re-derive. Any change re-arms the ε-sweep re-ratification list → `JUDGE-FLAG:`, do not adjust.
+- **The two `Statement.lean` headline sorries are frozen** (rail 2) — they discharge only when C6 lands.
+- **A pin is not done until a numeric trap checks it** (`check_blueprint.py`); C8's trap is added this pass.
+- **A partition claim owes a proved disjointness lemma** (pass-29) — zero sorries is not zero holes.
+
+### 🚧 Forbidden drift
+- Do NOT retreat off C8 to C9/C6 while C8's 2 holes are open. Finish C8.
+- Do NOT re-seed the v1 truncating-`Aff` route (doc-hazard rail).
+- Do NOT touch any WATCHED/ratified statement or re-derive a frozen constant.
+- A failure to close a hole is **INFORMATION**, not pressure to adjust a statement or constant → `JUDGE-FLAG:`.
+
+### Follow-ups (NON-BLOCKING — do NOT spend a crux lap on these)
+- Scrub stale "OPEN/sorry/owed" docstrings on PROVED nodes: `BlackEdgeQ.lean:115`, `Case3.lean:2922`,
+  `FirstPassage.lean:981/985/1325`, `Basic/Collatz.lean:16`, `Prob/Basic.lean:16`.
+- `check_blueprint.py` check 11 traps `epsBW = 1/10^4` but the code deploys `1/10^1000` — update the trap value.
+- `papers/literature-review.md` fidelity-ledger row says `ε := 10⁻⁴` (stale; deployed `10⁻¹⁰⁰⁰`).
+
+*(Independent audit record → `judge/pass-30.md`. An external Fable strategy cross-check on the overnight burn-down order is pending; fold in on arrival.)*
+
+---
+
+## SUPERSEDED — JUDGE PASS 29, 2026-07-14 — **C10 → C8 (pin) → C7 (prove) → C8 (close) → C9**
 
 🗺️ **`blueprint_rules.md` is BINDING — read it.** One node, one claim; pinning = writing the Lean
 statement with `sorry`; green border = *the statement exists*, never *finished*; **never set a

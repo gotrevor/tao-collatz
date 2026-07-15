@@ -402,21 +402,32 @@ with \(n_0 := \lfloor \log x / (10\log 2)\rfloor\) (5.1).
 \lapsrisk{10--18}{medium}{75\%}
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Ratified and flipped at judge pass 30 (2026-07-14): the theorem is kernel-clean
+  (\(\mathrm{propext}, \mathrm{Classical.choice}, \mathrm{Quot.sound}\)), clearing the pass-29
+  missed flip.  The route closed as designed --- the integral test discharges Proposition~1.9's
+  \(d_{\mathrm{TV}}\) hypothesis (5.4), the two-sided Lemma~2.2 tail gives (5.5), and an explicit
+  descent yields \(\mathrm{Syr}^{n_0}(\mathbf N_y) = O(x^{0.99}) \le x\).
+\end{proof}
+
 \begin{proposition}[Approximate first-passage formula; Prop 5.2]\label{C8}
   \lean{first_passage_approx}
   \uses{C2, C5, C7}
-  \notready
+  \leanok
 \textbf{Proposition 5.2}, the approximate formula (paper (5.8)) for the law of the
 first-passage location, built from the bookkeeping events
 \(\mathcal{A}^{(n')}\) (5.11), \(E'\) (5.10), and \(I_y\) (5.9), through the
 \(B_{n,y}\) equivalence chain relating the passage location to the affine images of the input
 window.  This is where the Prop~1.9 geometric approximation is fed into the concrete window
 statistics.
-% PINNED 2026-07-14 (RATIFY-C8): first_passage_approx (paper (5.8)) written with `sorry` over the
-% existing first-passage defs + the affine map Aff (1.3); defs nZero/mZero/goodTuple/Iy/Eprime and
-% the main term approxMainTerm (TaoCollatz/Sec5/ApproxFormula.lean).  Decomposed into named sorries
-% approx_good_tuple_whp (5.12) and approx_passtime_window (5.16, the SOLE C7 consumer).  \leanok is
-% the judge's to set after ratification against pp.22--25 -- kept \notready until then.
+% STATEMENT RATIFIED judge pass 30 (2026-07-14) as RATIFY-C8-v2: first_passage_approx +
+% approxMainTerm read VERBATIM against Prop 5.2 (5.8)/(5.9)/(5.10)/(5.11)/(5.18)/(5.19) on PDF
+% pp.22--25.  The v1 pin (N-truncating Aff, unguarded) over-counted (5.8) by a super-polylog
+% factor and made truncation_error_bound FALSE; v2 guards the pushforward by the EXACT affine
+% relation 3^{n-m0}*N + fnat = M*2^{|a|} (= the (5.18) congruence + (5.19) value), so Lemma 2.1
+% makes the reindex exact (approxMainTerm_eq_steppedMid, PROVED axiom-clean).  This \leanok is the
+% STATEMENT flip (green border); the PROOF is still owed (holes: (5.16) window + (5.17) stepback).
 \lapsrisk{15--30}{medium}{75\%}
 \end{proposition}
 

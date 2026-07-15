@@ -1151,6 +1151,18 @@ theorem windowMass_le_half_log {lo hi : ℝ} (hlo1 : 1 ≤ lo) (hlohi : lo ≤ h
     rw [windowMass, hne, Finset.sum_empty]
     positivity
 
+/-- Membership in `logWindow` is exactly: odd, and in `[lo, hi]` (the range bound is implied). -/
+theorem mem_logWindow_iff {lo hi : ℝ} {N : ℕ} :
+    N ∈ logWindow lo hi ↔ N % 2 = 1 ∧ lo ≤ (N : ℝ) ∧ (N : ℝ) ≤ hi := by
+  simp only [logWindow, Finset.mem_filter, Finset.mem_range]
+  constructor
+  · rintro ⟨_, h⟩; exact h
+  · rintro ⟨h1, h2, h3⟩
+    refine ⟨?_, h1, h2, h3⟩
+    have hle : (N : ℝ) ≤ (⌈hi⌉₊ : ℝ) := le_trans h3 (Nat.le_ceil hi)
+    have : N ≤ ⌈hi⌉₊ := by exact_mod_cast hle
+    omega
+
 /-- **(5.16) integral-test edge mass — owed.**  The log-uniform mass of the edge window `Edge x y` is
 `≪ log^{-c} x`.  This is Tao's "straightforward calculation using the integral test": the log-uniform
 law puts mass `≈ log(b/a)/((α−1)log y)` on a sub-interval `[a,b] ⊂ [y, y^α]`, and each edge slab has
@@ -1163,7 +1175,161 @@ theorem passtime_edge_mass :
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect (Set.indicator (Edge x y) 1)
           ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  classical
+  obtain ⟨xn, hnon⟩ := logWindow_nonempty_of_large
+  obtain ⟨cD, xD, hcD, hDlb⟩ := windowMass_ge_clog
+  refine ⟨1/5, 2/cD, max (max ((2:ℝ) ^ (2000:ℝ)) xn) xD, by norm_num, by positivity,
+    fun x hx y hy => ?_⟩
+  have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+  have hxn : xn ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxD : xD ≤ x := le_trans (le_max_right _ _) hx
+  have hyset : y = x ^ alpha ∨ y = x ^ alpha ^ 2 := by simpa [Set.mem_insert_iff] using hy
+  obtain ⟨hMy, h2y⟩ := window_arith hx2000 hyset
+  have hx1 : (1:ℝ) ≤ x := by
+    refine le_trans ?_ hx2000
+    rw [show (1:ℝ) = (2:ℝ) ^ (0:ℝ) from (Real.rpow_zero 2).symm]
+    exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (by norm_num)
+  have hx0 : (0:ℝ) < x := lt_of_lt_of_le one_pos hx1
+  have hxy : x ≤ y := by
+    rcases hyset with h | h <;> rw [h] <;>
+      · nth_rewrite 1 [show x = x ^ (1:ℝ) from (Real.rpow_one x).symm]
+        exact Real.rpow_le_rpow_of_exponent_le hx1 (by unfold alpha; norm_num)
+  have hy8 : (8:ℝ) ≤ y := by
+    refine le_trans ?_ (le_trans hx2000 hxy)
+    have h1 : (2:ℝ) ^ (3:ℝ) ≤ (2:ℝ) ^ (2000:ℝ) :=
+      Real.rpow_le_rpow_of_exponent_le (by norm_num) (by norm_num)
+    have h2 : (2:ℝ) ^ (3:ℝ) = 8 := by
+      rw [show (3:ℝ) = ((3:ℕ):ℝ) by norm_num, Real.rpow_natCast]; norm_num
+    rw [h2] at h1; exact h1
+  have hy0 : (0:ℝ) < y := lt_of_lt_of_le (by norm_num) hy8
+  have hy1 : (1:ℝ) ≤ y := le_trans (by norm_num) hy8
+  have h1ltx : (1:ℝ) < x := by
+    refine lt_of_lt_of_le ?_ hx2000
+    rw [show (1:ℝ) = (2:ℝ) ^ (0:ℝ) from (Real.rpow_zero 2).symm]
+    exact Real.rpow_lt_rpow_of_exponent_lt (by norm_num) (by norm_num)
+  have hlogxpos : (0:ℝ) < Real.log x := Real.log_pos h1ltx
+  have hlogx1386 : (1386:ℝ) ≤ Real.log x := by
+    have h1 : Real.log ((2:ℝ) ^ (2000:ℝ)) ≤ Real.log x := Real.log_le_log (by positivity) hx2000
+    rw [Real.log_rpow (by norm_num)] at h1
+    have hl2 : (0.6931:ℝ) ≤ Real.log 2 := by have := Real.log_two_gt_d9; linarith
+    nlinarith [h1, hl2]
+  have hyαy : y ≤ y ^ alpha := by
+    nth_rewrite 1 [← Real.rpow_one y]
+    exact Real.rpow_le_rpow_of_exponent_le hy1 (by unfold alpha; norm_num)
+  have hyα0 : (0:ℝ) < y ^ alpha := Real.rpow_pos_of_pos hy0 alpha
+  -- edge half-width facts (`sEdge x = log^{0.8} x`)
+  have hs0 : (0:ℝ) ≤ sEdge x := by unfold sEdge; positivity
+  have hexps_pos : (0:ℝ) < Real.exp (sEdge x) := Real.exp_pos _
+  have hexps1 : (1:ℝ) ≤ Real.exp (sEdge x) := Real.one_le_exp_iff.mpr hs0
+  have hs_half : sEdge x ≤ (1/2) * Real.log x := by
+    unfold sEdge
+    have hsplit : Real.log x ^ (-(0.2):ℝ) * Real.log x = Real.log x ^ (0.8:ℝ) := by
+      nth_rewrite 2 [← Real.rpow_one (Real.log x)]
+      rw [← Real.rpow_add hlogxpos]; norm_num
+    have hlog02ge2 : (2:ℝ) ≤ Real.log x ^ (0.2:ℝ) := by
+      have h32 : ((32:ℝ))^(0.2:ℝ) = 2 := by
+        rw [show (32:ℝ) = (2:ℝ) ^ (5:ℕ) by norm_num, ← Real.rpow_natCast (2:ℝ) 5,
+          ← Real.rpow_mul (by norm_num : (0:ℝ) ≤ 2),
+          show ((5:ℕ):ℝ) * (0.2:ℝ) = 1 by norm_num, Real.rpow_one]
+      calc (2:ℝ) = (32:ℝ) ^ (0.2:ℝ) := h32.symm
+        _ ≤ Real.log x ^ (0.2:ℝ) :=
+            Real.rpow_le_rpow (by norm_num) (by linarith [hlogx1386]) (by norm_num)
+    have hneg02 : Real.log x ^ (-(0.2):ℝ) ≤ 1/2 := by
+      rw [Real.rpow_neg hlogxpos.le, show (1/2:ℝ) = (2:ℝ)⁻¹ from by norm_num]
+      exact inv_anti₀ (by norm_num) hlog02ge2
+    calc Real.log x ^ (0.8:ℝ) = Real.log x ^ (-(0.2):ℝ) * Real.log x := hsplit.symm
+      _ ≤ (1/2) * Real.log x := mul_le_mul_of_nonneg_right hneg02 hlogxpos.le
+  -- `2·exp(sEdge x) ≤ y^α` (so the upper edge slab lies above `1`)
+  have hlog2half : Real.log 2 ≤ (1/2) * Real.log x := by
+    have h := Real.log_two_lt_d9; nlinarith [hlogx1386, h]
+  have h2expx : (2:ℝ) * Real.exp (sEdge x) ≤ x := by
+    calc (2:ℝ) * Real.exp (sEdge x)
+        = Real.exp (Real.log 2) * Real.exp (sEdge x) := by rw [Real.exp_log (by norm_num)]
+      _ = Real.exp (Real.log 2 + sEdge x) := (Real.exp_add _ _).symm
+      _ ≤ Real.exp (Real.log x) := Real.exp_le_exp.mpr (by linarith [hs_half, hlog2half])
+      _ = x := Real.exp_log hx0
+  have h2exp : (2:ℝ) * Real.exp (sEdge x) ≤ y ^ alpha := le_trans h2expx (le_trans hxy hyαy)
+  have hyαexp_pos : (0:ℝ) < y ^ alpha * Real.exp (-sEdge x) := mul_pos hyα0 (Real.exp_pos _)
+  have h2SU : (2:ℝ) ≤ y ^ alpha * Real.exp (-sEdge x) := by
+    rw [Real.exp_neg, ← div_eq_mul_inv, le_div_iff₀ hexps_pos]; exact h2exp
+  -- slab masses via the integral-test upper bound
+  have hSL : windowMass y (y * Real.exp (sEdge x)) ≤ (1/2) * sEdge x + 2 / y := by
+    have hle := windowMass_le_half_log hy1 (le_mul_of_one_le_right hy0.le hexps1)
+    rwa [show y * Real.exp (sEdge x) / y = Real.exp (sEdge x) from by
+      rw [mul_comm, mul_div_assoc, div_self hy0.ne', mul_one], Real.log_exp] at hle
+  have hSU : windowMass (y ^ alpha * Real.exp (-sEdge x)) (y ^ alpha)
+      ≤ (1/2) * sEdge x + 2 / (y ^ alpha * Real.exp (-sEdge x)) := by
+    have hlohi : y ^ alpha * Real.exp (-sEdge x) ≤ y ^ alpha := by
+      nth_rewrite 2 [← mul_one (y ^ alpha)]
+      exact mul_le_mul_of_nonneg_left (Real.exp_le_one_iff.mpr (by linarith [hs0])) hyα0.le
+    have hle := windowMass_le_half_log (by linarith [h2SU]) hlohi
+    have hlogeq : Real.log (y ^ alpha / (y ^ alpha * Real.exp (-sEdge x))) = sEdge x := by
+      rw [Real.log_div hyα0.ne' hyαexp_pos.ne', Real.log_mul hyα0.ne' (Real.exp_ne_zero _),
+        Real.log_exp]; ring
+    rwa [hlogeq] at hle
+  -- `2 ≤ sEdge x`
+  have hspos : (2:ℝ) ≤ sEdge x := by
+    unfold sEdge
+    have h2 : ((2:ℝ) ^ (1.25:ℝ)) ^ (0.8:ℝ) = 2 := by
+      rw [← Real.rpow_mul (by norm_num : (0:ℝ) ≤ 2), show (1.25:ℝ) * 0.8 = 1 by norm_num,
+        Real.rpow_one]
+    have h1 : (2:ℝ) ^ (1.25:ℝ) ≤ Real.log x := by
+      have ha : (2:ℝ) ^ (1.25:ℝ) ≤ (2:ℝ) ^ ((4:ℕ):ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le (by norm_num) (by norm_num)
+      rw [Real.rpow_natCast] at ha; norm_num at ha; linarith [hlogx1386]
+    calc (2:ℝ) = ((2:ℝ) ^ (1.25:ℝ)) ^ (0.8:ℝ) := h2.symm
+      _ ≤ Real.log x ^ (0.8:ℝ) := Real.rpow_le_rpow (by positivity) h1 (by norm_num)
+  -- numerator (edge-slab reciprocal sum) ≤ `2·sEdge x`
+  have hnum : (∑ N ∈ (logWindow y (y ^ alpha)).filter (fun N => N ∈ Edge x y), (N : ℝ)⁻¹)
+      ≤ 2 * sEdge x := by
+    have hsub : (logWindow y (y ^ alpha)).filter (fun N => N ∈ Edge x y) ⊆
+        logWindow y (y * Real.exp (sEdge x)) ∪
+          logWindow (y ^ alpha * Real.exp (-sEdge x)) (y ^ alpha) := by
+      intro N hN
+      rw [Finset.mem_filter] at hN
+      obtain ⟨hNW, hNE⟩ := hN
+      rw [mem_logWindow_iff] at hNW
+      obtain ⟨hodd, hylo, hyhi⟩ := hNW
+      simp only [Edge, Set.mem_setOf_eq] at hNE
+      rw [Finset.mem_union, mem_logWindow_iff, mem_logWindow_iff]
+      rcases hNE with hE | hE
+      · exact Or.inl ⟨hodd, hylo, hE⟩
+      · exact Or.inr ⟨hodd, hE, hyhi⟩
+    have hunion : (∑ N ∈ (logWindow y (y ^ alpha)).filter (fun N => N ∈ Edge x y), (N : ℝ)⁻¹)
+        ≤ windowMass y (y * Real.exp (sEdge x))
+          + windowMass (y ^ alpha * Real.exp (-sEdge x)) (y ^ alpha) := by
+      calc (∑ N ∈ (logWindow y (y ^ alpha)).filter (fun N => N ∈ Edge x y), (N : ℝ)⁻¹)
+          ≤ ∑ N ∈ logWindow y (y * Real.exp (sEdge x)) ∪
+              logWindow (y ^ alpha * Real.exp (-sEdge x)) (y ^ alpha), (N : ℝ)⁻¹ :=
+            Finset.sum_le_sum_of_subset_of_nonneg hsub (fun N _ _ => by positivity)
+        _ ≤ (∑ N ∈ logWindow y (y * Real.exp (sEdge x)), (N : ℝ)⁻¹)
+              + ∑ N ∈ logWindow (y ^ alpha * Real.exp (-sEdge x)) (y ^ alpha), (N : ℝ)⁻¹ := by
+            rw [← Finset.sum_union_inter]
+            exact le_add_of_nonneg_right (Finset.sum_nonneg (fun N _ => by positivity))
+        _ = windowMass y (y * Real.exp (sEdge x))
+              + windowMass (y ^ alpha * Real.exp (-sEdge x)) (y ^ alpha) := rfl
+    have hb1 : (2:ℝ) / y ≤ 1 := (div_le_one hy0).mpr (show (2:ℝ) ≤ y by linarith only [hy8])
+    have hb2 : (2:ℝ) / (y ^ alpha * Real.exp (-sEdge x)) ≤ 1 := (div_le_one hyαexp_pos).mpr h2SU
+    linarith only [hunion, hSL, hSU, hb1, hb2, hspos]
+  -- reduce the expectation to the ratio and close by dividing by `windowMass`
+  rw [logUnifOdd_expect_indicator_eq (hnon x hxn y hy) (Edge x y)]
+  have hWMpos : (0:ℝ) < windowMass y (y ^ alpha) :=
+    lt_of_lt_of_le (by positivity) (hDlb x hxD y hy)
+  rw [div_le_iff₀ hWMpos]
+  have hLmul : Real.log x ^ (-(1/5):ℝ) * Real.log x = Real.log x ^ (0.8:ℝ) := by
+    nth_rewrite 2 [← Real.rpow_one (Real.log x)]
+    rw [← Real.rpow_add hlogxpos]; norm_num
+  have hErpow : 2 / cD * Real.log x ^ (-(1/5):ℝ) * (cD * Real.log x)
+      = 2 * Real.log x ^ (0.8:ℝ) := by
+    rw [show 2 / cD * Real.log x ^ (-(1/5):ℝ) * (cD * Real.log x)
+        = (cD / cD) * (2 * (Real.log x ^ (-(1/5):ℝ) * Real.log x)) from by ring,
+      div_self (ne_of_gt hcD), one_mul, hLmul]
+  calc (∑ N ∈ (logWindow y (y ^ alpha)).filter (fun N => N ∈ Edge x y), (N : ℝ)⁻¹)
+      ≤ 2 * sEdge x := hnum
+    _ = 2 * Real.log x ^ (0.8:ℝ) := rfl
+    _ = 2 / cD * Real.log x ^ (-(1/5):ℝ) * (cD * Real.log x) := hErpow.symm
+    _ ≤ 2 / cD * Real.log x ^ (-(1/5):ℝ) * windowMass y (y ^ alpha) :=
+        mul_le_mul_of_nonneg_left (hDlb x hxD y hy) (by positivity)
 
 /-- **Paper (5.16), window term.**  On the event that `N_y` *does* pass, the passage time nonetheless
 lands outside `I_y` only with probability `≪ log^{-c} x`.  Reduction (proved here): the event

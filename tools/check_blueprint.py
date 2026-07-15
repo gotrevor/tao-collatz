@@ -581,6 +581,39 @@ def check12(n=14, xi=1, eps=Fraction(2, 100), damp=None, B=44, tol=1e-9):
     print(f"12. (7.36)-bridge n={n} xi={xi} eps={eps} damp={lam:.6g}: "
           f"E_pascal = {VA:.12f}  vs  E Q(Hold) = {VB:.12f}  (|diff| = {err:.2e})  OK")
 
+def check13():
+    # C8 / Prop 5.2 (5.8) exact-reindex trap (added judge pass 30, 2026-07-14).
+    # The pin approxMainTerm renders P(Aff_a(N_y)=M) as the mass of the EXACT affine event
+    #   3^k N + fnat(k,a) = M * 2^{|a|}            (Tao (5.18)/(5.19), Lemma 2.1),
+    # NOT the N-truncating Aff = floor((3^k N + fnat)/2^{|a|}).  Under truncation, Aff depends on
+    # `a` essentially only through |a|, collapsing exponentially many good tuples into one M-window,
+    # so the old truncation_error_bound would be FALSE.  This trap pins the gap on a finite
+    # instance: the exact-divisibility count is O(1) while the truncating count is huge.  A future
+    # v1-style regression (dropping the divisibility guard) trips `guard_cnt <= 5`.
+    from itertools import product
+    def pre(a, m): return sum(a[:m])
+    def good(a, k, thr): return all(abs(pre(a, n) - 2 * n) <= thr for n in range(1, k + 1))
+    k, N, W, thr = 8, 7, 4.0, 3
+    true_val = N
+    for _ in range(k):
+        true_val = syr(true_val)
+    lo, hi = true_val / W, true_val * W
+    trunc_cnt = guard_cnt = 0
+    for a in product(range(1, 6), repeat=k):
+        if not good(a, k, thr):
+            continue
+        num = 3 ** k * N + fnat(k, a)
+        den = 2 ** pre(a, k)
+        if lo <= num // den <= hi:            # truncating (floor) Aff in the E' window
+            trunc_cnt += 1
+            if num % den == 0:                # the EXACT (5.18) divisibility guard
+                guard_cnt += 1
+    assert guard_cnt <= 5, (k, N, guard_cnt)          # exact reindex is O(1) (Lemma 2.1 bijection)
+    assert trunc_cnt >= 100, (k, N, trunc_cnt)        # truncation over-counts (5.8) grossly
+    assert trunc_cnt >= 50 * (guard_cnt + 1), (k, N, trunc_cnt, guard_cnt)
+    print(f"13. C8 (5.8) exact reindex: trunc={trunc_cnt} >> exact-guard={guard_cnt} (k={k} N={N})  OK")
+
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
@@ -590,4 +623,5 @@ if __name__ == "__main__":
     check12()                                     # statement-faithful damping
     check12(damp=1.0 / 2.718281828459045)         # amplified: O(1)-sensitive seam
     check12(n=16, xi=7, damp=0.5)                 # second geometry
+    check13()                                     # C8 (5.8) exact-reindex trap
     print("ALL CHECKS PASS ✅")
