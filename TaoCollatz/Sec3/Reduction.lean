@@ -296,6 +296,95 @@ theorem descentProb_base :
     (descentEvent ⌊x⌋₊ N₀)ᶜ {N | ¬ passes ⌊x⌋₊ N} hsub
   linarith [le_trans hmono hkey]
 
+/-- **Ladder iteration** of `descentProb_step` from `descentProb_base` (p.18 top): climbing
+`j` scales up from a base scale `y ≤ N₀` costs the base error plus a geometric error sum
+`∑_{i<j} (α^{-c})^i · (log y)^{-c}`. The scale after `j` climbs is `y^{α^j}`. -/
+theorem descentProb_ladder :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ : ℕ, ∀ y : ℝ, x₀ ≤ y → y ≤ (N₀ : ℝ) → ∀ j : ℕ,
+      1 - C * y ^ (-c)
+        - C * (Real.log y) ^ (-c) * ∑ i ∈ Finset.range j, (alpha ^ (-c)) ^ i
+        ≤ descentProb ⌊y ^ (alpha ^ j)⌋₊ ((y ^ (alpha ^ j)) ^ alpha) N₀ := by
+  obtain ⟨cb, Cb, xb, hcb, hCb, hbase⟩ := descentProb_base
+  obtain ⟨cs, Cs, xs, hcs, hCs, hstep⟩ := descentProb_step
+  set c := min cb cs with hcdef
+  have hc : 0 < c := lt_min hcb hcs
+  set C := max Cb Cs with hCdef
+  have hC : 0 < C := lt_of_lt_of_le hCb (le_max_left _ _)
+  refine ⟨c, C, max (max xb xs) (Real.exp 1), hc, hC, fun N₀ y hy hyN j => ?_⟩
+  have hyb : xb ≤ y := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hy
+  have hys : xs ≤ y := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hy
+  have hye : Real.exp 1 ≤ y := le_trans (le_max_right _ _) hy
+  have hy1 : (1 : ℝ) ≤ y := by
+    calc (1 : ℝ) = Real.exp 0 := (Real.exp_zero).symm
+      _ ≤ Real.exp 1 := Real.exp_le_exp.mpr zero_le_one
+      _ ≤ y := hye
+  have hy0 : (0 : ℝ) < y := lt_of_lt_of_le one_pos hy1
+  have hL1 : (1 : ℝ) ≤ Real.log y := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hye
+  have hL0 : (0 : ℝ) < Real.log y := lt_of_lt_of_le one_pos hL1
+  have hN₀1 : 1 ≤ N₀ := by exact_mod_cast le_trans hy1 hyN
+  have halpha1 : (1 : ℝ) ≤ alpha := by norm_num [alpha]
+  have halpha0 : (0 : ℝ) < alpha := by norm_num [alpha]
+  -- scale monotonicity: `y ≤ y^{α^j}`, and every ladder scale clears the thresholds
+  have hpow1 : ∀ i : ℕ, (1 : ℝ) ≤ alpha ^ i := fun i => one_le_pow₀ halpha1
+  have hscale : ∀ i : ℕ, y ≤ y ^ (alpha ^ i) := by
+    intro i
+    calc y = y ^ (1 : ℝ) := (Real.rpow_one y).symm
+      _ ≤ y ^ (alpha ^ i) := Real.rpow_le_rpow_of_exponent_le hy1 (hpow1 i)
+  induction j with
+  | zero =>
+    have hb := hbase y hyb N₀ hyN
+    have h0 : y ^ (alpha ^ (0 : ℕ)) = y := by rw [pow_zero, Real.rpow_one]
+    rw [h0, Finset.sum_range_zero, mul_zero, sub_zero]
+    have herr : Cb * y ^ (-cb) ≤ C * y ^ (-c) := by
+      refine mul_le_mul (le_max_left _ _) ?_ (Real.rpow_nonneg hy0.le _) hC.le
+      exact Real.rpow_le_rpow_of_exponent_le hy1 (by simp [hcdef, neg_le_neg_iff, min_le_left])
+    linarith
+  | succ j ih =>
+    -- one `descentProb_step` at scale `x = y^{α^j}`
+    have hxstep : xs ≤ y ^ (alpha ^ j) := le_trans hys (hscale j)
+    have hs := hstep (y ^ (alpha ^ j)) hxstep N₀ hN₀1
+    -- scale identities
+    have hup : (y ^ (alpha ^ j)) ^ alpha = y ^ (alpha ^ (j + 1)) := by
+      rw [← Real.rpow_mul hy0.le]
+      congr 1
+    have hup2 : (y ^ (alpha ^ j)) ^ (alpha ^ 2) = (y ^ (alpha ^ (j + 1))) ^ alpha := by
+      rw [← Real.rpow_mul hy0.le, ← Real.rpow_mul hy0.le]
+      congr 1
+      ring
+    rw [hup, hup2] at hs
+    rw [hup] at ih
+    -- error conversion: `Cs·(log y^{α^j})^{-cs} ≤ C·(α^{-c})^j·(log y)^{-c}`
+    have hlogx : Real.log (y ^ (alpha ^ j)) = alpha ^ j * Real.log y :=
+      Real.log_rpow hy0 _
+    have hbase1 : (1 : ℝ) ≤ alpha ^ j * Real.log y := by
+      nlinarith [hpow1 j, hL1]
+    have hgeom : ((alpha ^ j : ℝ)) ^ (-c) = (alpha ^ (-c)) ^ j := by
+      rw [← Real.rpow_natCast alpha j, ← Real.rpow_natCast (alpha ^ (-c)) j,
+        ← Real.rpow_mul halpha0.le, ← Real.rpow_mul halpha0.le]
+      congr 1
+      ring
+    have herrstep : Cs * Real.log (y ^ (alpha ^ j)) ^ (-cs)
+        ≤ C * ((alpha ^ (-c)) ^ j * Real.log y ^ (-c)) := by
+      rw [hlogx]
+      have h1 : (alpha ^ j * Real.log y) ^ (-cs) ≤ (alpha ^ j * Real.log y) ^ (-c) :=
+        Real.rpow_le_rpow_of_exponent_le hbase1 (neg_le_neg (min_le_right cb cs))
+      have h2 : (alpha ^ j * Real.log y) ^ (-c)
+          = (alpha ^ (-c)) ^ j * Real.log y ^ (-c) := by
+        rw [Real.mul_rpow (pow_nonneg halpha0.le j) hL0.le, hgeom]
+      have h3 : (0 : ℝ) ≤ (alpha ^ (-c)) ^ j * Real.log y ^ (-c) := by positivity
+      calc Cs * (alpha ^ j * Real.log y) ^ (-cs)
+          ≤ Cs * (alpha ^ j * Real.log y) ^ (-c) :=
+            mul_le_mul_of_nonneg_left h1 hCs.le
+        _ = Cs * ((alpha ^ (-c)) ^ j * Real.log y ^ (-c)) := by rw [h2]
+        _ ≤ C * ((alpha ^ (-c)) ^ j * Real.log y ^ (-c)) :=
+            mul_le_mul_of_nonneg_right (le_max_right Cb Cs) h3
+    rw [Finset.sum_range_succ, mul_add, mul_comm (C * Real.log y ^ (-c)) ((alpha ^ (-c)) ^ j)]
+    have := herrstep
+    have hCL : C * Real.log y ^ (-c) * (alpha ^ (-c)) ^ j
+        = C * ((alpha ^ (-c)) ^ j * Real.log y ^ (-c)) := by ring
+    linarith [hs, ih]
+
 /-- **Telescope** (p.18 top): iterating `descentProb_step` down `J ≈ log_α(log x/log N₀)`
 scales from the base `y < N₀^{1/α}` and summing `∑_j (α^j log y)^{-c} ≪ log^{-c} N₀` gives
 `ℙ(B_{x^{1/α}}) ≥ 1 − O(log^{-c}N₀)` — the window `[x, x^α]`, threshold `⌊x^{1/α}⌋`. -/
