@@ -356,6 +356,65 @@ noncomputable def cn (x : ℝ) (E : Set ℕ) (n : ℕ) (X : ZMod (3 ^ (n - mZero
   (3 : ℝ) ^ (n - mZero x)
     * ∑' M : ℕ, if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X then (M : ℝ)⁻¹ else 0
 
+/-- **Residue-class window as an arithmetic progression** (general AP reindex).  For modulus `q ≥ 1`, a
+real window `[lo, hi]` with `1 ≤ lo`, and any residue `X : ZMod q`, the naturals in `[⌈lo⌉, ⌊hi⌋]`
+congruent to `X mod q` form an AP `{a, a+q, …, a+q(count−1)}` with first term `a ≥ lo` and one-past-end
+`a + q·count ≤ hi + q`.  (The `3^{n−m₀}`/general-`q` analog of `classMass_ap_form`, without the oddness
+filter; same `Nat.find`-least-element + `range.image` bijection argument.) -/
+theorem class_window_ap_form {lo hi : ℝ} (hlo : 1 ≤ lo) (hlohi : lo ≤ hi)
+    {q : ℕ} (hq : 1 ≤ q) (X : ZMod q) :
+    ∃ a count : ℕ,
+      ((Finset.Icc ⌈lo⌉₊ ⌊hi⌋₊).filter (fun M : ℕ => (M : ZMod q) = X)
+        = (Finset.range count).image (fun i => a + q * i))
+      ∧ lo ≤ (a : ℝ)
+      ∧ (a : ℝ) + (q : ℝ) * (count : ℝ) ≤ hi + (q : ℝ) := by
+  sorry
+
+/-- **Residue-class harmonic window bound** (general AP integral test).  The harmonic mass of the
+residue class `X mod q` in the window `[lo, hi]` is bounded by the integral term plus the `O(1/lo)`
+discretization error: a single application of `harmonic_ap_integral_bound` on the AP `{a + q·i}` from
+`class_window_ap_form`.  This is the reusable analytic core of the crude `cn_bound`. -/
+theorem harmonic_class_window_bound {lo hi : ℝ} (hlo : 1 ≤ lo) (hlohi : lo ≤ hi)
+    {q : ℕ} (hq : 1 ≤ q) (X : ZMod q) :
+    (∑' M : ℕ, if lo ≤ (M : ℝ) ∧ (M : ℝ) ≤ hi ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0)
+      ≤ (q : ℝ)⁻¹ * Real.log ((hi + q) / lo) + 1 / lo := by
+  have hqR : (0 : ℝ) < q := by exact_mod_cast hq
+  have hlopos : (0 : ℝ) < lo := by linarith
+  have hhipos : (0 : ℝ) < hi := lt_of_lt_of_le hlopos hlohi
+  obtain ⟨a, count, hAP, ha_ge, hend⟩ := class_window_ap_form hlo hlohi hq X
+  have haposR : (0 : ℝ) < (a : ℝ) := lt_of_lt_of_le hlopos ha_ge
+  have hcond : ∀ M : ℕ, (lo ≤ (M : ℝ) ∧ (M : ℝ) ≤ hi ∧ (M : ZMod q) = X)
+      ↔ M ∈ (Finset.Icc ⌈lo⌉₊ ⌊hi⌋₊).filter (fun M : ℕ => (M : ZMod q) = X) := by
+    intro M
+    rw [Finset.mem_filter, Finset.mem_Icc, Nat.ceil_le, Nat.le_floor_iff hhipos.le]
+    tauto
+  have htsum : (∑' M : ℕ, if lo ≤ (M : ℝ) ∧ (M : ℝ) ≤ hi ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0)
+      = ∑ M ∈ (Finset.Icc ⌈lo⌉₊ ⌊hi⌋₊).filter (fun M : ℕ => (M : ZMod q) = X), (M : ℝ)⁻¹ := by
+    rw [tsum_eq_sum (s := (Finset.Icc ⌈lo⌉₊ ⌊hi⌋₊).filter (fun M : ℕ => (M : ZMod q) = X))
+      (fun M hM => if_neg (fun h => hM ((hcond M).mp h)))]
+    exact Finset.sum_congr rfl (fun M hM => if_pos ((hcond M).mpr hM))
+  rw [htsum, hAP]
+  have hinj : ∀ i ∈ Finset.range count, ∀ j ∈ Finset.range count,
+      a + q * i = a + q * j → i = j := fun i _ j _ h =>
+    Nat.eq_of_mul_eq_mul_left hq (Nat.add_left_cancel h)
+  rw [Finset.sum_image hinj]
+  have hcast : ∀ i : ℕ, ((a + q * i : ℕ) : ℝ)⁻¹ = ((a : ℝ) + (q : ℝ) * (i : ℝ))⁻¹ := by
+    intro i; push_cast; ring_nf
+  rw [Finset.sum_congr rfl (fun i _ => hcast i)]
+  have hharm := harmonic_ap_integral_bound haposR hqR count
+  have hsum_le : (∑ i ∈ Finset.range count, ((a : ℝ) + (q : ℝ) * (i : ℝ))⁻¹)
+      ≤ (q : ℝ)⁻¹ * Real.log (((a : ℝ) + (q : ℝ) * (count : ℝ)) / (a : ℝ)) + (a : ℝ)⁻¹ := by
+    have h := (abs_le.mp hharm).2; linarith
+  refine le_trans hsum_le ?_
+  have hlog_le : Real.log (((a : ℝ) + (q : ℝ) * (count : ℝ)) / (a : ℝ))
+      ≤ Real.log ((hi + q) / lo) := by
+    apply Real.log_le_log (by positivity)
+    rw [div_le_div_iff₀ haposR hlopos]
+    nlinarith [mul_le_mul_of_nonneg_right hend hlopos.le,
+      mul_le_mul_of_nonneg_left ha_ge (by positivity : (0 : ℝ) ≤ hi + (q : ℝ))]
+  have hainv : (a : ℝ)⁻¹ ≤ 1 / lo := by rw [one_div]; exact inv_anti₀ hlopos ha_ge
+  exact add_le_add (mul_le_mul_of_nonneg_left hlog_le (by positivity)) hainv
+
 /-- **Crude harmonic-weight bound** (`c_n(X) ≪ log^{0.7}x`) — the shared self-contained prerequisite of
 B1 and B2.  This is a *weakening* of Tao's Lemma 5.3 (`c_n ≪ 1`, which needs the delicate `c_{n,a}`
 split over `ℕ^{m₀}` with the extra CRT modulus `2^{a_{[1,m₀]}+1}`).  We only need the crude bound: the
