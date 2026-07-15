@@ -16,6 +16,27 @@ binds unless restated here. `blueprint_rules.md` is BINDING: one node, one claim
 means the STATEMENT exists, never "finished"; never set a `\leanok` yourself. Report work as
 **"N sorries + M orange."***
 
+> ### 🔄 REVIEW-LAP REFRESH (2026-07-15, post-`fef0c38`) — objective NARROWED to C8's last hole
+> **State advanced past the pass-30 snapshot:** `passtime_window_inner` (5.16) is CLOSED, and the (5.17)
+> **forward** leg `firstPassMid_le_steppedMid` is PROVED axiom-clean. **C8 (`first_passage_approx`) now
+> rests on exactly ONE sorry** (kernel-checked this lap): the (5.17) **reverse** leg
+> `steppedMid_le_firstPassMid_add` (`ApproxFormula.lean`). Census = **4 sorries + 0 orange** (reverse leg,
+> C9 `stabilization`, 2 `Statement.lean` headlines).
+> - **THE single objective:** close `steppedMid_le_firstPassMid_add`. **Mandated move:** the reverse defect
+>   `∑_{n∈Iy} E[𝟙_{T_n∖S_n}]` splits pointwise into **Case A** (`n−m₀ ≤ T_x N`) and **Case B**
+>   (`n−m₀ > T_x N`). Case A collapses EXACTLY (via `passTime_stepback`: `T_x N = n`, disjoint across `n`)
+>   to `E[𝟙_{¬good⁽ⁿ⁰⁾}] ≤ C log^{-c}` by PROVED `approx_good_tuple_whp` — **prove this half now.** Case B is
+>   the genuine **early-return** event (orbit dips ≤x, rises, dips again) — isolate it as a named sorry
+>   `reverse_early_return_whp`; **do NOT** claim it follows from `approx_passtime_window` alone.
+> - **⚠ ROADMAP CORRECTION (supersedes handoff step 2b):** the handoff/`eprime_forces_passTime` disjointness
+>   only holds on Case A (its hypothesis `n−m₀ ≤ T_x N`). Case B N can lie in several `T_n` (returns spaced
+>   >m₀ apart), so `approx_passtime_window` (which needs `T_x N ∉ Iy`) does NOT cover early-returns with
+>   `T_x N ∈ Iy`. The early-return bound is a real union-of-returns whp estimate — its own named sorry.
+> - **Forbidden drift (unchanged):** do NOT retreat to C9/C6 while C8's hole is open; do NOT touch a ratified
+>   pin or frozen constant. Decomposing the reverse leg into named sub-sorries in `src/` is PROGRESS.
+> - **Why:** C8 is one hole from done; closing it completes Prop 5.2 and fires judge-trigger (b) → C9 may then
+>   *use* C8's theorem, not just cite it. This is hardest-first: the reverse leg is the route-decisive blocker.
+
 ### State (kernel-verified this pass; `blueprint_audit.py` → 15 proved, 0 orange, 0 drift, 0 false-green)
 - **15 nodes proved + axiom-clean**: all of §7 (X2–X11), **C10** (Prop 1.14), C5, C2, S3, C4, **C7** (just flipped).
 - **C8 (Prop 5.2) RATIFIED v2** (statement faithful; exact reindex `approxMainTerm_eq_steppedMid` PROVED
@@ -645,6 +666,11 @@ analytic assembly over machinery that is *already proved*. Driving C10 → C9 �
 wiring is the last mile. No route trigger has fired; route = CONTINUE.
 
 ### Directive history (this section's entries; full campaign history below under SUPERSEDED)
+- **review lap (2026-07-15, `fef0c38`)**: route CONTINUE, no trigger fired. Inventory kernel-verified: C8
+  `first_passage_approx` down to ONE sorry (5.17 reverse leg); `passtime_window_inner`+forward leg CLOSED.
+  Objective NARROWED to `steppedMid_le_firstPassMid_add`; recorded the CaseA(exact)/CaseB(early-return)
+  split + roadmap correction (handoff step 2b's "approx_passtime_window covers it" is FALSE for returns
+  with `T_x N ∈ Iy`). Mandated: prove Case A (`approx_good_tuple_whp`), isolate Case B as a named sorry.
 - **review lap (2026-07-14, `810518b`)**: route CONTINUE, no trigger fired. **C7 (obj 3) PROVED +
   axiom-clean** (`first_passage_nonescape` = trust base; integral test + `valSum_lower_tail` closed
   by the grind laps since `e0913ce`). Objectives 1/2/3 all DONE. Live target advances to the

@@ -1,31 +1,39 @@
 # STATUS — tao-collatz 📊
 
 **First-anywhere Lean 4 formalization of Tao 2019 "Almost all Collatz orbits
- attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3322 jobs) ·
-**Updated**: deep reflection · 2026-07-15 · `95436f9`
+ attain almost bounded values" (Thm 1.3).** · **Build**: 🟢 green (3323 jobs) ·
+**Updated**: review lap · 2026-07-15 · `fef0c38`
 
 ## Where it stands
 
 **🏆 §7 (the campaign's 65–75% risk concentration), 🏆 C10 `fine_scale_mixing`
 (Prop 1.14, the §6 crux), and 🏆 C7 `first_passage_nonescape` (Prop (1.19)) are all
-CLOSED and axiom-clean** — re-verified this reflection lap (both
-`[propext, Classical.choice, Quot.sound]` at `95436f9`). The campaign order
-`C10 → C8(pin) → C7(prove) → C8(close) → C9` STANDS; the **live target is the C8-close
-leg = `first_passage_approx`** (Prop 5.2 / (5.8), `Sec5/ApproxFormula.lean`).
-**🚩 This reflection caught a false summit in C8:** the ratified `approxMainTerm` pin
-renders (5.8) with the ℕ-**truncating** `Aff` and **no divisibility guard**, so the
-closing hole `truncation_error_bound` (`:1215`) is **FALSE** — the truncation over-counts
-by a super-polylog factor (source pp.22–25 + numeric probe
-`tools/sandbox/tao_c8_truncation_probe.py`; thousands of good tuples collapse into `E'`,
-the exact (5.18) guard collapses that to ~1). **Mandated correction:** re-pin
-`approxMainTerm` with the exact-affine/(5.18) guard (RATIFY-C8-v2), delete
-`truncation_error_bound`, re-wire onto the exact Lemma-2.1 reindex (mechanical layer
-reusable); parallel-safe thread = `passtime_window_inner` (:798, the (5.16) window). See
-DIRECTION.md CURRENT DIRECTIVE + PENDING_WORK Reflection 2026-07-15. **6 sorries + 0
-orange nodes** (3×C8 `:798,1200,1215`, 1×C9 `:1399`, 2 frozen headline stubs).
+CLOSED and axiom-clean** (`[propext, Classical.choice, Quot.sound]`). The pass-30
+false-summit is REPAIRED: `approxMainTerm` was re-pinned RATIFY-C8-v2 (exact affine guard)
+and the reindex `approxMainTerm_eq_steppedMid` is PROVED axiom-clean, so `steppedMid` — not
+the truncating `Aff` — carries (5.8). **C8 = `first_passage_approx` (Prop 5.2 / (5.8)) now
+rests on exactly ONE sorry** (kernel-checked this lap): the (5.17) **reverse** leg
+`steppedMid_le_firstPassMid_add` (`Sec5/ApproxFormula.lean:2602`). Its two siblings are
+closed — `passtime_window_inner` (5.16) proved, and the (5.17) **forward** leg
+`firstPassMid_le_steppedMid` proved axiom-clean (a DETERMINISTIC `S_n ⊆ T_n` inclusion, no
+error). All C8 error now lives in the reverse leg. Campaign order
+`C10 ✅ → C8(pin ✅) → C7 ✅ → C8 close (1 hole) → C9 → C6 → headline` STANDS.
+**Census = 4 sorries + 0 orange** (C8 reverse leg, C9 `stabilization`, 2 frozen headline stubs).
 
 ## What's happened (newest first)
 
+- **review lap (2026-07-15, `fef0c38`)**: route CONTINUE, no trigger fired. Inventory
+  kernel-verified: C8 `first_passage_approx` = trust base + ONE `sorryAx` (the 5.17 reverse
+  leg); `passtime_window_inner` + the 5.17 forward leg both CLOSED since the pass-30 snapshot.
+  Narrowed the directive to `steppedMid_le_firstPassMid_add` and recorded the CaseA(exact,
+  disjoint)/CaseB(early-return) split — correcting the handoff's claim that
+  `approx_passtime_window` alone bounds the reverse defect (it misses returns with `T_x N ∈ Iy`).
+  Then decomposed the reverse leg in `src/` (see next commit). DIRECTION/STATUS refreshed.
+- **grind laps C8 (5.17) (2026-07-15, `eabcb16`→`fef0c38`)**: closed the (5.17) FORWARD leg.
+  `firstPassMid_le_steppedMid` proved axiom-clean via `stepback_passage_scale`/
+  `stepback_size_window`/`expect_mono_on_support`; `eprime_forces_passTime` (the disjointness
+  key) proved; helpers `good_nested`/`mZero_le_of_mem_Iy`/`slack_*`/`three_pow_nZero_le` banked.
+  C8 reverse leg is the sole remaining C8 hole.
 - **deep reflection (2026-07-15, `95436f9`)**: route **CONTINUE-with-correction**; **T5
   FIRED**. Re-verified C10 + C7 axiom-clean at `95436f9`. **Caught a false summit in the
   C8 close:** grind laps `d8a9d57`→`95436f9` built the `steppedMid`/`approxMainTerm`
@@ -83,18 +91,16 @@ orange nodes** (3×C8 `:798,1200,1215`, 1×C9 `:1399`, 2 frozen headline stubs).
 
 ## Outstanding
 
-### Short-term (mirror PENDING_WORK top — deep reflection 2026-07-15)
-- **RE-PIN `approxMainTerm` (RATIFY-C8-v2), `ApproxFormula.lean:224`** — START HERE
-  (route-decisive). Guard the pushforward by the exact affine relation
-  `3^{n−m₀}N + fnat (n−m₀) ā = M·2^{a_{[1,n−m₀]}}` (⟺ (5.18) congruence + integrality),
-  the faithful render of Tao's `ℙ(Aff_ā(N_y)=M)`. Then **delete `truncation_error_bound`**
-  (`:1215`, false) — the reindex becomes exact via Lemma 2.1. Leave the node `\notready`
-  (orange) pending a judge. Mechanical layer reusable.
-- **`passtime_window_inner` (`:798`)** — PARALLEL-SAFE (does not touch the reindex), bank
-  anytime. The (5.16) window term: integral test reusing C7's proved
-  `classMass`/`windowMass`/`intTest_*`.
-- **`first_passage_stepback_reduce` (`:1200`)** — the (5.17) event reduction; needs the
-  `E'` size window (orbit estimate `syr_iterate_good_bracket'` proved) + reverse inclusion.
+### Short-term (mirror PENDING_WORK top — review lap 2026-07-15)
+- **`steppedMid_le_firstPassMid_add` (`ApproxFormula.lean:2602`)** — C8's LAST hole, the
+  (5.17) reverse leg. Reverse defect `∑_{n∈Iy} E[𝟙_{T_n∖S_n}]` splits pointwise CaseA
+  (`n−m₀ ≤ T_x N`) ⊎ CaseB (`n−m₀ > T_x N`). **Case A** collapses exactly to
+  `E[𝟙_{¬good⁽ⁿ⁰⁾}] ≤ C log^{-c}` (`approx_good_tuple_whp`, PROVED) via `passTime_stepback`
+  ⟹ `T_x N = n` (disjoint). **Case B** = the genuine early-return event → named sorry
+  `reverse_early_return_whp` (a union-of-returns whp estimate; NOT covered by
+  `approx_passtime_window` alone). Prove Case A + wiring now; isolate Case B honestly.
+- Then **C9 `stabilization`** (`FirstPassage.lean:1399`, Prop 1.11, consumes C10 ✅ + C8),
+  then **C6** (§3 reduction) → wire the 2 `Statement.lean` headlines.
 
 ### Long-term
 - Close C8 (assembly + the two whp sub-lemmas), then C9 `stabilization` (Prop 1.11,
@@ -111,17 +117,17 @@ Close C7 → C8 → C9 `stabilization` → C6 → wire the two `Statement.lean` 
 
 The two headline theorems are NOT yet assembled — the §1–§6 spine feeds into
 `Statement` only after C8/C9/C6 land. §7, C10, and C7 (the crux concentrations plus
-the first-passage non-escape) are closed and clean. Ledger re-run this reflection lap
-(real `#print axioms` at `95436f9`). ⚠️ `#print axioms` certifies PROOFS, not STATEMENTS:
-the C8 row's flag is a **statement-fidelity** defect (`approxMainTerm` pin), invisible to
-the kernel — exactly the transcription-drift class this ledger exists to surface:
+the first-passage non-escape) are closed and clean. Ledger re-run this review lap
+(real `#print axioms` at `fef0c38`). The pass-30 `approxMainTerm` fidelity flag is CLEARED:
+re-pinned RATIFY-C8-v2 (exact affine guard) and `approxMainTerm_eq_steppedMid` proved
+axiom-clean, so C8's remaining debt is pure `sorry`-discharge (the reverse leg), not fidelity:
 
 | headline / node | paper claim | `#print axioms` shows | status |
 |---|---|---|---|
 | `Statement` Thm 1.3 / Thm 3.1 | Thm 1.3 (uncond.) | `sorry` (spine not assembled) | 🔜 stub — discharges when C8/C9/C6 land |
 | C10 `fine_scale_mixing` (Prop 1.14) | §6 fine-scale mixing | `[propext, choice, Quot.sound]` | 🟢 **CLOSED, clean** (was the §6 crux); judge to flip `\leanok` |
 | C7 `first_passage_nonescape` (1.19) | `P(T_x(N_y)=∞) ≪ x^{-c}` | `[propext, choice, Quot.sound]` | 🟢 **CLOSED, clean** (integral test + (5.5) done); judge to flip `\leanok` |
-| C8 `first_passage_approx` (Prop 5.2 / (5.8)) | §5 approx formula | trust base + `sorryAx` (3 sub-sorries) | 🟡 **current target — pin defect flagged**: `approxMainTerm` uses ℕ-truncating `Aff` unguarded ⟹ `truncation_error_bound` false ⟹ **RE-PIN owed (RATIFY-C8-v2)** with (5.18) guard (JUDGE-FLAG). Statement-fidelity issue, not a `#print axioms` issue |
+| C8 `first_passage_approx` (Prop 5.2 / (5.8)) | §5 approx formula | trust base + `sorryAx` (1 sub-sorry) | 🟡 **current target**: RATIFY-C8-v2 exact reindex PROVED; window (5.16) + forward leg (5.17) CLOSED. ONE hole = `steppedMid_le_firstPassMid_add` (5.17 reverse leg). Pin-fidelity flag CLEARED |
 | C9 `stabilization` (Prop 1.11) | §5 first-passage stab. | trust base + `sorryAx` | 🟡 downstream of C10 + C8; after C8 |
 | `charFn_decay` (Prop 1.17) / `key_fourier_decay` (Prop 7.1) | char/Fourier decay | `[propext, choice, Quot.sound]` | 🟢 done, clean |
 | `prop_7_8` / `Q_black_edge` / `Q_polynomial_decay` + X8–X11 kernels | Prop 7.8 + Lemmas 7.6–7.10 | `[propext, choice, Quot.sound]` | 🟢 **§7 CLOSED, clean** |
@@ -130,14 +136,12 @@ the kernel — exactly the transcription-drift class this ledger exists to surfa
 Math-axiom count on every completed node = **0** (trust base only). No 🔴
 (open-conjecture) axioms anywhere — correct, since Thm 1.3 is unconditional. No
 🟡/🟠 *cited* axioms: the open nodes (C8, C9) are being PROVED, not cited.
-Remaining work is `sorry`-discharge (C8 + C9 + 2 headline) **plus one fidelity re-pin**
-(C8 `approxMainTerm`, RATIFY-C8-v2) — not axiom-discharge.
+Remaining work is pure `sorry`-discharge (C8 reverse leg + C9 + 2 headline) — the pass-30
+`approxMainTerm` re-pin is DONE, so no fidelity debt remains.
 
 ## Pointers
-DIRECTION.md (binding directive; **deep-reflection update 2026-07-15 `95436f9` on top** —
-C8 re-pin mandate) · BLUEPRINT.md (frozen node ledger §2) · newest baton
-`HANDOFF-2026-07-15-C8-reindex-mechanized.md` (HEAD `95436f9`) · PENDING_WORK.md
-(Reflection 2026-07-15 top: C8 pin JUDGE-FLAG + attack plan) ·
-papers/literature-review.md (source synthesis, incl. §5 HOLE #4) ·
-`tools/sandbox/tao_c8_truncation_probe.py` (numeric evidence) ·
+DIRECTION.md (binding directive; **review-lap refresh 2026-07-15 `fef0c38` on top** —
+objective narrowed to C8 reverse leg) · BLUEPRINT.md (frozen node ledger §2) · newest baton
+`HANDOFF-2026-07-15-C8-5.17-forward-leg-closed.md` (HEAD `fef0c38`) · PENDING_WORK.md
+(top: reverse-leg CaseA/CaseB attack plan) · papers/literature-review.md (source synthesis) ·
 paper `papers/tao-2019-almost-all-orbits.pdf`.
