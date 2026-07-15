@@ -20,14 +20,17 @@
 **Census: still 5 sorries + 0 orange** (these are *proved* helpers, not new holes). Full lake build
 green (3316).
 
-**Remaining (5.19)/(5.20) chain now needs** (with the two bricks above in hand):
-- `windowMass y (y^α) = (1+O)(α−1)/2·log y` — the harmonic normaliser two-sided estimate. Infrastructure
-  READY: `harmonic_ap_integral_bound` (general AP integral test, `FirstPassage.lean:414`), the logWindow
-  = odd-AP identity + `count` (in `intTest_D_lower`'s proof, `FirstPassage.lean:823`), `intTest_D_lower`
-  (lower bound only, needs upgrade to two-sided). This is the next self-contained analytic brick.
+**`windowMass_estimate` PROVED** (`FirstPassage.lean`, after `intTest_D_lower`, axiom-clean):
+`|windowMass y (y^α) − (α−1)/2·log y| ≤ 3` for `y∈{x^α,x^{α²}}`, large x. The (5.19) harmonic normaliser
+`D` = `(α−1)/2·log y + O(1)`. Reused the odd-AP structure from `intTest_D_lower` + `harmonic_ap_integral_bound`
+(step 2) + `log_le_sub_one_of_pos` endpoint bounds. This is the DENOMINATOR of the (5.19) mass.
+
+**Remaining (5.19)/(5.20) chain now needs** (with the three bricks — pointmass, apply_toReal, windowMass_estimate — in hand):
 - `N* ∈ logWindow y (y^α)` for good (ā,M): from the `E'` size window + good-tuple orbit bracket
   (`syr_iterate_good_bracket`, `ApproxFormula.lean`), N* ≍ (4/3)^{m₀}x·2^{-|ā|}·... lands in [y,y^α].
 - `(N*)⁻¹ = 3^{n−m₀}/(M·2^{pre ā}−fnat) ≈ 3^{n−m₀}/(M·2^{pre ā})` — relative error `O(x^{-c})`.
+- Then the per-n term = `(1/D)·3^{n−m₀}·∑_ā 2^{-pre ā}[good]·∑_{M∈E',≡} 1/M`, feeding into (5.20)→Z.
+- **(5.20) fine_scale_mixing seam** — still the route-decisive C9 unknown; SEAM-PROBE next.
 
 **Next attack on `perNTerm_eval` (continue hardest-first):** with `perNTerm_pointmass` in hand, the
 remaining chain is:
