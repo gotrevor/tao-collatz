@@ -1,3 +1,36 @@
+## Grind lap — 2026-07-15 — ✅ C9 crux DECOMPOSED + ASSEMBLY PROVED — down to 3 faithful analytic leaves
+
+**`approxMainTerm_to_Z` is now PROVED** from three faithful sub-lemmas — the full (5.19)+(5.20)+(5.9)
+assembly + the `log y`/`(α−1)` cancellation is **machine-checked**. The whole C9 spine is wired:
+`stabilization ← approxMainTerm_window_stable ← approxMainTerm_to_Z ← {perNTerm_eval, Iy_count_ratio,
+mainZ_bound}`. `#print axioms stabilization` `sorryAx` now traces to those **3 leaf sub-lemmas ALONE**,
+which PROVABLY suffice (kernel checked the assembly).
+
+New in `Sec5/Stabilization.lean`:
+- **`perNTerm x E y n`** (def) + `approxMainTerm_eq_sum_perNTerm` (rfl split of (5.8) over `I_y`).
+- **`perNTerm_eval`** (:221, sorry) — **(5.19)+(5.20), THE hard leaf & sole C10 consumer.** Per-n term
+  `= mainZ/((α−1)/2·log y)` up to *relative* `O(log^{-c})`. Combines single-value mass (5.19) +
+  harmonic→Z (5.20). **Lemma 5.3 `c_n≪1` + `fine_scale_mixing` (C10) enter HERE.**
+- **`Iy_count_ratio`** (:233, sorry) — (5.9): `#I_y/((α−1)/2·log y) = 2/log(4/3) + O(log^{-c})`. Pure
+  lattice-point count = interval length + O(1). **Most self-contained; cheapest leaf.**
+- **`mainZ_bound`** (:244, sorry) — `|mainZ x E| ≤ C` (Z = O(1)). Small.
+
+**Census: 5 sorries + 0 orange** (2 headlines + the 3 leaves; up from 3 — the C9 decomposition, PROGRESS).
+Full lake build green (3324). The assembly arithmetic (Hölder-style split of `∑_{n∈I_y}` through the
+shared `mainZ`, ratio bound, error collapse) is DONE — future laps only fill the 3 analytic leaves.
+
+**Next attack (hardest-first = `perNTerm_eval`; or bank the cheap leaves first):**
+- `perNTerm_eval` is the route-decisive C10 consumer. Sub-decompose into (5.19) [single-value mass:
+  the affine event has ≤1 solution `N*`; `logUnifOdd y (y^α) N* = (1/N*)/D` with `D = ∑_{odd N∈[y,y^α]}
+  1/N = (1+O(1/x))(α−1)/2·log y` — the harmonic-sum estimate, an integral test over odds reusing C7's
+  `intTest_*`] and (5.20) [`𝔼_{ā∼Geom^{n−m₀}} c_n(F mod 3^{n−m₀}) = Z + O(log^{-c})`; Lemma 5.3 bounds
+  `c_n≪1` via integral test (5.25)/(5.26)+CRT; **fine-scale mixing** makes `𝔼 c_n ≈ Z`]. SEAM-PROBE the
+  `fine_scale_mixing` `osc`-interface against (5.20) first — the route-decisive unknown for C9.
+- `Iy_count_ratio` + `mainZ_bound` are self-contained banks (do when `perNTerm_eval` stalls). `Iy` has
+  `mem_Iy_bounds`/`mem_Iy_le_nZero`/`mZero_le_of_mem_Iy` already proved to lean on.
+
+---
+
 ## Grind lap — 2026-07-15 — ✅ rib 2 PROVED (mod deep sorry) — C9 crux isolated as y-free `approxMainTerm_to_Z`
 
 **Source-grounded the Prop 1.11 mechanism (PDF pp.25–27) and refactored the C9 crux to the paper's

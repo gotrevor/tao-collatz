@@ -198,6 +198,54 @@ noncomputable def mainZ (x : ℝ) (E : Set ℕ) : ℝ :=
       (3 : ℝ) ^ mZero x * ((syracZ (mZero x)) (M : ZMod (3 ^ mZero x))).toReal / (M : ℝ)
     else 0
 
+open Classical in
+/-- The per-`n` summand of `approxMainTerm` (5.8): `∑_{ā∈𝒜⁽ⁿ⁻ᵐ⁰⁾} ∑_{M∈E'} ℙ(Aff_ā(N_y)=M)`, i.e. the
+contribution of a single first-passage time `n ∈ I_y`. -/
+noncomputable def perNTerm (x : ℝ) (E : Set ℕ) (y : ℝ) (n : ℕ) : ℝ :=
+  ∑' (ā : Fin (n - mZero x) → ℕ), ∑' (M : ℕ),
+    if goodTuple x (n - mZero x) ā ∧ Eprime x E M then
+      (∑' N, if 3 ^ (n - mZero x) * N + fnat (n - mZero x) ā = M * 2 ^ pre ā (n - mZero x)
+             then (logUnifOdd y (y ^ alpha)) N else 0).toReal
+    else 0
+
+/-- `approxMainTerm` is the sum of its per-`n` terms over `I_y` (definitional unfolding of (5.8)). -/
+theorem approxMainTerm_eq_sum_perNTerm (x : ℝ) (E : Set ℕ) (y : ℝ) :
+    approxMainTerm x E y = ∑ n ∈ Iy x y, perNTerm x E y n := rfl
+
+/-- **Per-`n` evaluation (5.19)+(5.20).**  For each `n ∈ I_y`, the per-`n` term equals the
+window-independent `mainZ x E` divided by the harmonic normaliser `((α−1)/2)·log y`, up to a *relative*
+`O(log^{-c} x)` error.  Combines the single-value mass (5.19)
+`ℙ(Aff_ā(N_y)=M) = (1+O(x^{-c}))·2^{-|ā|}·3^{n−m₀}/(((α−1)/2)·log y·M)` with the harmonic→`Z` reduction
+(5.20) `3^{n−m₀}∑_ā 2^{-|ā|}∑_{M∈E',≡} 1/M = mainZ + O(log^{-c})`.  **[C9 sub-crux — this is where
+Lemma 5.3 (`c_n≪1`) and Prop 1.14 (`fine_scale_mixing`, C10) are consumed.]** -/
+theorem perNTerm_eval :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNTerm x E y n - mainZ x E / ((alpha - 1) / 2 * Real.log y)|
+            ≤ C * (Real.log x) ^ (-c) / ((alpha - 1) / 2 * Real.log y) := by
+  sorry
+
+/-- **Interval count (5.9).**  `#I_y = (1+O(log^{-c}x))·(α−1)/log(4/3)·log y`, rendered as the ratio to
+the harmonic normaliser: `#I_y / (((α−1)/2)·log y) = 2/log(4/3) + O(log^{-c}x)`.  This is the pure
+lattice-point count `#{n∈[IyLo,IyHi]}` = interval length `+ O(1)` (via `IyHi−IyLo = (α−1)log y/log(4/3)
+− 2log^{0.8}x`), whose ratio telescopes the window into the **y-free** `2/log(4/3)`. -/
+theorem Iy_count_ratio :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        |((Iy x y).card : ℝ) / ((alpha - 1) / 2 * Real.log y) - 2 / Real.log (4 / 3)|
+          ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
+/-- **`mainZ` is `O(1)`** — the y-free quantity `Z` (5.21) is bounded uniformly (it is a probability-
+weighted harmonic average over `E'`, and `#E'·(mass/M)` telescopes to `O(1)`; equivalently `Z ≍
+(log(4/3)/2)·ℙ(Pass∈E) = O(1)`).  Needed so the multiplicative `(5.19)`/`(5.9)` errors on `mainZ` stay
+`O(log^{-c})`. -/
+theorem mainZ_bound :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C := by
+  sorry
+
 /-- **(5.18)–(5.21) + (5.9) evaluation of the affine main term.**  For `y ∈ {x^α, x^{α²}}`,
 `approxMainTerm x E y = (2 / log(4/3))·mainZ x E + O(log^{-c} x)`.  This subsumes Tao's pp.25–27
 chain: the single-value mass formula (5.19)
@@ -215,7 +263,99 @@ theorem approxMainTerm_to_Z :
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |approxMainTerm x E y - 2 / Real.log (4 / 3) * mainZ x E|
             ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨c1, C1, x1, hc1, hC1, h9⟩ := Iy_count_ratio
+  obtain ⟨Cz, xz, hCz, hZb⟩ := mainZ_bound
+  obtain ⟨c2, C2, x2, hc2, hC2, hp⟩ := perNTerm_eval
+  have hlog43 : 0 < Real.log (4 / 3) := Real.log_pos (by norm_num)
+  have halpha0 : 0 < alpha := by norm_num [alpha]
+  have halpha1 : 0 < alpha - 1 := by norm_num [alpha]
+  have hb2 : (0 : ℝ) < 2 / Real.log (4 / 3) := by positivity
+  refine ⟨min c1 c2, (2 / Real.log (4 / 3) + C1) * C2 + Cz * C1,
+    max (max (max x1 xz) x2) (Real.exp 1), lt_min hc1 hc2, by nlinarith [hC1, hC2, hCz, hb2],
+    fun x hx E hE y hy => ?_⟩
+  -- thresholds
+  have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
+  have hx1 : x1 ≤ x :=
+    le_trans (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) (le_max_left _ _)) hx
+  have hxz : xz ≤ x :=
+    le_trans (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) (le_max_left _ _)) hx
+  have hx2 : x2 ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 1) hxe
+  have hL1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hxe
+  have hL0 : 0 < Real.log x := by linarith
+  have hLy : 0 < Real.log y := by
+    rcases hy with rfl | rfl
+    · rw [Real.log_rpow hxpos]; exact mul_pos halpha0 hL0
+    · rw [Real.log_rpow hxpos]; exact mul_pos (pow_pos halpha0 2) hL0
+  set c := min c1 c2 with hc
+  have hcc1 : c ≤ c1 := min_le_left _ _
+  have hcc2 : c ≤ c2 := min_le_right _ _
+  set L := Real.log x with hLdef
+  have hLc1 : L ^ (-c1) ≤ L ^ (-c) := Real.rpow_le_rpow_of_exponent_le hL1 (neg_le_neg hcc1)
+  have hLc2 : L ^ (-c2) ≤ L ^ (-c) := Real.rpow_le_rpow_of_exponent_le hL1 (neg_le_neg hcc2)
+  have hLc1le1 : L ^ (-c1) ≤ 1 := by
+    rw [show (1 : ℝ) = L ^ (0 : ℝ) from (Real.rpow_zero L).symm]
+    exact Real.rpow_le_rpow_of_exponent_le hL1 (by linarith [hc1.le])
+  have hLcpos : 0 < L ^ (-c) := Real.rpow_pos_of_pos hL0 _
+  set norm := (alpha - 1) / 2 * Real.log y with hnorm
+  have hnormpos : 0 < norm := mul_pos (by linarith) hLy
+  -- (5.9) ratio bound, and nonnegativity of the ratio
+  have h9' := h9 x hx1 y hy
+  set ratio := ((Iy x y).card : ℝ) / norm with hratio
+  have hratio_nn : 0 ≤ ratio := by rw [hratio]; positivity
+  have hratio_le : ratio ≤ 2 / Real.log (4 / 3) + C1 * L ^ (-c1) := by
+    have := (abs_le.mp h9').2; linarith
+  -- Structural split of the target through the shared `mainZ`.
+  rw [approxMainTerm_eq_sum_perNTerm]
+  have hsplit : (∑ n ∈ Iy x y, perNTerm x E y n) - 2 / Real.log (4 / 3) * mainZ x E
+      = (∑ n ∈ Iy x y, (perNTerm x E y n - mainZ x E / norm))
+        + mainZ x E * (ratio - 2 / Real.log (4 / 3)) := by
+    rw [Finset.sum_sub_distrib, Finset.sum_const, nsmul_eq_mul, hratio]; ring
+  rw [hsplit]
+  -- Part A: ∑|δ_n| ≤ ratio · C2 L^{-c2}
+  have hPartA : (∑ n ∈ Iy x y, |perNTerm x E y n - mainZ x E / norm|)
+      ≤ ratio * (C2 * L ^ (-c2)) := by
+    calc (∑ n ∈ Iy x y, |perNTerm x E y n - mainZ x E / norm|)
+        ≤ ∑ _n ∈ Iy x y, C2 * L ^ (-c2) / norm := by
+          refine Finset.sum_le_sum fun n hn => ?_
+          have := hp x hx2 E hE y hy n hn
+          rw [hnorm, hLdef]; exact this
+      _ = ((Iy x y).card : ℝ) * (C2 * L ^ (-c2) / norm) := by
+          rw [Finset.sum_const, nsmul_eq_mul]
+      _ = ratio * (C2 * L ^ (-c2)) := by rw [hratio]; ring
+  -- Two component bounds, then a numeric collapse.
+  have ha1nn : 0 ≤ L ^ (-c1) := (Real.rpow_pos_of_pos hL0 _).le
+  have ha2nn : 0 ≤ L ^ (-c2) := (Real.rpow_pos_of_pos hL0 _).le
+  have hAbs : |∑ n ∈ Iy x y, (perNTerm x E y n - mainZ x E / norm)| ≤ ratio * (C2 * L ^ (-c2)) :=
+    le_trans (Finset.abs_sum_le_sum_abs _ _) hPartA
+  have hMZ : |mainZ x E * (ratio - 2 / Real.log (4 / 3))| ≤ Cz * (C1 * L ^ (-c1)) := by
+    rw [abs_mul]
+    exact mul_le_mul (hZb x hxz E hE) h9' (abs_nonneg _) hCz.le
+  -- ratio·(C2 a2) ≤ (2/log43 + C1)·C2·a  and  Cz·(C1 a1) ≤ Cz·C1·a
+  have hStepA : ratio * (C2 * L ^ (-c2)) ≤ (2 / Real.log (4 / 3) + C1) * C2 * L ^ (-c) := by
+    have h1 : ratio * (C2 * L ^ (-c2))
+        ≤ (2 / Real.log (4 / 3) + C1 * L ^ (-c1)) * (C2 * L ^ (-c2)) :=
+      mul_le_mul_of_nonneg_right hratio_le (mul_nonneg hC2.le ha2nn)
+    have h2 : (2 / Real.log (4 / 3) + C1 * L ^ (-c1)) * (C2 * L ^ (-c2))
+        ≤ (2 / Real.log (4 / 3) + C1) * (C2 * L ^ (-c)) := by
+      apply mul_le_mul _ (mul_le_mul_of_nonneg_left hLc2 hC2.le) (mul_nonneg hC2.le ha2nn)
+        (by positivity)
+      nlinarith [hLc1le1, hC1.le]
+    calc ratio * (C2 * L ^ (-c2)) ≤ (2 / Real.log (4 / 3) + C1) * (C2 * L ^ (-c)) := le_trans h1 h2
+      _ = (2 / Real.log (4 / 3) + C1) * C2 * L ^ (-c) := by ring
+  have hStepB : Cz * (C1 * L ^ (-c1)) ≤ Cz * C1 * L ^ (-c) := by
+    have : C1 * L ^ (-c1) ≤ C1 * L ^ (-c) := mul_le_mul_of_nonneg_left hLc1 hC1.le
+    calc Cz * (C1 * L ^ (-c1)) ≤ Cz * (C1 * L ^ (-c)) := mul_le_mul_of_nonneg_left this hCz.le
+      _ = Cz * C1 * L ^ (-c) := by ring
+  calc |(∑ n ∈ Iy x y, (perNTerm x E y n - mainZ x E / norm))
+          + mainZ x E * (ratio - 2 / Real.log (4 / 3))|
+      ≤ |∑ n ∈ Iy x y, (perNTerm x E y n - mainZ x E / norm)|
+        + |mainZ x E * (ratio - 2 / Real.log (4 / 3))| := abs_add_le _ _
+    _ ≤ ratio * (C2 * L ^ (-c2)) + Cz * (C1 * L ^ (-c1)) := add_le_add hAbs hMZ
+    _ ≤ (2 / Real.log (4 / 3) + C1) * C2 * L ^ (-c) + Cz * C1 * L ^ (-c) :=
+        add_le_add hStepA hStepB
+    _ = ((2 / Real.log (4 / 3) + C1) * C2 + Cz * C1) * L ^ (-c) := by ring
 
 /-- **Lemma 5.3 + (5.18)–(5.21)** — window-stability of the affine main term.  `approxMainTerm x E y`
 agrees across the two nested windows `y = x^α` and `y = x^{α²}` up to `O(log^{-c} x)`.  PROVED from
