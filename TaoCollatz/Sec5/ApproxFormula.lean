@@ -100,6 +100,46 @@ theorem syr_iterate_bracket (N n : ℕ) (hN : N % 2 = 1) :
     gcongr (3 ^ n * N : ℝ) / 2 ^ valSum N n + ?_
     rw [div_le_iff₀ hpos]; nlinarith [hleR]
 
+/-- **`valSum` deviation on the good event.**  If `valVec N n'` is a good tuple and `n ≤ n'`, the
+prefix valuation sum stays within `log^{0.6}x` of its mean `2n`: `|valSum N n − 2n| < log^{0.6}x`.
+(`valSum N n = pre (valVec N n') n` for `n ≤ n'`, so this is directly the good-tuple prefix bound.) -/
+theorem valSum_dev_on_good (x : ℝ) (N n' n : ℕ)
+    (hgood : goodTuple x n' (valVec N n')) (hn : n ≤ n') :
+    |(valSum N n : ℝ) - 2 * n| < Real.log x ^ (0.6 : ℝ) := by
+  have h := hgood.2 n hn
+  rwa [pre_valVec hn] at h
+
+/-- **Two-sided `2^{valSum}` bracket on the good event** (rpow form).  From `valSum_dev_on_good`:
+`2^{2n − log^{0.6}x} < 2^{valSum N n} < 2^{2n + log^{0.6}x}`.  Dividing `3^n N` by this turns the
+`syr_iterate_bracket` main term `3^n N / 2^{valSum}` into `(3/4)^n N · 2^{∓log^{0.6}x}` — the
+multiplicative orbit estimate the `E'` size window needs. -/
+theorem two_rpow_valSum_bounds (x : ℝ) (N n' n : ℕ)
+    (hgood : goodTuple x n' (valVec N n')) (hn : n ≤ n') :
+    (2 : ℝ) ^ (2 * (n : ℝ) - Real.log x ^ (0.6 : ℝ)) < (2 : ℝ) ^ ((valSum N n : ℝ)) ∧
+      (2 : ℝ) ^ ((valSum N n : ℝ)) < (2 : ℝ) ^ (2 * (n : ℝ) + Real.log x ^ (0.6 : ℝ)) := by
+  obtain ⟨hlo, hhi⟩ := abs_lt.mp (valSum_dev_on_good x N n' n hgood hn)
+  refine ⟨?_, ?_⟩
+  · rw [Real.rpow_lt_rpow_left_iff (by norm_num : (1 : ℝ) < 2)]; linarith
+  · rw [Real.rpow_lt_rpow_left_iff (by norm_num : (1 : ℝ) < 2)]; linarith
+
+/-- **(5.13)/(5.14) multiplicative orbit estimate** (good-event two-sided bracket).  Combining
+`syr_iterate_bracket` with `two_rpow_valSum_bounds`: for odd `N` with `valVec N n'` good and
+`n ≤ n'`,
+`3^n N / 2^{2n + log^{0.6}x} ≤ Syr^n N ≤ 3^n N / 2^{2n − log^{0.6}x} + 3^n`.
+Since `2^{2n} = 4^n`, the main term is `(3/4)^n N · 2^{∓log^{0.6}x}` — exactly the `exp(O(log^{0.6}x))`
+multiplicative window around `(3/4)^n N` the `E'` size bounds and both reindex legs consume. -/
+theorem syr_iterate_good_bracket (x : ℝ) (N n' n : ℕ) (hN : N % 2 = 1)
+    (hgood : goodTuple x n' (valVec N n')) (hn : n ≤ n') :
+    (3 : ℝ) ^ n * N / 2 ^ (2 * (n : ℝ) + Real.log x ^ (0.6 : ℝ)) ≤ (syr^[n] N : ℝ) ∧
+      (syr^[n] N : ℝ)
+        ≤ (3 : ℝ) ^ n * N / 2 ^ (2 * (n : ℝ) - Real.log x ^ (0.6 : ℝ)) + 3 ^ n := by
+  obtain ⟨hb_lo, hb_hi⟩ := syr_iterate_bracket N n hN
+  obtain ⟨hB_lo, hB_hi⟩ := two_rpow_valSum_bounds x N n' n hgood hn
+  rw [← Real.rpow_natCast (2 : ℝ) (valSum N n)] at hb_lo hb_hi
+  refine ⟨le_trans ?_ hb_lo, le_trans hb_hi ?_⟩
+  · gcongr
+  · gcongr
+
 /-- Lower endpoint of the interval `I_y` (5.9): `log(y/x)/log(4/3) + log^{0.8} x`. -/
 noncomputable def IyLo (x y : ℝ) : ℝ :=
   Real.log (y / x) / Real.log (4 / 3) + Real.log x ^ (0.8 : ℝ)

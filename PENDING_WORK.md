@@ -36,15 +36,19 @@ The route-decisive leg is now a proved triangle `|firstPassMid−approxMainTerm|
    Forward inclusion EXACT (`firstPass_event_stepback_subset` ✅); remaining = reverse inclusion + `E'`
    size window `exp(±log^{0.7}x)(4/3)^{m₀}x` (orbit estimate (5.13)/(5.14)) + nested `𝒜⁽ⁿ⁰⁾⊂𝒜⁽ⁿ⁻ᵐ⁰⁾`.
 
-## ✅ ADVANCED — (5.13)/(5.14) orbit estimate FOUNDATION: `syr_iterate_bracket` (axiom-clean)
+## ✅ ADVANCED — (5.13)/(5.14) orbit estimate PROVED (axiom-clean, `ApproxFormula.lean`)
 The SHARED analytic core of BOTH remaining reindex legs (`truncation_error_bound` + `first_passage_stepback_reduce`)
 is the orbit size estimate `Syr^{k}N ≈ (3/4)^k N` — it fixes the `E'` size window they both consume.
-First brick proved (`ApproxFormula.lean`, from `syr_iterate_key` + `fnat_valVec_le`), for odd N:
-  `3^n N / 2^{valSum N n} ≤ Syr^n N ≤ 3^n N / 2^{valSum N n} + 3^n`.
-NEXT on this core: (a) `2^{valSum} ∈ [2^{2n}·2^{-L}, 2^{2n}·2^{L}]` with `L=log^{0.6}x` on the good event
-(from goodTuple's prefix bound |pre−2n|<L, i.e. valSum=pre valVec), turning the main term into
-`(3/4)^n N · 2^{±L}`; (b) absorb the `+3^n` slack (small vs `(3/4)^n N` since `N≥y≥x^{1.001}`, `n≤n₀`).
-Result feeds `Syr^{n−m₀}N ∈ [exp(−log^{0.7}x)(4/3)^{m₀}x, exp(+log^{0.7}x)(4/3)^{m₀}x]` = the E' window.
+The multiplicative two-sided bracket is now DONE:
+- `syr_iterate_bracket` (odd N): `3^n N/2^{valSum N n} ≤ Syr^n N ≤ 3^n N/2^{valSum N n} + 3^n`.
+- `valSum_dev_on_good`: on good, `|valSum N n − 2n| < log^{0.6}x` (= goodTuple prefix bound via pre_valVec).
+- `two_rpow_valSum_bounds`: `2^{2n−L} < 2^{valSum N n} < 2^{2n+L}` (rpow, L=log^{0.6}x).
+- **`syr_iterate_good_bracket`** (the payoff): for odd N, good `valVec N n'`, `n ≤ n'`:
+  `3^n N / 2^{2n+log^{0.6}x} ≤ Syr^n N ≤ 3^n N / 2^{2n−log^{0.6}x} + 3^n`
+  = `(3/4)^n N · 2^{∓log^{0.6}x}` main term (since `2^{2n}=4^n`) + `+3^n` slack.
+NEXT: convert this into the `E'` size window `syr^{n−m₀}N ∈ [exp(−log^{0.7}x)(4/3)^{m₀}x, exp(+…)…]`
+(needs `n∈Iy` ⟹ `(3/4)^{n−m₀}N_y ≈ (4/3)^{m₀}x` from IyLo/IyHi def + `2^{log^{0.6}x} ≤ exp(log^{0.7}x)`),
+then feed both `truncation_error_bound` (bound the E'-count) and `first_passage_stepback_reduce`.
 
 ## ✅ ADVANCED THIS LAP — (5.17) step-back EXACT core proved, axiom-clean (route-decisive leg)
 The route-decisive leg `first_passage_affine_reindex` was attacked at its EXACT sub-part per the
