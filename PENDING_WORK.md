@@ -14,7 +14,13 @@ The route-decisive leg is now a proved triangle `|firstPassMid−approxMainTerm|
 1. **`first_passage_truncation_reindex`** (`|steppedMid−approxMainTerm|`) — HARDEST/next. Reorder
    `approxMainTerm`'s fixed-ā tsum → `∑_N (P N)·#{ā good : Aff N (n−m₀) ā ∈ E'}`; diagonal ā=valVec term
    = `steppedMid` (via `aff_valVec_eq_syr` + `valVec_unique`), truncation ā's = nonneg error ≤ O(log^{-c}).
-   Mechanical tsum reorder (Fubini/tsum_comm + toReal/summability) + the truncation count bound.
+   **ENGINE + target-M layer now DONE (axiom-clean, ApproxFormula.lean):**
+   - `map_mask_tsum` / `map_mask_tsum_toReal` — the ℝ≥0∞ pushforward reorder `∑_M [q M](P.map φ)M =
+     ∑_N [q(φN)] P N` (via `PMF.tsum_map_mul`), real form with toReal. UNCONDITIONAL, reusable.
+   - **`approxMainTerm_eq_source`** — EXACT: `approxMainTerm = ∑_n ∑'_ā [good ā] (∑'_N [Aff N (n−m₀)ā ∈ E']
+     P N).toReal`. The target-space `M`/pushforward layer is ELIMINATED; only pure `logUnifOdd` source
+     masses remain. Remaining for this leg: the `ā ↔ N` reorder (pull toReal out of the ā-sum via
+     finiteness of good-tuples; ENNReal Fubini) + diagonal(ā=valVec)-vs-truncation count bound.
 2. **`first_passage_stepback_reduce`** (`|firstPassMid−steppedMid|`) — the (5.17) event reduction.
    Forward inclusion EXACT (`firstPass_event_stepback_subset` ✅); remaining = reverse inclusion + `E'`
    size window `exp(±log^{0.7}x)(4/3)^{m₀}x` (orbit estimate (5.13)/(5.14)) + nested `𝒜⁽ⁿ⁰⁾⊂𝒜⁽ⁿ⁻ᵐ⁰⁾`.

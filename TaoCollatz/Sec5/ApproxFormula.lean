@@ -896,6 +896,53 @@ noncomputable def steppedMid (x : ℝ) (E : Set ℕ) (y : ℝ) : ℝ :=
       (Set.indicator {N | goodTuple x (n - mZero x) (valVec N (n - mZero x)) ∧
         Eprime x E (syr^[n - mZero x] N)} 1)
 
+/-- **Pushforward reorder (ℝ≥0∞, unconditional).**  Masking a pushforward mass by a predicate `q`
+on the target and summing equals summing the source mass over `{N : q (φ N)}`.  This is the
+reindex engine for the (5.18) step: `∑_M [q M] (P.map φ) M = ∑_N [q (φ N)] P N`.  No summability
+side-conditions (ℝ≥0∞ Fubini via `PMF.tsum_map_mul`). -/
+theorem map_mask_tsum (P : PMF ℕ) (φ : ℕ → ℕ) (q : ℕ → Prop) [DecidablePred q] :
+    (∑' M, if q M then (P.map φ) M else 0) = ∑' N, if q (φ N) then P N else 0 := by
+  have h := PMF.tsum_map_mul P φ (fun M => if q M then (1 : ℝ≥0∞) else 0)
+  simpa only [mul_ite, mul_one, mul_zero] using h
+
+/-- **Pushforward reorder, real form.**  The `.toReal`-per-term masked pushforward sum (the shape
+of `approxMainTerm`'s inner `∑_M` for a fixed good `ā`) equals the source-side masked mass, as a
+real number.  Combines `map_mask_tsum` with `ENNReal.tsum_toReal_eq` (each masked mass `≤ 1 ≠ ⊤`). -/
+theorem map_mask_tsum_toReal (P : PMF ℕ) (φ : ℕ → ℕ) (q : ℕ → Prop) [DecidablePred q] :
+    (∑' M, if q M then ((P.map φ) M).toReal else 0)
+      = (∑' N, if q (φ N) then P N else 0).toReal := by
+  rw [← map_mask_tsum P φ q]
+  rw [ENNReal.tsum_toReal_eq]
+  · refine tsum_congr fun M => ?_
+    split <;> simp
+  · intro M
+    split
+    · exact PMF.apply_ne_top _ _
+    · simp
+
+open Classical in
+/-- **`approxMainTerm` in pure source form.**  Applying the pushforward reorder `map_mask_tsum_toReal`
+to each fixed-`ā` inner `∑_M` collapses the target-space `M`-layer: the affine main term equals a
+double sum over `(n, ā)` of the *source* `logUnifOdd`-mass of `{N : Aff N (n−m₀) ā ∈ E'}`, restricted
+to good `ā`.  This is an EXACT identity (no error yet), the first step of the (5.18) reindex — it
+leaves only the `ā ↔ N` reorder + the diagonal/truncation count. -/
+theorem approxMainTerm_eq_source (x : ℝ) (E : Set ℕ) (y : ℝ) :
+    approxMainTerm x E y = ∑ n ∈ Iy x y,
+      ∑' ā : Fin (n - mZero x) → ℕ,
+        if goodTuple x (n - mZero x) ā then
+          (∑' N, if Eprime x E (Aff N (n - mZero x) ā) then (logUnifOdd y (y ^ alpha)) N else 0).toReal
+        else 0 := by
+  unfold approxMainTerm
+  refine Finset.sum_congr rfl fun n _ => ?_
+  refine tsum_congr fun ā => ?_
+  by_cases hg : goodTuple x (n - mZero x) ā
+  · -- good ā: the `M`-sum reindexes to the source mass
+    simp only [hg, true_and, if_true]
+    rw [← map_mask_tsum_toReal (logUnifOdd y (y ^ alpha)) (fun N => Aff N (n - mZero x) ā)
+      (fun M => Eprime x E M)]
+  · -- not good: both sides vanish
+    simp only [hg, false_and, if_false, ENNReal.toReal_zero, tsum_zero]
+
 /-- **(5.17) event reduction leg** (owed) — `|firstPassMid − steppedMid| ≤ O(log^{-c}x)`.  Passing
 from the `T_x=n`-partitioned good event to its stepped-back diagonal form costs `O(log^{-c}x)`.  The
 `T_x`/`Pass`/oddness half of `Eprime(Syr^{n−m₀}N)` is EXACT given `T_x N = n` (proved:
