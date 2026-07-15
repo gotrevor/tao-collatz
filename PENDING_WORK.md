@@ -1,3 +1,24 @@
+## Grind lap — 2026-07-15 (cont.) — (5.16) `passtime_edge_mass` PROVED axiom-clean; C8 5 sorries
+
+**The integral-test edge mass is CLOSED.** `passtime_edge_mass` (`ApproxFormula.lean`) proved
+axiom-clean: `ℙ(N_y ∈ Edge) ≤ 20000·log^{-1/5}x`. Reusable bricks landed this lap (all axiom-clean):
+`logUnifOdd_expect_indicator_eq` (expect→windowMass-ratio), `logWindow_odd_ap` +
+`windowMass_eq_ap_sum` (AP decomposition, factored out of `intTest_D_lower`), `windowMass_ge_clog`
+(denominator ≥ (1/10000)log x), `windowMass_le_half_log` (slab ≤ ½·s+2/lo), `mem_logWindow_iff`.
+
+**State: 5 sorries + 0 orange nodes** (2 headline, C9 `stabilization` `FirstPassage.lean:1399`,
+`passtime_edge_of_good` `ApproxFormula.lean:826`, `first_passage_stepback_reduce` `ApproxFormula.lean:1887`).
+
+**Next attack (C8 close, 2 leaves left):**
+1. `passtime_edge_of_good` (:806) — the (5.15) POINTWISE inclusion `good ∧ passes ∧ T_x∉I_y ⟹ N∈Edge`.
+   Orbit-estimate arithmetic on `syr_iterate_good_bracket'` (both passage-time tails). Verified TRUE
+   by hand (see the lemma docstring). This finishes `passtime_window_inner` (5.16) → `approx_passtime_window`.
+2. `first_passage_stepback_reduce` (:1887) — the (5.17) event reduction; forward inclusion is EXACT
+   (`firstPass_event_stepback_subset` ✅), remaining = reverse inclusion + `E'` size window.
+3. Then C9 `stabilization`.
+
+---
+
 ## Grind lap — 2026-07-15 (HEAD `460aaab`) — (5.16) window term DECOMPOSED (skeleton proved)
 
 **Advance on the C8-close crux.** `passtime_window_inner` (5.16) is no longer an opaque `sorry`: the
