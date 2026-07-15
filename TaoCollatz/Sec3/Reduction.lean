@@ -560,7 +560,108 @@ theorem window_bad_sum :
       (N₀ : ℝ) ≤ x →
       ∑ N ∈ (logWindow x (x ^ alpha)).filter (· ∈ {N | N₀ < syrMin N}), (N : ℝ)⁻¹
         ≤ C * (Real.log N₀) ^ (-c) * Real.log x := by
-  sorry
+  classical
+  obtain ⟨c, C, x₀d, hc, hC, hwhp⟩ := descent_whp
+  obtain ⟨x₀z, hnonempty⟩ := logWindow_nonempty_of_large
+  have halpha0 : (0 : ℝ) < alpha := by norm_num [alpha]
+  have halpha1 : (1 : ℝ) < alpha := by norm_num [alpha]
+  set M := max x₀z 1 with hMdef
+  have hM1 : (1 : ℝ) ≤ M := le_max_right _ _
+  have hM0 : (0 : ℝ) < M := lt_of_lt_of_le one_pos hM1
+  refine ⟨c, 2 * C, max (max x₀d (M ^ alpha)) (Real.exp 1), hc, by linarith,
+    fun N₀ x hx hN₀lb hN₀x => ?_⟩
+  -- basic sizes
+  have hxd : x₀d ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+  have hN₀d : x₀d ≤ (N₀ : ℝ) :=
+    le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hN₀lb
+  have hxMα : M ^ alpha ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
+  have hx1 : (1 : ℝ) ≤ x := by
+    calc (1 : ℝ) = Real.exp 0 := (Real.exp_zero).symm
+      _ ≤ Real.exp 1 := Real.exp_le_exp.mpr zero_le_one
+      _ ≤ x := hxe
+  have hx0 : (0 : ℝ) < x := lt_of_lt_of_le one_pos hx1
+  have hlogx1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hxe
+  have hlogx0 : (0 : ℝ) < Real.log x := lt_of_lt_of_le one_pos hlogx1
+  have hN₀e : Real.exp 1 ≤ (N₀ : ℝ) := le_trans (le_max_right _ _) hN₀lb
+  have hN₀0 : (0 : ℝ) < (N₀ : ℝ) := lt_of_lt_of_le (Real.exp_pos 1) hN₀e
+  have hLN1 : (1 : ℝ) ≤ Real.log N₀ := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hN₀e
+  have hLN0 : (0 : ℝ) < Real.log N₀ := lt_of_lt_of_le one_pos hLN1
+  have hLNc : (0 : ℝ) ≤ (Real.log N₀) ^ (-c) := Real.rpow_nonneg hLN0.le _
+  have hxa : x ≤ x ^ alpha := by
+    calc x = x ^ (1 : ℝ) := (Real.rpow_one x).symm
+      _ ≤ x ^ alpha := Real.rpow_le_rpow_of_exponent_le hx1 halpha1.le
+  -- window nonemptiness, via the `x' = x^{1/α}` reparametrization
+  have hxid : (x ^ alpha⁻¹) ^ alpha = x := by
+    rw [← Real.rpow_mul hx0.le, inv_mul_cancel₀ halpha0.ne', Real.rpow_one]
+  have hx'M : M ≤ x ^ alpha⁻¹ := by
+    have h1 : (M ^ alpha) ^ alpha⁻¹ ≤ x ^ alpha⁻¹ :=
+      Real.rpow_le_rpow (by positivity) hxMα (by positivity)
+    rwa [← Real.rpow_mul hM0.le, mul_inv_cancel₀ halpha0.ne', Real.rpow_one] at h1
+  have hx'z : x₀z ≤ x ^ alpha⁻¹ := le_trans (le_max_left _ _) hx'M
+  have hne : (logWindow x (x ^ alpha)).Nonempty := by
+    have := hnonempty (x ^ alpha⁻¹) hx'z ((x ^ alpha⁻¹) ^ alpha) (Set.mem_insert _ _)
+    rwa [hxid] at this
+  -- window mass: positive, and `≤ 2 log x`
+  have hmass_pos : (0 : ℝ) < windowMass x (x ^ alpha) := by
+    refine Finset.sum_pos (fun N hN => ?_) hne
+    have hodd : N % 2 = 1 := (mem_logWindow_iff.mp hN).1
+    have : (0 : ℕ) < N := by omega
+    positivity
+  have hmass_ub : windowMass x (x ^ alpha) ≤ 2 * Real.log x := by
+    have h1 := windowMass_le_half_log hx1 hxa
+    have hlogdiv : Real.log (x ^ alpha / x) = (alpha - 1) * Real.log x := by
+      rw [Real.log_div (by positivity) hx0.ne', Real.log_rpow hx0]; ring
+    have hx2 : (2 : ℝ) ≤ x := by
+      have : (2 : ℝ) ≤ Real.exp 1 := by
+        have := Real.add_one_le_exp 1
+        linarith
+      linarith [hxe]
+    have h2x : 2 / x ≤ 1 := by
+      rw [div_le_one hx0]; exact hx2
+    have halphale : alpha - 1 ≤ 2 := by norm_num [alpha]
+    calc windowMass x (x ^ alpha) ≤ (1/2) * ((alpha - 1) * Real.log x) + 2 / x := by
+          rw [← hlogdiv]; exact h1
+      _ ≤ (1/2) * (2 * Real.log x) + 1 := by
+          have := mul_le_mul_of_nonneg_right halphale hlogx0.le
+          linarith
+      _ ≤ 2 * Real.log x := by linarith
+  -- the descent-event complement has probability ≤ C·(log N₀)^{-c}
+  set B := descentEvent ⌊x ^ alpha⁻¹⌋₊ N₀ with hBdef
+  have hwhp' := hwhp N₀ x hxd hN₀d hN₀x
+  have hcompl : (logUnifOdd x (x ^ alpha)).expect (Set.indicator Bᶜ 1)
+      ≤ C * (Real.log N₀) ^ (-c) := by
+    have heq := expect_indicator_compl (logUnifOdd x (x ^ alpha)) B
+    unfold descentProb at hwhp'
+    linarith [heq, hwhp']
+  -- convert to the reciprocal-sum form
+  have hexpect_eq := logUnifOdd_expect_indicator_eq hne Bᶜ
+  have hsum_compl : ∑ N ∈ (logWindow x (x ^ alpha)).filter (fun N => N ∈ Bᶜ), (N : ℝ)⁻¹
+      ≤ C * (Real.log N₀) ^ (-c) * windowMass x (x ^ alpha) := by
+    rw [hexpect_eq, div_le_iff₀ hmass_pos] at hcompl
+    convert hcompl using 3
+    rfl
+  -- bad set ⊆ complement of the descent event
+  have hsubset : (logWindow x (x ^ alpha)).filter (· ∈ {N | N₀ < syrMin N})
+      ⊆ (logWindow x (x ^ alpha)).filter (fun N => N ∈ Bᶜ) := by
+    intro N hN
+    rw [Finset.mem_filter] at hN ⊢
+    refine ⟨hN.1, fun hmem => ?_⟩
+    have h1 : syrMin N ≤ N₀ := syrMin_le_of_descentEvent hmem
+    have h2 : N₀ < syrMin N := hN.2
+    omega
+  have hbad_le : ∑ N ∈ (logWindow x (x ^ alpha)).filter (· ∈ {N | N₀ < syrMin N}), (N : ℝ)⁻¹
+      ≤ ∑ N ∈ (logWindow x (x ^ alpha)).filter (fun N => N ∈ Bᶜ), (N : ℝ)⁻¹ :=
+    Finset.sum_le_sum_of_subset_of_nonneg hsubset fun N _ _ => by positivity
+  -- assemble
+  calc ∑ N ∈ (logWindow x (x ^ alpha)).filter (· ∈ {N | N₀ < syrMin N}), (N : ℝ)⁻¹
+      ≤ C * (Real.log N₀) ^ (-c) * windowMass x (x ^ alpha) := le_trans hbad_le hsum_compl
+    _ ≤ C * (Real.log N₀) ^ (-c) * (2 * Real.log x) := by
+        refine mul_le_mul_of_nonneg_left hmass_ub ?_
+        positivity
+    _ = 2 * C * (Real.log N₀) ^ (-c) * Real.log x := by ring
 
 /-- **Theorem 3.1, Syracuse sum form** (Tao 2019 p.16, first display):
 `∑_{N ∈ 2ℕ+1 ∩ [1,x], Syrmin(N) > N₀} 1/N ≪ log x / (log N₀)^c`. -/
