@@ -128,6 +128,51 @@ theorem expect_indicator_compl (P : PMF ℕ) (S : Set ℕ) :
       ENNReal.toReal_one]
   linarith [hadd, htot]
 
+/-- Terms `(p N)·1_V(N)` are summable (dominated by the PMF mass). -/
+theorem summable_indicator_term (p : PMF ℕ) (V : Set ℕ) :
+    Summable fun N => (p N).toReal * Set.indicator V 1 N := by
+  refine Summable.of_nonneg_of_le (fun N => mul_nonneg ENNReal.toReal_nonneg
+    (Set.indicator_nonneg (fun _ _ => zero_le_one) N)) (fun N => ?_)
+    (ENNReal.summable_toReal p.tsum_coe_ne_top)
+  by_cases h : N ∈ V <;> simp [Set.indicator_apply, h]
+
+/-- Indicator expectation of a pushforward is the expectation of the preimage indicator. -/
+theorem expect_indicator_map (p : PMF ℕ) (f : ℕ → ℕ) (E : Set ℕ) :
+    (p.map f).expect (Set.indicator E 1) = p.expect (Set.indicator (f ⁻¹' E) 1) := by
+  classical
+  rw [expect_indicator_toReal, expect_indicator_toReal]
+  congr 1
+  calc ∑' b, (if b ∈ E then (p.map f) b else 0)
+      = ∑' b, ∑' a, (if b ∈ E then (if b = f a then p a else 0) else 0) := by
+        refine tsum_congr fun b => ?_
+        by_cases hbE : b ∈ E
+        · simp only [if_pos hbE, PMF.map_apply]
+          exact tsum_congr fun a => by congr
+        · simp only [if_neg hbE, tsum_zero]
+    _ = ∑' a, ∑' b, (if b ∈ E then (if b = f a then p a else 0) else 0) :=
+        ENNReal.tsum_comm
+    _ = ∑' a, (if a ∈ f ⁻¹' E then p a else 0) := by
+        refine tsum_congr fun a => ?_
+        rw [tsum_eq_single (f a) (fun b hb => by
+          by_cases hbE : b ∈ E
+          · rw [if_pos hbE, if_neg hb]
+          · rw [if_neg hbE])]
+        by_cases hE : f a ∈ E
+        · rw [if_pos hE, if_pos rfl, if_pos (Set.mem_preimage.mpr hE)]
+        · rw [if_neg hE, if_neg (fun h => hE (Set.mem_preimage.mp h))]
+
+/-- Union subadditivity for indicator expectations. -/
+theorem expect_indicator_union_le (p : PMF ℕ) (S T : Set ℕ) :
+    p.expect (Set.indicator (S ∪ T) 1)
+      ≤ p.expect (Set.indicator S 1) + p.expect (Set.indicator T 1) := by
+  unfold PMF.expect
+  rw [← Summable.tsum_add (summable_indicator_term p S) (summable_indicator_term p T)]
+  refine Summable.tsum_le_tsum (fun N => ?_) (summable_indicator_term p (S ∪ T))
+    ((summable_indicator_term p S).add (summable_indicator_term p T))
+  have hnn : (0 : ℝ) ≤ (p N).toReal := ENNReal.toReal_nonneg
+  by_cases hS : N ∈ S <;> by_cases hT : N ∈ T <;>
+    simp [Set.indicator_apply, hS, hT] <;> linarith
+
 /-- **One-scale recursion** (p.17, the display chain): `ℙ(B_x) ≤ ℙ(B_{x^α}) + O(log^{-c}x)`.
 Route: `B_x ⊆ {Pass_x ∈ E}` up to the non-passage event (`stabilization` part 1, note
 `1 ∈ E_{N₀}` since `passLoc = 1` off passage and `Syrmin 1 = 1 ≤ N₀`); swap windows by
@@ -137,7 +182,93 @@ theorem descentProb_step :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
       descentProb ⌊x⌋₊ (x ^ alpha) N₀
         ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀ + C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨c, C, x₀, hc, hC, hstab⟩ := stabilization
+  refine ⟨c, 2 * C, max x₀ (Real.exp 1), hc, by linarith, fun x hx N₀ hN₀ => ?_⟩
+  have hx₀ : x₀ ≤ x := le_trans (le_max_left _ _) hx
+  have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
+  have hx1 : (1 : ℝ) ≤ x := by
+    calc (1 : ℝ) = Real.exp 0 := (Real.exp_zero).symm
+      _ ≤ Real.exp 1 := Real.exp_le_exp.mpr zero_le_one
+      _ ≤ x := hxe
+  have hx0 : (0 : ℝ) ≤ x := le_trans zero_le_one hx1
+  obtain ⟨hesc, hdTV⟩ := hstab x hx₀
+  -- rpow window identifications
+  have hw1 : (x ^ alpha) ^ alpha = x ^ alpha ^ 2 := by rw [pow_two, Real.rpow_mul hx0]
+  have hw2 : (x ^ alpha ^ 2) ^ alpha = x ^ alpha ^ 3 := by
+    conv_rhs => rw [pow_succ, Real.rpow_mul hx0]
+  set W₁ := logUnifOdd (x ^ alpha) (x ^ alpha ^ 2) with hW₁
+  set W₂ := logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3) with hW₂
+  set E : Set ℕ := {M | syrMin M ≤ N₀} with hE
+  set B₁ := descentEvent ⌊x⌋₊ N₀ with hB₁
+  set B₂ := descentEvent ⌊x ^ alpha⌋₊ N₀ with hB₂
+  -- error pieces from `stabilization`
+  have hesc₂ : W₂.expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1) ≤ C * x ^ (-c) := by
+    have := hesc (x ^ alpha ^ 2) (Set.mem_insert_of_mem _ rfl)
+    rwa [hw2] at this
+  have hdTV' := PMF.abs_expect_indicator_sub_le_dTV
+    (W₁.map (passLoc ⌊x⌋₊)) (W₂.map (passLoc ⌊x⌋₊)) E
+  -- the two probability chains
+  have hchain1 : descentProb ⌊x⌋₊ (x ^ alpha) N₀
+      ≤ (W₂.map (passLoc ⌊x⌋₊)).expect (Set.indicator E 1) + C * (Real.log x) ^ (-c) := by
+    have hsub : ∀ N ∈ W₁.support, N ∈ B₁ → N ∈ passLoc ⌊x⌋₊ ⁻¹' E := by
+      rintro N _ ⟨_, hs⟩
+      exact Set.mem_preimage.mpr hs
+    have h1 : descentProb ⌊x⌋₊ (x ^ alpha) N₀
+        ≤ W₁.expect (Set.indicator (passLoc ⌊x⌋₊ ⁻¹' E) 1) := by
+      unfold descentProb
+      rw [hw1]
+      exact expect_mono_on_support W₁ B₁ _ hsub
+    have h2 : W₁.expect (Set.indicator (passLoc ⌊x⌋₊ ⁻¹' E) 1)
+        = (W₁.map (passLoc ⌊x⌋₊)).expect (Set.indicator E 1) :=
+      (expect_indicator_map W₁ _ E).symm
+    have h3 : (W₁.map (passLoc ⌊x⌋₊)).expect (Set.indicator E 1)
+        ≤ (W₂.map (passLoc ⌊x⌋₊)).expect (Set.indicator E 1)
+          + C * (Real.log x) ^ (-c) := by
+      have := (abs_le.mp hdTV').2
+      linarith [le_trans this hdTV]
+    linarith
+  have hchain2 : (W₂.map (passLoc ⌊x⌋₊)).expect (Set.indicator E 1)
+      ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀ + C * x ^ (-c) := by
+    have h4 : (W₂.map (passLoc ⌊x⌋₊)).expect (Set.indicator E 1)
+        = W₂.expect (Set.indicator (passLoc ⌊x⌋₊ ⁻¹' E) 1) :=
+      expect_indicator_map W₂ _ E
+    have hsub2 : ∀ N ∈ W₂.support, N ∈ passLoc ⌊x⌋₊ ⁻¹' E
+        → N ∈ B₁ ∪ {N | ¬ passes ⌊x⌋₊ N} := by
+      intro N _ hN
+      by_cases hp : passes ⌊x⌋₊ N
+      · exact Or.inl ⟨hp, Set.mem_preimage.mp hN⟩
+      · exact Or.inr hp
+    have h5 : W₂.expect (Set.indicator (passLoc ⌊x⌋₊ ⁻¹' E) 1)
+        ≤ W₂.expect (Set.indicator (B₁ ∪ {N | ¬ passes ⌊x⌋₊ N}) 1) :=
+      expect_mono_on_support W₂ _ _ hsub2
+    have h6 := expect_indicator_union_le W₂ B₁ {N | ¬ passes ⌊x⌋₊ N}
+    -- threshold bump `⌊x⌋ ≤ ⌊x^α⌋`
+    have hxxa : x ≤ x ^ alpha := by
+      calc x = x ^ (1 : ℝ) := (Real.rpow_one x).symm
+        _ ≤ x ^ alpha := Real.rpow_le_rpow_of_exponent_le hx1 (by norm_num [alpha])
+    have h7 : W₂.expect (Set.indicator B₁ 1) ≤ W₂.expect (Set.indicator B₂ 1) :=
+      expect_mono_on_support W₂ B₁ B₂ fun N _ hN =>
+        descentEvent_mono (Nat.floor_mono hxxa) hN
+    have h8 : W₂.expect (Set.indicator B₂ 1)
+        = descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀ := by
+      unfold descentProb
+      rw [hw2]
+    linarith [hesc₂]
+  -- `x^{-c} ≤ (log x)^{-c}` for `x ≥ e`
+  have hlog1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hxe
+  have hlogpos : (0 : ℝ) < Real.log x := lt_of_lt_of_le one_pos hlog1
+  have herr : x ^ (-c) ≤ (Real.log x) ^ (-c) := by
+    rw [Real.rpow_neg hx0, Real.rpow_neg hlogpos.le]
+    refine inv_anti₀ (Real.rpow_pos_of_pos hlogpos _) ?_
+    exact Real.rpow_le_rpow hlogpos.le (Real.log_le_self hx0) hc.le
+  calc descentProb ⌊x⌋₊ (x ^ alpha) N₀
+      ≤ (W₂.map (passLoc ⌊x⌋₊)).expect (Set.indicator E 1)
+        + C * (Real.log x) ^ (-c) := hchain1
+    _ ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀ + C * x ^ (-c)
+        + C * (Real.log x) ^ (-c) := by linarith [hchain2]
+    _ ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀
+        + 2 * C * (Real.log x) ^ (-c) := by nlinarith [herr, hC]
 
 /-- **Base case** (p.17 bottom): at scales `x ≤ N₀`, the event needs only passage —
 `Syrmin(Pass) ≤ Pass ≤ ⌊x⌋ ≤ N₀` — so `first_passage_nonescape` gives `1 − O(x^{-c})`. -/
