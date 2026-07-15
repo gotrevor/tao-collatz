@@ -318,20 +318,9 @@ noncomputable def perNHarmonic (x : ℝ) (E : Set ℕ) (n : ℕ) : ℝ :=
         ∧ fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x)
     then ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ / (M : ℝ) else 0
 
-/-- **(5.19) harmonic reduction of `perNTerm`** — sub-lemma A of `perNTerm_eval`.  Each per-`n` term
-equals its harmonic content divided by the harmonic normaliser `norm = ((α−1)/2)·log y`, up to a
-*relative* `O(log^{-c}x)/norm` error.  Combines `perNTerm_pointmass` (affine → single point),
-`logUnifOdd_apply_toReal` (point mass `= (N*)⁻¹/D_y`), `windowMass_estimate` (`D_y = norm + O(1)`, the
-`1/D_y → 1/norm` swap), the `N* ∈ window` membership, and the `(N*)⁻¹ = 3^{n−m₀}/(M·2^{pre ā}−fnat) ≈
-3^{n−m₀}/(M·2^{pre ā})` relative error (`fnat_lt_pow_mul`).
-**[C9 leaf A — pure (5.19) analytic layer; does NOT consume C10.]** -/
-theorem perNTerm_harmonic_approx :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
-      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
-        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          |perNTerm x E y n - perNHarmonic x E n / ((alpha - 1) / 2 * Real.log y)|
-            ≤ C * (Real.log x) ^ (-c) / ((alpha - 1) / 2 * Real.log y) := by
-  sorry
+-- **(5.19) harmonic reduction `perNTerm_harmonic_approx`** (C9 leaf A) is decomposed and stated
+-- *below*, after the rib-1 fiber machinery it consumes (`perNHarmonic_eq_sum_cn` → `perNHarmonic_le`)
+-- and the `N*` sub-lemmas (`Nstar_odd`, `Nstar_mem_logWindow`).
 
 open Classical in
 /-- **Fine-scale harmonic content** — the intermediate between `perNHarmonic` and `mainZ` in the
@@ -1113,6 +1102,135 @@ theorem perNHarmonic_eq_sum_cn (x : ℝ) (E : Set ℕ) (n : ℕ)
   · rw [if_neg hg, mul_zero]
     exact (Finset.sum_eq_zero fun X _ => by
       rw [if_neg (fun h => hg h.1), zero_mul]).symm
+
+/-- On a positive tuple every nonempty prefix sum is `≥ 1` (the `i = 0` summand already is). -/
+theorem pre_pos {k : ℕ} (hk : 0 < k) (ā : Fin k → ℕ) (hpos : ∀ i, 1 ≤ ā i) {m : ℕ}
+    (hm : 1 ≤ m) : 1 ≤ pre ā m := by
+  have hs := Finset.single_le_sum (f := fun i => if h : i < k then ā ⟨i, h⟩ else 0)
+    (fun i _ => Nat.zero_le _) (Finset.mem_range.mpr (show 0 < m by omega))
+  rw [pre]
+  refine le_trans ?_ hs
+  rw [dif_pos hk]
+  exact hpos _
+
+/-- **`fnat` is odd** for `k ≥ 1` on positive tuples: the `m = 0` summand is `3^{k−1}·2^{pre ā 0} =
+3^{k−1}` (odd), and every `m ≥ 1` summand carries `2^{pre ā m}` with `pre ā m ≥ ā₀ ≥ 1` (even). -/
+theorem fnat_odd {k : ℕ} (hk : 1 ≤ k) (ā : Fin k → ℕ) (hpos : ∀ i, 1 ≤ ā i) :
+    fnat k ā % 2 = 1 := by
+  obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+  rw [fnat, Finset.sum_range_succ']
+  have h0 : pre ā 0 = 0 := by simp [pre]
+  have htail : 2 ∣ ∑ m ∈ Finset.range k', 3 ^ (k' + 1 - 1 - (m + 1)) * 2 ^ pre ā (m + 1) := by
+    refine Finset.dvd_sum fun m _ => Dvd.dvd.mul_left ?_ _
+    exact dvd_pow_self 2 (by have := pre_pos (Nat.succ_pos k') ā hpos (m := m + 1) (by omega); omega)
+  have hodd : (3 ^ (k' + 1 - 1 - 0) * 2 ^ pre ā 0) % 2 = 1 := by
+    rw [h0, pow_zero, mul_one, Nat.pow_mod]; norm_num
+  obtain ⟨t, ht⟩ := htail
+  omega
+
+/-- **`N*` is odd** — the affine solution `N* = (M·2^{pre ā} − fnat)/3^{n−m₀}` inherits `M`'s oddness:
+for `k = 0` it *is* `M`; for `k ≥ 1`, `M·2^{pre ā k}` is even (`pre ā k ≥ 1`) while `fnat` is odd
+(`fnat_odd`), so `3^k·N* = M·2^{pre} − fnat` is odd, hence so is `N*`.  This is what routes the
+solution into the ODD log-window that `logUnifOdd` is supported on. -/
+theorem Nstar_odd {k : ℕ} (ā : Fin k → ℕ) (hpos : ∀ i, 1 ≤ ā i) {M : ℕ} (hM : M % 2 = 1)
+    (hdvd : 3 ^ k ∣ (M * 2 ^ pre ā k - fnat k ā)) (hle : fnat k ā ≤ M * 2 ^ pre ā k) :
+    ((M * 2 ^ pre ā k - fnat k ā) / 3 ^ k) % 2 = 1 := by
+  rcases Nat.eq_zero_or_pos k with hk0 | hk1
+  · subst hk0
+    have h0 : pre ā 0 = 0 := by simp [pre]
+    have hf0 : fnat 0 ā = 0 := by simp [fnat]
+    simpa [h0, hf0] using hM
+  · obtain ⟨N, hN⟩ := hdvd
+    rw [hN, Nat.mul_div_cancel_left N (by positivity)]
+    have heq : 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k := by omega
+    have hf := fnat_odd hk1 ā hpos
+    have h3 : 3 ^ k % 2 = 1 := by rw [Nat.pow_mod]; norm_num
+    have hNprod : (3 ^ k * N) % 2 = N % 2 := by
+      rw [Nat.mul_mod, h3, one_mul]; omega
+    obtain ⟨c, hc⟩ := (dvd_pow_self 2
+      (by have := pre_pos hk1 ā hpos (m := k) hk1; omega : pre ā k ≠ 0)).mul_left M
+    omega
+
+open Classical in
+/-- **(5.18) `N*` window membership** — for `n ∈ I_y`, good `ā`, `M` in the `E'` window (5.10), and
+the affine equation solvable, the solution `N* = (M·2^{pre ā} − fnat)/3^{n−m₀}` lands in the odd
+log-window `[y, y^α]` (oddness by `Nstar_odd`), so `logUnifOdd y (y^α)` puts mass `(N*)⁻¹/D` on it.
+Log-arithmetic: `3^{n−m₀}·N* = M·2^{pre ā}·(1 − fnat/(M·2^{pre}))` with `fnat/(M·2^{pre}) < 3^{n−m₀}/M
+= O(x^{-2/5})`, so `log N* = log M + pre·log 2 − (n−m₀)·log 3 + O(x^{-c}) = log x + n·log(4/3) ±
+(log^{0.7} + log 2·log^{0.6} + o(1))·x`, and the `±log^{0.8}x` margins built into `IyLo`/`IyHi` (5.9)
+dominate the slack.  **[C9 leaf A sub-lemma — pure log-arithmetic; does NOT consume C10.]** -/
+theorem Nstar_mem_logWindow :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+        ∀ ā : Fin (n - mZero x) → ℕ, goodTuple x (n - mZero x) ā →
+          ∀ M : ℕ, M % 2 = 1 →
+            Real.exp (-Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x ≤ (M : ℝ) →
+            (M : ℝ) ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x →
+            3 ^ (n - mZero x) ∣ (M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā) →
+            fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x) →
+            ((M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā) / 3 ^ (n - mZero x))
+              ∈ logWindow y (y ^ alpha) := by
+  sorry
+
+/-- **Crude size bound on `perNHarmonic`** — `perNHarmonic ≤ C·log^{0.7}x`.  Via the (5.22) fiber
+identity (rib 1, `perNHarmonic_eq_sum_cn`): `perNHarmonic = ∑_X perNGoodMass·c_n ≤ (sup c_n)·∑_X
+syracZ = sup c_n ≤ C·log^{0.7}x` (`cn_bound`; `perNGoodMass ≤ syracZ` pointwise, total `syracZ` mass
+`1`).  Turns the relative errors of the (5.19) reduction into absolute `O(log^{-c})` errors. -/
+theorem perNHarmonic_le :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          perNHarmonic x E n ≤ C * (Real.log x) ^ (0.7 : ℝ) := by
+  classical
+  obtain ⟨Ccn, xcn, hCcn, hcn⟩ := cn_bound
+  refine ⟨Ccn, max xcn (Real.exp 1024), hCcn, fun x hx E hE y hy n hn => ?_⟩
+  have hxcn : xcn ≤ x := le_trans (le_max_left _ _) hx
+  have hx1024 : Real.exp 1024 ≤ x := le_trans (le_max_right _ _) hx
+  have hkn : n - mZero x ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
+  haveI : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
+  rw [perNHarmonic_eq_sum_cn x E n hx1024 hkn]
+  -- pointwise `perNGoodMass ≤ syracZ` (drop the good-restriction)
+  have hpoint : ∀ X : ZMod (3 ^ (n - mZero x)),
+      perNGoodMass x n X ≤ ((syracZ (n - mZero x)) X).toReal := by
+    intro X
+    rw [perNGoodMass_eq_iid, syracZ_toReal_eq_tsum_fnat]
+    refine (iid_fiber_summable _ _).tsum_le_tsum (fun ā => ?_) (iid_fiber_summable _ _)
+    by_cases hgx : goodTuple x (n - mZero x) ā
+        ∧ (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+            * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+    · rw [if_pos hgx, if_pos hgx.2]
+    · rw [if_neg hgx]; split_ifs
+      · exact ENNReal.toReal_nonneg
+      · exact le_rfl
+  -- total `syracZ` mass is `1`
+  have hmass1 : ∑ X : ZMod (3 ^ (n - mZero x)), ((syracZ (n - mZero x)) X).toReal = 1 := by
+    have h1 : ∑ X : ZMod (3 ^ (n - mZero x)), (syracZ (n - mZero x)) X = 1 := by
+      have h := (syracZ (n - mZero x)).tsum_coe
+      rwa [tsum_fintype] at h
+    rw [← ENNReal.toReal_sum (fun X _ => PMF.apply_ne_top _ _), h1, ENNReal.toReal_one]
+  calc ∑ X : ZMod (3 ^ (n - mZero x)), perNGoodMass x n X * cn x E n X
+      ≤ ∑ X : ZMod (3 ^ (n - mZero x)),
+          ((syracZ (n - mZero x)) X).toReal * (Ccn * Real.log x ^ (0.7 : ℝ)) :=
+        Finset.sum_le_sum fun X _ => mul_le_mul (hpoint X) (hcn x hxcn E hE y hy n hn X)
+          (cn_nonneg x E n X) ENNReal.toReal_nonneg
+    _ = Ccn * Real.log x ^ (0.7 : ℝ) := by rw [← Finset.sum_mul, hmass1, one_mul]
+
+open Classical in
+/-- **(5.19) harmonic reduction of `perNTerm`** — sub-lemma A of `perNTerm_eval`.  Each per-`n` term
+equals its harmonic content divided by the harmonic normaliser `norm = ((α−1)/2)·log y`, up to a
+*relative* `O(log^{-c}x)/norm` error.  Combines `perNTerm_pointmass` (affine → single point),
+`logUnifOdd_apply_toReal` (point mass `= (N*)⁻¹/D_y`), `Nstar_odd`/`Nstar_mem_logWindow` (the point
+is on the window), `windowMass_estimate` + `windowMass_ge_clog` (`D_y = norm + O(1)`, the
+`1/D_y → 1/norm` swap), the `(N*)⁻¹ = 3^{n−m₀}/(M·2^{pre ā}−fnat) ≈ 3^{n−m₀}/(M·2^{pre ā})` relative
+error (`fnat_lt_pow_mul`), and `perNHarmonic_le` to convert relative into absolute errors.
+**[C9 leaf A — pure (5.19) analytic layer; does NOT consume C10.]** -/
+theorem perNTerm_harmonic_approx :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNTerm x E y n - perNHarmonic x E n / ((alpha - 1) / 2 * Real.log y)|
+            ≤ C * (Real.log x) ^ (-c) / ((alpha - 1) / 2 * Real.log y) := by
+  sorry
 
 open Classical in
 /-- **iid good-tuple whp bound (Tao (5.11)/(5.12), iid form).**  Under the `geomHalf.iid k` law, a length-`k`
