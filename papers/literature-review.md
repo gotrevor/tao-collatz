@@ -134,3 +134,55 @@ the assembly lives inside the `Q_black_edge_case3` sorry.
 Both literature holes are documented as findings (judge/pass-09.md, PENDING_WORK
 Reflection 2026-07-12); the theorem itself is unaffected — the fixes are local to the
 proof of Lemma 7.9 and strictly consumable by p.55.
+
+### §5 Approximate formula / Prop 5.2 (C8) — pp.22–25 (read 2026-07-15 deep reflection)
+
+*This section was absent until the 2026-07-15 reflection — §5 is the live frontier (C8) yet had
+zero route-facing source synthesis. Added because the reflection's source read surfaced a
+**route-decisive pin defect**.*
+
+- **The (5.8) reindex is EXACT, driven by the (5.18) congruence.** Prop 5.2 (5.8) writes
+  `ℙ(Pass_x(N_y)∈E) = Σ_{n∈I_y} Σ_{ā∈𝒜^{(n−m₀)}} Σ_{M∈E'} ℙ(Aff_ā(N_y)=M) + O(log^{-c}x)`.
+  On p.25 Tao computes the RHS: by (1.3) the event `Aff_ā(N_y)=M` is **non-empty only when**
+  `M ≡ F_{n−m₀}(ā) (mod 3^{n−m₀})` **(5.18)**, and then (5.19) pins `N_y` to the **single** value
+  `2^{|ā|}(M−F_{n−m₀}(ā))/3^{n−m₀}`. So for each `(ā,M)` there is **at most one** `N_y`, and via
+  Lemma 2.1 the triples `(N,valVec) ↔ (ā,M)` are in **bijection** on the good/`E'` set. The `O(3^{n−m₀})`
+  / `O(x^{-c})` errors on p.25 are **value-rounding of a single probability term** (`M − F = (1+O(x^{-c}))M`),
+  **NOT** a count-multiplicity over `ā`. The window `E'` (5.10) is `exp(±log^{0.7}x)(4/3)^{m₀}x`; the
+  orbit slack (5.13)/(5.14) `exp(O(log^{0.6}x))` fits inside it (proved: `two_rpow_slack_le_exp`).
+  The `(α−1)/2·log y` factor on p.25 is the **log-uniform normalization** (partition function of
+  `Log(2ℕ+1∩[y,y^α])`), i.e. the probability's denominator — **not** a widening of the `M`-window.
+  ⟹ the "y^{α−1} spread looks wider than the window" worry in `HANDOFF-2026-07-15-C8-reindex-mechanized.md`
+  is a **misread** (that factor is the normalizer, cleared).
+
+- **🚩 CONFIRMED HOLE #4 (C8 `approxMainTerm` pin defect, found 2026-07-15, ~90% confidence —
+  source + numeric).** The Lean pin `approxMainTerm` (`Sec5/ApproxFormula.lean`, RATIFY-C8) renders
+  `ℙ(Aff_ā(N_y)=M)` with the **ℕ-truncating** `Aff N k ā = ⌊(3^k N + fnat k ā)/2^{a_{[1,k]}}⌋`
+  (`Basic/Valuation.lean:154`), **dropping the (5.18) congruence.** Under truncation `Aff` depends on
+  `ā` essentially only through `|ā| = a_{[1,k]}` (the `fnat/2^{|ā|}` term is an `O(1)` additive shift
+  to a value of size `~x`), so **exponentially many good tuples collapse into `E'`**, not just the
+  true valuation vector. The closing hole `truncation_error_bound` claims the excess
+  `approxMainTerm − steppedMid = E_N[#{good ā ≠ valVec : Aff N k ā ∈ E'}] ≤ C·log^{-c}x`; this is
+  **FALSE**. Numeric probe (`tools/sandbox/tao_c8_truncation_probe.py`, direct enumeration over the
+  Lean `fnat`/`Aff` defs): for a fixed odd `N` the truncating count is **hundreds–thousands and
+  grows with `k`** (e.g. `k=8, N=101`: 19 135 good `ā` in a window of multiplicative half-width 4,
+  collapsing to ~4 distinct `Aff` values), whereas adding the exact guard `2^{|ā|} ∣ (3^k N + fnat)`
+  collapses it to **0–3** (→ 1 in the asymptotic Lemma-2.1 regime). The window `E'` is
+  multiplicatively *wider* asymptotically (`exp(log^{0.7}x)→∞`), so the regime is worse, not better;
+  log-uniform `N`-averaging does not rescue a per-`N` count of thousands.
+- **The campaign KNEW the count "can exceed 1" (`ApproxFormula.lean` docstring ~:237) and bet it is
+  "absorbed in `O(log^{-c}x)` as Tao does."** That bet conflates Tao's *value-rounding* error with a
+  *count-multiplicity* introduced by the ℕ-floor; Tao's reindex has **no** such error term (it is
+  exact). The bet is refuted.
+- **The fix (faithful to (5.8)):** guard the `approxMainTerm` pushforward by the exact affine relation
+  `3^{n−m₀}N + fnat (n−m₀) ā = M·2^{a_{[1,n−m₀]}}` (equivalently the (5.18) congruence
+  `M ≡ F_{n−m₀}(ā) mod 3^{n−m₀}` + integrality). Then Lemma 2.1 makes the reindex **exact**,
+  `approxMainTerm = steppedMid` up to the genuine (5.19) value-rounding, and `truncation_error_bound`
+  **disappears**. This is a STATEMENT-level (pin) change → **JUDGE-FLAG** (see DIRECTION.md CURRENT
+  DIRECTIVE 2026-07-15 + PENDING_WORK Reflection 2026-07-15). Salvage: the mechanical layer
+  (`map_mask_tsum`, `goodTuple_finite`, `approxMainTerm_eq_source`, `syr_iterate_good_bracket'`,
+  `two_rpow_slack_le_exp`, the step-back kernels) is **reusable** against the guarded pin.
+
+**Fidelity-ledger row (add on re-pin):** `| (5.8) main term | exact `Aff_ā` (1.3) + congruence (5.18) |
+current pin: ℕ-truncating `Aff`, unguarded | over-counts by super-polylog factor — `truncation_error_bound`
+false | ❌ RE-PIN OWED (RATIFY-C8-v2, guarded pushforward) |`.

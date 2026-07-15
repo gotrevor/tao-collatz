@@ -1,3 +1,67 @@
+## Reflection — 2026-07-15 (deep reflection lap, HEAD `95436f9`)
+
+**Ground truth** (build 🟢 3322 jobs; fresh `#print axioms`): C10 `fine_scale_mixing` + C7
+`first_passage_nonescape` = `[propext, choice, Quot.sound]` (axiom-clean, re-verified); C8
+`first_passage_approx` + C9 `stabilization` = trust base + `sorryAx`. **6 sorries + 0 orange nodes**
+(2 headline stubs `Statement.lean:24,31`; C9 `FirstPassage.lean:1399`; C8 ×3 `ApproxFormula.lean:798,
+1200, 1215`). `blueprint_audit`: 14 nodes axiom-clean, 0 orange, 0 false-green; **C7 is a MISSED FLIP**
+(judge to set `\leanok`).
+
+**Direction call: CONTINUE-with-correction.** Destination unchanged (first-anywhere Lean Thm 1.3;
+no prior formalization exists). The two biggest risk concentrations — §7 (65–75%) and the §6 mixing
+crux C10 — are both CLOSED + axiom-clean, so the project is genuinely further along than at any prior
+reflection. **But the C8 close leg was on a false summit** (see JUDGE-FLAG). No prior route trigger
+(T1–T4, all §7/C10) governs the C8 phase; registered **T5** for it (DIRECTION.md).
+
+### 🚩 JUDGE-FLAG — C8 `approxMainTerm` pin is DEFECTIVE (route-decisive, ~90% confidence)
+
+**Claim.** `truncation_error_bound` (`ApproxFormula.lean:1215`), the sole remaining analytic hole of
+the (5.18) reindex, is **FALSE as stated**, because the ratified `approxMainTerm` pin renders (5.8)'s
+`ℙ(Aff_ā(N_y)=M)` with the **ℕ-truncating** `Aff N k ā = ⌊(3^k N + fnat k ā)/2^{a_{[1,k]}}⌋` and **no
+divisibility guard**, whereas Tao's (5.8) reindex is **EXACT** via Lemma 2.1 on the **(5.18)
+congruence** `M ≡ F_{n−m₀}(ā) (mod 3^{n−m₀})`.
+
+**Why (source, pp.22–25).** For the exact map, `Aff_ā(N_y)=M` is non-empty only under (5.18), and (5.19)
+then pins `N_y` to a **single** value; Lemma 2.1 makes `(N,valVec) ↔ (ā,M)` a **bijection** on the
+good/`E'` set, so the exact main term **equals** the `steppedMid` diagonal (no error term). Tao's
+`O(3^{n−m₀})`/`O(x^{-c})` are **value-rounding of one probability term**, not a multiplicity over `ā`.
+Under the ℕ-floor, `fnat/2^{|ā|}` is an `O(1)` additive shift to a value of size `~x`, so `Aff N k ā`
+depends on `ā` essentially only through `|ā|` ⟹ **exponentially-many good tuples collapse into `E'`.**
+
+**Evidence (numeric).** `tools/sandbox/tao_c8_truncation_probe.py` enumerates directly over the Lean
+`fnat`/`Aff` defs. Truncating count `#{good ā : Aff N k ā ∈ window}` = **hundreds–thousands, growing
+in `k`** (k=8,N=101: 19 135 tuples → ~4 distinct `Aff` values); adding the exact guard
+`2^{|ā|} ∣ (3^k N + fnat)` collapses it to **0–3** (→1 asymptotically). `E'` is multiplicatively *wider*
+asymptotically, so the real regime is worse. ⟹ `approxMainTerm − steppedMid` is super-polylog, **not**
+`O(log^{-c}x)`.
+
+**Fix (faithful to (5.8)) — MANDATED, see DIRECTION.md CURRENT DIRECTIVE:**
+1. **Re-pin `approxMainTerm` (RATIFY-C8-v2):** guard the pushforward by `3^{n−m₀}N + fnat (n−m₀) ā =
+   M·2^{a_{[1,n−m₀]}}` (⟺ (5.18) + integrality). Leave the node `\notready` (orange) pending a judge.
+2. **Delete `truncation_error_bound`** — with the guard the reindex is exact (Lemma 2.1), so
+   `steppedMid = approxMainTerm` up to genuine (5.19) value-rounding; the hole vanishes.
+3. Re-wire `approxMainTerm_eq_source` / `first_passage_truncation_reindex` /
+   `first_passage_affine_reindex` onto the guarded pin. **The mechanical layer is reusable**
+   (`map_mask_tsum`, `goodTuple_finite`, `syr_iterate_good_bracket'`, `two_rpow_slack_le_exp`, the
+   step-back kernels).
+4. **Parallel-safe (bank anytime, does NOT touch the reindex):** `passtime_window_inner`
+   (`ApproxFormula.lean:798`, the (5.16) window term) — source-backed integral test reusing C7's
+   proved `classMass`/`windowMass`/`intTest_*`.
+
+**KEEP:** hardest-first on the C8 reindex (it IS the route-decisive piece — the reflection's probe
+confirmed that by finding the defect); C10/C7 frozen. **STOP:** grinding `truncation_error_bound`
+as-is; building further on the unguarded `approxMainTerm`; trusting the `:237` "Tao absorbs it"
+docstring. **Highest-value next target:** the RATIFY-C8-v2 re-pin (step 1), then the exact reindex
+(step 2–3). Second-highest: `passtime_window_inner`.
+
+**Single point of doubt to retire:** my finding rests on a heuristic + small-parameter numerics + the
+source. Before committing multi-lap re-wiring, a grind lap SHOULD promote the probe to a sharper check
+(vary the good-threshold and window toward the asymptotic scaling, or check `Aff`-collision directly)
+to lift confidence 90%→~99%. But the qualitative gap (thousands vs 0–3) is large enough that the re-pin
+is the right bet now.
+
+---
+
 # 🎯 C8 close — attack plan (updated 2026-07-15, HEAD after step-back kernel)
 
 **Frontier**: C10 ✅ done · C7 ✅ **DONE + axiom-clean** · C8 = live target, **3 sorries**

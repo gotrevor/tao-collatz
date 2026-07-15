@@ -17,6 +17,52 @@ statement with `sorry`; green border = *the statement exists*, never *finished*;
 "What pass 29 verified"). The hard rails below are LIVE; the rails in the superseded blocks still
 bind wherever they are not restated here.*
 
+### 🧘 DEEP-REFLECTION UPDATE (2026-07-15, HEAD `95436f9`) — **C8 reindex pin is DEFECTIVE — RE-PIN before grinding**; route CONTINUE-with-correction
+
+*(NEWEST — outranks the blocks below wherever they conflict. The overall order
+`C10 → C8 → C7 → C8(close) → C9` STILL STANDS; C10/C7 remain CLOSED + axiom-clean, re-verified this
+lap by fresh `#print axioms` at `95436f9`. What changes: **HOW C8 closes.** Every pass-29 rail still
+binds except where the C8 sub-structure is restated here.)*
+
+**Route = CONTINUE, but a false summit was caught.** Ground truth this lap (build 🟢 3322 jobs;
+`#print axioms`): `fine_scale_mixing`=`first_passage_nonescape`=`[propext,choice,Quot.sound]`;
+`first_passage_approx`,`stabilization`= trust base+`sorryAx`. **6 sorries + 0 orange nodes**
+(2 headline stubs, C9 `stabilization`, 3×C8). blueprint_audit: 0 orange, 0 false-green; C7 is a
+**MISSED FLIP** (axiom-clean, `\leanok` not set — **judge task**).
+
+**🚩 JUDGE-FLAG (route-decisive): the ratified `approxMainTerm` pin (RATIFY-C8) does NOT faithfully
+render (5.8).** It builds the main term from the **ℕ-truncating** `Aff` (`Basic/Valuation.lean:154`)
+with **no** divisibility guard, but Tao's (5.8) reindex is **EXACT** (Lemma 2.1) and lives on the
+**(5.18) congruence** `M ≡ F_{n−m₀}(ā) (mod 3^{n−m₀})`. Under the ℕ-floor, `Aff N k ā` depends on `ā`
+essentially only through `|ā|`, so **exponentially-many good tuples collapse into `E'`** — the closing
+hole **`truncation_error_bound` (`ApproxFormula.lean:1215`) is FALSE** (`approxMainTerm − steppedMid`
+is super-polylog, not `O(log^{-c}x)`). Evidence: source read pp.22–25 (`papers/literature-review.md`
+§5, HOLE #4) + numeric probe `tools/sandbox/tao_c8_truncation_probe.py` (truncating count = thousands,
+growing in `k`; the exact guard `2^{|ā|} ∣ (3^k N + fnat)` collapses it to 0–3 → 1). The
+`ApproxFormula.lean:237` docstring's bet ("count can exceed 1, Tao absorbs it") conflates Tao's
+value-rounding error with a count-multiplicity the ℕ-floor invents; refuted.
+
+**🥇 MANDATED NEXT MOVE (do these, in order):**
+1. **RE-PIN `approxMainTerm`** as **RATIFY-C8-v2**: guard the pushforward by the exact affine relation
+   `3^{n−m₀}N + fnat (n−m₀) ā = M · 2^{a_{[1,n−m₀]}}` (⟺ (5.18) congruence + integrality). This is the
+   faithful render of Tao's `ℙ(Aff_ā(N_y)=M)`. Absent a live judge, the deep-reflection lap authorizes
+   this re-pin against source (5.8)+(5.18)+Lemma 2.1; tag `-- RATIFY-C8-v2`, record the diff, leave the
+   node `\notready` (orange) until a judge reads it. **DELETE `truncation_error_bound`** — with the
+   guard the reindex is exact (Lemma 2.1), so that hole vanishes; `steppedMid_le_approxMainTerm`
+   becomes `steppedMid = approxMainTerm` up to genuine (5.19) value-rounding.
+2. Re-wire `approxMainTerm_eq_source` / `first_passage_truncation_reindex` / `first_passage_affine_reindex`
+   onto the guarded pin (the mechanical layer — `map_mask_tsum`, `goodTuple_finite`,
+   `syr_iterate_good_bracket'`, `two_rpow_slack_le_exp`, the step-back kernels — is **reusable**).
+3. **Parallel SAFE thread** (does NOT touch the reindex, bank it anytime): `passtime_window_inner`
+   (`ApproxFormula.lean:798`, the (5.16) window term) — source-backed integral test reusing C7's
+   proved `classMass`/`windowMass`/`intTest_*`.
+
+**Forbidden drift (this update):** do NOT grind `truncation_error_bound` as stated (it is false — you
+will burn laps on an unprovable goal); do NOT keep building on the unguarded `approxMainTerm`; do NOT
+retreat to C9 while C8's reindex is being re-pinned; do NOT touch `first_passage_nonescape` /
+`stabilization` / `fine_scale_mixing` (WATCHED). The re-pin is the ONLY sanctioned edit to a
+RATIFY-C8 statement — everything else stays frozen.
+
 ### 🔎 REVIEW-LAP UPDATE (2026-07-14, HEAD `810518b`) — **C7 PROVED axiom-clean; live target advances to C8-close**; route CONTINUE
 
 *(Refines — does not override — Judge Pass 29 and the `e0913ce` update below. The
@@ -745,8 +791,21 @@ machinery. The campaign's risk is no longer concentrated in a kernel — it is n
   the real Lemma-7.4 separation and the X6 localization box are now proved against it
   (`sep = 100·ln10 ≈ 230.26` vs box `≈ 158.4`). The trigger stands re-armed for any
   FUTURE ε change: shrinking `epsBW` fires a full ε-sweep re-ratification (judge's).
+- **T5 (C8 reindex faithfulness)**: FIRED 2026-07-15 — the `approxMainTerm` pin over the ℕ-truncating
+  `Aff` over-counts (5.8) (numeric+source; `truncation_error_bound` false). Route stays CONTINUE via
+  the **guarded re-pin** (RATIFY-C8-v2, mandated above), NOT a full escalation — the destination and
+  the `C10→C8→C7→C8→C9` order are intact; only the C8 reindex mechanism changes. Re-arm: if the guarded
+  re-pin does NOT yield an EXACT (Lemma-2.1) reindex — i.e. `approxMainTerm = steppedMid` up to genuine
+  (5.19) value-rounding does not go through in Lean within ~6 grind laps — that is a deeper §5 problem
+  → write `ROUTE-ESCALATION-<date>.md` and re-cost §5.
 
 ### Directive history
+- **deep reflection (2026-07-15, `95436f9`)**: route CONTINUE-with-correction; **T5 FIRED** — caught a
+  false summit: the ratified `approxMainTerm` uses the ℕ-truncating `Aff` unguarded, so
+  `truncation_error_bound` is FALSE (source pp.22–25 + `tao_c8_truncation_probe.py`). Directive: RE-PIN
+  `approxMainTerm` with the (5.18) divisibility guard (RATIFY-C8-v2), delete `truncation_error_bound`,
+  re-wire onto the exact Lemma-2.1 reindex; parallel-safe = `passtime_window_inner`. C10/C7 re-verified
+  axiom-clean. Lit-review §5 written (was absent). STATUS + PENDING refreshed.
 - **review lap (2026-07-14)**: X8/Case-2 COMPLETE + axiom-clean; §7 chain now hinges on
   the single sorry X11 `Q_black_edge_case3`. All 3 X11 bridges proved. Directive narrows
   to closing X11 via X11a → X11c → X11d; no drop to the ManyTriangles split / spine stubs
