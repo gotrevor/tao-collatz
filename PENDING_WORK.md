@@ -1,3 +1,38 @@
+## Review lap (cont.) — 2026-07-15 — ✅ SOURCE READ pp.25–27: B2 route CORRECTED + Lemma 5.3 pinned
+
+**Read Tao pp.25–27 (PDF) for the (5.20)/(5.21) `Z`-reduction — the C10 seam.** This CORRECTS the B2
+attack plan I wrote above (the "M-equidistribution" worry was a MISREAD — Tao avoids it entirely).
+
+**The faithful structure (verified against PDF, not composed):**
+- (5.23) `c_n(X) := 3^{n−m₀}·∑_{M∈E', M≡X mod 3^{n−m₀}} 1/M` — the `E'`-harmonic mass of a residue class.
+  Pinned as **`cn`** (def) + **`cn_bound`** (Lemma 5.3: `sup_X c_n ≤ C`, self-contained integral test
+  5.25/5.26, NO C10) in `Stabilization.lean`. **This is the shared prerequisite of BOTH B1 and B2.**
+- (5.22) `perNHarmonic = 𝔼_{ā~Geom²ⁿ⁻ᵐ⁰}[1_good · c_n(F_{n−m₀}(ā) mod 3^{n−m₀})]`, and
+  `harmZfine = 𝔼[c_n(Syrac(ℤ/3^{n−m₀}ℤ))] = ∑_X syracZ(n−m₀)(X)·c_n(X)` (drop `1_good`).
+- **B1** (`perNHarmonic → harmZfine`) = `𝔼[1_{¬good}·c_n] ≤ (sup c_n)·ℙ(¬good)` ≤ `cn_bound × approx_good_tuple_whp`. Pure good-restriction, NO C10.
+- **B2** (`harmZfine → mainZ`) — THE C10 SEAM, now cleanly routed:
+  `harmZfine − mainZ = ∑_X [syracZ(n−m₀)(X) − fiber_avg(X)]·c_n(X)`, where
+  `fiber_avg(X) = 3^{m₀−(n−m₀)}·syracZ(m₀)(X mod 3^{m₀})` (the coarse weight `d_n` is the `3^{m₀}`-fiber
+  AVERAGE of `c_n`; `syracZ(m₀)` = marginal of `syracZ(n−m₀)` via `syracZ_map_cast`). Then **L¹×L∞
+  Hölder**: `|harmZfine − mainZ| ≤ (sup_X c_n)·∑_X|syracZ(n−m₀)(X) − fiber_avg(X)| = (sup c_n)·osc m₀ (n−m₀)`.
+  `sup c_n ≤ C` by `cn_bound`; `osc ≤ C'·m₀^{−A}` by `fine_scale_mixing` (C10), applicable via
+  `two_mZero_le_of_mem_Iy` (`m₀ ≤ n−m₀`). `m₀ ≈ 10⁻⁵ log x` ⟹ `m₀^{−A} ≤ log^{−c}x` for `A ≥ c`. **DONE
+  structurally — no M-equidistribution.**
+
+**Next grind steps (in order):** (1) prove **`cn_bound`** (Lemma 5.3) — self-contained, the CRT + integral
+test (5.25)/(5.26); it unblocks both B1 and B2. Reuse `intTest_*` machinery from FirstPassage/C7 if it
+fits. (2) Prove **B1** via the good-restriction (needs the `perNHarmonic = 𝔼[1_good·c_n]` +
+`harmZfine = 𝔼[c_n(Syrac)]` rewrites, i.e. Tonelli reorder + `syracZ_eq_rev_fnat` mass identity +
+`cn_bound`). (3) Prove **B2** via the osc identity: the key lemma is
+`harmZfine − mainZ = ∑_X g(X)·c_n(X)` with `g = syracZ(n−m₀) − fiber_avg` (needs `syracZ_map_cast` for
+the marginal + the `d_n` = fiber-avg identity), then the Hölder bound `|∑_X g·c_n| ≤ (sup c_n)·∑|g|` and
+`∑_X|g(X)| = osc m₀ (n−m₀) (syracZ(n−m₀)·toReal)` (definitional: `osc` IS this L¹ deviation), then
+`fine_scale_mixing`. Consider pinning the osc-identity + Hölder as their own sub-sorries.
+
+Census: **8 sorries + 0 orange** (added `cn_bound` = Lemma 5.3, the shared prerequisite — a real pin).
+
+---
+
 ## Review lap — 2026-07-15 — ✅ `harmonic_to_Z` (the C10 seam) DECOMPOSED + PROVED from B1+B2
 
 **Review outcome:** route CONTINUE, no trigger fired (T5 RESOLVED by the C8 re-pin; C8 now CLOSED +

@@ -347,6 +347,29 @@ noncomputable def harmZfine (x : ℝ) (E : Set ℕ) (n : ℕ) : ℝ :=
         * ((syracZ (n - mZero x)) (M : ZMod (3 ^ (n - mZero x)))).toReal / (M : ℝ)
     else 0
 
+open Classical in
+/-- **Tao's harmonic weight `c_n` (5.23)** — the `E'`-harmonic mass of a residue class mod `3^{n−m₀}`:
+`c_n(X) = 3^{n−m₀}·∑_{M∈E', M ≡ X mod 3^{n−m₀}} 1/M`.  With it, the (5.20) LHS `perNHarmonic` is the
+`Geom(2)^{n−m₀}`-expectation `𝔼[1_good · c_n(F_{n−m₀}(ā) mod 3^{n−m₀})]` (5.22), and the intermediate
+`harmZfine = 𝔼[c_n(Syrac(ℤ/3^{n−m₀}ℤ))] = ∑_X syracZ(n−m₀)(X)·c_n(X)` (drop the `1_good` restriction). -/
+noncomputable def cn (x : ℝ) (E : Set ℕ) (n : ℕ) (X : ZMod (3 ^ (n - mZero x))) : ℝ :=
+  (3 : ℝ) ^ (n - mZero x)
+    * ∑' M : ℕ, if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X then (M : ℝ)⁻¹ else 0
+
+/-- **Lemma 5.3** (`c_n(X) ≪ 1`) — the shared self-contained prerequisite of B1 and B2.  The harmonic
+weight `c_n` is bounded uniformly in the residue `X`, the scale `n ∈ I_y`, and (via `x₀`) in `x`.  Tao
+pp.26–27: split `c_n ≤ ∑_{(a_1..a_{m₀})} c_{n,a}`, and for each `(a_1,…,a_{m₀})` the Chinese-remainder
+constraint pins `M` to a single class mod `2^{a_{[1,m₀]}+1}·3^{n−m₀}`, so the integral test (5.25)/(5.26)
+gives `c_{n,a} ≪ 2^{−a_{[1,m₀]}/2}`, summing over `(a_1,…,a_{m₀}) ∈ ℕ^{m₀}` to `O(1)`.
+**[Self-contained integral-test estimate; does NOT consume C10.  Used as `sup_X c_n ≤ C` by both the
+B1 good-restriction bound and the B2 osc-Hölder bound.]** -/
+theorem cn_bound :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ C := by
+  sorry
+
 /-- **(5.20) sub-lemma B1 — geomHalf → `syracZ` reindex.**  `perNHarmonic` (whose inner weight is the
 `2^{−pre ā}` iid-geomHalf mass over *good, affine-solvable* tuples) agrees with `harmZfine` (the exact
 `Syrac(ℤ/3^{n−m₀}ℤ)` mass) up to `O(log^{-c}x)`.  Content: `syracZ_eq_rev_fnat` writes `syracZ(n−m₀)`
@@ -364,13 +387,18 @@ theorem perNHarmonic_eq_harmZfine_approx :
   sorry
 
 /-- **(5.20) sub-lemma B2 — the `fine_scale_mixing` scale bridge (THE C10 SEAM).**  The fine-scale
-harmonic content `harmZfine` (indexed by `Syrac(ℤ/3^{n−m₀}ℤ)`) agrees with `mainZ` (indexed by
-`Syrac(ℤ/3^{m₀}ℤ)`) up to `O(log^{-c}x)`.  This is the sole place Prop 1.14 (`fine_scale_mixing`,
-C10) and Lemma 5.3 (`c_n(X)≪1`) enter C9: `osc m₀ (n−m₀)` bounds the `L¹` deviation of
-`3^{n−m₀}·syracZ(n−m₀)` from its `3^{m₀}`-fiber average `3^{m₀}·syracZ(m₀)(· mod 3^{m₀})`
-(`syracZ_map_cast` is the marginal/projection identity), and summing that deviation over `M ∈ E'` with
-the `1/M` weight collapses `harmZfine` to the window-free `mainZ`.
-**[C9 leaf B2 — the C10 seam.]** -/
+harmonic content `harmZfine = ∑_X syracZ(n−m₀)(X)·c_n(X)` agrees with `mainZ = ∑_{X'} syracZ(m₀)(X')·
+c_n^{coarse}(X')` up to `O(log^{-c}x)`.  Route (Tao p.26, verified against PDF 2026-07-15): the coarse
+weight is the `3^{m₀}`-fiber **average** of `c_n` (`d_n(X') = 3^{m₀−(n−m₀)}·∑_{X≡X'} c_n(X)`), and
+`syracZ(m₀)` is the marginal of `syracZ(n−m₀)` (`syracZ_map_cast`), so
+`harmZfine − mainZ = ∑_X [syracZ(n−m₀)(X) − fiber_avg(X)]·c_n(X)` with `fiber_avg(X) =
+3^{m₀−(n−m₀)}·syracZ(m₀)(X mod 3^{m₀})`.  Bound by **L¹×L∞ Hölder**:
+`|harmZfine − mainZ| ≤ (sup_X c_n(X))·∑_X|syracZ(n−m₀)(X) − fiber_avg(X)| = (sup c_n)·osc m₀ (n−m₀)`,
+then `sup c_n ≤ C` by **Lemma 5.3** (`cn_bound`) and `osc ≤ C'·m₀^{−A}` by **Prop 1.14
+(`fine_scale_mixing`, C10)** — applicable since `m₀ ≤ n−m₀` (`two_mZero_le_of_mem_Iy`), giving
+`≤ C''·(10⁻⁵ log x)^{−A} ≤ C‴·log^{−c}x` for `A ≥ c`.  **NO M-equidistribution needed** — Tao routes
+the whole thing through the sup/osc pair, not through equidistributing `M` over residues.
+**[C9 leaf B2 — the C10 seam; the sole isolated C10 hole in C9.]** -/
 theorem harmZfine_to_mainZ :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
