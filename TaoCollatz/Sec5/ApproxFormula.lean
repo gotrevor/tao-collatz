@@ -2572,11 +2572,28 @@ theorem firstPassMid_le_steppedMid :
   · exact (hwin x hxw y hy n hn N hNodd hT hG).1
   · exact (hwin x hxw y hy n hn N hNodd hT hG).2
 
+/-- **`Eprime` forces the passage index** — the disjointness key for the (5.17) reverse leg.  If
+`N` passes, `m₀ ≤ n`, and the step-back `Syr^{n−m₀}N` satisfies `E'` (in particular passes at time
+`m₀`), and the step-back does not overshoot passage (`n − m₀ ≤ T_x N`), then `T_x N = n`.  Consequence:
+the stepped-back events `T_n = {good⁽ⁿ⁻ᵐ⁰⁾ ∧ E'(Syr^{n−m₀}N)}` are **pairwise disjoint** in `n` (each
+`N` lies in at most one, `n = T_x N`), so `∑_{n∈I_y} 𝟙_{T_n} ≤ 1` pointwise and the reverse-defect sum
+`∑_n P(T_n ∖ S_n)` collapses to a single probability — no `O(log x)` blow-up from the `I_y` sum. -/
+theorem eprime_forces_passTime {x : ℝ} {E : Set ℕ} {N n : ℕ}
+    (hpass : passes ⌊x⌋₊ N) (hk : n - mZero x ≤ passTime ⌊x⌋₊ N) (hmn : mZero x ≤ n)
+    (hE : Eprime x E (syr^[n - mZero x] N)) : passTime ⌊x⌋₊ N = n := by
+  obtain ⟨_, hTM, _⟩ := passTime_stepback ⌊x⌋₊ N (n - mZero x) hpass hk
+  have hEm : passTime ⌊x⌋₊ (syr^[n - mZero x] N) = mZero x := hE.2.1
+  rw [hTM] at hEm
+  omega
+
 /-- **(5.17) reverse leg** — `steppedMid ≤ firstPassMid + O(log^{-c}x)`.  The reverse defect
-`T_n ∖ S_n`: an `N` carrying `good⁽ⁿ⁻ᵐ⁰⁾` and `Syr^{n−m₀}N ∈ E'` need not carry `T_x N = n` with the
-FULL `good⁽ⁿ⁰⁾`.  The discrepancy lives in the good-tuple tail `good⁽ⁿ⁻ᵐ⁰⁾ ∖ good⁽ⁿ⁰⁾` and the
-passage-window complement, each `≪ log^{-c}x` by the PROVED whp bounds (`approx_good_tuple_whp` (5.12),
-`approx_passtime_window` (5.16)), summed over the `O(log x)` indices `n ∈ I_y`. -/
+`∑_{n∈I_y} P(T_n ∖ S_n)` (nonneg since `S_n ⊆ T_n`).  For odd `N`, split `T_n ∖ S_n` by `good⁽ⁿ⁰⁾`:
+* `¬good⁽ⁿ⁰⁾`: contributes `∑_n P(T_n ∩ ¬good⁽ⁿ⁰⁾)`.  The `T_n` are **disjoint** (`eprime_forces_passTime`),
+  so this collapses to `≤ P(¬good⁽ⁿ⁰⁾) ≤ C·log^{-c}x` (`approx_good_tuple_whp` (5.12)) — no `I_y`-blow-up.
+* `good⁽ⁿ⁰⁾`: then `E'(Syr^{n−m₀}N)` + `passTime N = n` (via `passTime_stepback` on `passLoc`) would put
+  `N ∈ S_n`; so the residual is `{good⁽ⁿ⁰⁾ ∧ E'(Syr^{n−m₀}N) ∧ T_x N ≠ n}`.  By `eprime_forces_passTime`
+  this forces `n − m₀ > T_x N` (early passage / the orbit dipped below `x` before `n−m₀`) — the paper's
+  early-return event, `≪ log^{-c}x` by the passage-window whp (`approx_passtime_window` (5.16)). -/
 theorem steppedMid_le_firstPassMid_add :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
