@@ -2,6 +2,7 @@ import TaoCollatz.Basic.Collatz
 import TaoCollatz.Basic.LogDensity
 import TaoCollatz.Sec5.Stabilization
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.SpecialFunctions.Log.Base
 
 /-!
 # §3 reduction — the C6 intermediates (Thm 3.1 Syracuse form, Thm 1.6, the (1.2) bridge)
@@ -392,7 +393,164 @@ theorem descent_whp :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
       (N₀ : ℝ) ≤ x →
       1 - C * (Real.log N₀) ^ (-c) ≤ descentProb ⌊x ^ (alpha⁻¹)⌋₊ x N₀ := by
-  sorry
+  obtain ⟨c, Cl, xl, hc, hCl, hlad⟩ := descentProb_ladder
+  have halpha1 : (1 : ℝ) < alpha := by norm_num [alpha]
+  have halpha0 : (0 : ℝ) < alpha := by linarith
+  set r := alpha ^ (-c) with hrdef
+  have hr0 : (0 : ℝ) < r := Real.rpow_pos_of_pos halpha0 _
+  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg halpha1 (by linarith)
+  have hr1' : (0 : ℝ) < 1 - r := by linarith
+  set A := max xl (Real.exp 1) with hAdef
+  have hAe : Real.exp 1 ≤ A := le_max_right _ _
+  have hA1 : (1 : ℝ) ≤ A := by
+    calc (1 : ℝ) = Real.exp 0 := (Real.exp_zero).symm
+      _ ≤ Real.exp 1 := Real.exp_le_exp.mpr zero_le_one
+      _ ≤ A := hAe
+  have hA0 : (0 : ℝ) < A := lt_of_lt_of_le one_pos hA1
+  refine ⟨c, Cl * (1 + (1 - r)⁻¹) * alpha ^ c,
+    max (A ^ alpha) (Real.exp 1), hc, ?_, fun N₀ x hx hN₀lb hN₀x => ?_⟩
+  · have h1r : (0 : ℝ) < (1 - r)⁻¹ := by positivity
+    have hac : (0 : ℝ) < alpha ^ c := Real.rpow_pos_of_pos halpha0 _
+    positivity
+  -- basic sizes
+  · have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
+    have hx1 : (1 : ℝ) ≤ x := by
+      calc (1 : ℝ) = Real.exp 0 := (Real.exp_zero).symm
+        _ ≤ Real.exp 1 := Real.exp_le_exp.mpr zero_le_one
+        _ ≤ x := hxe
+    have hx0 : (0 : ℝ) < x := lt_of_lt_of_le one_pos hx1
+    have hN₀e : Real.exp 1 ≤ (N₀ : ℝ) := le_trans (le_max_right _ _) hN₀lb
+    have hN₀0 : (0 : ℝ) < (N₀ : ℝ) := lt_of_lt_of_le (Real.exp_pos 1) hN₀e
+    have hLN1 : (1 : ℝ) ≤ Real.log N₀ := by
+      rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hN₀e
+    have hLN0 : (0 : ℝ) < Real.log N₀ := lt_of_lt_of_le one_pos hLN1
+    have hAα : A ^ alpha ≤ (N₀ : ℝ) := le_trans (le_max_left _ _) hN₀lb
+    -- the base-window scale `z = x^{1/α}` and its log
+    set z := x ^ (alpha⁻¹) with hzdef
+    have hz0 : (0 : ℝ) < z := Real.rpow_pos_of_pos hx0 _
+    have hlogz : Real.log z = alpha⁻¹ * Real.log x := Real.log_rpow hx0 _
+    have hlogx_ge : Real.log N₀ ≤ Real.log x := Real.log_le_log hN₀0 hN₀x
+    have hlogz_lb : Real.log N₀ / alpha ≤ Real.log z := by
+      rw [hlogz, div_eq_inv_mul]
+      exact mul_le_mul_of_nonneg_left hlogx_ge (by positivity)
+    have hlogz0 : (0 : ℝ) < Real.log z := lt_of_lt_of_le (by positivity) hlogz_lb
+    -- pick the number of ladder steps
+    set R := Real.log z / Real.log N₀ with hRdef
+    have hR0 : (0 : ℝ) < R := by positivity
+    set j := ⌈Real.logb alpha R⌉₊ with hjdef
+    have hαt : alpha ^ Real.logb alpha R = R :=
+      Real.rpow_logb halpha0 (ne_of_gt halpha1) hR0
+    have hαjR : R ≤ alpha ^ j := by
+      calc R = alpha ^ Real.logb alpha R := hαt.symm
+        _ ≤ alpha ^ ((j : ℕ) : ℝ) :=
+            Real.rpow_le_rpow_of_exponent_le halpha1.le (Nat.le_ceil _)
+        _ = alpha ^ j := Real.rpow_natCast alpha j
+    have hpj0 : (0 : ℝ) < alpha ^ j := pow_pos halpha0 j
+    -- the base scale `y = z^{α^{-j}}`
+    set y := z ^ ((alpha ^ j : ℝ)⁻¹) with hydef
+    have hy0 : (0 : ℝ) < y := Real.rpow_pos_of_pos hz0 _
+    have hyz : y ^ (alpha ^ j) = z := by
+      rw [hydef, ← Real.rpow_mul hz0.le, inv_mul_cancel₀ hpj0.ne', Real.rpow_one]
+    have hlogy : Real.log y = (alpha ^ j : ℝ)⁻¹ * Real.log z := Real.log_rpow hz0 _
+    -- `y ≤ N₀`
+    have hzR : Real.log z = R * Real.log N₀ := by rw [hRdef]; field_simp
+    have hyN₀ : y ≤ (N₀ : ℝ) := by
+      have hlog_le : Real.log y ≤ Real.log N₀ := by
+        rw [hlogy, hzR, inv_mul_le_iff₀ hpj0]
+        exact mul_le_mul_of_nonneg_right hαjR hLN0.le
+      exact (Real.log_le_log_iff hy0 hN₀0).mp hlog_le
+    -- `log y ≥ log N₀ / α` (scale lands in `[N₀^{1/α}, N₀]`)
+    have hlogy_lb : Real.log N₀ / alpha ≤ Real.log y := by
+      rcases Nat.eq_zero_or_pos j with hj0 | hjpos
+      · rw [hlogy, hj0, pow_zero, inv_one, one_mul]; exact hlogz_lb
+      · obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt hjpos
+        have hklt : (k : ℝ) < Real.logb alpha R := by
+          have : k < j := by omega
+          exact_mod_cast Nat.lt_ceil.mp (by rw [← hjdef]; exact this)
+        have hαk : (alpha : ℝ) ^ k < R := by
+          calc (alpha : ℝ) ^ k = alpha ^ ((k : ℕ) : ℝ) := (Real.rpow_natCast alpha k).symm
+            _ < alpha ^ Real.logb alpha R := by
+                exact Real.rpow_lt_rpow_of_exponent_lt halpha1 hklt
+            _ = R := hαt
+        have hjk : j = k + 1 := by omega
+        rw [hlogy, hjk, pow_succ, hzR]
+        have hαk' : (alpha : ℝ) ^ k ≤ R := hαk.le
+        have hposk : (0 : ℝ) < alpha ^ k := pow_pos halpha0 k
+        have key : Real.log N₀ / alpha
+            = (alpha ^ k * alpha)⁻¹ * (alpha ^ k * Real.log N₀) := by
+          field_simp
+        refine le_trans (le_of_eq key) ?_
+        exact mul_le_mul_of_nonneg_left
+          (mul_le_mul_of_nonneg_right hαk' hLN0.le) (by positivity)
+    -- `y ≥ A` (clears the ladder threshold and `e`)
+    have hlogA : Real.log (A ^ alpha) = alpha * Real.log A := Real.log_rpow hA0 _
+    have hlogN₀_A : alpha * Real.log A ≤ Real.log N₀ := by
+      rw [← hlogA]; exact Real.log_le_log (by positivity) hAα
+    have hyA : A ≤ y := by
+      have : Real.log A ≤ Real.log y := by
+        refine le_trans ?_ hlogy_lb
+        rw [le_div_iff₀ halpha0]
+        linarith
+      exact (Real.log_le_log_iff hA0 hy0).mp this
+    have hyxl : xl ≤ y := le_trans (le_max_left _ _) hyA
+    have hye : Real.exp 1 ≤ y := le_trans hAe hyA
+    have hLy1 : (1 : ℝ) ≤ Real.log y := by
+      rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hye
+    have hLy0 : (0 : ℝ) < Real.log y := lt_of_lt_of_le one_pos hLy1
+    -- the ladder
+    have hlad' := hlad N₀ y hyxl hyN₀ j
+    have hz2 : z ^ alpha = x := by
+      rw [hzdef, ← Real.rpow_mul hx0.le, inv_mul_cancel₀ (ne_of_gt halpha0),
+        Real.rpow_one]
+    rw [hyz, hz2] at hlad'
+    -- error algebra: geometric sum + scale conversion to `log N₀`
+    have hgeom : ∑ i ∈ Finset.range j, r ^ i ≤ (1 - r)⁻¹ := by
+      rw [geom_sum_eq hr1.ne j]
+      rw [div_le_iff_of_neg (by linarith : r - 1 < 0)]
+      have : (0 : ℝ) ≤ r ^ j := pow_nonneg hr0.le j
+      have hexp : (1 - r)⁻¹ * (r - 1) = -1 := by
+        field_simp
+        ring
+      rw [hexp]; linarith
+    have hyc : y ^ (-c) ≤ Real.log y ^ (-c) := by
+      rw [Real.rpow_neg hy0.le, Real.rpow_neg hLy0.le]
+      refine inv_anti₀ (Real.rpow_pos_of_pos hLy0 _) ?_
+      exact Real.rpow_le_rpow hLy0.le (Real.log_le_self hy0.le) hc.le
+    have hLyN : Real.log y ^ (-c) ≤ alpha ^ c * Real.log N₀ ^ (-c) := by
+      have h1 : Real.log N₀ / alpha ≤ Real.log y := hlogy_lb
+      have h2 : (0 : ℝ) < Real.log N₀ / alpha := by positivity
+      have h3 : Real.log y ^ (-c) ≤ (Real.log N₀ / alpha) ^ (-c) := by
+        rw [Real.rpow_neg hLy0.le, Real.rpow_neg h2.le]
+        exact inv_anti₀ (Real.rpow_pos_of_pos h2 _)
+          (Real.rpow_le_rpow h2.le h1 hc.le)
+      refine le_trans h3 (le_of_eq ?_)
+      rw [Real.div_rpow hLN0.le halpha0.le, div_eq_mul_inv, ← Real.rpow_neg halpha0.le,
+        neg_neg, mul_comm]
+    -- assemble
+    have hLyc0 : (0 : ℝ) ≤ Real.log y ^ (-c) := Real.rpow_nonneg hLy0.le _
+    have hsum0 : (0 : ℝ) ≤ ∑ i ∈ Finset.range j, r ^ i :=
+      Finset.sum_nonneg fun i _ => pow_nonneg hr0.le i
+    have herr : Cl * y ^ (-c) + Cl * Real.log y ^ (-c) * ∑ i ∈ Finset.range j, r ^ i
+        ≤ Cl * (1 + (1 - r)⁻¹) * alpha ^ c * Real.log N₀ ^ (-c) := by
+      have e1 : Cl * y ^ (-c) ≤ Cl * Real.log y ^ (-c) :=
+        mul_le_mul_of_nonneg_left hyc hCl.le
+      have e2 : Cl * Real.log y ^ (-c) * ∑ i ∈ Finset.range j, r ^ i
+          ≤ Cl * Real.log y ^ (-c) * (1 - r)⁻¹ :=
+        mul_le_mul_of_nonneg_left hgeom (by positivity)
+      have e3 : Cl * Real.log y ^ (-c) + Cl * Real.log y ^ (-c) * (1 - r)⁻¹
+          = Cl * (1 + (1 - r)⁻¹) * Real.log y ^ (-c) := by ring
+      have e4 : Cl * (1 + (1 - r)⁻¹) * Real.log y ^ (-c)
+          ≤ Cl * (1 + (1 - r)⁻¹) * (alpha ^ c * Real.log N₀ ^ (-c)) := by
+        refine mul_le_mul_of_nonneg_left hLyN ?_
+        have : (0 : ℝ) < (1 - r)⁻¹ := by positivity
+        positivity
+      calc Cl * y ^ (-c) + Cl * Real.log y ^ (-c) * ∑ i ∈ Finset.range j, r ^ i
+          ≤ Cl * Real.log y ^ (-c) + Cl * Real.log y ^ (-c) * (1 - r)⁻¹ := by
+            linarith
+        _ = Cl * (1 + (1 - r)⁻¹) * Real.log y ^ (-c) := e3
+        _ ≤ Cl * (1 + (1 - r)⁻¹) * (alpha ^ c * Real.log N₀ ^ (-c)) := e4
+        _ = Cl * (1 + (1 - r)⁻¹) * alpha ^ c * Real.log N₀ ^ (-c) := by ring
+    linarith [hlad']
 
 /-- **Window bad-mass** ((3.1), p.18): on any window `[x, x^α]` with `N₀ ≤ x`, the harmonic
 mass of `{Syrmin > N₀}` is `≪ log^{-c}N₀ · log x`. From `descent_whp` +
