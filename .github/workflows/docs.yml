@@ -1,0 +1,58 @@
+# Blueprint → GitHub Pages (blueprint-only adaptation of goodstein-independence's docs.yml).
+#
+# Publishes the leanblueprint web output (dep graph + per-node status, with campaign
+# estimates injected by blueprint/annotate_dep_graph.py) to <site>/blueprint/ on the
+# gh-pages branch. No Lean build required: `leanblueprint web` renders TeX only, and
+# the annotator is pure Python over content.tex.
+#
+# doc-gen4 API docs (/docs, the dep graph's "Lean" link target via \dochome{../docs})
+# are NOT built here yet — links 404 until a docs job is added; keep_files preserves
+# any /docs that lands later. Deliberately a separate, non-required workflow from CI:
+# a docs break is an honest red X that never blocks a merge.
+#
+# While the repo is private, the gh-pages push still succeeds but Pages serves nothing
+# (free plan); the built site is inspectable via the uploaded artifact.
+name: docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: write   # peaceiris pushes the built site to the gh-pages branch
+
+jobs:
+  blueprint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install blueprint toolchain (plasTeX + graphviz + dvisvgm)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz libgraphviz-dev dvisvgm \
+            texlive-latex-base texlive-latex-extra texlive-fonts-recommended
+          pip install leanblueprint
+
+      - name: Build blueprint web (+ campaign-estimate overlay)
+        run: ./blueprint/build.sh
+
+      - name: Upload site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blueprint-web
+          path: blueprint/web
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: blueprint/web
+          destination_dir: blueprint
+          keep_files: true

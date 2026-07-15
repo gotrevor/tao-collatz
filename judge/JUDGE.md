@@ -45,7 +45,7 @@ read the statement against its numbered display in the PDF, then **add it to
 | `./tools/tao_hbudget_check.py` | The C10 constant arithmetic. |
 
 ⚠️ **Run axiom checks in a pinned worktree when a worker is live in the shared tree:**
-`lean-create-worktree /Users/gotrevor/src/tao-collatz /Users/gotrevor/src/tao-collatz-judgeNN --start-point <sha>`
+`lean-create-worktree ~/src/tao-collatz ~/src/tao-collatz-judgeNN --start-point <sha>`
 (absolute base path; CoW `.lake`, ~2 min). Check first: `lean-treadmill list`, `pgrep -fl c-yolo`.
 
 ## Hard rules — host and human constraints

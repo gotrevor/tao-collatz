@@ -9,7 +9,7 @@ import re
 import subprocess
 import sys
 
-REPO = "/Users/gotrevor/src/tao-collatz"
+REPO = str(__import__("pathlib").Path(__file__).resolve().parent.parent)
 
 # Usage: tao_stmt_diff.py [REV_OLD [REV_NEW]]   (default: the D4 numeral commit)
 REV_OLD = sys.argv[1] if len(sys.argv) > 1 else "7803117^"
