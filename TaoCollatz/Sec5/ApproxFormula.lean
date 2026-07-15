@@ -1083,6 +1083,17 @@ theorem map_mask_tsum_toReal (P : PMF ℕ) (φ : ℕ → ℕ) (q : ℕ → Prop)
     · simp
 
 open Classical in
+/-- **Indicator expectation as a source mass.**  `P.expect (𝟙_S) = (∑_{N∈S} P N).toReal`.  Puts both
+`steppedMid` (an indicator expectation) and `approxMainTerm` on the same `(∑' N …).toReal` footing for
+the (5.18) exact reindex. -/
+theorem expect_indicator_toReal (P : PMF ℕ) (S : Set ℕ) :
+    P.expect (Set.indicator S 1) = (∑' N, if N ∈ S then P N else 0).toReal := by
+  rw [ENNReal.tsum_toReal_eq (fun N => by split; exacts [PMF.apply_ne_top _ _, by simp])]
+  unfold PMF.expect
+  refine tsum_congr fun N => ?_
+  by_cases h : N ∈ S <;> simp [Set.indicator_apply, h]
+
+open Classical in
 /-- **The (5.18)/(5.19) EXACT reindex — `approxMainTerm = steppedMid`** (RATIFY-C8-v2 content).
 With the divisibility-guarded `approxMainTerm` (paper's exact `Aff_ā`), Lemma 2.1 (`valVec_unique`)
 collapses the reindex to the diagonal: for odd `N`, good `ā`, and `M` odd (from `Eprime`), the exact
@@ -1097,18 +1108,131 @@ TODO(prove): reorder `∑'_ā ∑'_M ∑'_N` to `∑'_N`, apply `valVec_unique` 
 theorem approxMainTerm_eq_steppedMid (x : ℝ) (E : Set ℕ) (y : ℝ)
     (hy1 : (1 : ℝ) ≤ y ^ alpha) :
     approxMainTerm x E y = steppedMid x E y := by
-  sorry
-
-open Classical in
-/-- **Indicator expectation as a source mass.**  `P.expect (𝟙_S) = (∑_{N∈S} P N).toReal`.  This
-puts both `steppedMid` (an indicator expectation) and `approxMainTerm` (`approxMainTerm_eq_source`)
-on the same `(∑' N …).toReal` footing for the (5.18) domination. -/
-theorem expect_indicator_toReal (P : PMF ℕ) (S : Set ℕ) :
-    P.expect (Set.indicator S 1) = (∑' N, if N ∈ S then P N else 0).toReal := by
-  rw [ENNReal.tsum_toReal_eq (fun N => by split; exacts [PMF.apply_ne_top _ _, by simp])]
-  unfold PMF.expect
-  refine tsum_congr fun N => ?_
-  by_cases h : N ∈ S <;> simp [Set.indicator_apply, h]
+  classical
+  unfold approxMainTerm steppedMid
+  refine Finset.sum_congr rfl fun n _ => ?_
+  set k := n - mZero x with hk
+  set P := logUnifOdd y (y ^ alpha) with hP
+  set S : Set ℕ := {N | goodTuple x k (valVec N k) ∧ Eprime x E (syr^[k] N)} with hS
+  -- `P N = 0` for even `N` (log-uniform-odd support).
+  have hPodd : ∀ N : ℕ, N % 2 ≠ 1 → P N = 0 := by
+    intro N hN
+    by_contra hne
+    exact hN (logUnifOdd_support_le hy1 (hne : N ∈ P.support)).1
+  -- any `P`-dominated nonneg sum is `≤ 1` (instance-agnostic in the summand shape).
+  have hmass_le : ∀ g : ℕ → ℝ≥0∞, (∀ N, g N ≤ P N) → (∑' N, g N) ≤ 1 :=
+    fun g hg => le_trans (ENNReal.tsum_le_tsum hg) (le_of_eq P.tsum_coe)
+  -- The (5.18)/(5.19) forcing: any good `ā`, odd `M`, with the exact affine relation IS the diagonal.
+  have hforce : ∀ (N : ℕ), N % 2 = 1 → ∀ (ā : Fin k → ℕ) (M : ℕ),
+      goodTuple x k ā → Eprime x E M →
+      3 ^ k * N + fnat k ā = M * 2 ^ pre ā k → ā = valVec N k ∧ M = syr^[k] N := by
+    intro N hodd ā M hg hE' haff
+    have h2pos : 0 < 2 ^ pre ā k := by positivity
+    have hdvd : 2 ^ pre ā k ∣ 3 ^ k * N + fnat k ā := ⟨M, by rw [haff, Nat.mul_comm]⟩
+    have hAffM : Aff N k ā = M := by
+      unfold Aff; rw [haff, Nat.mul_div_cancel _ h2pos]
+    have hāeq : ā = valVec N k := (valVec_unique N k hodd ā hg.1).mp ⟨hdvd, by rw [hAffM]; exact hE'.1⟩
+    refine ⟨hāeq, ?_⟩
+    subst hāeq
+    have hkey := syr_iterate_key N k hodd
+    have hmm : M * 2 ^ pre (valVec N k) k = syr^[k] N * 2 ^ pre (valVec N k) k := by
+      rw [← haff, ← hkey, Nat.mul_comm]
+    exact Nat.eq_of_mul_eq_mul_right (by positivity) hmm
+  -- Per-`N` collapse of the `(ā,M)` double sum to the diagonal indicator.
+  have hperN : ∀ N : ℕ,
+      (∑' (ā : Fin k → ℕ), ∑' (M : ℕ),
+        (if goodTuple x k ā ∧ Eprime x E M
+              ∧ 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k then P N else 0))
+      = (if N ∈ S then P N else 0) := by
+    intro N
+    by_cases hodd : N % 2 = 1
+    · by_cases hNS : N ∈ S
+      · have hazero : ∀ ā : Fin k → ℕ, ā ≠ valVec N k →
+            (∑' M : ℕ, if goodTuple x k ā ∧ Eprime x E M
+                ∧ 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k then P N else 0) = 0 := by
+          intro ā hā
+          refine ENNReal.tsum_eq_zero.mpr fun M => if_neg ?_
+          rintro ⟨hg, hE', haff⟩
+          exact hā (hforce N hodd ā M hg hE' haff).1
+        have hMzero : ∀ M : ℕ, M ≠ syr^[k] N →
+            (if goodTuple x k (valVec N k) ∧ Eprime x E M
+                ∧ 3 ^ k * N + fnat k (valVec N k) = M * 2 ^ pre (valVec N k) k then P N else 0) = 0 := by
+          intro M hM
+          refine if_neg ?_
+          rintro ⟨hg, hE', haff⟩
+          exact hM (hforce N hodd (valVec N k) M hg hE' haff).2
+        have hcond : goodTuple x k (valVec N k) ∧ Eprime x E (syr^[k] N) ∧
+            3 ^ k * N + fnat k (valVec N k) = syr^[k] N * 2 ^ pre (valVec N k) k :=
+          ⟨hNS.1, hNS.2, by
+            rw [Nat.mul_comm (syr^[k] N) (2 ^ pre (valVec N k) k)]
+            exact (syr_iterate_key N k hodd).symm⟩
+        rw [if_pos hNS, tsum_eq_single (valVec N k) hazero,
+          tsum_eq_single (syr^[k] N) hMzero, if_pos hcond]
+      · rw [if_neg hNS]
+        refine ENNReal.tsum_eq_zero.mpr fun ā => ENNReal.tsum_eq_zero.mpr fun M => if_neg ?_
+        rintro ⟨hg, hE', haff⟩
+        obtain ⟨hāeq, hMeq⟩ := hforce N hodd ā M hg hE' haff
+        subst hāeq; subst hMeq
+        exact hNS ⟨hg, hE'⟩
+    · rw [hPodd N hodd]; simp
+  -- `if C then (∑' N …) else 0 = ∑' N, if C ∧ … else 0`, to expose the `N`-sum.
+  have hEq : ∀ (ā : Fin k → ℕ) (M : ℕ),
+      (if goodTuple x k ā ∧ Eprime x E M then
+        (∑' N, if 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k then P N else 0) else 0)
+      = ∑' N, (if goodTuple x k ā ∧ Eprime x E M
+          ∧ 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k then P N else 0) := by
+    intro ā M
+    by_cases hC : goodTuple x k ā ∧ Eprime x E M
+    · rw [if_pos hC]; exact tsum_congr fun N => by simp only [hC, true_and]
+    · rw [if_neg hC]
+      exact (ENNReal.tsum_eq_zero.mpr fun N => if_neg fun ⟨hg, hE', _⟩ => hC ⟨hg, hE'⟩).symm
+  -- The ℝ≥0∞ core identity.
+  have hcore : (∑' (ā : Fin k → ℕ), ∑' (M : ℕ),
+        (if goodTuple x k ā ∧ Eprime x E M then
+          (∑' N, if 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k then P N else 0) else 0))
+      = ∑' N, (if N ∈ S then P N else 0) := by
+    simp_rw [hEq]
+    rw [show (∑' (ā : Fin k → ℕ), ∑' (M : ℕ), ∑' N,
+          (if goodTuple x k ā ∧ Eprime x E M
+              ∧ 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k then P N else 0))
+        = ∑' (ā : Fin k → ℕ), ∑' N, ∑' (M : ℕ),
+          (if goodTuple x k ā ∧ Eprime x E M
+              ∧ 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k then P N else 0)
+        from tsum_congr fun ā => ENNReal.tsum_comm]
+    rw [ENNReal.tsum_comm]
+    exact tsum_congr fun N => hperN N
+  -- finiteness for the `.toReal` pulls
+  have hFfin : ∀ (ā : Fin k → ℕ) (M : ℕ),
+      (if goodTuple x k ā ∧ Eprime x E M then
+        (∑' N, if 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k then P N else 0) else 0) ≠ ⊤ := by
+    intro ā M; split
+    · exact ne_top_of_le_ne_top ENNReal.one_ne_top
+        (hmass_le _ fun N => by split <;> first | exact le_rfl | exact zero_le')
+    · simp
+  have hGfin : ∀ ā : Fin k → ℕ,
+      (∑' (M : ℕ), if goodTuple x k ā ∧ Eprime x E M then
+        (∑' N, if 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k then P N else 0) else 0) ≠ ⊤ := by
+    intro ā
+    refine ne_top_of_le_ne_top ENNReal.one_ne_top ?_
+    calc (∑' (M : ℕ), if goodTuple x k ā ∧ Eprime x E M then
+              (∑' N, if 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k then P N else 0) else 0)
+          ≤ ∑' (ā' : Fin k → ℕ), ∑' (M : ℕ), if goodTuple x k ā' ∧ Eprime x E M then
+              (∑' N, if 3 ^ k * N + fnat k ā' = M * 2 ^ pre ā' k then P N else 0) else 0 :=
+            ENNReal.le_tsum ā
+      _ = ∑' N, (if N ∈ S then P N else 0) := hcore
+      _ ≤ 1 := hmass_le _ fun N => by split <;> first | exact le_rfl | exact zero_le'
+  -- local `expect → sum` over the concrete `S` (so the `N ∈ S` decidability instance matches `hcore`).
+  have hexp : P.expect (Set.indicator S 1) = (∑' N, if N ∈ S then P N else 0).toReal := by
+    rw [ENNReal.tsum_toReal_eq (fun N => by split; exacts [PMF.apply_ne_top _ _, by simp])]
+    unfold PMF.expect
+    refine tsum_congr fun N => ?_
+    by_cases h : N ∈ S <;> simp [Set.indicator_apply, h]
+  -- assemble: rewrite the diagonal mass to the double sum, then pull `.toReal` termwise.
+  rw [hexp, ← hcore, ENNReal.tsum_toReal_eq hGfin]
+  refine tsum_congr fun ā => ?_
+  rw [ENNReal.tsum_toReal_eq (hFfin ā)]
+  refine tsum_congr fun M => ?_
+  split <;> simp
 
 open Classical in
 /-- **`steppedMid ≤ approxMainTerm`** — immediate from the EXACT reindex
