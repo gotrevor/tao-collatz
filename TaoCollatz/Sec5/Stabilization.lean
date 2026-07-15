@@ -732,21 +732,9 @@ theorem cn_bound :
     _ = Real.log ((hi + (3 : ℝ) ^ (n - mZero x)) / lo) + (3 : ℝ) ^ (n - mZero x) / lo := harith
     _ ≤ 4 * Real.log x ^ (0.7 : ℝ) := by nlinarith [hlogbound, hQdivlo, hlog2, ht1]
 
-/-- **(5.20) sub-lemma B1 — geomHalf → `syracZ` reindex.**  `perNHarmonic` (whose inner weight is the
-`2^{−pre ā}` iid-geomHalf mass over *good, affine-solvable* tuples) agrees with `harmZfine` (the exact
-`Syrac(ℤ/3^{n−m₀}ℤ)` mass) up to `O(log^{-c}x)`.  Content: `syracZ_eq_rev_fnat` writes `syracZ(n−m₀)`
-as the pushforward of `iid geomHalf` under `ā ↦ fnat·2^{−pre ā} mod 3^{n−m₀}`, so the affine congruence
-`3^{n−m₀} ∣ M·2^{pre ā}−fnat` is exactly `(map value of ā) = (M : ZMod 3^{n−m₀})`; and for good `ā`,
-`M ∈ E'` the `ℕ`-subtraction guard `fnat ≤ M·2^{pre ā}` is automatic
-(`fnat < 3^{n−m₀}·2^{pre ā} ≤ M·2^{pre ā}` via `fnat_lt_pow_mul` and `3^{n−m₀} ≤ M`).  The residual over
-*non-good* tuples is the good-tuple whp error `approx_good_tuple_whp`.
-**[C9 leaf B1 — pure reindex + whp; does NOT consume C10.]** -/
-theorem perNHarmonic_eq_harmZfine_approx :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
-      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
-        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          |perNHarmonic x E n - harmZfine x E n| ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+-- **(5.20) sub-lemma B1 (`perNHarmonic_eq_harmZfine_approx`)** is decomposed and proved *below*, after
+-- the `c_n` machinery (`cn_bound`, `cn_nonneg`, `harmZfine_eq_sum_cn`) it consumes.  See the
+-- `perNGoodMass` def + the two ribs `perNHarmonic_eq_sum_cn` / `syracZ_sub_perNGoodMass_bound`.
 
 /-- **Linear lower bound on `m₀`** — `m₀ = ⌊(α−1)/100·log x⌋ ≥ (1/200000)·log x` for `x ≥ exp(200000)`.
 Since `(α−1)/100 = 1/100000`, `m₀ > log x/100000 − 1 ≥ log x/200000` once `log x ≥ 200000`.  Used to
@@ -900,6 +888,105 @@ theorem harmZfine_sub_mainZ_le_osc {x : ℝ} {E : Set ℕ} {n : ℕ} (hmn : mZer
   refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
   rw [abs_of_nonneg (cn_nonneg x E n X)]
   exact hcn X
+
+open Classical in
+/-- **Good-restricted `syracZ` pushforward mass at residue `X`** (scale `k = n − m₀`).  `perNHarmonic`'s
+inner weight `1_good · 2^{−pre ā}` is exactly `1_good · (geomHalf.iid k)(ā).toReal` (a good tuple has
+every coordinate `≥ 1`), pushed forward under the reversed-`fnat` map
+`ā ↦ (fnat ā)·2^{−pre ā} mod 3^k`.  Dropping the `1_good` restriction recovers `syracZ k`
+(`syracZ_eq_rev_fnat`); the dropped mass is `ℙ(¬good)`, controlled whp. -/
+noncomputable def perNGoodMass (x : ℝ) (n : ℕ) (X : ZMod (3 ^ (n - mZero x))) : ℝ :=
+  ∑' ā : Fin (n - mZero x) → ℕ,
+    if goodTuple x (n - mZero x) ā
+        ∧ (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+            * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+      then ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ else 0
+
+/-- **B1 rib 1 — the `(5.22)` fiber identity (harm side, good-restricted).**  `perNHarmonic` regroups by
+residue class `X = M mod 3^{n−m₀}` exactly as `harmZfine` does, but with the good-restricted pushforward
+mass `perNGoodMass` in place of the full `syracZ(n−m₀)` mass:
+`perNHarmonic x E n = ∑_X perNGoodMass x n X · c_n(X)`.  Proof route (mirrors `harmZfine_eq_sum_cn`): on a
+good tuple `ā` and `M ∈ E'` the ℕ-affine guard `3^{n−m₀} ∣ M·2^{pre ā}−fnat ∧ fnat ≤ M·2^{pre ā}` is
+equivalent to the `ZMod` congruence `(M : ZMod 3^{n−m₀}) = (fnat ā)·2^{−pre ā}` (the guard `fnat ≤ M·2^{pre
+ā}` is automatic via `fnat_lt_pow_mul` + `3^{n−m₀} ≤ M`), so the inner `M`-sum is `c_n(F ā)/3^{n−m₀}·3^{n−m₀}`;
+then a fiber partition of the `ā`-tsum over the finite `ZMod (3^{n−m₀})` groups by `X = F ā`.
+**[C9 leaf B1 rib — pure reindex; does NOT consume C10.]** -/
+theorem perNHarmonic_eq_sum_cn (x : ℝ) (E : Set ℕ) (n : ℕ) :
+    perNHarmonic x E n
+      = ∑ X : ZMod (3 ^ (n - mZero x)), perNGoodMass x n X * cn x E n X := by
+  sorry
+
+/-- **B1 rib 2 — the good-tuple whp residual.**  Dropping the `1_good` restriction from `perNGoodMass`
+only *adds* nonnegative mass, and the total added mass over all residues is exactly `ℙ(¬good)` under the
+`geomHalf.iid (n−m₀)` law, which is `≪ log^{-1} x` (mirror of `goodTuple_prefix_dev_sum`'s iid half — the
+per-prefix `geomHalf_tail_bound` summed over the `≤ n₀` prefixes, no dTV transfer needed since the base
+law is already `geomHalf.iid`).  So `perNGoodMass x n X ≤ syracZ(n−m₀)(X).toReal` pointwise and
+`∑_X (syracZ(n−m₀)(X).toReal − perNGoodMass x n X) ≤ C·log^{-1}x`.
+**[C9 leaf B1 rib — pushforward decomposition + analytic whp; does NOT consume C10.]** -/
+theorem syracZ_sub_perNGoodMass_bound :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          (∀ X : ZMod (3 ^ (n - mZero x)),
+              perNGoodMass x n X ≤ ((syracZ (n - mZero x)) X).toReal) ∧
+            ∑ X : ZMod (3 ^ (n - mZero x)),
+                (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X)
+              ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
+  sorry
+
+/-- **(5.20) sub-lemma B1 — geomHalf → `syracZ` reindex** (assembled from the two ribs above).
+`perNHarmonic` (inner weight the `2^{−pre ā}` iid-geomHalf mass over *good, affine-solvable* tuples)
+agrees with `harmZfine` (the exact `Syrac(ℤ/3^{n−m₀}ℤ)` mass) up to `O(log^{-c}x)`.  Both reindex to
+`∑_X (mass)·c_n(X)` — `harmZfine` with the full `syracZ` mass (`harmZfine_eq_sum_cn`), `perNHarmonic`
+with the good-restricted `perNGoodMass` (`perNHarmonic_eq_sum_cn`).  L¹×L∞ Hölder with `0 ≤ c_n ≤
+Ccn·log^{0.7}x` (`cn_bound`/`cn_nonneg`) against the `log^{-1}x` whp residual
+(`syracZ_sub_perNGoodMass_bound`) gives net `log^{0.7−1} = log^{-0.3}`.
+**[C9 leaf B1 — pure reindex + whp; does NOT consume C10.]** -/
+theorem perNHarmonic_eq_harmZfine_approx :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNHarmonic x E n - harmZfine x E n| ≤ C * (Real.log x) ^ (-c) := by
+  obtain ⟨Ccn, x₀cn, hCcn, hcn⟩ := cn_bound
+  obtain ⟨Cw, x₀w, hCw, hwhp⟩ := syracZ_sub_perNGoodMass_bound
+  refine ⟨0.3, Ccn * Cw, max (max x₀cn x₀w) (Real.exp 1), by norm_num, by positivity,
+    fun x hx E hE y hy n hn => ?_⟩
+  simp only [max_le_iff] at hx
+  obtain ⟨⟨hxcn, hxw⟩, hxe1⟩ := hx
+  have hLpos : (0 : ℝ) < Real.log x := by
+    have h := Real.log_le_log (Real.exp_pos 1) hxe1
+    rw [Real.log_exp] at h; linarith
+  have hL07 : (0 : ℝ) ≤ Real.log x ^ (0.7 : ℝ) := Real.rpow_nonneg hLpos.le _
+  obtain ⟨hle, hsum⟩ := hwhp x hxw E hE y hy n hn
+  -- termwise: `|perNGoodMass·cn − syracZ·cn| ≤ (syracZ − perNGoodMass)·(Ccn·log^{0.7})`
+  have key : ∀ X : ZMod (3 ^ (n - mZero x)),
+      |perNGoodMass x n X * cn x E n X - ((syracZ (n - mZero x)) X).toReal * cn x E n X|
+        ≤ (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X)
+            * (Ccn * Real.log x ^ (0.7 : ℝ)) := by
+    intro X
+    rw [← sub_mul, abs_mul,
+      abs_of_nonpos (by linarith [hle X] : perNGoodMass x n X - ((syracZ (n - mZero x)) X).toReal ≤ 0),
+      abs_of_nonneg (cn_nonneg x E n X), neg_sub]
+    exact mul_le_mul_of_nonneg_left (hcn x hxcn E hE y hy n hn X)
+      (by linarith [hle X])
+  -- `log^{0.7}·log^{-1} = log^{-0.3}`
+  have hmul : Real.log x ^ (0.7 : ℝ) * Real.log x ^ (-(1 : ℝ)) = Real.log x ^ (-(0.3 : ℝ)) := by
+    rw [← Real.rpow_add hLpos]; norm_num
+  rw [perNHarmonic_eq_sum_cn, harmZfine_eq_sum_cn, ← Finset.sum_sub_distrib]
+  calc |∑ X : ZMod (3 ^ (n - mZero x)),
+          (perNGoodMass x n X * cn x E n X - ((syracZ (n - mZero x)) X).toReal * cn x E n X)|
+      ≤ ∑ X : ZMod (3 ^ (n - mZero x)),
+          |perNGoodMass x n X * cn x E n X - ((syracZ (n - mZero x)) X).toReal * cn x E n X| :=
+        Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ X : ZMod (3 ^ (n - mZero x)),
+          (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X)
+            * (Ccn * Real.log x ^ (0.7 : ℝ)) := Finset.sum_le_sum (fun X _ => key X)
+    _ = (∑ X : ZMod (3 ^ (n - mZero x)),
+          (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X))
+            * (Ccn * Real.log x ^ (0.7 : ℝ)) := by rw [← Finset.sum_mul]
+    _ ≤ (Cw * Real.log x ^ (-(1 : ℝ))) * (Ccn * Real.log x ^ (0.7 : ℝ)) :=
+        mul_le_mul_of_nonneg_right hsum (by positivity)
+    _ = Ccn * Cw * Real.log x ^ (-(0.3 : ℝ)) := by rw [← hmul]; ring
 
 /-- **(5.20) sub-lemma B2 — the `fine_scale_mixing` scale bridge (THE C10 SEAM).**  The fine-scale
 harmonic content `harmZfine = ∑_X syracZ(n−m₀)(X)·c_n(X)` agrees with `mainZ = ∑_{X'} syracZ(m₀)(X')·
