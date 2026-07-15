@@ -1,3 +1,27 @@
+## Grind lap — 2026-07-15 (HEAD `460aaab`) — (5.16) window term DECOMPOSED (skeleton proved)
+
+**Advance on the C8-close crux.** `passtime_window_inner` (5.16) is no longer an opaque `sorry`: the
+reduction is **PROVED** — `{passes ∧ T_x ∉ I_y}` ⊆ `{¬odd} ∪ {¬good tuple} ∪ Edge` (mod the
+even-support null set), bounded by `approx_good_tuple_whp` (5.12, proved) + the integral-test edge
+mass. Two **named, source-backed** sub-`sorry`s replace the one opaque hole (net C8 2→3 src sorries —
+progress, per blueprint_rules): `ApproxFormula.lean`:
+- **`passtime_edge_of_good` (:806)** — the (5.15) POINTWISE inclusion: on the good event, `passes ∧
+  T_x ∉ I_y ⟹ N ∈ Edge` (within `exp(±log^{0.8}x)` of a window endpoint). Verified TRUE by hand from
+  `syr_iterate_good_bracket'` (both endpoint tails; `log(4/3)·log^{0.8}x + O(log^{0.6}x) ≤ log^{0.8}x`).
+  Attack: derive `T_x ≥ (log(N/x) − log2·log^{0.6}x)/log(4/3)` (lower orbit bound) and `T_x ≤ n*` for
+  explicit `n* ≤ nZero` (upper orbit bound, absorb `+3^{n*}` via `3^{n*} ≤ x/2`), rearrange vs `IyLo`/`IyHi`.
+- **`passtime_edge_mass` (:835)** — the integral test: log-uniform mass of `Edge` ≤ `C·log^{-c}x`
+  (`c = 0.2`). Attack: reuse `windowMass`/`logUnifOdd_apply_of_nonempty`; edge-slab `∑ 1/N ≤ log-width
+  + O(1)` (`AntitoneOn.sum_le_integral` on `t↦1/t`, `integral_inv`), full `windowMass ≥ (α−1)log y − O(1)`.
+
+**Next attack (this leg):** prove `passtime_edge_mass` first (self-contained integral test, reuses C7's
+`Sec5.FirstPassage` window machinery), then `passtime_edge_of_good` (orbit-estimate arithmetic), then
+`first_passage_stepback_reduce` (5.17, `:1389`). Then C9 `stabilization` (`FirstPassage.lean:1391`).
+**Work report: 6 sorries + 0 orange nodes** (2 headline, C9, `passtime_edge_of_good`,
+`passtime_edge_mass`, `first_passage_stepback_reduce`).
+
+---
+
 ## Reflection — 2026-07-15 (deep reflection lap, HEAD `95436f9`)
 
 **Ground truth** (build 🟢 3322 jobs; fresh `#print axioms`): C10 `fine_scale_mixing` + C7
