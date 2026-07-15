@@ -57,6 +57,11 @@ means the STATEMENT exists, never "finished"; never set a `\leanok` yourself. Re
 > - **Plan step 2 (PIN the C6 intermediates) is STILL OUTSTANDING** — now the only un-pinned
 >   structural surface left. Pin it (statement-only, copy-not-compose, + numeric traps per
 >   `blueprint_rules.md`) alongside the C9 burn-down, BEFORE the C9 census hits zero.
+>   *(Fulfilled same day: `3431731` pinned C6a/b/c/s with traps + blueprint nodes.)*
+> - **Trust-the-treadmill ruling (Trevor, 2026-07-15): the operator layer flips `\leanok`s on
+>   the audit's kernel word alone** — proof flips for MISSED-FLIP nodes, statement flips for
+>   compiled pins — accepting that the judge pass may flip any of them back. Workers remain
+>   bound by rule 1 (never self-flip); the audit gate (0 false-green) still backs every flip.
 
 ### State (kernel-verified this pass; `blueprint_audit.py` → 15 proved, 0 orange, 0 drift, 0 false-green)
 - **15 nodes proved + axiom-clean**: all of §7 (X2–X11), **C10** (Prop 1.14), C5, C2, S3, C4, **C7** (just flipped).
