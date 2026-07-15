@@ -808,7 +808,10 @@ edge).  Off the support (`N > y^α`) the upper disjunct holds trivially, so `Edg
 noncomputable def Edge (x y : ℝ) : Set ℕ :=
   {N | (N : ℝ) ≤ y * Real.exp (sEdge x) ∨ y ^ alpha * Real.exp (- sEdge x) ≤ (N : ℝ)}
 
-/-- **(5.16) passage-time inclusion — the (5.15) estimate, owed.**  On the good-tuple event, if `N`
+-- HEARTBEAT: the (5.15) interval-algebra proof carries ~40 chained `have`s over the orbit
+-- estimate + three margin lemmas; the single proof term exceeds the default whnf budget.
+set_option maxHeartbeats 1600000 in
+/-- **(5.16) passage-time inclusion — the (5.15) estimate, PROVED.**  On the good-tuple event, if `N`
 passes but its passage time lands outside `I_y`, then `N` is within a factor `exp(s x)` of a window
 endpoint, i.e. `N ∈ Edge x y`.  This is the pointwise heart of (5.16): the orbit estimate (proved,
 `syr_iterate_good_bracket'`) gives `T_x(N) = log(N/x)/log(4/3) + O(log^{0.6}x)` (5.15), and the two
@@ -823,7 +826,260 @@ theorem passtime_edge_of_good :
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ N : ℕ, N % 2 = 1 →
         goodTuple x (nZero x) (valVec N (nZero x)) →
         passes ⌊x⌋₊ N → passTime ⌊x⌋₊ N ∉ Iy x y → N ∈ Edge x y := by
-  sorry
+  classical
+  refine ⟨Real.exp 100000, Real.one_le_exp (by norm_num), fun x hx y hy N hodd hgood hpass hTnotIy => ?_⟩
+  -- positivity / basic
+  have hxe : Real.exp 100000 ≤ x := hx
+  have hx1 : (1 : ℝ) < x := lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (100000 : ℝ)]) hxe
+  have hxpos : 0 < x := by linarith
+  set ℓ := Real.log x with hℓdef
+  have hℓbig : (100000 : ℝ) ≤ ℓ := by
+    rw [hℓdef, ← Real.log_exp 100000]; exact Real.log_le_log (Real.exp_pos _) hxe
+  have hℓpos : 0 < ℓ := by linarith
+  -- constants
+  have hb_lo : (0.693 : ℝ) < Real.log 2 := by have := Real.log_two_gt_d9; linarith
+  have hb_hi : Real.log 2 < (0.694 : ℝ) := by have := Real.log_two_lt_d9; linarith
+  have hb_pos : 0 < Real.log 2 := by linarith
+  have hg_hi : Real.log (4 / 3) ≤ (1 / 3 : ℝ) := by
+    have := Real.log_le_sub_one_of_pos (show (0:ℝ) < 4/3 by norm_num); linarith
+  have hg_lo : (1 / 4 : ℝ) ≤ Real.log (4 / 3) := by
+    rw [show (4:ℝ)/3 = (3/4)⁻¹ by norm_num, Real.log_inv]
+    have := Real.log_le_sub_one_of_pos (show (0:ℝ) < 3/4 by norm_num); linarith
+  have hg_pos : 0 < Real.log (4 / 3) := by linarith
+  have hlog3 : Real.log 3 ≤ 2 := by have := Real.log_le_sub_one_of_pos (show (0:ℝ) < 3 by norm_num); linarith
+  -- u-substitution basis
+  set u := ℓ ^ (0.2 : ℝ) with hudef
+  have hupos : 0 < u := Real.rpow_pos_of_pos hℓpos _
+  have hu10 : (10 : ℝ) ≤ u := by
+    rw [hudef]
+    have h1 : ((100000 : ℝ)) ^ (0.2 : ℝ) ≤ ℓ ^ (0.2 : ℝ) :=
+      Real.rpow_le_rpow (by norm_num) hℓbig (by norm_num)
+    have h2 : ((100000 : ℝ)) ^ (0.2 : ℝ) = 10 := by
+      rw [show (100000:ℝ) = (10:ℝ) ^ (5:ℕ) by norm_num, ← Real.rpow_natCast (10:ℝ) 5,
+        ← Real.rpow_mul (by norm_num)]; norm_num
+    linarith [h2 ▸ h1]
+  have hu3 : ℓ ^ (0.6 : ℝ) = u ^ 3 := by
+    rw [hudef, ← Real.rpow_natCast (ℓ ^ (0.2:ℝ)) 3, ← Real.rpow_mul hℓpos.le]; norm_num
+  have hu4 : ℓ ^ (0.8 : ℝ) = u ^ 4 := by
+    rw [hudef, ← Real.rpow_natCast (ℓ ^ (0.2:ℝ)) 4, ← Real.rpow_mul hℓpos.le]; norm_num
+  have hu5 : ℓ = u ^ 5 := by
+    rw [hudef, ← Real.rpow_natCast (ℓ ^ (0.2:ℝ)) 5, ← Real.rpow_mul hℓpos.le]; norm_num
+  -- abbreviations for s = log^{0.8} x, L = log^{0.6} x
+  set s := ℓ ^ (0.8 : ℝ) with hsdef
+  set L := ℓ ^ (0.6 : ℝ) with hLdef
+  have hspos : 0 < s := Real.rpow_pos_of_pos hℓpos _
+  have hLpos : 0 < L := Real.rpow_pos_of_pos hℓpos _
+  clear_value ℓ u s L
+  -- the three margin inequalities (pure in ℓ,s,L), proved via u-substitution + nlinarith
+  have hg1 : (1 - Real.log (4 / 3)) ≥ (2 / 3 : ℝ) := by linarith
+  -- (i)   L·b ≤ s·(1-g)
+  have hMargI : L * Real.log 2 ≤ s * (1 - Real.log (4 / 3)) := by
+    have hinner : Real.log 2 ≤ u * (1 - Real.log (4 / 3)) := by nlinarith [hu10, hg_hi, hupos, hb_hi]
+    rw [hu3, hu4]
+    have hstep : u ^ 3 * Real.log 2 ≤ u ^ 3 * (u * (1 - Real.log (4 / 3))) :=
+      mul_le_mul_of_nonneg_left hinner (pow_pos hupos 3).le
+    nlinarith [hstep]
+  -- (ii)  L·b + (b+g) ≤ s·(1-g)
+  have hMargII : L * Real.log 2 + (Real.log 2 + Real.log (4 / 3)) ≤ s * (1 - Real.log (4 / 3)) := by
+    have hinner : Real.log 2 + (Real.log 2 + Real.log (4 / 3)) ≤ u * (u * (1 - Real.log (4 / 3))) := by
+      nlinarith [hu10, hg_hi, hupos, hb_hi, hg_lo]
+    rw [hu3, hu4]
+    have hstep : u ^ 3 * Real.log 2 ≤ u ^ 3 * (u * (1 - Real.log (4 / 3))) :=
+      mul_le_mul_of_nonneg_left (by nlinarith [hu10, hg_hi, hupos, hb_hi] :
+        Real.log 2 ≤ u * (1 - Real.log (4 / 3))) (pow_pos hupos 3).le
+    nlinarith [hstep, hinner, pow_pos hupos 3]
+  -- (iii) b·L + (g+b) ≤ (30/1000)·ℓ + s   (the T ≤ ν margin)
+  have hMargIII : L * Real.log 2 + (Real.log (4 / 3) + Real.log 2)
+      ≤ (30 / 1000 : ℝ) * ℓ + s := by
+    rw [hu3, hu4, hu5]
+    have hbL : u ^ 3 * Real.log 2 ≤ u ^ 4 := by
+      have : u ^ 3 * Real.log 2 ≤ u ^ 3 * 1 := by nlinarith [pow_pos hupos 3, hb_hi]
+      nlinarith [this, hu10, pow_pos hupos 3]
+    nlinarith [hbL, hu10, hg_hi, hb_hi, pow_pos hupos 4, pow_pos hupos 5]
+  -- alpha facts
+  have halpha1 : (1 : ℝ) ≤ alpha := by unfold alpha; norm_num
+  have halpha_pos : (0 : ℝ) < alpha := by unfold alpha; norm_num
+  have halpha3 : alpha ^ 3 ≤ (1004 / 1000 : ℝ) := by unfold alpha; norm_num
+  have halpha_gt1 : (1 : ℝ) < alpha := by unfold alpha; norm_num
+  have halpha_le2 : alpha ≤ alpha ^ 2 := by unfold alpha; norm_num
+  -- sEdge x = s
+  have hs_eq : sEdge x = s := by rw [sEdge, hsdef, hℓdef]
+  -- unfold Edge and do contrapositive
+  simp only [Edge, Set.mem_setOf_eq, hs_eq]
+  by_contra hcon
+  push_neg at hcon
+  obtain ⟨hIntLo, hIntHi⟩ := hcon
+  -- y > 0
+  have hy0 : 0 < y := by rcases hy with h | h <;> rw [h] <;> exact Real.rpow_pos_of_pos hxpos _
+  set LY := Real.log y with hLYdef
+  -- N positive
+  have hNRpos : (0 : ℝ) < (N : ℝ) := lt_trans (mul_pos hy0 (Real.exp_pos s)) hIntLo
+  -- log of interior bounds
+  have hlogNlo : LY + s < Real.log (N : ℝ) := by
+    have h := Real.log_lt_log (mul_pos hy0 (Real.exp_pos s)) hIntLo
+    rwa [Real.log_mul hy0.ne' (Real.exp_pos _).ne', Real.log_exp] at h
+  have hlogNhi : Real.log (N : ℝ) < alpha * LY + (-s) := by
+    have h := Real.log_lt_log hNRpos hIntHi
+    rwa [Real.log_mul (Real.rpow_pos_of_pos hy0 alpha).ne' (Real.exp_pos _).ne',
+      Real.log_rpow hy0, Real.log_exp] at h
+  -- log y ≤ alpha^2 · ℓ, hence alpha·log y ≤ alpha^3·ℓ
+  have hlogy_le : LY ≤ alpha ^ 2 * ℓ := by
+    rcases hy with h | h
+    · rw [hLYdef, h, Real.log_rpow hxpos, ← hℓdef]
+      calc alpha * ℓ = 1 * (alpha * ℓ) := (one_mul _).symm
+        _ ≤ alpha * (alpha * ℓ) :=
+            mul_le_mul_of_nonneg_right halpha1 (mul_nonneg halpha_pos.le hℓpos.le)
+        _ = alpha ^ 2 * ℓ := by ring
+    · rw [hLYdef, h, Real.log_rpow hxpos, ← hℓdef]
+  have hlogN_ub : Real.log (N : ℝ) < (1004 / 1000 : ℝ) * ℓ - s := by
+    have h1 : alpha * LY ≤ alpha ^ 3 * ℓ := by
+      calc alpha * LY ≤ alpha * (alpha ^ 2 * ℓ) := mul_le_mul_of_nonneg_left hlogy_le halpha_pos.le
+        _ = alpha ^ 3 * ℓ := by ring
+    have h2 : alpha ^ 3 * ℓ ≤ (1004 / 1000 : ℝ) * ℓ := mul_le_mul_of_nonneg_right halpha3 hℓpos.le
+    linarith
+  -- ν bounds
+  set ν := nZero x with hνdef
+  have hνnn : (0 : ℝ) ≤ (ν : ℝ) := Nat.cast_nonneg _
+  have h10b_pos : (0 : ℝ) < 10 * Real.log 2 := by linarith
+  have hν_le : (ν : ℝ) * (10 * Real.log 2) ≤ ℓ := by
+    have h : (ν : ℝ) ≤ ℓ / (10 * Real.log 2) := by
+      rw [hνdef, hℓdef]; unfold nZero
+      exact Nat.floor_le (div_nonneg (Real.log_nonneg hx1.le) (mul_nonneg (by norm_num) hb_pos.le))
+    exact (le_div_iff₀ h10b_pos).mp h
+  have hν_lb : ℓ < ((ν : ℝ) + 1) * (10 * Real.log 2) := by
+    have h : ℓ / (10 * Real.log 2) < (ν : ℝ) + 1 := by
+      rw [hνdef, hℓdef]; exact_mod_cast Nat.lt_floor_add_one _
+    exact (div_lt_iff₀ h10b_pos).mp h
+  clear_value ν
+  -- ν·g lower bound (feeds step iii)
+  have hgb : (34 / 1000 : ℝ) ≤ Real.log (4 / 3) / (10 * Real.log 2) := by
+    rw [le_div_iff₀ h10b_pos]; linarith only [hg_lo, hb_hi]
+  have hνg : (34 / 1000 : ℝ) * ℓ - Real.log (4 / 3) ≤ (ν : ℝ) * Real.log (4 / 3) := by
+    have hfrac : ℓ / (10 * Real.log 2) - 1 < (ν : ℝ) := by
+      have h := (div_lt_iff₀ h10b_pos).mpr hν_lb; linarith only [h]
+    have h2 : ℓ / (10 * Real.log 2) * Real.log (4 / 3) - Real.log (4 / 3)
+        ≤ (ν : ℝ) * Real.log (4 / 3) := by
+      have := mul_le_mul_of_nonneg_right hfrac.le hg_pos.le; nlinarith only [this]
+    have h3 : (34 / 1000 : ℝ) * ℓ ≤ ℓ / (10 * Real.log 2) * Real.log (4 / 3) := by
+      have hm := mul_le_mul_of_nonneg_left hgb hℓpos.le
+      calc (34 / 1000 : ℝ) * ℓ = ℓ * (34 / 1000) := by ring
+        _ ≤ ℓ * (Real.log (4 / 3) / (10 * Real.log 2)) := hm
+        _ = ℓ / (10 * Real.log 2) * Real.log (4 / 3) := by ring
+    linarith only [h2, h3]
+  -- 3^ν ≤ x/2  (feeds steps ii,iii)
+  have h2ν : 2 * (ν : ℝ) ≤ ℓ - Real.log 2 := by
+    have hprod : (0 : ℝ) ≤ (ν : ℝ) * (Real.log 2 - 0.693) :=
+      mul_nonneg hνnn (by linarith only [hb_lo])
+    nlinarith only [hν_le, hb_lo, hb_hi, hℓbig, hνnn, hprod]
+  have h3ν : (3 : ℝ) ^ ν ≤ x / 2 := by
+    have hlog : Real.log ((3 : ℝ) ^ ν) ≤ Real.log (x / 2) := by
+      rw [Real.log_pow, Real.log_div hxpos.ne' (by norm_num : (2 : ℝ) ≠ 0), ← hℓdef]
+      have hle3 : (ν : ℝ) * Real.log 3 ≤ (ν : ℝ) * 2 := mul_le_mul_of_nonneg_left hlog3 hνnn
+      linarith only [hle3, h2ν]
+    exact (Real.log_le_log_iff (by positivity) (by linarith only [hxpos] : (0 : ℝ) < x / 2)).mp hlog
+  -- rewriting helpers for the orbit slack exponent
+  have hLval : Real.log x ^ (0.6 : ℝ) = L := by rw [← hℓdef, ← hLdef]
+  have hsval : Real.log x ^ (0.8 : ℝ) = s := by rw [← hℓdef, ← hsdef]
+  have hlog34 : Real.log (3 / 4) = -Real.log (4 / 3) := by
+    rw [show (3 : ℝ) / 4 = (4 / 3)⁻¹ by norm_num, Real.log_inv]
+  -- reusable log expansion for (3/4)^m · N · 2^e
+  have hlogexp : ∀ (m : ℕ) (e : ℝ),
+      Real.log ((3 / 4 : ℝ) ^ m * (N : ℝ) * (2 : ℝ) ^ e)
+        = (m : ℝ) * Real.log (3 / 4) + Real.log (N : ℝ) + e * Real.log 2 := by
+    intro m e
+    rw [Real.log_mul (mul_pos (by positivity : (0:ℝ) < (3/4:ℝ)^m) hNRpos).ne'
+          (by positivity : (0:ℝ) < (2:ℝ)^e).ne',
+        Real.log_mul (by positivity : (0:ℝ) < (3/4:ℝ)^m).ne' hNRpos.ne',
+        Real.log_pow, Real.log_rpow (by norm_num)]
+  -- passage-time facts
+  set T := passTime ⌊x⌋₊ N with hTdef
+  have hne : {n | syr^[n] N ≤ ⌊x⌋₊}.Nonempty := hpass
+  have hTmem : syr^[T] N ≤ ⌊x⌋₊ := Nat.sInf_mem hne
+  have hxfloor_le : ((⌊x⌋₊ : ℕ) : ℝ) ≤ x := Nat.floor_le hxpos.le
+  have hTmemR : (syr^[T] N : ℝ) ≤ x := le_trans (by exact_mod_cast hTmem) hxfloor_le
+  -- N > ⌊x⌋₊  (so T ≥ 1)
+  have hxα_gt : x < x ^ alpha := by
+    have h := Real.rpow_lt_rpow_of_exponent_lt hx1 halpha_gt1
+    rwa [Real.rpow_one] at h
+  have hyge : x ^ alpha ≤ y := by
+    rcases hy with h | h
+    · rw [h]
+    · rw [h]; exact Real.rpow_le_rpow_of_exponent_le hx1.le halpha_le2
+  have hNbig : ((⌊x⌋₊ : ℕ) : ℝ) < (N : ℝ) := by
+    have h1 : x ^ alpha ≤ y * Real.exp s :=
+      calc x ^ alpha = x ^ alpha * 1 := (mul_one _).symm
+        _ ≤ y * Real.exp s := mul_le_mul hyge (Real.one_le_exp hspos.le) (by norm_num) hy0.le
+    linarith only [hIntLo, hxα_gt, h1, hxfloor_le]
+  have hT1 : 1 ≤ T := by
+    rcases Nat.eq_zero_or_pos T with h0 | h
+    · exfalso; rw [h0] at hTmem
+      simp only [Function.iterate_zero, id] at hTmem
+      have : (N : ℝ) ≤ ((⌊x⌋₊ : ℕ) : ℝ) := by exact_mod_cast hTmem
+      linarith only [hNbig, this]
+    · exact h
+  -- STEP (iii): T ≤ ν
+  obtain ⟨_, hUpν⟩ := syr_iterate_good_bracket' x N ν ν hodd hgood (le_refl _)
+  rw [hLval] at hUpν
+  have hmainν_half : (3 / 4 : ℝ) ^ ν * (N : ℝ) * 2 ^ L ≤ x / 2 := by
+    have hlog : Real.log ((3 / 4 : ℝ) ^ ν * (N : ℝ) * 2 ^ L) ≤ Real.log (x / 2) := by
+      rw [hlogexp ν L, hlog34, Real.log_div hxpos.ne' (by norm_num : (2:ℝ) ≠ 0), ← hℓdef]
+      linarith only [hνg, hlogN_ub, hMargIII]
+    exact (Real.log_le_log_iff
+      (mul_pos (mul_pos (by positivity : (0:ℝ) < (3/4:ℝ)^ν) hNRpos) (by positivity : (0:ℝ) < (2:ℝ)^L))
+      (by linarith only [hxpos] : (0:ℝ) < x/2)).mp hlog
+  have hν_final : (syr^[ν] N : ℝ) ≤ x := le_trans hUpν (by linarith only [hmainν_half, h3ν])
+  have hTν : T ≤ ν := by
+    rw [hTdef]; exact Nat.sInf_le (Nat.le_floor hν_final)
+  -- STEP (i): IyLo ≤ T
+  have hIyLo : IyLo x y ≤ (T : ℝ) := by
+    obtain ⟨hLoT, _⟩ := syr_iterate_good_bracket' x N ν T hodd hgood hTν
+    rw [hLval] at hLoT
+    have hle : (3 / 4 : ℝ) ^ T * (N : ℝ) * 2 ^ (-L) ≤ x := le_trans hLoT hTmemR
+    have hlogle : (T : ℝ) * Real.log (3 / 4) + Real.log (N : ℝ) + (-L) * Real.log 2 ≤ ℓ := by
+      rw [← hlogexp T (-L), hℓdef]
+      exact Real.log_le_log
+        (mul_pos (mul_pos (by positivity : (0:ℝ) < (3/4:ℝ)^T) hNRpos) (by positivity : (0:ℝ) < (2:ℝ)^(-L))) hle
+    rw [hlog34] at hlogle
+    have hTg : Real.log (N : ℝ) - L * Real.log 2 - ℓ ≤ (T : ℝ) * Real.log (4 / 3) := by
+      nlinarith only [hlogle]
+    have hkey : Real.log y - ℓ + s * Real.log (4 / 3) ≤ (T : ℝ) * Real.log (4 / 3) := by
+      linarith only [hTg, hlogNlo, hMargI]
+    rw [IyLo, hsval, Real.log_div hy0.ne' hxpos.ne', ← hℓdef, ← hLYdef,
+      div_add' _ _ _ hg_pos.ne', div_le_iff₀ hg_pos]
+    linarith only [hkey]
+  -- STEP (ii): T ≤ IyHi
+  have hIyHi : (T : ℝ) ≤ IyHi x y := by
+    obtain ⟨_, hUpTm⟩ := syr_iterate_good_bracket' x N ν (T - 1) hodd hgood (by omega : T - 1 ≤ ν)
+    rw [hLval] at hUpTm
+    have hnm : ¬ (syr^[T - 1] N ≤ ⌊x⌋₊) := by
+      intro hle
+      have hh : passTime ⌊x⌋₊ N ≤ T - 1 := Nat.sInf_le hle
+      rw [← hTdef] at hh; omega
+    have hprevnat : ⌊x⌋₊ < syr^[T - 1] N := Nat.lt_of_not_le hnm
+    have hprevR : x < (syr^[T - 1] N : ℝ) := by
+      have h1 : x < (⌊x⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one x
+      have h2 : ((⌊x⌋₊ : ℕ) : ℝ) + 1 ≤ (syr^[T - 1] N : ℝ) := by exact_mod_cast hprevnat
+      linarith only [h1, h2]
+    have h3Tm : (3 : ℝ) ^ (T - 1) ≤ x / 2 :=
+      le_trans (pow_le_pow_right₀ (by norm_num) (by omega : T - 1 ≤ ν)) h3ν
+    have hmain'half : x / 2 < (3 / 4 : ℝ) ^ (T - 1) * (N : ℝ) * 2 ^ L := by
+      linarith only [hprevR, hUpTm, h3Tm]
+    have hloglt : Real.log (x / 2)
+        < (T : ℝ) * Real.log (3 / 4) - Real.log (3 / 4) + Real.log (N : ℝ) + L * Real.log 2 := by
+      have h := Real.log_lt_log (by linarith only [hxpos] : (0:ℝ) < x/2) hmain'half
+      rw [hlogexp (T - 1) L] at h
+      rw [Nat.cast_sub hT1, Nat.cast_one] at h
+      nlinarith only [h]
+    rw [Real.log_div hxpos.ne' (by norm_num : (2:ℝ) ≠ 0), ← hℓdef, hlog34] at hloglt
+    have hkey2 : (T : ℝ) * Real.log (4 / 3) ≤ alpha * Real.log y - ℓ - s * Real.log (4 / 3) := by
+      nlinarith only [hloglt, hlogNhi, hMargII]
+    rw [IyHi, hsval, Real.log_div (Real.rpow_pos_of_pos hy0 alpha).ne' hxpos.ne',
+      Real.log_rpow hy0, ← hℓdef, ← hLYdef, le_sub_iff_add_le, le_div_iff₀ hg_pos]
+    nlinarith only [hkey2]
+  -- CONCLUDE: T ∈ Iy x y, contradicting hTnotIy
+  have hTin : T ∈ Iy x y :=
+    Finset.mem_filter.mpr ⟨Finset.mem_range.mpr (by rw [← hνdef]; omega), hIyLo, hIyHi⟩
+  exact hTnotIy hTin
 
 open Classical in
 /-- **Log-uniform indicator expectation as a window-mass ratio.**  For a nonempty window, the
