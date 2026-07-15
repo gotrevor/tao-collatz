@@ -102,6 +102,102 @@ theorem aff_valVec_eq_syr (N k : ℕ) (hN : N % 2 = 1) :
 -- require on the reindexing vectors is already proved: `valVec_pos` (`Syracuse/ValuationDist.lean`)
 -- gives `1 ≤ valVec N k i` for odd `N` (since `3·(odd)+1` is even).
 
+/-! ## Shared `PMF.expect` / event glue for the C8 sub-lemmas -/
+
+/-- Expectation of an event indicator dominated pointwise by a sum of two indicators is at most the
+sum of their expectations (a binary union/subadditivity bound for `PMF.expect`). -/
+theorem expect_le_add_of_indicator_le {α : Type*} (p : PMF α) (U S T : Set α)
+    (h : ∀ a, Set.indicator U (1 : α → ℝ) a ≤ Set.indicator S 1 a + Set.indicator T 1 a) :
+    p.expect (Set.indicator U 1) ≤
+      p.expect (Set.indicator S 1) + p.expect (Set.indicator T 1) := by
+  classical
+  have hsumP : Summable fun a => (p a).toReal := ENNReal.summable_toReal p.tsum_coe_ne_top
+  have ind01 : ∀ (V : Set α) a,
+      (0 : ℝ) ≤ Set.indicator V (1 : α → ℝ) a ∧ Set.indicator V (1 : α → ℝ) a ≤ 1 := by
+    intro V a
+    refine ⟨Set.indicator_nonneg (fun _ _ => zero_le_one) a, ?_⟩
+    rw [Set.indicator_apply]; split <;> simp
+  have hsum : ∀ (V : Set α), Summable fun a => (p a).toReal * Set.indicator V (1 : α → ℝ) a := by
+    intro V
+    exact Summable.of_nonneg_of_le (fun a => mul_nonneg ENNReal.toReal_nonneg (ind01 V a).1)
+      (fun a => mul_le_of_le_one_right ENNReal.toReal_nonneg (ind01 V a).2) hsumP
+  show (∑' a, (p a).toReal * Set.indicator U 1 a) ≤
+      (∑' a, (p a).toReal * Set.indicator S 1 a) + (∑' a, (p a).toReal * Set.indicator T 1 a)
+  rw [← (hsum S).tsum_add (hsum T)]
+  refine (hsum U).tsum_le_tsum (fun a => ?_) ((hsum S).add (hsum T))
+  calc (p a).toReal * Set.indicator U 1 a
+      ≤ (p a).toReal * (Set.indicator S 1 a + Set.indicator T 1 a) :=
+        mul_le_mul_of_nonneg_left (h a) ENNReal.toReal_nonneg
+    _ = (p a).toReal * Set.indicator S 1 a + (p a).toReal * Set.indicator T 1 a := by ring
+
+/-- Finset version of the union bound: an indicator dominated pointwise by a finite sum of
+indicators has expectation at most the sum of the term expectations. -/
+theorem expect_le_sum_of_indicator_le {α ι : Type*} (p : PMF α) (U : Set α)
+    (s : Finset ι) (T : ι → Set α)
+    (h : ∀ a, Set.indicator U (1 : α → ℝ) a ≤ ∑ i ∈ s, Set.indicator (T i) 1 a) :
+    p.expect (Set.indicator U 1) ≤ ∑ i ∈ s, p.expect (Set.indicator (T i) 1) := by
+  classical
+  have hsumP : Summable fun a => (p a).toReal := ENNReal.summable_toReal p.tsum_coe_ne_top
+  have ind01 : ∀ (V : Set α) a,
+      (0 : ℝ) ≤ Set.indicator V (1 : α → ℝ) a ∧ Set.indicator V (1 : α → ℝ) a ≤ 1 := by
+    intro V a
+    refine ⟨Set.indicator_nonneg (fun _ _ => zero_le_one) a, ?_⟩
+    rw [Set.indicator_apply]; split <;> simp
+  have hsum : ∀ (V : Set α), Summable fun a => (p a).toReal * Set.indicator V (1 : α → ℝ) a := by
+    intro V
+    exact Summable.of_nonneg_of_le (fun a => mul_nonneg ENNReal.toReal_nonneg (ind01 V a).1)
+      (fun a => mul_le_of_le_one_right ENNReal.toReal_nonneg (ind01 V a).2) hsumP
+  have hsumRHS : Summable fun a => (p a).toReal * ∑ i ∈ s, Set.indicator (T i) (1 : α → ℝ) a := by
+    refine Summable.of_nonneg_of_le
+      (fun a => mul_nonneg ENNReal.toReal_nonneg (Finset.sum_nonneg fun i _ => (ind01 (T i) a).1))
+      (fun a => ?_) (hsumP.mul_right (s.card : ℝ))
+    refine mul_le_mul_of_nonneg_left ?_ ENNReal.toReal_nonneg
+    calc ∑ i ∈ s, Set.indicator (T i) (1 : α → ℝ) a ≤ ∑ _i ∈ s, (1 : ℝ) :=
+          Finset.sum_le_sum fun i _ => (ind01 (T i) a).2
+      _ = (s.card : ℝ) := by simp
+  have hswap : (∑ i ∈ s, p.expect (Set.indicator (T i) 1))
+      = ∑' a, (p a).toReal * ∑ i ∈ s, Set.indicator (T i) (1 : α → ℝ) a := by
+    unfold PMF.expect
+    rw [← Summable.tsum_finsetSum (fun i _ => hsum (T i))]
+    exact tsum_congr fun a => by rw [Finset.mul_sum]
+  rw [hswap]
+  show (∑' a, (p a).toReal * Set.indicator U 1 a) ≤ _
+  refine (hsum U).tsum_le_tsum (fun a => ?_) hsumRHS
+  exact mul_le_mul_of_nonneg_left (h a) ENNReal.toReal_nonneg
+
+/-- For `x ≥ e` and `c > 0`, `x^{-c} ≤ (log x)^{-c}` (since `1 ≤ log x ≤ x`).  This is what lets the
+escape term's `x^{-c}` bound (`first_passage_nonescape`) fold into the `(log x)^{-c}` target. -/
+theorem escape_to_log {x c : ℝ} (hx : Real.exp 1 ≤ x) (hc : 0 < c) :
+    x ^ (-c) ≤ (Real.log x) ^ (-c) := by
+  have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 1) hx
+  have hlog1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hx
+  have hlogpos : 0 < Real.log x := lt_of_lt_of_le one_pos hlog1
+  have hle : Real.log x ≤ x := le_trans (Real.log_le_sub_one_of_pos hxpos) (by linarith)
+  rw [Real.rpow_neg hxpos.le, Real.rpow_neg hlogpos.le, inv_eq_one_div, inv_eq_one_div]
+  exact one_div_le_one_div_of_le (Real.rpow_pos_of_pos hlogpos c)
+    (Real.rpow_le_rpow hlogpos.le hle hc.le)
+
+/-- On the odd support, `¬ goodTuple` is exactly the existence of a prefix `n ≤ n₀` whose valuation
+sum `valSum N n` deviates from the mean `2n` by `≥ log^{0.6} x` (the positivity conjunct of
+`goodTuple` is automatic for odd `N` by `valVec_pos`; `pre (valVec N n₀) n = valSum N n`). -/
+theorem not_goodTuple_iff_prefix_dev {x : ℝ} {N n₀ : ℕ} (hN : N % 2 = 1) :
+    ¬ goodTuple x n₀ (valVec N n₀) ↔
+      ∃ n ∈ Finset.range (n₀ + 1), Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n| := by
+  have hpos : ∀ i, 1 ≤ valVec N n₀ i := fun i => valVec_pos N n₀ hN i
+  unfold goodTuple
+  rw [not_and]
+  constructor
+  · intro h
+    have hdev := h hpos
+    push_neg at hdev
+    obtain ⟨n, hn, hge⟩ := hdev
+    exact ⟨n, Finset.mem_range.mpr (by omega), by rwa [pre_valVec (by omega : n ≤ n₀)] at hge⟩
+  · rintro ⟨n, hn, hge⟩ _
+    rw [Finset.mem_range] at hn
+    push_neg
+    exact ⟨n, by omega, by rw [pre_valVec (by omega : n ≤ n₀)]; exact hge⟩
+
 -- RATIFY-C8: paper Proposition 5.2 / (5.8), §5 pp.22–25.  Rendered against the numbered display;
 -- the `O(log^{-c} x)` error is spelled as an explicit `∃ c C x₀` bound (design invariant D3).
 /-- **Proposition 5.2** (approximate first-passage formula, paper (5.8)).  For every odd
@@ -128,59 +224,104 @@ Two probabilistic sub-lemmas carry the analytic content of Prop 5.2; the rest of
 pointwise event algebra (the `B_{n,y}` chain and the Lemma 2.1 affine bijection). Pinning these as
 named `sorry`s converts the orange C8 seam into visible, attackable holes. -/
 
-/-- **Paper (5.12)** — the good-tuple union bound.  Outside an event of probability `≪ log^{-c} x`
+/-! **Paper (5.12)** — the good-tuple union bound.  Outside an event of probability `≪ log^{-c} x`
 (the paper takes `log^{-10} x`), the full length-`n₀` valuation vector of `N_y` lies in the
-good-tuple set `𝒜⁽ⁿ⁰⁾`.  Proof (owed): from (5.4) [C5 / Prop 1.9, axiom-clean] and Lemma 2.2
-[S3, two-sided, axiom-clean] each prefix deviates by `≥ log^{0.6} x` with probability
-`≪ exp(−c log^{0.2} x)`; union over the `n₀ + 1` prefixes. **Does not use C7.** -/
+good-tuple set `𝒜⁽ⁿ⁰⁾`.  The union-bound skeleton (`expect_le_add_of_indicator_le` +
+`expect_le_sum_of_indicator_le` + `not_goodTuple_iff_prefix_dev`) is proved in
+`approx_good_tuple_whp`; the analytic per-prefix bound is `goodTuple_prefix_dev_sum`.
+From (5.4) [C5 / Prop 1.9, axiom-clean] and Lemma 2.2 [S3, two-sided, axiom-clean] each prefix
+deviates by `≥ log^{0.6} x` w.p. `≪ exp(−c log^{0.2} x)`; sum over the `n₀ + 1` prefixes.
+**Does not use C7.** -/
+
+/-- **(5.12) analytic core** (owed) — the summed per-prefix deviation bound.  Each of the `n₀ + 1`
+prefixes `valSum N n` deviates from its mean `2n` by `≥ log^{0.6} x` with probability
+`≪ exp(−c log^{0.2} x)` (transfer to `geomHalf.iid` via C5 `valuation_dist`, then the two-sided
+S3 `geomHalf_tail_bound`); the sum over prefixes is still `≪ log^{-c} x`.  This is the ONLY analytic
+hole of `approx_good_tuple_whp` — the union-bound skeleton around it is proved. -/
+theorem goodTuple_prefix_dev_sum :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        ∑ n ∈ Finset.range (nZero x + 1),
+            (logUnifOdd y (y ^ alpha)).expect
+              (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1)
+          ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
 theorem approx_good_tuple_whp :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1)
           ≤ C * (Real.log x) ^ (-c) := by
-  sorry
-
-/-! ### Glue for the (5.16) split -/
-
-/-- Expectation of an event indicator dominated pointwise by a sum of two indicators is at most the
-sum of their expectations (a union/subadditivity bound for `PMF.expect`). -/
-theorem expect_le_add_of_indicator_le {α : Type*} (p : PMF α) (U S T : Set α)
-    (h : ∀ a, Set.indicator U (1 : α → ℝ) a ≤ Set.indicator S 1 a + Set.indicator T 1 a) :
-    p.expect (Set.indicator U 1) ≤
-      p.expect (Set.indicator S 1) + p.expect (Set.indicator T 1) := by
-  classical
-  have hsumP : Summable fun a => (p a).toReal := ENNReal.summable_toReal p.tsum_coe_ne_top
-  have ind01 : ∀ (V : Set α) a,
-      (0 : ℝ) ≤ Set.indicator V (1 : α → ℝ) a ∧ Set.indicator V (1 : α → ℝ) a ≤ 1 := by
-    intro V a
-    refine ⟨Set.indicator_nonneg (fun _ _ => zero_le_one) a, ?_⟩
-    rw [Set.indicator_apply]; split <;> simp
-  have hsum : ∀ (V : Set α), Summable fun a => (p a).toReal * Set.indicator V (1 : α → ℝ) a := by
-    intro V
-    exact Summable.of_nonneg_of_le (fun a => mul_nonneg ENNReal.toReal_nonneg (ind01 V a).1)
-      (fun a => mul_le_of_le_one_right ENNReal.toReal_nonneg (ind01 V a).2) hsumP
-  show (∑' a, (p a).toReal * Set.indicator U 1 a) ≤
-      (∑' a, (p a).toReal * Set.indicator S 1 a) + (∑' a, (p a).toReal * Set.indicator T 1 a)
-  rw [← (hsum S).tsum_add (hsum T)]
-  refine (hsum U).tsum_le_tsum (fun a => ?_) ((hsum S).add (hsum T))
-  calc (p a).toReal * Set.indicator U 1 a
-      ≤ (p a).toReal * (Set.indicator S 1 a + Set.indicator T 1 a) :=
-        mul_le_mul_of_nonneg_left (h a) ENNReal.toReal_nonneg
-    _ = (p a).toReal * Set.indicator S 1 a + (p a).toReal * Set.indicator T 1 a := by ring
-
-/-- For `x ≥ e` and `c > 0`, `x^{-c} ≤ (log x)^{-c}` (since `1 ≤ log x ≤ x`).  This is what lets the
-escape term's `x^{-c}` bound (`first_passage_nonescape`) fold into the `(log x)^{-c}` target. -/
-theorem escape_to_log {x c : ℝ} (hx : Real.exp 1 ≤ x) (hc : 0 < c) :
-    x ^ (-c) ≤ (Real.log x) ^ (-c) := by
-  have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 1) hx
-  have hlog1 : (1 : ℝ) ≤ Real.log x := by
-    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hx
-  have hlogpos : 0 < Real.log x := lt_of_lt_of_le one_pos hlog1
-  have hle : Real.log x ≤ x := le_trans (Real.log_le_sub_one_of_pos hxpos) (by linarith)
-  rw [Real.rpow_neg hxpos.le, Real.rpow_neg hlogpos.le, inv_eq_one_div, inv_eq_one_div]
-  exact one_div_le_one_div_of_le (Real.rpow_pos_of_pos hlogpos c)
-    (Real.rpow_le_rpow hlogpos.le hle hc.le)
+  obtain ⟨c, C, x₀, hc, hC, hsum⟩ := goodTuple_prefix_dev_sum
+  refine ⟨c, C, max x₀ 1, hc, hC, fun x hx y hy => ?_⟩
+  have hx0 : x₀ ≤ x := le_trans (le_max_left _ _) hx
+  have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
+  have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
+    have hy1 : (1 : ℝ) ≤ y := by
+      rcases hy with h | h <;> rw [h] <;>
+        · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
+          exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha <;> positivity)
+    rw [show (1 : ℝ) = (1 : ℝ) ^ alpha from (Real.one_rpow _).symm]
+    exact Real.rpow_le_rpow (by norm_num) hy1 (by unfold alpha; positivity)
+  set P := logUnifOdd y (y ^ alpha) with hPdef
+  have heven0 : P.expect (Set.indicator {N : ℕ | ¬ (N % 2 = 1)} 1) = 0 := by
+    have hzero : ∀ a, (P a).toReal * Set.indicator {N : ℕ | ¬ (N % 2 = 1)} (1 : ℕ → ℝ) a = 0 := by
+      intro a
+      by_cases ha : P a = 0
+      · rw [ha]; simp
+      · have hmem : a ∈ P.support := ha
+        have hodd : a % 2 = 1 := (logUnifOdd_support_le hyα1 hmem).1
+        rw [Set.indicator_of_notMem (by simp only [Set.mem_setOf_eq, not_not]; exact hodd)]; ring
+    show ∑' a, (P a).toReal * Set.indicator {N : ℕ | ¬ (N % 2 = 1)} 1 a = 0
+    simp_rw [hzero]; exact tsum_zero
+  have hpw1 : ∀ N, Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} (1 : ℕ → ℝ) N ≤
+      Set.indicator {N : ℕ | ¬ (N % 2 = 1)} 1 N +
+      Set.indicator {N | ∃ n ∈ Finset.range (nZero x + 1),
+        Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1 N := by
+    intro N
+    have h1 : (0 : ℝ) ≤ Set.indicator {N : ℕ | ¬ (N % 2 = 1)} (1 : ℕ → ℝ) N :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    have h2 : (0 : ℝ) ≤ Set.indicator {N | ∃ n ∈ Finset.range (nZero x + 1),
+        Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} (1 : ℕ → ℝ) N :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    by_cases hN : N ∈ {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))}
+    · rw [Set.indicator_of_mem hN, Pi.one_apply]
+      by_cases hodd : N % 2 = 1
+      · have hmem : N ∈ {N | ∃ n ∈ Finset.range (nZero x + 1),
+            Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} :=
+          (not_goodTuple_iff_prefix_dev hodd).mp hN
+        rw [Set.indicator_of_mem hmem, Pi.one_apply]; linarith
+      · rw [Set.indicator_of_mem (show N ∈ {N : ℕ | ¬ (N % 2 = 1)} from hodd), Pi.one_apply]; linarith
+    · rw [Set.indicator_of_notMem hN]; linarith
+  have hpw2 : ∀ N, Set.indicator {N | ∃ n ∈ Finset.range (nZero x + 1),
+        Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} (1 : ℕ → ℝ) N ≤
+      ∑ n ∈ Finset.range (nZero x + 1),
+        Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1 N := by
+    intro N
+    by_cases hN : N ∈ {N | ∃ n ∈ Finset.range (nZero x + 1),
+        Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|}
+    · rw [Set.indicator_of_mem hN, Pi.one_apply]
+      obtain ⟨n, hn, hdev⟩ := hN
+      refine le_trans (le_of_eq ?_) (Finset.single_le_sum
+        (f := fun k => Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N k : ℝ) - 2 * k|}
+          (1 : ℕ → ℝ) N)
+        (fun i _ => Set.indicator_nonneg (fun _ _ => zero_le_one) N) hn)
+      rw [Set.indicator_of_mem (show N ∈ {M | Real.log x ^ (0.6 : ℝ) ≤ |(valSum M n : ℝ) - 2 * n|}
+        from hdev), Pi.one_apply]
+    · rw [Set.indicator_of_notMem hN]
+      exact Finset.sum_nonneg (fun i _ => Set.indicator_nonneg (fun _ _ => zero_le_one) N)
+  calc P.expect (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1)
+      ≤ P.expect (Set.indicator {N : ℕ | ¬ (N % 2 = 1)} 1)
+          + P.expect (Set.indicator {N | ∃ n ∈ Finset.range (nZero x + 1),
+              Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1) :=
+        expect_le_add_of_indicator_le _ _ _ _ hpw1
+    _ = P.expect (Set.indicator {N | ∃ n ∈ Finset.range (nZero x + 1),
+              Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1) := by rw [heven0]; ring
+    _ ≤ ∑ n ∈ Finset.range (nZero x + 1),
+          P.expect (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1) :=
+        expect_le_sum_of_indicator_le _ _ _ _ hpw2
+    _ ≤ C * (Real.log x) ^ (-c) := hsum x hx0 y hy
 
 /-- **Paper (5.16), window term** (owed — the integral-test piece).  On the event that `N_y` *does*
 pass, the passage time nonetheless lands outside `I_y` only with probability `≪ log^{-c} x`.

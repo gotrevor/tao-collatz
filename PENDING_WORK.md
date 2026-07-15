@@ -46,21 +46,30 @@ and `+O(3^{n-m₀})` precisely to handle the rounding. So step 5 is an **APPROXI
 - Reusable glue: **`expect_le_add_of_indicator_le`** (PMF.expect subadditivity for indicator unions) +
   **`escape_to_log`** (`x^{-c} ≤ (log x)^{-c}` for `x ≥ e`), both axiom-clean.
 
-## C8 sorry census now (still 3 in ApproxFormula, but the C7 seam is gone)
-1. `first_passage_approx` (:116) — the assembly (steps 4+5: `B_{n,y}` event chain + the approximate
+## C8 sorry census now (still 3 in ApproxFormula; BOTH whp sub-lemmas now proved modulo isolated cores)
+1. `first_passage_approx` (:212) — the assembly (steps 4+5: `B_{n,y}` event chain + the approximate
    affine reindex; truncation absorbed per the INSIGHT above).
-2. `approx_good_tuple_whp` (:136) — (5.12) union bound, C5 `valuation_dist` + S3 `geomHalf_tail_bound`.
-3. `passtime_window_inner` (:191) — (5.16) window term ONLY: `{passes ∧ T_x∉Iy}`, the integral test
+2. `goodTuple_prefix_dev_sum` (:241) — (5.12) ANALYTIC CORE only: `∑_{n≤n₀} ℙ(|valSum N n − 2n| ≥
+   log^{0.6}x) ≤ C log^{-c}x`. The union-bound skeleton around it (`approx_good_tuple_whp`) is PROVED.
+3. `passtime_window_inner` (:332) — (5.16) window term ONLY: `{passes ∧ T_x∉Iy}`, the integral test
    that `N_y` avoids the `2 log^{0.8}x` edge collars; reuse C7's `classMass`/`windowMass`/`intTest_*`.
 
-## Next moves (hardest-first)
-1. **`approx_good_tuple_whp` (5.12)** — most self-contained, precedented by C7's just-proved
-   `valSum_lower_geom` (SAME machinery: `valuation_dist` → `geomHalf.iid`, then two-sided
-   `geomHalf_tail_bound`). Route: on the odd support `valVec_pos` kills the `∀i, 1≤aᵢ` conjunct, so
-   `¬goodTuple ⟺ ∃ n≤n₀, log^{0.6}x ≤ |valSum N n − 2n|` (via `pre_valVec`); union-bound over the
-   `n₀+1` prefixes (`expect_le_add_of_indicator_le` generalizes to a finite `Finset.sum`); transfer each
-   prefix deviation to `geomHalf.iid` via `valuation_dist` + the prefix marginal (`iidMap_pre` from C10);
-   bound by `Gweight` and sum. Decompose into a per-prefix tail sub-sorry + the Gweight-sum if it fights.
+## Banked this lap #2 (proved, axiom-clean; ApproxFormula.lean)
+- **`approx_good_tuple_whp` (5.12) — PROVED** (was pinned sorry) modulo `goodTuple_prefix_dev_sum`.
+  Skeleton: on odd support `valVec_pos` kills the `∀i,1≤aᵢ` conjunct ⟹ `¬goodTuple ⟺ ∃ n≤n₀ prefix
+  dev` (`not_goodTuple_iff_prefix_dev`); split off the even-N mass (=0, `logUnifOdd` support ⊆ odd)
+  and union-bound the `n₀+1` prefixes. `#print axioms` = trust base + one `sorryAx` (= the core).
+- Reusable glue (both axiom-clean): **`expect_le_sum_of_indicator_le`** (Finset-sum `PMF.expect`
+  subadditivity), **`not_goodTuple_iff_prefix_dev`** (the reduction). `expect_le_add_of_indicator_le`
+  moved to the shared-glue section (before the sub-lemmas) so all of C8 can use it.
+
+## Next moves (hardest-first) — the 3 remaining C8 cores
+1. **`goodTuple_prefix_dev_sum`** — precedented by C7's `valSum_lower_geom` (SAME machinery:
+   `valuation_dist` → `geomHalf.iid` transfer, two-sided `geomHalf_tail_bound`, `Gweight`). Per prefix
+   `n`: transfer `ℙ_P(|valSum N n − 2n|≥λ) ≤ ℙ_Q(|pre a n − 2n|≥λ) + dTV`, `Q=geomHalf.iid n₀`; the
+   prefix marginal `pre a n` under `Q` is `|Geom(2)_n|` (prefix-block marginal, cf. C10 `iidMap_pre`);
+   `geomHalf_tail_bound` ⟹ `Gweight(1+n, ct·λ)`, `λ=log^{0.6}x`. Sum over `n≤n₀≍log x`: worst term
+   `exp(−c log^{0.2}x)`, times `log x`, still `≪ log^{-c}x`; the `(n₀+1)·dTV` term is `≪ x^{-c'}`.
 2. **`passtime_window_inner` (5.16 window)** — the integral test over the log-uniform window edges.
 3. **`first_passage_approx`** assembly — step-4 `B_{n,y}` event chain (exact, `syr_iterate_key` +
    `passTime`/E' defs) then the step-5 approximate reindex (`aff_valVec_eq_syr` + `valVec_unique`,
