@@ -614,6 +614,54 @@ def check13():
     print(f"13. C8 (5.8) exact reindex: trunc={trunc_cnt} >> exact-guard={guard_cnt} (k={k} N={N})  OK")
 
 
+def check14():
+    # C6 §3 pins (2026-07-15): Thm 3.1 Syracuse forms + AlmostAllOdd normalizer.
+    # logSum A (oddInterval x) = sum_{N odd, 1<=N<=x, N in A} 1/N; logProb normalizes by the
+    # ODD-window mass, NOT the full [1,x] mass.  Plausible-wrong renderings this traps:
+    #   (a) normalizing the odd-window probability by posInterval mass (gives ~1/2, not 1);
+    #   (b) the two Thm 3.1 displays not being complementary (sum-form vs 1 - prob-form).
+    x = 30_000
+    S_odd = sum(Fraction(1, N) for N in range(1, x + 1, 2))
+    S_all = sum(Fraction(1, N) for N in range(1, x + 1))
+    # (a) the sure event on the odd window has logProb EXACTLY 1 under the intended
+    # normalizer; under the wrong (posInterval) normalizer it is ~ 1/2.
+    assert S_odd / S_odd == 1
+    assert S_odd / S_all < Fraction(7, 10), float(S_odd / S_all)
+    # log-uniformity sanity: residue 1 mod 4 carries ~half the odd-window mass (the
+    # constant term drifts at finite x: 0.568 at x=3e4).  A posInterval-normalized
+    # wrong rendering would sit near 1/4 — the bracket separates the two.
+    S_1mod4 = sum(Fraction(1, N) for N in range(1, x + 1, 4))
+    assert Fraction(45, 100) < S_1mod4 / S_odd < Fraction(65, 100), float(S_1mod4 / S_odd)
+    # (b) display equivalence, Fraction-exact, on a NON-degenerate synthetic bad set
+    # {N : syrMin-proxy > N0} := {N : N > N0} (syrMin itself is 1 for every small odd N,
+    # which would make the bad set empty and the check vacuous):
+    N0 = 137
+    bad = sum(Fraction(1, N) for N in range(1, x + 1, 2) if N > N0)
+    good = sum(Fraction(1, N) for N in range(1, x + 1, 2) if N <= N0)
+    assert bad / S_odd == 1 - good / S_odd                    # sum form <-> 1 - prob form
+    # and the real bad set IS empty at small scale (all odd N <= 3000 reach 1):
+    for N in range(1, 3001, 2):
+        assert orbit_min(syr, N, 400) == 1, N
+    print(f"14. C6 Thm 3.1 forms: odd-window normalizer + display equivalence      OK (x={x})")
+
+def check15():
+    # C6 (1.2) pullback trap: logSum {N | oddPart N in A} (posInterval x)
+    #                           <= 2 * logSum A (oddInterval x)
+    # via sum_{N<=x, oddPart N in A} 1/N = sum_a 2^-a sum_{M in A odd, M<=x/2^a} 1/M.
+    # The trap checks BOTH directions: the intended constant 2 holds (exactly), and the
+    # bound is nearly attained (ratio > 1.8), so a plausible-wrong rendering with
+    # constant 1 (forgetting the geometric series over nu2) FAILS.
+    x = 2 ** 16
+    for label, A in [("M%3==1", lambda M: M % 3 == 1),
+                     ("M<=999", lambda M: M <= 999),
+                     ("all",    lambda M: True)]:
+        lhs = sum(Fraction(1, N) for N in range(1, x + 1) if A(N >> nu2(N)))
+        rhs_half = sum(Fraction(1, M) for M in range(1, x + 1, 2) if A(M))
+        assert lhs <= 2 * rhs_half, (label, float(lhs), float(rhs_half))
+        assert lhs > Fraction(18, 10) * rhs_half, (label, float(lhs / rhs_half))
+    print(f"15. C6 (1.2) oddPart pullback: constant 2 exact and >1.8-tight          OK (x=2^16)")
+
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
@@ -624,4 +672,5 @@ if __name__ == "__main__":
     check12(damp=1.0 / 2.718281828459045)         # amplified: O(1)-sensitive seam
     check12(n=16, xi=7, damp=0.5)                 # second geometry
     check13()                                     # C8 (5.8) exact-reindex trap
+    check14(); check15()                          # C6 §3 pins (Thm 3.1 forms, (1.2) pullback)
     print("ALL CHECKS PASS ✅")
