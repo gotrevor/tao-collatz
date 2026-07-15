@@ -2242,6 +2242,107 @@ theorem mZero_le_of_mem_Iy :
   exact ⟨hm1, by exact_mod_cast le_trans hIyLo_ge hnge⟩
 
 open Classical in
+/-- Step-back pow split: `(3/4)^{n−m} = (4/3)^m · (3/4)^n` for `m ≤ n` (real, `(4/3)=(3/4)⁻¹`). -/
+theorem pow_stepback_eq {m n : ℕ} (h : m ≤ n) :
+    (3 / 4 : ℝ) ^ (n - m) = (4 / 3) ^ m * (3 / 4) ^ n := by
+  have hsplit : (3 / 4 : ℝ) ^ n = (3 / 4) ^ m * (3 / 4) ^ (n - m) := by
+    rw [← pow_add]; congr 1; omega
+  rw [hsplit, show (4 / 3 : ℝ) = (3 / 4)⁻¹ by norm_num, inv_pow]
+  have : (3 / 4 : ℝ) ^ m ≠ 0 := by positivity
+  field_simp
+
+/-- `3^{n₀} ≤ x^{1/5}` for `x ≥ 1`: `n₀·log 3 ≤ (log x/(10 log 2))·log 3 ≤ (1/5) log x` since
+`log 3 ≤ 2 log 2 = log 4`.  Bounds the `+3^{n−m₀}` rounding term of the orbit bracket. -/
+theorem three_pow_nZero_le {x : ℝ} (hx1 : 1 ≤ x) : (3 : ℝ) ^ nZero x ≤ x ^ ((1 : ℝ) / 5) := by
+  have hxpos : 0 < x := by linarith
+  have hlogx : 0 ≤ Real.log x := Real.log_nonneg hx1
+  have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
+  have hquot : 0 ≤ Real.log x / (10 * Real.log 2) := div_nonneg hlogx (by positivity)
+  have hnf : (nZero x : ℝ) ≤ Real.log x / (10 * Real.log 2) := by
+    unfold nZero; exact Nat.floor_le hquot
+  have he : (3 : ℝ) ^ nZero x = Real.exp (Real.log 3 * (nZero x : ℝ)) := by
+    rw [← Real.rpow_natCast (3 : ℝ) (nZero x), Real.rpow_def_of_pos (by norm_num)]
+  have hx5 : x ^ ((1 : ℝ) / 5) = Real.exp (Real.log x * (1 / 5)) := Real.rpow_def_of_pos hxpos _
+  rw [he, hx5]
+  apply Real.exp_le_exp.mpr
+  have hlog3le : Real.log 3 ≤ 2 * Real.log 2 := by
+    rw [show (2 : ℝ) * Real.log 2 = Real.log 4 by
+      rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.log_pow]; push_cast; ring]
+    exact Real.log_le_log (by norm_num) (by norm_num)
+  calc Real.log 3 * (nZero x : ℝ) ≤ Real.log 3 * (Real.log x / (10 * Real.log 2)) :=
+        mul_le_mul_of_nonneg_left hnf hlog3.le
+    _ ≤ (2 * Real.log 2) * (Real.log x / (10 * Real.log 2)) :=
+        mul_le_mul_of_nonneg_right hlog3le hquot
+    _ = Real.log x * (1 / 5) := by field_simp; ring
+
+/-- **Slack core** for the (5.17) window: `2·log 2·log^{0.6}x + 1 ≤ log^{0.7}x` for `x` large
+(`log^{0.7} = log^{0.6}·log^{0.1}`, and `log^{0.1}x ≥ 2 log 2 + 1` once `log x ≥ (2 log 2 + 1)^{10}`). -/
+theorem slack_key :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ) + 1 ≤ (Real.log x) ^ (0.7 : ℝ) := by
+  have hl2 : (0 : ℝ) ≤ Real.log 2 := Real.log_nonneg (by norm_num)
+  have hb : (0 : ℝ) ≤ 2 * Real.log 2 + 1 := by positivity
+  have hb1 : (1 : ℝ) ≤ 2 * Real.log 2 + 1 := by linarith
+  refine ⟨Real.exp ((2 * Real.log 2 + 1) ^ (10 : ℕ)), Real.one_le_exp (by positivity),
+    fun x hx => ?_⟩
+  have hL : (2 * Real.log 2 + 1) ^ (10 : ℕ) ≤ Real.log x := by
+    rw [← Real.log_exp ((2 * Real.log 2 + 1) ^ (10 : ℕ))]; exact Real.log_le_log (Real.exp_pos _) hx
+  have hL1 : (1 : ℝ) ≤ Real.log x := le_trans (one_le_pow₀ hb1) hL
+  have hLpos : (0 : ℝ) < Real.log x := by linarith
+  have hL01 : (2 * Real.log 2 + 1) ≤ (Real.log x) ^ (0.1 : ℝ) := by
+    have h := Real.rpow_le_rpow (by positivity) hL (by norm_num : (0 : ℝ) ≤ (0.1 : ℝ))
+    rwa [← Real.rpow_natCast (2 * Real.log 2 + 1) 10, ← Real.rpow_mul hb,
+      show ((10 : ℕ) : ℝ) * (0.1 : ℝ) = 1 by norm_num, Real.rpow_one] at h
+  have hL06 : (1 : ℝ) ≤ (Real.log x) ^ (0.6 : ℝ) := Real.one_le_rpow hL1 (by norm_num)
+  have hL06nn : (0 : ℝ) ≤ (Real.log x) ^ (0.6 : ℝ) := by linarith
+  have hsplit : (Real.log x) ^ (0.7 : ℝ) = (Real.log x) ^ (0.6 : ℝ) * (Real.log x) ^ (0.1 : ℝ) := by
+    rw [← Real.rpow_add hLpos]; norm_num
+  rw [hsplit]
+  nlinarith [hL01, hL06, hL06nn, mul_le_mul_of_nonneg_left hL01 hL06nn]
+
+/-- Upper slack (from `slack_key`): `2^{2 log^{0.6}x} + 1 ≤ exp(log^{0.7}x)`.  (`2^{2t}=exp(2 log2·t)`,
+and `exp(2log2 t)·e ≤ exp(log^{0.7})` with `e ≥ 2`, `2^{2t} ≥ 1`.) -/
+theorem slack_upper {x : ℝ} (hLnn : 0 ≤ Real.log x)
+    (hslack : 2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ) + 1 ≤ (Real.log x) ^ (0.7 : ℝ)) :
+    (2 : ℝ) ^ (2 * (Real.log x) ^ (0.6 : ℝ)) + 1 ≤ Real.exp ((Real.log x) ^ (0.7 : ℝ)) := by
+  have harg : (0 : ℝ) ≤ 2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ) :=
+    mul_nonneg (mul_nonneg (by norm_num) (Real.log_nonneg (by norm_num))) (Real.rpow_nonneg hLnn _)
+  have heq : (2 : ℝ) ^ (2 * (Real.log x) ^ (0.6 : ℝ))
+      = Real.exp (2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ)) := by
+    rw [Real.rpow_def_of_pos (by norm_num)]; congr 1; ring
+  rw [heq]
+  have hmono : Real.exp (2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ)) * Real.exp 1
+      ≤ Real.exp ((Real.log x) ^ (0.7 : ℝ)) := by
+    rw [← Real.exp_add]; exact Real.exp_le_exp.mpr hslack
+  have hApos := Real.exp_pos (2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ))
+  have he1 : (2 : ℝ) ≤ Real.exp 1 := by have := Real.add_one_le_exp (1 : ℝ); linarith
+  have hA1 : (1 : ℝ) ≤ Real.exp (2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ)) := Real.one_le_exp harg
+  nlinarith [hmono, hA1, he1, hApos]
+
+/-- Lower slack (from `slack_key`): `exp(−log^{0.7}x) ≤ (3/8)·2^{−2 log^{0.6}x}`.  (`exp(2log2 t − log^{0.7})
+≤ exp(−1) ≤ 3/8`, using `e ≥ 8/3`.) -/
+theorem slack_lower {x : ℝ}
+    (hslack : 2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ) + 1 ≤ (Real.log x) ^ (0.7 : ℝ)) :
+    Real.exp (-(Real.log x) ^ (0.7 : ℝ)) ≤ (3 / 8) * (2 : ℝ) ^ (-(2 * (Real.log x) ^ (0.6 : ℝ))) := by
+  have heq : (2 : ℝ) ^ (-(2 * (Real.log x) ^ (0.6 : ℝ)))
+      = Real.exp (-(2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ))) := by
+    rw [Real.rpow_def_of_pos (by norm_num)]; congr 1; ring
+  rw [heq]
+  have hle : -(Real.log x) ^ (0.7 : ℝ) ≤ -1 + -(2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ)) := by
+    linarith
+  calc Real.exp (-(Real.log x) ^ (0.7 : ℝ))
+        ≤ Real.exp (-1 + -(2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ))) := Real.exp_le_exp.mpr hle
+    _ = Real.exp (-1) * Real.exp (-(2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ))) := by
+        rw [Real.exp_add]
+    _ ≤ (3 / 8) * Real.exp (-(2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ))) := by
+        have he8 : Real.exp (-1) ≤ 3 / 8 := by
+          have he : (8 : ℝ) / 3 ≤ Real.exp 1 := by have := Real.exp_one_gt_d9; linarith
+          have hid : Real.exp (-1) * Real.exp 1 = 1 := by rw [← Real.exp_add]; norm_num
+          nlinarith [Real.exp_pos (-1), he, hid,
+            mul_nonneg (Real.exp_pos (-1)).le (by linarith : (0 : ℝ) ≤ Real.exp 1 - 8 / 3)]
+        exact mul_le_mul_of_nonneg_right he8 (Real.exp_pos _).le
+
 /-- **(5.17) size-window brick** (the sole remaining analytic content of the forward leg).  On the
 good-passage event `{T_x N = n ∧ good⁽ⁿ⁰⁾(N)}` with `N` odd and `n ∈ I_y`, the stepped-back iterate
 `M = Syr^{n−m₀}N` lands in the `E'` size window `exp(±log^{0.7}x)·(4/3)^{m₀}·x`.  Proof route (paper
