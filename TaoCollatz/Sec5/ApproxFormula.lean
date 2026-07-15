@@ -74,6 +74,32 @@ theorem goodTuple_finite (x : ℝ) (n' : ℕ) : {a : Fin n' → ℕ | goodTuple 
     exact (Fin.mk.injEq _ _ _ _).mp this
   exact Set.finite_coe_iff.mp hfin
 
+/-- **Real-valued two-sided bracket for the Syracuse iterate** (foundation for the (5.13)/(5.14)
+orbit estimate).  From `syr_iterate_key` (`2^{valSum}·Syr^n N = 3^n N + Fnat`) and `fnat_valVec_le`
+(`Fnat ≤ 2^{valSum}·3^n`), for odd `N`:
+`3^n N / 2^{valSum N n} ≤ Syr^n N ≤ 3^n N / 2^{valSum N n} + 3^n`.
+The main term `3^n N / 2^{valSum}` becomes `(3/4)^n N` once `valSum ≈ 2n` (the good-tuple prefix
+control), and the additive `+3^n` is the lower-order rounding slack; both reindex legs consume this. -/
+theorem syr_iterate_bracket (N n : ℕ) (hN : N % 2 = 1) :
+    (3 ^ n * N : ℝ) / 2 ^ valSum N n ≤ (syr^[n] N : ℝ) ∧
+      (syr^[n] N : ℝ) ≤ (3 ^ n * N : ℝ) / 2 ^ valSum N n + 3 ^ n := by
+  have hkey := syr_iterate_key N n hN
+  rw [pre_valVec (le_refl n)] at hkey
+  have hle := fnat_valVec_le N n
+  have hpos : (0 : ℝ) < 2 ^ valSum N n := by positivity
+  have hkeyR : (2 ^ valSum N n : ℝ) * (syr^[n] N : ℝ)
+      = (3 ^ n * N : ℝ) + (fnat n (valVec N n) : ℝ) := by exact_mod_cast hkey
+  have hleR : (fnat n (valVec N n) : ℝ) ≤ (2 ^ valSum N n : ℝ) * 3 ^ n := by exact_mod_cast hle
+  have hS : (syr^[n] N : ℝ)
+      = ((3 ^ n * N : ℝ) + (fnat n (valVec N n) : ℝ)) / 2 ^ valSum N n :=
+    eq_div_of_mul_eq hpos.ne' (by rw [mul_comm]; exact hkeyR)
+  refine ⟨?_, ?_⟩
+  · rw [hS]; gcongr
+    exact le_add_of_nonneg_right (by positivity)
+  · rw [hS, add_div]
+    gcongr (3 ^ n * N : ℝ) / 2 ^ valSum N n + ?_
+    rw [div_le_iff₀ hpos]; nlinarith [hleR]
+
 /-- Lower endpoint of the interval `I_y` (5.9): `log(y/x)/log(4/3) + log^{0.8} x`. -/
 noncomputable def IyLo (x y : ℝ) : ℝ :=
   Real.log (y / x) / Real.log (4 / 3) + Real.log x ^ (0.8 : ℝ)
