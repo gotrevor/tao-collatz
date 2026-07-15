@@ -2343,15 +2343,27 @@ theorem slack_lower {x : ℝ}
             mul_nonneg (Real.exp_pos (-1)).le (by linarith : (0 : ℝ) ≤ Real.exp 1 - 8 / 3)]
         exact mul_le_mul_of_nonneg_right he8 (Real.exp_pos _).le
 
-/-- **(5.17) size-window brick** (the sole remaining analytic content of the forward leg).  On the
-good-passage event `{T_x N = n ∧ good⁽ⁿ⁰⁾(N)}` with `N` odd and `n ∈ I_y`, the stepped-back iterate
-`M = Syr^{n−m₀}N` lands in the `E'` size window `exp(±log^{0.7}x)·(4/3)^{m₀}·x`.  Proof route (paper
-(5.13)/(5.14)): `M` has passage time `m₀` (`passTime_stepback`), so `Syr^{m₀}M ≤ ⌊x⌋ < Syr^{m₀−1}M`;
-the good bracket `syr_iterate_good_bracket'` over the full `n₀`-length good tuple pins
-`M ≍ (4/3)^{m₀}·Syr^n N` with `Syr^n N ∈ [(3/4)⌊x⌋·2^{−2log^{0.6}}, ⌊x⌋]` (first-passage straddle +
-the single-step drop bounded by the good entry `a_n ∈ 2 ± 2log^{0.6}`); `two_rpow_slack_le_exp`
-absorbs the `2^{±O(log^{0.6})}` inside `exp(±log^{0.7}x)`, and `exp(−log^{0.7}x) ≪ 3/4` swamps the
-lower `3/4` factor. -/
+/-- **(5.17) passage orbit-straddle core** — on `{T_x N = n ∧ good⁽ⁿ⁰⁾}` with `N` odd, `n ∈ I_y`, the
+passage-scaled quantity `(3/4)^n·N` is pinned near `x`:
+`(3/8)·x·2^{−log^{0.6}x} ≤ (3/4)^n·N ≤ x·2^{log^{0.6}x}`.
+Upper: `Syr^n N ≤ ⌊x⌋ ≤ x` with the good bracket lower half.  Lower: `Syr^{n−1}N > ⌊x⌋ > x−1` (passage
+minimality) with the good bracket upper half at `n−1`, absorbing the `+3^{n−1}` rounding via
+`three_pow_nZero_le` (`3^{n−1} ≤ x^{1/5} ≤ x/2`).  This is the genuine first-passage content of the
+size window; everything else is `±`-slack absorption (`slack_upper`/`slack_lower`). -/
+theorem stepback_passage_scale :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+        ∀ N : ℕ, N % 2 = 1 → passTime ⌊x⌋₊ N = n →
+          goodTuple x (nZero x) (valVec N (nZero x)) →
+            (3 / 8) * x * (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) ≤ (3 / 4 : ℝ) ^ n * (N : ℝ) ∧
+              (3 / 4 : ℝ) ^ n * (N : ℝ) ≤ x * (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) := by
+  sorry
+
+/-- **(5.17) size-window brick** — on `{T_x N = n ∧ good⁽ⁿ⁰⁾}`, `N` odd, `n ∈ I_y`, the stepped-back
+iterate `M = Syr^{n−m₀}N` lands in the `E'` size window `exp(±log^{0.7}x)·(4/3)^{m₀}·x`.  Assembled from
+the passage core `stepback_passage_scale` (pinning `(3/4)^n·N ≍ x`), the good bracket at `k = n−m₀`
+(`syr_iterate_good_bracket'`), the pow split `pow_stepback_eq` ((3/4)^{n−m₀}=(4/3)^{m₀}(3/4)^n), and the
+`±`-slack absorption `slack_upper`/`slack_lower` (with `three_pow_nZero_le` for the `+3^{n−m₀}` term). -/
 theorem stepback_size_window :
     ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
@@ -2361,7 +2373,66 @@ theorem stepback_size_window :
                 ≤ (syr^[n - mZero x] N : ℝ) ∧
               (syr^[n - mZero x] N : ℝ)
                 ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x := by
-  sorry
+  obtain ⟨xps, hxps1, hscale⟩ := stepback_passage_scale
+  obtain ⟨xsk, _hxsk1, hsk⟩ := slack_key
+  obtain ⟨xmz, _hxmz1, hmz⟩ := mZero_le_of_mem_Iy
+  refine ⟨max (max xps xsk) xmz, le_max_of_le_left (le_max_of_le_left hxps1),
+    fun x hx y hy n hn N hodd hT hgood => ?_⟩
+  have hxps : xps ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+  have hxsk : xsk ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxmz : xmz ≤ x := le_trans (le_max_right _ _) hx
+  have hx1 : (1 : ℝ) ≤ x := le_trans hxps1 hxps
+  have hxpos : (0 : ℝ) < x := by linarith
+  have hLnn : (0 : ℝ) ≤ Real.log x := Real.log_nonneg hx1
+  -- positivity of the slack factors
+  have hs_pos : (0 : ℝ) < (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) := Real.rpow_pos_of_pos (by norm_num) _
+  have hsn_pos : (0 : ℝ) < (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) :=
+    Real.rpow_pos_of_pos (by norm_num) _
+  have hQpos : (0 : ℝ) < (4 / 3 : ℝ) ^ mZero x := by positivity
+  have hQ1 : (1 : ℝ) ≤ (4 / 3 : ℝ) ^ mZero x := one_le_pow₀ (by norm_num)
+  -- interval facts
+  obtain ⟨_, hmn⟩ := hmz x hxmz y hy n hn
+  have hk : n - mZero x ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
+  -- good bracket at k = n − m₀, rewritten via the (3/4)^{n−m₀} split
+  obtain ⟨hbr_lo, hbr_hi⟩ := syr_iterate_good_bracket' x N (nZero x) (n - mZero x) hodd hgood hk
+  rw [pow_stepback_eq hmn] at hbr_lo hbr_hi
+  -- passage scale
+  obtain ⟨hsc_lo, hsc_hi⟩ := hscale x hxps y hy n hn N hodd hT hgood
+  -- 3^{n−m₀} ≤ (4/3)^{m₀}·x
+  have h3k : (3 : ℝ) ^ (n - mZero x) ≤ (4 / 3 : ℝ) ^ mZero x * x := by
+    have hmono : (3 : ℝ) ^ (n - mZero x) ≤ (3 : ℝ) ^ nZero x :=
+      pow_le_pow_right₀ (by norm_num) hk
+    have hx15 : x ^ ((1 : ℝ) / 5) ≤ x := by
+      have := Real.rpow_le_rpow_of_exponent_le hx1 (by norm_num : (1 : ℝ) / 5 ≤ 1)
+      rwa [Real.rpow_one] at this
+    have hxle : x ≤ (4 / 3 : ℝ) ^ mZero x * x := by nlinarith [hQ1, hxpos]
+    calc (3 : ℝ) ^ (n - mZero x) ≤ (3 : ℝ) ^ nZero x := hmono
+      _ ≤ x ^ ((1 : ℝ) / 5) := three_pow_nZero_le hx1
+      _ ≤ x := hx15
+      _ ≤ (4 / 3 : ℝ) ^ mZero x * x := hxle
+  -- square identities for the slack factors
+  have hss : (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) * (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ))
+      = (2 : ℝ) ^ (2 * Real.log x ^ (0.6 : ℝ)) := by
+    rw [← Real.rpow_add (by norm_num)]; congr 1; ring
+  have hssn : (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) * (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ)))
+      = (2 : ℝ) ^ (-(2 * Real.log x ^ (0.6 : ℝ))) := by
+    rw [← Real.rpow_add (by norm_num)]; congr 1; ring
+  -- slack lemmas, folded to the squared factors
+  have hSU : (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) * (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) + 1
+      ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) := by
+    rw [hss]; exact slack_upper hLnn (hsk x hxsk)
+  have hSL : Real.exp (-(Real.log x ^ (0.7 : ℝ)))
+      ≤ (3 / 8) * ((2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) * (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ)))) := by
+    rw [hssn]; exact slack_lower (hsk x hxsk)
+  refine ⟨?_, ?_⟩
+  · -- lower
+    have hC := mul_nonneg (mul_nonneg hQpos.le hsn_pos.le) (sub_nonneg.mpr hsc_lo)
+    have hD := mul_nonneg (mul_nonneg hQpos.le hxpos.le) (sub_nonneg.mpr hSL)
+    nlinarith [hbr_lo, hC, hD]
+  · -- upper
+    have hA := mul_nonneg (mul_nonneg hQpos.le hs_pos.le) (sub_nonneg.mpr hsc_hi)
+    have hB := mul_nonneg (mul_nonneg hQpos.le hxpos.le) (sub_nonneg.mpr hSU)
+    nlinarith [hbr_hi, hA, hB, h3k]
 
 open Classical in
 /-- **(5.17) forward leg** — `firstPassMid ≤ steppedMid`, a deterministic event inclusion with NO
