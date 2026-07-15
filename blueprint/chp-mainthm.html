@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  MathJax = { 
+    tex: {
+		    inlineMath: [['$','$'], ['\\(','\\)']]
+	} }
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<meta name="generator" content="plasTeX" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>First passage, stabilization, and the main theorem</title>
+<link rel="next" href="chp-mixing.html" title="Fine-scale mixing (§6)" />
+<link rel="prev" href="chp-syracuse.html" title="The Syracuse random variable and its valuation" />
+<link rel="up" href="index.html" title="Tao 2019 Collatz Blueprint" />
+<link rel="stylesheet" href="styles/theme-white.css" />
+<link rel="stylesheet" href="styles/amsthm.css" />
+<link rel="stylesheet" href="styles/showmore.css" />
+<link rel="stylesheet" href="styles/blueprint.css" />
+<link rel="stylesheet" href="styles/extra_styles.css" />
+</head>
+
+<body>
+<header>
+<svg  id="toc-toggle" class="icon icon-list-numbered "><use xlink:href="symbol-defs.svg#icon-list-numbered"></use></svg>
+<h1 id="doc_title"><a href="index.html">Tao 2019 Collatz Blueprint</a></h1>
+</header>
+
+<div class="wrapper">
+<nav class="toc">
+<ul class="sub-toc-0">
+<li class="">
+  <a href="sect0001.html"><span class="toc_ref">1</span> <span class="toc_entry">Program overview</span></a>
+  <span class="expand-toc">▶</span>
+  <ul class="sub-toc-1">
+     <li class="">
+  <a href="sect0001.html#a0000000003"><span class="toc_ref">1.1</span> <span class="toc_entry">The spine</span></a>
+ </li>
+<li class="">
+  <a href="sect0001.html#a0000000005"><span class="toc_ref">1.2</span> <span class="toc_entry">The three risk kernels</span></a>
+ </li>
+<li class="">
+  <a href="sect0001.html#a0000000006"><span class="toc_ref">1.3</span> <span class="toc_entry">Global modelling decisions</span></a>
+ </li>
+
+  </ul>
+ </li>
+<li class="">
+  <a href="chp-support.html"><span class="toc_ref">2</span> <span class="toc_entry">The support layer</span></a>
+  <span class="expand-toc">▶</span>
+  <ul class="sub-toc-1">
+     <li class="">
+  <a href="chp-support.html#a0000000007"><span class="toc_ref">2.1</span> <span class="toc_entry">PMF calculus</span></a>
+ </li>
+<li class="">
+  <a href="chp-support.html#a0000000008"><span class="toc_ref">2.2</span> <span class="toc_entry">The geometric family and local bounds</span></a>
+ </li>
+<li class="">
+  <a href="chp-support.html#a0000000009"><span class="toc_ref">2.3</span> <span class="toc_entry">Fourier analysis on \(\mathbb {Z}/3^n\mathbb {Z}\)</span></a>
+ </li>
+
+  </ul>
+ </li>
+<li class="">
+  <a href="chp-dictionary.html"><span class="toc_ref">3</span> <span class="toc_entry">The Collatz–Syracuse dictionary and logarithmic density</span></a>
+ </li>
+<li class="">
+  <a href="chp-syracuse.html"><span class="toc_ref">4</span> <span class="toc_entry">The Syracuse random variable and its valuation</span></a>
+ </li>
+<li class=" active current">
+  <a href="chp-mainthm.html"><span class="toc_ref">5</span> <span class="toc_entry">First passage, stabilization, and the main theorem</span></a>
+  <span class="expand-toc">▼</span>
+  <ul class="sub-toc-1 active">
+     <li class="">
+  <a href="chp-mainthm.html#a0000000010"><span class="toc_ref">5.1</span> <span class="toc_entry">The main theorem</span></a>
+ </li>
+<li class="">
+  <a href="chp-mainthm.html#a0000000011"><span class="toc_ref">5.2</span> <span class="toc_entry">First passage (§5)</span></a>
+ </li>
+
+  </ul>
+ </li>
+<li class="">
+  <a href="chp-mixing.html"><span class="toc_ref">6</span> <span class="toc_entry">Fine-scale mixing (§6)</span></a>
+ </li>
+<li class="">
+  <a href="chp-crux.html"><span class="toc_ref">7</span> <span class="toc_entry">The crux: character decay via renewal versus triangles (§7)</span></a>
+  <span class="expand-toc">▶</span>
+  <ul class="sub-toc-1">
+     <li class="">
+  <a href="chp-crux.html#a0000000012"><span class="toc_ref">7.1</span> <span class="toc_entry">Setup and the phase functions</span></a>
+ </li>
+<li class="">
+  <a href="chp-crux.html#a0000000013"><span class="toc_ref">7.2</span> <span class="toc_entry">The triangle structure of the black set</span></a>
+ </li>
+<li class="">
+  <a href="chp-crux.html#a0000000014"><span class="toc_ref">7.3</span> <span class="toc_entry">The holding process and its finitized renewal recursion (D6)</span></a>
+ </li>
+<li class="">
+  <a href="chp-crux.html#a0000000015"><span class="toc_ref">7.4</span> <span class="toc_entry">The three cases of Prop 7.8</span></a>
+ </li>
+<li class="">
+  <a href="chp-crux.html#a0000000016"><span class="toc_ref">7.5</span> <span class="toc_entry">Assembly: Prop 1.17</span></a>
+ </li>
+
+  </ul>
+ </li>
+<li ><a href="dep_graph_document.html">Dependency graph</a></li>
+</ul>
+</nav>
+
+<div class="content">
+<div class="content-wrapper">
+
+
+<div class="main-text">
+<h1 id="chp:mainthm">5 First passage, stabilization, and the main theorem</h1>
+
+<h1 id="a0000000010">5.1 The main theorem</h1>
+<div class="theorem_thmwrapper theorem-style-definition" id="C6">
+  <div class="theorem_thmheading">
+    <span class="theorem_thmcaption">
+    Theorem
+    </span>
+    <span class="theorem_thmlabel">5.1</span>
+    <span class="theorem_thmtitle">Main theorem: Thm 1.3, Thm 1.6, quantitative Thm 3.1</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C6">#</a>
+    
+    <a class="icon proof" href="chp-mainthm.html#a0000000027"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-dictionary.html#C3">Definition 3.3</a></li>
+          
+          <li><a href="chp-mainthm.html#C7">Lemma 5.7</a></li>
+          
+          <li><a href="chp-mainthm.html#C8">Proposition 5.8</a></li>
+          
+          <li><a href="chp-mainthm.html#C9">Proposition 5.9</a></li>
+          
+          <li><a href="chp-mainthm.html#C6s">Theorem 5.5</a></li>
+          
+          <li><a href="chp-mainthm.html#C6s">Theorem 5.5</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/tao_collatz" class="lean_decl">tao_collatz</a></li>
+          
+          <li><a href="../docs/find/#doc/tao_collatz_quantitative" class="lean_decl">tao_collatz_quantitative</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="theorem_thmcontent">
+  <p>   <b class="bfseries">Theorem 1.3</b> (the summit): for every \(f:\mathbb {N}\to \mathbb {R}\) with \(f(N)\to \infty \), \(\mathrm{Colmin}(N){\lt}f(N)\) for almost all \(N\) in logarithmic density. It follows from the intermediate <b class="bfseries">Theorem 1.6</b> (almost all orbits attain almost bounded values) which in turn follows from the <b class="bfseries">quantitative Theorem 3.1</b>: there exist \(c,C{\gt}0\) so that for all \(N_0,x\ge 2\), </p>
+<div class="displaymath" id="a0000000028">
+  \[  \mathrm{logProb}_{[1,x]}\bigl(\{ N : \mathrm{Colmin}(N)\le N_0\} \bigr) \; \ge \;  1 - C/(\log N_0)^{c}.  \]
+</div>
+<p> Thm&#160;3.1 is obtained from the stabilization estimate Prop&#160;1.11 (node&#160;<a href="chp-mainthm.html#C9">5.9</a>) by iterating over dyadic scales (§3). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">done</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000027">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p> 🏔️ <b class="bfseries">THE SUMMIT</b> (2026-07-15, <span class="ttfamily">8ccd1a2</span>/<span class="ttfamily">9f17733</span>): both frozen <span class="ttfamily">Statement.lean</span> stubs discharged by <span class="ttfamily">exact</span> from the C6s spine — the only edit that file ever receives. Kernel-checked axiom-clean host-side, 114 declarations (<span class="ttfamily">blueprint_audit</span> 2026-07-15, 0 drift, 0 false-green). Judge ratification reads still owed on the C6 pins (ratify-on-pin flags stand); flips under the trust-the-treadmill ruling. </p>
+
+  </div>
+</div>
+<div class="theorem_thmwrapper theorem-style-definition" id="C6a">
+  <div class="theorem_thmheading">
+    <span class="theorem_thmcaption">
+    Theorem
+    </span>
+    <span class="theorem_thmlabel">5.2</span>
+    <span class="theorem_thmtitle">Thm 3.1, Syracuse forms</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C6a">#</a>
+    
+    <a class="icon proof" href="chp-mainthm.html#a0000000029"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-dictionary.html#C1">Definition 3.1</a></li>
+          
+          <li><a href="chp-dictionary.html#C3">Definition 3.3</a></li>
+          
+          <li><a href="chp-mainthm.html#C9">Proposition 5.9</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/tao_syracuse_quantitative_sum" class="lean_decl">tao_syracuse_quantitative_sum</a></li>
+          
+          <li><a href="../docs/find/#doc/tao_syracuse_quantitative" class="lean_decl">tao_syracuse_quantitative</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="theorem_thmcontent">
+  <p>   Paper p.16, both displays of the one claim ("…or equivalently …"): \(\sum _{N\in 2\mathbb {N}+1\cap [1,x]:\  \mathrm{Syrmin}(N){\gt}N_0} 1/N \ll \log x/\log ^c N_0\), and \(\mathbb {P}(\mathrm{Syrmin}(\mathbf{Log}(2\mathbb {N}+1\cap [1,x]))\le N_0) \ge 1-O(\log ^{-c}N_0)\). Obtained from Prop&#160;1.11 (node&#160;<a href="chp-mainthm.html#C9">5.9</a>) by the dyadic-scale telescoping of §3 (pp.17–18). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">done</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000029">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>Kernel-clean, BOTH forms (<span class="ttfamily">2c3e273</span>+; <span class="ttfamily">blueprint_audit</span> 2026-07-15 lists C6a on the MISSED-FLIP roll). Telescope \(\to \) covering \(\to \) sum/probability forms. Trust-the-treadmill flip (operator layer); judge flip-back allowed. </p>
+
+  </div>
+</div>
+<div class="theorem_thmwrapper theorem-style-definition" id="C6b">
+  <div class="theorem_thmheading">
+    <span class="theorem_thmcaption">
+    Theorem
+    </span>
+    <span class="theorem_thmlabel">5.3</span>
+    <span class="theorem_thmtitle">Theorem 1.6</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C6b">#</a>
+    
+    <a class="icon proof" href="chp-mainthm.html#a0000000030"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-dictionary.html#C1">Definition 3.1</a></li>
+          
+          <li><a href="chp-dictionary.html#C3">Definition 3.3</a></li>
+          
+          <li><a href="chp-mainthm.html#C6a">Theorem 5.2</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/tao_syracuse" class="lean_decl">tao_syracuse</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="theorem_thmcontent">
+  <p>   Paper p.4: for \(f\) with \(f(N)\to \infty \), almost all odd \(N\) (log density on the odd window) satisfy \(\mathrm{Syrmin}(N){\lt}f(N)\). From Thm&#160;3.1 at \(N_0:=\tilde f(x)= \inf _{N\ge x}f(N)\) (p.18). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">done</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000030">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>Kernel-clean (<span class="ttfamily">blueprint_audit</span> 2026-07-15, MISSED-FLIP roll). Trust-the-treadmill flip (operator layer); judge flip-back allowed. </p>
+
+  </div>
+</div>
+<div class="lemma_thmwrapper theorem-style-definition" id="C6c">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">5.4</span>
+    <span class="lemma_thmtitle">The (1.2) odd-part reduction, both forms</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C6c">#</a>
+    
+    <a class="icon proof" href="chp-mainthm.html#a0000000031"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-dictionary.html#C1">Definition 3.1</a></li>
+          
+          <li><a href="chp-dictionary.html#C3">Definition 3.3</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/logSum_oddPart_pullback" class="lean_decl">logSum_oddPart_pullback</a></li>
+          
+          <li><a href="../docs/find/#doc/almostAllPos_oddPart_of_almostAllOdd" class="lean_decl">almostAllPos_oddPart_of_almostAllOdd</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>   Worker-authored rendering of the one-paragraph reductions (p.5 and p.16 "in particular, by (1.2)"): quantitatively, \(\sum _{N\le x:\  \mathrm{oddPart}(N)\in A} 1/N \le 2\sum _{M\in A\cap (2\mathbb {N}+1)\cap [1,x]} 1/M\) (geometric series over \(\nu _2\)); qualitatively, an almost-all-odd property pulls back along \(\mathrm{oddPart}\) to almost-all on \(\mathbb {N}+1\). Rests on the proved \(\mathrm{Colmin}= \mathrm{Syrmin}\circ \mathrm{oddPart}\) (node&#160;<a href="chp-dictionary.html#C1">3.1</a>). Trap: check15 (constant 2 exact and \({\gt}1.8\)-tight, so a constant-1 mis-rendering fails). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">done</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000031">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>Kernel-clean, both forms (<span class="ttfamily">42fb97c</span> half 1, <span class="ttfamily">3de7831</span> half 2; <span class="ttfamily">blueprint_audit</span> 2026-07-15). Trust-the-treadmill flip; judge flip-back allowed. </p>
+
+  </div>
+</div>
+<div class="theorem_thmwrapper theorem-style-definition" id="C6s">
+  <div class="theorem_thmheading">
+    <span class="theorem_thmcaption">
+    Theorem
+    </span>
+    <span class="theorem_thmlabel">5.5</span>
+    <span class="theorem_thmtitle">Headline spine: Thm 1.3 and Thm 3.1-Colmin from the intermediates</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C6s">#</a>
+    
+    <a class="icon proof" href="chp-mainthm.html#a0000000032"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-mainthm.html#C6a">Theorem 5.2</a></li>
+          
+          <li><a href="chp-mainthm.html#C6b">Theorem 5.3</a></li>
+          
+          <li><a href="chp-mainthm.html#C6c">Lemma 5.4</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/tao_collatz_spine" class="lean_decl">tao_collatz_spine</a></li>
+          
+          <li><a href="../docs/find/#doc/tao_collatz_quantitative_spine" class="lean_decl">tao_collatz_quantitative_spine</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="theorem_thmcontent">
+  <p>   Statements byte-identical to the two frozen <span class="ttfamily">Statement.lean</span> headlines; when these close, the frozen sorries discharge by <span class="ttfamily">exact</span> (the only edit <span class="ttfamily">Statement.lean</span> ever receives). Quantitative route: C6a(sum form) + C6c + harmonic-mass bounds on the full window. Headline route: C6b at \(\tilde f\) + C6c + \(\mathrm{oddPart}(N)\le N\). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">done</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000032">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>Kernel-clean, both spines (<span class="ttfamily">8ccd1a2</span>; <span class="ttfamily">blueprint_audit</span> 2026-07-15). Statements byte-identical to the frozen headlines, so the stubs discharged by <span class="ttfamily">exact</span>. Trust-the-treadmill flip; judge flip-back allowed. </p>
+
+  </div>
+</div>
+<h1 id="a0000000011">5.2 First passage (§5)</h1>
+<div class="definition_thmwrapper theorem-style-definition" id="C7d">
+  <div class="definition_thmheading">
+    <span class="definition_thmcaption">
+    Definition
+    </span>
+    <span class="definition_thmlabel">5.6</span>
+    <span class="definition_thmtitle">First-passage data and the log-uniform window</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C7d">#</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-dictionary.html#C1">Definition 3.1</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/passes" class="lean_decl">passes</a></li>
+          
+          <li><a href="../docs/find/#doc/passTime" class="lean_decl">passTime</a></li>
+          
+          <li><a href="../docs/find/#doc/passLoc" class="lean_decl">passLoc</a></li>
+          
+          <li><a href="../docs/find/#doc/logWindow" class="lean_decl">logWindow</a></li>
+          
+          <li><a href="../docs/find/#doc/logUnifOdd" class="lean_decl">logUnifOdd</a></li>
+          
+          <li><a href="../docs/find/#doc/alpha" class="lean_decl">alpha</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="definition_thmcontent">
+  <p>   The first-passage data: \(\mathrm{passes}(x,N)\) (\(=T_x(N){\lt}\infty \), the orbit reaches \(\le x\)), the passage time \(\mathrm{passTime}\), and the passage location \(\mathrm{Pass}_x = \mathrm{passLoc}\) (with the convention \(\mathrm{Syr}^\infty := 1\)); plus the log-uniform law \(\mathbf{N}_y \equiv \mathbf{Log}(2\mathbb {N}+1 \cap [y,y^\alpha ])\) (\(\mathrm{logWindow}\), \(\mathrm{logUnifOdd}\)) and the exponent \(\alpha = 1.001\) (paper (1.18)). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">low</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="lemma_thmwrapper theorem-style-definition" id="C7">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">5.7</span>
+    <span class="lemma_thmtitle">First-passage non-escape; (1.19)</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C7">#</a>
+    
+    <a class="icon proof" href="chp-mainthm.html#a0000000033"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-syracuse.html#C5">Proposition 4.2</a></li>
+          
+          <li><a href="chp-support.html#S2">Definition 2.2</a></li>
+          
+          <li><a href="chp-mainthm.html#C7d">Definition 5.6</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/first_passage_nonescape" class="lean_decl">first_passage_nonescape</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>   Paper (1.19): a log-uniformly chosen odd \(N_y\) in the window \([y,y^\alpha ]\) fails ever to descend to \(\le x\) only with small probability, </p>
+<div class="displaymath" id="a0000000034">
+  \[  \mathbb {P}\bigl(T_x(N_y)=\infty \bigr) \ll x^{-c}.  \]
+</div>
+<p> Tao’s route (§5 pp.20–21) runs entirely over proved machinery except for one new brick: the <b class="bfseries">integral test</b> \(d_{\mathrm{TV}}(\mathbf{N}_y \bmod 2^{n'}, \mathrm{Unif}) \ll 2^{-n'}\), which is exactly the hypothesis Proposition&#160;1.9 (node C5) takes. Given it, Prop&#160;1.9 supplies (5.4), Lemma&#160;2.2 (node S3, two-sided) supplies the lower-tail bound (5.5) \(\mathbb {P}(|\vec a^{(n_0)}(\mathbf{N}_y)| \le 1.9 n_0) \ll x^{-c}\), and an explicit descent computation gives \(\mathrm{Syr}^{n_0}(\mathbf{N}_y) = O(x^{0.99}) \le x\) on the complement, with \(n_0 := \lfloor \log x / (10\log 2)\rfloor \) (5.1). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 10–18 treadmill laps; risk <b class="bfseries">medium</b> (75% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000033">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>Ratified and flipped at judge pass 30 (2026-07-14): the theorem is kernel-clean (\(\mathrm{propext}, \mathrm{Classical.choice}, \mathrm{Quot.sound}\)), clearing the pass-29 missed flip. The route closed as designed — the integral test discharges Proposition&#160;1.9’s \(d_{\mathrm{TV}}\) hypothesis (5.4), the two-sided Lemma&#160;2.2 tail gives (5.5), and an explicit descent yields \(\mathrm{Syr}^{n_0}(\mathbf N_y) = O(x^{0.99}) \le x\). </p>
+
+  </div>
+</div>
+<div class="proposition_thmwrapper theorem-style-definition" id="C8">
+  <div class="proposition_thmheading">
+    <span class="proposition_thmcaption">
+    Proposition
+    </span>
+    <span class="proposition_thmlabel">5.8</span>
+    <span class="proposition_thmtitle">Approximate first-passage formula; Prop 5.2</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C8">#</a>
+    
+    <a class="icon proof" href="chp-mainthm.html#a0000000035"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-dictionary.html#C2">Lemma 3.2</a></li>
+          
+          <li><a href="chp-syracuse.html#C5">Proposition 4.2</a></li>
+          
+          <li><a href="chp-mainthm.html#C7">Lemma 5.7</a></li>
+          
+          <li><a href="chp-mainthm.html#C7">Lemma 5.7</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/first_passage_approx" class="lean_decl">first_passage_approx</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="proposition_thmcontent">
+  <p>   <b class="bfseries">Proposition 5.2</b>, the approximate formula (paper (5.8)) for the law of the first-passage location, built from the bookkeeping events \(\mathcal{A}^{(n')}\) (5.11), \(E'\) (5.10), and \(I_y\) (5.9), through the \(B_{n,y}\) equivalence chain relating the passage location to the affine images of the input window. This is where the Prop&#160;1.9 geometric approximation is fed into the concrete window statistics. </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">done</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000035">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p> 🏆 <b class="bfseries">COMPLETE</b> (2026-07-15 overnight): the (5.16) window term closed via the integral test over C7’s <span class="ttfamily">classMass</span>/<span class="ttfamily">windowMass</span> machinery; the (5.17) stepback closed by the forward/reverse-leg split with the early-return event proved <em>empty</em> (<span class="ttfamily">0bea9d1</span>). Kernel-checked axiom-clean by <span class="ttfamily">blueprint_audit</span> 2026-07-15 (MISSED FLIP list, twice). Statement pre-ratified (pass 30), so this flip is the mechanical half — done by the operator layer per the DIRECTION.md operator note. </p>
+
+  </div>
+</div>
+<div class="proposition_thmwrapper theorem-style-definition" id="C9">
+  <div class="proposition_thmheading">
+    <span class="proposition_thmcaption">
+    Proposition
+    </span>
+    <span class="proposition_thmlabel">5.9</span>
+    <span class="proposition_thmtitle">Stabilization across scales; Prop 1.11</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C9">#</a>
+    
+    <a class="icon proof" href="chp-mainthm.html#a0000000036"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-mainthm.html#C8">Proposition 5.8</a></li>
+          
+          <li><a href="chp-mixing.html#C10">Proposition 6.1</a></li>
+          
+          <li><a href="chp-mainthm.html#C9A">Lemma 5.12</a></li>
+          
+          <li><a href="chp-mainthm.html#C9B1">Lemma 5.10</a></li>
+          
+          <li><a href="chp-mainthm.html#C9B2">Lemma 5.11</a></li>
+          
+          <li><a href="chp-mainthm.html#C8">Proposition 5.8</a></li>
+          
+          <li><a href="chp-mixing.html#C10">Proposition 6.1</a></li>
+          
+          <li><a href="chp-mainthm.html#C9A">Lemma 5.12</a></li>
+          
+          <li><a href="chp-mainthm.html#C9B1">Lemma 5.10</a></li>
+          
+          <li><a href="chp-mainthm.html#C9B2">Lemma 5.11</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/stabilization" class="lean_decl">stabilization</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="proposition_thmcontent">
+  <p>   <b class="bfseries">Proposition 1.11</b>, the spine’s key input. With \(\alpha =1.001\) (paper (1.18)): there are \(c,C,x_0{\gt}0\) so that for \(x\ge x_0\), the first-passage location laws seen from two successive scales \(x^{\alpha }\) and \(x^{\alpha ^2}\) agree up to </p>
+<div class="displaymath" id="a0000000037">
+  \[  d_{\mathrm{TV}}\Bigl( \bigl(\mathrm{logUnifOdd}_{[x^{\alpha },\, x^{\alpha ^2}]}\bigr)_*\mathrm{Pass}_{\lfloor x\rfloor }, \bigl(\mathrm{logUnifOdd}_{[x^{\alpha ^2},\, x^{\alpha ^3}]}\bigr)_*\mathrm{Pass}_{\lfloor x\rfloor } \Bigr) \le C(\log x)^{-c},  \]
+</div>
+<p> together with the non-escape control on each window. Proved via Lemma&#160;5.3 (\(c_n(X)\ll 1\)) and (5.18)–(5.21), applying the fine-scale mixing Prop&#160;1.14 (node&#160;<a href="chp-mixing.html#C10">6.1</a>) at a base scale \(m_0\). </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">done</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000036">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p> 🏆 <b class="bfseries">COMPLETE</b> (2026-07-15, <span class="ttfamily">9e5604b</span>): assembly + every leaf closed; <span class="ttfamily">stabilization</span> kernel-checked axiom-clean by <span class="ttfamily">blueprint_audit</span> (MISSED FLIP list). Flipped under the trust-the-treadmill ruling (DIRECTION.md operator note); judge flip-back allowed. </p>
+
+  </div>
+</div>
+<div class="lemma_thmwrapper theorem-style-definition" id="C9B1">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">5.10</span>
+    <span class="lemma_thmtitle">C9 leaf B1 – geomHalf\(\to \)syracZ reindex; (5.20) left half</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C9B1">#</a>
+    
+    <a class="icon proof" href="chp-mainthm.html#a0000000038"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/perNHarmonic_eq_harmZfine_approx" class="lean_decl">perNHarmonic_eq_harmZfine_approx</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>  \(|\mathrm{perNHarmonic}\, x\, E\, n - \mathrm{harmZfine}\, x\, E\, n| \le C(\log x)^{-c}\) on \(I_y\): the iid-geomHalf \(2^{-\mathrm{pre}\, \bar a}\) mass over good, affine-solvable tuples agrees with the exact \(\mathrm{Syrac}(\mathbb {Z}/3^{n-m_0}\mathbb {Z})\) mass. Both ribs (<span class="ttfamily">syracZ_sub_perNGoodMass_bound</span>; the <span class="ttfamily">solvable_iff_fmapZ</span> pointwise bridge) are proved; the assembly is L\(^1\times \)L\(^\infty \) Hölder against <span class="ttfamily">cn_bound</span>. Does NOT consume C10. </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">done</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000038">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>Kernel-clean (<span class="ttfamily">44fcd94</span>; <span class="ttfamily">blueprint_audit</span> 2026-07-15). Trust-the-treadmill flip (operator layer); judge flip-back allowed. </p>
+
+  </div>
+</div>
+<div class="lemma_thmwrapper theorem-style-definition" id="C9B2">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">5.11</span>
+    <span class="lemma_thmtitle">C9 leaf B2 – the C10 seam; (5.20) scale bridge</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C9B2">#</a>
+    
+    <a class="icon proof" href="chp-mainthm.html#a0000000039"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
+    
+    <button class="modal"><svg  class="icon icon-mindmap "><use xlink:href="symbol-defs.svg#icon-mindmap"></use></svg>
+</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Uses</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="chp-mixing.html#C10">Proposition 6.1</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/harmZfine_to_mainZ" class="lean_decl">harmZfine_to_mainZ</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>   \(|\mathrm{harmZfine}\, x\, E\, n - \mathrm{mainZ}\, x\, E| \le C(\log x)^{-c}\): L\(^1\times \)L\(^\infty \) Hölder, \(\sup _X c_n(X) \le C\log ^{0.7}x\) (<span class="ttfamily">cn_bound</span>) against \(\mathrm{osc}\, m_0\, (n-m_0) \le C' m_0^{-A}\) via Prop&#160;1.14 (node&#160;<a href="chp-mixing.html#C10">6.1</a>) at \(A {\gt} 0.7 + c\) – the SOLE consumption of C10 inside C9. </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">done</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000039">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>Kernel-clean (<span class="ttfamily">ece1f36</span>; <span class="ttfamily">blueprint_audit</span> 2026-07-15). Trust-the-treadmill flip (operator layer); judge flip-back allowed. </p>
+
+  </div>
+</div>
+<div class="lemma_thmwrapper theorem-style-definition" id="C9A">
+  <div class="lemma_thmheading">
+    <span class="lemma_thmcaption">
+    Lemma
+    </span>
+    <span class="lemma_thmlabel">5.12</span>
+    <span class="lemma_thmtitle">C9 leaf A – (5.19) harmonic reduction of the per-\(n\) term</span>
+    <div class="thm_header_extras">
+
+    
+    ✓
+        </div>
+    <div class="thm_header_hidden_extras">
+
+    <a class="icon proof" href="chp-mainthm.html#C9A">#</a>
+    
+    <a class="icon proof" href="chp-mainthm.html#a0000000040"><svg  class="icon icon-cogs "><use xlink:href="symbol-defs.svg#icon-cogs"></use></svg>
+</a>
+    
+    
+    
+    <button class="modal lean">L∃∀N</button>
+        <div class="modal-container">
+      <div class="modal-content">
+        <header>
+          <h1>Lean declarations</h1>
+          <button class="closebtn"><svg  class="icon icon-cross "><use xlink:href="symbol-defs.svg#icon-cross"></use></svg>
+</button>
+        </header>
+        
+        <ul class="uses">
+          
+          <li><a href="../docs/find/#doc/perNTerm_harmonic_approx" class="lean_decl">perNTerm_harmonic_approx</a></li>
+          
+        </ul>
+    
+      </div>
+    </div>
+
+    
+        </div>
+  </div>
+  <div class="lemma_thmcontent">
+  <p>  \(|\mathrm{perNTerm}\, x\, E\, y\, n - \mathrm{perNHarmonic}\, x\, E\, n/\mathrm{norm}| \le C(\log x)^{-c}/\mathrm{norm}\), \(\mathrm{norm} = \tfrac {\alpha -1}{2}\log y\): the affine mass collapses to the single point \(N^* = (M\, 2^{\mathrm{pre}\, \bar a} - \mathrm{fnat})/3^{n-m_0}\) (<span class="ttfamily">perNTerm_pointmass</span>), which is odd (<span class="ttfamily">Nstar_odd</span>, via <span class="ttfamily">fnat_odd</span>) and lies on the window (<span class="ttfamily">Nstar_mem_logWindow</span>, both PROVED this run), so \(\mathbb {P} = (N^*)^{-1}/D_y\); then \((N^*)^{-1} \approx 3^{n-m_0}/(M\, 2^{\mathrm{pre}})\) (relative \(O(x^{-c})\)) and \(1/D_y \approx 1/\mathrm{norm}\) (<span class="ttfamily">windowMass_estimate</span>/<span class="ttfamily">windowMass_ge_clog</span>), with relative errors made absolute by \(\mathrm{perNHarmonic} \le C\log ^{0.7}x\) (<span class="ttfamily">perNHarmonic_le</span>, PROVED). Does NOT consume C10. </p>
+<p><i class="itshape"><b class="bfseries">Campaign estimate:</b> 0 treadmill laps; risk <b class="bfseries">done</b> (100% confidence the node completes as stated).</i> </p>
+
+  </div>
+</div>
+<div class="proof_wrapper" id="a0000000040">
+  <div class="proof_heading">
+    <span class="proof_caption">
+    Proof
+    </span>
+    <span class="expand-proof">▶</span>
+  </div>
+  <div class="proof_content">
+  <p>Kernel-clean (<span class="ttfamily">60bb490</span>; <span class="ttfamily">blueprint_audit</span> 2026-07-15). Trust-the-treadmill flip (operator layer); judge flip-back allowed. </p>
+
+  </div>
+</div>
+
+</div> <!--main-text -->
+</div> <!-- content-wrapper -->
+</div> <!-- content -->
+</div> <!-- wrapper -->
+
+<nav class="prev_up_next">
+  <svg  id="showmore-minus" class="icon icon-eye-minus showmore"><use xlink:href="symbol-defs.svg#icon-eye-minus"></use></svg>
+
+  <svg  id="showmore-plus" class="icon icon-eye-plus showmore"><use xlink:href="symbol-defs.svg#icon-eye-plus"></use></svg>
+
+  <a href="chp-syracuse.html" title="The Syracuse random variable and its valuation"><svg  class="icon icon-arrow-left "><use xlink:href="symbol-defs.svg#icon-arrow-left"></use></svg>
+</a>
+  <a href="index.html" title="Tao 2019 Collatz Blueprint"><svg  class="icon icon-arrow-up "><use xlink:href="symbol-defs.svg#icon-arrow-up"></use></svg>
+</a>
+  <a href="chp-mixing.html" title="Fine-scale mixing (§6)"><svg  class="icon icon-arrow-right "><use xlink:href="symbol-defs.svg#icon-arrow-right"></use></svg>
+</a>
+</nav>
+
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/plastex.js"></script>
+<script type="text/javascript" src="js/svgxuse.js"></script>
+<script type="text/javascript" src="js/js.cookie.min.js"></script>
+<script type="text/javascript" src="js/showmore.js"></script>
+</body>
+</html>
