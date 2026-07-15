@@ -902,6 +902,54 @@ noncomputable def perNGoodMass (x : ℝ) (n : ℕ) (X : ZMod (3 ^ (n - mZero x))
             * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
       then ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ else 0
 
+open Classical in
+/-- **`perNGoodMass` in iid-mass form.**  On a good tuple every coordinate is `≥ 1`, so the literal
+`2^{−pre ā}` weight is exactly the iid `geomHalf` mass `(geomHalf.iid k)(ā).toReal`.  Rewriting to this
+form lines `perNGoodMass` up termwise with the `syracZ`-pushforward. -/
+theorem perNGoodMass_eq_iid (x : ℝ) (n : ℕ) (X : ZMod (3 ^ (n - mZero x))) :
+    perNGoodMass x n X
+      = ∑' ā : Fin (n - mZero x) → ℕ,
+          if goodTuple x (n - mZero x) ā
+              ∧ (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+                  * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+            then ((geomHalf.iid (n - mZero x)) ā).toReal else 0 := by
+  rw [perNGoodMass]
+  refine tsum_congr fun ā => ?_
+  by_cases h : goodTuple x (n - mZero x) ā
+      ∧ (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+          * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+  · rw [if_pos h, if_pos h, iid_geomHalf_apply_of_pos _ _ h.1.1,
+      ENNReal.toReal_pow, ENNReal.toReal_inv, inv_pow]
+    norm_num
+  · rw [if_neg h, if_neg h]
+
+open Classical in
+/-- **`syracZ` marginal in `fnat`-pushforward form.**  `syracZ k = (geomHalf.iid k).map (ā ↦
+(fnat ā)·2^{−pre ā})` (`syracZ_eq_rev_fnat`), so its real mass at `X` is the iid mass summed over the
+fiber `{ā | (fnat ā)·2^{−pre ā} = X}`. -/
+theorem syracZ_toReal_eq_tsum_fnat (x : ℝ) (n : ℕ) (X : ZMod (3 ^ (n - mZero x))) :
+    ((syracZ (n - mZero x)) X).toReal
+      = ∑' ā : Fin (n - mZero x) → ℕ,
+          if (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+                  * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+            then ((geomHalf.iid (n - mZero x)) ā).toReal else 0 := by
+  rw [syracZ_eq_rev_fnat, PMF.map_apply,
+    ENNReal.tsum_toReal_eq (fun ā => by split_ifs; exacts [PMF.apply_ne_top _ _, ENNReal.zero_ne_top])]
+  refine tsum_congr fun ā => ?_
+  by_cases h : (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+      * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+  · rw [if_pos h.symm, if_pos h]
+  · rw [if_neg (fun he => h he.symm), if_neg h, ENNReal.toReal_zero]
+
+/-- Summability of the `syracZ`-fiber iid mass (bounded above by the full iid mass, which sums to 1). -/
+theorem iid_fiber_summable (k : ℕ) (P : (Fin k → ℕ) → Prop) [DecidablePred P] :
+    Summable (fun ā : Fin k → ℕ => if P ā then ((geomHalf.iid k) ā).toReal else 0) := by
+  refine Summable.of_nonneg_of_le (fun ā => by positivity) (fun ā => ?_)
+    (ENNReal.summable_toReal (by rw [(geomHalf.iid k).tsum_coe]; exact ENNReal.one_ne_top))
+  split_ifs
+  · exact le_rfl
+  · exact ENNReal.toReal_nonneg
+
 /-- **B1 rib 1 — the `(5.22)` fiber identity (harm side, good-restricted).**  `perNHarmonic` regroups by
 residue class `X = M mod 3^{n−m₀}` exactly as `harmZfine` does, but with the good-restricted pushforward
 mass `perNGoodMass` in place of the full `syracZ(n−m₀)` mass:
@@ -914,6 +962,20 @@ then a fiber partition of the `ā`-tsum over the finite `ZMod (3^{n−m₀})` gr
 theorem perNHarmonic_eq_sum_cn (x : ℝ) (E : Set ℕ) (n : ℕ) :
     perNHarmonic x E n
       = ∑ X : ZMod (3 ^ (n - mZero x)), perNGoodMass x n X * cn x E n X := by
+  sorry
+
+open Classical in
+/-- **iid good-tuple whp bound (Tao (5.11)/(5.12), iid form).**  Under the `geomHalf.iid k` law, a length-`k`
+tuple fails to be good with probability `≪ log^{-1}x` (for `k ≤ n₀`).  This is the iid half of
+`goodTuple_prefix_dev_sum` — `¬good` means a coord is `0` (mass `0`, since `geomHalf` has no atom at `0`)
+or some prefix `pre a m` deviates from `2m` by `≥ log^{0.6}x` (each `≪ exp(−c·log^{0.2}x)` via
+`geomHalf_tail_bound`; sum over the `≤ k+1 ≤ log x` prefixes, then the `log x·exp(−c log^{0.2}) ≤ log^{-1}`
+shrink).  No dTV transfer is needed because the base law is already `geomHalf.iid`. -/
+theorem good_tuple_whp_iid :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ k : ℕ, k ≤ nZero x →
+      (∑' ā : Fin k → ℕ,
+          if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
+        ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
   sorry
 
 /-- **B1 rib 2 — the good-tuple whp residual.**  Dropping the `1_good` restriction from `perNGoodMass`
@@ -932,7 +994,74 @@ theorem syracZ_sub_perNGoodMass_bound :
             ∑ X : ZMod (3 ^ (n - mZero x)),
                 (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X)
               ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
-  sorry
+  classical
+  obtain ⟨C, x₀, hC, hwhp⟩ := good_tuple_whp_iid
+  refine ⟨C, x₀, hC, fun x hx E hE y hy n hn => ?_⟩
+  set k := n - mZero x with hk
+  have hkn : k ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
+  -- abbreviations for the two masked fiber families
+  set F : (Fin k → ℕ) → ZMod (3 ^ k) := fun ā =>
+    (fnat k ā : ZMod (3 ^ k)) * (2 : ZMod (3 ^ k))⁻¹ ^ pre ā k with hF
+  -- summability of the full and good-restricted fibers
+  have hFsumm : ∀ X : ZMod (3 ^ k),
+      Summable (fun ā : Fin k → ℕ => if F ā = X then ((geomHalf.iid k) ā).toReal else 0) :=
+    fun X => iid_fiber_summable k (fun ā => F ā = X)
+  have hGsumm : ∀ X : ZMod (3 ^ k),
+      Summable (fun ā : Fin k → ℕ =>
+        if goodTuple x k ā ∧ F ā = X then ((geomHalf.iid k) ā).toReal else 0) :=
+    fun X => iid_fiber_summable k (fun ā => goodTuple x k ā ∧ F ā = X)
+  -- pointwise `perNGoodMass ≤ syracZ.toReal`
+  have hpoint : ∀ X : ZMod (3 ^ k),
+      perNGoodMass x n X ≤ ((syracZ k) X).toReal := by
+    intro X
+    rw [perNGoodMass_eq_iid, syracZ_toReal_eq_tsum_fnat]
+    refine (hGsumm X).tsum_le_tsum (fun ā => ?_) (hFsumm X)
+    by_cases hgx : goodTuple x k ā ∧ F ā = X
+    · rw [if_pos hgx, if_pos hgx.2]
+    · rw [if_neg hgx]; split_ifs
+      · exact ENNReal.toReal_nonneg
+      · exact le_rfl
+  refine ⟨hpoint, ?_⟩
+  -- the residue sum collapses to `ℙ(¬good)` under the iid law
+  have hcollapse :
+      ∑ X : ZMod (3 ^ k), (((syracZ k) X).toReal - perNGoodMass x n X)
+        = ∑' ā : Fin k → ℕ, if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0 := by
+    have hterm : ∀ X : ZMod (3 ^ k),
+        ((syracZ k) X).toReal - perNGoodMass x n X
+          = ∑' ā : Fin k → ℕ,
+              ((if F ā = X then ((geomHalf.iid k) ā).toReal else 0)
+                - if goodTuple x k ā ∧ F ā = X then ((geomHalf.iid k) ā).toReal else 0) := by
+      intro X
+      rw [syracZ_toReal_eq_tsum_fnat, perNGoodMass_eq_iid,
+        (hFsumm X).tsum_sub (hGsumm X)]
+    rw [Finset.sum_congr rfl (fun X _ => hterm X),
+      (Summable.tsum_finsetSum (fun X _ => (hFsumm X).sub (hGsumm X))).symm]
+    refine tsum_congr fun ā => ?_
+    -- fiber count = 1: `∑_X ([F ā=X] − [good ∧ F ā=X]) = [¬good]`
+    rw [Finset.sum_sub_distrib]
+    have hfull : ∑ X : ZMod (3 ^ k), (if F ā = X then ((geomHalf.iid k) ā).toReal else 0)
+        = ((geomHalf.iid k) ā).toReal := by
+      rw [Finset.sum_ite_eq Finset.univ (F ā) (fun _ => ((geomHalf.iid k) ā).toReal),
+        if_pos (Finset.mem_univ _)]
+    by_cases hg : goodTuple x k ā
+    · have hgood : ∑ X : ZMod (3 ^ k),
+          (if goodTuple x k ā ∧ F ā = X then ((geomHalf.iid k) ā).toReal else 0)
+          = ((geomHalf.iid k) ā).toReal := by
+        have hcongr : ∀ X : ZMod (3 ^ k),
+            (if goodTuple x k ā ∧ F ā = X then ((geomHalf.iid k) ā).toReal else 0)
+              = (if F ā = X then ((geomHalf.iid k) ā).toReal else 0) := by
+          intro X
+          by_cases hX : F ā = X
+          · rw [if_pos ⟨hg, hX⟩, if_pos hX]
+          · rw [if_neg (fun h => hX h.2), if_neg hX]
+        rw [Finset.sum_congr rfl (fun X _ => hcongr X), hfull]
+      rw [hfull, hgood, if_neg (not_not.mpr hg), sub_self]
+    · have hgood : ∑ X : ZMod (3 ^ k),
+          (if goodTuple x k ā ∧ F ā = X then ((geomHalf.iid k) ā).toReal else 0) = 0 :=
+        Finset.sum_eq_zero (fun X _ => if_neg (fun h => hg h.1))
+      rw [hfull, hgood, if_pos hg, sub_zero]
+  rw [hcollapse]
+  exact hwhp x hx k hkn
 
 /-- **(5.20) sub-lemma B1 — geomHalf → `syracZ` reindex** (assembled from the two ribs above).
 `perNHarmonic` (inner weight the `2^{−pre ā}` iid-geomHalf mass over *good, affine-solvable* tuples)
