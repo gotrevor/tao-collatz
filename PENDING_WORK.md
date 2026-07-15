@@ -35,7 +35,16 @@ in `k`** (k=8,N=101: 19 135 tuples → ~4 distinct `Aff` values); adding the exa
 asymptotically, so the real regime is worse. ⟹ `approxMainTerm − steppedMid` is super-polylog, **not**
 `O(log^{-c}x)`.
 
-**Fix (faithful to (5.8)) — MANDATED, see DIRECTION.md CURRENT DIRECTIVE:**
+**✅ EXECUTED (2026-07-15, commit `8dcabb2`, build green).** The re-pin is DONE: `approxMainTerm`
+is now on the exact `{N : 3^{n−m₀}N + Fnat = M·2^{|ā|}}` guard; `truncation_error_bound` is PROVED
+(excess ≡ 0); the false hole is replaced by the honest **`approxMainTerm_eq_steppedMid`**
+(`ApproxFormula.lean:1100`, sorry) — the exact-reindex equality, now **THE C8 reindex crux**, provable
+from `valVec_unique` (Lemma 2.1) + `Eprime`-oddness + `aff_valVec_eq_syr`. **Remaining C8 = 3 sorries**:
+`approxMainTerm_eq_steppedMid` (:1100, the reindex), `first_passage_stepback_reduce` (:1134, (5.17)),
+`passtime_window_inner` (:808, (5.16)). Next-lap target: prove `approxMainTerm_eq_steppedMid` (reorder
+`∑'_ā ∑'_M ∑'_N → ∑'_N`, apply `valVec_unique` to collapse to the diagonal = `steppedMid`).
+
+**Fix (faithful to (5.8)) — the plan that was executed:**
 1. **Re-pin `approxMainTerm` (RATIFY-C8-v2):** guard the pushforward by `3^{n−m₀}N + fnat (n−m₀) ā =
    M·2^{a_{[1,n−m₀]}}` (⟺ (5.18) + integrality). Leave the node `\notready` (orange) pending a judge.
 2. **Delete `truncation_error_bound`** — with the guard the reindex is exact (Lemma 2.1), so
