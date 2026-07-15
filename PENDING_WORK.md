@@ -1,4 +1,46 @@
-## Grind lap — 2026-07-15 (cont.) — (5.16) leg COMPLETE: `passtime_edge_of_good` PROVED axiom-clean; C8 4 sorries
+## Grind lap — 2026-07-15 (cont.) — C8 (5.17) DECOMPOSED into forward/reverse legs; 5 sorries
+
+**`first_passage_stepback_reduce` (5.17) is now split into two named directional legs** (both in
+`ApproxFormula.lean`), and the `|·|` assembly is proved axiom-clean from them:
+- `firstPassMid_le_steppedMid : firstPassMid ≤ steppedMid` — **EXACT forward inclusion, NO error.**
+- `steppedMid_le_firstPassMid_add : steppedMid ≤ firstPassMid + C·log^{-c}x` — the reverse defect.
+
+**Key structural finding (drives both legs): the forward inclusion `S_n ⊆ T_n` is DETERMINISTIC.** The
+E′ size window is NOT a whp restriction on `N`; it is FORCED by the passage of `M = Syr^{n−m₀}N`
+itself. On `S_n = {T_x N = n ∧ Pass∈E ∧ good⁽ⁿ⁰⁾}`, `passTime_stepback` gives `passTime M = m₀`, so
+`Syr^{m₀}M ≤ x < Syr^{m₀−1}M ≍ x` and the good bracket (`syr_iterate_good_bracket'`, valid over the
+full `n₀`-length good tuple which controls prefix sums up to `n`) pins `M ≍ (4/3)^{m₀}·Syr^n N` with
+`Syr^n N ∈ [(3/4)·⌊x⌋·2^{-2log^{0.6}}, ⌊x⌋]` (first-passage straddle + single-step drop bounded by the
+good entry `a_n ∈ 2±2log^{0.6}`). `two_rpow_slack_le_exp` absorbs the `2^{±O(log^{0.6})}` inside
+`exp(±log^{0.7}x)`; the `3/4` factor is swamped since `exp(−log^{0.7}x) ≪ 3/4`. So ALL the O(log^{-c})
+error is the REVERSE leg (`T_n∖S_n`: `good⁽ⁿ⁻ᵐ⁰⁾∖good⁽ⁿ⁰⁾` + passage-window complement).
+
+**Bricks proved this lap (axiom-clean, reused by forward leg):** `good_nested` (𝒜⁽ⁿ²⁾⊂𝒜⁽ⁿ¹⁾ for
+n₁≤n₂ — entries+prefix sums agree via `pre_valVec`), `mem_Iy_le_nZero`, `mem_Iy_bounds`. Existing
+`syr_iterate_odd (N n) (hN)` gives the `M%2=1` conjunct. Doc-hazard comment (was "reindex APPROXIMATE")
+corrected to EXACT.
+
+**Next attack — prove `firstPassMid_le_steppedMid` down to ONE size-window brick.** Steps:
+1. Reduce `firstPassMid ≤ steppedMid` to `∀ n ∈ Iy, P.expect(ind S_n) ≤ P.expect(ind T_n)` via
+   `Finset.sum_le_sum`; then to a per-ODD-`N` inclusion `S_n → T_n` (even N: `P N = 0` via
+   `logUnifOdd_support_le`, so termwise `(P N).toReal·ind` monotone — mirror the `hsum`/`tsum_le_tsum`
+   idiom in `first_passage_window_reduce`, lines ~1806/1894).
+2. Per-odd-`N` inclusion needs: (i) `m₀ ≤ n` — **needs a new interval lemma `mZero_le_of_mem_Iy`**
+   (`IyLo ≥ m₀`: `m₀ ≈ 0.00001 log x` ≪ `IyLo ≈ 0.00347 log x`; reuse the `u:=log^{0.2}x` substitution
+   idiom, `log(4/3)∈[1/4,1/3]`); (ii) `n ≤ n₀` (`mem_Iy_le_nZero` ✅); (iii) `passes N` (from
+   `passTime N = n` ∧ `n ≥ 1`, i.e. `n ≥ m₀ ≥ 1`); (iv) `good_nested` for `good⁽ⁿ⁻ᵐ⁰⁾`; (v)
+   `firstPass_event_stepback_subset`/`passTime_stepback` for `passTime M = m₀`, `passLoc M = passLoc N ∈ E`;
+   (vi) `syr_iterate_odd` for `M%2=1`; (vii) **the size-window brick** `stepback_size_window` — the sole
+   remaining analytic content; state it as a named sorry: on `{T_x N=n, good⁽ⁿ⁰⁾, N odd}`, `M` lands in
+   `[exp(−log^{0.7})(4/3)^{m₀}x, exp(+log^{0.7})(4/3)^{m₀}x]`.
+This isolates the crux to `stepback_size_window` + the reverse leg. ⚠ Do NOT touch ratified pins.
+
+**State: 5 sorries + 0 orange** (2 headline, C9 `stabilization` `FirstPassage.lean:1391`,
+`firstPassMid_le_steppedMid` + `steppedMid_le_firstPassMid_add` `ApproxFormula.lean`). Report N+0.
+
+---
+
+## SUPERSEDED — (5.16) leg COMPLETE: `passtime_edge_of_good` PROVED axiom-clean; C8 4 sorries
 
 **The (5.15) pointwise inclusion is CLOSED — the ENTIRE (5.16) window leg is now axiom-clean.**
 `passtime_edge_of_good` (`ApproxFormula.lean`) proved: on the good-tuple event, `passes ∧ T_x ∉ I_y ⟹
