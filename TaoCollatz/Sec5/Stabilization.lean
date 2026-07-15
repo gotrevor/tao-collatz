@@ -990,10 +990,129 @@ equivalent to the `ZMod` congruence `(M : ZMod 3^{n−m₀}) = (fnat ā)·2^{−
 ā}` is automatic via `fnat_lt_pow_mul` + `3^{n−m₀} ≤ M`), so the inner `M`-sum is `c_n(F ā)/3^{n−m₀}·3^{n−m₀}`;
 then a fiber partition of the `ā`-tsum over the finite `ZMod (3^{n−m₀})` groups by `X = F ā`.
 **[C9 leaf B1 rib — pure reindex; does NOT consume C10.]** -/
-theorem perNHarmonic_eq_sum_cn (x : ℝ) (E : Set ℕ) (n : ℕ) :
+theorem perNHarmonic_eq_sum_cn (x : ℝ) (E : Set ℕ) (n : ℕ)
+    (hx : Real.exp 1024 ≤ x) (hkn : n - mZero x ≤ nZero x) :
     perNHarmonic x E n
       = ∑ X : ZMod (3 ^ (n - mZero x)), perNGoodMass x n X * cn x E n X := by
-  sorry
+  classical
+  haveI : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
+  -- every `M ∈ E'` dominates the modulus: `3^{n−m₀} ≤ M` (window floor, `cn_window_size` (i))
+  have h3kM : ∀ M : ℕ, Eprime x E M → 3 ^ (n - mZero x) ≤ M := by
+    intro M hEp
+    have hlo := (cn_window_size hx hkn (m := mZero x)).1
+    have hMlo := hEp.2.2.2.1
+    have h3R : ((3 ^ (n - mZero x) : ℕ) : ℝ) ≤ (M : ℝ) := by
+      push_cast
+      linarith [pow_pos (show (0 : ℝ) < 3 by norm_num) (n - mZero x)]
+    exact_mod_cast h3R
+  -- so the ℕ-affine size guard is automatic on `E'`
+  have hguard : ∀ (ā : Fin (n - mZero x) → ℕ) (M : ℕ), Eprime x E M →
+      fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x) := fun ā M hEp =>
+    le_trans (fnat_lt_pow_mul (n - mZero x) ā).le
+      (Nat.mul_le_mul (h3kM M hEp) le_rfl)
+  -- LHS: solvability mask → residue fiber (`solvable_iff_fmapZ`), inner `M`-sum factors
+  have hLHS : perNHarmonic x E n
+      = (3 : ℝ) ^ (n - mZero x) * ∑' ā : Fin (n - mZero x) → ℕ,
+          (if goodTuple x (n - mZero x) ā then
+              ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹
+                * ∑' M : ℕ, (if Eprime x E M
+                    ∧ (M : ZMod (3 ^ (n - mZero x)))
+                        = (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+                            * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x)
+                  then (M : ℝ)⁻¹ else 0)
+            else 0) := by
+    rw [perNHarmonic]
+    congr 1
+    refine tsum_congr fun ā => ?_
+    by_cases hg : goodTuple x (n - mZero x) ā
+    · rw [if_pos hg, ← tsum_mul_left]
+      refine tsum_congr fun M => ?_
+      by_cases hEp : Eprime x E M
+      · by_cases hc : (M : ZMod (3 ^ (n - mZero x)))
+            = (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+                * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x)
+        · rw [if_pos ⟨hg, hEp,
+              (solvable_iff_fmapZ (n - mZero x) ā M (hguard ā M hEp)).mpr hc,
+              hguard ā M hEp⟩, if_pos ⟨hEp, hc⟩, div_eq_mul_inv]
+        · rw [if_neg (fun h =>
+              hc ((solvable_iff_fmapZ (n - mZero x) ā M (hguard ā M hEp)).mp h.2.2.1)),
+            if_neg (fun h => hc h.2), mul_zero]
+      · rw [if_neg (fun h => hEp h.2.1), if_neg (fun h => hEp h.1), mul_zero]
+    · rw [if_neg hg]
+      exact (tsum_congr fun M => if_neg (fun h => hg h.1)).trans tsum_zero
+  -- summability of the good-restricted fiber (via the iid form, `iid_fiber_summable`)
+  have hsummG : ∀ X : ZMod (3 ^ (n - mZero x)),
+      Summable (fun ā : Fin (n - mZero x) → ℕ =>
+        if goodTuple x (n - mZero x) ā
+            ∧ (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+                * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+          then ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ else 0) := by
+    intro X
+    refine (iid_fiber_summable (n - mZero x)
+      (fun ā => goodTuple x (n - mZero x) ā
+        ∧ (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+            * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X)).congr fun ā => ?_
+    by_cases h : goodTuple x (n - mZero x) ā
+        ∧ (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+            * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+    · rw [if_pos h, if_pos h, iid_geomHalf_apply_of_pos _ _ h.1.1,
+        ENNReal.toReal_pow, ENNReal.toReal_inv, inv_pow]
+      norm_num
+    · rw [if_neg h, if_neg h]
+  -- RHS termwise: push `cn X` into the `ā`-tsum of `perNGoodMass X`
+  have hRHS : ∀ X : ZMod (3 ^ (n - mZero x)),
+      perNGoodMass x n X * cn x E n X
+        = ∑' ā : Fin (n - mZero x) → ℕ,
+            (if goodTuple x (n - mZero x) ā
+                ∧ (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+                    * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+              then ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ else 0)
+            * ((3 : ℝ) ^ (n - mZero x)
+                * ∑' M : ℕ, (if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X
+                    then (M : ℝ)⁻¹ else 0)) := by
+    intro X
+    rw [perNGoodMass, cn, ← tsum_mul_right]
+  rw [hLHS, Finset.sum_congr rfl (fun X _ => hRHS X),
+    (Summable.tsum_finsetSum (fun (X : ZMod (3 ^ (n - mZero x))) _ =>
+      (hsummG X).mul_right ((3 : ℝ) ^ (n - mZero x)
+        * ∑' M : ℕ, (if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X
+            then (M : ℝ)⁻¹ else 0)))).symm, ← tsum_mul_left]
+  refine tsum_congr fun ā => ?_
+  by_cases hg : goodTuple x (n - mZero x) ā
+  · -- collapse the finite `∑_X`: only `X = F ā` survives
+    have hterm : ∀ X : ZMod (3 ^ (n - mZero x)),
+        (if goodTuple x (n - mZero x) ā
+            ∧ (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+                * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+          then ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ else 0)
+          * ((3 : ℝ) ^ (n - mZero x)
+              * ∑' M : ℕ, (if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X
+                  then (M : ℝ)⁻¹ else 0))
+        = if (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+              * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+          then ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹
+              * ((3 : ℝ) ^ (n - mZero x)
+                  * ∑' M : ℕ, (if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X
+                      then (M : ℝ)⁻¹ else 0))
+          else 0 := by
+      intro X
+      by_cases hX : (fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+          * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x) = X
+      · rw [if_pos ⟨hg, hX⟩, if_pos hX]
+      · rw [if_neg (fun h => hX h.2), if_neg hX, zero_mul]
+    rw [if_pos hg, Finset.sum_congr rfl (fun X _ => hterm X),
+      Finset.sum_ite_eq Finset.univ
+        ((fnat (n - mZero x) ā : ZMod (3 ^ (n - mZero x)))
+          * (2 : ZMod (3 ^ (n - mZero x)))⁻¹ ^ pre ā (n - mZero x))
+        (fun X => ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹
+          * ((3 : ℝ) ^ (n - mZero x)
+              * ∑' M : ℕ, (if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X
+                  then (M : ℝ)⁻¹ else 0))),
+      if_pos (Finset.mem_univ _)]
+    ring
+  · rw [if_neg hg, mul_zero]
+    exact (Finset.sum_eq_zero fun X _ => by
+      rw [if_neg (fun h => hg h.1), zero_mul]).symm
 
 open Classical in
 /-- **iid good-tuple whp bound (Tao (5.11)/(5.12), iid form).**  Under the `geomHalf.iid k` law, a length-`k`
@@ -1231,12 +1350,12 @@ theorem perNHarmonic_eq_harmZfine_approx :
           |perNHarmonic x E n - harmZfine x E n| ≤ C * (Real.log x) ^ (-c) := by
   obtain ⟨Ccn, x₀cn, hCcn, hcn⟩ := cn_bound
   obtain ⟨Cw, x₀w, hCw, hwhp⟩ := syracZ_sub_perNGoodMass_bound
-  refine ⟨0.3, Ccn * Cw, max (max x₀cn x₀w) (Real.exp 1), by norm_num, by positivity,
+  refine ⟨0.3, Ccn * Cw, max (max x₀cn x₀w) (Real.exp 1024), by norm_num, by positivity,
     fun x hx E hE y hy n hn => ?_⟩
   simp only [max_le_iff] at hx
-  obtain ⟨⟨hxcn, hxw⟩, hxe1⟩ := hx
+  obtain ⟨⟨hxcn, hxw⟩, hxe1024⟩ := hx
   have hLpos : (0 : ℝ) < Real.log x := by
-    have h := Real.log_le_log (Real.exp_pos 1) hxe1
+    have h := Real.log_le_log (Real.exp_pos 1024) hxe1024
     rw [Real.log_exp] at h; linarith
   have hL07 : (0 : ℝ) ≤ Real.log x ^ (0.7 : ℝ) := Real.rpow_nonneg hLpos.le _
   obtain ⟨hle, hsum⟩ := hwhp x hxw E hE y hy n hn
@@ -1254,7 +1373,9 @@ theorem perNHarmonic_eq_harmZfine_approx :
   -- `log^{0.7}·log^{-1} = log^{-0.3}`
   have hmul : Real.log x ^ (0.7 : ℝ) * Real.log x ^ (-(1 : ℝ)) = Real.log x ^ (-(0.3 : ℝ)) := by
     rw [← Real.rpow_add hLpos]; norm_num
-  rw [perNHarmonic_eq_sum_cn, harmZfine_eq_sum_cn, ← Finset.sum_sub_distrib]
+  rw [perNHarmonic_eq_sum_cn x E n hxe1024
+      (le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)),
+    harmZfine_eq_sum_cn, ← Finset.sum_sub_distrib]
   calc |∑ X : ZMod (3 ^ (n - mZero x)),
           (perNGoodMass x n X * cn x E n X - ((syracZ (n - mZero x)) X).toReal * cn x E n X)|
       ≤ ∑ X : ZMod (3 ^ (n - mZero x)),
