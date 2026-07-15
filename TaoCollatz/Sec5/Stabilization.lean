@@ -976,7 +976,129 @@ theorem good_tuple_whp_iid :
       (∑' ā : Fin k → ℕ,
           if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
         ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
-  sorry
+  classical
+  obtain ⟨ct, hct, Ct, hCt, htail⟩ := geomHalf_tail_bound
+  obtain ⟨κ, x₀g, hκ, hGdecay⟩ := Gweight_prefix_decay (d := ct) hct
+  obtain ⟨x₀A, hA⟩ := log_rpow_mul_exp_neg_le_one (p := 2) (κ := κ) (θ := 0.2)
+    (by norm_num) hκ (by norm_num)
+  refine ⟨2 * Ct, max x₀A (max (Real.exp 20) x₀g), by positivity, fun x hx k hk => ?_⟩
+  simp only [max_le_iff] at hx
+  obtain ⟨hxA, hx20, hxg⟩ := hx
+  have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 20) hx20
+  have hL20 : (20 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 20]; exact Real.log_le_log (Real.exp_pos _) hx20
+  have hLpos : 0 < Real.log x := by linarith
+  have hlam : (0 : ℝ) ≤ Real.log x ^ (0.6 : ℝ) := Real.rpow_nonneg hLpos.le _
+  -- masked fiber families: `Z` = coord-zero event, `D n` = prefix-`n` deviation event
+  set m : (Fin k → ℕ) → ℝ := fun ā => ((geomHalf.iid k) ā).toReal with hm
+  set Z : (Fin k → ℕ) → ℝ := fun ā => if ¬ (∀ i, 1 ≤ ā i) then m ā else 0 with hZ
+  set D : ℕ → (Fin k → ℕ) → ℝ := fun n ā =>
+    if Real.log x ^ (0.6 : ℝ) ≤ |(pre ā n : ℝ) - 2 * n| then m ā else 0 with hD
+  have hmnn : ∀ ā, 0 ≤ m ā := fun ā => ENNReal.toReal_nonneg
+  have hDnn : ∀ n ā, 0 ≤ D n ā := fun n ā => by
+    simp only [hD]; split_ifs <;> first | exact hmnn ā | exact le_rfl
+  have hZnn : ∀ ā, 0 ≤ Z ā := fun ā => by
+    simp only [hZ]; split_ifs <;> first | exact hmnn ā | exact le_rfl
+  have hsummZ : Summable Z := iid_fiber_summable k (fun ā => ¬ (∀ i, 1 ≤ ā i))
+  have hsummD : ∀ n, Summable (D n) := fun n =>
+    iid_fiber_summable k (fun ā => Real.log x ^ (0.6 : ℝ) ≤ |(pre ā n : ℝ) - 2 * n|)
+  have hsummLHS : Summable (fun ā : Fin k → ℕ => if ¬ goodTuple x k ā then m ā else 0) :=
+    iid_fiber_summable k (fun ā => ¬ goodTuple x k ā)
+  have hsummDsum : Summable (fun ā : Fin k → ℕ => ∑ n ∈ Finset.range (k + 1), D n ā) := by
+    have h : Summable (∑ n ∈ Finset.range (k + 1), D n) :=
+      Finset.sum_induction D Summable (fun _ _ ha hb => ha.add hb) summable_zero
+        (fun n _ => hsummD n)
+    exact h.congr (fun ā => Finset.sum_apply ā (Finset.range (k + 1)) D)
+  -- termwise: `[¬good] m ≤ Z + ∑_{n≤k} D n`
+  have hterm : ∀ ā, (if ¬ goodTuple x k ā then m ā else 0)
+      ≤ Z ā + ∑ n ∈ Finset.range (k + 1), D n ā := by
+    intro ā
+    have hsumnn : 0 ≤ ∑ n ∈ Finset.range (k + 1), D n ā :=
+      Finset.sum_nonneg (fun n _ => hDnn n ā)
+    by_cases hg : goodTuple x k ā
+    · rw [if_neg (not_not.mpr hg)]; linarith [hZnn ā]
+    · rw [if_pos hg]
+      -- unfold `¬good`
+      rw [goodTuple, not_and_or] at hg
+      rcases hg with hpos | hdev
+      · -- coord zero ⟹ `Z ā = m ā`, and it dominates
+        have hZm : Z ā = m ā := by simp only [hZ]; rw [if_pos hpos]
+        linarith
+      · -- prefix deviation at some `n* ≤ k`
+        push_neg at hdev
+        obtain ⟨n, hnk, hn⟩ := hdev
+        have hnmem : n ∈ Finset.range (k + 1) := Finset.mem_range.mpr (by omega)
+        have hDn : D n ā = m ā := by simp only [hD]; rw [if_pos hn]
+        have hsingle : D n ā ≤ ∑ n' ∈ Finset.range (k + 1), D n' ā :=
+          Finset.single_le_sum (fun n' _ => hDnn n' ā) hnmem
+        rw [hDn] at hsingle; linarith [hZnn ā]
+  -- `∑' Z = 0` (coord-zero has iid mass `0`)
+  have hZzero : ∑' ā : Fin k → ℕ, Z ā = 0 := by
+    refine (tsum_congr (fun ā => ?_)).trans tsum_zero
+    simp only [hZ]
+    by_cases hp : (∀ i, 1 ≤ ā i)
+    · rw [if_neg (not_not.mpr hp)]
+    · rw [if_pos hp]; simp only [hm]
+      rw [iid_geomHalf_apply_eq_zero_of_not_pos k ā hp, ENNReal.toReal_zero]
+  -- per-prefix deviation mass `≤ Ct·Gweight`
+  have hDbound : ∀ n ∈ Finset.range (k + 1),
+      ∑' ā : Fin k → ℕ, D n ā ≤ Ct * Gweight (1 + n) (ct * Real.log x ^ (0.6 : ℝ)) := by
+    intro n hn
+    have hnk : n ≤ k := by rw [Finset.mem_range] at hn; omega
+    simp only [hD, hm]
+    rw [iid_prefix_twosided_eq k n hnk (Real.log x ^ (0.6 : ℝ))]
+    exact htail n (Real.log x ^ (0.6 : ℝ)) hlam
+  -- assemble the tsum bound
+  have hmain : ∑' ā : Fin k → ℕ, (if ¬ goodTuple x k ā then m ā else 0)
+      ≤ ∑ n ∈ Finset.range (k + 1), Ct * Gweight (1 + n) (ct * Real.log x ^ (0.6 : ℝ)) := by
+    calc ∑' ā : Fin k → ℕ, (if ¬ goodTuple x k ā then m ā else 0)
+        ≤ ∑' ā : Fin k → ℕ, (Z ā + ∑ n ∈ Finset.range (k + 1), D n ā) :=
+          hsummLHS.tsum_le_tsum hterm (hsummZ.add hsummDsum)
+      _ = (∑' ā, Z ā) + ∑' ā, ∑ n ∈ Finset.range (k + 1), D n ā :=
+          hsummZ.tsum_add hsummDsum
+      _ = ∑ n ∈ Finset.range (k + 1), ∑' ā, D n ā := by
+          rw [hZzero, zero_add, ← Summable.tsum_finsetSum (fun n _ => hsummD n)]
+      _ ≤ ∑ n ∈ Finset.range (k + 1), Ct * Gweight (1 + n) (ct * Real.log x ^ (0.6 : ℝ)) :=
+          Finset.sum_le_sum hDbound
+  -- Gweight decay + (k+1 ≤ log x) + the `log·exp ≤ log^{-1}` shrink
+  have hnZ5 : (nZero x : ℝ) ≤ Real.log x / 5 := by
+    have hfloor : (nZero x : ℝ) ≤ Real.log x / (10 * Real.log 2) := by
+      unfold nZero; exact Nat.floor_le (by positivity)
+    have hlog2 : (1 / 2 : ℝ) ≤ Real.log 2 := le_of_lt (by have := Real.log_two_gt_d9; linarith)
+    exact le_trans hfloor
+      ((div_le_div_iff_of_pos_left hLpos (by linarith) (by norm_num)).mpr (by linarith))
+  have hn1L : ((k + 1 : ℕ) : ℝ) ≤ Real.log x := by
+    have hkR : (k : ℝ) ≤ Real.log x / 5 := le_trans (by exact_mod_cast hk) hnZ5
+    push_cast; linarith
+  have hGsum : ∑ n ∈ Finset.range (k + 1), Ct * Gweight (1 + n) (ct * Real.log x ^ (0.6 : ℝ))
+      ≤ ((k + 1 : ℕ) : ℝ) * (Ct * (2 * Real.exp (-κ * Real.log x ^ (0.2 : ℝ)))) := by
+    calc ∑ n ∈ Finset.range (k + 1), Ct * Gweight (1 + n) (ct * Real.log x ^ (0.6 : ℝ))
+        ≤ ∑ _n ∈ Finset.range (k + 1), Ct * (2 * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))) :=
+          Finset.sum_le_sum (fun n hn => mul_le_mul_of_nonneg_left
+            (hGdecay x hxg n (by rw [Finset.mem_range] at hn; omega)) hCt.le)
+      _ = ((k + 1 : ℕ) : ℝ) * (Ct * (2 * Real.exp (-κ * Real.log x ^ (0.2 : ℝ)))) := by
+          rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  have shrink : Real.log x * Real.exp (-κ * Real.log x ^ (0.2 : ℝ)) ≤ Real.log x ^ (-(1 : ℝ)) := by
+    have h1 : (Real.log x) ^ (-(1 : ℝ)) * (Real.log x) ^ (2 : ℝ) = Real.log x := by
+      rw [← Real.rpow_add hLpos]; norm_num
+    calc Real.log x * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))
+        = ((Real.log x) ^ (-(1 : ℝ)) * (Real.log x) ^ (2 : ℝ))
+            * Real.exp (-κ * Real.log x ^ (0.2 : ℝ)) := by rw [h1]
+      _ = (Real.log x) ^ (-(1 : ℝ))
+            * ((Real.log x) ^ (2 : ℝ) * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))) := by ring
+      _ ≤ (Real.log x) ^ (-(1 : ℝ)) * 1 :=
+          mul_le_mul_of_nonneg_left (hA x hxA) (Real.rpow_nonneg hLpos.le _)
+      _ = (Real.log x) ^ (-(1 : ℝ)) := mul_one _
+  calc ∑' ā : Fin k → ℕ, (if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
+      = ∑' ā : Fin k → ℕ, (if ¬ goodTuple x k ā then m ā else 0) := by rw [hm]
+    _ ≤ ((k + 1 : ℕ) : ℝ) * (Ct * (2 * Real.exp (-κ * Real.log x ^ (0.2 : ℝ)))) :=
+        le_trans hmain hGsum
+    _ = 2 * Ct * (((k + 1 : ℕ) : ℝ) * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))) := by ring
+    _ ≤ 2 * Ct * (Real.log x * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))) :=
+        mul_le_mul_of_nonneg_left
+          (mul_le_mul_of_nonneg_right hn1L (Real.exp_pos _).le) (by positivity)
+    _ ≤ 2 * Ct * (Real.log x) ^ (-(1 : ℝ)) :=
+        mul_le_mul_of_nonneg_left shrink (by positivity)
 
 /-- **B1 rib 2 — the good-tuple whp residual.**  Dropping the `1_good` restriction from `perNGoodMass`
 only *adds* nonnegative mass, and the total added mass over all residues is exactly `ℙ(¬good)` under the
