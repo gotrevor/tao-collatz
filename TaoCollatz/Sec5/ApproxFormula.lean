@@ -140,6 +140,35 @@ theorem syr_iterate_good_bracket (x : ℝ) (N n' n : ℕ) (hN : N % 2 = 1)
   · gcongr
   · gcongr
 
+/-- `(2:ℝ)^{2n} = 4^n` (rpow exponent `2·n`, natural base).  Reusable bridge for the orbit estimate. -/
+theorem two_rpow_two_mul (n : ℕ) : (2 : ℝ) ^ (2 * (n : ℝ)) = (4 : ℝ) ^ n := by
+  rw [show (2 : ℝ) * (n : ℝ) = (n : ℝ) + (n : ℝ) from by ring,
+    Real.rpow_add (by norm_num : (0 : ℝ) < 2)]
+  simp only [Real.rpow_natCast]
+  rw [← mul_pow]; norm_num
+
+/-- **(5.13)/(5.14) orbit estimate, clean `(3/4)^n N` form.**  The `syr_iterate_good_bracket`
+main term `3^n N / 2^{2n ± L}` (`L = log^{0.6}x`) rewritten as `(3/4)^n N · 2^{∓L}` (since
+`2^{2n}=4^n`).  This is the `exp(O(log^{0.6}x))` multiplicative window around `(3/4)^n N` directly. -/
+theorem syr_iterate_good_bracket' (x : ℝ) (N n' n : ℕ) (hN : N % 2 = 1)
+    (hgood : goodTuple x n' (valVec N n')) (hn : n ≤ n') :
+    (3 / 4 : ℝ) ^ n * N * 2 ^ (-(Real.log x ^ (0.6 : ℝ))) ≤ (syr^[n] N : ℝ) ∧
+      (syr^[n] N : ℝ) ≤ (3 / 4 : ℝ) ^ n * N * 2 ^ (Real.log x ^ (0.6 : ℝ)) + 3 ^ n := by
+  obtain ⟨hlo, hhi⟩ := syr_iterate_good_bracket x N n' n hN hgood hn
+  have hrw : ∀ s : ℝ, (3 : ℝ) ^ n * N / 2 ^ (2 * (n : ℝ) + s) = (3 / 4 : ℝ) ^ n * N * 2 ^ (-s) := by
+    intro s
+    have h2s : (2 : ℝ) ^ s ≠ 0 := (Real.rpow_pos_of_pos (by norm_num) s).ne'
+    have h4n : (4 : ℝ) ^ n ≠ 0 := by positivity
+    rw [Real.rpow_add (by norm_num : (0 : ℝ) < 2), two_rpow_two_mul,
+      Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2), div_pow]
+    field_simp
+  rw [hrw] at hlo
+  have hup := hrw (-(Real.log x ^ (0.6 : ℝ)))
+  rw [neg_neg] at hup
+  rw [show 2 * (n : ℝ) - Real.log x ^ (0.6 : ℝ)
+      = 2 * (n : ℝ) + (-(Real.log x ^ (0.6 : ℝ))) from by ring, hup] at hhi
+  exact ⟨hlo, hhi⟩
+
 /-- Lower endpoint of the interval `I_y` (5.9): `log(y/x)/log(4/3) + log^{0.8} x`. -/
 noncomputable def IyLo (x y : ℝ) : ℝ :=
   Real.log (y / x) / Real.log (4 / 3) + Real.log x ^ (0.8 : ℝ)
