@@ -29,10 +29,11 @@ group `M∈E'` by residue class mod `3^{n−m₀}` and use `1/M ≈ 1/x` + near-
 `(5.9)`-flavored M-equidistribution; may want its own sub-sorry). Then B1 (reindex, no C10), then the
 2 self-contained leaves `Iy_count_ratio` (5.9), `mainZ_bound`.
 
-⚠ OPEN QUESTION for B2 (record before grinding): does `n ∈ Iy x y` guarantee `m₀ ≤ n−m₀`? `Iy` is the
-first-passage window `[IyLo, IyHi]`; `n−m₀ ≥ m₀` ⟺ `n ≥ 2·mZero x`. Verify from `Iy`/`nZero`/`mZero`
-defs — if it can fail for small `n∈Iy`, B2 needs a low-`n` sub-case (likely negligible: `syracZ` on a
-tiny finer scale). This is the route-decisive check; the SMALLEST probe that tests B2's feasibility.
+✅ RESOLVED (route-decisive probe for B2): `n ∈ Iy x y ⟹ 2·m₀ ≤ n`, hence `m₀ ≤ n−m₀`, PROVED as the
+reusable lemma **`two_mZero_le_of_mem_Iy`** (`ApproxFormula.lean`, after `mZero_le_of_mem_Iy`,
+axiom-clean). `m₀ ≈ 10⁻⁵·log x` while `IyLo ≥ 3(α−1)·log x ≈ 3·10⁻³·log x`, so `2m₀ ≤ IyLo ≤ n` with
+room. **B2 needs NO degenerate low-scale sub-case** — `fine_scale_mixing A` applies at `(n:=n−m₀,
+m:=m₀)` with `1 ≤ m₀ ≤ n−m₀` for every `n ∈ Iy`, all `x` large. This de-risks B2's C10 application.
 
 ---
 

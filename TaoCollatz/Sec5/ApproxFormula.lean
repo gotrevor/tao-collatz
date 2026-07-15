@@ -2268,6 +2268,60 @@ theorem mZero_le_of_mem_Iy :
   have hnge : IyLo x y ≤ (n : ℝ) := (mem_Iy_bounds hn).1
   exact ⟨hm1, by exact_mod_cast le_trans hIyLo_ge hnge⟩
 
+/-- **Fine/coarse scale separation** — every `n ∈ I_y` satisfies `2·m₀ ≤ n`, hence `m₀ ≤ n − m₀`.
+This is exactly what lets `fine_scale_mixing` (Prop 1.14) be applied at the fine scale `n−m₀` with
+coarse scale `m₀ ≤ n−m₀` in the (5.20) `Z`-reduction: since `m₀ ≈ (α−1)/100·log x ≈ 10⁻⁵·log x` while
+`IyLo ≥ 3(α−1)·log x`, even `2m₀ ≤ IyLo ≤ n` with room to spare (`2·(α−1)/100 = (α−1)/50 ≤ 3(α−1)`).
+(Same pure interval idiom as `mZero_le_of_mem_Iy`, strengthened to the factor `2`.) -/
+theorem two_mZero_le_of_mem_Iy :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+        2 * mZero x ≤ n := by
+  refine ⟨Real.exp 100000, Real.one_le_exp (by norm_num), fun x hx y hy n hn => ?_⟩
+  have hxe : Real.exp 100000 ≤ x := hx
+  have hx1 : (1 : ℝ) < x := lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (100000 : ℝ)]) hxe
+  have hxpos : 0 < x := by linarith
+  have hLbig : (100000 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 100000]; exact Real.log_le_log (Real.exp_pos _) hxe
+  have hLnn : (0 : ℝ) ≤ Real.log x := by linarith
+  have hLpos : (0 : ℝ) < Real.log x := by linarith
+  have ha1 : alpha - 1 = (1 : ℝ) / 1000 := by unfold alpha; norm_num
+  have hcoef : (alpha - 1) / 100 = (1 : ℝ) / 100000 := by rw [ha1]; norm_num
+  have hg_hi : Real.log (4 / 3) ≤ (1 / 3 : ℝ) := by
+    have := Real.log_le_sub_one_of_pos (show (0:ℝ) < 4/3 by norm_num); linarith
+  have hg_pos : 0 < Real.log (4 / 3) := by
+    rw [show (4:ℝ)/3 = (3/4)⁻¹ by norm_num, Real.log_inv]
+    have := Real.log_le_sub_one_of_pos (show (0:ℝ) < 3/4 by norm_num); linarith
+  -- (m₀ : ℝ) ≤ (α−1)/100 · log x
+  have hmle : (mZero x : ℝ) ≤ (alpha - 1) / 100 * Real.log x := by
+    unfold mZero
+    exact Nat.floor_le (by rw [hcoef]; exact mul_nonneg (by norm_num) hLnn)
+  -- log(y/x) ≥ (α−1) log x
+  have hlogyx : (alpha - 1) * Real.log x ≤ Real.log (y / x) := by
+    have hlogdiv : ∀ z : ℝ, Real.log (x ^ z / x) = (z - 1) * Real.log x := by
+      intro z
+      rw [Real.log_div (by positivity) (ne_of_gt hxpos), Real.log_rpow hxpos]; ring
+    rcases hy with h | h
+    · rw [h, hlogdiv alpha]
+    · rw [h, hlogdiv (alpha ^ 2)]
+      nlinarith [hLpos, mul_pos (show (0:ℝ) < alpha by linarith) (show (0:ℝ) < alpha - 1 by linarith)]
+  -- assemble 2·m₀ ≤ IyLo ≤ n
+  have haLnn : (0 : ℝ) ≤ (alpha - 1) * Real.log x := mul_nonneg (by rw [ha1]; norm_num) hLnn
+  have hIyLo_ge : (2 * mZero x : ℝ) ≤ IyLo x y := by
+    unfold IyLo
+    have hlog08 : (0 : ℝ) ≤ Real.log x ^ (0.8 : ℝ) := Real.rpow_nonneg hLnn _
+    have h3aL : (0 : ℝ) ≤ 3 * (alpha - 1) * Real.log x :=
+      mul_nonneg (by rw [ha1]; norm_num) hLnn
+    have hdiv : 3 * (alpha - 1) * Real.log x ≤ Real.log (y / x) / Real.log (4 / 3) := by
+      rw [le_div_iff₀ hg_pos]
+      nlinarith [hlogyx, mul_nonneg h3aL (sub_nonneg.mpr hg_hi)]
+    have hbridge : 2 * ((alpha - 1) / 100 * Real.log x) ≤ 3 * (alpha - 1) * Real.log x := by
+      nlinarith [haLnn]
+    push_cast
+    linarith [hmle, hbridge, hdiv, hlog08]
+  have hnge : IyLo x y ≤ (n : ℝ) := (mem_Iy_bounds hn).1
+  exact_mod_cast le_trans hIyLo_ge hnge
+
 open Classical in
 /-- Step-back pow split: `(3/4)^{n−m} = (4/3)^m · (3/4)^n` for `m ≤ n` (real, `(4/3)=(3/4)⁻¹`). -/
 theorem pow_stepback_eq {m n : ℕ} (h : m ≤ n) :
