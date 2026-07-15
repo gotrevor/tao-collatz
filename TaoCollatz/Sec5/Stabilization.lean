@@ -704,6 +704,38 @@ theorem perNHarmonic_eq_harmZfine_approx :
           |perNHarmonic x E n - harmZfine x E n| ≤ C * (Real.log x) ^ (-c) := by
   sorry
 
+/-- **Linear lower bound on `m₀`** — `m₀ = ⌊(α−1)/100·log x⌋ ≥ (1/200000)·log x` for `x ≥ exp(200000)`.
+Since `(α−1)/100 = 1/100000`, `m₀ > log x/100000 − 1 ≥ log x/200000` once `log x ≥ 200000`.  Used to
+turn `fine_scale_mixing`'s `m₀^{−A}` decay into `(log x)^{−A}` decay (B2's final log-arithmetic). -/
+theorem mZero_ge_lin :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → (1 / 200000 : ℝ) * Real.log x ≤ (mZero x : ℝ) := by
+  refine ⟨Real.exp 200000, Real.one_le_exp (by norm_num), fun x hx => ?_⟩
+  have hL : (200000 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 200000]; exact Real.log_le_log (Real.exp_pos _) hx
+  have ha1 : (alpha - 1) / 100 = (1 : ℝ) / 100000 := by unfold alpha; norm_num
+  have hlt : (alpha - 1) / 100 * Real.log x < (mZero x : ℝ) + 1 := by
+    unfold mZero; exact Nat.lt_floor_add_one _
+  rw [ha1] at hlt
+  linarith
+
+/-- **B2 Hölder core** (sub-`sorry`, the genuinely-hard reindex step).  `harmZfine = ∑_X syracZ(n−m₀)(X)
+·c_n(X)` (group the `M`-sum by residue `X = M mod 3^{n−m₀}`) and `mainZ = ∑_X fiber_avg(X)·c_n(X)` with
+`fiber_avg(X) = 3^{m₀−(n−m₀)}·syracZ(m₀)(castHom X)` (the coarse residue `M mod 3^{m₀}` is `castHom X`,
+and `syracZ(m₀) = (syracZ(n−m₀)).map castHom` by `syracZ_map_cast`).  Subtracting and applying **L¹×L∞
+Hölder** with the uniform `cn_bound` bound `0 ≤ c_n(X) ≤ 4·log^{0.7}x`:
+`|harmZfine − mainZ| = |∑_X (syracZ(n−m₀)(X) − fiber_avg(X))·c_n(X)| ≤ (4 log^{0.7}x)·∑_X|syracZ(n−m₀)(X)
+− fiber_avg(X)|`, and the last sum is exactly `osc m₀ (n−m₀)` (its summand `|syracZ(n−m₀)(Y) −
+3^{m₀−(n−m₀)}·∑_{Y'≡Y} syracZ(n−m₀)(Y')|` matches `fiber_avg` via `syracZ_map_cast`).
+**[C9 leaf B2, reindex/Tonelli core — consumes `cn_bound`, `syracZ_map_cast`; the remaining hole.]** -/
+theorem harmZfine_sub_mainZ_le_osc {x : ℝ} (hx : Real.exp 1024 ≤ x)
+    {E : Set ℕ} (hE : ∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x)
+    {y : ℝ} (hy : y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ)) {n : ℕ} (hn : n ∈ Iy x y)
+    (hmn : mZero x ≤ n - mZero x) :
+    |harmZfine x E n - mainZ x E|
+      ≤ (4 * Real.log x ^ (0.7 : ℝ))
+          * osc (mZero x) (n - mZero x) hmn (fun Y => ((syracZ (n - mZero x)) Y).toReal) := by
+  sorry
+
 /-- **(5.20) sub-lemma B2 — the `fine_scale_mixing` scale bridge (THE C10 SEAM).**  The fine-scale
 harmonic content `harmZfine = ∑_X syracZ(n−m₀)(X)·c_n(X)` agrees with `mainZ = ∑_{X'} syracZ(m₀)(X')·
 c_n^{coarse}(X')` up to `O(log^{-c}x)`.  Route (Tao p.26, verified against PDF 2026-07-15): the coarse
@@ -722,7 +754,49 @@ theorem harmZfine_to_mainZ :
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |harmZfine x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨x1, _, htwo⟩ := two_mZero_le_of_mem_Iy
+  obtain ⟨x2, _, hmzlin⟩ := mZero_ge_lin
+  obtain ⟨Cfsm, hCfsm, hfsm⟩ := fine_scale_mixing 1.7 (by norm_num)
+  refine ⟨1, 4 * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ)),
+    max (Real.exp 200000) (max x1 x2), by norm_num,
+    mul_pos (mul_pos (by norm_num) hCfsm) (Real.rpow_pos_of_pos (by norm_num) _),
+    fun x hx E hE y hy n hn => ?_⟩
+  have h200 : Real.exp 200000 ≤ x := le_trans (le_max_left _ _) hx
+  have hx1x2 : max x1 x2 ≤ x := le_trans (le_max_right _ _) hx
+  have hxx1 : x1 ≤ x := le_trans (le_max_left _ _) hx1x2
+  have hxx2 : x2 ≤ x := le_trans (le_max_right _ _) hx1x2
+  have hxe1024 : Real.exp 1024 ≤ x :=
+    le_trans (Real.exp_le_exp.mpr (by norm_num : (1024 : ℝ) ≤ 200000)) h200
+  have hL200 : (200000 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 200000]; exact Real.log_le_log (Real.exp_pos _) h200
+  have hLpos : (0 : ℝ) < Real.log x := by linarith
+  have hmn : mZero x ≤ n - mZero x := by have := htwo x hxx1 y hy n hn; omega
+  have hmzR : (1 / 200000 : ℝ) * Real.log x ≤ (mZero x : ℝ) := hmzlin x hxx2
+  have hm1R : (1 : ℝ) ≤ (mZero x : ℝ) := by nlinarith [hmzR, hL200]
+  have hm1 : 1 ≤ mZero x := by exact_mod_cast hm1R
+  have hkey := harmZfine_sub_mainZ_le_osc hxe1024 hE hy hn hmn
+  have hosc := hfsm (n - mZero x) (mZero x) hmn hm1
+  have h4nn : (0 : ℝ) ≤ 4 * Real.log x ^ (0.7 : ℝ) := by positivity
+  have hc0pos : (0 : ℝ) < (1 / 200000 : ℝ) * Real.log x := by positivity
+  have hmono : (mZero x : ℝ) ^ (-(1.7 : ℝ))
+      ≤ ((1 / 200000 : ℝ) * Real.log x) ^ (-(1.7 : ℝ)) :=
+    Real.rpow_le_rpow_of_nonpos hc0pos hmzR (by norm_num)
+  have hsplit : ((1 / 200000 : ℝ) * Real.log x) ^ (-(1.7 : ℝ))
+      = (1 / 200000 : ℝ) ^ (-(1.7 : ℝ)) * Real.log x ^ (-(1.7 : ℝ)) :=
+    Real.mul_rpow (by norm_num) hLpos.le
+  have hcomb : Real.log x ^ (0.7 : ℝ) * Real.log x ^ (-(1.7 : ℝ)) = Real.log x ^ (-(1 : ℝ)) := by
+    rw [← Real.rpow_add hLpos]; norm_num
+  calc |harmZfine x E n - mainZ x E|
+      ≤ (4 * Real.log x ^ (0.7 : ℝ))
+          * osc (mZero x) (n - mZero x) hmn (fun Y => ((syracZ (n - mZero x)) Y).toReal) := hkey
+    _ ≤ (4 * Real.log x ^ (0.7 : ℝ)) * (Cfsm * (mZero x : ℝ) ^ (-(1.7 : ℝ))) :=
+        mul_le_mul_of_nonneg_left hosc h4nn
+    _ ≤ (4 * Real.log x ^ (0.7 : ℝ)) * (Cfsm * ((1 / 200000 : ℝ) * Real.log x) ^ (-(1.7 : ℝ))) := by
+        apply mul_le_mul_of_nonneg_left _ h4nn
+        exact mul_le_mul_of_nonneg_left hmono hCfsm.le
+    _ = (4 * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ)))
+          * (Real.log x ^ (0.7 : ℝ) * Real.log x ^ (-(1.7 : ℝ))) := by rw [hsplit]; ring
+    _ = (4 * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ))) * Real.log x ^ (-(1 : ℝ)) := by rw [hcomb]
 
 /-- **(5.20) harmonic → `Z` reduction** — sub-lemma B of `perNTerm_eval`, **the sole C10 consumer**.
 The window-free harmonic content agrees with Tao's `Z` (5.21) up to `O(log^{-c}x)`.  **PROVED** from the
