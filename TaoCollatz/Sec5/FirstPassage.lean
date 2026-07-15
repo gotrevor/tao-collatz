@@ -1383,19 +1383,10 @@ theorem first_passage_nonescape :
       rw [PMF.mem_support_iff] at hsupp; exact not_not.mp hsupp
     rw [h0]; simp
 
--- RATIFY-3: window endpoints spelled per the spec's guidance as `[x^α, x^{α²}]` and
--- `[x^{α²}, x^{α³}]` (using `alpha^2`, `alpha^3`), which the SKELETON-SPEC flagged as the
--- intended reading of its nested-pow shorthand. Judge against §5 pp.25–28.
-/-- **Proposition 1.11** (stabilization): the passage-location law is stable across the
-two nearby log-windows, and non-passage is rare. The spine's key input. -/
-theorem stabilization :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
-      (∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
-        (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
-          ≤ C * x ^ (-c)) ∧
-      PMF.dTV ((logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).map (passLoc ⌊x⌋₊))
-              ((logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).map (passLoc ⌊x⌋₊))
-        ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+-- NOTE (2026-07-15): **Proposition 1.11 `stabilization` (C9) RELOCATED to `Sec5/Stabilization.lean`**
+-- (statement byte-identical / RATIFY-3 preserved).  Its proof composes C8 (`first_passage_approx`,
+-- `Sec5/ApproxFormula.lean`) and C10 (`fine_scale_mixing`, `Sec6/MixingFromDecay.lean`), both of which
+-- are DOWNSTREAM of this file, so the assembly cannot live here without an import cycle.  The statement
+-- differ's `SEARCH_FILES` now includes `Sec5/Stabilization.lean`, so the WATCH followed the pin.
 
 end TaoCollatz

@@ -86,6 +86,7 @@ SEARCH_FILES = [
     "TaoCollatz/Sec6/MixingFromDecay.lean",
     "TaoCollatz/Sec5/FirstPassage.lean",
     "TaoCollatz/Sec5/ApproxFormula.lean",
+    "TaoCollatz/Sec5/Stabilization.lean",
     "TaoCollatz/Basic/Collatz.lean",
     "TaoCollatz/Syracuse/SyracRV.lean",
     "TaoCollatz/Statement.lean",

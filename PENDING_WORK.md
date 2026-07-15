@@ -1,3 +1,49 @@
+## Grind lap — 2026-07-15 — ✅ C9 ASSEMBLY-SPINE PROBE DONE — the seam FITS
+
+**Directive step 1 (the C9 assembly-spine probe) is complete.** New file `Sec5/Stabilization.lean`
+(imports `Sec5.ApproxFormula` + `Sec6.MixingFromDecay`). `stabilization` (Prop 1.11) RELOCATED there
+from `FirstPassage.lean` — **statement byte-identical** (differ ✅ `stabilization` character-identical;
+RATIFY-3 comment preserved). It could not stay in `FirstPassage.lean`: C8 (`first_passage_approx`,
+`ApproxFormula`) and C10 (`fine_scale_mixing`, `Sec6`) are both DOWNSTREAM of it → import cycle. The
+differ's `SEARCH_FILES` now includes `Sec5/Stabilization.lean`, so the WATCH followed the pin; root
+`TaoCollatz.lean` imports it after MixingFromDecay.
+
+**The seam VERIFIED to compose.** `stabilization` now PROVED modulo exactly two named ribs:
+`#print axioms stabilization = [propext, sorryAx, Classical.choice, Quot.sound]`, where the `sorryAx`
+comes ONLY from the two ribs — the C8 leg (`first_passage_approx`) is axiom-clean and slotted in with no
+interface friction. Concretely the interfaces fit:
+- C8's two `y`-values map exactly to the two dTV windows: `y=x^α → logUnifOdd(x^α,x^{α²})`,
+  `y=x^{α²} → logUnifOdd(x^{α²},x^{α³})` (rpow bridges `(x^α)^α=x^{α²}`, `(x^{α²})^α=x^{α³}` via
+  `Real.rpow_mul`);
+- C8's odd-`E⊆[1,x]` hypothesis is exactly what the dTV→event rib produces;
+- C8's `log^{-c}` normaliser is the same shape the dTV bound needs.
+
+**Conjunct 1** (non-passage rarity) discharged DIRECTLY from `first_passage_nonescape` (C7, character-
+identical). **Conjunct 2** (passLoc-law stability) = triangle over C8(twice) + main-term stability.
+
+**The two remaining ribs (both `sorry`, in `Sec5/Stabilization.lean`):**
+1. `dTV_passLoc_event_witness` (:52) — STRUCTURAL, no paper input: `dTV(P₁,P₂) ≤ 2|P₁(E)−P₂(E)|` for a
+   single odd event `E⊆[1,x]` (the Hahn set ∩ support). Content = tsum sign-split + `passLoc` support
+   fact (lands on odd Syracuse iterate ≤ x, or default 1). On-path, provable now.
+2. `approxMainTerm_window_stable` (:69) — **the genuine rib, where C10 enters**: `|approxMainTerm x E
+   (x^α) − approxMainTerm x E (x^{α²})| ≤ C log^{-c}`. This is Lemma 5.3 (`c_n(X)≪1`) + (5.18)–(5.21):
+   `approxMainTerm` depends on the window `y` only through the single-value `logUnifOdd`-masses
+   `ℙ(Aff_ā(N_y)=M)` and the range `I_y`; `fine_scale_mixing` makes those window-independent.
+
+**Census: 4 sorries + 0 orange** (was 3) — `Statement.lean:24,31` (headlines) + the 2 ribs above. The
++1 is the C9 decomposition = PROGRESS (invisible seam → two visible attackable holes).
+
+🚩 **JUDGE-FLAG (still open from last lap, trigger b):** ratify `first_passage_approx` as PROVEN + flip
+its `\leanok`-in-proof (blueprint_audit reports it as MISSED FLIP — axiom-clean). C9 now *uses* its
+theorem. Also: confirm the `stabilization` RELOCATION to `Sec5/Stabilization.lean` (byte-identical, was
+structurally forced by import acyclicity). Differ default baseline is frozen commit `7803117`, at which
+`first_passage_approx`/`nonescape` didn't exist → they show `NOT FOUND old=✗ new=✗` (benign, pre-existing).
+
+**Next attack (hardest-first):** fill rib 2 `approxMainTerm_window_stable` — decompose `approxMainTerm`'s
+`y`-dependence and wire `fine_scale_mixing`. Rib 1 is the cheaper structural bank (do it when rib 2 stalls).
+
+---
+
 ## Grind lap — 2026-07-15 (`0bea9d1`) — 🏆 C8 CLOSED, AXIOM-CLEAN — next = C9 `stabilization`
 
 **`first_passage_approx` (C8 = Prop 5.2 / (5.8)) is PROVEN, `#print axioms` = `[propext,
