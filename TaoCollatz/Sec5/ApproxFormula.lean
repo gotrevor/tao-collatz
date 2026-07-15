@@ -2357,7 +2357,93 @@ theorem stepback_passage_scale :
           goodTuple x (nZero x) (valVec N (nZero x)) →
             (3 / 8) * x * (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) ≤ (3 / 4 : ℝ) ^ n * (N : ℝ) ∧
               (3 / 4 : ℝ) ^ n * (N : ℝ) ≤ x * (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) := by
-  sorry
+  obtain ⟨xmz, _hxmz1, hmz⟩ := mZero_le_of_mem_Iy
+  refine ⟨max xmz (Real.exp 100000), le_max_of_le_right (Real.one_le_exp (by norm_num)),
+    fun x hx y hy n hn N hodd hT hgood => ?_⟩
+  have hxmz : xmz ≤ x := le_trans (le_max_left _ _) hx
+  have hxexp : Real.exp 100000 ≤ x := le_trans (le_max_right _ _) hx
+  have hx1 : (1 : ℝ) ≤ x := le_trans (Real.one_le_exp (by norm_num)) hxexp
+  have hxpos : (0 : ℝ) < x := by linarith
+  have hLbig : (100000 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 100000]; exact Real.log_le_log (Real.exp_pos _) hxexp
+  -- positivity of the slack factors
+  have hs_pos : (0 : ℝ) < (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) := Real.rpow_pos_of_pos (by norm_num) _
+  have hsn_pos : (0 : ℝ) < (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) :=
+    Real.rpow_pos_of_pos (by norm_num) _
+  have hcancel : (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) * (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) = 1 := by
+    rw [← Real.rpow_add (by norm_num), neg_add_cancel, Real.rpow_zero]
+  have hcancel2 : (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) * (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) = 1 := by
+    rw [← Real.rpow_add (by norm_num), add_neg_cancel, Real.rpow_zero]
+  -- index facts
+  obtain ⟨hm1, hmn⟩ := hmz x hxmz y hy n hn
+  have hn1 : 1 ≤ n := le_trans hm1 hmn
+  have hn_le_n0 : n ≤ nZero x := mem_Iy_le_nZero hn
+  have hn1_le_n0 : n - 1 ≤ nZero x := le_trans (Nat.sub_le n 1) hn_le_n0
+  -- passes N (from T_x N = n ≥ 1)
+  have hpass : passes ⌊x⌋₊ N := by
+    by_contra hnp
+    have hempty : {k | syr^[k] N ≤ ⌊x⌋₊} = ∅ := by
+      ext k; simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+      exact fun hk => hnp ⟨k, hk⟩
+    have hz : passTime ⌊x⌋₊ N = 0 := by unfold passTime; rw [hempty, Nat.sInf_empty]
+    omega
+  have hne : {k | syr^[k] N ≤ ⌊x⌋₊}.Nonempty := hpass
+  have hTs : sInf {k | syr^[k] N ≤ ⌊x⌋₊} = n := hT
+  -- passage: Syr^n N ≤ ⌊x⌋ and ⌊x⌋ < Syr^{n−1}N
+  have hpassmem : syr^[n] N ≤ ⌊x⌋₊ := by
+    have h := Nat.sInf_mem hne; rw [hTs] at h; exact h
+  have hmin : ⌊x⌋₊ < syr^[n - 1] N := by
+    by_contra hle
+    push_neg at hle
+    have hmem : n - 1 ∈ {k | syr^[k] N ≤ ⌊x⌋₊} := hle
+    have hle' : sInf {k | syr^[k] N ≤ ⌊x⌋₊} ≤ n - 1 := Nat.sInf_le hmem
+    rw [hTs] at hle'; omega
+  -- good bracket at n and n−1
+  obtain ⟨hbn_lo, _hbn_hi⟩ := syr_iterate_good_bracket' x N (nZero x) n hodd hgood hn_le_n0
+  obtain ⟨_hbn1_lo, hbn1_hi⟩ := syr_iterate_good_bracket' x N (nZero x) (n - 1) hodd hgood hn1_le_n0
+  -- pow split for the n−1 bracket
+  have hpow1 : (3 / 4 : ℝ) ^ (n - 1) = (4 / 3) * (3 / 4) ^ n := by
+    have h := pow_stepback_eq (m := 1) (n := n) hn1; rwa [pow_one] at h
+  rw [hpow1] at hbn1_hi
+  -- x < Syr^{n−1}N
+  have hx_lt : x < (syr^[n - 1] N : ℝ) := by
+    have h1 : x < (⌊x⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one x
+    have h2 : (⌊x⌋₊ : ℝ) + 1 ≤ (syr^[n - 1] N : ℝ) := by exact_mod_cast Nat.succ_le_of_lt hmin
+    linarith
+  -- 3^{n−1} ≤ x/2
+  have h3half : (3 : ℝ) ^ (n - 1) ≤ x / 2 := by
+    have hmono : (3 : ℝ) ^ (n - 1) ≤ (3 : ℝ) ^ nZero x := pow_le_pow_right₀ (by norm_num) hn1_le_n0
+    have hx15 : (3 : ℝ) ^ nZero x ≤ x ^ ((1 : ℝ) / 5) := three_pow_nZero_le hx1
+    have hx15half : x ^ ((1 : ℝ) / 5) ≤ x / 2 := by
+      have hxd : (0 : ℝ) < x / 2 := by linarith
+      rw [← Real.exp_log (Real.rpow_pos_of_pos hxpos _), ← Real.exp_log hxd]
+      apply Real.exp_le_exp.mpr
+      rw [Real.log_rpow hxpos, Real.log_div (ne_of_gt hxpos) (by norm_num)]
+      have hlog2le1 : Real.log 2 ≤ 1 := by have := Real.log_two_lt_d9; linarith
+      nlinarith [hLbig, hlog2le1]
+    linarith
+  refine ⟨?_, ?_⟩
+  · -- lower: (3/8)·x·2^{−L^{0.6}} ≤ (3/4)^n·N
+    have hge2 : (3 / 8) * x ≤ (3 / 4 : ℝ) ^ n * N * (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) := by
+      have hxlt2 := lt_of_lt_of_le hx_lt hbn1_hi
+      nlinarith [hxlt2, h3half]
+    have keyL : (3 / 4 : ℝ) ^ n * N * (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ))
+        * (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) = (3 / 4 : ℝ) ^ n * N := by
+      rw [mul_assoc, hcancel2, mul_one]
+    have hfin := mul_le_mul_of_nonneg_right hge2 hsn_pos.le
+    rw [keyL] at hfin
+    exact hfin
+  · -- upper: (3/4)^n·N ≤ x·2^{L^{0.6}}
+    have hfloorx : (⌊x⌋₊ : ℝ) ≤ x := Nat.floor_le hxpos.le
+    have hup1 : (3 / 4 : ℝ) ^ n * N * (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) ≤ x :=
+      le_trans hbn_lo (le_trans (by exact_mod_cast hpassmem) hfloorx)
+    have key : (3 / 4 : ℝ) ^ n * N * (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ)))
+        * (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) = (3 / 4 : ℝ) ^ n * N := by
+      rw [mul_assoc, hcancel, mul_one]
+    have hup2 := mul_le_mul_of_nonneg_right hup1 hs_pos.le
+    rw [key] at hup2
+    exact hup2
+
 
 /-- **(5.17) size-window brick** — on `{T_x N = n ∧ good⁽ⁿ⁰⁾}`, `N` odd, `n ∈ I_y`, the stepped-back
 iterate `M = Syr^{n−m₀}N` lands in the `E'` size window `exp(±log^{0.7}x)·(4/3)^{m₀}·x`.  Assembled from
