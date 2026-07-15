@@ -44,6 +44,20 @@ means the STATEMENT exists, never "finished"; never set a `\leanok` yourself. Re
 >   bridge go through *in Lean* is worth more than the three known-doable leaves combined. Once it lands, C9
 >   is pure analytic/combinatorial clean-up → C6 (§3 reduction) → headline.
 
+> ### 🪷 OPERATOR NOTE (2026-07-15, Trevor + Ren — the altitude layer for the current run)
+> - **Review/reflection laps are OFF for the running treadmill** (pure grind laps). The operator
+>   layer reads handoffs host-side and writes directive updates here. `JUDGE-FLAG:` semantics
+>   unchanged — flag in PENDING_WORK.md + the handoff; the operator is the reader. Judge event
+>   triggers still bind; the **C8-close trigger has FIRED** — the operator owes that ratification
+>   pass (C8 theorem-use, B1/B2 pins).
+> - **Vocabulary rail (NEW, binding): register a decomposition's load-bearing sub-lemmas on the
+>   blueprint in the SAME pass you coin them** — label under the parent node (`C9B1` style),
+>   `\notready` until judge ratification. Every letter-series name used in a handoff/commit must
+>   resolve on the map. B1/B2 are retroactively registered as `C9B1`/`C9B2` (content.tex).
+> - **Plan step 2 (PIN the C6 intermediates) is STILL OUTSTANDING** — now the only un-pinned
+>   structural surface left. Pin it (statement-only, copy-not-compose, + numeric traps per
+>   `blueprint_rules.md`) alongside the C9 burn-down, BEFORE the C9 census hits zero.
+
 ### State (kernel-verified this pass; `blueprint_audit.py` → 15 proved, 0 orange, 0 drift, 0 false-green)
 - **15 nodes proved + axiom-clean**: all of §7 (X2–X11), **C10** (Prop 1.14), C5, C2, S3, C4, **C7** (just flipped).
 - **C8 (Prop 5.2) RATIFIED v2** (statement faithful; exact reindex `approxMainTerm_eq_steppedMid` PROVED

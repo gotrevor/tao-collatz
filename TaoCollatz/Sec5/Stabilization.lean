@@ -1151,6 +1151,9 @@ theorem Nstar_odd {k : ℕ} (ā : Fin k → ℕ) (hpos : ∀ i, 1 ≤ ā i) {M :
       (by have := pre_pos hk1 ā hpos (m := k) hk1; omega : pre ā k ≠ 0)).mul_left M
     omega
 
+-- HEARTBEAT: one large log-arithmetic assembly (window bounds × margin rpow algebra × casts); the
+-- many linarith/nlinarith/positivity calls exhaust the default per-declaration budget cumulatively.
+set_option maxHeartbeats 1600000 in
 open Classical in
 /-- **(5.18) `N*` window membership** — for `n ∈ I_y`, good `ā`, `M` in the `E'` window (5.10), and
 the affine equation solvable, the solution `N* = (M·2^{pre ā} − fnat)/3^{n−m₀}` lands in the odd
@@ -1170,7 +1173,185 @@ theorem Nstar_mem_logWindow :
             fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x) →
             ((M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā) / 3 ^ (n - mZero x))
               ∈ logWindow y (y ^ alpha) := by
-  sorry
+  classical
+  obtain ⟨x₁, _, htwo⟩ := two_mZero_le_of_mem_Iy
+  refine ⟨max (Real.exp 1073741824) x₁, fun x hx y hy n hn ā hg M hModd hMlo hMhi hdvd hle => ?_⟩
+  have hxbig : Real.exp 1073741824 ≤ x := le_trans (le_max_left _ _) hx
+  have hxx1 : x₁ ≤ x := le_trans (le_max_right _ _) hx
+  have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hxbig
+  have hL : (1073741824 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1073741824]; exact Real.log_le_log (Real.exp_pos _) hxbig
+  have hLpos : (0 : ℝ) < Real.log x := by linarith
+  have hy0 : (0 : ℝ) < y := by
+    rcases (by simpa [Set.mem_insert_iff] using hy : y = x ^ alpha ∨ y = x ^ alpha ^ 2) with h | h <;>
+      rw [h] <;> exact Real.rpow_pos_of_pos hxpos _
+  have hkn : n - mZero x ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
+  have hx1024 : Real.exp 1024 ≤ x :=
+    le_trans (Real.exp_le_exp.mpr (by norm_num)) hxbig
+  -- `E'` dominates the modulus (window floor), so the guard is comfortable: `2·fnat ≤ M·2^{pre}`
+  obtain ⟨hS1, -, -⟩ := cn_window_size hx1024 hkn (m := mZero x)
+  have hMposR : (0 : ℝ) < (M : ℝ) := by
+    have h32 : (0 : ℝ) < 2 * (3 : ℝ) ^ (n - mZero x) + 2 := by positivity
+    linarith [hS1, hMlo]
+  have hM3nat : 2 * 3 ^ (n - mZero x) ≤ M := by
+    have hR : ((2 * 3 ^ (n - mZero x) : ℕ) : ℝ) ≤ (M : ℝ) := by push_cast; linarith [hS1, hMlo]
+    exact_mod_cast hR
+  have hf2 : 2 * fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x) :=
+    calc 2 * fnat (n - mZero x) ā
+        ≤ (2 * 3 ^ (n - mZero x)) * 2 ^ pre ā (n - mZero x) := by
+          rw [mul_assoc]
+          exact Nat.mul_le_mul le_rfl (fnat_lt_pow_mul _ ā).le
+      _ ≤ M * 2 ^ pre ā (n - mZero x) := Nat.mul_le_mul hM3nat le_rfl
+  have hf2R : 2 * (fnat (n - mZero x) ā : ℝ) ≤ (M : ℝ) * 2 ^ pre ā (n - mZero x) := by
+    exact_mod_cast hf2
+  -- rpow margin arithmetic: `log^{0.8}·log(4/3) ≥ log^{0.7} + log^{0.6}·log 2 + log 2`
+  have ht6nn : (0 : ℝ) ≤ Real.log x ^ (0.6 : ℝ) := Real.rpow_nonneg hLpos.le _
+  have ht7nn : (0 : ℝ) ≤ Real.log x ^ (0.7 : ℝ) := Real.rpow_nonneg hLpos.le _
+  have ht8nn : (0 : ℝ) ≤ Real.log x ^ (0.8 : ℝ) := Real.rpow_nonneg hLpos.le _
+  have ht61 : (1 : ℝ) ≤ Real.log x ^ (0.6 : ℝ) :=
+    calc (1 : ℝ) = (1 : ℝ) ^ (0.6 : ℝ) := (Real.one_rpow _).symm
+      _ ≤ Real.log x ^ (0.6 : ℝ) :=
+          Real.rpow_le_rpow (by norm_num) (by linarith) (by norm_num)
+  have hL01 : (8 : ℝ) ≤ Real.log x ^ (0.1 : ℝ) := by
+    have h8 : ((1073741824 : ℝ)) ^ ((0.1 : ℝ)) = 8 := by
+      rw [show (1073741824 : ℝ) = (8 : ℝ) ^ (10 : ℕ) by norm_num,
+        ← Real.rpow_natCast (8 : ℝ) 10, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 8),
+        show ((10 : ℕ) : ℝ) * (0.1 : ℝ) = 1 by push_cast; norm_num, Real.rpow_one]
+    have h := Real.rpow_le_rpow (by norm_num) hL (by norm_num : (0 : ℝ) ≤ (0.1 : ℝ))
+    rwa [h8] at h
+  have hsplit87 : Real.log x ^ (0.1 : ℝ) * Real.log x ^ (0.7 : ℝ) = Real.log x ^ (0.8 : ℝ) := by
+    rw [← Real.rpow_add hLpos]; norm_num
+  have hsplit76 : Real.log x ^ (0.1 : ℝ) * Real.log x ^ (0.6 : ℝ) = Real.log x ^ (0.7 : ℝ) := by
+    rw [← Real.rpow_add hLpos]; norm_num
+  have hlog2pos : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog2le1 : Real.log 2 ≤ 1 := by
+    have := Real.log_le_sub_one_of_pos (show (0 : ℝ) < 2 by norm_num); linarith
+  have hl43pos : (0 : ℝ) < Real.log (4 / 3) := Real.log_pos (by norm_num)
+  have hl43_lb : (1 / 4 : ℝ) ≤ Real.log (4 / 3) := by
+    have h34 : Real.log (3 / 4 : ℝ) ≤ 3 / 4 - 1 :=
+      Real.log_le_sub_one_of_pos (by norm_num)
+    have hinv : Real.log ((3 / 4 : ℝ)⁻¹) = -Real.log (3 / 4 : ℝ) := Real.log_inv _
+    rw [show ((3 / 4 : ℝ)⁻¹) = (4 / 3 : ℝ) by norm_num] at hinv
+    linarith
+  have hA : 8 * Real.log x ^ (0.7 : ℝ) ≤ Real.log x ^ (0.8 : ℝ) := by
+    rw [← hsplit87]; exact mul_le_mul_of_nonneg_right hL01 ht7nn
+  have hB : 8 * Real.log x ^ (0.6 : ℝ) ≤ Real.log x ^ (0.7 : ℝ) := by
+    rw [← hsplit76]; exact mul_le_mul_of_nonneg_right hL01 ht6nn
+  have hD : Real.log x ^ (0.6 : ℝ) * Real.log 2 ≤ Real.log x ^ (0.6 : ℝ) :=
+    mul_le_of_le_one_right ht6nn hlog2le1
+  have hE : Real.log x ^ (0.8 : ℝ) * (1 / 4) ≤ Real.log x ^ (0.8 : ℝ) * Real.log (4 / 3) :=
+    mul_le_mul_of_nonneg_left hl43_lb ht8nn
+  have hmargin : Real.log x ^ (0.7 : ℝ) + Real.log x ^ (0.6 : ℝ) * Real.log 2 + Real.log 2
+      ≤ Real.log x ^ (0.8 : ℝ) * Real.log (4 / 3) := by linarith
+  -- `log M` window bounds
+  have hlml : -Real.log x ^ (0.7 : ℝ) + (mZero x : ℝ) * Real.log (4 / 3) + Real.log x
+      ≤ Real.log (M : ℝ) := by
+    have hlopos : (0 : ℝ) < Real.exp (-Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x := by
+      positivity
+    have h := Real.log_le_log hlopos hMlo
+    rwa [Real.log_mul (by positivity) (by positivity), Real.log_mul (by positivity) (by positivity),
+      Real.log_exp, Real.log_pow] at h
+  have hlmh : Real.log (M : ℝ)
+      ≤ Real.log x ^ (0.7 : ℝ) + (mZero x : ℝ) * Real.log (4 / 3) + Real.log x := by
+    have h := Real.log_le_log hMposR hMhi
+    rwa [Real.log_mul (by positivity) (by positivity), Real.log_mul (by positivity) (by positivity),
+      Real.log_exp, Real.log_pow] at h
+  -- good-tuple prefix bound at full length: `|pre − 2k| < log^{0.6}`
+  have habs := hg.2 (n - mZero x) le_rfl
+  rw [abs_lt] at habs
+  have hPlo : 2 * ((n - mZero x : ℕ) : ℝ) - Real.log x ^ (0.6 : ℝ)
+      ≤ (pre ā (n - mZero x) : ℝ) := by linarith [habs.1]
+  have hPhi : (pre ā (n - mZero x) : ℝ)
+      ≤ 2 * ((n - mZero x : ℕ) : ℝ) + Real.log x ^ (0.6 : ℝ) := by linarith [habs.2]
+  have hPlo2 : 2 * ((n - mZero x : ℕ) : ℝ) * Real.log 2
+        - Real.log x ^ (0.6 : ℝ) * Real.log 2
+      ≤ (pre ā (n - mZero x) : ℝ) * Real.log 2 := by nlinarith [hPlo, hlog2pos.le]
+  have hPhi2 : (pre ā (n - mZero x) : ℝ) * Real.log 2
+      ≤ 2 * ((n - mZero x : ℕ) : ℝ) * Real.log 2
+        + Real.log x ^ (0.6 : ℝ) * Real.log 2 := by nlinarith [hPhi, hlog2pos.le]
+  -- `2·log 2 = log(4/3) + log 3`, and `m₀ + (n − m₀) = n`
+  have h4 : Real.log 4 = 2 * Real.log 2 := by
+    rw [show (4 : ℝ) = 2 ^ (2 : ℕ) by norm_num, Real.log_pow]; push_cast; ring
+  have hl43eq : Real.log (4 / 3 : ℝ) = 2 * Real.log 2 - Real.log 3 := by
+    rw [Real.log_div (by norm_num) (by norm_num), h4]
+  have e2l : ((n - mZero x : ℕ) : ℝ) * Real.log (4 / 3)
+      = 2 * ((n - mZero x : ℕ) : ℝ) * Real.log 2 - ((n - mZero x : ℕ) : ℝ) * Real.log 3 := by
+    rw [hl43eq]; ring
+  have hm0n : mZero x ≤ n := by have := htwo x hxx1 y hy n hn; omega
+  have e3 : (mZero x : ℝ) + ((n - mZero x : ℕ) : ℝ) = (n : ℝ) := by
+    push_cast [Nat.cast_sub hm0n]; ring
+  have e3l : (mZero x : ℝ) * Real.log (4 / 3) + ((n - mZero x : ℕ) : ℝ) * Real.log (4 / 3)
+      = (n : ℝ) * Real.log (4 / 3) := by rw [← add_mul, e3]
+  -- `I_y` endpoint bounds, multiplied through by `log(4/3)`
+  have hIy1 : Real.log y - Real.log x + Real.log x ^ (0.8 : ℝ) * Real.log (4 / 3)
+      ≤ (n : ℝ) * Real.log (4 / 3) := by
+    have h := (mem_Iy_bounds hn).1
+    rw [IyLo] at h
+    have h' := mul_le_mul_of_nonneg_right h hl43pos.le
+    rw [add_mul, div_mul_cancel₀ _ (ne_of_gt hl43pos),
+      Real.log_div (ne_of_gt hy0) (ne_of_gt hxpos)] at h'
+    linarith
+  have hIy2 : (n : ℝ) * Real.log (4 / 3)
+      ≤ alpha * Real.log y - Real.log x - Real.log x ^ (0.8 : ℝ) * Real.log (4 / 3) := by
+    have h := (mem_Iy_bounds hn).2
+    rw [IyHi] at h
+    have h' := mul_le_mul_of_nonneg_right h hl43pos.le
+    rw [sub_mul, div_mul_cancel₀ _ (ne_of_gt hl43pos),
+      Real.log_div (Real.rpow_pos_of_pos hy0 alpha).ne' (ne_of_gt hxpos),
+      Real.log_rpow hy0] at h'
+    linarith
+  -- the two multiplicative bounds on `Q = M·2^{pre}`
+  have hQpos : (0 : ℝ) < (M : ℝ) * 2 ^ pre ā (n - mZero x) :=
+    mul_pos hMposR (by positivity)
+  have e1 : Real.log ((M : ℝ) * 2 ^ pre ā (n - mZero x))
+      = Real.log (M : ℝ) + (pre ā (n - mZero x) : ℝ) * Real.log 2 := by
+    rw [Real.log_mul (by positivity) (by positivity), Real.log_pow]
+  have hQlo : 2 * y * (3 : ℝ) ^ (n - mZero x) ≤ (M : ℝ) * 2 ^ pre ā (n - mZero x) := by
+    have h2y3pos : (0 : ℝ) < 2 * y * (3 : ℝ) ^ (n - mZero x) :=
+      mul_pos (mul_pos two_pos hy0) (by positivity)
+    have tlo : Real.log (2 * y * (3 : ℝ) ^ (n - mZero x))
+        = Real.log 2 + Real.log y + ((n - mZero x : ℕ) : ℝ) * Real.log 3 := by
+      rw [Real.log_mul (by positivity) (by positivity),
+        Real.log_mul (by norm_num) (ne_of_gt hy0), Real.log_pow]
+    have hlog : Real.log (2 * y * (3 : ℝ) ^ (n - mZero x))
+        ≤ Real.log ((M : ℝ) * 2 ^ pre ā (n - mZero x)) := by
+      rw [tlo, e1]
+      linarith [hlml, hPlo2, e2l, e3l, hIy1, hmargin]
+    have h := Real.exp_le_exp.mpr hlog
+    rwa [Real.exp_log h2y3pos, Real.exp_log hQpos] at h
+  have hQhi : (M : ℝ) * 2 ^ pre ā (n - mZero x) ≤ y ^ alpha * (3 : ℝ) ^ (n - mZero x) := by
+    have hyapos : (0 : ℝ) < y ^ alpha * (3 : ℝ) ^ (n - mZero x) :=
+      mul_pos (Real.rpow_pos_of_pos hy0 _) (by positivity)
+    have thi : Real.log (y ^ alpha * (3 : ℝ) ^ (n - mZero x))
+        = alpha * Real.log y + ((n - mZero x : ℕ) : ℝ) * Real.log 3 := by
+      rw [Real.log_mul (Real.rpow_pos_of_pos hy0 alpha).ne' (by positivity),
+        Real.log_rpow hy0, Real.log_pow]
+    have hlog : Real.log ((M : ℝ) * 2 ^ pre ā (n - mZero x))
+        ≤ Real.log (y ^ alpha * (3 : ℝ) ^ (n - mZero x)) := by
+      rw [thi, e1]
+      linarith [hlmh, hPhi2, e2l, e3l, hIy2, hmargin, hlog2pos]
+    have h := Real.exp_le_exp.mpr hlog
+    rwa [Real.exp_log hQpos, Real.exp_log hyapos] at h
+  -- exact real value of `N*`, then the window bounds
+  obtain ⟨N, hN⟩ := hdvd
+  have hcastN : (((M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā)
+        / 3 ^ (n - mZero x) : ℕ) : ℝ)
+      = ((M : ℝ) * 2 ^ pre ā (n - mZero x) - (fnat (n - mZero x) ā : ℝ))
+          / 3 ^ (n - mZero x) := by
+    rw [hN, Nat.mul_div_cancel_left N (by positivity)]
+    have hNR : (M : ℝ) * 2 ^ pre ā (n - mZero x) - (fnat (n - mZero x) ā : ℝ)
+        = 3 ^ (n - mZero x) * (N : ℝ) := by
+      have h := congrArg (fun t : ℕ => (t : ℝ)) hN
+      push_cast [Nat.cast_sub hle] at h
+      exact h
+    rw [hNR, mul_div_cancel_left₀ _ (by positivity : ((3 : ℝ) ^ (n - mZero x)) ≠ 0)]
+  rw [mem_logWindow_iff]
+  refine ⟨Nstar_odd ā hg.1 hModd ⟨N, hN⟩ hle, ?_, ?_⟩
+  · rw [hcastN, le_div_iff₀ (by positivity : (0 : ℝ) < (3 : ℝ) ^ (n - mZero x))]
+    linarith [hQlo, hf2R]
+  · rw [hcastN, div_le_iff₀ (by positivity : (0 : ℝ) < (3 : ℝ) ^ (n - mZero x))]
+    have hfnn : (0 : ℝ) ≤ (fnat (n - mZero x) ā : ℝ) := Nat.cast_nonneg _
+    linarith [hQhi, hfnn]
 
 /-- **Crude size bound on `perNHarmonic`** — `perNHarmonic ≤ C·log^{0.7}x`.  Via the (5.22) fiber
 identity (rib 1, `perNHarmonic_eq_sum_cn`): `perNHarmonic = ∑_X perNGoodMass·c_n ≤ (sup c_n)·∑_X
