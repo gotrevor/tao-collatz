@@ -1,3 +1,27 @@
+## Grind lap — 2026-07-15 (`0bea9d1`) — 🏆 C8 CLOSED, AXIOM-CLEAN — next = C9 `stabilization`
+
+**`first_passage_approx` (C8 = Prop 5.2 / (5.8)) is PROVEN, `#print axioms` = `[propext,
+Classical.choice, Quot.sound]`** (kernel-verified this lap). The (5.17) reverse leg fully closed:
+`earlyReturn_size_contra` (the analytic core) proved → `reverse_early_return_whp` (early-return event
+EMPTY) → `steppedMid_le_firstPassMid_add` → `first_passage_stepback_reduce` → C8 all axiom-clean.
+
+🚩 **JUDGE-FLAG (directive event-trigger b): C8's last hole just closed.** Ratify `first_passage_approx`
+as PROVEN + flip its `\leanok`-in-proof before C9 switches from *citing* C8's statement to *using* its
+theorem. `earlyReturn_size_contra` is a deterministic real inequality (worth a paper cross-check: the
+E′ (4/3)^{m₀}x floor vs the decreasing good-orbit ceiling — pp.23–24 (5.10)/(5.13)–(5.16)).
+
+**Census: 3 sorries + 0 orange** — `Statement.lean:24,31` (Thm 1.3 / Thm 3.1 headlines) + C9
+`stabilization` (`FirstPassage.lean:1399`, Prop 1.11).
+
+**Next objective — C9 `stabilization` (Prop 1.11).** Consumes C10 ✅ `fine_scale_mixing` + C8 ✅
+`first_passage_approx` (both now PROVEN, so C9 can *use* the theorems, not just cite). Directive step 1
+(the C9 assembly-spine PROBE) was never done — do it FIRST: make the Prop 1.11 assembly compile using
+C8/C10 as black boxes, decomposing below `stabilization` into sorried ribs (Lemma 5.3 `c_n(X)≪1`,
+(5.18)–(5.21)). ⚠ If the C8/C10 interfaces don't fit (quantifier order, uniformity in n, normalization)
+→ JUDGE-FLAG the exact mismatch; do NOT edit the ratified C8/C10 pins.
+
+---
+
 ## Review lap — 2026-07-15 (`bb0c567`) — C8 (5.17) reverse-leg STRUCTURAL REDUCTION PROVED; one whp core left
 
 **`steppedMid_le_firstPassMid_add` is now machine-checked down to ONE narrow whp sorry.** The whole
