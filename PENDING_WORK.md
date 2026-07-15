@@ -1,4 +1,33 @@
-## Grind lap — 2026-07-15 (cont.) — (5.16) `passtime_edge_mass` PROVED axiom-clean; C8 5 sorries
+## Grind lap — 2026-07-15 (cont.) — (5.16) leg COMPLETE: `passtime_edge_of_good` PROVED axiom-clean; C8 4 sorries
+
+**The (5.15) pointwise inclusion is CLOSED — the ENTIRE (5.16) window leg is now axiom-clean.**
+`passtime_edge_of_good` (`ApproxFormula.lean`) proved: on the good-tuple event, `passes ∧ T_x ∉ I_y ⟹
+N ∈ Edge x y`. With it, `passtime_window_inner` (5.16) AND `approx_passtime_window` (the C7 consumer)
+both `#print axioms = [propext, Classical.choice, Quot.sound]`.
+
+**Proof shape (reusable idiom for the (5.17) leg):** contrapositive — assume `N` in the strict window
+interior `y·e^s < N < y^α·e^{-s}` (`s = log^{0.8}x`), derive `T_x ∈ I_y`, contradicting `∉`. Uses the
+proved orbit bracket `syr_iterate_good_bracket'` (`(3/4)^n·N·2^{±log^{0.6}x}`) at `n = nZero, T, T-1`
++ `passTime = sInf` minimality (`Nat.sInf_le` / step-back). All numeric margins reduce, via the
+substitution **`u := log^{0.2}x`** (so `log^{0.6}=u^3`, `log^{0.8}=u^4`, `log x=u^5`), to polynomials
+`nlinarith` discharges, with `log(4/3) ∈ [1/4,1/3]` (from `Real.log_le_sub_one_of_pos` + `log_inv`)
+and `log 2 ∈ (0.693,0.694)`. **Gotchas that bit:** (1) `set`-let vars poison `nlinarith`/`ring` via
+whnf — `clear_value` them + use `linarith only`/`nlinarith only` to exclude rpow/decimal context
+atoms; (2) `unfold alpha; norm_num` inside a big context whnf-times-out — pre-establish alpha facts
+early; (3) needed `set_option maxHeartbeats 1600000` (HEARTBEAT-justified) for the ~250-line term.
+
+**State: 4 sorries + 0 orange nodes** (2 headline, C9 `stabilization` `FirstPassage.lean:1391`,
+`first_passage_stepback_reduce` `ApproxFormula.lean` — C8's LAST leaf).
+
+**Next attack — `first_passage_stepback_reduce` (5.17), C8's last hole:** `|firstPassMid − steppedMid|
+≤ C·log^{-c}x`. Forward inclusion EXACT (`firstPass_event_stepback_subset` ✅); remaining = reverse
+inclusion + `E'` size window `exp(±log^{0.7}x)·(4/3)^{m₀}·x` (reuse the interval-algebra idiom above:
+`syr_iterate_good_bracket'` + `two_rpow_slack_le_exp` PROVED, `IyLo/IyHi` rearrangement) + nested
+`𝒜⁽ⁿ⁰⁾ ⊂ 𝒜⁽ⁿ⁻ᵐ⁰⁾`. Then C9 `stabilization`. ⚠ If it needs touching a ratified pin → `JUDGE-FLAG:`.
+
+---
+
+## SUPERSEDED — Grind lap — 2026-07-15 (cont.) — (5.16) `passtime_edge_mass` PROVED axiom-clean; C8 5 sorries
 
 **The integral-test edge mass is CLOSED.** `passtime_edge_mass` (`ApproxFormula.lean`) proved
 axiom-clean: `ℙ(N_y ∈ Edge) ≤ 20000·log^{-1/5}x`. Reusable bricks landed this lap (all axiom-clean):
