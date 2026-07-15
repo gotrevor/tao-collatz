@@ -356,6 +356,50 @@ noncomputable def cn (x : ℝ) (E : Set ℕ) (n : ℕ) (X : ZMod (3 ^ (n - mZero
   (3 : ℝ) ^ (n - mZero x)
     * ∑' M : ℕ, if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X then (M : ℝ)⁻¹ else 0
 
+open Classical in
+/-- **Fiber-partition reindex** — the reusable core of both `harmZfine`/`mainZ` → `∑_X (weight)·c_n(X)`
+identities.  For any residue-weight `W : ZMod q → ℝ`, the `E'`-harmonic sum with weight
+`W(M mod q)` regroups by residue class as `∑_X W(X)·classMass(X)`, where `classMass(X) =
+∑_{M∈E', M≡X} 1/M`.  Proof: pull `W X` into each class `tsum` (`Summable.tsum_mul_left`), swap the
+finite `∑_X` past the `tsum` (`tsum_sum`), then collapse the finite sum pointwise (`Finset.sum_ite_eq`:
+only `X = M mod q` survives).  Requires each class sum summable (`hsum`; holds since `E'` is a bounded
+window). -/
+theorem harmonic_reindex (x : ℝ) (E : Set ℕ) (q : ℕ) [NeZero q] (W : ZMod q → ℝ)
+    (hsum : ∀ X : ZMod q,
+      Summable (fun M : ℕ => if Eprime x E M ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0)) :
+    (∑' M : ℕ, if Eprime x E M then W (M : ZMod q) * (M : ℝ)⁻¹ else 0)
+      = ∑ X : ZMod q, W X
+          * ∑' M : ℕ, if Eprime x E M ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0 := by
+  -- pull `W X` inside each class tsum, then swap `∑_X` past the tsum
+  have hstep1 : (∑ X : ZMod q, W X
+        * ∑' M : ℕ, if Eprime x E M ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0)
+      = ∑' M : ℕ, ∑ X : ZMod q,
+          W X * (if Eprime x E M ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0) :=
+    calc (∑ X : ZMod q, W X
+          * ∑' M : ℕ, if Eprime x E M ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0)
+        = ∑ X : ZMod q, ∑' M : ℕ,
+            W X * (if Eprime x E M ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0) :=
+          Finset.sum_congr rfl (fun X _ => (Summable.tsum_mul_left (W X) (hsum X)).symm)
+      _ = ∑' M : ℕ, ∑ X : ZMod q,
+            W X * (if Eprime x E M ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0) :=
+          (Summable.tsum_finsetSum (fun X _ => (hsum X).mul_left (W X))).symm
+  rw [hstep1]
+  refine tsum_congr (fun M => ?_)
+  -- collapse the finite `∑_X`: only `X = (M : ZMod q)` contributes
+  by_cases hEp : Eprime x E M
+  · have : ∀ X : ZMod q,
+        W X * (if Eprime x E M ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0)
+          = if (M : ZMod q) = X then W X * (M : ℝ)⁻¹ else 0 := by
+      intro X; by_cases hX : (M : ZMod q) = X
+      · rw [if_pos (And.intro hEp hX), if_pos hX]
+      · rw [if_neg (fun h => hX h.2), if_neg hX, mul_zero]
+    rw [Finset.sum_congr rfl (fun X _ => this X),
+      Finset.sum_ite_eq Finset.univ (M : ZMod q) (fun X => W X * (M : ℝ)⁻¹),
+      if_pos (Finset.mem_univ _), if_pos hEp]
+  · rw [if_neg hEp]
+    refine (Finset.sum_eq_zero (fun X _ => ?_)).symm
+    rw [if_neg (fun h => hEp h.1), mul_zero]
+
 /-- **Residue-class window as an arithmetic progression** (general AP reindex).  For modulus `q ≥ 1`, a
 real window `[lo, hi]` at least one period wide (`lo + q + 1 ≤ hi`, so the class is nonempty), and any
 residue `X : ZMod q`, the naturals in `[⌈lo⌉, ⌊hi⌋]` congruent to `X mod q` form an AP
@@ -718,23 +762,144 @@ theorem mZero_ge_lin :
   rw [ha1] at hlt
   linarith
 
-/-- **B2 Hölder core** (sub-`sorry`, the genuinely-hard reindex step).  `harmZfine = ∑_X syracZ(n−m₀)(X)
-·c_n(X)` (group the `M`-sum by residue `X = M mod 3^{n−m₀}`) and `mainZ = ∑_X fiber_avg(X)·c_n(X)` with
-`fiber_avg(X) = 3^{m₀−(n−m₀)}·syracZ(m₀)(castHom X)` (the coarse residue `M mod 3^{m₀}` is `castHom X`,
-and `syracZ(m₀) = (syracZ(n−m₀)).map castHom` by `syracZ_map_cast`).  Subtracting and applying **L¹×L∞
-Hölder** with the uniform `cn_bound` bound `0 ≤ c_n(X) ≤ 4·log^{0.7}x`:
-`|harmZfine − mainZ| = |∑_X (syracZ(n−m₀)(X) − fiber_avg(X))·c_n(X)| ≤ (4 log^{0.7}x)·∑_X|syracZ(n−m₀)(X)
-− fiber_avg(X)|`, and the last sum is exactly `osc m₀ (n−m₀)` (its summand `|syracZ(n−m₀)(Y) −
-3^{m₀−(n−m₀)}·∑_{Y'≡Y} syracZ(n−m₀)(Y')|` matches `fiber_avg` via `syracZ_map_cast`).
-**[C9 leaf B2, reindex/Tonelli core — consumes `cn_bound`, `syracZ_map_cast`; the remaining hole.]** -/
-theorem harmZfine_sub_mainZ_le_osc {x : ℝ} (hx : Real.exp 1024 ≤ x)
-    {E : Set ℕ} (hE : ∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x)
-    {y : ℝ} (hy : y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ)) {n : ℕ} (hn : n ∈ Iy x y)
-    (hmn : mZero x ≤ n - mZero x) :
+open Classical in
+/-- Each residue-class harmonic sum `∑_{M∈E', M≡X} 1/M` is summable: `E'` bounds `M` to the finite
+window `[·, ⌊exp(log^{0.7}x)(4/3)^{m₀}x⌋]` (`Eprime`'s upper bound), so the support is finite. -/
+theorem cn_class_summable (x : ℝ) (E : Set ℕ) (q : ℕ) (X : ZMod q) :
+    Summable (fun M : ℕ => if Eprime x E M ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0) := by
+  classical
+  refine summable_of_ne_finset_zero
+    (s := Finset.range
+      (⌊Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x⌋₊ + 1)) (fun b hb => ?_)
+  rw [if_neg]
+  rintro ⟨hEp, _⟩
+  refine hb (Finset.mem_range.mpr ?_)
+  have hble : (b : ℝ) ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x := hEp.2.2.2.2
+  have := Nat.le_floor hble
+  omega
+
+open Classical in
+/-- **B1/B2 reindex identity (harm side)** — `harmZfine = ∑_X syracZ(n−m₀)(X)·c_n(X)` (Tao 5.22–5.23):
+regroup the `E'`-harmonic sum by residue class `X = M mod 3^{n−m₀}` via `harmonic_reindex` with weight
+`W(X) = 3^{n−m₀}·syracZ(n−m₀)(X)`, then absorb the `3^{n−m₀}` into `c_n(X)`. -/
+theorem harmZfine_eq_sum_cn (x : ℝ) (E : Set ℕ) (n : ℕ) :
+    harmZfine x E n
+      = ∑ X : ZMod (3 ^ (n - mZero x)), ((syracZ (n - mZero x)) X).toReal * cn x E n X := by
+  haveI : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
+  have hreindex := harmonic_reindex x E (3 ^ (n - mZero x))
+    (fun X => (3 : ℝ) ^ (n - mZero x) * ((syracZ (n - mZero x)) X).toReal)
+    (fun X => cn_class_summable x E _ X)
+  rw [harmZfine]
+  have hconv : (∑' M : ℕ, if Eprime x E M then
+        (3 : ℝ) ^ (n - mZero x)
+          * ((syracZ (n - mZero x)) (M : ZMod (3 ^ (n - mZero x)))).toReal / (M : ℝ) else 0)
+      = ∑' M : ℕ, if Eprime x E M then
+        ((3 : ℝ) ^ (n - mZero x)
+          * ((syracZ (n - mZero x)) (M : ZMod (3 ^ (n - mZero x)))).toReal) * (M : ℝ)⁻¹ else 0 := by
+    refine tsum_congr (fun M => ?_)
+    by_cases h : Eprime x E M
+    · rw [if_pos h, if_pos h, div_eq_mul_inv]
+    · rw [if_neg h, if_neg h]
+  rw [hconv, hreindex]
+  refine Finset.sum_congr rfl (fun X _ => ?_)
+  rw [cn]; ring
+
+open Classical in
+/-- **B2 reindex identity (main side)** — `mainZ = ∑_X fiber_avg(X)·c_n(X)`, `fiber_avg(X) =
+3^{m₀−(n−m₀)}·syracZ(m₀)(castHom X)`.  The coarse residue `M mod 3^{m₀}` is `castHom (M mod 3^{n−m₀})`
+(`map_natCast`), so `mainZ`'s weight `3^{m₀}·syracZ(m₀)(M mod 3^{m₀})` regroups by the FINE class via
+`harmonic_reindex`; the `3^{m₀}` splits as `3^{m₀−(n−m₀)}·3^{n−m₀}`, the latter absorbed into `c_n`. -/
+theorem mainZ_eq_sum_fiber_cn (x : ℝ) (E : Set ℕ) (n : ℕ) (hmn : mZero x ≤ n - mZero x) :
+    mainZ x E
+      = ∑ X : ZMod (3 ^ (n - mZero x)),
+          ((3 : ℝ) ^ ((mZero x : ℤ) - ((n - mZero x : ℕ) : ℤ))
+              * ((syracZ (mZero x))
+                  (ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ mZero x)) X)).toReal)
+            * cn x E n X := by
+  haveI : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
+  have hreindex := harmonic_reindex x E (3 ^ (n - mZero x))
+    (fun X => (3 : ℝ) ^ mZero x
+      * ((syracZ (mZero x)) (ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ mZero x)) X)).toReal)
+    (fun X => cn_class_summable x E _ X)
+  rw [mainZ]
+  have hconv : (∑' M : ℕ, if Eprime x E M then
+        (3 : ℝ) ^ mZero x * ((syracZ (mZero x)) (M : ZMod (3 ^ mZero x))).toReal / (M : ℝ) else 0)
+      = ∑' M : ℕ, if Eprime x E M then
+        ((3 : ℝ) ^ mZero x * ((syracZ (mZero x))
+          (ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ mZero x))
+            (M : ZMod (3 ^ (n - mZero x))))).toReal) * (M : ℝ)⁻¹ else 0 := by
+    refine tsum_congr (fun M => ?_)
+    by_cases h : Eprime x E M
+    · rw [if_pos h, if_pos h, div_eq_mul_inv,
+        map_natCast (ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ mZero x))) M]
+    · rw [if_neg h, if_neg h]
+  rw [hconv, hreindex]
+  refine Finset.sum_congr rfl (fun X _ => ?_)
+  rw [cn]
+  have h3 : (3 : ℝ) ^ mZero x
+      = (3 : ℝ) ^ ((mZero x : ℤ) - ((n - mZero x : ℕ) : ℤ)) * (3 : ℝ) ^ (n - mZero x) := by
+    rw [← zpow_natCast (3 : ℝ) (n - mZero x), ← zpow_add₀ (by norm_num : (3 : ℝ) ≠ 0),
+      ← zpow_natCast (3 : ℝ) (mZero x)]
+    congr 1; ring
+  rw [h3]; ring
+
+/-- **osc as an `L¹` deviation against `fiber_avg`** — the coarse fiber sum in `osc`'s definition is the
+`syracZ(m)` marginal (`syracZ_map_cast`): `∑_{Y'≡Y} syracZ(fine)(Y') = syracZ(m)(castHom Y)`.  So
+`osc m fine (syracZ(fine)) = ∑_X |syracZ(fine)(X) − 3^{m−fine}·syracZ(m)(castHom X)|`, matching the
+`harmZfine − mainZ` deviation term. -/
+theorem osc_syracZ_eq_sum_dev {m fine : ℕ} (hmn : m ≤ fine) :
+    osc m fine hmn (fun Y => ((syracZ fine) Y).toReal)
+      = ∑ X : ZMod (3 ^ fine),
+          |((syracZ fine) X).toReal
+            - (3 : ℝ) ^ ((m : ℤ) - (fine : ℤ))
+                * ((syracZ m)
+                    (ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) X)).toReal| := by
+  have hfib : ∀ Y : ZMod (3 ^ fine),
+      (∑ Y' ∈ Finset.univ.filter (fun Y' : ZMod (3 ^ fine) =>
+          ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y'
+            = ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y), ((syracZ fine) Y').toReal)
+        = ((syracZ m) (ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y)).toReal := by
+    intro Y
+    rw [← ENNReal.toReal_sum (fun Y' _ => PMF.apply_ne_top _ _)]
+    congr 1
+    rw [← syracZ_map_cast hmn, PMF.map_apply, tsum_fintype, Finset.sum_filter]
+    refine Finset.sum_congr rfl (fun a _ => ?_)
+    by_cases hc : ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) a
+        = ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ m)) Y
+    · rw [if_pos hc, if_pos hc.symm]
+    · rw [if_neg hc, if_neg (fun h => hc h.symm)]
+  rw [osc]
+  refine Finset.sum_congr rfl (fun Y _ => ?_)
+  rw [hfib Y]
+
+/-- `c_n(X) ≥ 0` — it is `3^{n−m₀}` times a `tsum` of nonnegative masked reciprocals. -/
+theorem cn_nonneg (x : ℝ) (E : Set ℕ) (n : ℕ) (X : ZMod (3 ^ (n - mZero x))) :
+    0 ≤ cn x E n X := by
+  classical
+  rw [cn]
+  refine mul_nonneg (by positivity) (tsum_nonneg (fun M => ?_))
+  split_ifs
+  · exact inv_nonneg.mpr (Nat.cast_nonneg M)
+  · exact le_rfl
+
+/-- **B2 Hölder core** — `|harmZfine − mainZ| ≤ (sup c_n)·osc m₀ (n−m₀)`.  Reindex both sides
+(`harmZfine_eq_sum_cn`, `mainZ_eq_sum_fiber_cn`): `harmZfine − mainZ = ∑_X (syracZ(n−m₀)(X) −
+fiber_avg(X))·c_n(X)`.  Then **L¹×L∞ Hölder** with `0 ≤ c_n(X) ≤ Ccn·log^{0.7}x` (`hcn`, from
+`cn_bound`) and `∑_X|syracZ(n−m₀)(X) − fiber_avg(X)| = osc m₀ (n−m₀)` (`osc_syracZ_eq_sum_dev`, via
+`syracZ_map_cast`).  Parameterized by the `c_n` bound `(Ccn, hcn)` so the caller supplies `cn_bound`. -/
+theorem harmZfine_sub_mainZ_le_osc {x : ℝ} {E : Set ℕ} {n : ℕ} (hmn : mZero x ≤ n - mZero x)
+    {Ccn : ℝ} (hCcn : 0 ≤ Ccn)
+    (hcn : ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ Ccn * Real.log x ^ (0.7 : ℝ)) :
     |harmZfine x E n - mainZ x E|
-      ≤ (4 * Real.log x ^ (0.7 : ℝ))
+      ≤ (Ccn * Real.log x ^ (0.7 : ℝ))
           * osc (mZero x) (n - mZero x) hmn (fun Y => ((syracZ (n - mZero x)) Y).toReal) := by
-  sorry
+  rw [harmZfine_eq_sum_cn, mainZ_eq_sum_fiber_cn x E n hmn, osc_syracZ_eq_sum_dev hmn,
+    Finset.mul_sum, ← Finset.sum_sub_distrib]
+  refine le_trans (Finset.abs_sum_le_sum_abs _ _) (Finset.sum_le_sum (fun X _ => ?_))
+  rw [← sub_mul, abs_mul, mul_comm (Ccn * Real.log x ^ (0.7 : ℝ))]
+  refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+  rw [abs_of_nonneg (cn_nonneg x E n X)]
+  exact hcn X
 
 /-- **(5.20) sub-lemma B2 — the `fine_scale_mixing` scale bridge (THE C10 SEAM).**  The fine-scale
 harmonic content `harmZfine = ∑_X syracZ(n−m₀)(X)·c_n(X)` agrees with `mainZ = ∑_{X'} syracZ(m₀)(X')·
@@ -757,16 +922,17 @@ theorem harmZfine_to_mainZ :
   obtain ⟨x1, _, htwo⟩ := two_mZero_le_of_mem_Iy
   obtain ⟨x2, _, hmzlin⟩ := mZero_ge_lin
   obtain ⟨Cfsm, hCfsm, hfsm⟩ := fine_scale_mixing 1.7 (by norm_num)
-  refine ⟨1, 4 * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ)),
-    max (Real.exp 200000) (max x1 x2), by norm_num,
-    mul_pos (mul_pos (by norm_num) hCfsm) (Real.rpow_pos_of_pos (by norm_num) _),
+  obtain ⟨Ccn, xcn, hCcnpos, hcnb⟩ := cn_bound
+  refine ⟨1, Ccn * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ)),
+    max (Real.exp 200000) (max x1 (max x2 xcn)), by norm_num,
+    mul_pos (mul_pos hCcnpos hCfsm) (Real.rpow_pos_of_pos (by norm_num) _),
     fun x hx E hE y hy n hn => ?_⟩
   have h200 : Real.exp 200000 ≤ x := le_trans (le_max_left _ _) hx
-  have hx1x2 : max x1 x2 ≤ x := le_trans (le_max_right _ _) hx
-  have hxx1 : x1 ≤ x := le_trans (le_max_left _ _) hx1x2
-  have hxx2 : x2 ≤ x := le_trans (le_max_right _ _) hx1x2
-  have hxe1024 : Real.exp 1024 ≤ x :=
-    le_trans (Real.exp_le_exp.mpr (by norm_num : (1024 : ℝ) ≤ 200000)) h200
+  have hrest : max x1 (max x2 xcn) ≤ x := le_trans (le_max_right _ _) hx
+  have hxx1 : x1 ≤ x := le_trans (le_max_left _ _) hrest
+  have hx2xcn : max x2 xcn ≤ x := le_trans (le_max_right _ _) hrest
+  have hxx2 : x2 ≤ x := le_trans (le_max_left _ _) hx2xcn
+  have hxxcn : xcn ≤ x := le_trans (le_max_right _ _) hx2xcn
   have hL200 : (200000 : ℝ) ≤ Real.log x := by
     rw [← Real.log_exp 200000]; exact Real.log_le_log (Real.exp_pos _) h200
   have hLpos : (0 : ℝ) < Real.log x := by linarith
@@ -774,9 +940,11 @@ theorem harmZfine_to_mainZ :
   have hmzR : (1 / 200000 : ℝ) * Real.log x ≤ (mZero x : ℝ) := hmzlin x hxx2
   have hm1R : (1 : ℝ) ≤ (mZero x : ℝ) := by nlinarith [hmzR, hL200]
   have hm1 : 1 ≤ mZero x := by exact_mod_cast hm1R
-  have hkey := harmZfine_sub_mainZ_le_osc hxe1024 hE hy hn hmn
+  have hcn : ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ Ccn * Real.log x ^ (0.7 : ℝ) :=
+    fun X => hcnb x hxxcn E hE y hy n hn X
+  have hkey := harmZfine_sub_mainZ_le_osc hmn hCcnpos.le hcn
   have hosc := hfsm (n - mZero x) (mZero x) hmn hm1
-  have h4nn : (0 : ℝ) ≤ 4 * Real.log x ^ (0.7 : ℝ) := by positivity
+  have hCnn : (0 : ℝ) ≤ Ccn * Real.log x ^ (0.7 : ℝ) := by positivity
   have hc0pos : (0 : ℝ) < (1 / 200000 : ℝ) * Real.log x := by positivity
   have hmono : (mZero x : ℝ) ^ (-(1.7 : ℝ))
       ≤ ((1 / 200000 : ℝ) * Real.log x) ^ (-(1.7 : ℝ)) :=
@@ -787,16 +955,16 @@ theorem harmZfine_to_mainZ :
   have hcomb : Real.log x ^ (0.7 : ℝ) * Real.log x ^ (-(1.7 : ℝ)) = Real.log x ^ (-(1 : ℝ)) := by
     rw [← Real.rpow_add hLpos]; norm_num
   calc |harmZfine x E n - mainZ x E|
-      ≤ (4 * Real.log x ^ (0.7 : ℝ))
+      ≤ (Ccn * Real.log x ^ (0.7 : ℝ))
           * osc (mZero x) (n - mZero x) hmn (fun Y => ((syracZ (n - mZero x)) Y).toReal) := hkey
-    _ ≤ (4 * Real.log x ^ (0.7 : ℝ)) * (Cfsm * (mZero x : ℝ) ^ (-(1.7 : ℝ))) :=
-        mul_le_mul_of_nonneg_left hosc h4nn
-    _ ≤ (4 * Real.log x ^ (0.7 : ℝ)) * (Cfsm * ((1 / 200000 : ℝ) * Real.log x) ^ (-(1.7 : ℝ))) := by
-        apply mul_le_mul_of_nonneg_left _ h4nn
+    _ ≤ (Ccn * Real.log x ^ (0.7 : ℝ)) * (Cfsm * (mZero x : ℝ) ^ (-(1.7 : ℝ))) :=
+        mul_le_mul_of_nonneg_left hosc hCnn
+    _ ≤ (Ccn * Real.log x ^ (0.7 : ℝ)) * (Cfsm * ((1 / 200000 : ℝ) * Real.log x) ^ (-(1.7 : ℝ))) := by
+        apply mul_le_mul_of_nonneg_left _ hCnn
         exact mul_le_mul_of_nonneg_left hmono hCfsm.le
-    _ = (4 * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ)))
+    _ = (Ccn * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ)))
           * (Real.log x ^ (0.7 : ℝ) * Real.log x ^ (-(1.7 : ℝ))) := by rw [hsplit]; ring
-    _ = (4 * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ))) * Real.log x ^ (-(1 : ℝ)) := by rw [hcomb]
+    _ = (Ccn * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ))) * Real.log x ^ (-(1 : ℝ)) := by rw [hcomb]
 
 /-- **(5.20) harmonic → `Z` reduction** — sub-lemma B of `perNTerm_eval`, **the sole C10 consumer**.
 The window-free harmonic content agrees with Tao's `Z` (5.21) up to `O(log^{-c}x)`.  **PROVED** from the
