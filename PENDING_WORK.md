@@ -1,3 +1,13 @@
+## 2026-07-15 (late) — C9 CLOSED · C6 pinned · §3 TELESCOPE PROVED. Census 9 + 0 orange.
+
+**Crux advance:** stabilization (Prop 1.11) kernel-checked axiom-clean (C9 zero). C6 pinned
+(C6a/b/c/s, traps 14/15). The §3 descent telescope — base/step/ladder/whp — is fully PROVED in
+Sec3/Reduction.lean; descentProb_ladder verified axiom-clean. Remaining: window_bad_sum (all
+ingredients on the shelf), covering argument for the Thm 3.1 sum form, then short derivations to
+the headlines. See HANDOFF-2026-07-15-C6-telescope-closed.md for the worked routes per sorry.
+
+---
+
 ## 2026-07-15 — §3 TELESCOPE DECOMPOSED: descent machinery in Sec3/Reduction.lean. Census 13 + 0 orange.
 
 **Advance on the crux** (`tao_syracuse_quantitative_sum`, the C6 analytic core): the paper's pp.17–18
