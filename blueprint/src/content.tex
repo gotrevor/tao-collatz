@@ -463,12 +463,13 @@ together with the non-escape control on each window.  Proved via Lemma~5.3
   \notready
 \(|\mathrm{perNHarmonic}\,x\,E\,n - \mathrm{harmZfine}\,x\,E\,n| \le C(\log x)^{-c}\) on
 \(I_y\): the iid-geomHalf \(2^{-\mathrm{pre}\,\bar a}\) mass over good, affine-solvable tuples
-agrees with the exact \(\mathrm{Syrac}(\mathbb{Z}/3^{n-m_0}\mathbb{Z})\) mass.  Rib 2 (the whp
-residual, \texttt{syracZ\_sub\_perNGoodMass\_bound}) is proved; rib 1 (the
-\texttt{solvable\_iff\_fmapZ} pointwise bridge + \texttt{Nstar\_mem\_logWindow}) is in
-progress; the assembly is L\(^1\times\)L\(^\infty\) H\"older against \texttt{cn\_bound}.
+agrees with the exact \(\mathrm{Syrac}(\mathbb{Z}/3^{n-m_0}\mathbb{Z})\) mass.  Both ribs
+(\texttt{syracZ\_sub\_perNGoodMass\_bound}; the \texttt{solvable\_iff\_fmapZ} pointwise bridge)
+are proved; the assembly is L\(^1\times\)L\(^\infty\) H\"older against \texttt{cn\_bound}.
 Does NOT consume C10.
-\lapsrisk{1--3}{low}{85\%}
+% Proof COMPLETE (44fcd94) and kernel-checked axiom-clean by blueprint_audit 2026-07-15
+% (MISSED FLIP list) -- statement read vs (5.20) + the \leanok flips are the judge's.
+\lapsrisk{0}{low}{95\%}
 \end{lemma}
 
 \begin{lemma}[C9 leaf B2 -- the C10 seam; (5.20) scale bridge]\label{C9B2}
@@ -479,8 +480,8 @@ Does NOT consume C10.
 L\(^1\times\)L\(^\infty\) H\"older, \(\sup_X c_n(X) \le C\log^{0.7}x\) (\texttt{cn\_bound})
 against \(\mathrm{osc}\,m_0\,(n-m_0) \le C' m_0^{-A}\) via Prop~1.14 (node~\ref{C10}) at
 \(A > 0.7 + c\) -- the SOLE consumption of C10 inside C9.
-% Proof COMPLETE per worker (ece1f36, "axiom-clean, no sorry" -- worker-reported tier); judge
-% kernel check owed before any \leanok flips (statement AND proof in one ratification read).
+% Proof COMPLETE (ece1f36) and kernel-checked axiom-clean by blueprint_audit 2026-07-15
+% (MISSED FLIP list) -- statement read vs (5.20) + the \leanok flips are the judge's.
 \lapsrisk{0--1}{low}{95\%}
 \end{lemma}
 
