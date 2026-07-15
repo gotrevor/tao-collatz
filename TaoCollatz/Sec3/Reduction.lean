@@ -1234,6 +1234,99 @@ theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
 theorem tao_collatz_quantitative_spine :
     ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (posInterval x) := by
-  sorry
+  obtain ⟨c, Ca, hc, hCa, hsum⟩ := tao_syracuse_quantitative_sum
+  refine ⟨c, 16 * Ca, hc, by linarith, fun N₀ x hN₀2 hx2 => ?_⟩
+  have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
+  have hx0 : (0 : ℝ) < (x : ℝ) := by linarith
+  have hlogx0 : (0 : ℝ) < Real.log x := Real.log_pos (by linarith)
+  have hN₀2R : (2 : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast hN₀2
+  have hLN0 : (0 : ℝ) < Real.log N₀ := Real.log_pos (by linarith)
+  have hLc0 : (0 : ℝ) < (Real.log N₀) ^ c := Real.rpow_pos_of_pos hLN0 _
+  set D := logSum Set.univ (posInterval x) with hDdef
+  set G := logSum {N | colMin N ≤ N₀} (posInterval x) with hGdef
+  set B := logSum {N | N₀ < colMin N} (posInterval x) with hBdef
+  -- complement split
+  have hsplit : G + B = D := by
+    rw [hGdef, hBdef, hDdef]
+    unfold logSum
+    rw [Finset.sum_filter, Finset.sum_filter, Finset.sum_filter, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun N _ => ?_
+    by_cases h : colMin N ≤ N₀
+    · have h1 : N ∈ {N | colMin N ≤ N₀} := h
+      have h2 : N ∉ {N | N₀ < colMin N} := by simp only [Set.mem_setOf_eq]; omega
+      rw [if_pos h1, if_neg h2, if_pos (Set.mem_univ N)]
+      ring
+    · have h1 : N ∉ {N | colMin N ≤ N₀} := h
+      have h2 : N ∈ {N | N₀ < colMin N} := by simp only [Set.mem_setOf_eq]; omega
+      rw [if_neg h1, if_pos h2, if_pos (Set.mem_univ N)]
+      ring
+  have hB0 : (0 : ℝ) ≤ B := by
+    rw [hBdef]; unfold logSum
+    exact Finset.sum_nonneg fun N _ => by positivity
+  -- `D ≥ 1` (the `N = 1` term)
+  have hD1 : (1 : ℝ) ≤ D := by
+    rw [hDdef]; unfold logSum
+    rw [Finset.filter_congr_decidable]
+    have h1mem : 1 ∈ (posInterval x).filter (· ∈ Set.univ) := by
+      rw [Finset.mem_filter]
+      refine ⟨?_, Set.mem_univ 1⟩
+      rw [posInterval, Finset.mem_filter, Finset.mem_range]
+      omega
+    calc (1 : ℝ) = (1 : ℝ) / ((1 : ℕ) : ℝ) := by norm_num
+      _ ≤ ∑ N ∈ (posInterval x).filter (· ∈ Set.univ), (1 : ℝ) / N :=
+          Finset.single_le_sum (f := fun N : ℕ => (1 : ℝ) / N)
+            (fun i _ => by positivity) h1mem
+  have hD0 : (0 : ℝ) < D := lt_of_lt_of_le one_pos hD1
+  -- `D` dominates the odd-window mass, so `log x ≤ 8 D`
+  have hDodd : logSum Set.univ (oddInterval x) ≤ D := by
+    rw [hDdef]; unfold logSum
+    refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun N _ _ => by positivity
+    intro N hN
+    simp only [Finset.mem_filter] at hN ⊢
+    obtain ⟨hNi, -⟩ := hN
+    simp only [oddInterval, posInterval, Finset.mem_filter, Finset.mem_range,
+      ge_iff_le] at hNi ⊢
+    exact ⟨⟨hNi.1, by omega⟩, Set.mem_univ N⟩
+  have hDlog : Real.log x ≤ 8 * D := by
+    have := log_le_eight_logSum_univ_oddInterval hx2
+    linarith
+  -- the bad set pulls back through `oddPart` (paper (1.2))
+  have hbad : B ≤ logSum {N | oddPart N ∈ {M | N₀ < syrMin M}} (posInterval x) := by
+    rw [hBdef]; unfold logSum
+    rw [Finset.sum_filter, Finset.sum_filter]
+    refine Finset.sum_le_sum fun N hN => ?_
+    have hN1 : 1 ≤ N := by
+      simp only [posInterval, Finset.mem_filter, Finset.mem_range, ge_iff_le] at hN
+      exact hN.2
+    by_cases h : N ∈ {N | N₀ < colMin N}
+    · rw [if_pos h]
+      have h' : N₀ < colMin N := h
+      have hgood : N ∈ {N | oddPart N ∈ {M | N₀ < syrMin M}} := by
+        simp only [Set.mem_setOf_eq]
+        rwa [← colMin_eq_syrMin_oddPart (by omega : 0 < N)]
+      rw [if_pos hgood]
+    · rw [if_neg h]
+      have h0 : (0 : ℝ) ≤ 1 / (N : ℝ) := by positivity
+      split_ifs <;> linarith
+  -- (1.2) pullback + C6a
+  have hB8 : B ≤ 16 * Ca * D / (Real.log N₀) ^ c := by
+    calc B ≤ logSum {N | oddPart N ∈ {M | N₀ < syrMin M}} (posInterval x) := hbad
+      _ ≤ 2 * logSum {M | N₀ < syrMin M} (oddInterval x) :=
+          logSum_oddPart_pullback _ x
+      _ ≤ 2 * (Ca * Real.log x / (Real.log N₀) ^ c) := by
+          have := hsum N₀ x hN₀2 hx2
+          linarith
+      _ ≤ 2 * (Ca * (8 * D) / (Real.log N₀) ^ c) := by gcongr
+      _ = 16 * Ca * D / (Real.log N₀) ^ c := by ring
+  -- assemble
+  unfold logProb
+  rw [← hGdef, ← hDdef]
+  have hGD : G = D - B := by linarith
+  rw [hGD, sub_div, div_self hD0.ne']
+  have hBD : B / D ≤ 16 * Ca / (Real.log N₀) ^ c := by
+    have h1 : B / D ≤ (16 * Ca * D / (Real.log N₀) ^ c) / D := by gcongr
+    calc B / D ≤ (16 * Ca * D / (Real.log N₀) ^ c) / D := h1
+      _ = 16 * Ca / (Real.log N₀) ^ c := by field_simp
+  linarith [hBD]
 
 end TaoCollatz
