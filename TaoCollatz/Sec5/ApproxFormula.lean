@@ -2586,20 +2586,243 @@ theorem eprime_forces_passTime {x : ℝ} {E : Set ℕ} {N n : ℕ}
   rw [hTM] at hEm
   omega
 
-/-- **(5.17) reverse leg** — `steppedMid ≤ firstPassMid + O(log^{-c}x)`.  The reverse defect
-`∑_{n∈I_y} P(T_n ∖ S_n)` (nonneg since `S_n ⊆ T_n`).  For odd `N`, split `T_n ∖ S_n` by `good⁽ⁿ⁰⁾`:
-* `¬good⁽ⁿ⁰⁾`: contributes `∑_n P(T_n ∩ ¬good⁽ⁿ⁰⁾)`.  The `T_n` are **disjoint** (`eprime_forces_passTime`),
-  so this collapses to `≤ P(¬good⁽ⁿ⁰⁾) ≤ C·log^{-c}x` (`approx_good_tuple_whp` (5.12)) — no `I_y`-blow-up.
-* `good⁽ⁿ⁰⁾`: then `E'(Syr^{n−m₀}N)` + `passTime N = n` (via `passTime_stepback` on `passLoc`) would put
-  `N ∈ S_n`; so the residual is `{good⁽ⁿ⁰⁾ ∧ E'(Syr^{n−m₀}N) ∧ T_x N ≠ n}`.  By `eprime_forces_passTime`
-  this forces `n − m₀ > T_x N` (early passage / the orbit dipped below `x` before `n−m₀`) — the paper's
-  early-return event, `≪ log^{-c}x` by the passage-window whp (`approx_passtime_window` (5.16)). -/
+/-- **Reverse finite union bound for `PMF.expect`.**  If a finite sum of event indicators is
+dominated pointwise by a single indicator `𝟙_U`, then the sum of the term expectations is at most
+`E[𝟙_U]`.  (The mirror of `expect_le_sum_of_indicator_le`; used to collapse the reverse-defect
+`∑_n E[𝟙_{¬good ∧ T_x=n}]` onto `E[𝟙_{¬good}]` via the `T_x N = n` disjointness across `n`.) -/
+theorem sum_expect_le_of_indicator_ge {α ι : Type*} (p : PMF α) (s : Finset ι) (T : ι → Set α)
+    (U : Set α)
+    (h : ∀ a, ∑ i ∈ s, Set.indicator (T i) (1 : α → ℝ) a ≤ Set.indicator U 1 a) :
+    ∑ i ∈ s, p.expect (Set.indicator (T i) 1) ≤ p.expect (Set.indicator U 1) := by
+  classical
+  have hsumP : Summable fun a => (p a).toReal := ENNReal.summable_toReal p.tsum_coe_ne_top
+  have ind01 : ∀ (V : Set α) a,
+      (0 : ℝ) ≤ Set.indicator V (1 : α → ℝ) a ∧ Set.indicator V (1 : α → ℝ) a ≤ 1 := by
+    intro V a
+    refine ⟨Set.indicator_nonneg (fun _ _ => zero_le_one) a, ?_⟩
+    rw [Set.indicator_apply]; split <;> simp
+  have hsum : ∀ (V : Set α), Summable fun a => (p a).toReal * Set.indicator V (1 : α → ℝ) a := by
+    intro V
+    exact Summable.of_nonneg_of_le (fun a => mul_nonneg ENNReal.toReal_nonneg (ind01 V a).1)
+      (fun a => mul_le_of_le_one_right ENNReal.toReal_nonneg (ind01 V a).2) hsumP
+  have hswap : (∑ i ∈ s, p.expect (Set.indicator (T i) 1))
+      = ∑' a, (p a).toReal * ∑ i ∈ s, Set.indicator (T i) (1 : α → ℝ) a := by
+    unfold PMF.expect
+    rw [← Summable.tsum_finsetSum (fun i _ => hsum (T i))]
+    exact tsum_congr fun a => by rw [Finset.mul_sum]
+  rw [hswap]
+  show (∑' a, (p a).toReal * ∑ i ∈ s, Set.indicator (T i) (1 : α → ℝ) a) ≤
+      ∑' a, (p a).toReal * Set.indicator U 1 a
+  have hsumLHS : Summable fun a => (p a).toReal * ∑ i ∈ s, Set.indicator (T i) (1 : α → ℝ) a := by
+    refine Summable.of_nonneg_of_le
+      (fun a => mul_nonneg ENNReal.toReal_nonneg (Finset.sum_nonneg fun i _ => (ind01 (T i) a).1))
+      (fun a => ?_) (hsumP.mul_right (s.card : ℝ))
+    refine mul_le_mul_of_nonneg_left ?_ ENNReal.toReal_nonneg
+    calc ∑ i ∈ s, Set.indicator (T i) (1 : α → ℝ) a ≤ ∑ _i ∈ s, (1 : ℝ) :=
+          Finset.sum_le_sum fun i _ => (ind01 (T i) a).2
+      _ = (s.card : ℝ) := by simp
+  refine hsumLHS.tsum_le_tsum (fun a => ?_) (hsum U)
+  exact mul_le_mul_of_nonneg_left (h a) ENNReal.toReal_nonneg
+
+/-- `Eprime` at a step-back time forces the base point to pass (given `1 ≤ m₀`): `E'` pins the
+first-passage time of `Syr^{k}N` to `m₀ ≥ 1`, so `Syr^{k}N` — hence `N` itself — reaches `≤ ⌊x⌋`. -/
+theorem passes_of_eprime {x : ℝ} {E : Set ℕ} {N k : ℕ} (hm : 1 ≤ mZero x)
+    (hE : Eprime x E (syr^[k] N)) : passes ⌊x⌋₊ N := by
+  have hT : passTime ⌊x⌋₊ (syr^[k] N) = mZero x := hE.2.1
+  have hpassM : passes ⌊x⌋₊ (syr^[k] N) := by
+    by_contra hnp
+    have hempty : {j | syr^[j] (syr^[k] N) ≤ ⌊x⌋₊} = ∅ := by
+      ext j
+      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+      exact fun hj => hnp ⟨j, hj⟩
+    have hz : passTime ⌊x⌋₊ (syr^[k] N) = 0 := by unfold passTime; rw [hempty, Nat.sInf_empty]
+    omega
+  obtain ⟨j, hj⟩ := hpassM
+  exact ⟨j + k, by rw [Function.iterate_add_apply]; exact hj⟩
+
+open Classical in
+/-- **(5.17) reverse leg — the early-return whp core** (owed).  Case B of the reverse defect: the
+step-back `Syr^{n−m₀}N` satisfies `E'` (so its first-passage time is exactly `m₀`), while `N` itself
+already passed STRICTLY earlier than the step-back point (`T_x N < n − m₀`).  Geometrically the orbit
+of `N` dips `≤ ⌊x⌋` at `T_x N`, rises back above `⌊x⌋`, and dips again so that `Syr^{n−m₀}N`
+first-passes `m₀` steps later — a genuine *return* event.  Summed over `n ∈ I_y` these are NOT pairwise
+disjoint (returns spaced `> m₀` apart coexist), so — unlike Case A — this does not collapse to a single
+`P(·)`, and it is NOT covered by `approx_passtime_window` (which only sees `T_x N ∉ I_y`, whereas here
+`T_x N` may lie in `I_y`).  It is a union-of-returns whp estimate: Tao bounds it by the (5.13)–(5.16)
+orbit control — an orbit that has already passed sits `≤ ⌊x⌋`, and the mass that climbs back above the
+`exp(−log^{0.7}x)(4/3)^{m₀}x` floor of `E'` is `≪ log^{-c}x`.  TODO(early-return): discharge from the
+passage-window machinery reused across C7/`approx_passtime_window`. -/
+theorem reverse_early_return_whp :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          ∑ n ∈ Iy x y, (logUnifOdd y (y ^ alpha)).expect
+              (Set.indicator {N | Eprime x E (syr^[n - mZero x] N) ∧
+                passTime ⌊x⌋₊ N < n - mZero x} 1)
+            ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
+/-- **(5.17) reverse leg** — `steppedMid ≤ firstPassMid + O(log^{-c}x)`.  Proved down to ONE whp
+core.  Pointwise, for each `n ∈ I_y` (so `1 ≤ m₀ ≤ n`), the stepped-back indicator is dominated by
+three events:
+`𝟙_{T_n} ≤ 𝟙_{S_n} + 𝟙_{¬good⁽ⁿ⁰⁾ ∧ T_x N = n} + 𝟙_{E′(Syr^{n−m₀}N) ∧ T_x N < n−m₀}`.
+Indeed `N ∈ T_n` ⟹ `E′(Syr^{n−m₀}N)`, so `N` passes (`passes_of_eprime`); either `T_x N < n−m₀`
+(the third, **early-return** set) or `n−m₀ ≤ T_x N`, in which case `passTime_stepback`+`E′` give
+`T_x N = n` and `passLoc N ∈ E`, so `N ∈ S_n` when `good⁽ⁿ⁰⁾` else `N` is in the middle
+(`¬good⁽ⁿ⁰⁾ ∧ T_x N = n`) set.  Summing:
+* the **middle** sets collapse EXACTLY: `{T_x N = n}` are disjoint in `n`, so
+  `∑_n 𝟙_{¬good⁽ⁿ⁰⁾ ∧ T_x N = n} ≤ 𝟙_{¬good⁽ⁿ⁰⁾}`, giving `≤ E[𝟙_{¬good}] ≤ C·log^{-c}`
+  (`approx_good_tuple_whp` (5.12)) — no `I_y`-blow-up (`sum_expect_le_of_indicator_ge`);
+* the **early-return** sets are the sole remaining whp hole (`reverse_early_return_whp`). -/
 theorem steppedMid_le_firstPassMid_add :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           steppedMid x E y ≤ firstPassMid x E y + C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨cg, Cg, xg, hcg, hCg, hgood⟩ := approx_good_tuple_whp
+  obtain ⟨ce, Ce, xe, hce, hCe, hearly⟩ := reverse_early_return_whp
+  obtain ⟨xi, _hxi1, hint⟩ := mZero_le_of_mem_Iy
+  refine ⟨min cg ce, Cg + Ce, max (max xg xe) (max xi (Real.exp 1)), lt_min hcg hce, by positivity,
+    fun x hx E hE y hy => ?_⟩
+  have hxg : xg ≤ x := (le_max_left xg xe).trans ((le_max_left _ _).trans hx)
+  have hxe : xe ≤ x := (le_max_right xg xe).trans ((le_max_left _ _).trans hx)
+  have hxi : xi ≤ x := (le_max_left xi (Real.exp 1)).trans ((le_max_right _ _).trans hx)
+  have hexp : Real.exp 1 ≤ x := (le_max_right xi (Real.exp 1)).trans ((le_max_right _ _).trans hx)
+  have hlog1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hexp
+  have hm : ∀ n ∈ Iy x y, 1 ≤ mZero x ∧ mZero x ≤ n := hint x hxi y hy
+  classical
+  unfold steppedMid firstPassMid
+  set P := logUnifOdd y (y ^ alpha) with hPdef
+  -- middle (¬good ∧ T_x=n) and early-return (E′ ∧ T_x<n−m₀) event families
+  -- per-`n` ternary domination of the stepped-back indicator
+  have hpern : ∀ n ∈ Iy x y,
+      P.expect (Set.indicator {N | goodTuple x (n - mZero x) (valVec N (n - mZero x)) ∧
+          Eprime x E (syr^[n - mZero x] N)} 1)
+        ≤ P.expect (Set.indicator {N | passTime ⌊x⌋₊ N = n ∧ passLoc ⌊x⌋₊ N ∈ E ∧
+            goodTuple x (nZero x) (valVec N (nZero x))} 1)
+          + (P.expect (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x)) ∧
+              passTime ⌊x⌋₊ N = n} 1)
+            + P.expect (Set.indicator {N | Eprime x E (syr^[n - mZero x] N) ∧
+              passTime ⌊x⌋₊ N < n - mZero x} 1)) := by
+    intro n hn
+    obtain ⟨hm1, hmn⟩ := hm n hn
+    set Sn : Set ℕ := {N | passTime ⌊x⌋₊ N = n ∧ passLoc ⌊x⌋₊ N ∈ E ∧
+      goodTuple x (nZero x) (valVec N (nZero x))} with hSn
+    set Gn : Set ℕ := {N | ¬ goodTuple x (nZero x) (valVec N (nZero x)) ∧
+      passTime ⌊x⌋₊ N = n} with hGn
+    set Cn : Set ℕ := {N | Eprime x E (syr^[n - mZero x] N) ∧
+      passTime ⌊x⌋₊ N < n - mZero x} with hCn
+    have hpw1 : ∀ N, Set.indicator {N | goodTuple x (n - mZero x) (valVec N (n - mZero x)) ∧
+          Eprime x E (syr^[n - mZero x] N)} (1 : ℕ → ℝ) N
+        ≤ Set.indicator Sn 1 N + Set.indicator (Gn ∪ Cn) 1 N := by
+      intro N
+      have h1 : (0 : ℝ) ≤ Set.indicator Sn (1 : ℕ → ℝ) N :=
+        Set.indicator_nonneg (fun _ _ => zero_le_one) N
+      have h2 : (0 : ℝ) ≤ Set.indicator (Gn ∪ Cn) (1 : ℕ → ℝ) N :=
+        Set.indicator_nonneg (fun _ _ => zero_le_one) N
+      by_cases hT : N ∈ {N | goodTuple x (n - mZero x) (valVec N (n - mZero x)) ∧
+          Eprime x E (syr^[n - mZero x] N)}
+      · rw [Set.indicator_of_mem hT, Pi.one_apply]
+        obtain ⟨_hGnm, hEp⟩ := hT
+        by_cases hlt : passTime ⌊x⌋₊ N < n - mZero x
+        · have hmemU : N ∈ Gn ∪ Cn := Or.inr ⟨hEp, hlt⟩
+          rw [Set.indicator_of_mem hmemU, Pi.one_apply]; linarith
+        · push_neg at hlt
+          have hpass : passes ⌊x⌋₊ N := passes_of_eprime hm1 hEp
+          have hPT : passTime ⌊x⌋₊ N = n := eprime_forces_passTime hpass hlt hmn hEp
+          obtain ⟨_, _, hLM⟩ := passTime_stepback ⌊x⌋₊ N (n - mZero x) hpass hlt
+          have hLE : passLoc ⌊x⌋₊ N ∈ E := by rw [← hLM]; exact hEp.2.2.1
+          by_cases hG0 : goodTuple x (nZero x) (valVec N (nZero x))
+          · have hmemS : N ∈ Sn := ⟨hPT, hLE, hG0⟩
+            rw [Set.indicator_of_mem hmemS, Pi.one_apply]; linarith
+          · have hmemU : N ∈ Gn ∪ Cn := Or.inl ⟨hG0, hPT⟩
+            rw [Set.indicator_of_mem hmemU, Pi.one_apply]; linarith
+      · rw [Set.indicator_of_notMem hT]; linarith
+    have hpw2 : ∀ N, Set.indicator (Gn ∪ Cn) (1 : ℕ → ℝ) N
+        ≤ Set.indicator Gn 1 N + Set.indicator Cn 1 N := by
+      intro N
+      have h1 : (0 : ℝ) ≤ Set.indicator Gn (1 : ℕ → ℝ) N :=
+        Set.indicator_nonneg (fun _ _ => zero_le_one) N
+      have h2 : (0 : ℝ) ≤ Set.indicator Cn (1 : ℕ → ℝ) N :=
+        Set.indicator_nonneg (fun _ _ => zero_le_one) N
+      by_cases hU : N ∈ Gn ∪ Cn
+      · rw [Set.indicator_of_mem hU, Pi.one_apply]
+        rcases hU with hG | hC
+        · rw [Set.indicator_of_mem hG, Pi.one_apply]; linarith
+        · rw [Set.indicator_of_mem hC, Pi.one_apply]; linarith
+      · rw [Set.indicator_of_notMem hU]; linarith
+    calc P.expect (Set.indicator {N | goodTuple x (n - mZero x) (valVec N (n - mZero x)) ∧
+            Eprime x E (syr^[n - mZero x] N)} 1)
+        ≤ P.expect (Set.indicator Sn 1) + P.expect (Set.indicator (Gn ∪ Cn) 1) :=
+          expect_le_add_of_indicator_le P _ Sn (Gn ∪ Cn) hpw1
+      _ ≤ P.expect (Set.indicator Sn 1)
+            + (P.expect (Set.indicator Gn 1) + P.expect (Set.indicator Cn 1)) := by
+          gcongr
+          exact expect_le_add_of_indicator_le P (Gn ∪ Cn) Gn Cn hpw2
+  -- middle collapse: ∑_n E[𝟙_{¬good ∧ T_x=n}] ≤ E[𝟙_{¬good}]
+  have hmid : ∑ n ∈ Iy x y, P.expect (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x)) ∧
+        passTime ⌊x⌋₊ N = n} 1)
+      ≤ P.expect (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1) := by
+    have hptwise : ∀ N, ∑ n ∈ Iy x y, Set.indicator {N | ¬ goodTuple x (nZero x)
+          (valVec N (nZero x)) ∧ passTime ⌊x⌋₊ N = n} (1 : ℕ → ℝ) N
+        ≤ Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1 N := by
+      intro N
+      by_cases hNG : ¬ goodTuple x (nZero x) (valVec N (nZero x))
+      · rw [Set.indicator_of_mem (show N ∈ {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))}
+          from hNG), Pi.one_apply]
+        calc ∑ n ∈ Iy x y, Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x)) ∧
+                passTime ⌊x⌋₊ N = n} (1 : ℕ → ℝ) N
+            ≤ ∑ n ∈ Iy x y, (if n = passTime ⌊x⌋₊ N then (1 : ℝ) else 0) := by
+              refine Finset.sum_le_sum (fun n _ => ?_)
+              by_cases hNn : N ∈ {N | ¬ goodTuple x (nZero x) (valVec N (nZero x)) ∧
+                  passTime ⌊x⌋₊ N = n}
+              · rw [Set.indicator_of_mem hNn, Pi.one_apply, if_pos hNn.2.symm]
+              · rw [Set.indicator_of_notMem hNn]; split <;> norm_num
+          _ ≤ 1 := by
+              rw [Finset.sum_ite_eq' (Iy x y) (passTime ⌊x⌋₊ N) (fun _ => (1 : ℝ))]
+              split <;> norm_num
+      · rw [Set.indicator_of_notMem (show N ∉ {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))}
+          from by simpa using hNG)]
+        refine le_of_eq (Finset.sum_eq_zero (fun n _ => ?_))
+        rw [Set.indicator_of_notMem (fun hmem => hNG hmem.1)]
+    exact sum_expect_le_of_indicator_ge P (Iy x y)
+      (fun n => {N | ¬ goodTuple x (nZero x) (valVec N (nZero x)) ∧ passTime ⌊x⌋₊ N = n})
+      {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} hptwise
+  -- early-return sum bound
+  have hearlyx : ∑ n ∈ Iy x y, P.expect (Set.indicator {N | Eprime x E (syr^[n - mZero x] N) ∧
+        passTime ⌊x⌋₊ N < n - mZero x} 1) ≤ Ce * (Real.log x) ^ (-ce) := by
+    rw [hPdef]; exact hearly x hxe E hE y hy
+  have hgoodx : P.expect (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1)
+      ≤ Cg * (Real.log x) ^ (-cg) := by rw [hPdef]; exact hgood x hxg y hy
+  -- assemble
+  calc ∑ n ∈ Iy x y, P.expect (Set.indicator {N | goodTuple x (n - mZero x)
+          (valVec N (n - mZero x)) ∧ Eprime x E (syr^[n - mZero x] N)} 1)
+      ≤ ∑ n ∈ Iy x y, (P.expect (Set.indicator {N | passTime ⌊x⌋₊ N = n ∧ passLoc ⌊x⌋₊ N ∈ E ∧
+            goodTuple x (nZero x) (valVec N (nZero x))} 1)
+          + (P.expect (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x)) ∧
+              passTime ⌊x⌋₊ N = n} 1)
+            + P.expect (Set.indicator {N | Eprime x E (syr^[n - mZero x] N) ∧
+              passTime ⌊x⌋₊ N < n - mZero x} 1))) := Finset.sum_le_sum hpern
+    _ = (∑ n ∈ Iy x y, P.expect (Set.indicator {N | passTime ⌊x⌋₊ N = n ∧ passLoc ⌊x⌋₊ N ∈ E ∧
+            goodTuple x (nZero x) (valVec N (nZero x))} 1))
+          + ((∑ n ∈ Iy x y, P.expect (Set.indicator {N | ¬ goodTuple x (nZero x)
+              (valVec N (nZero x)) ∧ passTime ⌊x⌋₊ N = n} 1))
+            + (∑ n ∈ Iy x y, P.expect (Set.indicator {N | Eprime x E (syr^[n - mZero x] N) ∧
+              passTime ⌊x⌋₊ N < n - mZero x} 1))) := by
+        rw [Finset.sum_add_distrib, Finset.sum_add_distrib]
+    _ ≤ (∑ n ∈ Iy x y, P.expect (Set.indicator {N | passTime ⌊x⌋₊ N = n ∧ passLoc ⌊x⌋₊ N ∈ E ∧
+            goodTuple x (nZero x) (valVec N (nZero x))} 1))
+          + (Cg * (Real.log x) ^ (-cg) + Ce * (Real.log x) ^ (-ce)) :=
+        add_le_add (le_refl _) (add_le_add (hmid.trans hgoodx) hearlyx)
+    _ ≤ (∑ n ∈ Iy x y, P.expect (Set.indicator {N | passTime ⌊x⌋₊ N = n ∧ passLoc ⌊x⌋₊ N ∈ E ∧
+            goodTuple x (nZero x) (valVec N (nZero x))} 1))
+          + (Cg + Ce) * (Real.log x) ^ (-(min cg ce)) := by
+        have hA : (Real.log x) ^ (-cg) ≤ (Real.log x) ^ (-(min cg ce)) :=
+          Real.rpow_le_rpow_of_exponent_le hlog1 (neg_le_neg (min_le_left cg ce))
+        have hB : (Real.log x) ^ (-ce) ≤ (Real.log x) ^ (-(min cg ce)) :=
+          Real.rpow_le_rpow_of_exponent_le hlog1 (neg_le_neg (min_le_right cg ce))
+        nlinarith [mul_le_mul_of_nonneg_left hA hCg.le, mul_le_mul_of_nonneg_left hB hCe.le]
 
 /-- **(5.17) event reduction leg** — `|firstPassMid − steppedMid| ≤ O(log^{-c}x)`.  Assembled from the
 two directional legs: the forward inclusion `firstPassMid ≤ steppedMid` (`firstPassMid_le_steppedMid`,
