@@ -2153,24 +2153,117 @@ theorem mem_Iy_bounds {x y : ℝ} {n : ℕ} (hn : n ∈ Iy x y) :
     IyLo x y ≤ (n : ℝ) ∧ (n : ℝ) ≤ IyHi x y := by
   rw [Iy, Finset.mem_filter] at hn; exact hn.2
 
+/-- **Support-restricted monotonicity of `expect ∘ indicator`.**  If `S ⊆ T` *on the support* of `p`
+(for every `a` with `p a ≠ 0`), then `p.expect (𝟙_S) ≤ p.expect (𝟙_T)`.  Weaker hypothesis than
+`expect_mono_le` (which needs pointwise inclusion for ALL `a`): off-support points contribute `0`, so
+inclusion there is irrelevant.  This is what lets the (5.17) forward inclusion `S_n ⊆ T_n` be verified
+only for ODD `N` (the `logUnifOdd` support). -/
+theorem expect_mono_on_support {α : Type*} (p : PMF α) (S T : Set α)
+    (h : ∀ a ∈ p.support, a ∈ S → a ∈ T) :
+    p.expect (Set.indicator S (1 : α → ℝ)) ≤ p.expect (Set.indicator T (1 : α → ℝ)) := by
+  classical
+  have hsum : ∀ V : Set α, Summable fun a => (p a).toReal * Set.indicator V (1 : α → ℝ) a := by
+    intro V
+    have hsumP : Summable fun a => (p a).toReal := ENNReal.summable_toReal p.tsum_coe_ne_top
+    refine Summable.of_nonneg_of_le
+      (fun a => mul_nonneg ENNReal.toReal_nonneg (Set.indicator_nonneg (fun _ _ => zero_le_one) a))
+      (fun a => ?_) hsumP
+    rw [Set.indicator_apply]; split
+    · simp
+    · simp
+  unfold PMF.expect
+  refine (hsum S).tsum_le_tsum (fun a => ?_) (hsum T)
+  by_cases ha : p a = 0
+  · simp [ha]
+  · refine mul_le_mul_of_nonneg_left ?_ ENNReal.toReal_nonneg
+    by_cases haS : a ∈ S
+    · rw [Set.indicator_of_mem haS,
+        Set.indicator_of_mem (h a ((PMF.mem_support_iff p a).mpr ha) haS)]
+    · rw [Set.indicator_of_notMem haS]
+      exact Set.indicator_nonneg (fun _ _ => zero_le_one) a
+
+/-- **(5.17) interval brick** — every summation index `n ∈ I_y` satisfies `1 ≤ m₀ ≤ n`.  `m₀ ≈
+(α−1)/100·log x ≈ 10⁻⁵·log x` while `IyLo ≈ log(y/x)/log(4/3) + log^{0.8}x ≥ (α−1)·log x/log(4/3) ≈
+3·10⁻³·log x`, so `m₀ ≤ IyLo ≤ n` with room to spare; and `m₀ ≥ 1` once `log x ≥ 100/(α−1)`.  (Pure
+interval arithmetic on the frozen `α`; reuses the `log(4/3) ∈ [1/4,1/3]` idiom.) -/
+theorem mZero_le_of_mem_Iy :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+        1 ≤ mZero x ∧ mZero x ≤ n := by
+  sorry
+
+open Classical in
+/-- **(5.17) size-window brick** (the sole remaining analytic content of the forward leg).  On the
+good-passage event `{T_x N = n ∧ good⁽ⁿ⁰⁾(N)}` with `N` odd and `n ∈ I_y`, the stepped-back iterate
+`M = Syr^{n−m₀}N` lands in the `E'` size window `exp(±log^{0.7}x)·(4/3)^{m₀}·x`.  Proof route (paper
+(5.13)/(5.14)): `M` has passage time `m₀` (`passTime_stepback`), so `Syr^{m₀}M ≤ ⌊x⌋ < Syr^{m₀−1}M`;
+the good bracket `syr_iterate_good_bracket'` over the full `n₀`-length good tuple pins
+`M ≍ (4/3)^{m₀}·Syr^n N` with `Syr^n N ∈ [(3/4)⌊x⌋·2^{−2log^{0.6}}, ⌊x⌋]` (first-passage straddle +
+the single-step drop bounded by the good entry `a_n ∈ 2 ± 2log^{0.6}`); `two_rpow_slack_le_exp`
+absorbs the `2^{±O(log^{0.6})}` inside `exp(±log^{0.7}x)`, and `exp(−log^{0.7}x) ≪ 3/4` swamps the
+lower `3/4` factor. -/
+theorem stepback_size_window :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+        ∀ N : ℕ, N % 2 = 1 → passTime ⌊x⌋₊ N = n →
+          goodTuple x (nZero x) (valVec N (nZero x)) →
+            Real.exp (-Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x
+                ≤ (syr^[n - mZero x] N : ℝ) ∧
+              (syr^[n - mZero x] N : ℝ)
+                ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x := by
+  sorry
+
+open Classical in
 /-- **(5.17) forward leg** — `firstPassMid ≤ steppedMid`, a deterministic event inclusion with NO
 error.  For each `n ∈ I_y` the good-passage event
 `S_n = {T_x N = n ∧ Pass_x N ∈ E ∧ good⁽ⁿ⁰⁾(N)}` embeds into the stepped-back diagonal event
-`T_n = {good⁽ⁿ⁻ᵐ⁰⁾(N) ∧ E'(Syr^{n−m₀}N)}`:
-* the `T_x`/`Pass`/oddness half of `E'` is EXACT given `T_x N = n` (`firstPass_event_stepback_subset`
-  plus `syr` oddness on the odd support of `logUnifOdd`);
-* the good-tuple index drops by `good_nested` (`n − m₀ ≤ n ≤ n₀`);
-* the `E'` *size* window `exp(±log^{0.7}x)·(4/3)^{m₀}·x` is FORCED, not whp: `M = Syr^{n−m₀}N` has
-  passage time `m₀` (from `passTime_stepback`), so the good bracket `syr_iterate_good_bracket'` pins
-  `M ≈ (4/3)^{m₀}·Syr^n N` with `Syr^n N ≍ x`, and `two_rpow_slack_le_exp` absorbs the `2^{±log^{0.6}}`
-  slack inside `exp(±log^{0.7}x)`.
-Hence `S_n ⊆ T_n` pointwise and the finite `I_y`-sum is monotone. -/
+`T_n = {good⁽ⁿ⁻ᵐ⁰⁾(N) ∧ E'(Syr^{n−m₀}N)}`, verified for odd `N` (`expect_mono_on_support`):
+* the good-tuple index drops by `good_nested` (`n − m₀ ≤ n ≤ n₀`, `mem_Iy_le_nZero`);
+* `passTime M = m₀`, `passLoc M = passLoc N ∈ E` are EXACT via `passTime_stepback` (using `m₀ ≤ n`,
+  `mZero_le_of_mem_Iy`, and `passes N` from `T_x N = n ≥ 1`);
+* `M % 2 = 1` from `syr_iterate_odd`;
+* the `E'` size window is `stepback_size_window`.
+Hence `S_n ⊆ T_n` on the odd support and the finite `I_y`-sum is monotone. -/
 theorem firstPassMid_le_steppedMid :
     ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           firstPassMid x E y ≤ steppedMid x E y := by
-  sorry
+  obtain ⟨xw, hxw1, hwin⟩ := stepback_size_window
+  obtain ⟨xi, _hxi1, hint⟩ := mZero_le_of_mem_Iy
+  refine ⟨max xw xi, le_max_of_le_left hxw1, fun x hx E hE y hy => ?_⟩
+  have hxw : xw ≤ x := le_trans (le_max_left _ _) hx
+  have hxi : xi ≤ x := le_trans (le_max_right _ _) hx
+  have hx1 : (1 : ℝ) ≤ x := le_trans hxw1 hxw
+  have hyge1 : (1 : ℝ) ≤ y := by
+    rcases hy with h | h
+    · rw [h]; exact Real.one_le_rpow hx1 (by unfold alpha; norm_num)
+    · rw [h]; exact Real.one_le_rpow hx1 (by positivity)
+  have hy1 : (1 : ℝ) ≤ y ^ alpha := Real.one_le_rpow hyge1 (by unfold alpha; norm_num)
+  unfold firstPassMid steppedMid
+  refine Finset.sum_le_sum (fun n hn => ?_)
+  refine expect_mono_on_support (logUnifOdd y (y ^ alpha)) _ _ (fun N hNsupp hNS => ?_)
+  obtain ⟨hT, hL, hG⟩ := hNS
+  have hNodd : N % 2 = 1 := (logUnifOdd_support_le hy1 hNsupp).1
+  obtain ⟨hm1, hmn⟩ := hint x hxi y hy n hn
+  have hn1 : 1 ≤ n := le_trans hm1 hmn
+  have hpass : passes ⌊x⌋₊ N := by
+    by_contra hnp
+    have hempty : {k | syr^[k] N ≤ ⌊x⌋₊} = ∅ := by
+      ext k
+      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+      exact fun hk => hnp ⟨k, hk⟩
+    have hz : passTime ⌊x⌋₊ N = 0 := by unfold passTime; rw [hempty, Nat.sInf_empty]
+    omega
+  have hk : n - mZero x ≤ passTime ⌊x⌋₊ N := by rw [hT]; omega
+  obtain ⟨_hpassM, hTM, hLM⟩ := passTime_stepback ⌊x⌋₊ N (n - mZero x) hpass hk
+  have hGnest : goodTuple x (n - mZero x) (valVec N (n - mZero x)) :=
+    good_nested (le_trans (Nat.sub_le n (mZero x)) (mem_Iy_le_nZero hn)) hG
+  refine ⟨hGnest, syr_iterate_odd N (n - mZero x) hNodd, ?_, ?_, ?_, ?_⟩
+  · rw [hTM, hT]; omega
+  · rw [hLM]; exact hL
+  · exact (hwin x hxw y hy n hn N hNodd hT hG).1
+  · exact (hwin x hxw y hy n hn N hNodd hT hG).2
 
 /-- **(5.17) reverse leg** — `steppedMid ≤ firstPassMid + O(log^{-c}x)`.  The reverse defect
 `T_n ∖ S_n`: an `N` carrying `good⁽ⁿ⁻ᵐ⁰⁾` and `Syr^{n−m₀}N ∈ E'` need not carry `T_x N = n` with the
