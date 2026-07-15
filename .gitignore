@@ -1,2 +1,8 @@
 /.lake
 papers/**/*.pdf
+
+# Generated blueprint artifacts — rebuild with blueprint/build.sh (leanblueprint web + annotate).
+# The blueprints hub serves these from the working tree; git carries only the TeX source.
+blueprint/web/
+blueprint/src/web.paux
+blueprint/lean_decls
