@@ -670,7 +670,226 @@ theorem tao_syracuse_quantitative_sum :
     ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       logSum {N | N₀ < syrMin N} (oddInterval x)
         ≤ C * Real.log x / (Real.log N₀) ^ c := by
-  sorry
+  obtain ⟨c, Cw, xw, hc, hCw, hwbs⟩ := window_bad_sum
+  have halpha1 : (1 : ℝ) < alpha := by norm_num [alpha]
+  have halpha0 : (0 : ℝ) < alpha := by linarith
+  have hden : (0 : ℝ) < alpha - 1 := by linarith
+  set X := max xw (Real.exp 1) with hXdef
+  have hXe : Real.exp 1 ≤ X := le_max_right _ _
+  have hX1 : (1 : ℝ) ≤ X := by
+    calc (1 : ℝ) = Real.exp 0 := (Real.exp_zero).symm
+      _ ≤ Real.exp 1 := Real.exp_le_exp.mpr zero_le_one
+      _ ≤ X := hXe
+  have hX0 : (0 : ℝ) < X := lt_of_lt_of_le one_pos hX1
+  set K1 := max 1 ((Real.log X) ^ c) with hK1def
+  have hK11 : (1 : ℝ) ≤ K1 := le_max_left _ _
+  set C := max (Cw * alpha / (alpha - 1)) (4 * K1) with hCdef
+  have hC0 : (0 : ℝ) < C := by
+    have h1 : (0 : ℝ) < Cw * alpha / (alpha - 1) := by positivity
+    exact lt_of_lt_of_le h1 (le_max_left _ _)
+  refine ⟨c, C, hc, hC0, fun N₀ x hN₀2 hx2 => ?_⟩
+  -- common size facts
+  have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
+  have hx0 : (0 : ℝ) < (x : ℝ) := by linarith
+  have hlogx0 : (0 : ℝ) < Real.log x := Real.log_pos (by linarith)
+  have hN₀2R : (2 : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast hN₀2
+  have hN₀0 : (0 : ℝ) < (N₀ : ℝ) := by linarith
+  have hLN0 : (0 : ℝ) < Real.log N₀ := Real.log_pos (by linarith)
+  have hLc0 : (0 : ℝ) < (Real.log N₀) ^ c := Real.rpow_pos_of_pos hLN0 _
+  by_cases hbig : X ≤ (N₀ : ℝ)
+  · -- large N₀
+    by_cases hxN : x ≤ N₀
+    · -- bad set empty: every N in the window has `syrMin N ≤ N ≤ x ≤ N₀`
+      have h0 : logSum {N | N₀ < syrMin N} (oddInterval x) ≤ 0 := by
+        unfold logSum
+        rw [Finset.sum_filter]
+        refine le_of_eq (Finset.sum_eq_zero fun N hN => if_neg ?_)
+        rw [oddInterval, Finset.mem_filter, Finset.mem_range] at hN
+        simp only [Set.mem_setOf_eq, not_lt]
+        have := syrMin_le_self N
+        omega
+      have hRHS : (0 : ℝ) ≤ C * Real.log x / (Real.log N₀) ^ c := by positivity
+      linarith
+    · -- covering argument over the windows `[N₀^{α^k}, N₀^{α^{k+1}}]`
+      push_neg at hxN
+      have hN₀x : (N₀ : ℝ) < (x : ℝ) := by exact_mod_cast hxN
+      have hLxL : Real.log N₀ < Real.log x := Real.log_lt_log hN₀0 hN₀x
+      set R := Real.log x / Real.log N₀ with hRdef
+      have hR0 : (0 : ℝ) < R := by positivity
+      have hR1 : (1 : ℝ) < R := (one_lt_div hLN0).mpr hLxL
+      have hlogb0 : (0 : ℝ) < Real.logb alpha R := Real.logb_pos halpha1 hR1
+      set K := ⌈Real.logb alpha R⌉₊ with hKdef
+      set z : ℕ → ℝ := fun k => (N₀ : ℝ) ^ (alpha ^ k) with hzdef
+      have hz0 : z 0 = (N₀ : ℝ) := by simp [hzdef]
+      have hzpos : ∀ k, (0 : ℝ) < z k := fun k => Real.rpow_pos_of_pos hN₀0 _
+      have hzsucc : ∀ k, (z k) ^ alpha = z (k + 1) := by
+        intro k
+        simp only [hzdef]
+        rw [← Real.rpow_mul hN₀0.le, ← pow_succ]
+      have hlogz : ∀ k, Real.log (z k) = alpha ^ k * Real.log N₀ := by
+        intro k
+        simp only [hzdef]
+        rw [Real.log_rpow hN₀0]
+      have hzN₀ : ∀ k, (N₀ : ℝ) ≤ z k := by
+        intro k
+        have h1 : (N₀ : ℝ) = (N₀ : ℝ) ^ (1 : ℝ) := (Real.rpow_one _).symm
+        rw [h1]
+        simp only [hzdef]
+        exact Real.rpow_le_rpow_of_exponent_le (by linarith)
+          (one_le_pow₀ halpha1.le)
+      -- top window covers `x`
+      have hzK : (x : ℝ) ≤ z K := by
+        have hRK : R ≤ alpha ^ K := by
+          calc R = alpha ^ Real.logb alpha R :=
+                (Real.rpow_logb halpha0 (ne_of_gt halpha1) hR0).symm
+            _ ≤ alpha ^ ((K : ℕ) : ℝ) :=
+                Real.rpow_le_rpow_of_exponent_le halpha1.le (Nat.le_ceil _)
+            _ = alpha ^ K := Real.rpow_natCast alpha K
+        have hlog_le : Real.log x ≤ Real.log (z K) := by
+          rw [hlogz K]
+          calc Real.log x = R * Real.log N₀ := by rw [hRdef]; field_simp
+            _ ≤ alpha ^ K * Real.log N₀ :=
+                mul_le_mul_of_nonneg_right hRK hLN0.le
+        exact (Real.log_le_log_iff hx0 (hzpos K)).mp hlog_le
+      -- every bad `N` lands in some window
+      have hstep : ∀ m : ℕ, ∀ N : ℕ, (N₀ : ℝ) < (N : ℝ) → (N : ℝ) ≤ z m →
+          ∃ k, k < m ∧ z k ≤ (N : ℝ) ∧ (N : ℝ) ≤ z (k + 1) := by
+        intro m
+        induction m with
+        | zero =>
+          intro N hlt hle
+          rw [hz0] at hle
+          exact absurd hle (not_le.mpr hlt)
+        | succ m ih =>
+          intro N hlt hle
+          rcases le_or_gt (z m) (N : ℝ) with hzm | hzm
+          · exact ⟨m, Nat.lt_succ_self m, hzm, hle⟩
+          · obtain ⟨k, hk, h1, h2⟩ := ih N hlt hzm.le
+            exact ⟨k, Nat.lt_succ_of_lt hk, h1, h2⟩
+      set W : ℕ → Finset ℕ :=
+        fun k => (logWindow (z k) ((z k) ^ alpha)).filter (· ∈ {N | N₀ < syrMin N})
+        with hWdef
+      -- per-window bad-mass bound
+      have hwin : ∀ k, ∑ N ∈ W k, ((N : ℝ))⁻¹
+          ≤ Cw * (Real.log N₀) ^ (-c) * (alpha ^ k * Real.log N₀) := by
+        intro k
+        have hXzk : X ≤ z k := le_trans hbig (hzN₀ k)
+        have hxwzk : xw ≤ z k := le_trans (le_max_left _ _) hXzk
+        have hxwN₀ : xw ≤ (N₀ : ℝ) := le_trans (le_max_left _ _) hbig
+        have := hwbs N₀ (z k) hxwzk hxwN₀ (hzN₀ k)
+        rw [hlogz k] at this
+        exact this
+      -- cover: bad filter ⊆ ⋃_{k<K} W k
+      have hsubset : (oddInterval x).filter (· ∈ {N | N₀ < syrMin N})
+          ⊆ (Finset.range K).biUnion W := by
+        intro N hN
+        rw [Finset.mem_filter] at hN
+        obtain ⟨hNi, hNbad⟩ := hN
+        rw [oddInterval, Finset.mem_filter, Finset.mem_range] at hNi
+        have hNbad' : N₀ < syrMin N := hNbad
+        have hNN₀ : N₀ < N := lt_of_lt_of_le hNbad' (syrMin_le_self N)
+        have hNlt : (N₀ : ℝ) < (N : ℝ) := by exact_mod_cast hNN₀
+        have hNx : (N : ℝ) ≤ (x : ℝ) := by
+          have : N ≤ x := by omega
+          exact_mod_cast this
+        obtain ⟨k, hkK, hzk, hzk1⟩ := hstep K N hNlt (le_trans hNx hzK)
+        rw [Finset.mem_biUnion]
+        refine ⟨k, Finset.mem_range.mpr hkK, ?_⟩
+        rw [hWdef, Finset.mem_filter]
+        refine ⟨mem_logWindow_iff.mpr ⟨hNi.2, hzk, ?_⟩, hNbad⟩
+        rw [hzsucc k]
+        exact hzk1
+      -- sum over an overlapping cover is at most the sum of window sums
+      have hbiu : ∀ u : Finset ℕ, ∑ N ∈ u.biUnion W, ((N : ℝ))⁻¹
+          ≤ ∑ k ∈ u, ∑ N ∈ W k, ((N : ℝ))⁻¹ := by
+        intro u
+        induction u using Finset.induction_on with
+        | empty => simp
+        | insert a u ha ih =>
+          rw [Finset.biUnion_insert, Finset.sum_insert ha]
+          have hui := Finset.sum_union_inter (s₁ := W a) (s₂ := u.biUnion W)
+            (f := fun N : ℕ => ((N : ℝ))⁻¹)
+          have hnn : (0 : ℝ) ≤ ∑ N ∈ (W a) ∩ (u.biUnion W), ((N : ℝ))⁻¹ :=
+            Finset.sum_nonneg fun N _ => by positivity
+          linarith [ih]
+      -- geometric sum
+      have hgeom : ∑ k ∈ Finset.range K, (alpha : ℝ) ^ k ≤ alpha * R / (alpha - 1) := by
+        have hK_le : (alpha : ℝ) ^ K ≤ alpha * R := by
+          have h1 : ((K : ℕ) : ℝ) < Real.logb alpha R + 1 :=
+            Nat.ceil_lt_add_one hlogb0.le
+          calc (alpha : ℝ) ^ K = alpha ^ ((K : ℕ) : ℝ) := (Real.rpow_natCast _ _).symm
+            _ ≤ alpha ^ (Real.logb alpha R + 1) :=
+                Real.rpow_le_rpow_of_exponent_le halpha1.le h1.le
+            _ = alpha * R := by
+                rw [Real.rpow_add halpha0,
+                  Real.rpow_logb halpha0 (ne_of_gt halpha1) hR0, Real.rpow_one]
+                ring
+        rw [geom_sum_eq (ne_of_gt halpha1) K, div_le_div_iff_of_pos_right hden]
+        linarith [hK_le]
+      -- assemble
+      have hL_neg : (Real.log N₀) ^ (-c) = ((Real.log N₀) ^ c)⁻¹ :=
+        Real.rpow_neg hLN0.le c
+      have hLc : (0 : ℝ) ≤ (Real.log N₀) ^ (-c) := Real.rpow_nonneg hLN0.le _
+      have hchain : logSum {N | N₀ < syrMin N} (oddInterval x)
+          ≤ Cw * (Real.log N₀) ^ (-c) * Real.log N₀ * ∑ k ∈ Finset.range K, alpha ^ k := by
+        unfold logSum
+        simp_rw [one_div]
+        rw [Finset.filter_congr_decidable]
+        calc ∑ N ∈ (oddInterval x).filter (· ∈ {N | N₀ < syrMin N}), ((N : ℝ))⁻¹
+            ≤ ∑ N ∈ (Finset.range K).biUnion W, ((N : ℝ))⁻¹ :=
+              Finset.sum_le_sum_of_subset_of_nonneg hsubset fun N _ _ => by positivity
+          _ ≤ ∑ k ∈ Finset.range K, ∑ N ∈ W k, ((N : ℝ))⁻¹ := hbiu _
+          _ ≤ ∑ k ∈ Finset.range K,
+                Cw * (Real.log N₀) ^ (-c) * (alpha ^ k * Real.log N₀) :=
+              Finset.sum_le_sum fun k _ => hwin k
+          _ = Cw * (Real.log N₀) ^ (-c) * Real.log N₀ * ∑ k ∈ Finset.range K, alpha ^ k := by
+              rw [Finset.mul_sum]
+              exact Finset.sum_congr rfl fun k _ => by ring
+      have hLR : Real.log N₀ * R = Real.log x := by
+        rw [hRdef]; field_simp
+      calc logSum {N | N₀ < syrMin N} (oddInterval x)
+          ≤ Cw * (Real.log N₀) ^ (-c) * Real.log N₀ * ∑ k ∈ Finset.range K, alpha ^ k :=
+            hchain
+        _ ≤ Cw * (Real.log N₀) ^ (-c) * Real.log N₀ * (alpha * R / (alpha - 1)) := by
+            refine mul_le_mul_of_nonneg_left hgeom ?_
+            positivity
+        _ = Cw * alpha / (alpha - 1) * Real.log x / (Real.log N₀) ^ c := by
+            rw [hL_neg, ← hLR]
+            field_simp
+        _ ≤ C * Real.log x / (Real.log N₀) ^ c := by
+            have hAC : Cw * alpha / (alpha - 1) ≤ C := le_max_left _ _
+            gcongr
+  · -- small `N₀ < X`: trivial harmonic bound `logSum ≤ windowMass 1 x ≤ 4 log x`
+    push_neg at hbig
+    have hLK : (Real.log N₀) ^ c ≤ K1 := by
+      have hNX : Real.log N₀ ≤ Real.log X := Real.log_le_log hN₀0 hbig.le
+      rcases le_or_gt (Real.log N₀) 1 with hL1 | hL1
+      · exact le_trans (Real.rpow_le_one hLN0.le hL1 hc.le) hK11
+      · exact le_trans (Real.rpow_le_rpow hLN0.le hNX hc.le) (le_max_right _ _)
+    have hharm : logSum {N | N₀ < syrMin N} (oddInterval x) ≤ windowMass 1 x := by
+      unfold logSum windowMass
+      simp_rw [one_div]
+      rw [Finset.filter_congr_decidable]
+      refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun N _ _ => by positivity
+      intro N hN
+      rw [Finset.mem_filter] at hN
+      have hNi := hN.1
+      rw [oddInterval, Finset.mem_filter, Finset.mem_range] at hNi
+      rw [mem_logWindow_iff]
+      have h1 : 1 ≤ N := by omega
+      have h2 : N ≤ x := by omega
+      exact ⟨hNi.2, by exact_mod_cast h1, by exact_mod_cast h2⟩
+    have hwm := windowMass_le_half_log (le_refl (1 : ℝ)) (le_trans one_le_two hx2R)
+    have hlog2 : (0.6931471803 : ℝ) < Real.log 2 := Real.log_two_gt_d9
+    have hlogx2 : Real.log 2 ≤ Real.log x := Real.log_le_log two_pos hx2R
+    have hdiv1 : Real.log ((x : ℝ) / 1) = Real.log x := by rw [div_one]
+    have h4 : logSum {N | N₀ < syrMin N} (oddInterval x) ≤ 4 * Real.log x := by
+      rw [hdiv1] at hwm
+      have : (2 : ℝ) / 1 = 2 := by norm_num
+      linarith [hharm, hwm]
+    rw [le_div_iff₀ hLc0]
+    have hCK : 4 * K1 ≤ C := le_max_right _ _
+    nlinarith [h4, hLK, hlogx0, hK11, hLc0.le, hC0]
 
 /-- **Theorem 3.1, Syracuse probability form** (Tao 2019 p.16, second display):
 `ℙ(Syrmin(Log(2ℕ+1 ∩ [1,x])) ≤ N₀) ≥ 1 − O(log^{-c} N₀)`. -/
