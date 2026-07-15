@@ -43,6 +43,33 @@ namespace TaoCollatz
 def goodTuple (x : ℝ) (n' : ℕ) (a : Fin n' → ℕ) : Prop :=
   (∀ i, 1 ≤ a i) ∧ ∀ n, n ≤ n' → |(pre a n : ℝ) - 2 * n| < Real.log x ^ (0.6 : ℝ)
 
+/-- Prefix sums grow with the length argument (`pre a` is monotone). -/
+theorem pre_mono {n : ℕ} (a : Fin n → ℕ) {m m' : ℕ} (h : m ≤ m') : pre a m ≤ pre a m' := by
+  unfold pre
+  refine Finset.sum_le_sum_of_subset_of_nonneg ?_ (fun i _ _ => Nat.zero_le _)
+  intro x hx
+  exact Finset.mem_range.mpr (lt_of_lt_of_le (Finset.mem_range.mp hx) h)
+
+/-- **`fnat` upper bound** — `fnat k a < 3^k · 2^{a_{[1,k]}}` (the `F_k` integerification is dominated
+by the trivial geometric bound: each summand `3^{k-1-m}·2^{a_{[1,m]}} ≤ 3^{k-1-m}·2^{a_{[1,k]}}` by
+prefix monotonicity, and `∑_{m<k} 3^{k-1-m} = (3^k−1)/2 < 3^k`).  Needed for the (5.19) `(N*)⁻¹`
+relative-error step: `fnat/(M·2^{pre}) < 3^k/M`, which is `O(x^{-c})` in the operating regime. -/
+theorem fnat_lt_pow_mul (k : ℕ) (a : Fin k → ℕ) : fnat k a < 3 ^ k * 2 ^ pre a k := by
+  unfold fnat
+  have hpk : (1 : ℕ) ≤ 3 ^ k := Nat.one_le_pow _ _ (by norm_num)
+  calc ∑ m ∈ Finset.range k, 3 ^ (k - 1 - m) * 2 ^ pre a m
+      ≤ ∑ m ∈ Finset.range k, 3 ^ (k - 1 - m) * 2 ^ pre a k := by
+        refine Finset.sum_le_sum fun m hm => ?_
+        have hle : pre a m ≤ pre a k := pre_mono a (Nat.le_of_lt (Finset.mem_range.mp hm))
+        exact Nat.mul_le_mul (le_refl _) (Nat.pow_le_pow_right (by norm_num) hle)
+    _ = (∑ m ∈ Finset.range k, 3 ^ (k - 1 - m)) * 2 ^ pre a k := by rw [Finset.sum_mul]
+    _ = (∑ j ∈ Finset.range k, 3 ^ j) * 2 ^ pre a k := by
+        rw [Finset.sum_range_reflect (fun j => 3 ^ j) k]
+    _ < 3 ^ k * 2 ^ pre a k := by
+        refine (Nat.mul_lt_mul_right (by positivity)).mpr ?_
+        rw [Nat.geomSum_eq (by norm_num) k]
+        omega
+
 /-- Each entry of a vector is bounded by its full prefix sum: `a i ≤ pre a n'`. -/
 theorem entry_le_pre {n' : ℕ} (a : Fin n' → ℕ) (i : Fin n') : a i ≤ pre a n' := by
   have h := Finset.single_le_sum (f := fun m => if h : m < n' then a ⟨m, h⟩ else 0)

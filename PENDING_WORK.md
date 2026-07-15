@@ -25,12 +25,27 @@ green (3316).
 `D` = `(α−1)/2·log y + O(1)`. Reused the odd-AP structure from `intTest_D_lower` + `harmonic_ap_integral_bound`
 (step 2) + `log_le_sub_one_of_pos` endpoint bounds. This is the DENOMINATOR of the (5.19) mass.
 
-**Remaining (5.19)/(5.20) chain now needs** (with the three bricks — pointmass, apply_toReal, windowMass_estimate — in hand):
-- `N* ∈ logWindow y (y^α)` for good (ā,M): from the `E'` size window + good-tuple orbit bracket
-  (`syr_iterate_good_bracket`, `ApproxFormula.lean`), N* ≍ (4/3)^{m₀}x·2^{-|ā|}·... lands in [y,y^α].
-- `(N*)⁻¹ = 3^{n−m₀}/(M·2^{pre ā}−fnat) ≈ 3^{n−m₀}/(M·2^{pre ā})` — relative error `O(x^{-c})`.
-- Then the per-n term = `(1/D)·3^{n−m₀}·∑_ā 2^{-pre ā}[good]·∑_{M∈E',≡} 1/M`, feeding into (5.20)→Z.
-- **(5.20) fine_scale_mixing seam** — still the route-decisive C9 unknown; SEAM-PROBE next.
+**`fnat_lt_pow_mul` PROVED** (`ApproxFormula.lean`, near `entry_le_pre`, axiom-clean; + helper `pre_mono`):
+`fnat k a < 3^k · 2^{pre a k}`. This is the numerator bound for the (5.19) `(N*)⁻¹` relative error:
+`(N*)⁻¹ = 3^k/(M·2^{pre ā}−fnat)`, and `fnat/(M·2^{pre ā}) < 3^k/M = O(x^{-0.84})` in the regime
+(3^{n−m₀} ≤ 3^{n₀} ≈ x^{0.158}, M ≍ x).
+
+**SEAM UNDERSTOOD (2026-07-15) — the (5.20) fine_scale_mixing interface is now precisely mapped:**
+- `geomHalf a = 2^{-a}` (a≥1) ⟹ `(iid geomHalf k)` mass of tuple ā = `2^{-pre ā k}` — EXACTLY the (5.19)
+  weight. And `syracZ k = (iid geomHalf k).map (a ↦ fnat k a · 2^{-pre a k} mod 3^k)` (`syracZ_eq_rev_fnat`).
+- The (5.19) solvability congruence `3^{n−m₀} ∣ M·2^{pre ā}−fnat` ⟺ `M ≡ fnat·2^{-pre ā} mod 3^{n−m₀}` =
+  the syracZ summand value at k=n−m₀. So `∑_ā[good, congr] 2^{-pre ā} = syracZ(n−m₀)(M mod 3^{n−m₀})`
+  RESTRICTED to good tuples (good-tuple restriction is the O(log^{-c}) whp error, `approx_good_tuple_whp`).
+- `mainZ` uses `syracZ (mZero x)` mod 3^{m₀}. Bridge: `syracZ_map_cast` projects syracZ(n−m₀)→syracZ(m₀),
+  and **`fine_scale_mixing`'s `osc` bounds the deviation** `3^{n−m₀}·syracZ(n−m₀)(r) ≈ 3^{m₀}·syracZ(m₀)(r
+  mod 3^{m₀})` (density nearly constant on 3^{m₀}-fibers). THIS is where C10 enters — Lemma 5.3 `c_n≪1`.
+
+**Remaining (5.19)/(5.20) chain** (with pointmass, apply_toReal, windowMass_estimate, fnat_lt_pow_mul in hand):
+- `N* ∈ logWindow y (y^α)` for good (ā,M): from the `E'` size window + `syr_iterate_good_bracket`.
+- Assemble (5.19): `perNTerm ≈ (1/D)·∑_ā∑_M[good∧E',≡] 3^{n−m₀}·2^{-pre ā}/M` via the 4 bricks.
+- **(5.20) → Z**: state `harmonic_to_Z` (the `fine_scale_mixing`/`osc` seam) as a named sorry; the interface
+  is now mapped above. Then `perNTerm_eval` from {5.19-assembly, harmonic_to_Z} + windowMass_estimate.
+  ERROR CHECK (done): the windowMass O(1) error → swap error O(1/(D·norm))=O(L^{-2}) ≤ target L^{-1-c}. ✓
 
 **Next attack on `perNTerm_eval` (continue hardest-first):** with `perNTerm_pointmass` in hand, the
 remaining chain is:
