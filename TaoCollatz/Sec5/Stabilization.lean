@@ -357,31 +357,107 @@ noncomputable def cn (x : ℝ) (E : Set ℕ) (n : ℕ) (X : ZMod (3 ^ (n - mZero
     * ∑' M : ℕ, if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X then (M : ℝ)⁻¹ else 0
 
 /-- **Residue-class window as an arithmetic progression** (general AP reindex).  For modulus `q ≥ 1`, a
-real window `[lo, hi]` with `1 ≤ lo`, and any residue `X : ZMod q`, the naturals in `[⌈lo⌉, ⌊hi⌋]`
-congruent to `X mod q` form an AP `{a, a+q, …, a+q(count−1)}` with first term `a ≥ lo` and one-past-end
-`a + q·count ≤ hi + q`.  (The `3^{n−m₀}`/general-`q` analog of `classMass_ap_form`, without the oddness
-filter; same `Nat.find`-least-element + `range.image` bijection argument.) -/
-theorem class_window_ap_form {lo hi : ℝ} (hlo : 1 ≤ lo) (hlohi : lo ≤ hi)
-    {q : ℕ} (hq : 1 ≤ q) (X : ZMod q) :
+real window `[lo, hi]` at least one period wide (`lo + q + 1 ≤ hi`, so the class is nonempty), and any
+residue `X : ZMod q`, the naturals in `[⌈lo⌉, ⌊hi⌋]` congruent to `X mod q` form an AP
+`{a, a+q, …, a+q(count−1)}` with first term `a ≥ lo` and one-past-end `a + q·count ≤ hi + q`.  (The
+`3^{n−m₀}`/general-`q` analog of `classMass_ap_form`, without the oddness filter; same
+`Nat.find`-least-element + `range.image` bijection argument.) -/
+theorem class_window_ap_form {lo hi : ℝ} (hlo : 1 ≤ lo) {q : ℕ} (hq : 1 ≤ q)
+    (hwide : (lo : ℝ) + (q : ℝ) + 1 ≤ hi) (X : ZMod q) :
     ∃ a count : ℕ,
       ((Finset.Icc ⌈lo⌉₊ ⌊hi⌋₊).filter (fun M : ℕ => (M : ZMod q) = X)
         = (Finset.range count).image (fun i => a + q * i))
       ∧ lo ≤ (a : ℝ)
       ∧ (a : ℝ) + (q : ℝ) * (count : ℝ) ≤ hi + (q : ℝ) := by
-  sorry
+  have hqpos : 0 < q := hq
+  haveI : NeZero q := ⟨by omega⟩
+  have hlopos : (0 : ℝ) < lo := by linarith
+  have hqR : (0 : ℝ) < (q : ℝ) := by exact_mod_cast hqpos
+  have hhi : (0 : ℝ) ≤ hi := by linarith
+  set ylo : ℕ := ⌈lo⌉₊ with hylodef
+  set yhi : ℕ := ⌊hi⌋₊ with hyhidef
+  have hylo_ge : lo ≤ (ylo : ℝ) := Nat.le_ceil lo
+  have hylo_lt : (ylo : ℝ) < lo + 1 := Nat.ceil_lt_add_one hlopos.le
+  have hyhi_le : (yhi : ℝ) ≤ hi := Nat.floor_le hhi
+  have hyhi_gt : hi - 1 < (yhi : ℝ) := by
+    have := Nat.lt_floor_add_one hi; rw [← hyhidef] at this; push_cast at this ⊢; linarith
+  -- residue
+  set ρ : ℕ := X.val with hρdef
+  have hρlt : ρ < q := ZMod.val_lt X
+  have hZbridge : ∀ N : ℕ, ((N : ZMod q) = X) ↔ N % q = ρ := by
+    intro N
+    rw [show X = ((ρ : ℕ) : ZMod q) from (ZMod.natCast_zmod_val X).symm,
+      ZMod.natCast_eq_natCast_iff', Nat.mod_eq_of_lt hρlt]
+  -- least class element ≥ ylo (the AP start `a`)
+  have hex : ∃ N, ylo ≤ N ∧ N % q = ρ := by
+    refine ⟨ρ + q * ylo, ?_, ?_⟩
+    · exact le_trans (Nat.le_mul_of_pos_left ylo hqpos) (Nat.le_add_left _ _)
+    · rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hρlt]
+  set a : ℕ := Nat.find hex with hadef
+  obtain ⟨haylo, hamod⟩ : ylo ≤ a ∧ a % q = ρ := Nat.find_spec hex
+  have ha_lt : a < ylo + q := by
+    by_contra hcon
+    push_neg at hcon
+    have hle : q ≤ a := by omega
+    have hre : a - q + q = a := Nat.sub_add_cancel hle
+    have h2 : (a - q) % q = ρ := by rw [← Nat.add_mod_right (a - q) q, hre]; exact hamod
+    exact Nat.find_min hex (show a - q < a by omega) ⟨by omega, h2⟩
+  have haR_ge : lo ≤ (a : ℝ) := le_trans hylo_ge (by exact_mod_cast haylo)
+  -- `a ≤ yhi` from the width hypothesis (guarantees the class is nonempty)
+  have ha_le_yhi : a ≤ yhi := by
+    have haRlt : (a : ℝ) < lo + q := by
+      have h1 : (a : ℝ) + 1 ≤ (ylo : ℝ) + q := by exact_mod_cast ha_lt
+      linarith [hylo_lt]
+    have : (a : ℝ) < (yhi : ℝ) := by linarith [hyhi_gt, hwide]
+    exact_mod_cast Nat.le_of_lt (by exact_mod_cast this)
+  set count : ℕ := (yhi - a) / q + 1 with hcountdef
+  -- the class finset IS the AP `{a + q·i : i < count}`
+  have hFeq : (Finset.Icc ylo yhi).filter (fun N : ℕ => (N : ZMod q) = X)
+      = (Finset.range count).image (fun i => a + q * i) := by
+    ext N
+    simp only [Finset.mem_filter, Finset.mem_image, Finset.mem_range, Finset.mem_Icc, hZbridge]
+    constructor
+    · rintro ⟨⟨hNylo, hNyhi⟩, hNmod⟩
+      have haN : a ≤ N := Nat.find_min' hex ⟨hNylo, hNmod⟩
+      have hdvd : q ∣ N - a := (Nat.modEq_iff_dvd' haN).mp (by
+        show a % q = N % q; rw [hamod, hNmod])
+      refine ⟨(N - a) / q, ?_, ?_⟩
+      · have : (N - a) / q ≤ (yhi - a) / q := Nat.div_le_div_right (Nat.sub_le_sub_right hNyhi a)
+        omega
+      · rw [Nat.mul_div_cancel' hdvd]; omega
+    · rintro ⟨i, hi, rfl⟩
+      have hmod : (a + q * i) % q = ρ := by rw [Nat.add_mul_mod_self_left]; exact hamod
+      have hile : i ≤ (yhi - a) / q := by omega
+      have hmul : q * i ≤ yhi - a := by
+        calc q * i ≤ q * ((yhi - a) / q) := Nat.mul_le_mul (le_refl q) hile
+          _ = (yhi - a) / q * q := by ring
+          _ ≤ yhi - a := Nat.div_mul_le_self _ _
+      exact ⟨⟨by omega, by omega⟩, hmod⟩
+  have hcount_lower : a + q * count ≤ yhi + q := by
+    have hmul : q * ((yhi - a) / q) ≤ yhi - a := by
+      calc q * ((yhi - a) / q) = (yhi - a) / q * q := by ring
+        _ ≤ yhi - a := Nat.div_mul_le_self _ _
+    have hexp : q * count = q * ((yhi - a) / q) + q := by rw [hcountdef]; ring
+    omega
+  refine ⟨a, count, hFeq, haR_ge, ?_⟩
+  · have hcast : ((a + q * count : ℕ) : ℝ) = (a : ℝ) + (q : ℝ) * (count : ℝ) := by push_cast; ring
+    have hle : ((a + q * count : ℕ) : ℝ) ≤ ((yhi + q : ℕ) : ℝ) := by exact_mod_cast hcount_lower
+    rw [hcast] at hle
+    push_cast at hle
+    linarith [hyhi_le]
 
 /-- **Residue-class harmonic window bound** (general AP integral test).  The harmonic mass of the
 residue class `X mod q` in the window `[lo, hi]` is bounded by the integral term plus the `O(1/lo)`
 discretization error: a single application of `harmonic_ap_integral_bound` on the AP `{a + q·i}` from
 `class_window_ap_form`.  This is the reusable analytic core of the crude `cn_bound`. -/
-theorem harmonic_class_window_bound {lo hi : ℝ} (hlo : 1 ≤ lo) (hlohi : lo ≤ hi)
-    {q : ℕ} (hq : 1 ≤ q) (X : ZMod q) :
+theorem harmonic_class_window_bound {lo hi : ℝ} (hlo : 1 ≤ lo) {q : ℕ} (hq : 1 ≤ q)
+    (hwide : (lo : ℝ) + (q : ℝ) + 1 ≤ hi) (X : ZMod q) :
     (∑' M : ℕ, if lo ≤ (M : ℝ) ∧ (M : ℝ) ≤ hi ∧ (M : ZMod q) = X then (M : ℝ)⁻¹ else 0)
       ≤ (q : ℝ)⁻¹ * Real.log ((hi + q) / lo) + 1 / lo := by
   have hqR : (0 : ℝ) < q := by exact_mod_cast hq
   have hlopos : (0 : ℝ) < lo := by linarith
-  have hhipos : (0 : ℝ) < hi := lt_of_lt_of_le hlopos hlohi
-  obtain ⟨a, count, hAP, ha_ge, hend⟩ := class_window_ap_form hlo hlohi hq X
+  have hhipos : (0 : ℝ) < hi := by linarith
+  obtain ⟨a, count, hAP, ha_ge, hend⟩ := class_window_ap_form hlo hq hwide X
   have haposR : (0 : ℝ) < (a : ℝ) := lt_of_lt_of_le hlopos ha_ge
   have hcond : ∀ M : ℕ, (lo ≤ (M : ℝ) ∧ (M : ℝ) ≤ hi ∧ (M : ZMod q) = X)
       ↔ M ∈ (Finset.Icc ⌈lo⌉₊ ⌊hi⌋₊).filter (fun M : ℕ => (M : ZMod q) = X) := by
