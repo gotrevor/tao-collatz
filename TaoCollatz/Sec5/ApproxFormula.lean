@@ -367,25 +367,8 @@ theorem iid_prefix_twosided_eq (n₀ n : ℕ) (h : n ≤ n₀) (lam : ℝ) :
   simpa only [Function.comp_apply, E, Set.indicator, Set.mem_setOf_eq, Pi.one_apply,
     mul_ite, mul_one, mul_zero] using hmap.symm
 
--- RATIFY-C8: paper Proposition 5.2 / (5.8), §5 pp.22–25.  Rendered against the numbered display;
--- the `O(log^{-c} x)` error is spelled as an explicit `∃ c C x₀` bound (design invariant D3).
-/-- **Proposition 5.2** (approximate first-passage formula, paper (5.8)).  For every odd
-`E ⊂ [1,x]` and `y ∈ {x^α, x^{α²}}`, the passage-location probability `ℙ(Pass_x(N_y) ∈ E)` agrees
-with the affine main term `approxMainTerm` up to `O(log^{-c} x)`:
-`ℙ(Pass_x(N_y) ∈ E) = ∑_{n∈I_y} ∑_{ā∈𝒜} ∑_{M∈E'} ℙ(Aff_ā(N_y) = M) + O(log^{-c} x)`.
-
-This is node **C8**.  The proof (owed) runs: (5.12) good-tuple union bound
-[`approx_good_tuple_whp`] ⟹ (5.16) passage-time-in-window [`approx_passtime_window`, **which
-consumes C7** — see the module docstring] ⟹ the `B_{n,y}` equivalence chain (5.17) ⟹ the Lemma 2.1
-affine reindexing (5.18) giving (5.8). -/
-theorem first_passage_approx :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
-      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
-        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
-          |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
-              - approxMainTerm x E y|
-            ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+-- `first_passage_approx` (RATIFY-C8, Prop 5.2 / (5.8)) is proved at the END of this file
+-- (after its sub-lemmas `first_passage_window_reduce` + `first_passage_affine_reindex`).
 
 /-! ## Named decomposition of C8 (route + probe)
 
@@ -716,6 +699,104 @@ theorem approx_passtime_window :
         expect_le_add_of_indicator_le _ _ _ _ hpw
     _ ≤ C₁ * x ^ (-c₁) + C₂ * (Real.log x) ^ (-c₂) :=
         add_le_add (hesc x hx1 y hy) (hwin x hx2 y hy)
+    _ ≤ C₁ * (Real.log x) ^ (-(min c₁ c₂)) + C₂ * (Real.log x) ^ (-(min c₁ c₂)) :=
+        add_le_add (mul_le_mul_of_nonneg_left hA hC₁.le) (mul_le_mul_of_nonneg_left hB hC₂.le)
+    _ = (C₁ + C₂) * (Real.log x) ^ (-(min c₁ c₂)) := by ring
+
+/-! ## C8 assembly: the `first_passage_approx` (5.8) chain, decomposed
+
+The assembly runs `ℙ(Pass_x(N_y) ∈ E)  →  firstPassMid  →  approxMainTerm`.  `firstPassMid` is the
+probability restricted to the good-tuple × window event and partitioned by the passage time
+`T_x(N_y) = n` over `n ∈ I_y` (paper (5.9)); it is the natural bridge between the raw passage
+probability and the affine main term.  Two owed sub-lemmas carry the two legs:
+
+* `first_passage_window_reduce` — the (5.12)+(5.16) whp reduction: replacing `{Pass ∈ E}` by its
+  restriction to `good ∧ (passes ∧ T_x ∈ I_y)` and partitioning by `T_x = n` costs `O(log^{-c}x)`.
+  Consumes the two PROVED whp lemmas `approx_good_tuple_whp` and `approx_passtime_window`.
+* `first_passage_affine_reindex` — the (5.17) `B_{n,y}` event chain + (5.18) Lemma 2.1 affine
+  reindexing (APPROXIMATE — truncation absorbed, see the module docstring).  This is the
+  route-decisive leg against the pinned `approxMainTerm`.
+
+`first_passage_approx` itself is then a triangle inequality over these two, mirroring the
+`approx_passtime_window` combine. -/
+
+open Classical in
+/-- The bridge term for (5.8): the passage-location probability restricted to the good-tuple event
+and partitioned by the passage time `T_x(N_y) = n` over the window `I_y` (5.9). -/
+noncomputable def firstPassMid (x : ℝ) (E : Set ℕ) (y : ℝ) : ℝ :=
+  ∑ n ∈ Iy x y,
+    (logUnifOdd y (y ^ alpha)).expect
+      (Set.indicator {N | passTime ⌊x⌋₊ N = n ∧ passLoc ⌊x⌋₊ N ∈ E ∧
+        goodTuple x (nZero x) (valVec N (nZero x))} 1)
+
+/-- **(5.12)+(5.16) whp reduction** (owed) — the first leg of (5.8).  Passing from the raw
+`ℙ(Pass_x(N_y) ∈ E)` to the restricted, `T_x`-partitioned `firstPassMid` costs `O(log^{-c} x)`:
+the discarded mass lies in `{¬ good} ∪ {¬ (passes ∧ T_x ∈ I_y)}`, each `≪ log^{-c} x` by the two
+PROVED whp lemmas `approx_good_tuple_whp` (5.12) and `approx_passtime_window` (5.16).  (On the
+complementary good∩window event, `{Pass ∈ E}` is the disjoint union over `n ∈ I_y` of
+`{T_x = n ∧ Pass ∈ E ∧ good}`, so the partition is exact there.) -/
+theorem first_passage_window_reduce :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
+              - firstPassMid x E y|
+            ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
+/-- **(5.17) `B_{n,y}` event chain + (5.18) Lemma 2.1 affine reindexing** (owed) — the second,
+route-decisive leg of (5.8).  For each `n ∈ I_y`, the event `{T_x(N_y)=n ∧ Pass∈E ∧ good}` equals
+(step back `m₀` steps, (5.17)) `{Syr^{n-m₀}(N_y) ∈ E' ∧ good}`, whose probability the Lemma 2.1
+affine bijection reindexes to `∑_{ā∈𝒜⁽ⁿ⁻ᵐ⁰⁾} ∑_{M∈E'} ℙ(Aff_ā(N_y)=M)` — the summand of
+`approxMainTerm`.  The reindex is APPROXIMATE (`Aff` uses truncating ℕ-division; the truncation
+coincidences are absorbed in `O(log^{-c}x)`, see the module docstring), so this is the `≤`/error
+form, NOT an exact identity.  Kernels `aff_valVec_eq_syr` + `valVec_unique` drive the main term. -/
+theorem first_passage_affine_reindex :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |firstPassMid x E y - approxMainTerm x E y|
+            ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
+-- RATIFY-C8: paper Proposition 5.2 / (5.8), §5 pp.22–25.  Rendered against the numbered display;
+-- the `O(log^{-c} x)` error is spelled as an explicit `∃ c C x₀` bound (design invariant D3).
+/-- **Proposition 5.2** (approximate first-passage formula, paper (5.8)).  For every odd
+`E ⊂ [1,x]` and `y ∈ {x^α, x^{α²}}`, the passage-location probability `ℙ(Pass_x(N_y) ∈ E)` agrees
+with the affine main term `approxMainTerm` up to `O(log^{-c} x)`:
+`ℙ(Pass_x(N_y) ∈ E) = ∑_{n∈I_y} ∑_{ā∈𝒜} ∑_{M∈E'} ℙ(Aff_ā(N_y) = M) + O(log^{-c} x)`.
+
+This is node **C8**.  Proof: triangle inequality over the two owed legs
+`first_passage_window_reduce` [(5.12)+(5.16) whp reduction to `firstPassMid`] and
+`first_passage_affine_reindex` [(5.17) `B_{n,y}` chain + (5.18) affine reindexing to
+`approxMainTerm`]. -/
+theorem first_passage_approx :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
+              - approxMainTerm x E y|
+            ≤ C * (Real.log x) ^ (-c) := by
+  obtain ⟨c₁, C₁, x₁, hc₁, hC₁, hwr⟩ := first_passage_window_reduce
+  obtain ⟨c₂, C₂, x₂, hc₂, hC₂, har⟩ := first_passage_affine_reindex
+  refine ⟨min c₁ c₂, C₁ + C₂, max (max x₁ x₂) (Real.exp 1), lt_min hc₁ hc₂, by positivity,
+    fun x hx E hE y hy => ?_⟩
+  have hx1 : x₁ ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+  have hx2 : x₂ ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
+  have hlog1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hxe
+  have hA : (Real.log x) ^ (-c₁) ≤ (Real.log x) ^ (-(min c₁ c₂)) :=
+    Real.rpow_le_rpow_of_exponent_le hlog1 (neg_le_neg (min_le_left c₁ c₂))
+  have hB : (Real.log x) ^ (-c₂) ≤ (Real.log x) ^ (-(min c₁ c₂)) :=
+    Real.rpow_le_rpow_of_exponent_le hlog1 (neg_le_neg (min_le_right c₁ c₂))
+  calc |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
+          - approxMainTerm x E y|
+      ≤ |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
+            - firstPassMid x E y|
+          + |firstPassMid x E y - approxMainTerm x E y| := abs_sub_le _ _ _
+    _ ≤ C₁ * (Real.log x) ^ (-c₁) + C₂ * (Real.log x) ^ (-c₂) :=
+        add_le_add (hwr x hx1 E hE y hy) (har x hx2 E hE y hy)
     _ ≤ C₁ * (Real.log x) ^ (-(min c₁ c₂)) + C₂ * (Real.log x) ^ (-(min c₁ c₂)) :=
         add_le_add (mul_le_mul_of_nonneg_left hA hC₁.le) (mul_le_mul_of_nonneg_left hB hC₂.le)
     _ = (C₁ + C₂) * (Real.log x) ^ (-(min c₁ c₂)) := by ring

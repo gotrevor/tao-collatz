@@ -20,10 +20,26 @@
   2·exp(−κ log^{0.2}x)` for `n ≤ n₀`, via `1+n ≤ log x/4`), `iid_prefix_twosided_eq`,
   `pre_eq_fin_sum_castLE'`. Final decay exponent chosen `c = 1`.
 
-## Remaining C8 = 2 named sorries (hardest-first)
-1. **`first_passage_approx`** (:388) — the assembly (steps 4+5: `B_{n,y}` event chain + approximate
-   affine reindex; truncation absorbed per the INSIGHT below). ROUTE-DECISIVE.
-2. **`passtime_window_inner`** (:663) — (5.16) window term: `{passes ∧ T_x∉Iy}`, integral test that
+## ✅ ALSO THIS LAP — `first_passage_approx` ASSEMBLY skeleton PROVED (route-decisive triangle wired)
+Decomposed the (5.8) assembly into a clean **2-leg triangle** through a new bridge def
+`firstPassMid` (= `ℙ(Pass∈E)` restricted to `good` and partitioned by `T_x = n` over `I_y`), and
+PROVED `first_passage_approx` itself as `|ℙ − mid| + |mid − approxMainTerm|` (mirrors the
+`approx_passtime_window` combine: `abs_sub_le` + `min c₁ c₂`). **This confirms the pinned
+`approxMainTerm` typechecks through the assembly** — the route-decisive concern is now isolated in one
+leg. `first_passage_approx` `#print axioms` = trust base + `sorryAx` (the two legs only).
+
+## Remaining C8 = 3 named sorries (all `Sec5/ApproxFormula.lean`, hardest-first)
+1. **`first_passage_affine_reindex`** — ROUTE-DECISIVE. `|firstPassMid − approxMainTerm| ≤
+   C log^{-c}x`. The (5.17) `B_{n,y}` step-back-`m₀` event chain (`{T_x=n ∧ Pass∈E ∧ good} =
+   {Syr^{n-m₀}N ∈ E' ∧ good}`, EXACT via `syr_iterate_key`/`passTime`/`Eprime` defs) then the (5.18)
+   Lemma 2.1 affine reindex (`aff_valVec_eq_syr` + `valVec_unique`, APPROXIMATE — truncation in the
+   error per the INSIGHT below). Attack the `B_{n,y}` event identity FIRST (it is exact).
+2. **`first_passage_window_reduce`** — `|ℙ(Pass∈E) − firstPassMid| ≤ C log^{-c}x`. Pure whp
+   bookkeeping over the two PROVED lemmas `approx_good_tuple_whp` (5.12) + `approx_passtime_window`
+   (5.16): discarded mass ⊂ `{¬good} ∪ {¬(passes ∧ T_x∈Iy)}`; on the complement `{Pass∈E}` is the
+   disjoint `⊕_{n∈Iy} {T_x=n ∧ Pass∈E ∧ good}`. MOST TRACTABLE next — `expect_le_add_of_indicator_le`
+   + a finite disjoint-partition identity over `Iy`.
+3. **`passtime_window_inner`** — (5.16) window term: `{passes ∧ T_x∉Iy}`, integral test that
    `N_y` avoids the `2 log^{0.8}x` edge collars; reuse C7's `classMass`/`windowMass`/`intTest_*`.
 
 Then C9 `stabilization` (`FirstPassage.lean:1343`).
