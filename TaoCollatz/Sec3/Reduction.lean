@@ -897,7 +897,124 @@ theorem tao_syracuse_quantitative_sum :
 theorem tao_syracuse_quantitative :
     ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       1 - C / (Real.log N₀) ^ c ≤ logProb {N | syrMin N ≤ N₀} (oddInterval x) := by
-  sorry
+  obtain ⟨c, Ca, hc, hCa, hsum⟩ := tao_syracuse_quantitative_sum
+  refine ⟨c, 8 * Ca, hc, by linarith, fun N₀ x hN₀2 hx2 => ?_⟩
+  -- size facts
+  have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
+  have hx0 : (0 : ℝ) < (x : ℝ) := by linarith
+  have hlogx0 : (0 : ℝ) < Real.log x := Real.log_pos (by linarith)
+  have hN₀2R : (2 : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast hN₀2
+  have hLN0 : (0 : ℝ) < Real.log N₀ := Real.log_pos (by linarith)
+  have hLc0 : (0 : ℝ) < (Real.log N₀) ^ c := Real.rpow_pos_of_pos hLN0 _
+  set D := logSum Set.univ (oddInterval x) with hDdef
+  set G := logSum {N | syrMin N ≤ N₀} (oddInterval x) with hGdef
+  set B := logSum {N | N₀ < syrMin N} (oddInterval x) with hBdef
+  -- complement split: G + B = D
+  have hsplit : G + B = D := by
+    rw [hGdef, hBdef, hDdef]
+    unfold logSum
+    rw [Finset.sum_filter, Finset.sum_filter, Finset.sum_filter, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun N _ => ?_
+    by_cases h : syrMin N ≤ N₀
+    · have h1 : N ∈ {N | syrMin N ≤ N₀} := h
+      have h2 : N ∉ {N | N₀ < syrMin N} := by simp only [Set.mem_setOf_eq]; omega
+      rw [if_pos h1, if_neg h2, if_pos (Set.mem_univ N)]
+      ring
+    · have h1 : N ∉ {N | syrMin N ≤ N₀} := h
+      have h2 : N ∈ {N | N₀ < syrMin N} := by simp only [Set.mem_setOf_eq]; omega
+      rw [if_neg h1, if_pos h2, if_pos (Set.mem_univ N)]
+      ring
+  have hB0 : (0 : ℝ) ≤ B := by
+    rw [hBdef]; unfold logSum
+    exact Finset.sum_nonneg fun N _ => by positivity
+  -- `D ≥ 1` (the `N = 1` term)
+  have hD1 : (1 : ℝ) ≤ D := by
+    rw [hDdef]; unfold logSum
+    rw [Finset.filter_congr_decidable]
+    have h1mem : 1 ∈ (oddInterval x).filter (· ∈ Set.univ) := by
+      rw [Finset.mem_filter]
+      refine ⟨?_, Set.mem_univ 1⟩
+      rw [oddInterval, Finset.mem_filter, Finset.mem_range]
+      omega
+    calc (1 : ℝ) = (1 : ℝ) / ((1 : ℕ) : ℝ) := by norm_num
+      _ ≤ ∑ N ∈ (oddInterval x).filter (· ∈ Set.univ), (1 : ℝ) / N :=
+          Finset.single_le_sum (f := fun N : ℕ => (1 : ℝ) / N)
+            (fun i _ => by positivity) h1mem
+  have hD0 : (0 : ℝ) < D := lt_of_lt_of_le one_pos hD1
+  -- `D` is the odd-window mass of `[1, x]`
+  have hwm_eq : D = windowMass 1 (x : ℝ) := by
+    rw [hDdef]; unfold logSum windowMass
+    simp_rw [one_div]
+    rw [Finset.filter_congr_decidable]
+    refine Finset.sum_congr ?_ fun _ _ => rfl
+    ext N
+    rw [Finset.mem_filter, oddInterval, Finset.mem_filter, Finset.mem_range,
+      mem_logWindow_iff]
+    constructor
+    · rintro ⟨⟨hlt, hodd⟩, -⟩
+      have h1 : 1 ≤ N := by omega
+      have h2 : N ≤ x := by omega
+      exact ⟨hodd, by exact_mod_cast h1, by exact_mod_cast h2⟩
+    · rintro ⟨hodd, h1, h2⟩
+      have h2' : N ≤ x := by exact_mod_cast h2
+      exact ⟨⟨by omega, hodd⟩, Set.mem_univ N⟩
+  -- odd-window harmonic lower bound: `log x ≤ 8 D`
+  have hDlog : Real.log x ≤ 8 * D := by
+    rcases le_or_gt (Real.log x) 8 with h8 | h8
+    · linarith
+    · have hne : (logWindow 1 (x : ℝ)).Nonempty := by
+        refine ⟨1, ?_⟩
+        rw [mem_logWindow_iff]
+        exact ⟨by omega, by norm_num, by exact_mod_cast (by linarith : (1 : ℝ) ≤ (x : ℝ))⟩
+      obtain ⟨a, count, hcount0, hloa, halt, hxlt, hxle, hFeq⟩ :=
+        logWindow_odd_ap one_pos hne
+      have hinj : ∀ i ∈ Finset.range count, ∀ j ∈ Finset.range count,
+          a + 2 * i = a + 2 * j → i = j := by intro i _ j _ h; omega
+      have ha0 : (0 : ℝ) < (a : ℝ) := lt_of_lt_of_le one_pos hloa
+      have ha3 : (a : ℝ) < 4 := by linarith
+      have hharm := (abs_le.mp (harmonic_ap_integral_bound ha0 two_pos count)).1
+      have hmass := windowMass_eq_ap_sum hFeq hinj
+      have hac0 : (0 : ℝ) < (a : ℝ) + 2 * (count : ℝ) := by positivity
+      have hlog_ge : Real.log x - Real.log 4
+          ≤ Real.log (((a : ℝ) + 2 * (count : ℝ)) / (a : ℝ)) := by
+        rw [Real.log_div hac0.ne' ha0.ne']
+        have h1 : Real.log x ≤ Real.log ((a : ℝ) + 2 * (count : ℝ)) :=
+          Real.log_le_log hx0 hxlt.le
+        have h2 : Real.log (a : ℝ) ≤ Real.log 4 := Real.log_le_log ha0 ha3.le
+        linarith
+      have hlog4 : Real.log 4 < 2 := by
+        have h2 : (2.7 : ℝ) < Real.exp 1 := by
+          have := Real.exp_one_gt_d9
+          linarith
+        have h3 : Real.exp 2 = Real.exp 1 * Real.exp 1 := by
+          rw [← Real.exp_add]; norm_num
+        have h1 : (4 : ℝ) < Real.exp 2 := by nlinarith
+        calc Real.log 4 < Real.log (Real.exp 2) := Real.log_lt_log (by norm_num) h1
+          _ = 2 := Real.log_exp 2
+      have hainv : (a : ℝ)⁻¹ ≤ 1 := by
+        rw [inv_le_one_iff₀]; right; exact hloa
+      have hD_ge : (1/2) * (Real.log x - 2) - 1 ≤ D := by
+        rw [hwm_eq, hmass]
+        have hkey : (2 : ℝ)⁻¹ * Real.log (((a : ℝ) + 2 * (count : ℝ)) / (a : ℝ)) - (a : ℝ)⁻¹
+            ≤ ∑ i ∈ Finset.range count, ((a : ℝ) + 2 * (i : ℝ))⁻¹ := by linarith
+        refine le_trans ?_ hkey
+        nlinarith [hlog_ge, hlog4]
+      linarith
+  -- the C6a bad-sum bound, converted through `D`
+  have hB8 : B ≤ 8 * Ca * D / (Real.log N₀) ^ c := by
+    calc B ≤ Ca * Real.log x / (Real.log N₀) ^ c := hsum N₀ x hN₀2 hx2
+      _ ≤ Ca * (8 * D) / (Real.log N₀) ^ c := by gcongr
+      _ = 8 * Ca * D / (Real.log N₀) ^ c := by ring
+  -- assemble: `logProb = G/D = 1 − B/D ≥ 1 − 8Ca/L^c`
+  unfold logProb
+  rw [← hGdef, ← hDdef]
+  have hGD : G = D - B := by linarith
+  rw [hGD, sub_div, div_self hD0.ne']
+  have hBD : B / D ≤ 8 * Ca / (Real.log N₀) ^ c := by
+    have h1 : B / D ≤ (8 * Ca * D / (Real.log N₀) ^ c) / D := by gcongr
+    calc B / D ≤ (8 * Ca * D / (Real.log N₀) ^ c) / D := h1
+      _ = 8 * Ca / (Real.log N₀) ^ c := by field_simp
+  linarith [hBD]
 
 /-- **Theorem 1.6** (Tao 2019 p.4): for `f` with `f(N) → ∞`, almost all odd `N`
 (log density on the odd window) satisfy `Syrmin(N) < f(N)`. -/
