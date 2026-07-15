@@ -1,0 +1,15 @@
+{
+  "challenge_module": "Comparator.TaoCollatz.Challenge",
+  "solution_module": "Comparator.TaoCollatz.Solution",
+  "theorem_names": [
+    "TaoCollatz.colMin_zero",
+    "TaoCollatz.colMin_twentyseven",
+    "TaoCollatz.almostAllPos_true",
+    "TaoCollatz.not_almostAllPos_false",
+    "TaoCollatz.logProb_odd_window_two",
+    "TaoCollatz.tao_collatz",
+    "TaoCollatz.tao_collatz_quantitative"
+  ],
+  "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+  "enable_nanoda": true
+}

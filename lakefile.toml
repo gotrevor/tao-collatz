@@ -10,3 +10,10 @@ rev = "v4.31.0"
 
 [[lean_lib]]
 name = "TaoCollatz"
+
+# comparator harness — deliberately NOT in defaultTargets (challenge files carry
+# `sorry` by design and the main lib builds warnings-as-errors). Build explicitly
+# with `lake build Comparator`; the real gate is .github/workflows/comparator.yml.
+[[lean_lib]]
+name = "Comparator"
+globs = ["Comparator.+"]

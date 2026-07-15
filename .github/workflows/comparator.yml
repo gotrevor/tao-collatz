@@ -1,0 +1,119 @@
+name: Comparator
+
+# Machine-checked STATEMENT-level trust, independent of this repo's own build.
+#
+# The project's own axiom gate (`#print axioms` on the headlines) certifies the *proofs*, but it
+# runs inside our own Lean environment — it trusts our elaborator, our oleans, and any
+# macro/tactic/set_option in the project. comparator certifies the *statements*, from outside:
+#
+#   1. Each Comparator/<Result>/Challenge.lean imports ONLY Mathlib and declares the trusted
+#      vocabulary + anchors. That file is the entire human audit surface.
+#   2. Solution.lean discharges the named theorems from the real development.
+#   3. comparator exports both environments (it deliberately does NOT load our oleans), checks that
+#      every declaration used in a challenge statement is IDENTICAL in the solution, replays the
+#      proofs through the Lean kernel AND the independent `nanoda` kernel, and enforces the
+#      permitted-axiom whitelist.
+#
+# The solution build runs under `landrun` (Linux Landlock sandbox), so a solution that tried to
+# rewrite the challenge's oleans mid-elaboration could not. That protects a *stranger* checking this
+# repo without trusting us — which is the point.
+#
+# ⚠️ tao-collatz is IN PROGRESS: the headline theorems are still `sorry`, so this harness certifies
+# the trusted VOCABULARY (col/colMin/log-density defs) + the non-vacuity anchors, not Thm 1.3 yet.
+# The headlines join the challenge when they are discharged. See Comparator/TaoCollatz/Challenge.lean.
+#
+# Linux-only by construction (landrun needs Landlock). No local/macOS path — for a local pre-flight
+# of the statement-identity check, run `scripts/comparator-probe`.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  comparator:
+    runs-on: ubuntu-26.04
+    env:
+      # lean4export MUST match the Lean version of THIS project's oleans, or it refuses them with
+      # "incompatible header". Keep in lockstep with lean-toolchain.
+      LEAN4EXPORT_TAG: v4.31.0
+    steps:
+      - uses: actions/checkout@v7
+
+      # elan/lake MUST come first: the verifier build below compiles lean4export and comparator,
+      # which are Lean projects on their own toolchains. `build: false` — we drive our build below.
+      - uses: leanprover/lean-action@v1
+        with:
+          build: false
+
+      - name: Cache verifier binaries
+        id: cache-bins
+        uses: actions/cache@v6
+        with:
+          path: ~/verifier-bin
+          key: verifier-bin-${{ runner.os }}-${{ env.LEAN4EXPORT_TAG }}-v1
+
+      - name: Build landrun, lean4export, nanoda, comparator
+        if: steps.cache-bins.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/verifier-bin ~/verifier-src && cd ~/verifier-src
+
+          # landrun — Landlock sandbox (built from main per comparator's README).
+          git clone --depth 1 https://github.com/Zouuup/landrun.git
+          (cd landrun && go build -o ~/verifier-bin/landrun ./cmd/landrun)
+
+          # nanoda — the INDEPENDENT kernel: trust weakens from "Lean's kernel is correct" to
+          # "Lean's kernel OR nanoda is correct".
+          git clone --depth 1 https://github.com/ammkrn/nanoda_lib.git
+          (cd nanoda_lib && cargo build --release && cp target/release/nanoda_bin ~/verifier-bin/)
+
+          # lean4export — pinned to OUR Lean version (see note above).
+          git clone https://github.com/leanprover/lean4export.git
+          (cd lean4export && git checkout "$LEAN4EXPORT_TAG" && lake build \
+             && cp .lake/build/bin/lean4export ~/verifier-bin/)
+
+          # comparator itself (builds on its own toolchain; elan fetches it).
+          git clone --depth 1 https://github.com/leanprover/comparator.git
+          (cd comparator && lake build comparator && cp .lake/build/bin/comparator ~/verifier-bin/)
+
+      - name: Build project + comparator modules
+        run: |
+          lake exe cache get
+          lake build TaoCollatz
+          lake build Comparator
+
+      - name: Verify every result under comparator (Lean kernel + nanoda)
+        run: |
+          set -uo pipefail
+          export PATH="$HOME/verifier-bin:$PATH"
+          fail=0
+          shopt -s nullglob
+          configs=(Comparator/*/config.json)
+          if [ ${#configs[@]} -eq 0 ]; then
+            echo "::error::no comparator configs found — the gate would pass vacuously"; exit 1
+          fi
+          echo "### 🔍 Comparator: statement-level verification" >> "$GITHUB_STEP_SUMMARY"
+          for cfg in "${configs[@]}"; do
+            name=$(basename "$(dirname "$cfg")")
+            echo "::group::comparator — $name"
+            if lake env comparator "$cfg"; then
+              echo "::notice::comparator OK — $name"
+              echo "- ✅ \`$name\` — challenge statements proved, both kernels accept" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error::comparator FAILED — $name"
+              echo "- ❌ \`$name\` — FAILED" >> "$GITHUB_STEP_SUMMARY"
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $fail

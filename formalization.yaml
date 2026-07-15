@@ -1,0 +1,135 @@
+# formalization.yaml -- self-reported provenance for the tao-collatz formalization.
+# Schema: https://github.com/mathlib-initiative/formalization.yaml (v0.3)
+#
+# Status: COMPLETE (2026-07-15). Both headline theorems are proved and kernel-verified
+# axiom-clean. Everything below is either machine-derived or explicitly marked as an estimate;
+# where a fact was not recorded, it says so rather than guessing.
+
+version: "v0.3"
+
+project:
+  name: "tao-collatz"
+  authors: ["Trevor Morris"]
+  license: "Apache-2.0"
+
+sources:
+  - title: "Almost all orbits of the Collatz map attain almost bounded values"
+    authors: ["Terence Tao"]
+    id: "https://arxiv.org/abs/1909.03562"
+    type: "paper"
+    author_contacted: "n/a"
+
+status:
+  scope: >-
+    COMPLETE (2026-07-15). Tao's Theorem 1.3 (almost all Collatz orbits attain almost bounded
+    values, in LOGARITHMIC density) and its quantitative form Theorem 3.1 (`Colmin` form) are both
+    proved: `TaoCollatz.tao_collatz` and `TaoCollatz.tao_collatz_quantitative`, sorry-free and
+    kernel-verified axiom-clean (`#print axioms` = exactly propext/Quot.sound/Classical.choice,
+    dated run 2026-07-15 via `tools/blueprint_audit.py`, 114 declarations).
+
+    The comparator harness (`Comparator/TaoCollatz/`) certifies BOTH the trusted vocabulary and
+    the headlines: the Mathlib-only rendering of every definition the headlines are stated in
+    (`col`, `colMin`, `logSum`, `logProb`, `posInterval`, `HasLogDensity`, `AlmostAllPos`) is
+    byte-identical to the ones the development uses; five proved NON-VACUITY ANCHORS pin their
+    semantics against exact finite instances (notably `logProb_odd_window_two`, which separates
+    logarithmic from natural density — the axis Theorem 1.3 lives on); and the two headline
+    theorems are proved against exactly those definitions. Residual trust: a human reading of
+    `Challenge.lean` against the paper (statement faithfulness), as always.
+  sorry_count: "0"
+  sorry_in_definitions: 0
+  # Axioms below are for the COMPLETED spine nodes and the anchors, verified by `#print axioms`.
+  # They are NOT a claim about the (unproved) headlines.
+  axioms: ["propext", "Quot.sound", "Classical.choice"]
+
+  main_results:
+    - declaration: "TaoCollatz.tao_collatz"
+      file: "TaoCollatz/Statement.lean"
+      status: "proved (2026-07-15, kernel-verified axiom-clean)"
+      note: "Tao Theorem 1.3, logarithmic density. In the comparator harness."
+    - declaration: "TaoCollatz.tao_collatz_quantitative"
+      file: "TaoCollatz/Statement.lean"
+      status: "proved (2026-07-15, kernel-verified axiom-clean)"
+      note: "Tao Theorem 3.1 (Colmin form). In the comparator harness."
+
+  # The comparator-harnessed, proved declarations (the vocabulary anchors):
+  harness_results:
+    - declaration: "TaoCollatz.colMin_zero"
+      comparator_config: "Comparator/TaoCollatz/config.json"
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
+    - declaration: "TaoCollatz.colMin_twentyseven"
+      comparator_config: "Comparator/TaoCollatz/config.json"
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
+    - declaration: "TaoCollatz.almostAllPos_true"
+      comparator_config: "Comparator/TaoCollatz/config.json"
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
+    - declaration: "TaoCollatz.not_almostAllPos_false"
+      comparator_config: "Comparator/TaoCollatz/config.json"
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
+    - declaration: "TaoCollatz.logProb_odd_window_two"
+      comparator_config: "Comparator/TaoCollatz/config.json"
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
+    - declaration: "TaoCollatz.tao_collatz"
+      comparator_config: "Comparator/TaoCollatz/config.json"
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
+    - declaration: "TaoCollatz.tao_collatz_quantitative"
+      comparator_config: "Comparator/TaoCollatz/config.json"
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
+
+automation:
+  methods:
+    - method: "agent"
+      framework: "Claude Code"
+      tool_setup: >-
+        Interactive agent sessions for design, statement authoring, and proof architecture. The
+        trusted statement surface (`TaoCollatz/Statement.lean` and the Mathlib-only comparator
+        `Challenge.lean`) is authored and reviewed with a human in the loop — statements are never
+        delegated unsupervised, since `#print axioms` certifies proofs, not statements.
+      cost:
+        hardware: "local laptop (Apple M4 Max); API-only for the models"
+    - method: "autonomous"
+      framework: "lean-treadmill (custom autonomous grind harness over Claude Code)"
+      tool_setup: >-
+        Long-running autonomous "laps" grinding on remaining `sorry`s, with periodic judge review
+        laps against the PDF, a build-must-be-green gate, and an axiom gate (`lean-axiom-gate`)
+        that rejects any lap introducing a new axiom or `native_decide`. House rule: unconditionally
+        sorry-free AND axiom-free (asking only for "sorry-free" invites axioms instead), and no
+        unreviewed `maxHeartbeats` bumps.
+      cost:
+        hardware: "local laptop; API-only for the models"
+  spend_usd: >-
+    subscription-based usage (Claude Max), not metered API spend — no meaningful dollar figure to
+    report. The real cost is usage-window, not currency.
+  notes: >-
+    Models: Anthropic Claude, driven through Claude Code (Opus tier by default). Exact per-lap model
+    versions were not logged and are not reconstructed here rather than guessed.
+
+review:
+  status: "self-assessed"
+  reviewers: ["Trevor Morris"]
+  notes: >-
+    No external peer review. Machine-enforced on the harness: `leanprover/comparator` checks the
+    solution proves the challenge's anchor statements against byte-identical definitions, replays
+    through the Lean kernel AND the independent `nanoda` kernel (`enable_nanoda: true`), and enforces
+    the axiom whitelist, all under a `landrun` sandbox. Local pre-flight of the statement-identity
+    portion: `scripts/comparator-probe` (macOS-friendly; the full gate is CI-only). The residual
+    risk comparator cannot address is statement faithfulness: a human must read
+    `Comparator/TaoCollatz/Challenge.lean`'s DEFINITIONS against Tao 2019 and agree they say what the
+    paper says. That file is small on purpose.
+
+alignment:
+  namespace: "TaoCollatz"
+  statements:
+    - source: "Tao 2019, Theorem 1.3 (almost all Collatz orbits attain almost bounded values; log density)"
+      lean: "TaoCollatz.tao_collatz"
+      module: "TaoCollatz.Statement"
+      status: "formalized"
+    - source: "Tao 2019, Theorem 3.1 (quantitative Colmin form)"
+      lean: "TaoCollatz.tao_collatz_quantitative"
+      module: "TaoCollatz.Statement"
+      status: "formalized"
+
+acknowledgements: >-
+  Mathlib and the Lean FRO. `leanprover/comparator` and the `nanoda` kernel, which make this repo's
+  trusted vocabulary checkable by someone who does not trust, or run, our code. The Lean Zulip
+  `#AI authored projects` channel, where the Challenge/Solution/comparator/formalization.yaml
+  convention was worked out.
