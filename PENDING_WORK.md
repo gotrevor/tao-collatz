@@ -46,9 +46,14 @@ The multiplicative two-sided bracket is now DONE:
 - **`syr_iterate_good_bracket`** (the payoff): for odd N, good `valVec N n'`, `n ≤ n'`:
   `3^n N / 2^{2n+log^{0.6}x} ≤ Syr^n N ≤ 3^n N / 2^{2n−log^{0.6}x} + 3^n`
   = `(3/4)^n N · 2^{∓log^{0.6}x}` main term (since `2^{2n}=4^n`) + `+3^n` slack.
-NEXT: convert this into the `E'` size window `syr^{n−m₀}N ∈ [exp(−log^{0.7}x)(4/3)^{m₀}x, exp(+…)…]`
-(needs `n∈Iy` ⟹ `(3/4)^{n−m₀}N_y ≈ (4/3)^{m₀}x` from IyLo/IyHi def + `2^{log^{0.6}x} ≤ exp(log^{0.7}x)`),
-then feed both `truncation_error_bound` (bound the E'-count) and `first_passage_stepback_reduce`.
+Clean `(3/4)^n N` form: **`syr_iterate_good_bracket'`** — `(3/4)^n N·2^{−L} ≤ Syr^n N ≤ (3/4)^n N·2^{L}+3^n`.
+Slack absorption: **`two_rpow_slack_le_exp`** (axiom-clean) — for x large, `2^{log^{0.6}x} ≤ exp(log^{0.7}x)`
+(via `log2 ≤ log^{0.1}x`), so the orbit `2^{±L}` slack fits inside the `E'` `exp(±log^{0.7}x)` window.
+NEXT: convert into the `E'` size window `syr^{n−m₀}N ∈ [exp(−log^{0.7}x)(4/3)^{m₀}x, exp(+…)…]` — the
+remaining piece is the INTERVAL algebra `n∈Iy ⟹ (3/4)^n N ≈ x` from IyLo/IyHi def (⚠️ verify the
+exponent bookkeeping against Tao pp.22-24 — the y^{α−1} spread vs exp(log^{0.7}x) needs care; the
+window is tied to n∈Iy AND N∈[y,y^α] jointly). Then feed `truncation_error_bound` (E'-count, the (5.19)
+crux) + `first_passage_stepback_reduce`.
 
 ## ✅ ADVANCED THIS LAP — (5.17) step-back EXACT core proved, axiom-clean (route-decisive leg)
 The route-decisive leg `first_passage_affine_reindex` was attacked at its EXACT sub-part per the

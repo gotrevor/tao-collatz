@@ -169,6 +169,32 @@ theorem syr_iterate_good_bracket' (x : ℝ) (N n' n : ℕ) (hN : N % 2 = 1)
       = 2 * (n : ℝ) + (-(Real.log x ^ (0.6 : ℝ))) from by ring, hup] at hhi
   exact ⟨hlo, hhi⟩
 
+/-- **Slack absorption** — the orbit estimate's `2^{log^{0.6}x}` multiplicative slack is dominated by
+the `E'` window's `exp(log^{0.7}x)`, for `x` large.  Since `2^{log^{0.6}x} = exp(log 2·log^{0.6}x)`
+and `log 2 ≤ log^{0.1}x` once `log x ≥ (log 2)^{10}`, we get `log 2·log^{0.6}x ≤ log^{0.7}x`.  This is
+what lets the `exp(O(log^{0.6}x))` orbit window fit inside the `exp(±log^{0.7}x)` `E'` window. -/
+theorem two_rpow_slack_le_exp :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) := by
+  refine ⟨Real.exp ((Real.log 2) ^ (10 : ℕ)), Real.one_le_exp (by positivity), fun x hx => ?_⟩
+  have hlogx : (Real.log 2) ^ (10 : ℕ) ≤ Real.log x := by
+    rw [← Real.log_exp ((Real.log 2) ^ (10 : ℕ))]
+    exact Real.log_le_log (Real.exp_pos _) hx
+  have hlogpos : (0 : ℝ) < Real.log x := lt_of_lt_of_le (by positivity) hlogx
+  have hl2 : (0 : ℝ) ≤ Real.log 2 := Real.log_nonneg (by norm_num)
+  -- log 2 ≤ log^{0.1}x
+  have hlog2le : Real.log 2 ≤ Real.log x ^ (0.1 : ℝ) := by
+    have h := Real.rpow_le_rpow (by positivity) hlogx (by norm_num : (0 : ℝ) ≤ (0.1 : ℝ))
+    rwa [← Real.rpow_natCast (Real.log 2) 10, ← Real.rpow_mul hl2,
+      show ((10 : ℕ) : ℝ) * (0.1 : ℝ) = 1 from by norm_num, Real.rpow_one] at h
+  rw [Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 2)]
+  apply Real.exp_le_exp.mpr
+  calc Real.log 2 * Real.log x ^ (0.6 : ℝ)
+      ≤ Real.log x ^ (0.1 : ℝ) * Real.log x ^ (0.6 : ℝ) :=
+        mul_le_mul_of_nonneg_right hlog2le (by positivity)
+    _ = Real.log x ^ (0.7 : ℝ) := by
+        rw [← Real.rpow_add hlogpos]; norm_num
+
 /-- Lower endpoint of the interval `I_y` (5.9): `log(y/x)/log(4/3) + log^{0.8} x`. -/
 noncomputable def IyLo (x y : ℝ) : ℝ :=
   Real.log (y / x) / Real.log (4 / 3) + Real.log x ^ (0.8 : ℝ)
