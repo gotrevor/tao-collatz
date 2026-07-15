@@ -356,18 +356,22 @@ noncomputable def cn (x : ℝ) (E : Set ℕ) (n : ℕ) (X : ZMod (3 ^ (n - mZero
   (3 : ℝ) ^ (n - mZero x)
     * ∑' M : ℕ, if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X then (M : ℝ)⁻¹ else 0
 
-/-- **Lemma 5.3** (`c_n(X) ≪ 1`) — the shared self-contained prerequisite of B1 and B2.  The harmonic
-weight `c_n` is bounded uniformly in the residue `X`, the scale `n ∈ I_y`, and (via `x₀`) in `x`.  Tao
-pp.26–27: split `c_n ≤ ∑_{(a_1..a_{m₀})} c_{n,a}`, and for each `(a_1,…,a_{m₀})` the Chinese-remainder
-constraint pins `M` to a single class mod `2^{a_{[1,m₀]}+1}·3^{n−m₀}`, so the integral test (5.25)/(5.26)
-gives `c_{n,a} ≪ 2^{−a_{[1,m₀]}/2}`, summing over `(a_1,…,a_{m₀}) ∈ ℕ^{m₀}` to `O(1)`.
-**[Self-contained integral-test estimate; does NOT consume C10.  Used as `sup_X c_n ≤ C` by both the
-B1 good-restriction bound and the B2 osc-Hölder bound.]** -/
+/-- **Crude harmonic-weight bound** (`c_n(X) ≪ log^{0.7}x`) — the shared self-contained prerequisite of
+B1 and B2.  This is a *weakening* of Tao's Lemma 5.3 (`c_n ≪ 1`, which needs the delicate `c_{n,a}`
+split over `ℕ^{m₀}` with the extra CRT modulus `2^{a_{[1,m₀]}+1}`).  We only need the crude bound: the
+`E'` window (5.10) is `exp(±log^{0.7}x)·(4/3)^{m₀}·x`, so a SINGLE integral test (5.25,
+`harmonic_ap_integral_bound`) on the residue class mod `3^{n−m₀}` gives
+`c_n(X) = 3^{n−m₀}·∑_{M∈E', M≡X} 1/M ≤ log(M₁/M₀) + 3^{n−m₀}/M₀ ≤ 2·log^{0.7}x + o(1) ≤ C·log^{0.7}x`.
+This SUFFICES downstream because both consumers have adjustable/faster-decaying partners:
+**B1** pairs it with `approx_good_tuple_whp` (decay `log^{−1}x`, so `log^{0.7}·log^{−1} = log^{−0.3}`),
+**B2** pairs it with `fine_scale_mixing`'s `osc ≤ C·m₀^{−A}` for EVERY `A>0` (take `A>0.7`).
+**[Self-contained integral-test estimate; does NOT consume C10.  NOT Lemma 5.3 — a sufficient crude
+weakening.  Used as `sup_X c_n ≤ C·log^{0.7}x` by both B1 and B2.]** -/
 theorem cn_bound :
     ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ C := by
+          ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ C * (Real.log x) ^ (0.7 : ℝ) := by
   sorry
 
 /-- **(5.20) sub-lemma B1 — geomHalf → `syracZ` reindex.**  `perNHarmonic` (whose inner weight is the
@@ -394,10 +398,10 @@ weight is the `3^{m₀}`-fiber **average** of `c_n` (`d_n(X') = 3^{m₀−(n−m
 `harmZfine − mainZ = ∑_X [syracZ(n−m₀)(X) − fiber_avg(X)]·c_n(X)` with `fiber_avg(X) =
 3^{m₀−(n−m₀)}·syracZ(m₀)(X mod 3^{m₀})`.  Bound by **L¹×L∞ Hölder**:
 `|harmZfine − mainZ| ≤ (sup_X c_n(X))·∑_X|syracZ(n−m₀)(X) − fiber_avg(X)| = (sup c_n)·osc m₀ (n−m₀)`,
-then `sup c_n ≤ C` by **Lemma 5.3** (`cn_bound`) and `osc ≤ C'·m₀^{−A}` by **Prop 1.14
-(`fine_scale_mixing`, C10)** — applicable since `m₀ ≤ n−m₀` (`two_mZero_le_of_mem_Iy`), giving
-`≤ C''·(10⁻⁵ log x)^{−A} ≤ C‴·log^{−c}x` for `A ≥ c`.  **NO M-equidistribution needed** — Tao routes
-the whole thing through the sup/osc pair, not through equidistributing `M` over residues.
+then `sup c_n ≤ C·log^{0.7}x` by the crude `cn_bound` and `osc ≤ C'·m₀^{−A}` by **Prop 1.14
+(`fine_scale_mixing`, C10)** for EVERY `A>0` — applicable since `m₀ ≤ n−m₀` (`two_mZero_le_of_mem_Iy`).
+Taking `A > 0.7 + c`: `≤ C''·log^{0.7}x·(10⁻⁵ log x)^{−A} ≤ C‴·log^{−c}x`.  **NO M-equidistribution
+needed** — Tao routes the whole thing through the sup/osc pair, not through equidistributing `M`.
 **[C9 leaf B2 — the C10 seam; the sole isolated C10 hole in C9.]** -/
 theorem harmZfine_to_mainZ :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →

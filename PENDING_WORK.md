@@ -19,9 +19,27 @@ attack plan I wrote above (the "M-equidistribution" worry was a MISREAD — Tao 
   `two_mZero_le_of_mem_Iy` (`m₀ ≤ n−m₀`). `m₀ ≈ 10⁻⁵ log x` ⟹ `m₀^{−A} ≤ log^{−c}x` for `A ≥ c`. **DONE
   structurally — no M-equidistribution.**
 
-**Next grind steps (in order):** (1) prove **`cn_bound`** (Lemma 5.3) — self-contained, the CRT + integral
-test (5.25)/(5.26); it unblocks both B1 and B2. Reuse `intTest_*` machinery from FirstPassage/C7 if it
-fits. (2) Prove **B1** via the good-restriction (needs the `perNHarmonic = 𝔼[1_good·c_n]` +
+**⚡ STRATEGIC FORK RESOLVED (2026-07-15): `cn_bound` restated to the CRUDE bound `c_n ≤ C·log^{0.7}x`
+(NOT Lemma 5.3's `c_n≪1`).** Reason: Tao's `c_n≪1` needs the delicate `c_{n,a}` split over `ℕ^{m₀}`
+(extra CRT modulus `2^{a_{[1,m₀]}+1}`) — HARD. But the crude bound (one integral test on the `E'` window
+mod `3^{n−m₀}`) is SUFFICIENT downstream, because both consumers have faster/adjustable partners:
+- **B1**: `approx_good_tuple_whp` decays `log^{−1}x` (verified: `goodTuple_prefix_dev_sum` uses `c=1`),
+  so `log^{0.7}·log^{−1} = log^{−0.3}` ✓.
+- **B2**: `fine_scale_mixing`'s `osc ≤ C·m₀^{−A}` holds for EVERY `A>0`; take `A>0.7` ⟹ `log^{0.7}·
+  (10⁻⁵log x)^{−A} = log^{−(A−0.7)}` ✓.
+The window ratio `M₁/M₀ = exp(2 log^{0.7}x)` is EXPONENTIAL, so a naive count gives `exp` — the integral
+test (`harmonic_ap_integral_bound`) is essential to get `log(M₁/M₀) = 2 log^{0.7}x`. This restatement
+converts `cn_bound` from infeasible-without-Tao's-hard-argument to a one-integral-test proof.
+
+**Next grind steps (in order):** (1) prove **`cn_bound`** (crude, `c_n ≤ C·log^{0.7}x`). **Template =
+`intTest_class_dev`** (`FirstPassage.lean:685`): it does the SAME residue-class harmonic-sum→AP→integral
+pattern (via `classMass_ap_form` + `harmonic_ap_integral_bound`) but for the C7 window `[y,y^α]` /
+modulus `2^{3n₀}`. Adapt: reproduce a `classMass_ap_form` analog for the `E'` window
+`[exp(−log^{0.7}x)(4/3)^{m₀}x, exp(+…)]` / modulus `3^{n−m₀}` — express `∑'_{M∈E',M≡X mod q} 1/M` as
+`∑_{i<count} (a + q·i)⁻¹` (a = least M in class∩window, count = #), apply `harmonic_ap_integral_bound`
+(err `≤ a⁻¹ ≤ 1/M₀ = o(1)`), then `c_n = q·[q⁻¹log(M₁/M₀) + O(1/M₀)] = log(M₁/M₀)+o(1) ≤ 2log^{0.7}x+1`.
+The fiddly part is the tsum→finite-AP reindex over the REAL window bounds in `Eprime`.
+(2) Prove **B1** via the good-restriction (needs the `perNHarmonic = 𝔼[1_good·c_n]` +
 `harmZfine = 𝔼[c_n(Syrac)]` rewrites, i.e. Tonelli reorder + `syracZ_eq_rev_fnat` mass identity +
 `cn_bound`). (3) Prove **B2** via the osc identity: the key lemma is
 `harmZfine − mainZ = ∑_X g(X)·c_n(X)` with `g = syracZ(n−m₀) − fiber_avg` (needs `syracZ_map_cast` for
