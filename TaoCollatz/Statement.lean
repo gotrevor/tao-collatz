@@ -22,7 +22,7 @@ namespace TaoCollatz
 (in logarithmic density) satisfy `Colmin(N) < f(N)`. -/
 theorem tao_collatz (f : ℕ → ℝ) (hf : Filter.Tendsto f Filter.atTop Filter.atTop) :
     AlmostAllPos fun N => (colMin N : ℝ) < f N := by
-  sorry
+  exact tao_collatz_spine f hf
 
 /-- **Theorem 3.1** (Tao 2019, `Colmin` form): quantitative version — the log-probability
 that `Colmin(N) ≤ N₀` on the window `[1, x]` is at least `1 - C/(log N₀)^c`. -/

@@ -1224,11 +1224,6 @@ Sorried wiring theorems, byte-identical in statement to the two frozen
   `→ ∞`), then `almostAllPos_oddPart_of_almostAllOdd` + `oddPart N ≤ N` gives
   `colMin N = syrMin (oddPart N) < f̃ (oddPart N) ≤ f N`. -/
 
-/-- Spine for **Theorem 1.3**: statement identical to the frozen `tao_collatz`. -/
-theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
-    AlmostAllPos fun N => (colMin N : ℝ) < f N := by
-  sorry
-
 /-- Spine for **Theorem 3.1 (Colmin form)**: statement identical to the frozen
 `tao_collatz_quantitative`. -/
 theorem tao_collatz_quantitative_spine :
@@ -1328,5 +1323,138 @@ theorem tao_collatz_quantitative_spine :
     calc B / D ≤ (16 * Ca * D / (Real.log N₀) ^ c) / D := h1
       _ = 16 * Ca / (Real.log N₀) ^ c := by field_simp
   linarith [hBD]
+
+/-- Spine for **Theorem 1.3**: statement identical to the frozen `tao_collatz`. -/
+theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
+    AlmostAllPos fun N => (colMin N : ℝ) < f N := by
+  obtain ⟨cb, Cb, hcb, hCb, hq⟩ := tao_collatz_quantitative_spine
+  unfold AlmostAllPos HasLogDensity
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  -- pick a fixed `N₀` with `Cb/(log N₀)^cb < ε/3`
+  have hlogto : Tendsto (fun n : ℕ => Real.log n) atTop atTop :=
+    Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
+  have hrpowto : Tendsto (fun n : ℕ => (Real.log n) ^ cb) atTop atTop :=
+    (tendsto_rpow_atTop hcb).comp hlogto
+  have h0 : Tendsto (fun n : ℕ => Cb / (Real.log n) ^ cb) atTop (nhds 0) :=
+    Tendsto.div_atTop tendsto_const_nhds hrpowto
+  have hev : ∀ᶠ n : ℕ in atTop, Cb / (Real.log n) ^ cb < ε / 3 :=
+    (tendsto_order.1 h0).2 (ε / 3) (by linarith)
+  obtain ⟨N₀, hN₀2, hN₀ε⟩ : ∃ N₀ : ℕ, 2 ≤ N₀ ∧ Cb / (Real.log N₀) ^ cb < ε / 3 := by
+    obtain ⟨n, hn⟩ := (hev.and (eventually_ge_atTop 2)).exists
+    exact ⟨n, hn.2, hn.1⟩
+  -- pick `M` past which `f > N₀`
+  obtain ⟨M, hM⟩ := eventually_atTop.mp (hf.eventually_gt_atTop (N₀ : ℝ))
+  set SM := logSum Set.univ (posInterval M) with hSMdef
+  have hSM0 : (0 : ℝ) ≤ SM := by
+    rw [hSMdef]; unfold logSum
+    exact Finset.sum_nonneg fun N _ => by positivity
+  -- eventual threshold in `x`
+  obtain ⟨X, hX⟩ := eventually_atTop.mp
+    ((hlogto.eventually_gt_atTop (24 * SM / ε)).and (eventually_ge_atTop 2))
+  refine ⟨X, fun x hx => ?_⟩
+  obtain ⟨hlogx_big, hx2⟩ := hX x hx
+  -- per-`x` objects
+  set D := logSum Set.univ (posInterval x) with hDdef
+  set Sgood := logSum {N | (colMin N : ℝ) < f N} (posInterval x) with hSgooddef
+  set S1 := logSum {N | colMin N ≤ N₀} (posInterval x) with hS1def
+  set S2 := logSum {N | N < M} (posInterval x) with hS2def
+  -- `D ≥ 1` (the `N = 1` term)
+  have hD1 : (1 : ℝ) ≤ D := by
+    rw [hDdef]; unfold logSum
+    rw [Finset.filter_congr_decidable]
+    have h1mem : 1 ∈ (posInterval x).filter (· ∈ Set.univ) := by
+      rw [Finset.mem_filter]
+      refine ⟨?_, Set.mem_univ 1⟩
+      rw [posInterval, Finset.mem_filter, Finset.mem_range]
+      omega
+    calc (1 : ℝ) = (1 : ℝ) / ((1 : ℕ) : ℝ) := by norm_num
+      _ ≤ ∑ N ∈ (posInterval x).filter (· ∈ Set.univ), (1 : ℝ) / N :=
+          Finset.single_le_sum (f := fun N : ℕ => (1 : ℝ) / N)
+            (fun i _ => by positivity) h1mem
+  have hD0 : (0 : ℝ) < D := lt_of_lt_of_le one_pos hD1
+  -- `log x ≤ 8D` (dominates the odd-window mass)
+  have hDodd : logSum Set.univ (oddInterval x) ≤ D := by
+    rw [hDdef]; unfold logSum
+    refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun N _ _ => by positivity
+    intro N hN
+    simp only [Finset.mem_filter] at hN ⊢
+    obtain ⟨hNi, -⟩ := hN
+    simp only [oddInterval, posInterval, Finset.mem_filter, Finset.mem_range,
+      ge_iff_le] at hNi ⊢
+    exact ⟨⟨hNi.1, by omega⟩, Set.mem_univ N⟩
+  have hDlog : Real.log x ≤ 8 * D := by
+    have := log_le_eight_logSum_univ_oddInterval hx2
+    linarith
+  have hSgood0 : (0 : ℝ) ≤ Sgood := by
+    rw [hSgooddef]; unfold logSum
+    exact Finset.sum_nonneg fun N _ => by positivity
+  have hS20 : (0 : ℝ) ≤ S2 := by
+    rw [hS2def]; unfold logSum
+    exact Finset.sum_nonneg fun N _ => by positivity
+  -- `Sgood ≤ D`
+  have hSgoodD : Sgood ≤ D := by
+    rw [hSgooddef, hDdef]; unfold logSum
+    rw [Finset.sum_filter, Finset.sum_filter]
+    refine Finset.sum_le_sum fun N _ => ?_
+    rw [if_pos (Set.mem_univ N)]
+    have h0 : (0 : ℝ) ≤ 1 / (N : ℝ) := by positivity
+    split_ifs <;> linarith
+  -- the split: `{colMin ≤ N₀} ⊆ {good} ∪ {N < M}` termwise
+  have hkey : S1 ≤ Sgood + S2 := by
+    rw [hS1def, hSgooddef, hS2def]; unfold logSum
+    rw [Finset.sum_filter, Finset.sum_filter, Finset.sum_filter,
+      ← Finset.sum_add_distrib]
+    refine Finset.sum_le_sum fun N _ => ?_
+    by_cases h1 : N ∈ {N | colMin N ≤ N₀}
+    · rw [if_pos h1]
+      have h1' : colMin N ≤ N₀ := h1
+      rcases le_or_gt M N with h2 | h2
+      · have hgood : N ∈ {N | (colMin N : ℝ) < f N} := by
+          simp only [Set.mem_setOf_eq]
+          have hs : (colMin N : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast h1'
+          exact lt_of_le_of_lt hs (hM N h2)
+        rw [if_pos hgood]
+        have h0 : (0 : ℝ) ≤ 1 / (N : ℝ) := by positivity
+        split_ifs <;> linarith
+      · have hsmall : N ∈ {N | N < M} := h2
+        rw [if_pos hsmall]
+        have h0 : (0 : ℝ) ≤ 1 / (N : ℝ) := by positivity
+        split_ifs <;> linarith
+    · rw [if_neg h1]
+      have h0 : (0 : ℝ) ≤ 1 / (N : ℝ) := by positivity
+      split_ifs <;> linarith
+  -- `S2 ≤ SM` (the small terms live in `posInterval M`)
+  have hS2SM : S2 ≤ SM := by
+    rw [hS2def, hSMdef]; unfold logSum
+    refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun N _ _ => by positivity
+    intro N hN
+    simp only [Finset.mem_filter] at hN ⊢
+    obtain ⟨hNi, hNM⟩ := hN
+    have hNM' : N < M := hNM
+    simp only [posInterval, Finset.mem_filter, Finset.mem_range, ge_iff_le] at hNi ⊢
+    exact ⟨⟨by omega, hNi.2⟩, Set.mem_univ N⟩
+  -- `S2/D < ε/3` from `24·SM/ε < log x ≤ 8D`
+  have hS2D : S2 / D < ε / 3 := by
+    have h1 : 24 * SM / ε < 8 * D := lt_of_lt_of_le hlogx_big hDlog
+    have h2 : 24 * SM < 8 * D * ε := (div_lt_iff₀ hε).mp h1
+    rw [div_lt_iff₀ hD0]
+    nlinarith [hS2SM]
+  -- quantitative bound at `N₀`
+  have hq' : 1 - Cb / (Real.log N₀) ^ cb ≤ S1 / D := hq N₀ x hN₀2 hx2
+  -- assemble
+  have hp_eq : logProb {N | (colMin N : ℝ) < f N} (posInterval x) = Sgood / D := rfl
+  have h2 : S1 / D ≤ Sgood / D + S2 / D := by
+    rw [← add_div]
+    gcongr
+  have hp_ge : 1 - 2 * ε / 3 < Sgood / D := by
+    have := hN₀ε
+    linarith
+  have hp_le : Sgood / D ≤ 1 := by
+    rw [div_le_one hD0]
+    exact hSgoodD
+  rw [hp_eq, Real.dist_eq, abs_of_nonpos (by linarith)]
+  linarith
+
 
 end TaoCollatz
