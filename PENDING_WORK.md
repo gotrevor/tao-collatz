@@ -1,3 +1,22 @@
+## 2026-07-15 — §3 TELESCOPE DECOMPOSED: descent machinery in Sec3/Reduction.lean. Census 13 + 0 orange.
+
+**Advance on the crux** (`tao_syracuse_quantitative_sum`, the C6 analytic core): the paper's pp.17–18
+argument is now a compiling Lean skeleton. PROVED deterministic orbit layer: `syrMin_le_syrMin_iterate`,
+`syrMin_le_self`, `passes_mono`, `passLoc_le_of_passes`, `passTime_anti`, `syrMin_passLoc_anti`,
+`descentEvent_mono` (threshold-monotone B_x), `syrMin_le_of_descentEvent`. Defs `descentEvent`,
+`descentProb`. SORRIED (each with paper line + route in docstring): `logUnifOdd_expect_indicator`
+(prob = harmonic mass/windowMass), `descentProb_step` (one-scale recursion via `stabilization` dTV +
+`abs_expect_indicator_sub_le_dTV`), `descentProb_base` (nonescape at x ≤ N₀), `descent_whp` (the
+J-scale telescope — THE remaining hard piece; induction over j with error sum Σ(α^j log y)^{-c}),
+`window_bad_sum` ((3.1) per-window). Sorry bump 8→13 is decomposition progress per blueprint rules.
+
+**Next attack order:** (1) `logUnifOdd_expect_indicator` (mechanical, PMF.ofFinset expect unfold);
+(2) `descentProb_base` (event ⊇ passes + `first_passage_nonescape`); (3) `descentProb_step`;
+(4) `descent_whp` telescope (hardest — design the induction on scales as x^{α^{-j}}, or reformulate
+as strong induction on ⌊log x⌋); (5) `window_bad_sum`; (6) assemble the pin + covering argument.
+
+---
+
 ## 2026-07-15 — 📌 C6 INTERMEDIATES PINNED (directive step 2 DONE). Census 10 sorries + 0 orange.
 
 **Advance on the crux:** the last un-pinned structural surface (the §3 reduction, the headline seam)

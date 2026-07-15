@@ -1,5 +1,6 @@
 import TaoCollatz.Basic.Collatz
 import TaoCollatz.Basic.LogDensity
+import TaoCollatz.Sec5.Stabilization
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -30,6 +31,127 @@ Statement notes for the judge (faithfulness choices, flagged, not silently made)
 namespace TaoCollatz
 
 open Filter
+
+/-! ## Descent machinery for the §3 telescoping (worker-authored decomposition)
+
+The paper's proof of Thm 3.1 (pp.17–18) iterates Prop 1.11 over dyadic-in-`α` scales. The
+event `B_x` ("the orbit passes `x` and its passage location eventually reaches `≤ N₀`") is
+`descentEvent`; its probability over the log-uniform window `[y, y^α]` is `descentProb`.
+Deterministic orbit lemmas are proved here; the probabilistic recursion, base case, and
+telescope are named sorries (each with its paper line). -/
+
+/-- `Syrmin` can only rise along the orbit: the orbit of `syr^[k] N` is a tail of `N`'s. -/
+theorem syrMin_le_syrMin_iterate (N k : ℕ) : syrMin N ≤ syrMin (syr^[k] N) := by
+  apply le_csInf (Set.range_nonempty _)
+  rintro b ⟨j, rfl⟩
+  show syrMin N ≤ syr^[j] (syr^[k] N)
+  rw [← Function.iterate_add_apply]
+  exact Nat.sInf_le ⟨j + k, rfl⟩
+
+/-- `Syrmin M ≤ M` (the orbit starts at `M`). -/
+theorem syrMin_le_self (M : ℕ) : syrMin M ≤ M := Nat.sInf_le ⟨0, rfl⟩
+
+/-- Passing a lower threshold implies passing a higher one. -/
+theorem passes_mono {x x' N : ℕ} (h : x ≤ x') : passes x N → passes x' N :=
+  fun ⟨n, hn⟩ => ⟨n, le_trans hn h⟩
+
+/-- The passage location is at most the threshold (on passage). -/
+theorem passLoc_le_of_passes {x N : ℕ} (h : passes x N) : passLoc x N ≤ x := by
+  have hne : {n | syr^[n] N ≤ x}.Nonempty := h
+  have hmem : syr^[passTime x N] N ≤ x := Nat.sInf_mem hne
+  rw [passLoc, if_pos h]
+  exact hmem
+
+/-- A higher threshold is passed no later. -/
+theorem passTime_anti {x x' N : ℕ} (hxx' : x ≤ x') (h : passes x N) :
+    passTime x' N ≤ passTime x N := by
+  have hne : {n | syr^[n] N ≤ x}.Nonempty := h
+  have hmem : syr^[passTime x N] N ≤ x := Nat.sInf_mem hne
+  exact Nat.sInf_le (le_trans hmem hxx')
+
+/-- For `x ≤ x'` the `x`-passage location sits on the orbit of the `x'`-passage location,
+so its `Syrmin` is at least as small (paper p.17: `SyrN(Pass_x) ⊆ SyrN(Pass_{x^α})`). -/
+theorem syrMin_passLoc_anti {x x' N : ℕ} (hxx' : x ≤ x') (h : passes x N) :
+    syrMin (passLoc x' N) ≤ syrMin (passLoc x N) := by
+  have h' : passes x' N := passes_mono hxx' h
+  have hloc' : passLoc x' N = syr^[passTime x' N] N := by rw [passLoc, if_pos h']
+  have hloc : passLoc x N = syr^[passTime x N] N := by rw [passLoc, if_pos h]
+  have hshift : passLoc x N = syr^[passTime x N - passTime x' N] (passLoc x' N) := by
+    rw [hloc', ← Function.iterate_add_apply, hloc]
+    congr 1
+    have := passTime_anti hxx' h
+    omega
+  rw [hshift]
+  exact syrMin_le_syrMin_iterate _ _
+
+/-- The §3 descent event `B_x` (p.17): the orbit passes `≤ x`, and from the passage
+location it eventually reaches `≤ N₀`. -/
+def descentEvent (x N₀ : ℕ) : Set ℕ := {N | passes x N ∧ syrMin (passLoc x N) ≤ N₀}
+
+/-- `B` is monotone in the threshold (the deterministic inclusion driving the recursion,
+p.17: `T_x < ∞ ∧ Pass_x ∈ E_{N₀}` implies `B_{x^α}`). -/
+theorem descentEvent_mono {x x' N₀ : ℕ} (hxx' : x ≤ x') :
+    descentEvent x N₀ ⊆ descentEvent x' N₀ := by
+  rintro N ⟨hp, hs⟩
+  exact ⟨passes_mono hxx' hp, le_trans (syrMin_passLoc_anti hxx' hp) hs⟩
+
+/-- On the descent event, `Syrmin(N) ≤ N₀` (p.18: `Syrmin(N_x) ≤ Syrmin(Pass) ≤ N₀`). -/
+theorem syrMin_le_of_descentEvent {x N₀ N : ℕ} (h : N ∈ descentEvent x N₀) :
+    syrMin N ≤ N₀ := by
+  obtain ⟨hp, hs⟩ := h
+  have hloc : passLoc x N = syr^[passTime x N] N := by rw [passLoc, if_pos hp]
+  rw [hloc] at hs
+  exact le_trans (syrMin_le_syrMin_iterate _ _) hs
+
+/-- `ℙ(B_x)` over the log-uniform window `[y, y^α]`. -/
+noncomputable def descentProb (x : ℕ) (y : ℝ) (N₀ : ℕ) : ℝ :=
+  (logUnifOdd y (y ^ alpha)).expect (Set.indicator (descentEvent x N₀) 1)
+
+open Classical in
+/-- **Indicator expectation formula** for the log-uniform window: the probability of `S`
+is its harmonic mass in the window over the total window mass. -/
+theorem logUnifOdd_expect_indicator {lo hi : ℝ} (h : (logWindow lo hi).Nonempty)
+    (S : Set ℕ) :
+    (logUnifOdd lo hi).expect (Set.indicator S 1)
+      = (∑ N ∈ (logWindow lo hi).filter (· ∈ S), (N : ℝ)⁻¹) / windowMass lo hi := by
+  sorry
+
+/-- **One-scale recursion** (p.17, the display chain): `ℙ(B_x) ≤ ℙ(B_{x^α}) + O(log^{-c}x)`.
+Route: `B_x ⊆ {Pass_x ∈ E}` up to the non-passage event (`stabilization` part 1, note
+`1 ∈ E_{N₀}` since `passLoc = 1` off passage and `Syrmin 1 = 1 ≤ N₀`); swap windows by
+`stabilization`'s dTV bound via `abs_expect_indicator_sub_le_dTV`; re-enter `B_{x^α}` by
+`descentEvent_mono` (⌊x⌋₊ ≤ ⌊x^α⌋₊). -/
+theorem descentProb_step :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
+      descentProb ⌊x⌋₊ (x ^ alpha) N₀
+        ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀ + C * (Real.log x) ^ (-c) := by
+  sorry
+
+/-- **Base case** (p.17 bottom): at scales `x ≤ N₀`, the event needs only passage —
+`Syrmin(Pass) ≤ Pass ≤ ⌊x⌋ ≤ N₀` — so `first_passage_nonescape` gives `1 − O(x^{-c})`. -/
+theorem descentProb_base :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, x ≤ (N₀ : ℝ) →
+      1 - C * x ^ (-c) ≤ descentProb ⌊x⌋₊ (x ^ alpha) N₀ := by
+  sorry
+
+/-- **Telescope** (p.18 top): iterating `descentProb_step` down `J ≈ log_α(log x/log N₀)`
+scales from the base `y < N₀^{1/α}` and summing `∑_j (α^j log y)^{-c} ≪ log^{-c} N₀` gives
+`ℙ(B_{x^{1/α}}) ≥ 1 − O(log^{-c}N₀)` — the window `[x, x^α]`, threshold `⌊x^{1/α}⌋`. -/
+theorem descent_whp :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+      (N₀ : ℝ) ≤ x →
+      1 - C * (Real.log N₀) ^ (-c) ≤ descentProb ⌊x ^ (alpha⁻¹)⌋₊ x N₀ := by
+  sorry
+
+/-- **Window bad-mass** ((3.1), p.18): on any window `[x, x^α]` with `N₀ ≤ x`, the harmonic
+mass of `{Syrmin > N₀}` is `≪ log^{-c}N₀ · log x`. From `descent_whp` +
+`syrMin_le_of_descentEvent` + `logUnifOdd_expect_indicator` + `windowMass_le_half_log`. -/
+theorem window_bad_sum :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+      (N₀ : ℝ) ≤ x →
+      ∑ N ∈ (logWindow x (x ^ alpha)).filter (· ∈ {N | N₀ < syrMin N}), (N : ℝ)⁻¹
+        ≤ C * (Real.log N₀) ^ (-c) * Real.log x := by
+  sorry
 
 /-- **Theorem 3.1, Syracuse sum form** (Tao 2019 p.16, first display):
 `∑_{N ∈ 2ℕ+1 ∩ [1,x], Syrmin(N) > N₀} 1/N ≪ log x / (log N₀)^c`. -/
