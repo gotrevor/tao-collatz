@@ -491,6 +491,90 @@ theorem harmonic_class_window_bound {lo hi : ℝ} (hlo : 1 ≤ lo) {q : ℕ} (hq
   have hainv : (a : ℝ)⁻¹ ≤ 1 / lo := by rw [one_div]; exact inv_anti₀ hlopos ha_ge
   exact add_le_add (mul_le_mul_of_nonneg_left hlog_le (by positivity)) hainv
 
+/-- **Window size facts** for the crude `cn_bound` integral test.  For `x ≥ exp(1024)` and a fine
+scale `k ≤ n₀`, the (5.10) window `[lo, hi] = [exp(−log^{0.7}x)·(4/3)^m·x, exp(log^{0.7}x)·(4/3)^m·x]`
+satisfies: (i) `2·3^k + 2 ≤ lo` (so `q = 3^k ≤ lo`, `lo ≥ 1`, and the residue class is nonempty),
+(ii) `2·lo ≤ hi` (so `lo + q + 1 ≤ hi`), and (iii) `hi = exp(2 log^{0.7}x)·lo` (so `log(hi/lo)`
+is exactly `2 log^{0.7}x`).  Core estimates: `3^k ≤ 3^{n₀} ≤ x^{1/5}` (`three_pow_nZero_le`), and the
+sub-linear gain `log^{0.7}x ≤ (1/8) log x` (from `log^{0.3}x ≥ 1024^{0.3} = 8`), giving
+`log^{0.7}x + log 4 ≤ (4/5) log x`, i.e. `4·x^{1/5} ≤ exp(−log^{0.7}x)·x ≤ lo`. -/
+theorem cn_window_size {x : ℝ} (hx : Real.exp 1024 ≤ x) {k m : ℕ} (hk : k ≤ nZero x) :
+    2 * (3 : ℝ) ^ k + 2 ≤ Real.exp (-(Real.log x ^ (0.7 : ℝ))) * (4 / 3) ^ m * x ∧
+    2 * (Real.exp (-(Real.log x ^ (0.7 : ℝ))) * (4 / 3) ^ m * x)
+      ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ m * x ∧
+    Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ m * x
+      = Real.exp (2 * Real.log x ^ (0.7 : ℝ))
+          * (Real.exp (-(Real.log x ^ (0.7 : ℝ))) * (4 / 3) ^ m * x) := by
+  have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos _) hx
+  have hx1 : (1 : ℝ) < x := lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (1024 : ℝ)]) hx
+  have hL1024 : (1024 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1024]; exact Real.log_le_log (Real.exp_pos _) hx
+  set L := Real.log x with hLdef
+  have hLpos : (0 : ℝ) < L := by linarith
+  set t := L ^ (0.7 : ℝ) with htdef
+  have ht1 : (1 : ℝ) ≤ t := by
+    rw [htdef]
+    calc (1 : ℝ) = (1 : ℝ) ^ (0.7 : ℝ) := (Real.one_rpow _).symm
+      _ ≤ L ^ (0.7 : ℝ) := Real.rpow_le_rpow (by norm_num) (by linarith : (1 : ℝ) ≤ L) (by norm_num)
+  have htnn : (0 : ℝ) ≤ t := le_trans zero_le_one ht1
+  have hxe : Real.exp L = x := Real.exp_log hxpos
+  have hm1 : (1 : ℝ) ≤ (4 / 3 : ℝ) ^ m := one_le_pow₀ (by norm_num)
+  -- `hi = exp(2t)·lo`
+  have hhieq : Real.exp t * (4 / 3) ^ m * x
+      = Real.exp (2 * t) * (Real.exp (-t) * (4 / 3) ^ m * x) := by
+    rw [show Real.exp (2 * t) * (Real.exp (-t) * (4 / 3 : ℝ) ^ m * x)
+        = (Real.exp (2 * t) * Real.exp (-t)) * ((4 / 3 : ℝ) ^ m * x) by ring,
+      ← Real.exp_add, show 2 * t + -t = t by ring]
+    ring
+  refine ⟨?_, ?_, hhieq⟩
+  · -- (i) `2·3^k + 2 ≤ lo`
+    have h3k : (3 : ℝ) ^ k ≤ x ^ ((1 : ℝ) / 5) :=
+      le_trans (pow_le_pow_right₀ (by norm_num) hk) (three_pow_nZero_le hx1.le)
+    have hx15_1 : (1 : ℝ) ≤ x ^ ((1 : ℝ) / 5) :=
+      calc (1 : ℝ) = (1 : ℝ) ^ ((1 : ℝ) / 5) := (Real.one_rpow _).symm
+        _ ≤ x ^ ((1 : ℝ) / 5) := Real.rpow_le_rpow (by norm_num) hx1.le (by norm_num)
+    have hLsplit : L = t * L ^ (0.3 : ℝ) := by rw [htdef, ← Real.rpow_add hLpos]; norm_num
+    have he1024 : (1024 : ℝ) ^ (0.3 : ℝ) = 8 := by
+      rw [show (0.3 : ℝ) = (3 : ℝ) / 10 by norm_num,
+        show (1024 : ℝ) = (2 : ℝ) ^ (10 : ℕ) by norm_num,
+        ← Real.rpow_natCast (2 : ℝ) 10, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2),
+        show ((10 : ℕ) : ℝ) * ((3 : ℝ) / 10) = ((3 : ℕ) : ℝ) by push_cast; norm_num,
+        Real.rpow_natCast]
+      norm_num
+    have hL03 : (8 : ℝ) ≤ L ^ (0.3 : ℝ) := by
+      have h := Real.rpow_le_rpow (by norm_num : (0 : ℝ) ≤ 1024) hL1024
+        (by norm_num : (0 : ℝ) ≤ (0.3 : ℝ))
+      rwa [he1024] at h
+    have hkey1 : 8 * t ≤ L := by
+      have hml := mul_le_mul_of_nonneg_left hL03 htnn
+      nlinarith [hLsplit, hml]
+    have hlog4 : Real.log 4 ≤ 3 := by
+      have := Real.log_le_sub_one_of_pos (show (0 : ℝ) < 4 by norm_num); linarith
+    have hkey : t + Real.log 4 ≤ 4 * L / 5 := by nlinarith [hkey1, hlog4, hL1024]
+    have hx15e : x ^ ((1 : ℝ) / 5) = Real.exp (L * (1 / 5)) := by
+      rw [Real.rpow_def_of_pos hxpos]
+    have hstep : 4 * x ^ ((1 : ℝ) / 5) ≤ Real.exp (-t) * x := by
+      have hlhs : 4 * x ^ ((1 : ℝ) / 5) = Real.exp (Real.log 4 + L * (1 / 5)) := by
+        rw [Real.exp_add, Real.exp_log (by norm_num : (0 : ℝ) < 4), ← hx15e]
+      have hrhs : Real.exp (-t) * x = Real.exp (-t + L) := by rw [Real.exp_add, hxe]
+      rw [hlhs, hrhs]; exact Real.exp_le_exp.mpr (by linarith [hkey])
+    have hlo_ge : Real.exp (-t) * x ≤ Real.exp (-t) * (4 / 3) ^ m * x := by
+      rw [mul_right_comm]
+      exact le_mul_of_one_le_right (mul_pos (Real.exp_pos _) hxpos).le hm1
+    have hcombine : 2 * (3 : ℝ) ^ k + 2 ≤ 4 * x ^ ((1 : ℝ) / 5) := by nlinarith [h3k, hx15_1]
+    calc 2 * (3 : ℝ) ^ k + 2 ≤ 4 * x ^ ((1 : ℝ) / 5) := hcombine
+      _ ≤ Real.exp (-t) * x := hstep
+      _ ≤ Real.exp (-t) * (4 / 3) ^ m * x := hlo_ge
+  · -- (ii) `2·lo ≤ hi`
+    have hlopos : (0 : ℝ) < Real.exp (-t) * (4 / 3) ^ m * x :=
+      mul_pos (mul_pos (Real.exp_pos _) (by positivity)) hxpos
+    have hexp2 : (2 : ℝ) ≤ Real.exp (2 * t) := by
+      have hlog2 : Real.log 2 ≤ 2 * t := by
+        have := Real.log_le_sub_one_of_pos (show (0 : ℝ) < 2 by norm_num); nlinarith [ht1]
+      calc (2 : ℝ) = Real.exp (Real.log 2) := (Real.exp_log (by norm_num)).symm
+        _ ≤ Real.exp (2 * t) := Real.exp_le_exp.mpr hlog2
+    rw [hhieq]; nlinarith [hlopos, hexp2]
+
 /-- **Crude harmonic-weight bound** (`c_n(X) ≪ log^{0.7}x`) — the shared self-contained prerequisite of
 B1 and B2.  This is a *weakening* of Tao's Lemma 5.3 (`c_n ≪ 1`, which needs the delicate `c_{n,a}`
 split over `ℕ^{m₀}` with the extra CRT modulus `2^{a_{[1,m₀]}+1}`).  We only need the crude bound: the
@@ -507,7 +591,102 @@ theorem cn_bound :
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ C * (Real.log x) ^ (0.7 : ℝ) := by
-  sorry
+  refine ⟨4, Real.exp 1024, by norm_num, fun x hx E hE y hy n hn X => ?_⟩
+  classical
+  have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos _) hx
+  have hx1 : (1 : ℝ) < x := lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (1024 : ℝ)]) hx
+  have hL1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]
+    exact Real.log_le_log (Real.exp_pos _)
+      (le_trans (Real.exp_le_exp.mpr (by norm_num : (1 : ℝ) ≤ 1024)) hx)
+  have ht1 : (1 : ℝ) ≤ Real.log x ^ (0.7 : ℝ) :=
+    calc (1 : ℝ) = (1 : ℝ) ^ (0.7 : ℝ) := (Real.one_rpow _).symm
+      _ ≤ Real.log x ^ (0.7 : ℝ) := Real.rpow_le_rpow (by norm_num) hL1 (by norm_num)
+  -- fine scale `n − m₀`, modulus `q = 3^{n−m₀}` (kept explicit to match `cn` after unfolding)
+  have hkn0 : n - mZero x ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
+  have hq1 : 1 ≤ 3 ^ (n - mZero x) := Nat.one_le_pow _ _ (by norm_num)
+  have hqcast : ((3 ^ (n - mZero x) : ℕ) : ℝ) = (3 : ℝ) ^ (n - mZero x) := by push_cast; ring
+  have h3kpos : (1 : ℝ) ≤ (3 : ℝ) ^ (n - mZero x) := one_le_pow₀ (by norm_num)
+  -- window endpoints (byte-identical to `Eprime`'s (5.10) bounds)
+  obtain ⟨hS1, hS2, hhieq⟩ := cn_window_size hx hkn0 (m := mZero x)
+  set lo := Real.exp (-(Real.log x ^ (0.7 : ℝ))) * (4 / 3) ^ mZero x * x with hlodef
+  set hi := Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x with hidef
+  have hlopos : (0 : ℝ) < lo := by nlinarith [hS1, h3kpos]
+  have hhipos : (0 : ℝ) < hi := by nlinarith [hS1, hS2, h3kpos]
+  have hlo1 : (1 : ℝ) ≤ lo := by nlinarith [hS1, h3kpos]
+  have hQle_lo : (3 : ℝ) ^ (n - mZero x) ≤ lo := by nlinarith [hS1, h3kpos]
+  have hwide : lo + ((3 ^ (n - mZero x) : ℕ) : ℝ) + 1 ≤ hi := by
+    rw [hqcast]; nlinarith [hS1, hS2, h3kpos]
+  -- the residue-class harmonic window bound (integral test)
+  have hwin := harmonic_class_window_bound hlo1 hq1 hwide X
+  -- termwise domination: `Eprime`-mask ≤ window-mask (explicit lambdas; `le_trans` bridges by defeq)
+  have hf_nonneg : ∀ M : ℕ,
+      0 ≤ (if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X then (M : ℝ)⁻¹ else 0) := by
+    intro M; split_ifs
+    · exact inv_nonneg.mpr (Nat.cast_nonneg M)
+    · exact le_rfl
+  have hdom : ∀ M : ℕ,
+      (if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X then (M : ℝ)⁻¹ else 0)
+        ≤ (if lo ≤ (M : ℝ) ∧ (M : ℝ) ≤ hi ∧ (M : ZMod (3 ^ (n - mZero x))) = X
+            then (M : ℝ)⁻¹ else 0) := by
+    intro M
+    by_cases hA : Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X
+    · have hwc : lo ≤ (M : ℝ) ∧ (M : ℝ) ≤ hi ∧ (M : ZMod (3 ^ (n - mZero x))) = X := by
+        refine ⟨?_, ?_, hA.2⟩
+        · rw [hlodef]; exact hA.1.2.2.2.1
+        · rw [hidef]; exact hA.1.2.2.2.2
+      rw [if_pos hA, if_pos hwc]
+    · rw [if_neg hA]; split_ifs
+      · exact inv_nonneg.mpr (Nat.cast_nonneg M)
+      · exact le_rfl
+  have hg_summ : Summable (fun M : ℕ =>
+      if lo ≤ (M : ℝ) ∧ (M : ℝ) ≤ hi ∧ (M : ZMod (3 ^ (n - mZero x))) = X
+        then (M : ℝ)⁻¹ else 0) := by
+    refine summable_of_ne_finset_zero
+      (s := (Finset.Icc ⌈lo⌉₊ ⌊hi⌋₊).filter (fun M : ℕ => (M : ZMod (3 ^ (n - mZero x))) = X))
+      (fun b hb => ?_)
+    rw [if_neg]
+    rintro ⟨h1, h2, h3⟩
+    exact hb (by
+      rw [Finset.mem_filter, Finset.mem_Icc, Nat.ceil_le, Nat.le_floor_iff hhipos.le]
+      exact ⟨⟨h1, h2⟩, h3⟩)
+  have hf_summ : Summable (fun M : ℕ =>
+      if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X then (M : ℝ)⁻¹ else 0) :=
+    Summable.of_nonneg_of_le hf_nonneg hdom hg_summ
+  have hcore := le_trans (hf_summ.tsum_le_tsum hdom hg_summ) hwin
+  -- assemble: `cn = q·∑ ≤ q·(window bound) ≤ 4 log^{0.7}x`
+  have hQne : (3 : ℝ) ^ (n - mZero x) ≠ 0 := by positivity
+  have hQdivlo : (3 : ℝ) ^ (n - mZero x) / lo ≤ 1 := (div_le_one hlopos).mpr hQle_lo
+  have hlo_le_hi : lo ≤ hi := by nlinarith [hS2, hlopos]
+  have hnum : hi + (3 : ℝ) ^ (n - mZero x) ≤ 2 * hi := by nlinarith [le_trans hQle_lo hlo_le_hi]
+  have hfrac : (hi + (3 : ℝ) ^ (n - mZero x)) / lo ≤ 2 * Real.exp (2 * Real.log x ^ (0.7 : ℝ)) := by
+    rw [div_le_iff₀ hlopos]
+    calc hi + (3 : ℝ) ^ (n - mZero x) ≤ 2 * hi := hnum
+      _ = 2 * (Real.exp (2 * Real.log x ^ (0.7 : ℝ)) * lo) := by rw [hhieq]
+      _ = 2 * Real.exp (2 * Real.log x ^ (0.7 : ℝ)) * lo := by ring
+  have hlogbound : Real.log ((hi + (3 : ℝ) ^ (n - mZero x)) / lo)
+      ≤ Real.log 2 + 2 * Real.log x ^ (0.7 : ℝ) := by
+    have hpos : (0 : ℝ) < (hi + (3 : ℝ) ^ (n - mZero x)) / lo := by positivity
+    calc Real.log ((hi + (3 : ℝ) ^ (n - mZero x)) / lo)
+        ≤ Real.log (2 * Real.exp (2 * Real.log x ^ (0.7 : ℝ))) := Real.log_le_log hpos hfrac
+      _ = Real.log 2 + 2 * Real.log x ^ (0.7 : ℝ) := by
+          rw [Real.log_mul (by norm_num) (Real.exp_ne_zero _), Real.log_exp]
+  have hlog2 : Real.log 2 ≤ 1 := by
+    have := Real.log_le_sub_one_of_pos (show (0 : ℝ) < 2 by norm_num); linarith
+  have harith : (3 : ℝ) ^ (n - mZero x)
+        * (((3 ^ (n - mZero x) : ℕ) : ℝ)⁻¹
+            * Real.log ((hi + ((3 ^ (n - mZero x) : ℕ) : ℝ)) / lo) + 1 / lo)
+      = Real.log ((hi + (3 : ℝ) ^ (n - mZero x)) / lo) + (3 : ℝ) ^ (n - mZero x) / lo := by
+    rw [hqcast, mul_add, ← mul_assoc, mul_inv_cancel₀ hQne, one_mul, mul_one_div]
+  rw [cn]
+  calc (3 : ℝ) ^ (n - mZero x)
+        * (∑' M, (if Eprime x E M ∧ (M : ZMod (3 ^ (n - mZero x))) = X then (M : ℝ)⁻¹ else 0))
+      ≤ (3 : ℝ) ^ (n - mZero x)
+          * (((3 ^ (n - mZero x) : ℕ) : ℝ)⁻¹
+              * Real.log ((hi + ((3 ^ (n - mZero x) : ℕ) : ℝ)) / lo) + 1 / lo) :=
+        mul_le_mul_of_nonneg_left hcore (by positivity)
+    _ = Real.log ((hi + (3 : ℝ) ^ (n - mZero x)) / lo) + (3 : ℝ) ^ (n - mZero x) / lo := harith
+    _ ≤ 4 * Real.log x ^ (0.7 : ℝ) := by nlinarith [hlogbound, hQdivlo, hlog2, ht1]
 
 /-- **(5.20) sub-lemma B1 — geomHalf → `syracZ` reindex.**  `perNHarmonic` (whose inner weight is the
 `2^{−pre ā}` iid-geomHalf mass over *good, affine-solvable* tuples) agrees with `harmZfine` (the exact
