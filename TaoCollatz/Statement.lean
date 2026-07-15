@@ -1,5 +1,6 @@
 import TaoCollatz.Basic.Collatz
 import TaoCollatz.Basic.LogDensity
+import TaoCollatz.Sec3.Reduction
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -28,6 +29,6 @@ that `Colmin(N) ≤ N₀` on the window `[1, x]` is at least `1 - C/(log N₀)^c
 theorem tao_collatz_quantitative :
     ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (posInterval x) := by
-  sorry
+  exact tao_collatz_quantitative_spine
 
 end TaoCollatz
