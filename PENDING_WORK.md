@@ -1,7 +1,32 @@
-# 🎯 C8 close — attack plan (updated 2026-07-15, HEAD after goodTuple core)
+# 🎯 C8 close — attack plan (updated 2026-07-15, HEAD after step-back kernel)
 
-**Frontier**: C10 ✅ done · C7 ✅ **DONE + axiom-clean** · C8 = live target, **now 2 sorries** (was 3).
+**Frontier**: C10 ✅ done · C7 ✅ **DONE + axiom-clean** · C8 = live target, **2 sorries**
+(`first_passage_affine_reindex`, `passtime_window_inner`).
 **C8 = `first_passage_approx`** (Prop 5.2 / (5.8), `Sec5/ApproxFormula.lean`).
+
+## ✅ ADVANCED THIS LAP — (5.17) step-back EXACT core proved, axiom-clean (route-decisive leg)
+The route-decisive leg `first_passage_affine_reindex` was attacked at its EXACT sub-part per the
+mandate ("attack the `B_{n,y}` event identity FIRST — it is exact"). Two new axiom-clean lemmas:
+- **`passTime_stepback`** (`Sec5/FirstPassage.lean`, after `passLoc`): for `passes x N` and
+  `k ≤ T_x N`, `passes x (syr^[k]N) ∧ T_x(syr^[k]N) = T_x N − k ∧ Pass_x(syr^[k]N) = Pass_x N`.
+  Pure `sInf`-algebra (`Nat.sInf_mem`/`Nat.sInf_le`/`Function.iterate_add_apply`), NO orbit-size
+  estimate. `#print axioms` = `[propext, Classical.choice, Quot.sound]`.
+- **`firstPass_event_stepback_subset`** (`Sec5/ApproxFormula.lean`, before `first_passage_affine_reindex`):
+  for `m ≤ n`, `{T_x N = n ∧ Pass_x N ∈ E} ⊆ {T_x(syr^[n-m]N) = m ∧ Pass_x(syr^[n-m]N) ∈ E}`.
+  The EXACT forward `B_{n,y}` inclusion; consumes `passTime_stepback`. Axiom-clean.
+
+**Key finding (de-risks the pin):** the `T_x`/`Pass_x`/oddness half of `Eprime(syr^{n-m₀}N)` is an
+EXACT consequence of `T_x N = n` — the "no early passage" needed for the step-back is automatic
+because `T_x N = n` already means the orbit is `> x` for every step `< n ≥ n-m₀`. So the ONLY
+analytic content in the (5.17) step is the `E'` **size window** bounds
+`exp(±log^{0.7}x)·(4/3)^{m₀}·x` = the (5.13)/(5.14) orbit estimate `syr^{n-m₀}N ≈ (3/4)^{n-m₀}N_y`.
+
+**Remaining holes in `first_passage_affine_reindex` (hardest-first):**
+1. **(5.18) affine pushforward count** — `P({syr^{n-m₀}N ∈ E'} ∧ good) → ∑_ā∑_M P(Aff_ā N_y = M)`
+   via `valVec_unique` + `aff_valVec_eq_syr` (main term ā=valVec), truncation absorbed in the error.
+   This is the piece that touches the pinned `approxMainTerm` def — attack next.
+2. **(5.13)/(5.14) orbit size estimate** — feeds the `E'` size window and the reverse step-back
+   inclusion. Analytic (`syr_iterate_key` + goodTuple prefix control).
 
 ## ✅ CLOSED THIS LAP — `goodTuple_prefix_dev_sum` (5.12 analytic core), axiom-clean
 `#print axioms goodTuple_prefix_dev_sum` = `[propext, Classical.choice, Quot.sound]`. With it,

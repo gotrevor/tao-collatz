@@ -864,13 +864,36 @@ theorem first_passage_window_reduce :
         add_le_add (mul_le_mul_of_nonneg_left hA hCg.le) (mul_le_mul_of_nonneg_left hB hCw.le)
     _ = (Cg + Cw) * (Real.log x) ^ (-(min cg cw)) := by ring
 
+/-- **(5.17) step-back event inclusion — the EXACT forward direction.**  For any window index
+`n ≥ m`, the first-passage event `{T_x N = n ∧ Pass_x N ∈ E}` is contained in the stepped-back
+event `{T_x(Syr^{n-m}N) = m ∧ Pass_x(Syr^{n-m}N) ∈ E}`.  This is the pure event-algebra core of the
+`B_{n,y}` chain: since `T_x N = n` already forces the orbit to stay `> x` for every step `< n`
+(hence `< n-m`), stepping back `n-m` steps lands exactly at first-passage time `m` with the *same*
+passage location.  Proved from `passTime_stepback`; no orbit *size* estimate is used here (that
+enters only the reverse inclusion and the `E'` size window). -/
+theorem firstPass_event_stepback_subset (x' : ℕ) (E : Set ℕ) (n m : ℕ) (hmn : m ≤ n) :
+    {N | passes x' N ∧ passTime x' N = n ∧ passLoc x' N ∈ E}
+      ⊆ {N | passTime x' (syr^[n - m] N) = m ∧ passLoc x' (syr^[n - m] N) ∈ E} := by
+  intro N hN
+  obtain ⟨hpass, hT, hL⟩ := hN
+  have hk : n - m ≤ passTime x' N := by rw [hT]; omega
+  obtain ⟨_, hTM, hLM⟩ := passTime_stepback x' N (n - m) hpass hk
+  refine ⟨?_, ?_⟩
+  · rw [hTM, hT]; omega
+  · rw [hLM]; exact hL
+
 /-- **(5.17) `B_{n,y}` event chain + (5.18) Lemma 2.1 affine reindexing** (owed) — the second,
 route-decisive leg of (5.8).  For each `n ∈ I_y`, the event `{T_x(N_y)=n ∧ Pass∈E ∧ good}` equals
 (step back `m₀` steps, (5.17)) `{Syr^{n-m₀}(N_y) ∈ E' ∧ good}`, whose probability the Lemma 2.1
 affine bijection reindexes to `∑_{ā∈𝒜⁽ⁿ⁻ᵐ⁰⁾} ∑_{M∈E'} ℙ(Aff_ā(N_y)=M)` — the summand of
 `approxMainTerm`.  The reindex is APPROXIMATE (`Aff` uses truncating ℕ-division; the truncation
 coincidences are absorbed in `O(log^{-c}x)`, see the module docstring), so this is the `≤`/error
-form, NOT an exact identity.  Kernels `aff_valVec_eq_syr` + `valVec_unique` drive the main term. -/
+form, NOT an exact identity.  Kernels `aff_valVec_eq_syr` + `valVec_unique` drive the main term.
+
+The forward step-back inclusion `firstPass_event_stepback_subset` (EXACT) is proved; the remaining
+holes in this leg are (a) the reverse inclusion / `E'` *size* window (the (5.13)/(5.14) orbit
+estimate `Syr^{n-m₀}N ≈ (3/4)^{n-m₀}N_y`) and (b) the affine pushforward count via `valVec_unique`
+(the truncation-absorbed reindex). -/
 theorem first_passage_affine_reindex :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →

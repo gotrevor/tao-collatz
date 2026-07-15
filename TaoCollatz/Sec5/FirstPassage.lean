@@ -29,6 +29,54 @@ open Classical in
 /-- First passage location `Pass_x(N)`, with the paper's `Syr^∞ := 1` convention. -/
 noncomputable def passLoc (x N : ℕ) : ℕ := if passes x N then syr^[passTime x N] N else 1
 
+/-- **Step-back identity for the first passage** (paper (5.17), exact part).  If `N` passes and
+`k ≤ T_x(N)`, then stepping the orbit back by `k` steps shifts the first-passage time down by
+exactly `k` and leaves the passage *location* unchanged.  This is the pure event-algebra core of
+the `B_{n,y}` chain; the orbit *size* estimate `Syr^{k}N ≈ (3/4)^k N` is a separate, analytic fact. -/
+theorem passTime_stepback (x N k : ℕ) (hpass : passes x N) (hk : k ≤ passTime x N) :
+    passes x (syr^[k] N) ∧ passTime x (syr^[k] N) = passTime x N - k ∧
+      passLoc x (syr^[k] N) = passLoc x N := by
+  classical
+  set T := passTime x N with hT
+  have hne : {n | syr^[n] N ≤ x}.Nonempty := hpass
+  have hTmem : syr^[T] N ≤ x := Nat.sInf_mem hne
+  -- `syr^[i] (syr^[k] N) = syr^[k+i] N`
+  have hshift : ∀ i, syr^[i] (syr^[k] N) = syr^[k + i] N := by
+    intro i; rw [← Function.iterate_add_apply]; congr 1; omega
+  -- passes: witness `i = T - k`
+  have hpassM : passes x (syr^[k] N) := by
+    refine ⟨T - k, ?_⟩
+    rw [hshift, show k + (T - k) = T from by omega]; exact hTmem
+  refine ⟨hpassM, ?_, ?_⟩
+  · -- passTime x (syr^[k] N) = T - k
+    have hMmem : syr^[passTime x (syr^[k] N)] (syr^[k] N) ≤ x :=
+      Nat.sInf_mem (show {n | syr^[n] (syr^[k] N) ≤ x}.Nonempty from hpassM)
+    have hle1 : passTime x (syr^[k] N) ≤ T - k := by
+      apply Nat.sInf_le
+      show syr^[T - k] (syr^[k] N) ≤ x
+      rw [hshift, show k + (T - k) = T from by omega]; exact hTmem
+    have hle2 : T - k ≤ passTime x (syr^[k] N) := by
+      have hin : syr^[k + passTime x (syr^[k] N)] N ≤ x := by
+        rw [← hshift]; exact hMmem
+      have hTle : T ≤ k + passTime x (syr^[k] N) := Nat.sInf_le hin
+      omega
+    exact Nat.le_antisymm hle1 hle2
+  · -- passLoc unchanged
+    have hTM : passTime x (syr^[k] N) = T - k := by
+      have hMmem : syr^[passTime x (syr^[k] N)] (syr^[k] N) ≤ x :=
+        Nat.sInf_mem (show {n | syr^[n] (syr^[k] N) ≤ x}.Nonempty from hpassM)
+      have hle1 : passTime x (syr^[k] N) ≤ T - k := by
+        apply Nat.sInf_le
+        show syr^[T - k] (syr^[k] N) ≤ x
+        rw [hshift, show k + (T - k) = T from by omega]; exact hTmem
+      have hle2 : T - k ≤ passTime x (syr^[k] N) := by
+        have hin : syr^[k + passTime x (syr^[k] N)] N ≤ x := by rw [← hshift]; exact hMmem
+        have hTle : T ≤ k + passTime x (syr^[k] N) := Nat.sInf_le hin
+        omega
+      exact Nat.le_antisymm hle1 hle2
+    unfold passLoc
+    rw [if_pos hpassM, if_pos hpass, hTM, hshift, show k + (T - k) = T from by omega]
+
 /-- The odd numbers in `[lo, hi]`, as a `Finset` (window support). -/
 noncomputable def logWindow (lo hi : ℝ) : Finset ℕ :=
   (Finset.range (Nat.ceil hi + 1)).filter fun N => N % 2 = 1 ∧ lo ≤ (N : ℝ) ∧ (N : ℝ) ≤ hi
