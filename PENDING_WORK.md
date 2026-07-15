@@ -1,4 +1,37 @@
-## Grind lap — 2026-07-15 (cont.) — C8 (5.17) DECOMPOSED into forward/reverse legs; 5 sorries
+## Grind lap — 2026-07-15 (cont.) — C8 (5.17) FORWARD LEG CLOSED; reverse-leg key proved; 4 sorries
+
+**The (5.17) forward inclusion `firstPassMid ≤ steppedMid` is PROVED axiom-clean** — the structurally
+decisive half of C8's last leaf. Chain (all axiom-clean, `#print axioms` = trust base):
+`stepback_passage_scale` (passage orbit-straddle core) → `stepback_size_window` (E′ window) →
+`firstPassMid_le_steppedMid`. Supporting axiom-clean bricks proved this session: `good_nested`,
+`mem_Iy_le_nZero`, `mem_Iy_bounds`, `expect_mono_on_support`, `mZero_le_of_mem_Iy`, `pow_stepback_eq`,
+`three_pow_nZero_le`, `slack_key`/`slack_upper`/`slack_lower`, `eprime_forces_passTime`.
+
+**ONLY the reverse leg `steppedMid_le_firstPassMid_add` remains for C8** (`ApproxFormula.lean`, 1 sorry).
+Roadmap (docstring on the theorem is authoritative):
+- `steppedMid − firstPassMid = ∑_{n∈I_y} P(T_n ∖ S_n)` (nonneg; `S_n ⊆ T_n` from the forward leg).
+  `S_n={T_x N=n ∧ passLoc∈E ∧ good⁽ⁿ⁰⁾}`, `T_n={good⁽ⁿ⁻ᵐ⁰⁾ ∧ E′(Syr^{n−m₀}N)}`.
+- **Disjointness (PROVED): `eprime_forces_passTime`** — `E′(Syr^{n−m₀}N)` + passes + `n−m₀≤T_x N`
+  ⟹ `T_x N = n`. So the `T_n` are pairwise disjoint (`∑_n 𝟙_{T_n} ≤ 1`), collapsing the sum — NO
+  `O(log x)` blow-up. This is THE structural key; use it to bound both defect terms by a single `P(·)`.
+- Split `T_n ∖ S_n` by `good⁽ⁿ⁰⁾`:
+  (a) `¬good⁽ⁿ⁰⁾` term → `∑_n P(T_n∩¬good⁽ⁿ⁰⁾) ≤ P(¬good⁽ⁿ⁰⁾) ≤ C·log^{-c}` via **disjointness** +
+      PROVED `approx_good_tuple_whp` (5.12). This half is likely FULLY provable now (all inputs exist).
+  (b) `good⁽ⁿ⁰⁾` term: residual `{good⁽ⁿ⁰⁾ ∧ E′(Syr^{n−m₀}N) ∧ T_x N≠n}`; by `eprime_forces_passTime`
+      forces `n−m₀ > T_x N` = the **early-return event** (orbit dipped below x before n−m₀). Bound via
+      the passage-window whp `approx_passtime_window` (5.16). ⚠ This is the genuinely hard whp piece —
+      may need a new named sub-lemma; the early-return set is where the real analytic work remains.
+- **Next-lap attack**: (i) formalize the expect-subtraction algebra `steppedMid − firstPassMid =
+  ∑_n P.expect(𝟙_{T_n∖S_n})` (mirror `first_passage_window_reduce`'s `hsum`/`tsum` idiom, ~line 1806);
+  (ii) prove half (a) fully (disjointness + `approx_good_tuple_whp`); (iii) decompose half (b) into a
+  named early-return whp sorry. Closing the reverse leg makes `first_passage_approx` (C8) axiom-clean →
+  campaign advances to C9 `stabilization` (`FirstPassage.lean:1399`).
+
+**State: 4 sorries + 0 orange** (2 headline, C9 `stabilization`, C8 `steppedMid_le_firstPassMid_add`).
+
+---
+
+## SUPERSEDED — C8 (5.17) DECOMPOSED into forward/reverse legs; 5 sorries
 
 **`first_passage_stepback_reduce` (5.17) is now split into two named directional legs** (both in
 `ApproxFormula.lean`), and the `|·|` assembly is proved axiom-clean from them:
