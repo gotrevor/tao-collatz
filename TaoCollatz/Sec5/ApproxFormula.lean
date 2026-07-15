@@ -1016,6 +1016,141 @@ theorem windowMass_ge_clog :
       ≤ (1/2 : ℝ) * ((alpha - 1) * Real.log y - 3 / y) - (a:ℝ)⁻¹ := hfinal
     _ ≤ windowMass y Yα := hWMlb
 
+/-- **The log-uniform window is a finite odd arithmetic progression.**  For a nonempty window
+`logWindow lo hi` (`lo > 0`), there are `a` (the least odd `≥ ⌈lo⌉`) and a length `count ≥ 1` with
+`logWindow lo hi = {a, a+2, …, a+2(count−1)}`, and the endpoints straddle `[lo, hi]`:
+`lo ≤ a < lo+3` and `hi < a+2·count ≤ hi+2`.  This packages the AP decomposition (previously inlined in
+`intTest_D_lower`) so the integral test (`harmonic_ap_integral_bound`) can be applied uniformly to the
+full window and to its edge slabs. -/
+theorem logWindow_odd_ap {lo hi : ℝ} (hlo0 : 0 < lo) (hne : (logWindow lo hi).Nonempty) :
+    ∃ (a count : ℕ), 0 < count ∧ lo ≤ (a : ℝ) ∧ (a : ℝ) < lo + 3 ∧
+      hi < (a : ℝ) + 2 * (count : ℝ) ∧ (a : ℝ) + 2 * (count : ℝ) ≤ hi + 2 ∧
+      logWindow lo hi = (Finset.range count).image (fun i => a + 2 * i) := by
+  have hhi0 : (0:ℝ) < hi := by
+    obtain ⟨N, hN⟩ := hne
+    simp only [logWindow, Finset.mem_filter] at hN
+    exact lt_of_lt_of_le hlo0 (le_trans hN.2.2.1 hN.2.2.2)
+  set ylo : ℕ := ⌈lo⌉₊ with hylodef
+  set yhi : ℕ := ⌊hi⌋₊ with hyhidef
+  have hylo_ge : lo ≤ (ylo : ℝ) := Nat.le_ceil lo
+  have hylo_lt : (ylo : ℝ) < lo + 1 := Nat.ceil_lt_add_one hlo0.le
+  have hyhi_le : (yhi : ℝ) ≤ hi := Nat.floor_le hhi0.le
+  have hyhi_gt : hi - 1 < (yhi : ℝ) := by linarith [Nat.lt_floor_add_one hi]
+  have hex : ∃ N, ylo ≤ N ∧ N % 2 = 1 := ⟨2 * ylo + 1, by omega, by omega⟩
+  set a : ℕ := Nat.find hex with hadef
+  obtain ⟨haylo, haodd⟩ : ylo ≤ a ∧ a % 2 = 1 := Nat.find_spec hex
+  have ha_lt : a < ylo + 2 := by
+    by_contra hcon
+    push_neg at hcon
+    exact Nat.find_min hex (show a - 2 < a by omega) ⟨by omega, by omega⟩
+  have haR : (a : ℝ) < lo + 3 := by
+    have h1 : (a : ℝ) < (ylo : ℝ) + 2 := by exact_mod_cast ha_lt
+    linarith [hylo_lt]
+  have hloa : lo ≤ (a : ℝ) := le_trans hylo_ge (by exact_mod_cast haylo)
+  -- nonempty ⟹ `a ≤ yhi`
+  obtain ⟨N₀, hN₀⟩ := hne
+  simp only [logWindow, Finset.mem_filter, Finset.mem_range] at hN₀
+  have hN₀ylo : ylo ≤ N₀ := by rw [hylodef]; exact Nat.ceil_le.mpr hN₀.2.2.1
+  have haN₀ : a ≤ N₀ := Nat.find_min' hex ⟨hN₀ylo, hN₀.2.1⟩
+  have hN₀yhi : N₀ ≤ yhi := by rw [hyhidef]; exact Nat.le_floor hN₀.2.2.2
+  have ha_yhi : a ≤ yhi := le_trans haN₀ hN₀yhi
+  set count : ℕ := (yhi - a) / 2 + 1 with hcountdef
+  have hinj : ∀ i ∈ Finset.range count, ∀ j ∈ Finset.range count,
+      a + 2 * i = a + 2 * j → i = j := by intro i _ j _ h; omega
+  have hFeq : logWindow lo hi = (Finset.range count).image (fun i => a + 2 * i) := by
+    ext N
+    simp only [Finset.mem_image, Finset.mem_range, logWindow, Finset.mem_filter,
+      Nat.lt_add_one_iff]
+    constructor
+    · rintro ⟨_, hNodd, hNlo, hNhi⟩
+      have hNylo : ylo ≤ N := by rw [hylodef]; exact Nat.ceil_le.mpr hNlo
+      have hNyhi : N ≤ yhi := by rw [hyhidef]; exact Nat.le_floor hNhi
+      have haN : a ≤ N := Nat.find_min' hex ⟨hNylo, hNodd⟩
+      refine ⟨(N - a) / 2, ?_, ?_⟩
+      · have : (N - a) / 2 ≤ (yhi - a) / 2 := Nat.div_le_div_right (Nat.sub_le_sub_right hNyhi a)
+        omega
+      · omega
+    · rintro ⟨i, hi_lt, rfl⟩
+      have hle_yhi : a + 2 * i ≤ yhi := by
+        have hile : i ≤ (yhi - a) / 2 := by omega
+        have hmul : 2 * i ≤ yhi - a := by
+          calc 2 * i ≤ 2 * ((yhi - a) / 2) := by omega
+            _ ≤ yhi - a := by omega
+        omega
+      refine ⟨?_, ?_, ?_, ?_⟩
+      · have h1 : a + 2 * i ≤ yhi := hle_yhi
+        have h2 : yhi ≤ ⌈hi⌉₊ := by rw [hyhidef]; exact Nat.floor_le_ceil _
+        omega
+      · omega
+      · push_cast
+        have h0 : (0:ℝ) ≤ 2 * (i : ℝ) := by positivity
+        linarith [hloa, h0]
+      · have hle2 : (a + 2 * i : ℕ) ≤ yhi := hle_yhi
+        have hcst : ((a + 2 * i : ℕ) : ℝ) ≤ (yhi : ℝ) := by exact_mod_cast hle2
+        linarith [hyhi_le, hcst]
+  refine ⟨a, count, by omega, hloa, haR, ?_, ?_, hFeq⟩
+  · -- `hi < a + 2·count`
+    have hcountnat : yhi + 1 ≤ a + 2 * count := by omega
+    have hac : (yhi : ℝ) + 1 ≤ (a : ℝ) + 2 * (count : ℝ) := by exact_mod_cast hcountnat
+    linarith only [hac, hyhi_gt]
+  · -- `a + 2·count ≤ hi + 2`
+    have hcountnat : a + 2 * count ≤ yhi + 2 := by omega
+    have hac : (a : ℝ) + 2 * (count : ℝ) ≤ (yhi : ℝ) + 2 := by exact_mod_cast hcountnat
+    linarith only [hac, hyhi_le]
+
+/-- **Window mass as an AP reciprocal sum** — glue for the integral test.  In the nonempty case
+`windowMass lo hi = ∑_{i<count} 1/(a+2i)` for the AP data of `logWindow_odd_ap`. -/
+theorem windowMass_eq_ap_sum {lo hi : ℝ} {a count : ℕ}
+    (hFeq : logWindow lo hi = (Finset.range count).image (fun i => a + 2 * i))
+    (hinj : ∀ i ∈ Finset.range count, ∀ j ∈ Finset.range count, a + 2 * i = a + 2 * j → i = j) :
+    windowMass lo hi = ∑ i ∈ Finset.range count, ((a : ℝ) + 2 * (i : ℝ))⁻¹ := by
+  rw [windowMass, hFeq, Finset.sum_image hinj]
+  apply Finset.sum_congr rfl; intro i _; push_cast; ring_nf
+
+/-- **Integral-test upper bound on a window mass.**  `windowMass lo hi ≤ ½·log(hi/lo) + 2/lo` for
+`1 ≤ lo ≤ hi`.  (Empty window ⇒ `0 ≤` a nonnegative RHS; nonempty ⇒ AP + `harmonic_ap_integral_bound`,
+with `a ≥ lo` and `a+2·count ≤ hi+2` giving `log((a+2count)/a) ≤ log(hi/lo) + 2/lo`.)  This is the
+companion of `windowMass_ge_clog`; applied to the edge slabs it makes each a `½·s + O(1/lo)` mass. -/
+theorem windowMass_le_half_log {lo hi : ℝ} (hlo1 : 1 ≤ lo) (hlohi : lo ≤ hi) :
+    windowMass lo hi ≤ (1/2) * Real.log (hi / lo) + 2 / lo := by
+  have hlo0 : (0:ℝ) < lo := lt_of_lt_of_le one_pos hlo1
+  have hhi0 : (0:ℝ) < hi := lt_of_lt_of_le hlo0 hlohi
+  have hlogpos : (0:ℝ) ≤ Real.log (hi / lo) :=
+    Real.log_nonneg (by rw [le_div_iff₀ hlo0]; linarith)
+  by_cases hne : (logWindow lo hi).Nonempty
+  · obtain ⟨a, count, hcount0, hloa, haR, hHiLt, hHiLe, hFeq⟩ := logWindow_odd_ap hlo0 hne
+    have hinj : ∀ i ∈ Finset.range count, ∀ j ∈ Finset.range count,
+        a + 2 * i = a + 2 * j → i = j := by intro i _ j _ h; omega
+    have ha0R : (0:ℝ) < (a : ℝ) := lt_of_lt_of_le hlo0 hloa
+    have hA2C_pos : (0:ℝ) < (a : ℝ) + 2 * (count : ℝ) := by positivity
+    rw [windowMass_eq_ap_sum hFeq hinj]
+    have hharm := (abs_le.mp (harmonic_ap_integral_bound ha0R (by norm_num : (0:ℝ) < 2) count)).2
+    have hlogdiv : Real.log (((a:ℝ) + 2 * (count:ℝ)) / (a:ℝ))
+        = Real.log ((a:ℝ) + 2 * (count:ℝ)) - Real.log (a:ℝ) := Real.log_div hA2C_pos.ne' ha0R.ne'
+    -- `log((a+2count)/a) ≤ log(hi/lo) + 2/lo`
+    have hlogub : Real.log (((a:ℝ) + 2 * (count:ℝ)) / (a:ℝ)) ≤ Real.log (hi / lo) + 2 / lo := by
+      have hnum : Real.log ((a:ℝ) + 2 * (count:ℝ)) ≤ Real.log (hi + 2) :=
+        Real.log_le_log hA2C_pos hHiLe
+      have hden : Real.log lo ≤ Real.log (a:ℝ) := Real.log_le_log hlo0 hloa
+      have hsplit : Real.log (hi + 2) ≤ Real.log hi + 2 / lo := by
+        have hfac : hi + 2 = hi * (1 + 2 / hi) := by field_simp
+        rw [hfac, Real.log_mul hhi0.ne' (by positivity)]
+        have h1 : Real.log (1 + 2 / hi) ≤ 2 / hi :=
+          le_trans (Real.log_le_sub_one_of_pos (by positivity)) (by simp)
+        have h2 : (2:ℝ) / hi ≤ 2 / lo := by
+          rw [div_eq_mul_inv, div_eq_mul_inv]
+          exact mul_le_mul_of_nonneg_left (inv_anti₀ hlo0 hlohi) (by norm_num)
+        linarith
+      rw [hlogdiv, Real.log_div hhi0.ne' hlo0.ne']
+      linarith [hnum, hden, hsplit]
+    have hainv : (a:ℝ)⁻¹ ≤ (1/2) * (2 / lo) := by
+      rw [show (1/2:ℝ) * (2 / lo) = 1 / lo from by ring, one_div]; exact inv_anti₀ hlo0 hloa
+    -- `∑ ≤ 2⁻¹·log((a+2count)/a) + a⁻¹ ≤ ½(log(hi/lo)+2/lo) + ½·(2/lo)`
+    nlinarith [hharm, hlogub, hainv]
+  · rw [Finset.not_nonempty_iff_eq_empty] at hne
+    rw [windowMass, hne, Finset.sum_empty]
+    positivity
+
 /-- **(5.16) integral-test edge mass — owed.**  The log-uniform mass of the edge window `Edge x y` is
 `≪ log^{-c} x`.  This is Tao's "straightforward calculation using the integral test": the log-uniform
 law puts mass `≈ log(b/a)/((α−1)log y)` on a sub-interval `[a,b] ⊂ [y, y^α]`, and each edge slab has
