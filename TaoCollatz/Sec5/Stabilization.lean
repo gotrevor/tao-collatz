@@ -1472,6 +1472,10 @@ theorem perNHarmonic_le :
           (cn_nonneg x E n X) ENNReal.toReal_nonneg
     _ = Ccn * Real.log x ^ (0.7 : ℝ) := by rw [← Finset.sum_mul, hmass1, one_mul]
 
+-- HEARTBEAT: one large analytic assembly (per-(ā,M) window/harmonic algebra with two nlinarith
+-- cores, plus nested-tsum summability plumbing); the many nlinarith/positivity calls exhaust the
+-- default per-declaration budget cumulatively (mirrors `Nstar_mem_logWindow`).
+set_option maxHeartbeats 1600000 in
 open Classical in
 /-- **(5.19) harmonic reduction of `perNTerm`** — sub-lemma A of `perNTerm_eval`.  Each per-`n` term
 equals its harmonic content divided by the harmonic normaliser `norm = ((α−1)/2)·log y`, up to a
@@ -1487,7 +1491,307 @@ theorem perNTerm_harmonic_approx :
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |perNTerm x E y n - perNHarmonic x E n / ((alpha - 1) / 2 * Real.log y)|
             ≤ C * (Real.log x) ^ (-c) / ((alpha - 1) / 2 * Real.log y) := by
-  sorry
+  classical
+  obtain ⟨Cw, xw, hCwpos, hw⟩ := windowMass_estimate
+  obtain ⟨cD, xD, hcDpos, hDlbAll⟩ := windowMass_ge_clog
+  obtain ⟨CH, xH, hCHpos, hHAll⟩ := perNHarmonic_le
+  obtain ⟨xN, hNwin⟩ := Nstar_mem_logWindow
+  have halpha1 : (0 : ℝ) < alpha - 1 := by norm_num [alpha]
+  have hC1nn : (0 : ℝ) ≤ Cw / cD := (div_pos hCwpos hcDpos).le
+  have hC2nn : (0 : ℝ) ≤ 2 * Cw / (alpha - 1) :=
+    div_nonneg (by linarith [hCwpos]) halpha1.le
+  set Cε : ℝ := 2 + 3 * (Cw / cD) + 2 * Cw / (alpha - 1) with hCεdef
+  have hCεpos : 0 < Cε := by rw [hCεdef]; linarith
+  refine ⟨0.3, Cε * CH,
+    max (max xw xD) (max (max xH xN) (max (Real.exp 1024) (Real.exp Cε))),
+    by norm_num, mul_pos hCεpos hCHpos, fun x hx E hE y hy n hn => ?_⟩
+  simp only [max_le_iff] at hx
+  obtain ⟨⟨hxw, hxD⟩, ⟨hxH, hxN⟩, hx1024, hxCε⟩ := hx
+  have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hx1024
+  have hL1024 : (1024 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1024]; exact Real.log_le_log (Real.exp_pos _) hx1024
+  have hLpos : (0 : ℝ) < Real.log x := by linarith
+  have hLCε : Cε ≤ Real.log x := by
+    rw [← Real.log_exp Cε]; exact Real.log_le_log (Real.exp_pos _) hxCε
+  have ha1 : (1 : ℝ) ≤ alpha := by norm_num [alpha]
+  have ha2 : (1 : ℝ) ≤ alpha ^ 2 := by norm_num [alpha]
+  have hlogy : Real.log x ≤ Real.log y := by
+    rcases (by simpa [Set.mem_insert_iff] using hy :
+        y = x ^ alpha ∨ y = x ^ alpha ^ 2) with h | h <;> rw [h, Real.log_rpow hxpos]
+    · nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ alpha - 1) hLpos.le]
+    · nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ alpha ^ 2 - 1) hLpos.le]
+  set nrm := (alpha - 1) / 2 * Real.log y with hnrmdef
+  have hnrmlb : (alpha - 1) / 2 * Real.log x ≤ nrm := by
+    rw [hnrmdef]; exact mul_le_mul_of_nonneg_left hlogy (by linarith)
+  have hnrmpos : (0 : ℝ) < nrm :=
+    lt_of_lt_of_le (mul_pos (by linarith) hLpos) hnrmlb
+  set D := windowMass y (y ^ alpha) with hDdef
+  have hDest : |D - nrm| ≤ Cw := hw x hxw y hy
+  have hDub : D ≤ nrm + Cw := by have := (abs_le.mp hDest).2; linarith
+  have hDlb2 : nrm - Cw ≤ D := by have := (abs_le.mp hDest).1; linarith
+  have hDlbL : cD * Real.log x ≤ D := hDlbAll x hxD y hy
+  have hDpos : (0 : ℝ) < D := lt_of_lt_of_le (mul_pos hcDpos hLpos) hDlbL
+  have hC1L : Cw * Real.log x ≤ Cw / cD * D := by
+    have h := mul_le_mul_of_nonneg_left hDlbL hC1nn
+    calc Cw * Real.log x = Cw / cD * (cD * Real.log x) := by
+          field_simp
+      _ ≤ Cw / cD * D := h
+  have hC2L : Cw * Real.log x ≤ 2 * Cw / (alpha - 1) * nrm := by
+    have h := mul_le_mul_of_nonneg_left hnrmlb hC2nn
+    calc Cw * Real.log x = 2 * Cw / (alpha - 1) * ((alpha - 1) / 2 * Real.log x) := by
+          field_simp
+      _ ≤ 2 * Cw / (alpha - 1) * nrm := h
+  have hkn : n - mZero x ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
+  have h3M : ∀ M : ℕ, Eprime x E M → 2 * (3 : ℝ) ^ (n - mZero x) + 2 ≤ (M : ℝ) := fun M hEp =>
+    le_trans (cn_window_size hx1024 hkn (m := mZero x)).1 hEp.2.2.2.1
+  have h3LM : ∀ M : ℕ, Eprime x E M →
+      (3 : ℝ) ^ (n - mZero x) * Real.log x ≤ (M : ℝ) := fun M hEp =>
+    le_trans (three_pow_log_le_window hx1024 hkn) hEp.2.2.2.1
+  -- the two masked integrand families: `A1` = (5.19) point masses, `G2` = harmonic terms
+  set A1 : (Fin (n - mZero x) → ℕ) → ℕ → ℝ := fun ā M =>
+    if goodTuple x (n - mZero x) ā ∧ Eprime x E M then
+      (if 3 ^ (n - mZero x) ∣ (M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā)
+          ∧ fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x) then
+        (logUnifOdd y (y ^ alpha)
+          ((M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā) / 3 ^ (n - mZero x))).toReal
+      else 0)
+    else 0 with hA1def
+  set G2 : (Fin (n - mZero x) → ℕ) → ℕ → ℝ := fun ā M =>
+    if goodTuple x (n - mZero x) ā ∧ Eprime x E M
+        ∧ 3 ^ (n - mZero x) ∣ (M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā)
+        ∧ fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x)
+    then ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ / (M : ℝ) else 0 with hG2def
+  have hA1nn : ∀ ā M, 0 ≤ A1 ā M := by
+    intro ā M; rw [hA1def]; dsimp only
+    split_ifs <;> first | exact ENNReal.toReal_nonneg | exact le_rfl
+  have hG2nn : ∀ ā M, 0 ≤ G2 ā M := by
+    intro ā M; rw [hG2def]; dsimp only
+    split_ifs
+    · positivity
+    · exact le_rfl
+  -- the (5.19) termwise band: `cL·(3^k·G2) ≤ A1 ≤ cU·(3^k·G2)`
+  have hband : ∀ ā M,
+      (Real.log x - Cε) / (Real.log x * nrm) * ((3 : ℝ) ^ (n - mZero x) * G2 ā M) ≤ A1 ā M
+      ∧ A1 ā M ≤ (Real.log x + Cε) / (Real.log x * nrm) * ((3 : ℝ) ^ (n - mZero x) * G2 ā M) := by
+    intro ā M
+    rw [hA1def, hG2def]; dsimp only
+    by_cases hcond : goodTuple x (n - mZero x) ā ∧ Eprime x E M
+    · obtain ⟨hg, hEp⟩ := hcond
+      by_cases hs : 3 ^ (n - mZero x) ∣ (M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā)
+          ∧ fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x)
+      · obtain ⟨hdvd, hle⟩ := hs
+        rw [if_pos ⟨hg, hEp, hdvd, hle⟩, if_pos ⟨hg, hEp⟩, if_pos ⟨hdvd, hle⟩]
+        -- window/size facts for this (ā, M)
+        have h3pos : (0 : ℝ) < (3 : ℝ) ^ (n - mZero x) := by positivity
+        have h2Ppos : (0 : ℝ) < (2 : ℝ) ^ pre ā (n - mZero x) := by positivity
+        have hM2 : 2 * (3 : ℝ) ^ (n - mZero x) + 2 ≤ (M : ℝ) := h3M M hEp
+        have hML : (3 : ℝ) ^ (n - mZero x) * Real.log x ≤ (M : ℝ) := h3LM M hEp
+        have hMpos : (0 : ℝ) < (M : ℝ) := by linarith [h3pos]
+        have hfQR : (fnat (n - mZero x) ā : ℝ)
+            < (3 : ℝ) ^ (n - mZero x) * (2 : ℝ) ^ pre ā (n - mZero x) := by
+          exact_mod_cast fnat_lt_pow_mul (n - mZero x) ā
+        have hfnn : (0 : ℝ) ≤ (fnat (n - mZero x) ā : ℝ) := Nat.cast_nonneg _
+        have hQpos : (0 : ℝ) < (M : ℝ) * (2 : ℝ) ^ pre ā (n - mZero x) :=
+          mul_pos hMpos h2Ppos
+        have h2f : 2 * (fnat (n - mZero x) ā : ℝ)
+            ≤ (M : ℝ) * (2 : ℝ) ^ pre ā (n - mZero x) := by
+          nlinarith [hfQR, h2Ppos,
+            mul_nonneg (by linarith : (0 : ℝ) ≤ (M : ℝ) - 2 * (3 : ℝ) ^ (n - mZero x))
+              h2Ppos.le]
+        have hfL : (fnat (n - mZero x) ā : ℝ) * Real.log x
+            ≤ (M : ℝ) * (2 : ℝ) ^ pre ā (n - mZero x) := by
+          nlinarith [mul_le_mul_of_nonneg_right hfQR.le hLpos.le,
+            mul_nonneg
+              (by linarith : (0 : ℝ) ≤ (M : ℝ) - (3 : ℝ) ^ (n - mZero x) * Real.log x)
+              h2Ppos.le]
+        have hQfpos : (0 : ℝ)
+            < (M : ℝ) * (2 : ℝ) ^ pre ā (n - mZero x) - (fnat (n - mZero x) ā : ℝ) := by
+          linarith [h2f, hQpos, hfnn]
+        -- evaluate the point mass at `N*`
+        have hNmem := hNwin x hxN y hy n hn ā hg M hEp.1 hEp.2.2.2.1 hEp.2.2.2.2 hdvd hle
+        have hval : (logUnifOdd y (y ^ alpha)
+              ((M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā)
+                / 3 ^ (n - mZero x))).toReal
+            = (3 : ℝ) ^ (n - mZero x)
+              / (((M : ℝ) * (2 : ℝ) ^ pre ā (n - mZero x) - (fnat (n - mZero x) ā : ℝ)) * D) := by
+          rw [logUnifOdd_apply_toReal_of_mem ⟨_, hNmem⟩ hNmem, Nstar_cast ā hdvd hle,
+            inv_div, div_div, ← hDdef]
+        have hharm : ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ / (M : ℝ)
+            = ((M : ℝ) * (2 : ℝ) ^ pre ā (n - mZero x))⁻¹ := by
+          rw [mul_inv, div_eq_mul_inv]; exact mul_comm _ _
+        rw [hval, hharm]
+        set QR := (M : ℝ) * (2 : ℝ) ^ pre ā (n - mZero x) with hQRdef
+        set fR := (fnat (n - mZero x) ā : ℝ) with hfRdef
+        -- the two cross-multiplied cores (exact positive combinations; see handoff plan)
+        have hcoreUP : Real.log x * nrm * QR ≤ (Real.log x + Cε) * ((QR - fR) * D) := by
+          nlinarith [mul_nonneg (mul_nonneg hQpos.le hLpos.le)
+              (by linarith [hDlb2] : (0 : ℝ) ≤ D + Cw - nrm),
+            mul_nonneg hQpos.le (by linarith [hC1L] : (0 : ℝ) ≤ Cw / cD * D - Cw * Real.log x),
+            mul_nonneg hDpos.le (by linarith [hfL] : (0 : ℝ) ≤ QR - fR * Real.log x),
+            mul_nonneg hDpos.le (by linarith [h2f] : (0 : ℝ) ≤ QR - 2 * fR),
+            mul_nonneg (mul_nonneg hC1nn hDpos.le) (by linarith [h2f] : (0 : ℝ) ≤ QR - 2 * fR),
+            mul_nonneg (mul_nonneg (by linarith [hC1nn, hC2nn] :
+                (0 : ℝ) ≤ Cw / cD + 2 * Cw / (alpha - 1)) hQfpos.le) hDpos.le,
+            hCεdef]
+        have hcoreDOWN : (Real.log x - Cε) * ((QR - fR) * D) ≤ Real.log x * nrm * QR := by
+          nlinarith [mul_nonneg (mul_nonneg (by linarith [hLCε] :
+                (0 : ℝ) ≤ Real.log x - Cε) hDpos.le) hfnn,
+            mul_nonneg (mul_nonneg (by linarith [hLCε] :
+                (0 : ℝ) ≤ Real.log x - Cε) hQpos.le)
+              (by linarith [hDub] : (0 : ℝ) ≤ nrm + Cw - D),
+            mul_nonneg hQpos.le
+              (by linarith [hC2L] : (0 : ℝ) ≤ 2 * Cw / (alpha - 1) * nrm - Cw * Real.log x),
+            mul_nonneg (mul_nonneg hCεpos.le hQpos.le) hCwpos.le,
+            mul_nonneg (mul_nonneg (by linarith [hC1nn] : (0 : ℝ) ≤ 2 + 3 * (Cw / cD))
+              hQpos.le) hnrmpos.le,
+            hCεdef]
+        constructor
+        · -- DOWN: `cL·3^k/QR ≤ 3^k/((QR−fR)·D)`
+          rw [show (Real.log x - Cε) / (Real.log x * nrm)
+                * ((3 : ℝ) ^ (n - mZero x) * QR⁻¹)
+              = (Real.log x - Cε) * (3 : ℝ) ^ (n - mZero x) / (Real.log x * nrm * QR) by
+            rw [← div_eq_mul_inv, div_mul_div_comm, mul_assoc]]
+          rw [div_le_div_iff₀ (mul_pos (mul_pos hLpos hnrmpos) hQpos)
+            (mul_pos hQfpos hDpos)]
+          nlinarith [mul_le_mul_of_nonneg_left hcoreDOWN h3pos.le]
+        · -- UP: `3^k/((QR−fR)·D) ≤ cU·3^k/QR`
+          rw [show (Real.log x + Cε) / (Real.log x * nrm)
+                * ((3 : ℝ) ^ (n - mZero x) * QR⁻¹)
+              = (Real.log x + Cε) * (3 : ℝ) ^ (n - mZero x) / (Real.log x * nrm * QR) by
+            rw [← div_eq_mul_inv, div_mul_div_comm, mul_assoc]]
+          rw [div_le_div_iff₀ (mul_pos hQfpos hDpos)
+            (mul_pos (mul_pos hLpos hnrmpos) hQpos)]
+          nlinarith [mul_le_mul_of_nonneg_left hcoreUP h3pos.le]
+      · rw [if_neg (fun h => hs ⟨h.2.2.1, h.2.2.2⟩), if_pos ⟨hg, hEp⟩, if_neg hs]
+        constructor <;> simp
+    · rw [if_neg (fun h => hcond ⟨h.1, h.2.1⟩), if_neg hcond]
+      constructor <;> simp
+  -- summability plumbing (dominating sides)
+  have hCSsumm : Summable (fun M : ℕ => if Eprime x E M then (M : ℝ)⁻¹ else 0) := by
+    refine summable_of_ne_finset_zero (s := Finset.range
+      (⌊Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x⌋₊ + 1)) (fun b hb => ?_)
+    rw [if_neg]
+    intro hEp
+    exact hb (Finset.mem_range.mpr (by have := Nat.le_floor hEp.2.2.2.2; omega))
+  have hdomG2 : ∀ ā M, G2 ā M
+      ≤ ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ * (if Eprime x E M then (M : ℝ)⁻¹ else 0) := by
+    intro ā M
+    rw [hG2def]; dsimp only
+    by_cases h : goodTuple x (n - mZero x) ā ∧ Eprime x E M
+        ∧ 3 ^ (n - mZero x) ∣ (M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā)
+        ∧ fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x)
+    · rw [if_pos h, if_pos h.2.1, div_eq_mul_inv]
+    · rw [if_neg h]
+      split_ifs
+      · positivity
+      · simp
+  have hG2M : ∀ ā, Summable (fun M => G2 ā M) := fun ā =>
+    Summable.of_nonneg_of_le (hG2nn ā) (hdomG2 ā)
+      (hCSsumm.mul_left ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹)
+  have hgoodsumm : Summable (fun ā : Fin (n - mZero x) → ℕ =>
+      if goodTuple x (n - mZero x) ā then ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ else 0) := by
+    refine (iid_fiber_summable (n - mZero x)
+      (fun ā => goodTuple x (n - mZero x) ā)).congr fun ā => ?_
+    by_cases h : goodTuple x (n - mZero x) ā
+    · rw [if_pos h, if_pos h, iid_geomHalf_apply_of_pos _ _ h.1,
+        ENNReal.toReal_pow, ENNReal.toReal_inv, inv_pow]
+      norm_num
+    · rw [if_neg h, if_neg h]
+  have hG2inner_le : ∀ ā, (∑' M, G2 ā M)
+      ≤ (if goodTuple x (n - mZero x) ā then ((2 : ℝ) ^ pre ā (n - mZero x))⁻¹ else 0)
+        * (∑' M : ℕ, if Eprime x E M then (M : ℝ)⁻¹ else 0) := by
+    intro ā
+    by_cases hgd : goodTuple x (n - mZero x) ā
+    · rw [if_pos hgd, ← tsum_mul_left]
+      exact (hG2M ā).tsum_le_tsum (hdomG2 ā) (hCSsumm.mul_left _)
+    · rw [if_neg hgd, zero_mul]
+      have hz : ∀ M, G2 ā M = 0 := by
+        intro M; rw [hG2def]; dsimp only
+        exact if_neg (fun h => hgd h.1)
+      rw [tsum_congr hz, tsum_zero]
+  have hG2outer : Summable (fun ā => ∑' M, G2 ā M) :=
+    Summable.of_nonneg_of_le (fun ā => tsum_nonneg (hG2nn ā)) hG2inner_le
+      (hgoodsumm.mul_right _)
+  -- the two tsum-level bounds
+  have hPT : perNTerm x E y n = ∑' ā, ∑' M, A1 ā M := by
+    rw [hA1def]; exact perNTerm_pointmass x E y n
+  have hHeq : perNHarmonic x E n = (3 : ℝ) ^ (n - mZero x) * ∑' ā, ∑' M, G2 ā M := by
+    rw [hG2def]; rfl
+  have hgMU : ∀ ā, Summable (fun M =>
+      (Real.log x + Cε) / (Real.log x * nrm) * ((3 : ℝ) ^ (n - mZero x) * G2 ā M)) := fun ā =>
+    ((hG2M ā).mul_left ((3 : ℝ) ^ (n - mZero x))).mul_left _
+  have hpullU : ∀ ā, (∑' M, (Real.log x + Cε) / (Real.log x * nrm)
+        * ((3 : ℝ) ^ (n - mZero x) * G2 ā M))
+      = (Real.log x + Cε) / (Real.log x * nrm)
+        * ((3 : ℝ) ^ (n - mZero x) * ∑' M, G2 ā M) := fun ā => by
+    rw [tsum_mul_left, tsum_mul_left]
+  have hgSU : Summable (fun ā => ∑' M, (Real.log x + Cε) / (Real.log x * nrm)
+      * ((3 : ℝ) ^ (n - mZero x) * G2 ā M)) :=
+    (((hG2outer.mul_left ((3 : ℝ) ^ (n - mZero x))).mul_left _).congr
+      (fun ā => (hpullU ā).symm))
+  have hUP : perNTerm x E y n
+      ≤ (Real.log x + Cε) / (Real.log x * nrm) * perNHarmonic x E n := by
+    rw [hPT, hHeq]
+    calc (∑' ā, ∑' M, A1 ā M)
+        ≤ ∑' ā, ∑' M, (Real.log x + Cε) / (Real.log x * nrm)
+            * ((3 : ℝ) ^ (n - mZero x) * G2 ā M) :=
+          tsum_tsum_le_tsum_tsum hA1nn (fun ā M => (hband ā M).2) hgMU hgSU
+      _ = (Real.log x + Cε) / (Real.log x * nrm)
+            * ((3 : ℝ) ^ (n - mZero x) * ∑' ā, ∑' M, G2 ā M) := by
+          rw [tsum_congr hpullU, tsum_mul_left, tsum_mul_left]
+  have hA1M : ∀ ā, Summable (fun M => A1 ā M) := fun ā =>
+    Summable.of_nonneg_of_le (hA1nn ā) (fun M => (hband ā M).2) (hgMU ā)
+  have hA1S : Summable (fun ā => ∑' M, A1 ā M) := by
+    refine Summable.of_nonneg_of_le (fun ā => tsum_nonneg (hA1nn ā)) (fun ā => ?_) hgSU
+    exact (hA1M ā).tsum_le_tsum (fun M => (hband ā M).2) (hgMU ā)
+  have hcLnn : (0 : ℝ) ≤ (Real.log x - Cε) / (Real.log x * nrm) :=
+    div_nonneg (by linarith [hLCε]) (mul_pos hLpos hnrmpos).le
+  have hpullD : ∀ ā, (∑' M, (Real.log x - Cε) / (Real.log x * nrm)
+        * ((3 : ℝ) ^ (n - mZero x) * G2 ā M))
+      = (Real.log x - Cε) / (Real.log x * nrm)
+        * ((3 : ℝ) ^ (n - mZero x) * ∑' M, G2 ā M) := fun ā => by
+    rw [tsum_mul_left, tsum_mul_left]
+  have hDOWN : (Real.log x - Cε) / (Real.log x * nrm) * perNHarmonic x E n
+      ≤ perNTerm x E y n := by
+    rw [hPT, hHeq]
+    calc (Real.log x - Cε) / (Real.log x * nrm)
+          * ((3 : ℝ) ^ (n - mZero x) * ∑' ā, ∑' M, G2 ā M)
+        = ∑' ā, ∑' M, (Real.log x - Cε) / (Real.log x * nrm)
+            * ((3 : ℝ) ^ (n - mZero x) * G2 ā M) := by
+          rw [tsum_congr hpullD, tsum_mul_left, tsum_mul_left]
+      _ ≤ ∑' ā, ∑' M, A1 ā M :=
+          tsum_tsum_le_tsum_tsum
+            (fun ā M => mul_nonneg hcLnn (mul_nonneg (by positivity) (hG2nn ā M)))
+            (fun ā M => (hband ā M).1) hA1M hA1S
+  -- assemble: relative → absolute error via `perNHarmonic_le`
+  have hH : perNHarmonic x E n ≤ CH * Real.log x ^ (0.7 : ℝ) :=
+    hHAll x hxH E hE y hy n hn
+  have hHnn : 0 ≤ perNHarmonic x E n := by
+    rw [hHeq]
+    exact mul_nonneg (by positivity)
+      (tsum_nonneg fun ā => tsum_nonneg fun M => hG2nn ā M)
+  obtain ⟨t3, ht3⟩ : ∃ t, t = Real.log x ^ (-(0.3 : ℝ)) := ⟨_, rfl⟩
+  have ht3nn : 0 ≤ t3 := by rw [ht3]; positivity
+  have ht7eq : Real.log x ^ (0.7 : ℝ) = t3 * Real.log x := by
+    rw [ht3, show Real.log x ^ (0.7 : ℝ) = Real.log x ^ (-(0.3 : ℝ) + 1) by norm_num,
+      Real.rpow_add hLpos, Real.rpow_one]
+  rw [ht7eq] at hH
+  set H := perNHarmonic x E n with hHdef
+  have hkey : Cε * H / (Real.log x * nrm) ≤ Cε * CH * t3 / nrm := by
+    rw [div_le_div_iff₀ (mul_pos hLpos hnrmpos) hnrmpos]
+    nlinarith [mul_le_mul_of_nonneg_left hH (mul_nonneg hCεpos.le hnrmpos.le)]
+  rw [← ht3, abs_le]
+  constructor
+  · have hid : (Real.log x - Cε) / (Real.log x * nrm) * H - H / nrm
+        = -(Cε * H / (Real.log x * nrm)) := by
+      field_simp
+      ring
+    linarith [hDOWN, hid, hkey]
+  · have hid : (Real.log x + Cε) / (Real.log x * nrm) * H - H / nrm
+        = Cε * H / (Real.log x * nrm) := by
+      field_simp
+      ring
+    linarith [hUP, hid, hkey]
 
 open Classical in
 /-- **iid good-tuple whp bound (Tao (5.11)/(5.12), iid form).**  Under the `geomHalf.iid k` law, a length-`k`
