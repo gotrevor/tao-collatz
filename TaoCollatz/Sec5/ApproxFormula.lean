@@ -742,7 +742,127 @@ theorem first_passage_window_reduce :
           |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
               - firstPassMid x E y|
             ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨cg, Cg, xg, hcg, hCg, hgood⟩ := approx_good_tuple_whp
+  obtain ⟨cw, Cw, xw, hcw, hCw, hwin⟩ := approx_passtime_window
+  refine ⟨min cg cw, Cg + Cw, max (max xg xw) (Real.exp 1), lt_min hcg hcw, by positivity,
+    fun x hx E hE y hy => ?_⟩
+  have hxg : xg ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+  have hxw : xw ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+  have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
+  have hlog1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hxe
+  classical
+  set P := logUnifOdd y (y ^ alpha) with hP
+  -- the big restricted event
+  set Sbig : Set ℕ := {N | passTime ⌊x⌋₊ N ∈ Iy x y ∧ passLoc ⌊x⌋₊ N ∈ E ∧
+    goodTuple x (nZero x) (valVec N (nZero x))} with hSbig
+  have hsum : ∀ (V : Set ℕ), Summable fun a => (P a).toReal * Set.indicator V 1 a := by
+    intro V
+    have hsumP : Summable fun a => (P a).toReal := ENNReal.summable_toReal P.tsum_coe_ne_top
+    refine Summable.of_nonneg_of_le
+      (fun a => mul_nonneg ENNReal.toReal_nonneg (Set.indicator_nonneg (fun _ _ => zero_le_one) a))
+      (fun a => ?_) hsumP
+    rw [Set.indicator_apply]; split
+    · simp
+    · simp
+  -- Step 1: firstPassMid = P.expect (ind Sbig)
+  have hcollapse : ∀ a, Set.indicator Sbig (1 : ℕ → ℝ) a
+      = ∑ n ∈ Iy x y, Set.indicator {N | passTime ⌊x⌋₊ N = n ∧ passLoc ⌊x⌋₊ N ∈ E ∧
+          goodTuple x (nZero x) (valVec N (nZero x))} 1 a := by
+    intro a
+    by_cases hP2 : passLoc ⌊x⌋₊ a ∈ E ∧ goodTuple x (nZero x) (valVec a (nZero x))
+    · by_cases hT : passTime ⌊x⌋₊ a ∈ Iy x y
+      · rw [Set.indicator_of_mem (show a ∈ Sbig from ⟨hT, hP2.1, hP2.2⟩), Pi.one_apply]
+        rw [Finset.sum_eq_single (passTime ⌊x⌋₊ a)]
+        · rw [Set.indicator_of_mem (show a ∈ {N | passTime ⌊x⌋₊ N = passTime ⌊x⌋₊ a ∧
+            passLoc ⌊x⌋₊ N ∈ E ∧ goodTuple x (nZero x) (valVec N (nZero x))} from
+            ⟨rfl, hP2.1, hP2.2⟩), Pi.one_apply]
+        · intro n _ hne
+          rw [Set.indicator_of_notMem]
+          simp only [Set.mem_setOf_eq]; rintro ⟨he, _, _⟩; exact hne he.symm
+        · intro hna; exact absurd hT hna
+      · rw [Set.indicator_of_notMem (show a ∉ Sbig from fun h => hT h.1)]
+        symm
+        apply Finset.sum_eq_zero
+        intro n hn
+        rw [Set.indicator_of_notMem]
+        simp only [Set.mem_setOf_eq]; rintro ⟨he, _, _⟩; exact hT (he ▸ hn)
+    · rw [Set.indicator_of_notMem (show a ∉ Sbig from fun h => hP2 ⟨h.2.1, h.2.2⟩)]
+      symm
+      apply Finset.sum_eq_zero
+      intro n _
+      rw [Set.indicator_of_notMem]
+      simp only [Set.mem_setOf_eq]; rintro ⟨_, h2, h3⟩; exact hP2 ⟨h2, h3⟩
+  have hmid : firstPassMid x E y = P.expect (Set.indicator Sbig 1) := by
+    unfold firstPassMid PMF.expect
+    rw [← hP]
+    rw [← Summable.tsum_finsetSum (fun n _ => hsum _)]
+    apply tsum_congr; intro a
+    rw [hcollapse a, Finset.mul_sum]
+  -- Step 2: pointwise domination indA ≤ ind Sbig + ind U23, ind U23 ≤ ind¬G + ind¬window
+  set U23 : Set ℕ := {N | ¬ goodTuple x (nZero x) (valVec N (nZero x)) ∨
+    ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} with hU23
+  have hpw1 : ∀ N, Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} (1 : ℕ → ℝ) N ≤
+      Set.indicator Sbig 1 N + Set.indicator U23 1 N := by
+    intro N
+    have h1 : (0 : ℝ) ≤ Set.indicator Sbig (1 : ℕ → ℝ) N :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    have h2 : (0 : ℝ) ≤ Set.indicator U23 (1 : ℕ → ℝ) N :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    by_cases hN : N ∈ {N | passLoc ⌊x⌋₊ N ∈ E}
+    · rw [Set.indicator_of_mem hN, Pi.one_apply]
+      by_cases hG : goodTuple x (nZero x) (valVec N (nZero x))
+      · by_cases hT : passTime ⌊x⌋₊ N ∈ Iy x y
+        · rw [Set.indicator_of_mem (show N ∈ Sbig from ⟨hT, hN, hG⟩), Pi.one_apply]; linarith
+        · rw [Set.indicator_of_mem (show N ∈ U23 from Or.inr (fun h => hT h.2)), Pi.one_apply]
+          linarith
+      · rw [Set.indicator_of_mem (show N ∈ U23 from Or.inl hG), Pi.one_apply]; linarith
+    · rw [Set.indicator_of_notMem hN]; linarith
+  have hpw2 : ∀ N, Set.indicator U23 (1 : ℕ → ℝ) N ≤
+      Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1 N +
+      Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} 1 N := by
+    intro N
+    have h1 : (0 : ℝ) ≤ Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))}
+      (1 : ℕ → ℝ) N := Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    have h2 : (0 : ℝ) ≤ Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)}
+      (1 : ℕ → ℝ) N := Set.indicator_nonneg (fun _ _ => zero_le_one) N
+    by_cases hN : N ∈ U23
+    · rw [Set.indicator_of_mem hN, Pi.one_apply]
+      rcases hN with hg | hw
+      · rw [Set.indicator_of_mem (show N ∈ {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))}
+          from hg), Pi.one_apply]; linarith
+      · rw [Set.indicator_of_mem (show N ∈ {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)}
+          from hw), Pi.one_apply]; linarith
+    · rw [Set.indicator_of_notMem hN]; linarith
+  -- combine
+  have hAbound : P.expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
+      ≤ P.expect (Set.indicator Sbig 1) + (P.expect (Set.indicator
+          {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1)
+        + P.expect (Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} 1)) := by
+    refine le_trans (expect_le_add_of_indicator_le P _ Sbig U23 hpw1) ?_
+    gcongr
+    exact expect_le_add_of_indicator_le P U23 _ _ hpw2
+  -- firstPassMid ≤ P.expect (indA)  (ind Sbig ≤ indA pointwise)
+  have hsub : Sbig ⊆ {N | passLoc ⌊x⌋₊ N ∈ E} := fun a ha => ha.2.1
+  have hmidle : firstPassMid x E y ≤ P.expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1) := by
+    rw [hmid]
+    unfold PMF.expect
+    refine (hsum Sbig).tsum_le_tsum
+      (fun a => mul_le_mul_of_nonneg_left ?_ ENNReal.toReal_nonneg) (hsum _)
+    exact Set.indicator_le_indicator_of_subset hsub (fun _ => zero_le_one) a
+  have hA : (Real.log x) ^ (-cg) ≤ (Real.log x) ^ (-(min cg cw)) :=
+    Real.rpow_le_rpow_of_exponent_le hlog1 (neg_le_neg (min_le_left cg cw))
+  have hB : (Real.log x) ^ (-cw) ≤ (Real.log x) ^ (-(min cg cw)) :=
+    Real.rpow_le_rpow_of_exponent_le hlog1 (neg_le_neg (min_le_right cg cw))
+  rw [abs_of_nonneg (by linarith [hmidle])]
+  have hthis := hAbound
+  rw [← hmid] at hthis
+  calc P.expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1) - firstPassMid x E y
+      ≤ Cg * (Real.log x) ^ (-cg) + Cw * (Real.log x) ^ (-cw) := by
+        linarith [hgood x hxg y hy, hwin x hxw y hy, hthis]
+    _ ≤ Cg * (Real.log x) ^ (-(min cg cw)) + Cw * (Real.log x) ^ (-(min cg cw)) :=
+        add_le_add (mul_le_mul_of_nonneg_left hA hCg.le) (mul_le_mul_of_nonneg_left hB hCw.le)
+    _ = (Cg + Cw) * (Real.log x) ^ (-(min cg cw)) := by ring
 
 /-- **(5.17) `B_{n,y}` event chain + (5.18) Lemma 2.1 affine reindexing** (owed) — the second,
 route-decisive leg of (5.8).  For each `n ∈ I_y`, the event `{T_x(N_y)=n ∧ Pass∈E ∧ good}` equals

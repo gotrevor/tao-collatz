@@ -28,18 +28,22 @@ PROVED `first_passage_approx` itself as `|ℙ − mid| + |mid − approxMainTerm
 `approxMainTerm` typechecks through the assembly** — the route-decisive concern is now isolated in one
 leg. `first_passage_approx` `#print axioms` = trust base + `sorryAx` (the two legs only).
 
-## Remaining C8 = 3 named sorries (all `Sec5/ApproxFormula.lean`, hardest-first)
+## ✅ ALSO THIS LAP — `first_passage_window_reduce` PROVED (leg 2 of the C8 assembly)
+`|ℙ(Pass∈E) − firstPassMid| ≤ C log^{-c}x`, axiom-clean modulo the still-open
+`passtime_window_inner` (which it consumes via `approx_passtime_window`). Proof: (a) collapse
+`firstPassMid = ∑_{n∈Iy} ℙ({T_x=n ∧ Pass∈E ∧ good})` to the single event `ℙ({T_x∈Iy ∧ Pass∈E ∧
+good})` via `Summable.tsum_finsetSum` + the disjointness of `{T_x=n}`; (b) pointwise dominate
+`ind{Pass∈E} ≤ ind Sbig + (ind¬good + ind¬window)` (two `expect_le_add_of_indicator_le`); (c)
+`Sbig ⊆ {Pass∈E}` gives `firstPassMid ≤ ℙ(Pass∈E)`, so the abs is the nonneg difference, bounded by
+`approx_good_tuple_whp` + `approx_passtime_window`.
+
+## Remaining C8 = 2 named sorries (all `Sec5/ApproxFormula.lean`, hardest-first)
 1. **`first_passage_affine_reindex`** — ROUTE-DECISIVE. `|firstPassMid − approxMainTerm| ≤
    C log^{-c}x`. The (5.17) `B_{n,y}` step-back-`m₀` event chain (`{T_x=n ∧ Pass∈E ∧ good} =
    {Syr^{n-m₀}N ∈ E' ∧ good}`, EXACT via `syr_iterate_key`/`passTime`/`Eprime` defs) then the (5.18)
    Lemma 2.1 affine reindex (`aff_valVec_eq_syr` + `valVec_unique`, APPROXIMATE — truncation in the
    error per the INSIGHT below). Attack the `B_{n,y}` event identity FIRST (it is exact).
-2. **`first_passage_window_reduce`** — `|ℙ(Pass∈E) − firstPassMid| ≤ C log^{-c}x`. Pure whp
-   bookkeeping over the two PROVED lemmas `approx_good_tuple_whp` (5.12) + `approx_passtime_window`
-   (5.16): discarded mass ⊂ `{¬good} ∪ {¬(passes ∧ T_x∈Iy)}`; on the complement `{Pass∈E}` is the
-   disjoint `⊕_{n∈Iy} {T_x=n ∧ Pass∈E ∧ good}`. MOST TRACTABLE next — `expect_le_add_of_indicator_le`
-   + a finite disjoint-partition identity over `Iy`.
-3. **`passtime_window_inner`** — (5.16) window term: `{passes ∧ T_x∉Iy}`, integral test that
+2. **`passtime_window_inner`** — (5.16) window term: `{passes ∧ T_x∉Iy}`, integral test that
    `N_y` avoids the `2 log^{0.8}x` edge collars; reuse C7's `classMass`/`windowMass`/`intTest_*`.
 
 Then C9 `stabilization` (`FirstPassage.lean:1343`).
