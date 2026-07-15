@@ -217,15 +217,25 @@ def Eprime (x : ℝ) (E : Set ℕ) (M : ℕ) : Prop :=
     (M : ℝ) ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x
 
 open Classical in
-/-- The right-hand main term of the approximate formula (5.8):
-`∑_{n∈I_y} ∑_{ā∈𝒜⁽ⁿ⁻ᵐ⁰⁾} ∑_{M∈E'} ℙ(Aff_ā(N_y) = M)`.  The inner `∑_{ā}∑_{M}` are rendered as
-`tsum`s masked by the `goodTuple`/`Eprime` membership predicates (the codebase idiom), and
-`ℙ(Aff_ā(N_y) = M)` is the pushforward mass of the fixed affine map `Aff · (n−m₀) ā` at `M`. -/
+-- RATIFY-C8-v2 (deep reflection 2026-07-15): the (5.8) main term, re-pinned against the paper's
+-- EXACT reindex.  The v1 pin used the ℕ-truncating `Aff` pushforward UNGUARDED, which over-counts
+-- (5.8) by a super-polylog factor (`tools/sandbox/tao_c8_truncation_probe.py`; DIRECTION.md CURRENT
+-- DIRECTIVE 2026-07-15) and makes the old `truncation_error_bound` FALSE.  Tao's `ℙ(Aff_ā(N_y)=M)`
+-- is the mass of the EXACT-affine event, non-empty only under the (5.18) congruence and then pinning
+-- `N_y` to the single (5.19) value `2^{|ā|}(M−F)/3^{n−m₀}`, i.e. `3^{n−m₀}N + Fnat = M·2^{a_{[1,n−m₀]}}`.
+/-- **Proposition 5.2 RHS**, the affine main term (5.8):
+`∑_{n∈I_y} ∑_{ā∈𝒜⁽ⁿ⁻ᵐ⁰⁾} ∑_{M∈E'} ℙ(Aff_ā(N_y) = M)`.  The inner `∑_{ā}∑_{M}` are `tsum`s masked
+by `goodTuple`/`Eprime`; `ℙ(Aff_ā(N_y) = M)` is the `logUnifOdd`-mass of the **exact** affine event
+`{N : 3^{n−m₀}·N + Fnat_{n−m₀}(ā) = M · 2^{a_{[1,n−m₀]}}}` — Tao's (5.18)/(5.19) integrality guard,
+which by Lemma 2.1 (`valVec_unique`) restricts the reindex to the true valuation vector (no truncation
+coincidences).  This makes the reindex EXACT: `approxMainTerm = steppedMid` (`approxMainTerm_eq_steppedMid`). -/
 noncomputable def approxMainTerm (x : ℝ) (E : Set ℕ) (y : ℝ) : ℝ :=
   ∑ n ∈ Iy x y,
     ∑' (ā : Fin (n - mZero x) → ℕ), ∑' (M : ℕ),
       if goodTuple x (n - mZero x) ā ∧ Eprime x E M then
-        (((logUnifOdd y (y ^ alpha)).map (fun N => Aff N (n - mZero x) ā)) M).toReal
+        (∑' N, if 3 ^ (n - mZero x) * N + fnat (n - mZero x) ā
+                    = M * 2 ^ pre ā (n - mZero x)
+               then (logUnifOdd y (y ^ alpha)) N else 0).toReal
       else 0
 
 /-! ## Lemma 2.1 kernels for the (5.18) affine reindexing (the route-decisive assembly step)
@@ -1073,27 +1083,21 @@ theorem map_mask_tsum_toReal (P : PMF ℕ) (φ : ℕ → ℕ) (q : ℕ → Prop)
     · simp
 
 open Classical in
-/-- **`approxMainTerm` in pure source form.**  Applying the pushforward reorder `map_mask_tsum_toReal`
-to each fixed-`ā` inner `∑_M` collapses the target-space `M`-layer: the affine main term equals a
-double sum over `(n, ā)` of the *source* `logUnifOdd`-mass of `{N : Aff N (n−m₀) ā ∈ E'}`, restricted
-to good `ā`.  This is an EXACT identity (no error yet), the first step of the (5.18) reindex — it
-leaves only the `ā ↔ N` reorder + the diagonal/truncation count. -/
-theorem approxMainTerm_eq_source (x : ℝ) (E : Set ℕ) (y : ℝ) :
-    approxMainTerm x E y = ∑ n ∈ Iy x y,
-      ∑' ā : Fin (n - mZero x) → ℕ,
-        if goodTuple x (n - mZero x) ā then
-          (∑' N, if Eprime x E (Aff N (n - mZero x) ā) then (logUnifOdd y (y ^ alpha)) N else 0).toReal
-        else 0 := by
-  unfold approxMainTerm
-  refine Finset.sum_congr rfl fun n _ => ?_
-  refine tsum_congr fun ā => ?_
-  by_cases hg : goodTuple x (n - mZero x) ā
-  · -- good ā: the `M`-sum reindexes to the source mass
-    simp only [hg, true_and, if_true]
-    rw [← map_mask_tsum_toReal (logUnifOdd y (y ^ alpha)) (fun N => Aff N (n - mZero x) ā)
-      (fun M => Eprime x E M)]
-  · -- not good: both sides vanish
-    simp only [hg, false_and, if_false, ENNReal.toReal_zero, tsum_zero]
+/-- **The (5.18)/(5.19) EXACT reindex — `approxMainTerm = steppedMid`** (RATIFY-C8-v2 content).
+With the divisibility-guarded `approxMainTerm` (paper's exact `Aff_ā`), Lemma 2.1 (`valVec_unique`)
+collapses the reindex to the diagonal: for odd `N`, good `ā`, and `M` odd (from `Eprime`), the exact
+affine relation `3^{n−m₀}N + Fnat = M·2^{|ā|}` holds **iff** `ā = valVec N (n−m₀)` (and then
+`M = Syr^{n−m₀}N` by `aff_valVec_eq_syr`).  So each `N` contributes to exactly one `(ā,M)` term, and
+the `(ā,M)`-sum reindexes to `steppedMid`'s single diagonal indicator — with **no** truncation error.
+This is the honest replacement for the (deleted-in-spirit) FALSE `truncation_error_bound`; the sole
+remaining reindex content is this exact bijection.  KEY INPUT: `valVec_unique` (`Basic/Valuation.lean`).
+TODO(prove): reorder `∑'_ā ∑'_M ∑'_N` to `∑'_N`, apply `valVec_unique` (guard + `Eprime` oddness ⇒
+`ā = valVec`) + `aff_valVec_eq_syr` to fix `M = Syr^{n−m₀}N`, matching `steppedMid`'s indicator mass
+(`expect_indicator_toReal`); even `N` carry zero `logUnifOdd`-mass (`logUnifOdd_support_le`, needs `hy1`). -/
+theorem approxMainTerm_eq_steppedMid (x : ℝ) (E : Set ℕ) (y : ℝ)
+    (hy1 : (1 : ℝ) ≤ y ^ alpha) :
+    approxMainTerm x E y = steppedMid x E y := by
+  sorry
 
 open Classical in
 /-- **Indicator expectation as a source mass.**  `P.expect (𝟙_S) = (∑_{N∈S} P N).toReal`.  This
@@ -1107,83 +1111,13 @@ theorem expect_indicator_toReal (P : PMF ℕ) (S : Set ℕ) :
   by_cases h : N ∈ S <;> simp [Set.indicator_apply, h]
 
 open Classical in
-/-- **`steppedMid ≤ approxMainTerm`** — the diagonal domination (the EXACT half of the (5.18)
-reindex).  Reordering `approxMainTerm` (via `approxMainTerm_eq_source` + `ENNReal.tsum_comm`) to
-`∑_n ∑_N P N · #{ā good : Aff N (n−m₀)ā ∈ E'}`, the diagonal `ā = valVec N (n−m₀)` is counted for
-every odd `N` in `steppedMid`'s event (`aff_valVec_eq_syr` gives `Aff N k (valVec N k) = Syr^k N`),
-so the count is `≥ 1` there; even `N` carry zero `logUnifOdd`-mass.  Hence `steppedMid`'s per-`n`
-mass is dominated termwise.  The residual `approxMainTerm − steppedMid ≥ 0` is exactly the
-truncation error bounded in `first_passage_truncation_reindex`. -/
+/-- **`steppedMid ≤ approxMainTerm`** — immediate from the EXACT reindex
+`approxMainTerm_eq_steppedMid` (they are equal under the RATIFY-C8-v2 guarded pin).  Retained as a
+named lemma because `first_passage_truncation_reindex` consumes this `≤` direction. -/
 theorem steppedMid_le_approxMainTerm (x : ℝ) (E : Set ℕ) (y : ℝ)
     (hy1 : (1 : ℝ) ≤ y ^ alpha) :
-    steppedMid x E y ≤ approxMainTerm x E y := by
-  rw [approxMainTerm_eq_source]
-  unfold steppedMid
-  refine Finset.sum_le_sum fun n _ => ?_
-  set k := n - mZero x with hk
-  set P := logUnifOdd y (y ^ alpha) with hP
-  set S : Set ℕ := {N | goodTuple x k (valVec N k) ∧ Eprime x E (syr^[k] N)} with hS
-  -- source mass `≤ 1` for any target predicate
-  have hmass : ∀ φ : ℕ → ℕ, (∑' N, if Eprime x E (φ N) then P N else 0) ≤ 1 := by
-    intro φ
-    calc (∑' N, if Eprime x E (φ N) then P N else 0) ≤ ∑' N, P N := by
-          refine ENNReal.tsum_le_tsum fun N => ?_
-          split
-          · exact le_rfl
-          · exact zero_le'
-      _ = 1 := P.tsum_coe
-  -- LHS as a source mass
-  rw [expect_indicator_toReal P _]
-  -- RHS: pull `.toReal` out of the (finite-support) ā-sum
-  have hRHS : (∑' ā : Fin k → ℕ, if goodTuple x k ā then
-        (∑' N, if Eprime x E (Aff N k ā) then P N else 0).toReal else 0)
-      = (∑' ā : Fin k → ℕ, if goodTuple x k ā then
-          (∑' N, if Eprime x E (Aff N k ā) then P N else 0) else 0).toReal := by
-    rw [ENNReal.tsum_toReal_eq (fun ā => by
-      split
-      · exact ne_top_of_le_ne_top ENNReal.one_ne_top (hmass _)
-      · simp)]
-    refine tsum_congr fun ā => ?_
-    split <;> simp
-  rw [hRHS]
-  apply ENNReal.toReal_mono
-  · -- finiteness: the ā-sum has support in the good-tuple Finset
-    rw [tsum_eq_sum (s := (goodTuple_finite x k).toFinset) fun ā hā => by
-      rw [if_neg (by rw [Set.Finite.mem_toFinset] at hā; exact hā)]]
-    refine (ENNReal.sum_lt_top.mpr fun ā _ => ?_).ne
-    split
-    · exact lt_of_le_of_lt (hmass _) ENNReal.one_lt_top
-    · simp
-  · -- domination: reorder RHS to `∑_N ∑_ā`, then the diagonal ā = valVec N k covers `S`
-    have hb : (∑' ā : Fin k → ℕ, if goodTuple x k ā then
-          (∑' N, if Eprime x E (Aff N k ā) then P N else 0) else 0)
-        = ∑' N, ∑' ā : Fin k → ℕ,
-            (if goodTuple x k ā ∧ Eprime x E (Aff N k ā) then P N else 0) := by
-      rw [show (∑' ā : Fin k → ℕ, if goodTuple x k ā then
-            (∑' N, if Eprime x E (Aff N k ā) then P N else 0) else 0)
-          = ∑' ā : Fin k → ℕ, ∑' N,
-              (if goodTuple x k ā ∧ Eprime x E (Aff N k ā) then P N else 0) from ?_,
-        ENNReal.tsum_comm]
-      refine tsum_congr fun ā => ?_
-      by_cases hga : goodTuple x k ā
-      · rw [if_pos hga]; exact tsum_congr fun N => by simp only [hga, true_and]
-      · rw [if_neg hga]; simp only [hga, false_and, if_false, tsum_zero]
-    rw [hb]
-    refine ENNReal.tsum_le_tsum fun N => ?_
-    by_cases hodd : N % 2 = 1
-    · by_cases hNS : N ∈ S
-      · rw [if_pos hNS]
-        have hmem : goodTuple x k (valVec N k) ∧ Eprime x E (Aff N k (valVec N k)) := by
-          refine ⟨hNS.1, ?_⟩
-          rw [aff_valVec_eq_syr N k hodd]; exact hNS.2
-        exact le_trans (le_of_eq (if_pos hmem).symm) (ENNReal.le_tsum (valVec N k))
-      · rw [if_neg hNS]; exact zero_le'
-    · have hz : P N = 0 := by
-        by_contra hne
-        exact hodd ((logUnifOdd_support_le hy1 (hne : N ∈ P.support)).1)
-      by_cases hNS : N ∈ S
-      · rw [if_pos hNS, hz]; exact zero_le'
-      · rw [if_neg hNS]; exact zero_le'
+    steppedMid x E y ≤ approxMainTerm x E y :=
+  le_of_eq (approxMainTerm_eq_steppedMid x E y hy1).symm
 
 /-- **(5.17) event reduction leg** (owed) — `|firstPassMid − steppedMid| ≤ O(log^{-c}x)`.  Passing
 from the `T_x=n`-partitioned good event to its stepped-back diagonal form costs `O(log^{-c}x)`.  The
@@ -1199,20 +1133,34 @@ theorem first_passage_stepback_reduce :
             ≤ C * (Real.log x) ^ (-c) := by
   sorry
 
-/-- **(5.19) truncation error bound** (owed) — the SOLE remaining analytic hole of the (5.18)
-reindex.  By `steppedMid_le_approxMainTerm` the two terms already satisfy `steppedMid ≤
-approxMainTerm`, so the reindex gap is the *nonneg* excess
-`approxMainTerm − steppedMid = ∑_n ∑'_N P N · #{truncation ā ≠ valVec N (n−m₀) : good ā ∧ Aff N (n−m₀)ā ∈ E'}`.
-Each such `ā` is a rounding coincidence (`2^{|ā|} ∤ 3^{n−m₀}N + Fnat ā`); Tao's (5.19) bounds their
-count via the `E'` size window `exp(±log^{0.7}x)(4/3)^{m₀}x`, giving `O(log^{-c}x)`.  This is the
-genuinely-analytic piece; the mechanical reorder/domination is DONE. -/
+/-- **(5.19) truncation error bound** — NOW TRIVIAL under RATIFY-C8-v2.  With the exact
+divisibility-guarded `approxMainTerm`, `approxMainTerm = steppedMid` (`approxMainTerm_eq_steppedMid`),
+so the reindex gap is identically `0`.  (Under the OLD unguarded ℕ-truncating pin this bound was
+FALSE — the truncation over-counted by a super-polylog factor; that is exactly why the pin was
+re-done.  See DIRECTION.md CURRENT DIRECTIVE 2026-07-15 and `tools/sandbox/tao_c8_truncation_probe.py`.)
+Retained as a named lemma so `first_passage_truncation_reindex` keeps its interface. -/
 theorem truncation_error_bound :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           approxMainTerm x E y - steppedMid x E y
             ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  refine ⟨1, 1, Real.exp 1, one_pos, one_pos, fun x hx E hE y hy => ?_⟩
+  have hx1 : (1 : ℝ) ≤ x := le_trans (Real.one_le_exp_iff.mpr (by norm_num)) hx
+  have hlog1 : (1 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hx
+  have hlogpos : 0 < Real.log x := lt_of_lt_of_le one_pos hlog1
+  have hone : ∀ b z : ℝ, 1 ≤ b → 0 ≤ z → (1 : ℝ) ≤ b ^ z := fun b z hb hz => by
+    calc (1 : ℝ) = b ^ (0 : ℝ) := (Real.rpow_zero b).symm
+      _ ≤ b ^ z := Real.rpow_le_rpow_of_exponent_le hb hz
+  have haz : (0 : ℝ) ≤ alpha := by norm_num [alpha]
+  have hy1 : (1 : ℝ) ≤ y ^ alpha := by
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hy
+    rcases hy with rfl | rfl
+    · exact hone _ alpha (hone x alpha hx1 haz) haz
+    · exact hone _ alpha (hone x (alpha ^ 2) hx1 (by positivity)) haz
+  rw [approxMainTerm_eq_steppedMid x E y hy1, sub_self, one_mul]
+  exact Real.rpow_nonneg hlogpos.le _
 
 theorem first_passage_truncation_reindex :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
