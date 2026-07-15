@@ -1,5 +1,6 @@
 import TaoCollatz.Basic.Collatz
 import TaoCollatz.Basic.LogDensity
+import TaoCollatz.Basic.Anchors
 import TaoCollatz.Basic.Valuation
 import TaoCollatz.Prob.Basic
 import TaoCollatz.Prob.Geometric
