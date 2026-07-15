@@ -1353,6 +1353,82 @@ theorem Nstar_mem_logWindow :
     have hfnn : (0 : ℝ) ≤ (fnat (n - mZero x) ā : ℝ) := Nat.cast_nonneg _
     linarith [hQhi, hfnn]
 
+/-- **`N*` cast to ℝ** — the exact-division value `(M·2^{pre ā} − fnat)/3^k` as a real quotient
+(the division is exact by the affine divisibility). -/
+theorem Nstar_cast {k : ℕ} (ā : Fin k → ℕ) {M : ℕ}
+    (hdvd : 3 ^ k ∣ (M * 2 ^ pre ā k - fnat k ā)) (hle : fnat k ā ≤ M * 2 ^ pre ā k) :
+    (((M * 2 ^ pre ā k - fnat k ā) / 3 ^ k : ℕ) : ℝ)
+      = ((M : ℝ) * 2 ^ pre ā k - (fnat k ā : ℝ)) / 3 ^ k := by
+  obtain ⟨N, hN⟩ := hdvd
+  rw [hN, Nat.mul_div_cancel_left N (by positivity)]
+  have hNR : (M : ℝ) * 2 ^ pre ā k - (fnat k ā : ℝ) = 3 ^ k * (N : ℝ) := by
+    have h := congrArg (fun t : ℕ => (t : ℝ)) hN
+    push_cast [Nat.cast_sub hle] at h
+    exact h
+  rw [hNR, mul_div_cancel_left₀ _ (by positivity : ((3 : ℝ) ^ k) ≠ 0)]
+
+/-- **Modulus × log clears the `E'` window floor** — `3^k·log x ≤ exp(−log^{0.7}x)·(4/3)^{m₀}·x` for
+`k ≤ n₀`.  Sharpening of `cn_window_size` (i): gives `3^{n−m₀}/M ≤ log^{-1}x` uniformly on `E'`, the
+relative error of the `(N*)⁻¹ ≈ 3^{n−m₀}/(M·2^{pre})` swap in (5.19).  Proof: `3^k ≤ x^{1/5}`
+(`three_pow_nZero_le`) and `log L + L^{0.7} ≤ (4/5)·L` (via `log L ≤ 2L^{1/2} − 2 ≤ 2L^{0.7}` and
+`L ≥ 8·L^{0.7}` from `L^{0.3} ≥ 1024^{0.3} = 8`). -/
+theorem three_pow_log_le_window {x : ℝ} (hx : Real.exp 1024 ≤ x) {k : ℕ} (hk : k ≤ nZero x) :
+    (3 : ℝ) ^ k * Real.log x
+      ≤ Real.exp (-Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x := by
+  have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hx
+  have hx1 : (1 : ℝ) < x := lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (1024 : ℝ)]) hx
+  have hL1024 : (1024 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 1024]; exact Real.log_le_log (Real.exp_pos _) hx
+  have hLpos : (0 : ℝ) < Real.log x := by linarith
+  have hL1 : (1 : ℝ) ≤ Real.log x := by linarith
+  have h3k : (3 : ℝ) ^ k ≤ x ^ ((1 : ℝ) / 5) :=
+    le_trans (pow_le_pow_right₀ (by norm_num) hk) (three_pow_nZero_le hx1.le)
+  have h12 : Real.log (Real.log x ^ ((1 : ℝ) / 2)) ≤ Real.log x ^ ((1 : ℝ) / 2) - 1 :=
+    Real.log_le_sub_one_of_pos (Real.rpow_pos_of_pos hLpos _)
+  have hlogrw : Real.log (Real.log x ^ ((1 : ℝ) / 2)) = (1 / 2) * Real.log (Real.log x) :=
+    Real.log_rpow hLpos _
+  have h1207 : Real.log x ^ ((1 : ℝ) / 2) ≤ Real.log x ^ (0.7 : ℝ) :=
+    Real.rpow_le_rpow_of_exponent_le hL1 (by norm_num)
+  have hsplit : Real.log x ^ (0.3 : ℝ) * Real.log x ^ (0.7 : ℝ) = Real.log x := by
+    rw [← Real.rpow_add hLpos, show (0.3 : ℝ) + 0.7 = 1 by norm_num, Real.rpow_one]
+  have h03 : (8 : ℝ) ≤ Real.log x ^ (0.3 : ℝ) := by
+    have he : ((1024 : ℝ)) ^ ((0.3 : ℝ)) = 8 := by
+      rw [show (1024 : ℝ) = (2 : ℝ) ^ (10 : ℕ) by norm_num, ← Real.rpow_natCast (2 : ℝ) 10,
+        ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2),
+        show ((10 : ℕ) : ℝ) * (0.3 : ℝ) = ((3 : ℕ) : ℝ) by push_cast; norm_num,
+        Real.rpow_natCast]
+      norm_num
+    have h := Real.rpow_le_rpow (by norm_num) hL1024 (by norm_num : (0 : ℝ) ≤ (0.3 : ℝ))
+    rwa [he] at h
+  have ht7nn : (0 : ℝ) ≤ Real.log x ^ (0.7 : ℝ) := Real.rpow_nonneg hLpos.le _
+  have hexp : Real.log x * (1 / 5) + Real.log (Real.log x)
+      ≤ -Real.log x ^ (0.7 : ℝ) + Real.log x := by
+    nlinarith [mul_nonneg (sub_nonneg.mpr h03) ht7nn, hsplit, h12, hlogrw, h1207]
+  calc (3 : ℝ) ^ k * Real.log x
+      ≤ x ^ ((1 : ℝ) / 5) * Real.log x := mul_le_mul_of_nonneg_right h3k hLpos.le
+    _ = Real.exp (Real.log x * (1 / 5)) * Real.exp (Real.log (Real.log x)) := by
+        rw [Real.rpow_def_of_pos hxpos, Real.exp_log hLpos]
+    _ = Real.exp (Real.log x * (1 / 5) + Real.log (Real.log x)) := (Real.exp_add _ _).symm
+    _ ≤ Real.exp (-Real.log x ^ (0.7 : ℝ) + Real.log x) := Real.exp_le_exp.mpr hexp
+    _ = Real.exp (-Real.log x ^ (0.7 : ℝ)) * x := by rw [Real.exp_add, Real.exp_log hxpos]
+    _ ≤ Real.exp (-Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x := by
+        rw [mul_right_comm]
+        exact le_mul_of_one_le_right (mul_pos (Real.exp_pos _) hxpos).le
+          (one_le_pow₀ (by norm_num))
+
+/-- **Nested-tsum monotonicity** — `∑'∑' f ≤ ∑'∑' g` from termwise `0 ≤ f ≤ g`, needing only the
+DOMINATING family's summability (inner per-`a`, and of the inner sums). -/
+theorem tsum_tsum_le_tsum_tsum {α β : Type*} {f g : α → β → ℝ}
+    (hf0 : ∀ a b, 0 ≤ f a b) (hfg : ∀ a b, f a b ≤ g a b)
+    (hgM : ∀ a, Summable (g a)) (hgS : Summable fun a => ∑' b, g a b) :
+    (∑' a, ∑' b, f a b) ≤ ∑' a, ∑' b, g a b := by
+  have hfM : ∀ a, Summable (f a) := fun a =>
+    Summable.of_nonneg_of_le (hf0 a) (hfg a) (hgM a)
+  have hinner : ∀ a, (∑' b, f a b) ≤ ∑' b, g a b := fun a =>
+    (hfM a).tsum_le_tsum (hfg a) (hgM a)
+  exact (Summable.of_nonneg_of_le (fun a => tsum_nonneg (hf0 a)) hinner hgS).tsum_le_tsum
+    hinner hgS
+
 /-- **Crude size bound on `perNHarmonic`** — `perNHarmonic ≤ C·log^{0.7}x`.  Via the (5.22) fiber
 identity (rib 1, `perNHarmonic_eq_sum_cn`): `perNHarmonic = ∑_X perNGoodMass·c_n ≤ (sup c_n)·∑_X
 syracZ = sup c_n ≤ C·log^{0.7}x` (`cn_bound`; `perNGoodMass ≤ syracZ` pointwise, total `syracZ` mass
