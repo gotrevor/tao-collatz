@@ -19,8 +19,17 @@ The route-decisive leg is now a proved triangle `|firstPassMid−approxMainTerm|
      ∑_N [q(φN)] P N` (via `PMF.tsum_map_mul`), real form with toReal. UNCONDITIONAL, reusable.
    - **`approxMainTerm_eq_source`** — EXACT: `approxMainTerm = ∑_n ∑'_ā [good ā] (∑'_N [Aff N (n−m₀)ā ∈ E']
      P N).toReal`. The target-space `M`/pushforward layer is ELIMINATED; only pure `logUnifOdd` source
-     masses remain. Remaining for this leg: the `ā ↔ N` reorder (pull toReal out of the ā-sum via
-     finiteness of good-tuples; ENNReal Fubini) + diagonal(ā=valVec)-vs-truncation count bound.
+     masses remain.
+   - **`steppedMid_le_approxMainTerm`** — DONE, axiom-clean (the EXACT half of (5.18)):
+     `steppedMid ≤ approxMainTerm` for `1 ≤ y^α`. Full `ā↔N` reorder (ENNReal.tsum_comm) done: the
+     diagonal `ā = valVec N (n−m₀)` is counted for every odd N in `steppedMid`'s event
+     (`aff_valVec_eq_syr` + `ENNReal.le_tsum`), even N carry zero mass (`logUnifOdd_support_le`),
+     finiteness via `goodTuple_finite` + `tsum_eq_sum`. Helper `expect_indicator_toReal` banked.
+   - **ONLY hole left in this leg**: the truncation ERROR bound `approxMainTerm − steppedMid ≤
+     C log^{-c}x` (nonneg by the domination) = `∑_n ∑'_N P N·#{truncation ā ≠ valVec : Aff N (n−m₀)ā ∈ E'}`.
+     This is the genuinely-analytic (5.19) piece: needs the `E'` size window to bound how many rounding
+     coincidences land in E'. Attack next; the abs in `first_passage_truncation_reindex` collapses to
+     this one-sided nonneg difference via `steppedMid_le_approxMainTerm`.
 2. **`first_passage_stepback_reduce`** (`|firstPassMid−steppedMid|`) — the (5.17) event reduction.
    Forward inclusion EXACT (`firstPass_event_stepback_subset` ✅); remaining = reverse inclusion + `E'`
    size window `exp(±log^{0.7}x)(4/3)^{m₀}x` (orbit estimate (5.13)/(5.14)) + nested `𝒜⁽ⁿ⁰⁾⊂𝒜⁽ⁿ⁻ᵐ⁰⁾`.

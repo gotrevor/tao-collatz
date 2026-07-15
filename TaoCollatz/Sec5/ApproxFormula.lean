@@ -974,6 +974,96 @@ theorem approxMainTerm_eq_source (x : ℝ) (E : Set ℕ) (y : ℝ) :
   · -- not good: both sides vanish
     simp only [hg, false_and, if_false, ENNReal.toReal_zero, tsum_zero]
 
+open Classical in
+/-- **Indicator expectation as a source mass.**  `P.expect (𝟙_S) = (∑_{N∈S} P N).toReal`.  This
+puts both `steppedMid` (an indicator expectation) and `approxMainTerm` (`approxMainTerm_eq_source`)
+on the same `(∑' N …).toReal` footing for the (5.18) domination. -/
+theorem expect_indicator_toReal (P : PMF ℕ) (S : Set ℕ) :
+    P.expect (Set.indicator S 1) = (∑' N, if N ∈ S then P N else 0).toReal := by
+  rw [ENNReal.tsum_toReal_eq (fun N => by split; exacts [PMF.apply_ne_top _ _, by simp])]
+  unfold PMF.expect
+  refine tsum_congr fun N => ?_
+  by_cases h : N ∈ S <;> simp [Set.indicator_apply, h]
+
+open Classical in
+/-- **`steppedMid ≤ approxMainTerm`** — the diagonal domination (the EXACT half of the (5.18)
+reindex).  Reordering `approxMainTerm` (via `approxMainTerm_eq_source` + `ENNReal.tsum_comm`) to
+`∑_n ∑_N P N · #{ā good : Aff N (n−m₀)ā ∈ E'}`, the diagonal `ā = valVec N (n−m₀)` is counted for
+every odd `N` in `steppedMid`'s event (`aff_valVec_eq_syr` gives `Aff N k (valVec N k) = Syr^k N`),
+so the count is `≥ 1` there; even `N` carry zero `logUnifOdd`-mass.  Hence `steppedMid`'s per-`n`
+mass is dominated termwise.  The residual `approxMainTerm − steppedMid ≥ 0` is exactly the
+truncation error bounded in `first_passage_truncation_reindex`. -/
+theorem steppedMid_le_approxMainTerm (x : ℝ) (E : Set ℕ) (y : ℝ)
+    (hy1 : (1 : ℝ) ≤ y ^ alpha) :
+    steppedMid x E y ≤ approxMainTerm x E y := by
+  rw [approxMainTerm_eq_source]
+  unfold steppedMid
+  refine Finset.sum_le_sum fun n _ => ?_
+  set k := n - mZero x with hk
+  set P := logUnifOdd y (y ^ alpha) with hP
+  set S : Set ℕ := {N | goodTuple x k (valVec N k) ∧ Eprime x E (syr^[k] N)} with hS
+  -- source mass `≤ 1` for any target predicate
+  have hmass : ∀ φ : ℕ → ℕ, (∑' N, if Eprime x E (φ N) then P N else 0) ≤ 1 := by
+    intro φ
+    calc (∑' N, if Eprime x E (φ N) then P N else 0) ≤ ∑' N, P N := by
+          refine ENNReal.tsum_le_tsum fun N => ?_
+          split
+          · exact le_rfl
+          · exact zero_le'
+      _ = 1 := P.tsum_coe
+  -- LHS as a source mass
+  rw [expect_indicator_toReal P _]
+  -- RHS: pull `.toReal` out of the (finite-support) ā-sum
+  have hRHS : (∑' ā : Fin k → ℕ, if goodTuple x k ā then
+        (∑' N, if Eprime x E (Aff N k ā) then P N else 0).toReal else 0)
+      = (∑' ā : Fin k → ℕ, if goodTuple x k ā then
+          (∑' N, if Eprime x E (Aff N k ā) then P N else 0) else 0).toReal := by
+    rw [ENNReal.tsum_toReal_eq (fun ā => by
+      split
+      · exact ne_top_of_le_ne_top ENNReal.one_ne_top (hmass _)
+      · simp)]
+    refine tsum_congr fun ā => ?_
+    split <;> simp
+  rw [hRHS]
+  apply ENNReal.toReal_mono
+  · -- finiteness: the ā-sum has support in the good-tuple Finset
+    rw [tsum_eq_sum (s := (goodTuple_finite x k).toFinset) fun ā hā => by
+      rw [if_neg (by rw [Set.Finite.mem_toFinset] at hā; exact hā)]]
+    refine (ENNReal.sum_lt_top.mpr fun ā _ => ?_).ne
+    split
+    · exact lt_of_le_of_lt (hmass _) ENNReal.one_lt_top
+    · simp
+  · -- domination: reorder RHS to `∑_N ∑_ā`, then the diagonal ā = valVec N k covers `S`
+    have hb : (∑' ā : Fin k → ℕ, if goodTuple x k ā then
+          (∑' N, if Eprime x E (Aff N k ā) then P N else 0) else 0)
+        = ∑' N, ∑' ā : Fin k → ℕ,
+            (if goodTuple x k ā ∧ Eprime x E (Aff N k ā) then P N else 0) := by
+      rw [show (∑' ā : Fin k → ℕ, if goodTuple x k ā then
+            (∑' N, if Eprime x E (Aff N k ā) then P N else 0) else 0)
+          = ∑' ā : Fin k → ℕ, ∑' N,
+              (if goodTuple x k ā ∧ Eprime x E (Aff N k ā) then P N else 0) from ?_,
+        ENNReal.tsum_comm]
+      refine tsum_congr fun ā => ?_
+      by_cases hga : goodTuple x k ā
+      · rw [if_pos hga]; exact tsum_congr fun N => by simp only [hga, true_and]
+      · rw [if_neg hga]; simp only [hga, false_and, if_false, tsum_zero]
+    rw [hb]
+    refine ENNReal.tsum_le_tsum fun N => ?_
+    by_cases hodd : N % 2 = 1
+    · by_cases hNS : N ∈ S
+      · rw [if_pos hNS]
+        have hmem : goodTuple x k (valVec N k) ∧ Eprime x E (Aff N k (valVec N k)) := by
+          refine ⟨hNS.1, ?_⟩
+          rw [aff_valVec_eq_syr N k hodd]; exact hNS.2
+        exact le_trans (le_of_eq (if_pos hmem).symm) (ENNReal.le_tsum (valVec N k))
+      · rw [if_neg hNS]; exact zero_le'
+    · have hz : P N = 0 := by
+        by_contra hne
+        exact hodd ((logUnifOdd_support_le hy1 (hne : N ∈ P.support)).1)
+      by_cases hNS : N ∈ S
+      · rw [if_pos hNS, hz]; exact zero_le'
+      · rw [if_neg hNS]; exact zero_le'
+
 /-- **(5.17) event reduction leg** (owed) — `|firstPassMid − steppedMid| ≤ O(log^{-c}x)`.  Passing
 from the `T_x=n`-partitioned good event to its stepped-back diagonal form costs `O(log^{-c}x)`.  The
 `T_x`/`Pass`/oddness half of `Eprime(Syr^{n−m₀}N)` is EXACT given `T_x N = n` (proved:
