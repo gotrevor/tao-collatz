@@ -1211,7 +1211,109 @@ theorem logSum_oddPart_pullback (A : Set ℕ) (x : ℕ) :
 pulls back along `oddPart` to an almost-all property on `ℕ+`. -/
 theorem almostAllPos_oddPart_of_almostAllOdd (P : ℕ → Prop) (h : AlmostAllOdd P) :
     AlmostAllPos fun N => P (oddPart N) := by
-  sorry
+  unfold AlmostAllPos HasLogDensity
+  unfold AlmostAllOdd at h
+  rw [Metric.tendsto_atTop] at h ⊢
+  intro ε hε
+  obtain ⟨X₁, hX₁⟩ := h (ε / 4) (by linarith)
+  refine ⟨max X₁ 2, fun x hx => ?_⟩
+  have hxX₁ : X₁ ≤ x := le_trans (le_max_left _ _) hx
+  have hx2 : 2 ≤ x := le_trans (le_max_right _ _) hx
+  -- window objects
+  set Do := logSum Set.univ (oddInterval x) with hDodef
+  set Go := logSum {N | P N} (oddInterval x) with hGodef
+  set Bo := logSum {N | ¬ P N} (oddInterval x) with hBodef
+  set Dp := logSum Set.univ (posInterval x) with hDpdef
+  set Gp := logSum {N | P (oddPart N)} (posInterval x) with hGpdef
+  set Bp := logSum {N | ¬ P (oddPart N)} (posInterval x) with hBpdef
+  -- complement splits over both windows
+  have hsplit_o : Go + Bo = Do := by
+    rw [hGodef, hBodef, hDodef]
+    unfold logSum
+    rw [Finset.sum_filter, Finset.sum_filter, Finset.sum_filter, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun N _ => ?_
+    by_cases hPN : P N
+    · have h1 : N ∈ {N | P N} := hPN
+      have h2 : N ∉ {N | ¬ P N} := fun hc => hc hPN
+      rw [if_pos h1, if_neg h2, if_pos (Set.mem_univ N)]
+      ring
+    · have h1 : N ∉ {N | P N} := hPN
+      have h2 : N ∈ {N | ¬ P N} := hPN
+      rw [if_neg h1, if_pos h2, if_pos (Set.mem_univ N)]
+      ring
+  have hsplit_p : Gp + Bp = Dp := by
+    rw [hGpdef, hBpdef, hDpdef]
+    unfold logSum
+    rw [Finset.sum_filter, Finset.sum_filter, Finset.sum_filter, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun N _ => ?_
+    by_cases hPN : P (oddPart N)
+    · have h1 : N ∈ {N | P (oddPart N)} := hPN
+      have h2 : N ∉ {N | ¬ P (oddPart N)} := fun hc => hc hPN
+      rw [if_pos h1, if_neg h2, if_pos (Set.mem_univ N)]
+      ring
+    · have h1 : N ∉ {N | P (oddPart N)} := hPN
+      have h2 : N ∈ {N | ¬ P (oddPart N)} := hPN
+      rw [if_neg h1, if_pos h2, if_pos (Set.mem_univ N)]
+      ring
+  -- nonnegativity and normalizer sizes
+  have hBo0 : (0 : ℝ) ≤ Bo := by
+    rw [hBodef]; unfold logSum
+    exact Finset.sum_nonneg fun N _ => by positivity
+  have hBp0 : (0 : ℝ) ≤ Bp := by
+    rw [hBpdef]; unfold logSum
+    exact Finset.sum_nonneg fun N _ => by positivity
+  have hGp0 : (0 : ℝ) ≤ Gp := by
+    rw [hGpdef]; unfold logSum
+    exact Finset.sum_nonneg fun N _ => by positivity
+  have hDo1 : (1 : ℝ) ≤ Do := one_le_logSum_univ_oddInterval hx2
+  have hDo0 : (0 : ℝ) < Do := lt_of_lt_of_le one_pos hDo1
+  have hDpDo : Do ≤ Dp := by
+    rw [hDodef, hDpdef]; unfold logSum
+    refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun N _ _ => by positivity
+    intro N hN
+    simp only [Finset.mem_filter] at hN ⊢
+    obtain ⟨hNi, -⟩ := hN
+    simp only [oddInterval, posInterval, Finset.mem_filter, Finset.mem_range,
+      ge_iff_le] at hNi ⊢
+    exact ⟨⟨hNi.1, by omega⟩, Set.mem_univ N⟩
+  have hDp0 : (0 : ℝ) < Dp := lt_of_lt_of_le hDo0 hDpDo
+  -- the (1.2) pullback: `Bp ≤ 2·Bo`
+  have hBpull : Bp ≤ 2 * Bo := logSum_oddPart_pullback {M | ¬ P M} x
+  -- the odd-window bad mass is small: `Bo < (ε/4)·Do`
+  have hodd := hX₁ x hxX₁
+  have hp_odd_eq : logProb {N | P N} (oddInterval x) = Go / Do := rfl
+  rw [hp_odd_eq, Real.dist_eq] at hodd
+  have hGoDo : Go = Do - Bo := by linarith
+  have hBoDo : Bo / Do < ε / 4 := by
+    have h2 : 1 - Go / Do ≤ |Go / Do - 1| := by
+      rw [abs_sub_comm]
+      exact le_abs_self _
+    have h3 : Go / Do = 1 - Bo / Do := by
+      rw [hGoDo, sub_div, div_self hDo0.ne']
+    linarith
+  have hBoD : Bo < ε / 4 * Do := by
+    rw [div_lt_iff₀ hDo0] at hBoDo
+    linarith
+  -- assemble: `1 − Gp/Dp = Bp/Dp ≤ 2Bo/Do < ε/2`
+  have hp_pos_eq : logProb {N | P (oddPart N)} (posInterval x) = Gp / Dp := rfl
+  have hGpDp : Gp / Dp ≤ 1 := by
+    rw [div_le_one hDp0]
+    linarith
+  have hBpDp : Bp / Dp < ε / 2 := by
+    have h1 : Bp / Dp ≤ 2 * Bo / Dp := by gcongr
+    have h2 : 2 * Bo / Dp ≤ 2 * Bo / Do := by
+      gcongr
+    have h3 : 2 * Bo / Do < 2 * (ε / 4 * Do) / Do := by
+      gcongr
+    have h4 : 2 * (ε / 4 * Do) / Do = ε / 2 := by
+      field_simp
+      ring
+    linarith
+  have hGp_eq : Gp / Dp = 1 - Bp / Dp := by
+    have hg : Gp = Dp - Bp := by linarith
+    rw [hg, sub_div, div_self hDp0.ne']
+  rw [hp_pos_eq, Real.dist_eq, abs_of_nonpos (by linarith)]
+  linarith [hBpDp, hGp_eq]
 
 /-! ## Spine — the headlines from the intermediates
 
