@@ -2543,7 +2543,68 @@ theorem Iy_count_ratio :
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         |((Iy x y).card : ℝ) / ((alpha - 1) / 2 * Real.log y) - 2 / Real.log (4 / 3)|
           ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨xB, hB⟩ := Iy_card_bracket
+  refine ⟨0.2, 6000, max xB (Real.exp ((2000 : ℝ) ^ (5 : ℕ))), by norm_num, by norm_num,
+    fun x hx y hy => ?_⟩
+  have hxB : xB ≤ x := le_trans (le_max_left _ _) hx
+  have hxe : Real.exp ((2000 : ℝ) ^ (5 : ℕ)) ≤ x := le_trans (le_max_right _ _) hx
+  have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hxe
+  have hLT5 : (2000 : ℝ) ^ (5 : ℕ) ≤ Real.log x := by
+    rw [← Real.log_exp ((2000 : ℝ) ^ (5 : ℕ))]
+    exact Real.log_le_log (Real.exp_pos _) hxe
+  have hLpos : (0 : ℝ) < Real.log x := lt_of_lt_of_le (by positivity) hLT5
+  have hL1 : (1 : ℝ) ≤ Real.log x := le_trans (by norm_num) hLT5
+  have hyval : y = x ^ alpha ∨ y = x ^ alpha ^ 2 := by simpa [Set.mem_insert_iff] using hy
+  have hy0 : (0 : ℝ) < y := by
+    rcases hyval with h | h <;> rw [h] <;> exact Real.rpow_pos_of_pos hxpos _
+  have halpha1 : (0 : ℝ) < alpha - 1 := by norm_num [alpha]
+  have hly_ge : Real.log x ≤ Real.log y := by
+    rcases hyval with h | h
+    · rw [h, Real.log_rpow hxpos]
+      nlinarith [mul_nonneg (show (0 : ℝ) ≤ alpha - 1 by norm_num [alpha]) hLpos.le]
+    · rw [h, Real.log_rpow hxpos]
+      nlinarith [mul_nonneg (show (0 : ℝ) ≤ alpha ^ 2 - 1 by norm_num [alpha]) hLpos.le]
+  have hlog43pos : (0 : ℝ) < Real.log (4 / 3) := Real.log_pos (by norm_num)
+  obtain ⟨hlo, hhi⟩ := hB x hxB y hy
+  -- opaque rpow atoms: `u = log^{0.8}x`, `v = log^{-0.2}x`, glued by `v·log x = u`
+  set L := Real.log x with hLdef
+  set u := L ^ (0.8 : ℝ) with hudef
+  set v := L ^ (-(0.2 : ℝ)) with hvdef
+  have hvL : v * L = u := by
+    rw [hudef, hvdef, ← Real.rpow_add_one hLpos.ne']; norm_num
+  have hu1 : (1 : ℝ) ≤ u := by
+    calc (1 : ℝ) = (1 : ℝ) ^ (0.8 : ℝ) := (Real.one_rpow _).symm
+      _ ≤ u := Real.rpow_le_rpow (by norm_num) hL1 (by norm_num)
+  have hvpos : (0 : ℝ) < v := Real.rpow_pos_of_pos hLpos _
+  -- the normaliser: `nrm = 0.0005·log y ≥ 0.0005·L > 0`
+  set nrm := (alpha - 1) / 2 * Real.log y with hnrmdef
+  have hnrmpos : (0 : ℝ) < nrm :=
+    mul_pos (by norm_num [alpha]) (lt_of_lt_of_le hLpos hly_ge)
+  have hnrm_lb : (alpha - 1) / 2 * L ≤ nrm :=
+    mul_le_mul_of_nonneg_left hly_ge (by norm_num [alpha])
+  -- exact ratio identity: the window midpoint `W = (α−1)·log y/log(4/3)` has `W/nrm = 2/log(4/3)`
+  have key : ((Iy x y).card : ℝ) / nrm - 2 / Real.log (4 / 3)
+      = (((Iy x y).card : ℝ) - (alpha - 1) * Real.log y / Real.log (4 / 3)) / nrm := by
+    have hlogy_ne : Real.log y ≠ 0 := (lt_of_lt_of_le hLpos hly_ge).ne'
+    rw [hnrmdef]
+    field_simp
+  rw [key, abs_div, abs_of_pos hnrmpos]
+  -- numerator bracket: `|card − W| ≤ 2u + 1` from `Iy_card_bracket`
+  have hnum : |((Iy x y).card : ℝ) - (alpha - 1) * Real.log y / Real.log (4 / 3)|
+      ≤ 2 * u + 1 := by
+    rw [abs_le]
+    constructor <;> nlinarith [hu1]
+  calc |((Iy x y).card : ℝ) - (alpha - 1) * Real.log y / Real.log (4 / 3)| / nrm
+      ≤ (2 * u + 1) / nrm := div_le_div_of_nonneg_right hnum hnrmpos.le
+    _ ≤ (2 * u + 1) / ((alpha - 1) / 2 * L) :=
+        div_le_div_of_nonneg_left (by nlinarith [hu1])
+          (mul_pos (by norm_num [alpha]) hLpos) hnrm_lb
+    _ ≤ 6000 * L ^ (-(0.2 : ℝ)) := by
+        rw [← hvdef, div_le_iff₀ (mul_pos (by norm_num [alpha] : (0:ℝ) < (alpha - 1)/2) hLpos)]
+        -- `6000·v·0.0005·L = 3·v·L = 3u ≥ 2u + 1` since `u ≥ 1`
+        have halpha : alpha - 1 = 0.001 := by norm_num [alpha]
+        rw [halpha]
+        nlinarith [hvL, hu1, hvpos.le, hLpos.le]
 
 /-- **(5.18)–(5.21) + (5.9) evaluation of the affine main term.**  For `y ∈ {x^α, x^{α²}}`,
 `approxMainTerm x E y = (2 / log(4/3))·mainZ x E + O(log^{-c} x)`.  This subsumes Tao's pp.25–27
