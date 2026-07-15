@@ -1,3 +1,30 @@
+## Grind lap — 2026-07-15 — ✅ C9 rib 1 CLOSED (axiom-clean) — C9 down to ONE crux (rib 2)
+
+**`dTV_passLoc_event_witness` (C9 rib 1) PROVED axiom-clean** (`[propext, Classical.choice, Quot.sound]`).
+The dTV→single-event reduction: signed/Hahn split `∑|P₁−P₂| = 2∑ max(P₁−P₂,0)` (since `∑(P₁−P₂)=0`),
+witnessed by the odd event `E={M | M%2=1 ∧ (M:ℝ)≤x ∧ P₂(M)≤P₁(M)}`, with the `passLoc` pushforward
+supported on odds `≤x` (so the Hahn set stays inside odd `[1,x]`, matching C8's `E`-hypothesis).
+
+Banked 4 reusable axiom-clean helpers in `Sec5/Stabilization.lean`:
+- `expect_map_indicator` — `(μ.map φ).expect 𝟙_E = μ.expect 𝟙_{φ∈E}` (general pushforward↔preimage).
+- `passLoc_odd`, `passLoc_le`, `passLoc_le_cast` — `passLoc` lands on an odd Syracuse iterate `≤ x`.
+
+**C9 now rests on a SINGLE crux:** `approxMainTerm_window_stable` (`Sec5/Stabilization.lean:197`) — the
+rib where **C10 `fine_scale_mixing` enters** (Lemma 5.3 `c_n(X)≪1` + (5.18)–(5.21)). This is the true
+route-decisive blocker; `#print axioms stabilization` `sorryAx` now traces to it ALONE (rib 1 clean, C8
+leg clean). **Census: 3 sorries + 0 orange** — `Statement.lean:24,31` (headlines) + rib 2.
+
+**Next attack (the crux, hardest-first):** `approxMainTerm_window_stable`. `approxMainTerm x E y` depends
+on `y` only via (a) the range `Iy x y` and (b) the single-value masses `ℙ(Aff_ā(N_y)=M) = logUnifOdd y
+(y^α)`-mass of the unique `N*` solving `3^{n−m₀}N + fnat = M·2^{pre ā}`. The log-uniform single-value
+mass is `≈ 2/(N*·(α−1)·ln y)`; across windows `ln y` scales by `α`, so the raw masses differ by a factor
+— the resolution (Tao §5, Lemma 5.3 + fine-scale mixing) is that summing over good tuples `ā` and the
+shifted range `Iy` telescopes the normaliser. ⚠ Read §5 pp.25–28 (Prop 1.11 proof) + `fine_scale_mixing`
+interface (it bounds `osc m n` of the Syracuse density) BEFORE decomposing — the `c_n(X)` factor is the
+bridge. Likely a multi-lap heroic grind; decompose into named sub-sorries (raising src count = progress).
+
+---
+
 ## Grind lap — 2026-07-15 — ✅ C9 ASSEMBLY-SPINE PROBE DONE — the seam FITS
 
 **Directive step 1 (the C9 assembly-spine probe) is complete.** New file `Sec5/Stabilization.lean`

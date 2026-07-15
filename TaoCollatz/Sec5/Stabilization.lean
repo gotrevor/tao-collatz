@@ -39,6 +39,41 @@ open scoped ENNReal
 
 namespace TaoCollatz
 
+/-- Pushforward–expectation identity for indicators: the `μ.map φ`-probability of an event `E`
+equals the `μ`-probability of its `φ`-preimage.  `(μ.map φ).expect 𝟙_E = μ.expect 𝟙_{φ ∈ E}`. -/
+theorem expect_map_indicator {α β : Type*} (μ : PMF α) (φ : α → β) (E : Set β) :
+    (μ.map φ).expect (Set.indicator E 1)
+      = μ.expect (Set.indicator {a | φ a ∈ E} 1) := by
+  classical
+  unfold PMF.expect
+  rw [← PMF.toReal_tsum_mul_ofReal (μ.map φ) (Set.indicator E 1)
+        (fun b => Set.indicator_nonneg (fun _ _ => zero_le_one) b),
+      PMF.tsum_map_mul μ φ (fun b => ENNReal.ofReal (Set.indicator E 1 b)),
+      PMF.toReal_tsum_mul_ofReal μ (fun a => Set.indicator E 1 (φ a))
+        (fun a => Set.indicator_nonneg (fun _ _ => zero_le_one) (φ a))]
+  rfl
+
+/-- Every passage location of an odd start is odd (Syracuse iterate of an odd, or the default `1`). -/
+theorem passLoc_odd (xn N : ℕ) (hN : N % 2 = 1) : passLoc xn N % 2 = 1 := by
+  unfold passLoc
+  split
+  · exact syr_iterate_odd N _ hN
+  · rfl
+
+/-- The passage location is `≤ xn` (when it passes) or the default `1`. -/
+theorem passLoc_le (xn N : ℕ) : passLoc xn N ≤ xn ∨ passLoc xn N = 1 := by
+  unfold passLoc
+  split
+  · exact Or.inl (Nat.sInf_mem ‹passes xn N›)
+  · exact Or.inr rfl
+
+/-- The real bound `(passLoc ⌊x⌋₊ N : ℝ) ≤ x` for `x ≥ 1`. -/
+theorem passLoc_le_cast (N : ℕ) (x : ℝ) (hx : 1 ≤ x) : (passLoc ⌊x⌋₊ N : ℝ) ≤ x := by
+  rcases passLoc_le ⌊x⌋₊ N with h | h
+  · calc (passLoc ⌊x⌋₊ N : ℝ) ≤ (⌊x⌋₊ : ℝ) := by exact_mod_cast h
+      _ ≤ x := Nat.floor_le (by linarith)
+  · rw [h]; simpa using hx
+
 /-- **dTV → single-event reduction** for the two passage-location pushforwards (structural, on-path).
 Both `P₁ = (logUnifOdd (x^α) (x^{α²})).map (passLoc ⌊x⌋₊)` and
 `P₂ = (logUnifOdd (x^{α²}) (x^{α³})).map (passLoc ⌊x⌋₊)` are supported on odd naturals `≤ x`
@@ -57,7 +92,100 @@ theorem dTV_passLoc_event_witness (x : ℝ) (hx : 1 ≤ x) :
                     (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
                 - (logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).expect
                     (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)| := by
-  sorry
+  classical
+  set P₁ := (logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).map (passLoc ⌊x⌋₊) with hP1
+  set P₂ := (logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).map (passLoc ⌊x⌋₊) with hP2
+  -- The two windows are `≥ 1`, so their base measures are supported on odds (`logUnifOdd_support_le`).
+  have hone : ∀ z : ℝ, 0 ≤ z → (1 : ℝ) ≤ x ^ z := fun z hz => by
+    calc (1 : ℝ) = x ^ (0 : ℝ) := (Real.rpow_zero x).symm
+      _ ≤ x ^ z := Real.rpow_le_rpow_of_exponent_le hx hz
+  have hhi1 : (1 : ℝ) ≤ x ^ alpha ^ 2 := hone _ (by positivity)
+  -- Pushforward support: a positive-mass value is odd and `≤ x`.
+  have hsupp1 : ∀ M : ℕ, P₁ M ≠ 0 → M % 2 = 1 ∧ (M : ℝ) ≤ x := by
+    intro M hM
+    have hmem : M ∈ P₁.support := hM
+    rw [hP1, PMF.mem_support_map_iff] at hmem
+    obtain ⟨N, hNsupp, hNM⟩ := hmem
+    have hNodd : N % 2 = 1 := (logUnifOdd_support_le hhi1 hNsupp).1
+    subst hNM
+    exact ⟨passLoc_odd _ _ hNodd, passLoc_le_cast _ _ hx⟩
+  -- Summability + total mass of the two real densities.
+  have hg : Summable (fun v => (P₁ v).toReal) :=
+    ENNReal.summable_toReal (by rw [P₁.tsum_coe]; exact ENNReal.one_ne_top)
+  have hh : Summable (fun v => (P₂ v).toReal) :=
+    ENNReal.summable_toReal (by rw [P₂.tsum_coe]; exact ENNReal.one_ne_top)
+  have hsg : ∑' v, (P₁ v).toReal = 1 := by
+    rw [← ENNReal.tsum_toReal_eq (fun v => P₁.apply_ne_top v), P₁.tsum_coe]; simp
+  have hsh : ∑' v, (P₂ v).toReal = 1 := by
+    rw [← ENNReal.tsum_toReal_eq (fun v => P₂.apply_ne_top v), P₂.tsum_coe]; simp
+  have hf : Summable (fun v => (P₁ v).toReal - (P₂ v).toReal) := hg.sub hh
+  have hsf : ∑' v, ((P₁ v).toReal - (P₂ v).toReal) = 0 := by
+    rw [hg.tsum_sub hh, hsg, hsh]; ring
+  refine ⟨{M : ℕ | M % 2 = 1 ∧ (M : ℝ) ≤ x ∧ (P₂ M).toReal ≤ (P₁ M).toReal}, ?_, ?_⟩
+  · intro M hM
+    exact ⟨hM.1, by have := hM.1; omega, hM.2.1⟩
+  · set E := {M : ℕ | M % 2 = 1 ∧ (M : ℝ) ≤ x ∧ (P₂ M).toReal ≤ (P₁ M).toReal} with hEdef
+    -- event masses ↔ base-measure expectations
+    have hEexp : ∀ μ : PMF ℕ,
+        ∑' v, Set.indicator E (fun w => (μ w).toReal) v = μ.expect (Set.indicator E 1) := by
+      intro μ
+      unfold PMF.expect
+      refine tsum_congr fun v => ?_
+      by_cases hv : v ∈ E
+      · rw [Set.indicator_of_mem hv, Set.indicator_of_mem hv]; simp
+      · rw [Set.indicator_of_notMem hv, Set.indicator_of_notMem hv]; simp
+    have hD1 : ∑' v, Set.indicator E (fun w => (P₁ w).toReal) v
+        = (logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).expect
+            (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1) := by
+      rw [hEexp P₁, hP1, expect_map_indicator]
+    have hD2 : ∑' v, Set.indicator E (fun w => (P₂ w).toReal) v
+        = (logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).expect
+            (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1) := by
+      rw [hEexp P₂, hP2, expect_map_indicator]
+    -- pointwise Hahn identity: `|g − h| = 2·(𝟙_E g − 𝟙_E h) − (g − h)`
+    have key : ∀ v, |(P₁ v).toReal - (P₂ v).toReal|
+        = 2 * (Set.indicator E (fun w => (P₁ w).toReal) v
+               - Set.indicator E (fun w => (P₂ w).toReal) v)
+          - ((P₁ v).toReal - (P₂ v).toReal) := by
+      intro v
+      by_cases hv : v ∈ E
+      · rw [Set.indicator_of_mem hv, Set.indicator_of_mem hv,
+            abs_of_nonneg (by have := hv.2.2; linarith)]; ring
+      · rw [Set.indicator_of_notMem hv, Set.indicator_of_notMem hv]
+        have hle : (P₁ v).toReal ≤ (P₂ v).toReal := by
+          by_cases hox : v % 2 = 1 ∧ (v : ℝ) ≤ x
+          · have hc : ¬ ((P₂ v).toReal ≤ (P₁ v).toReal) := fun hc => hv ⟨hox.1, hox.2, hc⟩
+            linarith [not_le.mp hc]
+          · have h0 : P₁ v = 0 := by
+              by_contra hne; exact hox (hsupp1 v hne)
+            rw [h0]; simp
+        rw [abs_of_nonpos (by linarith)]; ring
+    have hIndG : Summable (Set.indicator E (fun w => (P₁ w).toReal)) := hg.indicator E
+    have hIndH : Summable (Set.indicator E (fun w => (P₂ w).toReal)) := hh.indicator E
+    have hFsum : Summable (fun v => 2 * (Set.indicator E (fun w => (P₁ w).toReal) v
+                    - Set.indicator E (fun w => (P₂ w).toReal) v)) :=
+      Summable.mul_left 2 (hIndG.sub hIndH)
+    calc PMF.dTV P₁ P₂
+        = ∑' v, |(P₁ v).toReal - (P₂ v).toReal| := rfl
+      _ = ∑' v, (2 * (Set.indicator E (fun w => (P₁ w).toReal) v
+                      - Set.indicator E (fun w => (P₂ w).toReal) v)
+                 - ((P₁ v).toReal - (P₂ v).toReal)) := tsum_congr key
+      _ = (∑' v, 2 * (Set.indicator E (fun w => (P₁ w).toReal) v
+                      - Set.indicator E (fun w => (P₂ w).toReal) v))
+          - ∑' v, ((P₁ v).toReal - (P₂ v).toReal) := hFsum.tsum_sub hf
+      _ = 2 * (∑' v, Set.indicator E (fun w => (P₁ w).toReal) v)
+          - 2 * (∑' v, Set.indicator E (fun w => (P₂ w).toReal) v) := by
+            rw [tsum_mul_left, hIndG.tsum_sub hIndH, hsf]; ring
+      _ = 2 * ((logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).expect
+                  (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
+               - (logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).expect
+                  (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)) := by
+            rw [hD1, hD2]; ring
+      _ ≤ 2 * |(logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).expect
+                  (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
+               - (logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).expect
+                  (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)| := by
+            gcongr; exact le_abs_self _
 
 /-- **Lemma 5.3 + (5.18)–(5.21)** — window-stability of the affine main term.  `approxMainTerm x E y`
 depends on the window `y` only through the single-value `logUnifOdd`-masses `ℙ(Aff_ā(N_y) = M)` (and the
