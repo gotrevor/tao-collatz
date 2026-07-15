@@ -66,6 +66,45 @@ while naming no theorem — its content gets written down somewhere else, as par
 Fixed: split into `C7d` (definition node, done) + `C7` (the lemma, pinned as
 `first_passage_nonescape` with a `sorry`, character-identical to the conjunct it was hiding in).
 
+## 3b. Case study — C8, and why a pin needs a numeric trap (2026-07-14, reflection lap)
+
+C8's v1 pin rendered Prop 5.2 (5.8), `∑ ℙ(Aff_ā(N_y) = M)`, by reusing the existing `Aff`
+(`Basic/Valuation.lean`):
+
+```lean
+noncomputable def Aff (N n : ℕ) (a : Fin n → ℕ) : ℕ := (3 ^ n * N + fnat n a) / 2 ^ pre a n
+```
+
+That is **ℕ floor-division**, and its docstring claimed *"paper (1.3), guarded by the divisibility."*
+**The docstring lied about the body** — there is no guard. Tao's `Aff_ā` (1.3) is *exact* division,
+meaningful (by Lemma 2.1) only at the true valuation vector. Floor-division makes the result depend
+on `ā` essentially only through the denominator exponent `|ā|`, so exponentially-many good tuples
+collapse onto one `M`. The closing lemma `truncation_error_bound` (error is `O(log^{-c}x)`) is
+therefore **FALSE** — the error is super-polylog.
+
+The top-level statement *looked* like (5.8), so "copy-not-compose" appeared satisfied. The infidelity
+was one layer down, in a reused definition whose name and docstring both read correctly.
+
+**What saw it, and what did not.** Blind: the green build, `#print axioms` (`sorryAx` is about
+proof-completeness, not faithfulness), the sorry census (it counts a pinned node but cannot see a
+*wrong* one), the statement differ (the statement was born wrong and never changed), and
+`blueprint_audit` (existence + axioms, not semantics). The **only** things that could see it were a
+human reading pp.22–25 against the Lean object and a **numeric instance probe** —
+`19135` collapsed tuples vs the true `0–3`. A reflection lap (Opus) did both.
+
+> 📌 **The lesson, and the rule it created.** The campaign's D8 statement-trap harness
+> (`tools/check_blueprint.py`) is built for *exactly* this — but it did not cover C8, so the trap got
+> written five laps late as a throwaway. **A `sorry`-stub makes a node visible; a numeric trap makes
+> it faithful.** Rule (`blueprint_rules.md` §"A pin is not done until a numeric trap checks it"):
+> every pin ships with an entry in `check_blueprint.py`. Two sub-rules the failure forced: *copy-not-
+> compose reaches the definitions a statement rests on*, and *a definition's docstring is a claim
+> held to its code — read the body.*
+
+There is also a deeper structural point. The discipline correctly kept C8 **orange** (unratified),
+but nothing stopped the box building ~5 laps of proof machinery on the unratified pin before the
+reflection lap caught it. **Unratified pins get built upon.** A numeric trap is what makes that safe:
+it is the check that stands in for paper-ratification while the judge is still asleep.
+
 ## 4. The audit gates (`./tools/blueprint_audit.py`, run in CI)
 
 It **derives** node status from `content.tex` + a **live kernel run** (`lake env lean`,
