@@ -433,7 +433,7 @@ statistics.
 
 \begin{proposition}[Stabilization across scales; Prop 1.11]\label{C9}
   \lean{stabilization}
-  \uses{C8, C10, C9B1, C9B2}
+  \uses{C8, C10, C9A, C9B1, C9B2}
   \leanok
 \textbf{Proposition 1.11}, the spine's key input.  With \(\alpha=1.001\) (paper (1.18)):
 there are \(c,C,x_0>0\) so that for \(x\ge x_0\), the first-passage location laws seen from two
@@ -482,6 +482,24 @@ against \(\mathrm{osc}\,m_0\,(n-m_0) \le C' m_0^{-A}\) via Prop~1.14 (node~\ref{
 % Proof COMPLETE per worker (ece1f36, "axiom-clean, no sorry" -- worker-reported tier); judge
 % kernel check owed before any \leanok flips (statement AND proof in one ratification read).
 \lapsrisk{0--1}{low}{95\%}
+\end{lemma}
+
+\begin{lemma}[C9 leaf A -- (5.19) harmonic reduction of the per-\(n\) term]\label{C9A}
+  \lean{perNTerm_harmonic_approx}
+  \notready
+% Registered 2026-07-15 (worker, vocabulary rail from the operator note): the leaf-A
+% decomposition names coined this run.  \notready pending judge ratification.
+\(|\mathrm{perNTerm}\,x\,E\,y\,n - \mathrm{perNHarmonic}\,x\,E\,n/\mathrm{norm}| \le
+C(\log x)^{-c}/\mathrm{norm}\), \(\mathrm{norm} = \tfrac{\alpha-1}{2}\log y\): the affine mass
+collapses to the single point \(N^* = (M\,2^{\mathrm{pre}\,\bar a} - \mathrm{fnat})/3^{n-m_0}\)
+(\texttt{perNTerm\_pointmass}), which is odd (\texttt{Nstar\_odd}, via \texttt{fnat\_odd}) and
+lies on the window (\texttt{Nstar\_mem\_logWindow}, both PROVED this run), so
+\(\mathbb{P} = (N^*)^{-1}/D_y\); then \((N^*)^{-1} \approx 3^{n-m_0}/(M\,2^{\mathrm{pre}})\)
+(relative \(O(x^{-c})\)) and \(1/D_y \approx 1/\mathrm{norm}\)
+(\texttt{windowMass\_estimate}/\texttt{windowMass\_ge\_clog}), with relative errors made
+absolute by \(\mathrm{perNHarmonic} \le C\log^{0.7}x\) (\texttt{perNHarmonic\_le}, PROVED).
+Does NOT consume C10.
+\lapsrisk{1--3}{low}{85\%}
 \end{lemma}
 
 
