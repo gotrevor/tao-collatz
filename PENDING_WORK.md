@@ -25,11 +25,13 @@ The route-decisive leg is now a proved triangle `|firstPassMid−approxMainTerm|
      diagonal `ā = valVec N (n−m₀)` is counted for every odd N in `steppedMid`'s event
      (`aff_valVec_eq_syr` + `ENNReal.le_tsum`), even N carry zero mass (`logUnifOdd_support_le`),
      finiteness via `goodTuple_finite` + `tsum_eq_sum`. Helper `expect_indicator_toReal` banked.
-   - **ONLY hole left in this leg**: the truncation ERROR bound `approxMainTerm − steppedMid ≤
-     C log^{-c}x` (nonneg by the domination) = `∑_n ∑'_N P N·#{truncation ā ≠ valVec : Aff N (n−m₀)ā ∈ E'}`.
-     This is the genuinely-analytic (5.19) piece: needs the `E'` size window to bound how many rounding
-     coincidences land in E'. Attack next; the abs in `first_passage_truncation_reindex` collapses to
-     this one-sided nonneg difference via `steppedMid_le_approxMainTerm`.
+   - **`first_passage_truncation_reindex` — now PROVED modulo `truncation_error_bound`.** The abs
+     collapses via `steppedMid_le_approxMainTerm` (`1 ≤ y^α` from x≥1) + `abs_sub_comm`/`abs_of_nonneg`
+     to the one-sided nonneg `approxMainTerm − steppedMid`. `#print axioms` = trust base + sorryAx.
+   - **ONLY hole left in this leg = `truncation_error_bound`** (:1094, new pinned sorry):
+     `approxMainTerm − steppedMid ≤ C log^{-c}x` = `∑_n ∑'_N P N·#{truncation ā ≠ valVec : good ā ∧
+     Aff N (n−m₀)ā ∈ E'}`. The genuinely-analytic (5.19) piece: bound the rounding-coincidence count
+     via the `E'` size window `exp(±log^{0.7}x)(4/3)^{m₀}x`. All mechanical reorder/domination DONE.
 2. **`first_passage_stepback_reduce`** (`|firstPassMid−steppedMid|`) — the (5.17) event reduction.
    Forward inclusion EXACT (`firstPass_event_stepback_subset` ✅); remaining = reverse inclusion + `E'`
    size window `exp(±log^{0.7}x)(4/3)^{m₀}x` (orbit estimate (5.13)/(5.14)) + nested `𝒜⁽ⁿ⁰⁾⊂𝒜⁽ⁿ⁻ᵐ⁰⁾`.

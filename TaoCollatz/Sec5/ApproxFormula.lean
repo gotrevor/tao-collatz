@@ -1078,20 +1078,44 @@ theorem first_passage_stepback_reduce :
             ≤ C * (Real.log x) ^ (-c) := by
   sorry
 
-/-- **(5.18) affine truncation reindex leg** (owed) — `|steppedMid − approxMainTerm| ≤ O(log^{-c}x)`.
-Reordering `approxMainTerm`'s fixed-ā `tsum` to a sum over `N` gives
-`∑_N (P N)·#{ā good : Aff N (n−m₀) ā ∈ E'}`; the diagonal `ā = valVec N (n−m₀)` term is exactly
-`steppedMid` (via `aff_valVec_eq_syr` + `valVec_unique`), and the truncation vectors `ā ≠ valVec`
-(where `2^{|ā|} ∤ 3^{n−m₀}N + Fnat ā`, so `Aff` rounds) contribute the nonneg error absorbed in
-`O(log^{-c}x)` (module docstring, ROUTE-DECISIVE INSIGHT).  This is an `≤`/error bound, NOT an exact
-identity. -/
+/-- **(5.19) truncation error bound** (owed) — the SOLE remaining analytic hole of the (5.18)
+reindex.  By `steppedMid_le_approxMainTerm` the two terms already satisfy `steppedMid ≤
+approxMainTerm`, so the reindex gap is the *nonneg* excess
+`approxMainTerm − steppedMid = ∑_n ∑'_N P N · #{truncation ā ≠ valVec N (n−m₀) : good ā ∧ Aff N (n−m₀)ā ∈ E'}`.
+Each such `ā` is a rounding coincidence (`2^{|ā|} ∤ 3^{n−m₀}N + Fnat ā`); Tao's (5.19) bounds their
+count via the `E'` size window `exp(±log^{0.7}x)(4/3)^{m₀}x`, giving `O(log^{-c}x)`.  This is the
+genuinely-analytic piece; the mechanical reorder/domination is DONE. -/
+theorem truncation_error_bound :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          approxMainTerm x E y - steppedMid x E y
+            ≤ C * (Real.log x) ^ (-c) := by
+  sorry
+
 theorem first_passage_truncation_reindex :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |steppedMid x E y - approxMainTerm x E y|
             ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨c, C, x₀, hc, hC, herr⟩ := truncation_error_bound
+  refine ⟨c, C, max x₀ 1, hc, hC, fun x hx E hE y hy => ?_⟩
+  have hx0 : x₀ ≤ x := le_trans (le_max_left _ _) hx
+  have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
+  -- `1 ≤ b^z` from `1 ≤ b`, `0 ≤ z` (via `b^0 = 1 ≤ b^z`)
+  have hone : ∀ b z : ℝ, 1 ≤ b → 0 ≤ z → (1 : ℝ) ≤ b ^ z := fun b z hb hz => by
+    calc (1 : ℝ) = b ^ (0 : ℝ) := (Real.rpow_zero b).symm
+      _ ≤ b ^ z := Real.rpow_le_rpow_of_exponent_le hb hz
+  have haz : (0 : ℝ) ≤ alpha := by norm_num [alpha]
+  have hy1 : (1 : ℝ) ≤ y ^ alpha := by
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hy
+    rcases hy with rfl | rfl
+    · exact hone _ alpha (hone x alpha hx1 haz) haz
+    · exact hone _ alpha (hone x (alpha ^ 2) hx1 (by positivity)) haz
+  have hdom := steppedMid_le_approxMainTerm x E y hy1
+  rw [abs_sub_comm, abs_of_nonneg (by linarith)]
+  exact herr x hx0 E hE y hy
 
 /-- **(5.17) `B_{n,y}` event chain + (5.18) Lemma 2.1 affine reindexing** — the second,
 route-decisive leg of (5.8).  For each `n ∈ I_y`, the event `{T_x(N_y)=n ∧ Pass∈E ∧ good}` equals
