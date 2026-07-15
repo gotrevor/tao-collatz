@@ -107,14 +107,26 @@ theorem syrMin_le_of_descentEvent {x N₀ N : ℕ} (h : N ∈ descentEvent x N�
 noncomputable def descentProb (x : ℕ) (y : ℝ) (N₀ : ℕ) : ℝ :=
   (logUnifOdd y (y ^ alpha)).expect (Set.indicator (descentEvent x N₀) 1)
 
-open Classical in
-/-- **Indicator expectation formula** for the log-uniform window: the probability of `S`
-is its harmonic mass in the window over the total window mass. -/
-theorem logUnifOdd_expect_indicator {lo hi : ℝ} (h : (logWindow lo hi).Nonempty)
-    (S : Set ℕ) :
-    (logUnifOdd lo hi).expect (Set.indicator S 1)
-      = (∑ N ∈ (logWindow lo hi).filter (· ∈ S), (N : ℝ)⁻¹) / windowMass lo hi := by
-  sorry
+/-- Complement identity for indicator expectations: `𝔼[1_S] = 1 − 𝔼[1_{Sᶜ}]`. -/
+theorem expect_indicator_compl (P : PMF ℕ) (S : Set ℕ) :
+    P.expect (Set.indicator S 1) = 1 - P.expect (Set.indicator Sᶜ 1) := by
+  have hsumP : Summable fun N => (P N).toReal := ENNReal.summable_toReal P.tsum_coe_ne_top
+  have hsum : ∀ V : Set ℕ, Summable fun N => (P N).toReal * Set.indicator V 1 N := by
+    intro V
+    refine Summable.of_nonneg_of_le (fun N => mul_nonneg ENNReal.toReal_nonneg
+      (Set.indicator_nonneg (fun _ _ => zero_le_one) N)) (fun N => ?_) hsumP
+    by_cases h : N ∈ V <;> simp [Set.indicator_apply, h]
+  have hadd : P.expect (Set.indicator S 1) + P.expect (Set.indicator Sᶜ 1)
+      = ∑' N, (P N).toReal := by
+    unfold PMF.expect
+    rw [← Summable.tsum_add (hsum S) (hsum Sᶜ)]
+    refine tsum_congr fun N => ?_
+    by_cases h : N ∈ S <;>
+      simp [Set.indicator_apply, h]
+  have htot : ∑' N, (P N).toReal = 1 := by
+    rw [← ENNReal.tsum_toReal_eq (fun N => PMF.apply_ne_top _ _), P.tsum_coe,
+      ENNReal.toReal_one]
+  linarith [hadd, htot]
 
 /-- **One-scale recursion** (p.17, the display chain): `ℙ(B_x) ≤ ℙ(B_{x^α}) + O(log^{-c}x)`.
 Route: `B_x ⊆ {Pass_x ∈ E}` up to the non-passage event (`stabilization` part 1, note
@@ -132,7 +144,26 @@ theorem descentProb_step :
 theorem descentProb_base :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, x ≤ (N₀ : ℝ) →
       1 - C * x ^ (-c) ≤ descentProb ⌊x⌋₊ (x ^ alpha) N₀ := by
-  sorry
+  obtain ⟨c, C, x₀, hc, hC, hne⟩ := first_passage_nonescape
+  refine ⟨c, C, max x₀ 0, hc, hC, fun x hx N₀ hxN₀ => ?_⟩
+  have hx₀ : x₀ ≤ x := le_trans (le_max_left _ _) hx
+  have hx0 : (0 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
+  have hkey := hne x hx₀ (x ^ alpha) (Set.mem_insert _ _)
+  have hfloor : ⌊x⌋₊ ≤ N₀ := by
+    calc ⌊x⌋₊ ≤ ⌊(N₀ : ℝ)⌋₊ := Nat.floor_mono hxN₀
+      _ = N₀ := Nat.floor_natCast N₀
+  unfold descentProb
+  rw [expect_indicator_compl]
+  have hsub : ∀ N ∈ (logUnifOdd (x ^ alpha) ((x ^ alpha) ^ alpha)).support,
+      N ∈ (descentEvent ⌊x⌋₊ N₀)ᶜ → N ∈ {N | ¬ passes ⌊x⌋₊ N} := by
+    intro N _ hN
+    by_contra hpass
+    rw [Set.mem_setOf_eq, not_not] at hpass
+    exact hN ⟨hpass, le_trans
+      (le_trans (syrMin_le_self _) (passLoc_le_of_passes hpass)) hfloor⟩
+  have hmono := expect_mono_on_support (logUnifOdd (x ^ alpha) ((x ^ alpha) ^ alpha))
+    (descentEvent ⌊x⌋₊ N₀)ᶜ {N | ¬ passes ⌊x⌋₊ N} hsub
+  linarith [le_trans hmono hkey]
 
 /-- **Telescope** (p.18 top): iterating `descentProb_step` down `J ≈ log_α(log x/log N₀)`
 scales from the base `y < N₀^{1/α}` and summing `∑_j (α^j log y)^{-c} ≪ log^{-c} N₀` gives
