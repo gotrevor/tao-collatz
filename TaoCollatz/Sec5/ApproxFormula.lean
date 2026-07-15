@@ -198,6 +198,175 @@ theorem not_goodTuple_iff_prefix_dev {x : ℝ} {N n₀ : ℕ} (hN : N % 2 = 1) :
     push_neg
     exact ⟨n, by omega, by rw [pre_valVec (by omega : n ≤ n₀)]; exact hge⟩
 
+/-! ### Analytic + marginal glue for the (5.12) core `goodTuple_prefix_dev_sum` (below)
+
+These are the reusable bricks the good-tuple deviation sum needs: two elementary
+`polynomial-in-log ≪ stretched-exponential` decay facts, an inline copy of the Sec6 prefix-block
+marginal `iidMap_pre` (Sec6 is not imported here), the Gweight decay for a fixed threshold
+`d·log^{0.6}x` over prefixes `n ≤ nZero x`, and the two-sided prefix analogue of
+`iid_geomHalf_overflow_eq`. -/
+
+/-- Real-variable version of `log_le_eps_mul_of_large`: `log w ≤ ε w` for `w` large. -/
+theorem log_le_eps_mul_real {ε : ℝ} (hε : 0 < ε) :
+    ∃ w₀ : ℝ, ∀ w : ℝ, w₀ ≤ w → Real.log w ≤ ε * w := by
+  refine ⟨(2 / ε) ^ 2, fun w hw => ?_⟩
+  have hwpos : 0 < w := lt_of_lt_of_le (by positivity) hw
+  have hsqrt_pos : 0 < Real.sqrt w := Real.sqrt_pos.mpr hwpos
+  have hsq : Real.sqrt w ^ 2 = w := Real.sq_sqrt hwpos.le
+  have hlog_le : Real.log w ≤ 2 * Real.sqrt w := by
+    calc Real.log w = Real.log (Real.sqrt w ^ 2) := by rw [hsq]
+      _ = 2 * Real.log (Real.sqrt w) := by rw [Real.log_pow]; push_cast; ring
+      _ ≤ 2 * (Real.sqrt w - 1) := by
+          have := Real.log_le_sub_one_of_pos hsqrt_pos; linarith
+      _ ≤ 2 * Real.sqrt w := by linarith [hsqrt_pos.le]
+  have hsqrt_lb : 2 / ε ≤ Real.sqrt w := by
+    calc 2 / ε = Real.sqrt ((2 / ε) ^ 2) := (Real.sqrt_sq (by positivity)).symm
+      _ ≤ Real.sqrt w := Real.sqrt_le_sqrt hw
+  have hcomb : 2 * Real.sqrt w ≤ ε * w := by
+    have h1 : (2 : ℝ) ≤ ε * Real.sqrt w := by
+      have := mul_le_mul_of_nonneg_left hsqrt_lb hε.le
+      rwa [mul_div_cancel₀ _ hε.ne'] at this
+    calc 2 * Real.sqrt w ≤ (ε * Real.sqrt w) * Real.sqrt w :=
+          mul_le_mul_of_nonneg_right h1 hsqrt_pos.le
+      _ = ε * (Real.sqrt w ^ 2) := by ring
+      _ = ε * w := by rw [hsq]
+  linarith
+
+/-- Superpolynomial-decay core: for `p, κ, θ > 0`, once `x` is large,
+`(log x)^p · exp(−κ·(log x)^θ) ≤ 1`.  (Polynomial-in-`log x` beaten by a stretched exponential.) -/
+theorem log_rpow_mul_exp_neg_le_one {p κ θ : ℝ} (hp : 0 < p) (hκ : 0 < κ) (hθ : 0 < θ) :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      (Real.log x) ^ p * Real.exp (-κ * (Real.log x) ^ θ) ≤ 1 := by
+  obtain ⟨s₀, hs₀⟩ := log_le_eps_mul_real (ε := κ * θ / p) (by positivity)
+  refine ⟨Real.exp (max ((max s₀ 1) ^ (1/θ)) 1), fun x hx => ?_⟩
+  have hlogx : (max ((max s₀ 1) ^ (1/θ)) 1) ≤ Real.log x := by
+    rw [← Real.log_exp (max ((max s₀ 1) ^ (1/θ)) 1)]
+    exact Real.log_le_log (Real.exp_pos _) hx
+  set w : ℝ := Real.log x with hwdef
+  have hw1 : (1 : ℝ) ≤ w := le_trans (le_max_right _ _) hlogx
+  have hwpos : 0 < w := lt_of_lt_of_le one_pos hw1
+  have hwbig : (max s₀ 1) ^ (1/θ) ≤ w := le_trans (le_max_left _ _) hlogx
+  set s : ℝ := w ^ θ with hsdef
+  have hspos : 0 < s := Real.rpow_pos_of_pos hwpos θ
+  have hsbig : max s₀ 1 ≤ s := by
+    have hmono : ((max s₀ 1) ^ (1/θ)) ^ θ ≤ w ^ θ :=
+      Real.rpow_le_rpow (Real.rpow_nonneg (le_max_of_le_right zero_le_one) _) hwbig hθ.le
+    rwa [← Real.rpow_mul (le_max_of_le_right zero_le_one), one_div_mul_cancel hθ.ne',
+      Real.rpow_one] at hmono
+  have hkey : p * Real.log w ≤ κ * s := by
+    have hs0 : s₀ ≤ s := le_trans (le_max_left _ _) hsbig
+    have hlogs := hs₀ s hs0
+    have hws : w = s ^ (1/θ) := by
+      rw [hsdef, ← Real.rpow_mul hwpos.le, mul_one_div, div_self hθ.ne', Real.rpow_one]
+    have hlogw : Real.log w = (1/θ) * Real.log s := by
+      rw [hws, Real.log_rpow hspos]
+    rw [hlogw]
+    rw [show p * ((1/θ) * Real.log s) = (p/θ) * Real.log s by ring]
+    have hpθ : 0 < p / θ := by positivity
+    calc (p/θ) * Real.log s ≤ (p/θ) * ((κ * θ / p) * s) :=
+          mul_le_mul_of_nonneg_left hlogs hpθ.le
+      _ = κ * s := by field_simp [hp.ne', hθ.ne']
+  have hexp : w ^ p ≤ Real.exp (κ * s) := by
+    rw [Real.rpow_def_of_pos hwpos]
+    exact Real.exp_le_exp.mpr (by rw [mul_comm (Real.log w) p]; exact hkey)
+  calc w ^ p * Real.exp (-κ * s)
+      ≤ Real.exp (κ * s) * Real.exp (-κ * s) :=
+        mul_le_mul_of_nonneg_right hexp (Real.exp_pos _).le
+    _ = 1 := by rw [← Real.exp_add, show κ * s + -κ * s = 0 by ring, Real.exp_zero]
+
+/-- Inline copy of `pre_eq_fin_sum_castLE` (lives in Sec6, not visible here). -/
+theorem pre_eq_fin_sum_castLE' {n : ℕ} (a : Fin n → ℕ) {r : ℕ} (h : r ≤ n) :
+    pre a r = ∑ i : Fin r, a (Fin.castLE h i) := by
+  rw [pre, ← Fin.sum_univ_eq_sum_range (fun i => if hh : i < n then a ⟨i, hh⟩ else 0) r]
+  refine Finset.sum_congr rfl (fun i _ => ?_)
+  rw [dif_pos (lt_of_lt_of_le i.isLt h)]
+  rfl
+
+/-- Inline copy of `iidMap_pre` (Sec6): under `geomHalf.iid n`, the prefix sum `pre a r` is
+distributed as `iidSum geomHalf r`, for `r ≤ n`. -/
+theorem iidMap_pre' (n r : ℕ) (h : r ≤ n) :
+    (geomHalf.iid n).map (fun a : Fin n → ℕ => pre a r) = iidSum geomHalf r := by
+  have hcomp : (fun a : Fin n → ℕ => pre a r)
+      = (fun w : Fin r → ℕ => ∑ i, w i) ∘ (fun a : Fin n → ℕ => a ∘ Fin.castLE h) := by
+    funext a; simp only [Function.comp_apply]; rw [pre_eq_fin_sum_castLE' a h]
+  rw [hcomp, ← PMF.map_comp, iid_map_castLE geomHalf r n h]
+  rfl
+
+/-- The prefix Gweight decay: for `d > 0`, each `Gweight (1+n) (d·log^{0.6} x)` with `n ≤ nZero x`
+is bounded by a stretched exponential `2·exp(−κ·log^{0.2} x)`.  (Both the `exp(−·²/(1+n))` term
+— using `1+n ≤ log x / 4` — and the `exp(−d·log^{0.6}x)` term dominate `exp(−κ log^{0.2}x)`.) -/
+theorem Gweight_prefix_decay {d : ℝ} (hd : 0 < d) :
+    ∃ κ x₀ : ℝ, 0 < κ ∧ ∀ x : ℝ, x₀ ≤ x → ∀ n : ℕ, n ≤ nZero x →
+      Gweight (1 + n) (d * (Real.log x ^ (0.6:ℝ)))
+        ≤ 2 * Real.exp (-κ * (Real.log x ^ (0.2:ℝ))) := by
+  refine ⟨min (4 * d ^ 2) d, Real.exp 20, lt_min (by positivity) hd, fun x hx n hn => ?_⟩
+  have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos _) hx
+  set L : ℝ := Real.log x with hLdef
+  have hL20 : (20 : ℝ) ≤ L := by
+    rw [hLdef, ← Real.log_exp 20]; exact Real.log_le_log (Real.exp_pos _) hx
+  have hLpos : 0 < L := by linarith
+  have hL1 : (1 : ℝ) ≤ L := by linarith
+  set P02 : ℝ := L ^ (0.2 : ℝ) with hP02
+  set P06 : ℝ := L ^ (0.6 : ℝ) with hP06
+  have hP02pos : 0 < P02 := Real.rpow_pos_of_pos hLpos _
+  have hP06pos : 0 < P06 := Real.rpow_pos_of_pos hLpos _
+  have hP02ge1 : (1 : ℝ) ≤ P02 := Real.one_le_rpow hL1 (by norm_num)
+  have hP0602 : P02 ≤ P06 := by
+    rw [hP02, hP06]; exact Real.rpow_le_rpow_of_exponent_le hL1 (by norm_num)
+  have hP06sq : P06 ^ 2 = L * P02 := by
+    rw [hP06, hP02, ← Real.rpow_natCast (L ^ (0.6:ℝ)) 2, ← Real.rpow_mul hLpos.le,
+      show (0.6:ℝ) * (2:ℕ) = 1.2 by push_cast; norm_num,
+      show (1.2:ℝ) = 1 + 0.2 by norm_num, Real.rpow_add hLpos, Real.rpow_one]
+  have hlog2 : (1 / 2 : ℝ) ≤ Real.log 2 := le_of_lt (by have := Real.log_two_gt_d9; linarith)
+  have hnZ : (nZero x : ℝ) ≤ L / 5 := by
+    have hfloor : (nZero x : ℝ) ≤ L / (10 * Real.log 2) := by
+      rw [hLdef]; unfold nZero; exact Nat.floor_le (by positivity)
+    refine le_trans hfloor
+      ((div_le_div_iff_of_pos_left hLpos (by linarith) (by norm_num)).mpr (by linarith))
+  have hnR : (n : ℝ) ≤ L / 5 := le_trans (by exact_mod_cast hn) hnZ
+  have h1n4 : (1 : ℝ) + n ≤ L / 4 := by
+    have h20 : (1 : ℝ) ≤ L / 20 := by linarith
+    have : L / 5 + L / 20 ≤ L / 4 := by linarith
+    linarith
+  have h1npos : (0 : ℝ) < 1 + n := by positivity
+  set κ : ℝ := min (4 * d ^ 2) d with hκdef
+  have hκpos : 0 < κ := lt_min (by positivity) hd
+  have hexpand : (d * P06) ^ 2 = d ^ 2 * (L * P02) := by rw [mul_pow, hP06sq]
+  have hterm1 : Real.exp (-((d * P06) ^ 2) / (1 + n)) ≤ Real.exp (-κ * P02) := by
+    apply Real.exp_le_exp.mpr
+    have hκle : κ ≤ 4 * d ^ 2 := min_le_left _ _
+    have hkey : κ * P02 * (1 + n) ≤ (d * P06) ^ 2 := by
+      rw [hexpand]
+      calc κ * P02 * (1 + n) ≤ 4 * d ^ 2 * P02 * (L / 4) :=
+            mul_le_mul (mul_le_mul_of_nonneg_right hκle hP02pos.le) h1n4 h1npos.le (by positivity)
+        _ = d ^ 2 * (L * P02) := by ring
+    rw [neg_div, neg_mul, neg_le_neg_iff, le_div_iff₀ h1npos]
+    exact hkey
+  have hterm2 : Real.exp (-|d * P06|) ≤ Real.exp (-κ * P02) := by
+    apply Real.exp_le_exp.mpr
+    rw [abs_of_nonneg (by positivity), neg_mul]
+    have hκd : κ ≤ d := min_le_right _ _
+    have hkey2 : κ * P02 ≤ d * P06 :=
+      le_trans (mul_le_mul_of_nonneg_right hκd hP02pos.le) (mul_le_mul_of_nonneg_left hP0602 hd.le)
+    linarith
+  calc Gweight (1 + n) (d * P06)
+      = Real.exp (-((d * P06) ^ 2) / (1 + n)) + Real.exp (-|d * P06|) := by simp only [Gweight]
+    _ ≤ Real.exp (-κ * P02) + Real.exp (-κ * P02) := add_le_add hterm1 hterm2
+    _ = 2 * Real.exp (-κ * P02) := by ring
+
+/-- Prefix analogue of `iid_geomHalf_overflow_eq`, two-sided: the prefix deviation mass under
+`geomHalf.iid n₀` equals the `iidSum geomHalf n` deviation mass, for `n ≤ n₀`. -/
+theorem iid_prefix_twosided_eq (n₀ n : ℕ) (h : n ≤ n₀) (lam : ℝ) :
+    (∑' a : Fin n₀ → ℕ, if lam ≤ |(pre a n : ℝ) - 2 * n| then ((geomHalf.iid n₀) a).toReal else 0)
+      = (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0) := by
+  let E : Set ℕ := {L | lam ≤ |(L : ℝ) - 2 * n|}
+  have hmap := PMF.expect_map_of_nonneg (geomHalf.iid n₀) (fun a => pre a n)
+    (Set.indicator E 1) (fun L => Set.indicator_nonneg (fun _ _ => zero_le_one) L)
+  rw [iidMap_pre' n₀ n h] at hmap
+  unfold PMF.expect at hmap
+  simpa only [Function.comp_apply, E, Set.indicator, Set.mem_setOf_eq, Pi.one_apply,
+    mul_ite, mul_one, mul_zero] using hmap.symm
+
 -- RATIFY-C8: paper Proposition 5.2 / (5.8), §5 pp.22–25.  Rendered against the numbered display;
 -- the `O(log^{-c} x)` error is spelled as an explicit `∃ c C x₀` bound (design invariant D3).
 /-- **Proposition 5.2** (approximate first-passage formula, paper (5.8)).  For every odd
@@ -245,7 +414,163 @@ theorem goodTuple_prefix_dev_sum :
             (logUnifOdd y (y ^ alpha)).expect
               (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1)
           ≤ C * (Real.log x) ^ (-c) := by
-  sorry
+  obtain ⟨K, hK, x₀e, herr⟩ := integral_test_logUnif
+  obtain ⟨cd, Cd, hcd, hCd, hdist⟩ := valuation_dist 1 K (by norm_num) hK
+  obtain ⟨ct, hct, Ct, hCt, htail⟩ := geomHalf_tail_bound
+  obtain ⟨κ, x₀g, hκ, hGdecay⟩ := Gweight_prefix_decay (d := ct) hct
+  obtain ⟨x₀A, hA⟩ := log_rpow_mul_exp_neg_le_one (p := 2) (κ := κ) (θ := 0.2)
+    (by norm_num) hκ (by norm_num)
+  obtain ⟨cq, x₀q, hcq, hqle⟩ := two_rpow_neg_nZero_le hcd
+  obtain ⟨x₀B, hB⟩ := log_rpow_mul_exp_neg_le_one (p := 2) (κ := cq) (θ := 1)
+    (by norm_num) hcq (by norm_num)
+  refine ⟨1, 2 * Ct + Cd, max x₀e (max x₀A (max x₀q (max x₀B (max (Real.exp 20) x₀g)))),
+    one_pos, by positivity, fun x hx y hy => ?_⟩
+  simp only [max_le_iff] at hx
+  obtain ⟨hxe, hxA, hxq, hxB, hx20, hxg⟩ := hx
+  have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 20) hx20
+  have hL20 : (20 : ℝ) ≤ Real.log x := by
+    rw [← Real.log_exp 20]; exact Real.log_le_log (Real.exp_pos _) hx20
+  have hLpos : 0 < Real.log x := by linarith
+  have hL1 : (1 : ℝ) ≤ Real.log x := by linarith
+  have hx1 : (1 : ℝ) ≤ x := le_trans (Real.one_le_exp (by norm_num)) hx20
+  have hlam : (0 : ℝ) ≤ Real.log x ^ (0.6 : ℝ) := Real.rpow_nonneg hLpos.le _
+  -- window preliminaries (mirror valSum_lower_geom)
+  have hy1 : (1 : ℝ) ≤ y := by
+    rcases hy with h | h <;> rw [h] <;>
+      · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
+        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha <;> positivity)
+  have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
+    rw [show (1 : ℝ) = (1 : ℝ) ^ alpha from (Real.one_rpow _).symm]
+    exact Real.rpow_le_rpow (by norm_num) hy1 (by unfold alpha; positivity)
+  have hodd : ∀ N ∈ (logUnifOdd y (y ^ alpha)).support, N % 2 = 1 :=
+    fun N hN => (logUnifOdd_support_le hyα1 hN).1
+  have hsize : (2 + 1) * (nZero x : ℝ) ≤ ((3 * nZero x : ℕ) : ℝ) := le_of_eq (by push_cast; ring)
+  have hmod : PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
+      (unifOddMod (3 * nZero x)) ≤ K * (2 : ℝ) ^ (-((3 * nZero x : ℕ) : ℝ)) := by
+    rw [show ((3 * nZero x : ℕ) : ℝ) = 3 * (nZero x : ℝ) by push_cast; ring]
+    exact herr x hxe y hy
+  have hdistPQ := hdist (nZero x) (3 * nZero x) (logUnifOdd y (y ^ alpha)) hsize hodd hmod
+  set P₀ : PMF (Fin (nZero x) → ℕ) := (logUnifOdd y (y ^ alpha)).map fun N => valVec N (nZero x)
+    with hP₀def
+  set Q₀ : PMF (Fin (nZero x) → ℕ) := geomHalf.iid (nZero x) with hQ₀def
+  -- hdistPQ : P₀.dTV Q₀ ≤ Cd * 2^(-cd * n₀)
+  -- STEP: per-prefix bound
+  have hStep : ∀ n ∈ Finset.range (nZero x + 1),
+      (logUnifOdd y (y ^ alpha)).expect
+          (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1)
+        ≤ Ct * Gweight (1 + n) (ct * Real.log x ^ (0.6 : ℝ)) + P₀.dTV Q₀ := by
+    intro n hn
+    rw [Finset.mem_range] at hn
+    have hnle : n ≤ nZero x := by omega
+    -- transfer to P₀
+    have htarget : (logUnifOdd y (y ^ alpha)).expect
+        (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1)
+        = P₀.expect (Set.indicator
+            {a : Fin (nZero x) → ℕ | Real.log x ^ (0.6 : ℝ) ≤ |(pre a n : ℝ) - 2 * n|} 1) := by
+      rw [hP₀def, PMF.expect_map_of_nonneg (logUnifOdd y (y ^ alpha)) (fun N => valVec N (nZero x))
+        (Set.indicator {a : Fin (nZero x) → ℕ | Real.log x ^ (0.6 : ℝ) ≤ |(pre a n : ℝ) - 2 * n|} 1)
+        (fun a => Set.indicator_nonneg (fun _ _ => zero_le_one) a)]
+      unfold PMF.expect
+      apply tsum_congr; intro N; congr 1
+      simp only [Function.comp_apply, Set.indicator_apply, Set.mem_setOf_eq,
+        pre_valVec hnle, Pi.one_apply]
+    have hev := PMF.abs_expect_indicator_sub_le_dTV P₀ Q₀
+      {a : Fin (nZero x) → ℕ | Real.log x ^ (0.6 : ℝ) ≤ |(pre a n : ℝ) - 2 * n|}
+    have hXe : P₀.expect (Set.indicator
+          {a : Fin (nZero x) → ℕ | Real.log x ^ (0.6 : ℝ) ≤ |(pre a n : ℝ) - 2 * n|} 1)
+        ≤ Q₀.expect (Set.indicator
+          {a : Fin (nZero x) → ℕ | Real.log x ^ (0.6 : ℝ) ≤ |(pre a n : ℝ) - 2 * n|} 1)
+          + P₀.dTV Q₀ := by
+      have := le_abs_self (P₀.expect (Set.indicator
+        {a : Fin (nZero x) → ℕ | Real.log x ^ (0.6 : ℝ) ≤ |(pre a n : ℝ) - 2 * n|} 1)
+        - Q₀.expect (Set.indicator
+        {a : Fin (nZero x) → ℕ | Real.log x ^ (0.6 : ℝ) ≤ |(pre a n : ℝ) - 2 * n|} 1))
+      linarith [hev, this]
+    have hQside : Q₀.expect (Set.indicator
+          {a : Fin (nZero x) → ℕ | Real.log x ^ (0.6 : ℝ) ≤ |(pre a n : ℝ) - 2 * n|} 1)
+        ≤ Ct * Gweight (1 + n) (ct * Real.log x ^ (0.6 : ℝ)) := by
+      have hexpand : Q₀.expect (Set.indicator
+          {a : Fin (nZero x) → ℕ | Real.log x ^ (0.6 : ℝ) ≤ |(pre a n : ℝ) - 2 * n|} 1)
+          = ∑' a : Fin (nZero x) → ℕ,
+              if Real.log x ^ (0.6 : ℝ) ≤ |(pre a n : ℝ) - 2 * n|
+                then (Q₀ a).toReal else 0 := by
+        unfold PMF.expect
+        apply tsum_congr; intro a
+        simp only [Set.indicator, Set.mem_setOf_eq, Pi.one_apply, mul_ite, mul_one, mul_zero]
+      rw [hexpand, hQ₀def, iid_prefix_twosided_eq (nZero x) n hnle (Real.log x ^ (0.6 : ℝ))]
+      exact htail n (Real.log x ^ (0.6 : ℝ)) hlam
+    rw [htarget]; linarith [hXe, hQside]
+  -- sum the steps
+  have hsum1 := Finset.sum_le_sum hStep
+  rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul] at hsum1
+  -- bound the Gweight sum by (n₀+1)·(Ct·2·exp(-κ·log^{0.2}x))
+  have hGsum : ∑ n ∈ Finset.range (nZero x + 1), Ct * Gweight (1 + n) (ct * Real.log x ^ (0.6 : ℝ))
+      ≤ ((nZero x + 1 : ℕ) : ℝ) * (Ct * (2 * Real.exp (-κ * Real.log x ^ (0.2 : ℝ)))) := by
+    have hle : ∀ n ∈ Finset.range (nZero x + 1),
+        Ct * Gweight (1 + n) (ct * Real.log x ^ (0.6 : ℝ))
+          ≤ Ct * (2 * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))) := fun n hn =>
+      mul_le_mul_of_nonneg_left (hGdecay x hxg n (by rw [Finset.mem_range] at hn; omega)) hCt.le
+    calc ∑ n ∈ Finset.range (nZero x + 1), Ct * Gweight (1 + n) (ct * Real.log x ^ (0.6 : ℝ))
+        ≤ ∑ _n ∈ Finset.range (nZero x + 1), Ct * (2 * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))) :=
+          Finset.sum_le_sum hle
+      _ = ((nZero x + 1 : ℕ) : ℝ) * (Ct * (2 * Real.exp (-κ * Real.log x ^ (0.2 : ℝ)))) := by
+          rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  -- (n₀+1 : ℝ) ≤ log x
+  have hnZ5 : (nZero x : ℝ) ≤ Real.log x / 5 := by
+    have hfloor : (nZero x : ℝ) ≤ Real.log x / (10 * Real.log 2) := by
+      unfold nZero; exact Nat.floor_le (by positivity)
+    have hlog2 : (1 / 2 : ℝ) ≤ Real.log 2 := le_of_lt (by have := Real.log_two_gt_d9; linarith)
+    exact le_trans hfloor
+      ((div_le_div_iff_of_pos_left hLpos (by linarith) (by norm_num)).mpr (by linarith))
+  have hn1L : ((nZero x + 1 : ℕ) : ℝ) ≤ Real.log x := by push_cast; linarith [hnZ5]
+  -- the "shrink" step: log x · E ≤ (log x)^{-1} when (log x)^2 · E ≤ 1
+  have shrink : ∀ E : ℝ, 0 ≤ E → (Real.log x) ^ (2 : ℝ) * E ≤ 1 →
+      Real.log x * E ≤ (Real.log x) ^ (-(1 : ℝ)) := by
+    intro E hE0 hE
+    have h1 : (Real.log x) ^ (-(1 : ℝ)) * (Real.log x) ^ (2 : ℝ) = Real.log x := by
+      rw [← Real.rpow_add hLpos]; norm_num
+    calc Real.log x * E = ((Real.log x) ^ (-(1 : ℝ)) * (Real.log x) ^ (2 : ℝ)) * E := by rw [h1]
+      _ = (Real.log x) ^ (-(1 : ℝ)) * ((Real.log x) ^ (2 : ℝ) * E) := by ring
+      _ ≤ (Real.log x) ^ (-(1 : ℝ)) * 1 :=
+          mul_le_mul_of_nonneg_left hE (Real.rpow_nonneg hLpos.le _)
+      _ = (Real.log x) ^ (-(1 : ℝ)) := mul_one _
+  -- A-term: the Gweight-decay sum contribution
+  have hAterm : ((nZero x + 1 : ℕ) : ℝ) * (Ct * (2 * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))))
+      ≤ 2 * Ct * (Real.log x) ^ (-(1 : ℝ)) := by
+    have hE0 : (0 : ℝ) ≤ Real.exp (-κ * Real.log x ^ (0.2 : ℝ)) := (Real.exp_pos _).le
+    have hs := shrink _ hE0 (hA x hxA)
+    calc ((nZero x + 1 : ℕ) : ℝ) * (Ct * (2 * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))))
+        = 2 * Ct * (((nZero x + 1 : ℕ) : ℝ) * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))) := by ring
+      _ ≤ 2 * Ct * (Real.log x * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))) :=
+          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hn1L hE0) (by positivity)
+      _ ≤ 2 * Ct * (Real.log x) ^ (-(1 : ℝ)) := mul_le_mul_of_nonneg_left hs (by positivity)
+  -- B-term: the dTV contribution
+  have hBterm : ((nZero x + 1 : ℕ) : ℝ) * (P₀.dTV Q₀) ≤ Cd * (Real.log x) ^ (-(1 : ℝ)) := by
+    have hdtv : P₀.dTV Q₀ ≤ Cd * x ^ (-cq) :=
+      le_trans hdistPQ (mul_le_mul_of_nonneg_left (hqle x hxq) hCd.le)
+    have hxexp : x ^ (-cq) = Real.exp (-cq * (Real.log x) ^ (1 : ℝ)) := by
+      rw [Real.rpow_one, Real.rpow_def_of_pos hxpos, mul_comm (Real.log x) (-cq)]
+    have hE0 : (0 : ℝ) ≤ Real.exp (-cq * (Real.log x) ^ (1 : ℝ)) := (Real.exp_pos _).le
+    have hs := shrink _ hE0 (hB x hxB)
+    calc ((nZero x + 1 : ℕ) : ℝ) * (P₀.dTV Q₀)
+        ≤ ((nZero x + 1 : ℕ) : ℝ) * (Cd * x ^ (-cq)) :=
+          mul_le_mul_of_nonneg_left hdtv (by positivity)
+      _ = Cd * (((nZero x + 1 : ℕ) : ℝ) * Real.exp (-cq * (Real.log x) ^ (1 : ℝ))) := by
+          rw [hxexp]; ring
+      _ ≤ Cd * (Real.log x * Real.exp (-cq * (Real.log x) ^ (1 : ℝ))) :=
+          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hn1L hE0) hCd.le
+      _ ≤ Cd * (Real.log x) ^ (-(1 : ℝ)) := mul_le_mul_of_nonneg_left hs hCd.le
+  -- assemble
+  calc ∑ n ∈ Finset.range (nZero x + 1),
+          (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1)
+      ≤ (∑ n ∈ Finset.range (nZero x + 1), Ct * Gweight (1 + n) (ct * Real.log x ^ (0.6 : ℝ)))
+          + ((nZero x + 1 : ℕ) : ℝ) * (P₀.dTV Q₀) := hsum1
+    _ ≤ ((nZero x + 1 : ℕ) : ℝ) * (Ct * (2 * Real.exp (-κ * Real.log x ^ (0.2 : ℝ))))
+          + ((nZero x + 1 : ℕ) : ℝ) * (P₀.dTV Q₀) := by linarith [hGsum]
+    _ ≤ 2 * Ct * (Real.log x) ^ (-(1 : ℝ)) + Cd * (Real.log x) ^ (-(1 : ℝ)) := by
+        linarith [hAterm, hBterm]
+    _ = (2 * Ct + Cd) * (Real.log x) ^ (-(1 : ℝ)) := by ring
 
 theorem approx_good_tuple_whp :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →

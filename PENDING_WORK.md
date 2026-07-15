@@ -1,10 +1,32 @@
-# 🎯 C8 close — attack plan (2026-07-14 review lap, HEAD `810518b`)
+# 🎯 C8 close — attack plan (updated 2026-07-15, HEAD after goodTuple core)
 
-**Frontier**: C10 ✅ done · C7 ✅ **DONE + axiom-clean** (`first_passage_nonescape` = trust base,
-verified this lap) · C8 = live target. **C8 = `first_passage_approx`** (Prop 5.2 / (5.8),
-`Sec5/ApproxFormula.lean`), 3 named sorries. Per DIRECTION: hardest-first = the **assembly** (:97, the
-Lemma-2.1 affine reindexing), then the two whp sub-lemmas. C9 `stabilization` (`FirstPassage.lean:1351`)
-after C8.
+**Frontier**: C10 ✅ done · C7 ✅ **DONE + axiom-clean** · C8 = live target, **now 2 sorries** (was 3).
+**C8 = `first_passage_approx`** (Prop 5.2 / (5.8), `Sec5/ApproxFormula.lean`).
+
+## ✅ CLOSED THIS LAP — `goodTuple_prefix_dev_sum` (5.12 analytic core), axiom-clean
+`#print axioms goodTuple_prefix_dev_sum` = `[propext, Classical.choice, Quot.sound]`. With it,
+**`approx_good_tuple_whp` (5.12) is now FULLY proved axiom-clean.** The proof (all in `ApproxFormula.lean`):
+- **Single** dTV transfer at length `n₀` (`valuation_dist 1 K` at `n' = 3n₀`, exactly `valSum_lower_geom`'s
+  `hdistPQ`), so the per-prefix events all ride ONE `P₀.dTV Q₀ ≤ Cd·2^{-cd n₀}`; summing `(n₀+1)` copies
+  is fine because `2^{-cd n₀}` is superpolynomially small (this is WHY per-prefix `valuation_dist` at
+  length `n` — whose dTV sum is a *constant* geometric series — does NOT work; use length `n₀` + the
+  prefix marginal).
+- Prefix marginal `iidMap_pre'` (inline copy of Sec6's `iidMap_pre`; Sec6 not imported) pushes
+  `Q₀ = geomHalf.iid n₀` forward under `pre · n` to `iidSum geomHalf n`; then `geomHalf_tail_bound`
+  (two-sided) gives each prefix `≤ Ct·Gweight(1+n)(ct·log^{0.6}x)`.
+- New reusable analytic glue (all axiom-clean, in `ApproxFormula.lean`): `log_le_eps_mul_real`
+  (real-var `log w ≤ εw`), `log_rpow_mul_exp_neg_le_one` (`(log x)^p·exp(−κ log^θ x) ≤ 1`, the
+  poly-beaten-by-stretched-exp fact), `Gweight_prefix_decay` (`Gweight(1+n)(d·log^{0.6}x) ≤
+  2·exp(−κ log^{0.2}x)` for `n ≤ n₀`, via `1+n ≤ log x/4`), `iid_prefix_twosided_eq`,
+  `pre_eq_fin_sum_castLE'`. Final decay exponent chosen `c = 1`.
+
+## Remaining C8 = 2 named sorries (hardest-first)
+1. **`first_passage_approx`** (:388) — the assembly (steps 4+5: `B_{n,y}` event chain + approximate
+   affine reindex; truncation absorbed per the INSIGHT below). ROUTE-DECISIVE.
+2. **`passtime_window_inner`** (:663) — (5.16) window term: `{passes ∧ T_x∉Iy}`, integral test that
+   `N_y` avoids the `2 log^{0.8}x` edge collars; reuse C7's `classMass`/`windowMass`/`intTest_*`.
+
+Then C9 `stabilization` (`FirstPassage.lean:1343`).
 
 ## Tao's Prop 5.2 proof (pp.22–25) → Lean decomposition
 Read verbatim from the PDF this lap. The proof of (5.8) is a chain:
