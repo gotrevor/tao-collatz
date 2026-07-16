@@ -1182,7 +1182,7 @@ theorem dft_cond_density {ι : Type*} {n : ℕ} (P : PMF ι) (X : ι → ZMod (3
       = ZMod.stdAddChar (-(X a * ξ)) * (if w a then (1 : ℂ) else 0) := by
     intro a
     by_cases h : w a
-    · simp only [h, and_true, if_pos h, mul_one, apply_ite (Complex.ofReal), Complex.ofReal_one,
+    · simp only [h, and_true, mul_one, apply_ite (Complex.ofReal), Complex.ofReal_one,
         Complex.ofReal_zero, mul_ite, mul_one, mul_zero]
       rw [Finset.sum_ite_eq Finset.univ (X a) (fun Y => ZMod.stdAddChar (-(Y * ξ)))]
       simp
@@ -1265,7 +1265,7 @@ theorem syracZ_eq_tsum_condDens (j p : ℕ) (Y : ZMod (3 ^ (j + p))) :
     refine ne_top_of_le_ne_top (b := ∑' a, (geomHalf.iid (j + p)) a)
       (by rw [(geomHalf.iid (j + p)).tsum_coe]; exact ENNReal.one_ne_top) ?_
     refine ENNReal.tsum_le_tsum (fun a => ?_)
-    exact le_trans (mul_le_mul_left' (by split <;> simp) _) (le_of_eq (mul_one _))
+    exact le_trans (mul_le_mul_right (by split <;> simp) _) (le_of_eq (mul_one _))
   -- collapse the `l`-sum of the tail-valuation indicator to the pure offset indicator
   have hcollapse : ∀ a : Fin (j + p) → ℕ,
       (∑' l : ℕ, (if (fnat (j + p) a : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre a (j + p) = Y
@@ -1880,7 +1880,7 @@ of the conditioned density is `≤ D²·(tail collision entropy)`. Proof: per hi
 Parseval `tail_factor_l2_eq`. This isolates the two genuinely-remaining obligations — establishing
 `hunif` (uniform head decay) and bounding `∑(tailDens)²` (the Rényi/offset-injectivity count, Lemma
 6.2) — behind a machine-checked reduction. -/
-theorem condDens_highfreq_l2_le (j p l m : ℕ) (D : ℝ) (hD : 0 ≤ D)
+theorem condDens_highfreq_l2_le (j p l m : ℕ) (D : ℝ)
     (hunif : ∀ ξ ∈ highFreq m (j + p),
       ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
           (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
@@ -1939,7 +1939,7 @@ theorem condDens_osc_le (j p l m : ℕ) (hmn : m ≤ j + p) (D : ℝ) (hD : 0 �
     _ ≤ Real.sqrt (D ^ 2 * ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2)) := by
         apply Real.sqrt_le_sqrt
         rw [← mul_assoc]
-        exact condDens_highfreq_l2_le j p l m D hD hunif
+        exact condDens_highfreq_l2_le j p l m D hunif
     _ = D * Real.sqrt ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2) := by
         rw [Real.sqrt_mul (sq_nonneg D), Real.sqrt_sq hD]
 
@@ -2046,7 +2046,7 @@ theorem tail_factor_l2_eqW (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [Decidab
 
 /-- **Windowed sharp `ℓ²`-mass refinement** — mirror of `condDens_highfreq_l2_le` for `condDensW`. -/
 theorem condDensW_highfreq_l2_le (j p l m : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W]
-    (D : ℝ) (hD : 0 ≤ D)
+    (D : ℝ)
     (hunif : ∀ ξ ∈ highFreq m (j + p),
       ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
           (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
@@ -2102,7 +2102,7 @@ theorem condDensW_osc_le (j p l m : ℕ) (W : (Fin p → ℕ) → Prop) [Decidab
     _ ≤ Real.sqrt (D ^ 2 * ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p l W Y) ^ 2)) := by
         apply Real.sqrt_le_sqrt
         rw [← mul_assoc]
-        exact condDensW_highfreq_l2_le j p l m W D hD hunif
+        exact condDensW_highfreq_l2_le j p l m W D hunif
     _ = D * Real.sqrt ((3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p l W Y) ^ 2) := by
         rw [Real.sqrt_mul (sq_nonneg D), Real.sqrt_sq hD]
 

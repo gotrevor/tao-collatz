@@ -24,7 +24,7 @@ open scoped ENNReal
 
 namespace TaoCollatz
 
-variable {M : Type*} [AddCommMonoid M]
+variable {M : Type*}
 
 /-- The partition function (moment generating function at the tilt weight `w`). -/
 noncomputable def tiltZ (p : PMF M) (w : M → ℝ≥0∞) : ℝ≥0∞ := ∑' d, p d * w d
@@ -47,7 +47,7 @@ theorem tilt_apply (p : PMF M) (w : M → ℝ≥0∞) (hZ0 : tiltZ p w ≠ 0)
 division): the tilted walk's point mass times `Zⁿ` is the original walk's point mass
 times the weight. Induction on `n`; the multiplicativity of `w` recombines the head
 draw's weight with the tail sum's weight on the diagonal `v = a + e`. -/
-theorem iidSum_tilt_apply (p : PMF M) {w : M → ℝ≥0∞} (hw0 : w 0 = 1)
+theorem iidSum_tilt_apply [AddCommMonoid M] (p : PMF M) {w : M → ℝ≥0∞} (hw0 : w 0 = 1)
     (hwadd : ∀ a b, w (a + b) = w a * w b)
     (hZ0 : tiltZ p w ≠ 0) (hZt : tiltZ p w ≠ ∞) (n : ℕ) (v : M) :
     (iidSum (tilt p w hZ0 hZt) n) v * (tiltZ p w) ^ n = (iidSum p n) v * w v := by
@@ -100,7 +100,7 @@ theorem tiltZ_map {M' : Type*} (p : PMF M) (φ : M → M') (w : M' → ℝ≥0�
 
 /-- **Partition functions of iid sums are powers** (MGF multiplicativity, the
 Chernoff engine): `Z_{S_n}(λ) = Z(λ)ⁿ`. -/
-theorem tiltZ_iidSum (p : PMF M) {w : M → ℝ≥0∞} (hw0 : w 0 = 1)
+theorem tiltZ_iidSum [AddCommMonoid M] (p : PMF M) {w : M → ℝ≥0∞} (hw0 : w 0 = 1)
     (hwadd : ∀ a b, w (a + b) = w a * w b)
     (hZ0 : tiltZ p w ≠ 0) (hZt : tiltZ p w ≠ ∞) (n : ℕ) :
     tiltZ (iidSum p n) w = (tiltZ p w) ^ n := by
@@ -112,7 +112,7 @@ theorem tiltZ_iidSum (p : PMF M) {w : M → ℝ≥0∞} (hw0 : w 0 = 1)
 `P(S_n = v) = P_λ(S̃_n = v) · M(λ)ⁿ · w(v)⁻¹` whenever the weight at `v` is finite
 and nonzero — the change of measure that converts the tilted walk's center-regime
 local bound into the original walk's off-center Gaussian bound. -/
-theorem iidSum_apply_eq_tilt (p : PMF M) {w : M → ℝ≥0∞} (hw0 : w 0 = 1)
+theorem iidSum_apply_eq_tilt [AddCommMonoid M] (p : PMF M) {w : M → ℝ≥0∞} (hw0 : w 0 = 1)
     (hwadd : ∀ a b, w (a + b) = w a * w b)
     (hZ0 : tiltZ p w ≠ 0) (hZt : tiltZ p w ≠ ∞) (n : ℕ) (v : M)
     (hwv0 : w v ≠ 0) (hwvt : w v ≠ ∞) :

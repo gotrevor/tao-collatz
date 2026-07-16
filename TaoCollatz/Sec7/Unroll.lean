@@ -101,7 +101,7 @@ noncomputable def fpDist : ℕ → PMF (ℕ × ℤ)
       else (fpDist (s - d.2.toNat)).map fun e => (d.1 + e.1, d.2 + e.2)
   termination_by s => s
   decreasing_by
-    push_neg at _h
+    push Not at _h
     omega
 
 /-- Every `fpDist`-endpoint has positive first coordinate (the walk takes ≥ 1 step). -/
@@ -141,7 +141,7 @@ theorem fpDist_support_snd_gt :
       rcases hcond with h | h
       · omega
       · exact h
-    · push_neg at hcond
+    · push Not at hcond
       rw [PMF.mem_support_map_iff] at hde
       obtain ⟨e', he's, he'⟩ := hde
       have hrec := IH (s - d.2.toNat) (by omega) e' he's
@@ -209,7 +209,7 @@ theorem Q_le_fpDist_expect (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (hε :
       by_cases h0 : hold d = 0
       · rw [h0, zero_mul, zero_mul]
       · have hd2 := hold_support_snd_ge d (by rwa [PMF.mem_support_iff])
-        refine mul_le_mul_left' ?_ _
+        refine mul_le_mul_right ?_ _
         split_ifs with hcond
         · -- overshoot: the endpoint is d itself
           refine le_of_eq ?_
@@ -217,7 +217,7 @@ theorem Q_le_fpDist_expect (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (hε :
             rw [PMF.pure_apply, if_neg he, zero_mul])]
           rw [PMF.pure_apply, if_pos rfl, one_mul]
         · -- within budget: recurse with s - d₂ from (j+d₁, l+d₂)
-          push_neg at hcond
+          push Not at hcond
           rw [PMF.tsum_map_mul]
           have hIH := IH (s - d.2.toNat) (by omega) (j + d.1) (l + d.2)
           refine le_trans hIH (le_of_eq (tsum_congr fun e => ?_))
@@ -263,7 +263,7 @@ theorem holdSum_le_modPair (n N : ℕ) (v : ℕ × ℤ) :
         PMF.apply_le_map_apply _ _ _
     _ = (iidSum (hold.map (modPair N)) n) (modPair N v) := by
         rw [iidSum_map hold (modPair N) (by simp [modPair])
-          (fun a b => by simp [modPair, Prod.ext_iff])]
+          (fun _ _ => by simp [modPair])]
 
 /-- **The circle-method bound for the `Hold` walk**, all algebraic steps composed:
 for every modulus `N`, the lattice point mass of `Hold_{[1,n]}` is at most
@@ -556,7 +556,7 @@ theorem iidSum_apply_le_center_of_decay (p : PMF (ℕ × ℤ)) {c : ℝ} (hc : 1
             PMF.apply_le_map_apply _ _ _
         _ = (iidSum (p.map (modPair N)) n) (modPair N v) := by
             rw [iidSum_map p (modPair N) (by simp [modPair])
-              (fun a b => by simp [modPair, Prod.ext_iff])]
+              (fun _ _ => by simp [modPair])]
     have hmain : ((iidSum p n) v).toReal
         ≤ ((N : ℝ) ^ 2)⁻¹ * ∑ ξ : ZMod N × ZMod N, ‖charFn (p.map (modPair N)) ξ‖ ^ n :=
       le_trans (ENNReal.toReal_mono

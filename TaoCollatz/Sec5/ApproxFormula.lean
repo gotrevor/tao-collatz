@@ -381,12 +381,12 @@ theorem not_goodTuple_iff_prefix_dev {x : ℝ} {N n₀ : ℕ} (hN : N % 2 = 1) :
   constructor
   · intro h
     have hdev := h hpos
-    push_neg at hdev
+    push Not at hdev
     obtain ⟨n, hn, hge⟩ := hdev
     exact ⟨n, Finset.mem_range.mpr (by omega), by rwa [pre_valVec (by omega : n ≤ n₀)] at hge⟩
   · rintro ⟨n, hn, hge⟩ _
     rw [Finset.mem_range] at hn
-    push_neg
+    push Not
     exact ⟨n, by omega, by rw [pre_valVec (by omega : n ≤ n₀)]; exact hge⟩
 
 /-! ### Analytic + marginal glue for the (5.12) core `goodTuple_prefix_dev_sum` (below)
@@ -612,7 +612,7 @@ theorem goodTuple_prefix_dev_sum :
   have hy1 : (1 : ℝ) ≤ y := by
     rcases hy with h | h <;> rw [h] <;>
       · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
-        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha <;> positivity)
+        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha; positivity)
   have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
     rw [show (1 : ℝ) = (1 : ℝ) ^ alpha from (Real.one_rpow _).symm]
     exact Real.rpow_le_rpow (by norm_num) hy1 (by unfold alpha; positivity)
@@ -760,7 +760,7 @@ theorem approx_good_tuple_whp :
     have hy1 : (1 : ℝ) ≤ y := by
       rcases hy with h | h <;> rw [h] <;>
         · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
-          exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha <;> positivity)
+          exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha; positivity)
     rw [show (1 : ℝ) = (1 : ℝ) ^ alpha from (Real.one_rpow _).symm]
     exact Real.rpow_le_rpow (by norm_num) hy1 (by unfold alpha; positivity)
   set P := logUnifOdd y (y ^ alpha) with hPdef
@@ -936,7 +936,7 @@ theorem passtime_edge_of_good :
   -- unfold Edge and do contrapositive
   simp only [Edge, Set.mem_setOf_eq, hs_eq]
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   obtain ⟨hIntLo, hIntHi⟩ := hcon
   -- y > 0
   have hy0 : 0 < y := by rcases hy with h | h <;> rw [h] <;> exact Real.rpow_pos_of_pos hxpos _
@@ -1205,7 +1205,7 @@ theorem windowMass_ge_clog :
   obtain ⟨haylo, haodd⟩ : ylo ≤ a ∧ a % 2 = 1 := Nat.find_spec hex
   have ha_lt : a < ylo + 2 := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     exact Nat.find_min hex (show a - 2 < a by omega) ⟨by omega, by omega⟩
   have haR : (a : ℝ) < y + 3 := by
     have h1 : (a : ℝ) < (ylo : ℝ) + 2 := by exact_mod_cast ha_lt
@@ -1326,7 +1326,7 @@ theorem logWindow_odd_ap {lo hi : ℝ} (hlo0 : 0 < lo) (hne : (logWindow lo hi).
   obtain ⟨haylo, haodd⟩ : ylo ≤ a ∧ a % 2 = 1 := Nat.find_spec hex
   have ha_lt : a < ylo + 2 := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     exact Nat.find_min hex (show a - 2 < a by omega) ⟨by omega, by omega⟩
   have haR : (a : ℝ) < lo + 3 := by
     have h1 : (a : ℝ) < (ylo : ℝ) + 2 := by exact_mod_cast ha_lt
@@ -1649,7 +1649,7 @@ theorem passtime_window_inner :
     have hy1 : (1 : ℝ) ≤ y := by
       rcases hy with h | h <;> rw [h] <;>
         · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
-          exact Real.rpow_le_rpow (by norm_num) hx1le (by unfold alpha <;> positivity)
+          exact Real.rpow_le_rpow (by norm_num) hx1le (by unfold alpha; positivity)
     rw [show (1 : ℝ) = (1 : ℝ) ^ alpha from (Real.one_rpow _).symm]
     exact Real.rpow_le_rpow (by norm_num) hy1 (by unfold alpha; positivity)
   set P := logUnifOdd y (y ^ alpha) with hPdef
@@ -1702,10 +1702,10 @@ theorem passtime_window_inner :
   -- exponent-monotonicity closers
   have hmono1 : C1 * (Real.log x) ^ (-c1) ≤ C1 * (Real.log x) ^ (-(min c1 c2)) :=
     mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow_of_exponent_le hlog1 (by simp [neg_le_neg_iff, min_le_left])) hC1.le
+      (Real.rpow_le_rpow_of_exponent_le hlog1 (by simp [neg_le_neg_iff])) hC1.le
   have hmono2 : C2 * (Real.log x) ^ (-c2) ≤ C2 * (Real.log x) ^ (-(min c1 c2)) :=
     mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow_of_exponent_le hlog1 (by simp [neg_le_neg_iff, min_le_right])) hC2.le
+      (Real.rpow_le_rpow_of_exponent_le hlog1 (by simp [neg_le_neg_iff])) hC2.le
   calc P.expect (Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1)
       ≤ P.expect (Set.indicator {N : ℕ | ¬ (N % 2 = 1)} 1) + P.expect (Set.indicator T 1) :=
         expect_le_add_of_indicator_le _ _ _ _ hpwUT
@@ -2005,7 +2005,7 @@ theorem expect_indicator_toReal (P : PMF ℕ) (S : Set ℕ) :
   rw [ENNReal.tsum_toReal_eq (fun N => by split; exacts [PMF.apply_ne_top _ _, by simp])]
   unfold PMF.expect
   refine tsum_congr fun N => ?_
-  by_cases h : N ∈ S <;> simp [Set.indicator_apply, h]
+  by_cases h : N ∈ S <;> simp [h]
 
 open Classical in
 /-- **The (5.18)/(5.19) EXACT reindex — `approxMainTerm = steppedMid`** (RATIFY-C8-v2 content).
@@ -2121,7 +2121,7 @@ theorem approxMainTerm_eq_steppedMid (x : ℝ) (E : Set ℕ) (y : ℝ)
         (∑' N, if 3 ^ k * N + fnat k ā = M * 2 ^ pre ā k then P N else 0) else 0) ≠ ⊤ := by
     intro ā M; split
     · exact ne_top_of_le_ne_top ENNReal.one_ne_top
-        (hmass_le _ fun N => by split <;> first | exact le_rfl | exact zero_le')
+        (hmass_le _ fun N => by split <;> first | exact le_rfl | exact zero_le)
     · simp
   have hGfin : ∀ ā : Fin k → ℕ,
       (∑' (M : ℕ), if goodTuple x k ā ∧ Eprime x E M then
@@ -2134,13 +2134,13 @@ theorem approxMainTerm_eq_steppedMid (x : ℝ) (E : Set ℕ) (y : ℝ)
               (∑' N, if 3 ^ k * N + fnat k ā' = M * 2 ^ pre ā' k then P N else 0) else 0 :=
             ENNReal.le_tsum ā
       _ = ∑' N, (if N ∈ S then P N else 0) := hcore
-      _ ≤ 1 := hmass_le _ fun N => by split <;> first | exact le_rfl | exact zero_le'
+      _ ≤ 1 := hmass_le _ fun N => by split <;> first | exact le_rfl | exact zero_le
   -- local `expect → sum` over the concrete `S` (so the `N ∈ S` decidability instance matches `hcore`).
   have hexp : P.expect (Set.indicator S 1) = (∑' N, if N ∈ S then P N else 0).toReal := by
     rw [ENNReal.tsum_toReal_eq (fun N => by split; exacts [PMF.apply_ne_top _ _, by simp])]
     unfold PMF.expect
     refine tsum_congr fun N => ?_
-    by_cases h : N ∈ S <;> simp [Set.indicator_apply, h]
+    by_cases h : N ∈ S <;> simp [h]
   -- assemble: rewrite the diagonal mass to the double sum, then pull `.toReal` termwise.
   rw [hexp, ← hcore, ENNReal.tsum_toReal_eq hGfin]
   refine tsum_congr fun ā => ?_
@@ -2317,7 +2317,6 @@ theorem two_mZero_le_of_mem_Iy :
       nlinarith [hlogyx, mul_nonneg h3aL (sub_nonneg.mpr hg_hi)]
     have hbridge : 2 * ((alpha - 1) / 100 * Real.log x) ≤ 3 * (alpha - 1) * Real.log x := by
       nlinarith [haLnn]
-    push_cast
     linarith [hmle, hbridge, hdiv, hlog08]
   have hnge : IyLo x y ≤ (n : ℝ) := (mem_Iy_bounds hn).1
   exact_mod_cast le_trans hIyLo_ge hnge
@@ -2475,7 +2474,7 @@ theorem stepback_passage_scale :
     have h := Nat.sInf_mem hne; rw [hTs] at h; exact h
   have hmin : ⌊x⌋₊ < syr^[n - 1] N := by
     by_contra hle
-    push_neg at hle
+    push Not at hle
     have hmem : n - 1 ∈ {k | syr^[k] N ≤ ⌊x⌋₊} := hle
     have hle' : sInf {k | syr^[k] N ≤ ⌊x⌋₊} ≤ n - 1 := Nat.sInf_le hmem
     rw [hTs] at hle'; omega
@@ -2869,7 +2868,7 @@ theorem reverse_early_return_whp :
     intro n hn
     obtain ⟨hm1, hmn⟩ := hint x hxi y hy n hn
     refine le_trans (expect_mono_on_support P _ (∅ : Set ℕ) (fun N hNsupp hNS => ?_))
-      (by simp [PMF.expect, Set.indicator_empty])
+      (by simp [PMF.expect])
     obtain ⟨hgood, hE', hlt⟩ := hNS
     set k := n - mZero x with hk_def
     have hN : N % 2 = 1 := (logUnifOdd_support_le hyα1 hNsupp).1
@@ -3000,7 +2999,7 @@ theorem steppedMid_le_firstPassMid_add :
         by_cases hlt : passTime ⌊x⌋₊ N < n - mZero x
         · have hmemU : N ∈ Gn ∪ Cn := Or.inr ⟨hGnm, hEp, hlt⟩
           rw [Set.indicator_of_mem hmemU, Pi.one_apply]; linarith
-        · push_neg at hlt
+        · push Not at hlt
           have hpass : passes ⌊x⌋₊ N := passes_of_eprime hm1 hEp
           have hPT : passTime ⌊x⌋₊ N = n := eprime_forces_passTime hpass hlt hmn hEp
           obtain ⟨_, _, hLM⟩ := passTime_stepback ⌊x⌋₊ N (n - mZero x) hpass hlt
