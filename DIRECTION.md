@@ -85,23 +85,53 @@ branch-vs-branch comparisons beyond step 1's chosen `c₀`. Comparisons against 
 `noncomputable def` — prove ONE `c_foo_pos` lemma per def and use it; do not let laps grind
 `positivity` failures site by site.
 
-### 🥉 STEP 3 — the headline + `cTao`, appended to `Statement.lean`
+### 🥉 STEP 3 — PIN FIRST (do this NOW, before further step-2 grinding): the claim goes into `Statement.lean` AND the Comparator
 
-Append to `TaoCollatz/Statement.lean`: the `cTao` def (value from step 1's sign-off) + the
-`tao_collatz_quantitative_explicit` theorem, proved by delegation to the explicit spine.
-**Append-only**: the two existing headline statements stay byte-identical (differ-watched);
-update the file's header comment to describe the three-statement surface and which are the
-paper's vs ours. The new docstring says plainly: *this statement is our augmentation, beyond
-the paper* (the paper gives `∃ c`; Remark 1.4 gives only a shape). `cTao`'s body must be pure
-Mathlib vocabulary (it will be re-declared verbatim in `Comparator/TaoCollatz/Challenge.lean`
-at step 4), so the file's statement-import surface does not grow.
+*(Re-ordered 2026-07-16 evening, operator: Trevor wants the finish line machine-checkable —
+the comparator entry is no longer gated. Pin the claim now; the proof is what the rest of
+the campaign discharges. This also arms the host's stop gate: `TaoCollatz/` is 0-sorry today,
+so the pinned `sorry` below is exactly what holds the `--done-when sorry-free:TaoCollatz`
+gate open until the claim is real.)*
 
-### 🏁 STEP 4 — OPERATOR-GATED (do not do in a grind lap)
+**3a — append to `TaoCollatz/Statement.lean`** (append-only; the two existing headlines stay
+byte-identical, differ-watched; update the header comment to the three-statement surface,
+paper's vs ours; docstring says plainly this is our augmentation — the paper gives `∃ c`,
+Remark 1.4 only a shape):
 
-Comparator additions (declare `cTao` + the third theorem in
-`Comparator/TaoCollatz/Challenge.lean`, add to `config.json` `theorem_names`) and the PR #6
-note update. These change the public trusted surface → Trevor/judge reads first. Flag
-readiness in PENDING_WORK.md and stop.
+```lean
+/-- The explicit exponent: `1/(640000000 · ln 2)`, traced through the witness tower
+(PR #6's note; step-1 trace ratified 2026-07-16). OUR augmentation, beyond the paper. -/
+noncomputable def cTao : ℝ := 1 / (640000000 * Real.log 2)
+
+/-- **Theorem 3.1, explicit-exponent form** (our augmentation): Theorem 3.1 holds with the
+concrete exponent `cTao`. First published explicit exponent for this theorem
+(MO 341570 open since 2019). -/
+theorem tao_collatz_quantitative_explicit :
+    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
+  sorry
+```
+
+The `sorry` is the pin — census-visible, and it will hold CI red (fresh-checkout
+`weak.warningAsError`) until the claim is real, which is correct and intended.
+
+**3b — same claim into the Comparator** (this makes CI's `comparator` check *define* done):
+in `Comparator/TaoCollatz/Challenge.lean`, declare `cTao` with a **byte-identical** body
+(comparator's closure check demands identity, and never a definition hole) + the theorem
+statement rendered over the challenge's vocabulary, `sorry`-by-design like its 7 siblings
+(the file's `set_option warningAsError false` covers it). Add
+`"TaoCollatz.tao_collatz_quantitative_explicit"` to `theorem_names` in `config.json`.
+**`Solution.lean` needs NO edit** — it imports the development, so comparator finds the
+real theorem there once 3c lands.
+
+**3c — discharge the pin** by delegation to the explicit spine (the step-2 chains), then
+finish any remaining step-2 carriers. When `TaoCollatz/` greps 0 sorries again, the claim
+is live; the host verifies with the axiom gate and CI.
+
+### 🏁 STEP 4 — OPERATOR-GATED (unchanged)
+
+The ship-PR itself and the PR #6 note update are the host's. Flag readiness in
+PENDING_WORK.md and keep grinding anything left.
 
 ### 🔒 Hard rails
 
