@@ -5,18 +5,21 @@
 # gh-pages branch. No Lean build required: `leanblueprint web` renders TeX only, and
 # the annotator is pure Python over content.tex.
 #
-# doc-gen4 API docs (/docs, the dep graph's "Lean" link target via \dochome{../docs})
-# are NOT built here yet — links 404 until a docs job is added; keep_files preserves
-# any /docs that lands later. Deliberately a separate, non-required workflow from CI:
-# a docs break is an honest red X that never blocks a merge.
+# doc-gen4 API docs (/docs, the dep graph's "Lean" link target via \dochome{../docs}) are
+# built by the `api-docs` job below, ported from lean-gallery's docbuild setup: a nested
+# `docbuild/` sub-project renders the whole import closure, then trim-docs.py keeps only the
+# TaoCollatz pages and relinks deps to the hosted mathlib4_docs, so /docs is a few MB. It runs
+# AFTER `blueprint` (needs:) so the two jobs' gh-pages pushes serialize instead of racing;
+# keep_files means each push preserves the other's output (blueprint + landing + docs coexist).
 #
-# While the repo is private, the gh-pages push still succeeds but Pages serves nothing
-# (free plan); the built site is inspectable via the uploaded artifact.
+# Deliberately a separate, non-required workflow from CI: a docs break is an honest red X that
+# never blocks a merge. paths-ignore skips the ~2h doc render on markdown-only pushes.
 name: docs
 
 on:
   push:
     branches: [main]
+    paths-ignore: ['**.md']
   workflow_dispatch:
 
 concurrency:
@@ -58,11 +61,56 @@ jobs:
           keep_files: true
 
       # Static landing page at the Pages site root (links to the blueprint + repo).
-      # keep_files preserves /blueprint (and any future /docs) written above.
+      # keep_files preserves /blueprint (and the /docs written by api-docs).
       - name: Deploy landing page to Pages root
         if: github.event_name != 'pull_request'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs-landing
+          keep_files: true
+
+  # doc-gen4 API docs → <site>/docs/. Ported from lean-gallery: a nested docbuild/ sub-project
+  # renders the full import closure, trim-docs.py keeps only the TaoCollatz pages + relinks deps
+  # to the hosted mathlib4_docs. `needs: blueprint` serializes this job's gh-pages push AFTER the
+  # blueprint/landing pushes so they don't race the branch; keep_files preserves both.
+  api-docs:
+    needs: blueprint
+    runs-on: ubuntu-24.04   # pinned like lean-gallery: the 26.04 preview image OOM'd doc-gen4;
+                            # 24.04's swap absorbs doc-gen4's ~16 GB peak. Revisit once 26.04 is GA.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+        with:
+          build: false        # we drive the doc build ourselves from docbuild/
+
+      # doc-gen4's peak memory sits right at the runner's 16 GB; the margin that keeps it alive
+      # is swap. Provide our own headroom instead of inheriting the image's, and log the water
+      # line so a future OOM investigation has before-numbers in the log.
+      - name: Add 8 GB swap (doc-gen4 headroom)
+        run: |
+          SWAP=/mnt/swapfile-docs
+          sudo fallocate -l 8G "$SWAP" 2>/dev/null || { SWAP=/swapfile-docs; sudo fallocate -l 8G "$SWAP"; }
+          sudo chmod 600 "$SWAP"
+          sudo mkswap "$SWAP"
+          sudo swapon "$SWAP"
+          swapon --show
+          free -h
+
+      - name: Build API docs (docbuild sub-project)
+        run: |
+          cd docbuild
+          lake exe cache get || true
+          lake build TaoCollatz:docs
+
+      - name: Trim docs to TaoCollatz (relink deps to hosted mathlib4_docs)
+        run: python3 docbuild/trim-docs.py docbuild/.lake/build/doc TaoCollatz
+
+      - name: Deploy API docs to Pages /docs
+        if: github.event_name != 'pull_request'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docbuild/.lake/build/doc
+          destination_dir: docs
           keep_files: true

@@ -1,4 +1,5 @@
 /.lake
+/docbuild/.lake
 
 # No committed PDFs — commit the .md summary, not the binary render (copyright + bloat).
 *.pdf
