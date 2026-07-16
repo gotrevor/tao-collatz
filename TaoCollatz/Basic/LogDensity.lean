@@ -37,15 +37,11 @@ noncomputable def logSum (A : Set ℕ) (R : Finset ℕ) : ℝ :=
 noncomputable def logProb (A : Set ℕ) (R : Finset ℕ) : ℝ :=
   logSum A R / logSum Set.univ R
 
-/-- The "window" `ℕ+ ∩ [1, x]` as a `Finset`. -/
-noncomputable def posInterval (x : ℕ) : Finset ℕ :=
-  (Finset.range (x + 1)).filter (· ≥ 1)
-
-/-- Logarithmic density of `A ⊂ ℕ+`, as the limit (if it exists) of
-`logProb A (posInterval x)` as `x → ∞`. Predicate form so it makes sense even
-when the limit does not exist; assert a specific value `d` via `HasLogDensity A d`. -/
+/-- Logarithmic density of `A ⊂ ℕ+` (Tao Def. 1.2). Predicate form so it makes
+sense even when the limit does not exist; assert a specific value `d` via
+`HasLogDensity A d`. -/
 def HasLogDensity (A : Set ℕ) (d : ℝ) : Prop :=
-  Filter.Tendsto (fun x => logProb A (posInterval x)) atTop (𝓝 d)
+  Filter.Tendsto (fun x => logProb A (Finset.Icc 1 x)) atTop (𝓝 d)
 
 /-- A property `P` holds for *almost all* `N ∈ ℕ+` (logarithmic density) if
 `{N | P N}` has log density `1`. -/

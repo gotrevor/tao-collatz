@@ -618,17 +618,17 @@ def check14():
     # C6 §3 pins (2026-07-15): Thm 3.1 Syracuse forms + AlmostAllOdd normalizer.
     # logSum A (oddInterval x) = sum_{N odd, 1<=N<=x, N in A} 1/N; logProb normalizes by the
     # ODD-window mass, NOT the full [1,x] mass.  Plausible-wrong renderings this traps:
-    #   (a) normalizing the odd-window probability by posInterval mass (gives ~1/2, not 1);
+    #   (a) normalizing the odd-window probability by full-window (Finset.Icc 1 x) mass (gives ~1/2, not 1);
     #   (b) the two Thm 3.1 displays not being complementary (sum-form vs 1 - prob-form).
     x = 30_000
     S_odd = sum(Fraction(1, N) for N in range(1, x + 1, 2))
     S_all = sum(Fraction(1, N) for N in range(1, x + 1))
     # (a) the sure event on the odd window has logProb EXACTLY 1 under the intended
-    # normalizer; under the wrong (posInterval) normalizer it is ~ 1/2.
+    # normalizer; under the wrong (full-window) normalizer it is ~ 1/2.
     assert S_odd / S_odd == 1
     assert S_odd / S_all < Fraction(7, 10), float(S_odd / S_all)
     # log-uniformity sanity: residue 1 mod 4 carries ~half the odd-window mass (the
-    # constant term drifts at finite x: 0.568 at x=3e4).  A posInterval-normalized
+    # constant term drifts at finite x: 0.568 at x=3e4).  A full-window-normalized
     # wrong rendering would sit near 1/4 — the bracket separates the two.
     S_1mod4 = sum(Fraction(1, N) for N in range(1, x + 1, 4))
     assert Fraction(45, 100) < S_1mod4 / S_odd < Fraction(65, 100), float(S_1mod4 / S_odd)
@@ -645,7 +645,7 @@ def check14():
     print(f"14. C6 Thm 3.1 forms: odd-window normalizer + display equivalence      OK (x={x})")
 
 def check15():
-    # C6 (1.2) pullback trap: logSum {N | oddPart N in A} (posInterval x)
+    # C6 (1.2) pullback trap: logSum {N | oddPart N in A} (Finset.Icc 1 x)
     #                           <= 2 * logSum A (oddInterval x)
     # via sum_{N<=x, oddPart N in A} 1/N = sum_a 2^-a sum_{M in A odd, M<=x/2^a} 1/M.
     # The trap checks BOTH directions: the intended constant 2 holds (exactly), and the
