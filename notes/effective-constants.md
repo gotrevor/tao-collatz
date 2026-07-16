@@ -320,3 +320,62 @@ analysis, not re-running `norm_num`.
 The tower table above lists 7 lemmas. The real path from the spine carries **76 constant-carrying
 existentials** (Sec5 37, Sec7 22, Sec6 8, Sec3 7, Syracuse 1, Prob 1), plus 31 threshold-only ones
 — 107 if the thresholds must be extracted too, which for `C` they must.
+
+## References 📚
+
+What the literature says about these constants. Short version: the shape is published, the
+numbers are not, and Tao says why. Quotes below were read off the source pages, not recalled.
+
+**The paper.** Tao, *Almost all orbits of the Collatz map attain almost bounded values*,
+[arXiv:1909.03562](https://arxiv.org/abs/1909.03562); Forum of Mathematics Pi 10 (2022).
+Remark 1.4 (p.3) gives the shape and stops there:
+
+> our arguments give a constant of the form `C_δ ≪ exp(δ^{-O(1)})`
+
+The `O(1)` is never pinned. ⚠️ This repo pins **v5** (`AGENTS.md`); v6 landed 2026-07-06.
+
+**Tao, [11 Sep 2019](https://terrytao.wordpress.com/2019/09/10/almost-all-collatz-orbits-attain-almost-bounded-values/comment-page-1/#comment-521963)** — states Theorem 3.1 in exactly the shape
+formalized here (`Colmin(N) ≤ C₀` on a set of logarithmic density `1 - O(log^{-c} C₀)`), then:
+
+> in principle, this could be combined with a numerical verification of cases up to `C₀` to
+> obtain the result that the Collatz conjecture held for a set of positive logarithmic density.
+> (Thanks to Ben Green for pointing out this possibility to me.) Unfortunately the value of
+> `C₀` produced by the arguments in my paper, **while in principle explicit, are almost
+> certainly too enormous for this strategy to be easily implemented**
+
+The `C` floor above is the quantitative form of "too enormous": `C ≳ 10^(7 × 10⁷)`.
+
+**Tao, [29 Jan 2020](https://terrytao.wordpress.com/2020/01/25/equidistribution-of-syracuse-random-variables-and-density-of-collatz-preimages/#comment-537882)** — hedges even on the shape:
+
+> the arguments give an in principle explicit relation between `C` and `δ`, **which I believe
+> to be** of the form `C = exp(δ^{-O(1)})`
+
+**Tao, [22 Sep 2024](https://terrytao.wordpress.com/2019/09/10/almost-all-collatz-orbits-attain-almost-bounded-values/comment-page-4/#comment-685839)** — the closest thing to a direct answer:
+
+> The methods in my paper are effective and would in principle provide such a function, though
+> **I did not attempt to explicitly compute this as the arguments are rather inefficient.**
+
+**Tao, [29 Apr 2025](https://terrytao.wordpress.com/2019/09/10/almost-all-collatz-orbits-attain-almost-bounded-values/comment-page-4/#comment-687865)** — on the payoff, and its ceiling:
+
+> The arguments in my paper do show that a positive density fraction of orbits must fall below
+> some explicit finite threshold `C` … But even then this would fall short of the claim that a
+> density 1 set of orbits do not diverge.
+
+**[MathOverflow 341570](https://mathoverflow.net/questions/341570/explicit-bounds-from-taos-result-on-collatz-conjecture)**, Wojowu, 14 Sep 2019 — asks this note's question directly:
+
+> Are there any values of `δ<1` for which an explicit upper bound for `C_δ` is known?
+
+**Open since 2019.** The accepted answer points at v2's fuller `δ`-dependence, which answers a
+different question; its top comment (scoring above the answer) is `"more detail" -- for instance?`.
+
+### So what would be new here
+
+Nothing about `c`'s *value* is deep — it is arithmetic anyone could redo. What is unclaimed is
+that nobody has redone it. Two concrete things this note is close to:
+
+1. **Pin the `O(1)`.** Inverting Theorem 3.1 (`δ = C/(log N₀)^c`) gives
+   `C_δ = exp(C^{1/c} · δ^{-1/c})`, so the exponent in Remark 1.4's `exp(δ^{-O(1)})` is `1/c`,
+   needing **no `C`** — and the traced `c ≤ 1/(640_000_000 · ln 2)` gives `O(1) ≥ 4.4 × 10⁸`.
+   ⚠️ Unverified algebra, not machine-checked. Check before quoting.
+2. **Formalize the bounds**, so they are kernel-certified rather than hand-read. That is the
+   only version of this note that would be worth citing.
