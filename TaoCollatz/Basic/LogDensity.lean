@@ -37,9 +37,9 @@ noncomputable def logSum (A : Set ℕ) (R : Finset ℕ) : ℝ :=
 noncomputable def logProb (A : Set ℕ) (R : Finset ℕ) : ℝ :=
   logSum A R / logSum Set.univ R
 
-/-- Logarithmic density of `A ⊂ ℕ+`, as the limit (if it exists) of
-`logProb A (Finset.Icc 1 x)` as `x → ∞`. Predicate form so it makes sense even
-when the limit does not exist; assert a specific value `d` via `HasLogDensity A d`. -/
+/-- Logarithmic density of `A ⊂ ℕ+` (Tao Def. 1.2). Predicate form so it makes
+sense even when the limit does not exist; assert a specific value `d` via
+`HasLogDensity A d`. -/
 def HasLogDensity (A : Set ℕ) (d : ℝ) : Prop :=
   Filter.Tendsto (fun x => logProb A (Finset.Icc 1 x)) atTop (𝓝 d)
 
