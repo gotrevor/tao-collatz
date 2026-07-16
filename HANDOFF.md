@@ -20,7 +20,11 @@ and the step-1 JUDGE-FLAG.
 
 ## Next lap
 
-1. If the operator has signed off the JUDGE-FLAG: **STEP 3** — append to
+**⚡ The operator SIGNED OFF the step-1 JUDGE-FLAG mid-lap (commit `6852905`):
+`cTao = 1/(640000000 * Real.log 2)`, spot-checked at `4fb5304`. Step 3 is UNBLOCKED —
+do it first.**
+
+1. **STEP 3** — append to
    `TaoCollatz/Statement.lean` (append-only; two existing headlines byte-identical):
    `noncomputable def cTao : ℝ := 1 / (640000000 * Real.log 2)` + the
    `tao_collatz_quantitative_explicit` theorem per DIRECTION's shape, proved by delegation
