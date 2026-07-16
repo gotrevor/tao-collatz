@@ -576,18 +576,27 @@ From (5.4) [C5 / Prop 1.9, axiom-clean] and Lemma 2.2 [S3, two-sided, axiom-clea
 deviates by `≥ log^{0.6} x` w.p. `≪ exp(−c log^{0.2} x)`; sum over the `n₀ + 1` prefixes.
 **Does not use C7.** -/
 
-/-- **(5.12) analytic core** (owed) — the summed per-prefix deviation bound.  Each of the `n₀ + 1`
+/-- Effective-constants campaign: the `c`-witness of `goodTuple_prefix_dev_sum` — the (5.12)
+prefix-deviation sum decays at the full rate `1`. -/
+noncomputable def c_goodTupleDev : ℝ := 1
+
+theorem c_goodTupleDev_pos : 0 < c_goodTupleDev := by norm_num [c_goodTupleDev]
+
+/-- **(5.12) analytic core** — the summed per-prefix deviation bound, with the `c`-slot pinned
+to `c_goodTupleDev` (`C` and the threshold stay existential; the ratified original delegates
+here).  Each of the `n₀ + 1`
 prefixes `valSum N n` deviates from its mean `2n` by `≥ log^{0.6} x` with probability
 `≪ exp(−c log^{0.2} x)` (transfer to `geomHalf.iid` via C5 `valuation_dist`, then the two-sided
 S3 `geomHalf_tail_bound`); the sum over prefixes is still `≪ log^{-c} x`.  This is the ONLY analytic
 hole of `approx_good_tuple_whp` — the union-bound skeleton around it is proved. -/
-theorem goodTuple_prefix_dev_sum :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+theorem goodTuple_prefix_dev_sum_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         ∑ n ∈ Finset.range (nZero x + 1),
             (logUnifOdd y (y ^ alpha)).expect
               (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1)
-          ≤ C * (Real.log x) ^ (-c) := by
+          ≤ C * (Real.log x) ^ (-c_goodTupleDev) := by
+  rw [show c_goodTupleDev = 1 from rfl]
   obtain ⟨K, hK, x₀e, herr⟩ := integral_test_logUnif
   obtain ⟨cd, Cd, hcd, hCd, hdist⟩ := valuation_dist 1 K (by norm_num) hK
   obtain ⟨ct, hct, Ct, hCt, htail⟩ := geomHalf_tail_bound
@@ -597,8 +606,8 @@ theorem goodTuple_prefix_dev_sum :
   obtain ⟨cq, x₀q, hcq, hqle⟩ := two_rpow_neg_nZero_le hcd
   obtain ⟨x₀B, hB⟩ := log_rpow_mul_exp_neg_le_one (p := 2) (κ := cq) (θ := 1)
     (by norm_num) hcq (by norm_num)
-  refine ⟨1, 2 * Ct + Cd, max x₀e (max x₀A (max x₀q (max x₀B (max (Real.exp 20) x₀g)))),
-    one_pos, by positivity, fun x hx y hy => ?_⟩
+  refine ⟨2 * Ct + Cd, max x₀e (max x₀A (max x₀q (max x₀B (max (Real.exp 20) x₀g)))),
+    by positivity, fun x hx y hy => ?_⟩
   simp only [max_le_iff] at hx
   obtain ⟨hxe, hxA, hxq, hxB, hx20, hxg⟩ := hx
   have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 20) hx20
@@ -746,14 +755,28 @@ theorem goodTuple_prefix_dev_sum :
         linarith [hAterm, hBterm]
     _ = (2 * Ct + Cd) * (Real.log x) ^ (-(1 : ℝ)) := by ring
 
-theorem approx_good_tuple_whp :
+theorem goodTuple_prefix_dev_sum :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        ∑ n ∈ Finset.range (nZero x + 1),
+            (logUnifOdd y (y ^ alpha)).expect
+              (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1)
+          ≤ C * (Real.log x) ^ (-c) := by
+  obtain ⟨C, x₀, hC, h⟩ := goodTuple_prefix_dev_sum_explicit
+  exact ⟨c_goodTupleDev, C, x₀, c_goodTupleDev_pos, hC, h⟩
+
+/-- Sibling of `approx_good_tuple_whp` with the `c`-slot pinned to `c_goodTupleDev`
+(passthrough); the original delegates here. -/
+theorem approx_good_tuple_whp_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1)
-          ≤ C * (Real.log x) ^ (-c) := by
-  obtain ⟨c, C, x₀, hc, hC, hsum⟩ := goodTuple_prefix_dev_sum
-  refine ⟨c, C, max x₀ 1, hc, hC, fun x hx y hy => ?_⟩
+          ≤ C * (Real.log x) ^ (-c_goodTupleDev) := by
+  obtain ⟨C, x₀, hC, hsum⟩ := goodTuple_prefix_dev_sum_explicit
+  set c : ℝ := c_goodTupleDev with hcdef
+  have hc : 0 < c := c_goodTupleDev_pos
+  refine ⟨C, max x₀ 1, hC, fun x hx y hy => ?_⟩
   have hx0 : x₀ ≤ x := le_trans (le_max_left _ _) hx
   have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
@@ -821,6 +844,15 @@ theorem approx_good_tuple_whp :
           P.expect (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1) :=
         expect_le_sum_of_indicator_le _ _ _ _ hpw2
     _ ≤ C * (Real.log x) ^ (-c) := hsum x hx0 y hy
+
+theorem approx_good_tuple_whp :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1)
+          ≤ C * (Real.log x) ^ (-c) := by
+  obtain ⟨C, x₀, hC, h⟩ := approx_good_tuple_whp_explicit
+  exact ⟨c_goodTupleDev, C, x₀, c_goodTupleDev_pos, hC, h⟩
 
 /-- **(5.16) edge half-width** `s(x) := log^{0.8} x`.  This is the multiplicative log-scale radius
 around the window endpoints inside which the passage-time estimate (5.15) can push `T_x(N)` out of
@@ -1455,15 +1487,22 @@ law puts mass `≈ log(b/a)/((α−1)log y)` on a sub-interval `[a,b] ⊂ [y, y^
 Route (owed): reuse `Sec5.FirstPassage`'s `windowMass`/`logUnifOdd_apply_of_nonempty`; bound the
 edge-slab partial sum `∑_{N∈slab} 1/N` above by `log((b/a)) + O(1)` (sum ↔ integral, `AntitoneOn.sum_le_integral`
 on `t ↦ 1/t`, `integral_inv`) and the full `windowMass` below by `(α−1)log y − O(1)`. -/
-theorem passtime_edge_mass :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+noncomputable def c_edgeMass : ℝ := 1/5
+
+theorem c_edgeMass_pos : 0 < c_edgeMass := by norm_num [c_edgeMass]
+
+/-- Sibling of `passtime_edge_mass` with the `c`-slot pinned to `c_edgeMass`; `C` and the
+threshold stay existential. The original delegates here. -/
+theorem passtime_edge_mass_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect (Set.indicator (Edge x y) 1)
-          ≤ C * (Real.log x) ^ (-c) := by
+          ≤ C * (Real.log x) ^ (-c_edgeMass) := by
   classical
   obtain ⟨xn, hnon⟩ := logWindow_nonempty_of_large
   obtain ⟨cD, xD, hcD, hDlb⟩ := windowMass_ge_clog
-  refine ⟨1/5, 2/cD, max (max ((2:ℝ) ^ (2000:ℝ)) xn) xD, by norm_num, by positivity,
+  rw [show c_edgeMass = 1/5 from rfl]
+  refine ⟨2/cD, max (max ((2:ℝ) ^ (2000:ℝ)) xn) xD, by positivity,
     fun x hx y hy => ?_⟩
   have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxn : xn ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -1623,18 +1662,38 @@ its mass is bounded by the good-tuple union bound (5.12, `approx_good_tuple_whp`
 edge mass (`passtime_edge_mass`); the containment on the good event is `passtime_edge_of_good` (the
 (5.15) estimate).  **Does not use C7's escape bound** — that is the *other* term of (5.16), discharged
 in `approx_passtime_window`. -/
-theorem passtime_window_inner :
+theorem passtime_edge_mass :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator (Edge x y) 1)
+          ≤ C * (Real.log x) ^ (-c) := by
+  obtain ⟨C, x₀, hC, h⟩ := passtime_edge_mass_explicit
+  exact ⟨c_edgeMass, C, x₀, c_edgeMass_pos, hC, h⟩
+
+noncomputable def c_passtimeInner : ℝ := min c_goodTupleDev c_edgeMass
+
+theorem c_passtimeInner_pos : 0 < c_passtimeInner :=
+  lt_min c_goodTupleDev_pos c_edgeMass_pos
+
+/-- Sibling of `passtime_window_inner` with the `c`-slot pinned to `c_passtimeInner`; `C` and
+the threshold stay existential. The original delegates here. -/
+theorem passtime_window_inner_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1)
-          ≤ C * (Real.log x) ^ (-c) := by
+          ≤ C * (Real.log x) ^ (-c_passtimeInner) := by
   classical
-  obtain ⟨c1, C1, x1, hc1, hC1, hgoodwhp⟩ := approx_good_tuple_whp
-  obtain ⟨c2, C2, x2, hc2, hC2, hmass⟩ := passtime_edge_mass
+  obtain ⟨C1, x1, hC1, hgoodwhp⟩ := approx_good_tuple_whp_explicit
+  obtain ⟨C2, x2, hC2, hmass⟩ := passtime_edge_mass_explicit
   obtain ⟨x3, hx3one, hincl⟩ := passtime_edge_of_good
-  refine ⟨min c1 c2, C1 + C2, max (max (max x1 x2) x3) (Real.exp 1),
-    lt_min hc1 hc2, by positivity, fun x hx y hy => ?_⟩
+  set c1 : ℝ := c_goodTupleDev with hc1def
+  set c2 : ℝ := c_edgeMass with hc2def
+  have hc1 : 0 < c1 := c_goodTupleDev_pos
+  have hc2 : 0 < c2 := c_edgeMass_pos
+  rw [show c_passtimeInner = min c1 c2 from rfl]
+  refine ⟨C1 + C2, max (max (max x1 x2) x3) (Real.exp 1),
+    by positivity, fun x hx y hy => ?_⟩
   have hx1 : x1 ≤ x :=
     le_trans (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) (le_max_left _ _)) hx
   have hx2 : x2 ≤ x :=
@@ -1721,6 +1780,20 @@ theorem passtime_window_inner :
         add_le_add hmono1 hmono2
     _ = (C1 + C2) * (Real.log x) ^ (-(min c1 c2)) := by ring
 
+theorem passtime_window_inner :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1)
+          ≤ C * (Real.log x) ^ (-c) := by
+  obtain ⟨C, x₀, hC, h⟩ := passtime_window_inner_explicit
+  exact ⟨c_passtimeInner, C, x₀, c_passtimeInner_pos, hC, h⟩
+
+noncomputable def c_passtimeWindow : ℝ := min c_valSumTail c_passtimeInner
+
+theorem c_passtimeWindow_pos : 0 < c_passtimeWindow :=
+  lt_min c_valSumTail_pos c_passtimeInner_pos
+
 /-- **Paper (5.16)** — the passage time lands in the window `I_y` with probability `1 − O(log^{-c} x)`.
 Equivalently the complement `{N : ¬(passes ∧ T_x ∈ I_y)}` has probability `≪ log^{-c} x`.
 
@@ -1730,15 +1803,20 @@ Equivalently the complement `{N : ¬(passes ∧ T_x ∈ I_y)}` has probability `
 via `escape_to_log`.  The second term is `passtime_window_inner` (the integral-test window piece).
 This lemma **wires C7 into C8** — the whole of C8's dependence on C7 — leaving only the window
 integral test open. -/
-theorem approx_passtime_window :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+theorem approx_passtime_window_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} 1)
-          ≤ C * (Real.log x) ^ (-c) := by
-  obtain ⟨c₁, C₁, x₁, hc₁, hC₁, hesc⟩ := first_passage_nonescape
-  obtain ⟨c₂, C₂, x₂, hc₂, hC₂, hwin⟩ := passtime_window_inner
-  refine ⟨min c₁ c₂, C₁ + C₂, max (max x₁ x₂) (Real.exp 1), lt_min hc₁ hc₂, by positivity,
+          ≤ C * (Real.log x) ^ (-c_passtimeWindow) := by
+  obtain ⟨C₁, x₁, hC₁, hesc⟩ := first_passage_nonescape_explicit
+  obtain ⟨C₂, x₂, hC₂, hwin⟩ := passtime_window_inner_explicit
+  set c₁ : ℝ := c_valSumTail with hc1def
+  set c₂ : ℝ := c_passtimeInner with hc2def
+  have hc₁ : 0 < c₁ := c_valSumTail_pos
+  have hc₂ : 0 < c₂ := c_passtimeInner_pos
+  rw [show c_passtimeWindow = min c₁ c₂ from rfl]
+  refine ⟨C₁ + C₂, max (max x₁ x₂) (Real.exp 1), by positivity,
     fun x hx y hy => ?_⟩
   have hx1 : x₁ ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hx2 : x₂ ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -1805,22 +1883,41 @@ noncomputable def firstPassMid (x : ℝ) (E : Set ℕ) (y : ℝ) : ℝ :=
       (Set.indicator {N | passTime ⌊x⌋₊ N = n ∧ passLoc ⌊x⌋₊ N ∈ E ∧
         goodTuple x (nZero x) (valVec N (nZero x))} 1)
 
+theorem approx_passtime_window :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} 1)
+          ≤ C * (Real.log x) ^ (-c) := by
+  obtain ⟨C, x₀, hC, h⟩ := approx_passtime_window_explicit
+  exact ⟨c_passtimeWindow, C, x₀, c_passtimeWindow_pos, hC, h⟩
+
+noncomputable def c_windowReduce : ℝ := min c_goodTupleDev c_passtimeWindow
+
+theorem c_windowReduce_pos : 0 < c_windowReduce :=
+  lt_min c_goodTupleDev_pos c_passtimeWindow_pos
+
 /-- **(5.12)+(5.16) whp reduction** (owed) — the first leg of (5.8).  Passing from the raw
 `ℙ(Pass_x(N_y) ∈ E)` to the restricted, `T_x`-partitioned `firstPassMid` costs `O(log^{-c} x)`:
 the discarded mass lies in `{¬ good} ∪ {¬ (passes ∧ T_x ∈ I_y)}`, each `≪ log^{-c} x` by the two
 PROVED whp lemmas `approx_good_tuple_whp` (5.12) and `approx_passtime_window` (5.16).  (On the
 complementary good∩window event, `{Pass ∈ E}` is the disjoint union over `n ∈ I_y` of
 `{T_x = n ∧ Pass ∈ E ∧ good}`, so the partition is exact there.) -/
-theorem first_passage_window_reduce :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+theorem first_passage_window_reduce_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
               - firstPassMid x E y|
-            ≤ C * (Real.log x) ^ (-c) := by
-  obtain ⟨cg, Cg, xg, hcg, hCg, hgood⟩ := approx_good_tuple_whp
-  obtain ⟨cw, Cw, xw, hcw, hCw, hwin⟩ := approx_passtime_window
-  refine ⟨min cg cw, Cg + Cw, max (max xg xw) (Real.exp 1), lt_min hcg hcw, by positivity,
+            ≤ C * (Real.log x) ^ (-c_windowReduce) := by
+  obtain ⟨Cg, xg, hCg, hgood⟩ := approx_good_tuple_whp_explicit
+  obtain ⟨Cw, xw, hCw, hwin⟩ := approx_passtime_window_explicit
+  set cg : ℝ := c_goodTupleDev with hcgdef
+  set cw : ℝ := c_passtimeWindow with hcwdef
+  have hcg : 0 < cg := c_goodTupleDev_pos
+  have hcw : 0 < cw := c_passtimeWindow_pos
+  rw [show c_windowReduce = min cg cw from rfl]
+  refine ⟨Cg + Cw, max (max xg xw) (Real.exp 1), by positivity,
     fun x hx E hE y hy => ?_⟩
   have hxg : xg ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxw : xw ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -1939,6 +2036,16 @@ theorem first_passage_window_reduce :
     _ ≤ Cg * (Real.log x) ^ (-(min cg cw)) + Cw * (Real.log x) ^ (-(min cg cw)) :=
         add_le_add (mul_le_mul_of_nonneg_left hA hCg.le) (mul_le_mul_of_nonneg_left hB hCw.le)
     _ = (Cg + Cw) * (Real.log x) ^ (-(min cg cw)) := by ring
+
+theorem first_passage_window_reduce :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
+              - firstPassMid x E y|
+            ≤ C * (Real.log x) ^ (-c) := by
+  obtain ⟨C, x₀, hC, h⟩ := first_passage_window_reduce_explicit
+  exact ⟨c_windowReduce, C, x₀, c_windowReduce_pos, hC, h⟩
 
 /-- **(5.17) step-back event inclusion — the EXACT forward direction.**  For any window index
 `n ≥ m`, the first-passage event `{T_x N = n ∧ Pass_x N ∈ E}` is contained in the stepped-back
