@@ -1,5 +1,10 @@
 /.lake
-papers/**/*.pdf
+
+# No committed PDFs — commit the .md summary, not the binary render (copyright + bloat).
+*.pdf
+
+# Obsidian workspace (local editor state)
+.obsidian/
 
 # Generated blueprint artifacts — rebuild with blueprint/build.sh (leanblueprint web + annotate).
 # The blueprints hub serves these from the working tree; git carries only the TeX source.
