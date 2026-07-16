@@ -12,8 +12,8 @@
 - ⬜ STEP 1 — trace + lower-bound the `c8` / `cs` branches (route-decisive; see DIRECTION).
 - ⬜ STEP 2 — sibling+delegate de-existentialization of the `c`-path (Sec5 ~37 carriers,
   Sec3 glue ×6).
-- ⬜ STEP 3 — append to `TaoCollatz/Statement.lean` (ONE trusted file, Trevor's ruling
-  2026-07-16): `cTao` + `tao_collatz_quantitative_explicit`; existing headlines byte-identical.
+- ⬜ STEP 3 — append to `TaoCollatz/Statement.lean` (ONE trusted file = one audit surface):
+  `cTao` + `tao_collatz_quantitative_explicit`; existing headlines byte-identical.
 - ⬜ STEP 4 — OPERATOR-GATED: comparator additions + PR #6 note update.
 
 ## JUDGE-FLAGs

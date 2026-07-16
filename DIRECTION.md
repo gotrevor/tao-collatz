@@ -19,9 +19,11 @@ theorem tao_collatz_quantitative_explicit :
       1 - C / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x)
 ```
 
-**appended to `TaoCollatz/Statement.lean`** — ONE trusted file, per the audit doctrine and
-Trevor's ruling (2026-07-16): *"if there's only one Challenge.lean, there should only be one
-Statement.lean."* `cTao : ℝ` is an explicit `noncomputable def` in that same file (symbolic in
+**appended to `TaoCollatz/Statement.lean`** — ONE trusted file, because the trusted base is
+whatever a stranger must read in full, and one small file is the smallest honest version of
+that (the same logic that puts anchors and headlines in a single `Challenge.lean`). Provenance
+is a docstring's job, not a file boundary's. `cTao : ℝ` is an explicit `noncomputable def` in
+that same file (symbolic in
 `Real.log 2` — e.g. `1 / (640000000 * Real.log 2)` if step 1 confirms it), axiom-clean
 (`[propext, Classical.choice, Quot.sound]`), with `C` still existential. The docstrings carry
 the provenance split: the two existing headlines are the paper's (Thm 1.3 / Thm 3.1); the
