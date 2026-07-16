@@ -408,7 +408,7 @@ theorem class_window_ap_form {lo hi : ℝ} (hlo : 1 ≤ lo) {q : ℕ} (hq : 1 �
   have hylo_lt : (ylo : ℝ) < lo + 1 := Nat.ceil_lt_add_one hlopos.le
   have hyhi_le : (yhi : ℝ) ≤ hi := Nat.floor_le hhi
   have hyhi_gt : hi - 1 < (yhi : ℝ) := by
-    have := Nat.lt_floor_add_one hi; rw [← hyhidef] at this; push_cast at this ⊢; linarith
+    have := Nat.lt_floor_add_one hi; rw [← hyhidef] at this; linarith
   -- residue
   set ρ : ℕ := X.val with hρdef
   have hρlt : ρ < q := ZMod.val_lt X
@@ -425,7 +425,7 @@ theorem class_window_ap_form {lo hi : ℝ} (hlo : 1 ≤ lo) {q : ℕ} (hq : 1 �
   obtain ⟨haylo, hamod⟩ : ylo ≤ a ∧ a % q = ρ := Nat.find_spec hex
   have ha_lt : a < ylo + q := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hle : q ≤ a := by omega
     have hre : a - q + q = a := Nat.sub_add_cancel hle
     have h2 : (a - q) % q = ρ := by rw [← Nat.add_mod_right (a - q) q, hre]; exact hamod
@@ -860,7 +860,7 @@ fiber_avg(X))·c_n(X)`.  Then **L¹×L∞ Hölder** with `0 ≤ c_n(X) ≤ Ccn·
 `cn_bound`) and `∑_X|syracZ(n−m₀)(X) − fiber_avg(X)| = osc m₀ (n−m₀)` (`osc_syracZ_eq_sum_dev`, via
 `syracZ_map_cast`).  Parameterized by the `c_n` bound `(Ccn, hcn)` so the caller supplies `cn_bound`. -/
 theorem harmZfine_sub_mainZ_le_osc {x : ℝ} {E : Set ℕ} {n : ℕ} (hmn : mZero x ≤ n - mZero x)
-    {Ccn : ℝ} (hCcn : 0 ≤ Ccn)
+    {Ccn : ℝ}
     (hcn : ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ Ccn * Real.log x ^ (0.7 : ℝ)) :
     |harmZfine x E n - mainZ x E|
       ≤ (Ccn * Real.log x ^ (0.7 : ℝ))
@@ -1849,7 +1849,7 @@ theorem good_tuple_whp_iid :
         have hZm : Z ā = m ā := by simp only [hZ]; rw [if_pos hpos]
         linarith
       · -- prefix deviation at some `n* ≤ k`
-        push_neg at hdev
+        push Not at hdev
         obtain ⟨n, hnk, hn⟩ := hdev
         have hnmem : n ∈ Finset.range (k + 1) := Finset.mem_range.mpr (by omega)
         have hDn : D n ā = m ā := by simp only [hD]; rw [if_pos hn]
@@ -2106,7 +2106,7 @@ theorem harmZfine_to_mainZ :
   have hm1 : 1 ≤ mZero x := by exact_mod_cast hm1R
   have hcn : ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ Ccn * Real.log x ^ (0.7 : ℝ) :=
     fun X => hcnb x hxxcn E hE y hy n hn X
-  have hkey := harmZfine_sub_mainZ_le_osc hmn hCcnpos.le hcn
+  have hkey := harmZfine_sub_mainZ_le_osc hmn hcn
   have hosc := hfsm (n - mZero x) (mZero x) hmn hm1
   have hCnn : (0 : ℝ) ≤ Ccn * Real.log x ^ (0.7 : ℝ) := by positivity
   have hc0pos : (0 : ℝ) < (1 / 200000 : ℝ) * Real.log x := by positivity
@@ -2458,7 +2458,7 @@ theorem mainZ_bound :
   rw [abs_of_nonneg hZnn]
   by_cases hZsmall : mainZ x E ≤ CA + CB
   · nlinarith [hC8.le]
-  · push_neg at hZsmall
+  · push Not at hZsmall
     have hpos : (0 : ℝ) < mainZ x E - (CA + CB) := by linarith
     have hA1 : (0.001 * Real.log x) * (mainZ x E - (CA + CB))
         ≤ ((Iy x (x ^ alpha)).card : ℝ) * (mainZ x E - (CA + CB)) :=

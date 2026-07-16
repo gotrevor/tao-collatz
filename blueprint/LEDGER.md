@@ -15,7 +15,7 @@ Trust base = `[propext, Classical.choice, Quot.sound]`.
 | `S4` | 📐 definitions | `eC`, `osc` |
 | `C1` | 📐 definitions + lemma, axiom-clean | `col`, `colMin`, `oddPart`, `syr`, `syrMin`, `colMin_eq_syrMin_oddPart` |
 | `C2` | 🟢 **proved, axiom-clean** | `valVec`, `fnat`, `syr_iterate_key`, `valVec_unique`, `syr_iterate_odd` |
-| `C3` | 📐 definitions | `logProb`, `posInterval`, `HasLogDensity`, `AlmostAllPos`, `AlmostAllOdd` |
+| `C3` | 📐 definitions | `logProb`, `HasLogDensity`, `AlmostAllPos`, `AlmostAllOdd` |
 | `C4` | 📐 definitions + lemma, axiom-clean | `syracZ`, `syracZ_map_cast` |
 | `C5` | 🟢 **proved, axiom-clean** | `valuation_dist`, `valuation_tail`, `unifOddMod`, `valVec_pos` |
 | `C6` | 🟢 **proved, axiom-clean** | `tao_collatz`, `tao_collatz_quantitative` |

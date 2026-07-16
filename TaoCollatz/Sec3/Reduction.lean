@@ -116,14 +116,14 @@ theorem expect_indicator_compl (P : PMF ℕ) (S : Set ℕ) :
     intro V
     refine Summable.of_nonneg_of_le (fun N => mul_nonneg ENNReal.toReal_nonneg
       (Set.indicator_nonneg (fun _ _ => zero_le_one) N)) (fun N => ?_) hsumP
-    by_cases h : N ∈ V <;> simp [Set.indicator_apply, h]
+    by_cases h : N ∈ V <;> simp [h]
   have hadd : P.expect (Set.indicator S 1) + P.expect (Set.indicator Sᶜ 1)
       = ∑' N, (P N).toReal := by
     unfold PMF.expect
     rw [← Summable.tsum_add (hsum S) (hsum Sᶜ)]
     refine tsum_congr fun N => ?_
     by_cases h : N ∈ S <;>
-      simp [Set.indicator_apply, h]
+      simp [h]
   have htot : ∑' N, (P N).toReal = 1 := by
     rw [← ENNReal.tsum_toReal_eq (fun N => PMF.apply_ne_top _ _), P.tsum_coe,
       ENNReal.toReal_one]
@@ -135,7 +135,7 @@ theorem summable_indicator_term (p : PMF ℕ) (V : Set ℕ) :
   refine Summable.of_nonneg_of_le (fun N => mul_nonneg ENNReal.toReal_nonneg
     (Set.indicator_nonneg (fun _ _ => zero_le_one) N)) (fun N => ?_)
     (ENNReal.summable_toReal p.tsum_coe_ne_top)
-  by_cases h : N ∈ V <;> simp [Set.indicator_apply, h]
+  by_cases h : N ∈ V <;> simp [h]
 
 /-- Indicator expectation of a pushforward is the expectation of the preimage indicator. -/
 theorem expect_indicator_map (p : PMF ℕ) (f : ℕ → ℕ) (E : Set ℕ) :
@@ -172,7 +172,7 @@ theorem expect_indicator_union_le (p : PMF ℕ) (S T : Set ℕ) :
     ((summable_indicator_term p S).add (summable_indicator_term p T))
   have hnn : (0 : ℝ) ≤ (p N).toReal := ENNReal.toReal_nonneg
   by_cases hS : N ∈ S <;> by_cases hT : N ∈ T <;>
-    simp [Set.indicator_apply, hS, hT] <;> linarith
+    simp [hS, hT]
 
 /-- **One-scale recursion** (p.17, the display chain): `ℙ(B_x) ≤ ℙ(B_{x^α}) + O(log^{-c}x)`.
 Route: `B_x ⊆ {Pass_x ∈ E}` up to the non-passage event (`stabilization` part 1, note
@@ -339,7 +339,7 @@ theorem descentProb_ladder :
     rw [h0, Finset.sum_range_zero, mul_zero, sub_zero]
     have herr : Cb * y ^ (-cb) ≤ C * y ^ (-c) := by
       refine mul_le_mul (le_max_left _ _) ?_ (Real.rpow_nonneg hy0.le _) hC.le
-      exact Real.rpow_le_rpow_of_exponent_le hy1 (by simp [hcdef, neg_le_neg_iff, min_le_left])
+      exact Real.rpow_le_rpow_of_exponent_le hy1 (by simp [hcdef, neg_le_neg_iff])
     linarith
   | succ j ih =>
     -- one `descentProb_step` at scale `x = y^{α^j}`
@@ -711,7 +711,7 @@ theorem tao_syracuse_quantitative_sum :
       have hRHS : (0 : ℝ) ≤ C * Real.log x / (Real.log N₀) ^ c := by positivity
       linarith
     · -- covering argument over the windows `[N₀^{α^k}, N₀^{α^{k+1}}]`
-      push_neg at hxN
+      push Not at hxN
       have hN₀x : (N₀ : ℝ) < (x : ℝ) := by exact_mod_cast hxN
       have hLxL : Real.log N₀ < Real.log x := Real.log_lt_log hN₀0 hN₀x
       set R := Real.log x / Real.log N₀ with hRdef
@@ -860,7 +860,7 @@ theorem tao_syracuse_quantitative_sum :
             have hAC : Cw * alpha / (alpha - 1) ≤ C := le_max_left _ _
             gcongr
   · -- small `N₀ < X`: trivial harmonic bound `logSum ≤ windowMass 1 x ≤ 4 log x`
-    push_neg at hbig
+    push Not at hbig
     have hLK : (Real.log N₀) ^ c ≤ K1 := by
       have hNX : Real.log N₀ ≤ Real.log X := Real.log_le_log hN₀0 hbig.le
       rcases le_or_gt (Real.log N₀) 1 with hL1 | hL1
@@ -1149,16 +1149,16 @@ and the 2-adic splitting `∑_{N ≤ x, oddPart N ∈ A} 1/N = ∑_a 2^{-a} ∑_
 most twice the odd-window log-mass of the set (geometric series over `ν₂`). Feeds the
 Colmin forms of Thm 3.1 from the Syracuse forms. -/
 theorem logSum_oddPart_pullback (A : Set ℕ) (x : ℕ) :
-    logSum {N | oddPart N ∈ A} (posInterval x) ≤ 2 * logSum A (oddInterval x) := by
+    logSum {N | oddPart N ∈ A} (Finset.Icc 1 x) ≤ 2 * logSum A (oddInterval x) := by
   classical
   unfold logSum
-  set S := (posInterval x).filter (· ∈ {N | oddPart N ∈ A}) with hSdef
+  set S := (Finset.Icc 1 x).filter (· ∈ {N | oddPart N ∈ A}) with hSdef
   set T := (oddInterval x).filter (· ∈ A) with hTdef
   have hmem : ∀ N ∈ S, 1 ≤ N ∧ N ≤ x ∧ oddPart N ∈ A := by
     intro N hN
-    simp only [hSdef, posInterval, Finset.mem_filter, Finset.mem_range,
-      Set.mem_setOf_eq, ge_iff_le] at hN
-    exact ⟨hN.1.2, by omega, hN.2⟩
+    simp only [hSdef, Finset.mem_filter, Finset.mem_Icc,
+      Set.mem_setOf_eq] at hN
+    exact ⟨hN.1.1, hN.1.2, hN.2⟩
   -- reindex `N ↦ (ν₂ N, oddPart N)`; recover `N` via `2^{ν₂ N}·oddPart N = N`
   have hinj : ∀ a ∈ S, ∀ b ∈ S,
       (fun N => (padicValNat 2 N, oddPart N)) a
@@ -1176,7 +1176,7 @@ theorem logSum_oddPart_pullback (A : Set ℕ) (x : ℕ) :
       have h3 : padicValNat 2 N < 2 ^ padicValNat 2 N := Nat.lt_two_pow_self
       omega
     simp only [Finset.mem_product, Finset.mem_range, hTdef, oddInterval,
-      Finset.mem_filter, Set.mem_setOf_eq]
+      Finset.mem_filter]
     exact ⟨by omega, ⟨by omega, oddPart_odd h0⟩, hA⟩
   have hTnn : (0 : ℝ) ≤ ∑ M ∈ T, (1 : ℝ) / M :=
     Finset.sum_nonneg fun M _ => by positivity
@@ -1223,9 +1223,9 @@ theorem almostAllPos_oddPart_of_almostAllOdd (P : ℕ → Prop) (h : AlmostAllOd
   set Do := logSum Set.univ (oddInterval x) with hDodef
   set Go := logSum {N | P N} (oddInterval x) with hGodef
   set Bo := logSum {N | ¬ P N} (oddInterval x) with hBodef
-  set Dp := logSum Set.univ (posInterval x) with hDpdef
-  set Gp := logSum {N | P (oddPart N)} (posInterval x) with hGpdef
-  set Bp := logSum {N | ¬ P (oddPart N)} (posInterval x) with hBpdef
+  set Dp := logSum Set.univ (Finset.Icc 1 x) with hDpdef
+  set Gp := logSum {N | P (oddPart N)} (Finset.Icc 1 x) with hGpdef
+  set Bp := logSum {N | ¬ P (oddPart N)} (Finset.Icc 1 x) with hBpdef
   -- complement splits over both windows
   have hsplit_o : Go + Bo = Do := by
     rw [hGodef, hBodef, hDodef]
@@ -1273,9 +1273,9 @@ theorem almostAllPos_oddPart_of_almostAllOdd (P : ℕ → Prop) (h : AlmostAllOd
     intro N hN
     simp only [Finset.mem_filter] at hN ⊢
     obtain ⟨hNi, -⟩ := hN
-    simp only [oddInterval, posInterval, Finset.mem_filter, Finset.mem_range,
-      ge_iff_le] at hNi ⊢
-    exact ⟨⟨hNi.1, by omega⟩, Set.mem_univ N⟩
+    simp only [oddInterval, Finset.mem_filter, Finset.mem_range,
+      Finset.mem_Icc] at hNi ⊢
+    exact ⟨⟨by omega, by omega⟩, Set.mem_univ N⟩
   have hDp0 : (0 : ℝ) < Dp := lt_of_lt_of_le hDo0 hDpDo
   -- the (1.2) pullback: `Bp ≤ 2·Bo`
   have hBpull : Bp ≤ 2 * Bo := logSum_oddPart_pullback {M | ¬ P M} x
@@ -1295,7 +1295,7 @@ theorem almostAllPos_oddPart_of_almostAllOdd (P : ℕ → Prop) (h : AlmostAllOd
     rw [div_lt_iff₀ hDo0] at hBoDo
     linarith
   -- assemble: `1 − Gp/Dp = Bp/Dp ≤ 2Bo/Do < ε/2`
-  have hp_pos_eq : logProb {N | P (oddPart N)} (posInterval x) = Gp / Dp := rfl
+  have hp_pos_eq : logProb {N | P (oddPart N)} (Finset.Icc 1 x) = Gp / Dp := rfl
   have hGpDp : Gp / Dp ≤ 1 := by
     rw [div_le_one hDp0]
     linarith
@@ -1321,7 +1321,7 @@ Sorried wiring theorems, byte-identical in statement to the two frozen
 `Statement.lean` headlines. When these close, the frozen sorries discharge by `exact`
 (the ONLY edit `Statement.lean` ever receives). Proof routes, per §3:
 * quantitative spine: `tao_syracuse_quantitative_sum` + `logSum_oddPart_pullback` +
-  `colMin_eq_syrMin_oddPart` + harmonic-mass bounds on `posInterval`.
+  `colMin_eq_syrMin_oddPart` + harmonic-mass bounds on the window `Finset.Icc 1 x`.
 * headline spine: apply `tao_syracuse` at `f̃(M) := inf {f N | N ≥ M}` (which still
   `→ ∞`), then `almostAllPos_oddPart_of_almostAllOdd` + `oddPart N ≤ N` gives
   `colMin N = syrMin (oddPart N) < f̃ (oddPart N) ≤ f N`. -/
@@ -1330,7 +1330,7 @@ Sorried wiring theorems, byte-identical in statement to the two frozen
 `tao_collatz_quantitative`. -/
 theorem tao_collatz_quantitative_spine :
     ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
-      1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (posInterval x) := by
+      1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
   obtain ⟨c, Ca, hc, hCa, hsum⟩ := tao_syracuse_quantitative_sum
   refine ⟨c, 16 * Ca, hc, by linarith, fun N₀ x hN₀2 hx2 => ?_⟩
   have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
@@ -1339,9 +1339,9 @@ theorem tao_collatz_quantitative_spine :
   have hN₀2R : (2 : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast hN₀2
   have hLN0 : (0 : ℝ) < Real.log N₀ := Real.log_pos (by linarith)
   have hLc0 : (0 : ℝ) < (Real.log N₀) ^ c := Real.rpow_pos_of_pos hLN0 _
-  set D := logSum Set.univ (posInterval x) with hDdef
-  set G := logSum {N | colMin N ≤ N₀} (posInterval x) with hGdef
-  set B := logSum {N | N₀ < colMin N} (posInterval x) with hBdef
+  set D := logSum Set.univ (Finset.Icc 1 x) with hDdef
+  set G := logSum {N | colMin N ≤ N₀} (Finset.Icc 1 x) with hGdef
+  set B := logSum {N | N₀ < colMin N} (Finset.Icc 1 x) with hBdef
   -- complement split
   have hsplit : G + B = D := by
     rw [hGdef, hBdef, hDdef]
@@ -1364,13 +1364,13 @@ theorem tao_collatz_quantitative_spine :
   have hD1 : (1 : ℝ) ≤ D := by
     rw [hDdef]; unfold logSum
     rw [Finset.filter_congr_decidable]
-    have h1mem : 1 ∈ (posInterval x).filter (· ∈ Set.univ) := by
+    have h1mem : 1 ∈ (Finset.Icc 1 x).filter (· ∈ Set.univ) := by
       rw [Finset.mem_filter]
       refine ⟨?_, Set.mem_univ 1⟩
-      rw [posInterval, Finset.mem_filter, Finset.mem_range]
+      rw [Finset.mem_Icc]
       omega
     calc (1 : ℝ) = (1 : ℝ) / ((1 : ℕ) : ℝ) := by norm_num
-      _ ≤ ∑ N ∈ (posInterval x).filter (· ∈ Set.univ), (1 : ℝ) / N :=
+      _ ≤ ∑ N ∈ (Finset.Icc 1 x).filter (· ∈ Set.univ), (1 : ℝ) / N :=
           Finset.single_le_sum (f := fun N : ℕ => (1 : ℝ) / N)
             (fun i _ => by positivity) h1mem
   have hD0 : (0 : ℝ) < D := lt_of_lt_of_le one_pos hD1
@@ -1381,20 +1381,20 @@ theorem tao_collatz_quantitative_spine :
     intro N hN
     simp only [Finset.mem_filter] at hN ⊢
     obtain ⟨hNi, -⟩ := hN
-    simp only [oddInterval, posInterval, Finset.mem_filter, Finset.mem_range,
-      ge_iff_le] at hNi ⊢
-    exact ⟨⟨hNi.1, by omega⟩, Set.mem_univ N⟩
+    simp only [oddInterval, Finset.mem_filter, Finset.mem_range,
+      Finset.mem_Icc] at hNi ⊢
+    exact ⟨⟨by omega, by omega⟩, Set.mem_univ N⟩
   have hDlog : Real.log x ≤ 8 * D := by
     have := log_le_eight_logSum_univ_oddInterval hx2
     linarith
   -- the bad set pulls back through `oddPart` (paper (1.2))
-  have hbad : B ≤ logSum {N | oddPart N ∈ {M | N₀ < syrMin M}} (posInterval x) := by
+  have hbad : B ≤ logSum {N | oddPart N ∈ {M | N₀ < syrMin M}} (Finset.Icc 1 x) := by
     rw [hBdef]; unfold logSum
     rw [Finset.sum_filter, Finset.sum_filter]
     refine Finset.sum_le_sum fun N hN => ?_
     have hN1 : 1 ≤ N := by
-      simp only [posInterval, Finset.mem_filter, Finset.mem_range, ge_iff_le] at hN
-      exact hN.2
+      simp only [Finset.mem_Icc] at hN
+      exact hN.1
     by_cases h : N ∈ {N | N₀ < colMin N}
     · rw [if_pos h]
       have h' : N₀ < colMin N := h
@@ -1407,7 +1407,7 @@ theorem tao_collatz_quantitative_spine :
       split_ifs <;> linarith
   -- (1.2) pullback + C6a
   have hB8 : B ≤ 16 * Ca * D / (Real.log N₀) ^ c := by
-    calc B ≤ logSum {N | oddPart N ∈ {M | N₀ < syrMin M}} (posInterval x) := hbad
+    calc B ≤ logSum {N | oddPart N ∈ {M | N₀ < syrMin M}} (Finset.Icc 1 x) := hbad
       _ ≤ 2 * logSum {M | N₀ < syrMin M} (oddInterval x) :=
           logSum_oddPart_pullback _ x
       _ ≤ 2 * (Ca * Real.log x / (Real.log N₀) ^ c) := by
@@ -1447,7 +1447,7 @@ theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
     exact ⟨n, hn.2, hn.1⟩
   -- pick `M` past which `f > N₀`
   obtain ⟨M, hM⟩ := eventually_atTop.mp (hf.eventually_gt_atTop (N₀ : ℝ))
-  set SM := logSum Set.univ (posInterval M) with hSMdef
+  set SM := logSum Set.univ (Finset.Icc 1 M) with hSMdef
   have hSM0 : (0 : ℝ) ≤ SM := by
     rw [hSMdef]; unfold logSum
     exact Finset.sum_nonneg fun N _ => by positivity
@@ -1457,21 +1457,21 @@ theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
   refine ⟨X, fun x hx => ?_⟩
   obtain ⟨hlogx_big, hx2⟩ := hX x hx
   -- per-`x` objects
-  set D := logSum Set.univ (posInterval x) with hDdef
-  set Sgood := logSum {N | (colMin N : ℝ) < f N} (posInterval x) with hSgooddef
-  set S1 := logSum {N | colMin N ≤ N₀} (posInterval x) with hS1def
-  set S2 := logSum {N | N < M} (posInterval x) with hS2def
+  set D := logSum Set.univ (Finset.Icc 1 x) with hDdef
+  set Sgood := logSum {N | (colMin N : ℝ) < f N} (Finset.Icc 1 x) with hSgooddef
+  set S1 := logSum {N | colMin N ≤ N₀} (Finset.Icc 1 x) with hS1def
+  set S2 := logSum {N | N < M} (Finset.Icc 1 x) with hS2def
   -- `D ≥ 1` (the `N = 1` term)
   have hD1 : (1 : ℝ) ≤ D := by
     rw [hDdef]; unfold logSum
     rw [Finset.filter_congr_decidable]
-    have h1mem : 1 ∈ (posInterval x).filter (· ∈ Set.univ) := by
+    have h1mem : 1 ∈ (Finset.Icc 1 x).filter (· ∈ Set.univ) := by
       rw [Finset.mem_filter]
       refine ⟨?_, Set.mem_univ 1⟩
-      rw [posInterval, Finset.mem_filter, Finset.mem_range]
+      rw [Finset.mem_Icc]
       omega
     calc (1 : ℝ) = (1 : ℝ) / ((1 : ℕ) : ℝ) := by norm_num
-      _ ≤ ∑ N ∈ (posInterval x).filter (· ∈ Set.univ), (1 : ℝ) / N :=
+      _ ≤ ∑ N ∈ (Finset.Icc 1 x).filter (· ∈ Set.univ), (1 : ℝ) / N :=
           Finset.single_le_sum (f := fun N : ℕ => (1 : ℝ) / N)
             (fun i _ => by positivity) h1mem
   have hD0 : (0 : ℝ) < D := lt_of_lt_of_le one_pos hD1
@@ -1482,9 +1482,9 @@ theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
     intro N hN
     simp only [Finset.mem_filter] at hN ⊢
     obtain ⟨hNi, -⟩ := hN
-    simp only [oddInterval, posInterval, Finset.mem_filter, Finset.mem_range,
-      ge_iff_le] at hNi ⊢
-    exact ⟨⟨hNi.1, by omega⟩, Set.mem_univ N⟩
+    simp only [oddInterval, Finset.mem_filter, Finset.mem_range,
+      Finset.mem_Icc] at hNi ⊢
+    exact ⟨⟨by omega, by omega⟩, Set.mem_univ N⟩
   have hDlog : Real.log x ≤ 8 * D := by
     have := log_le_eight_logSum_univ_oddInterval hx2
     linarith
@@ -1526,7 +1526,7 @@ theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
     · rw [if_neg h1]
       have h0 : (0 : ℝ) ≤ 1 / (N : ℝ) := by positivity
       split_ifs <;> linarith
-  -- `S2 ≤ SM` (the small terms live in `posInterval M`)
+  -- `S2 ≤ SM` (the small terms live in `Finset.Icc 1 M`)
   have hS2SM : S2 ≤ SM := by
     rw [hS2def, hSMdef]; unfold logSum
     refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun N _ _ => by positivity
@@ -1534,8 +1534,8 @@ theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
     simp only [Finset.mem_filter] at hN ⊢
     obtain ⟨hNi, hNM⟩ := hN
     have hNM' : N < M := hNM
-    simp only [posInterval, Finset.mem_filter, Finset.mem_range, ge_iff_le] at hNi ⊢
-    exact ⟨⟨by omega, hNi.2⟩, Set.mem_univ N⟩
+    simp only [Finset.mem_Icc] at hNi ⊢
+    exact ⟨⟨by omega, by omega⟩, Set.mem_univ N⟩
   -- `S2/D < ε/3` from `24·SM/ε < log x ≤ 8D`
   have hS2D : S2 / D < ε / 3 := by
     have h1 : 24 * SM / ε < 8 * D := lt_of_lt_of_le hlogx_big hDlog
@@ -1545,7 +1545,7 @@ theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
   -- quantitative bound at `N₀`
   have hq' : 1 - Cb / (Real.log N₀) ^ cb ≤ S1 / D := hq N₀ x hN₀2 hx2
   -- assemble
-  have hp_eq : logProb {N | (colMin N : ℝ) < f N} (posInterval x) = Sgood / D := rfl
+  have hp_eq : logProb {N | (colMin N : ℝ) < f N} (Finset.Icc 1 x) = Sgood / D := rfl
   have h2 : S1 / D ≤ Sgood / D + S2 / D := by
     rw [← add_div]
     gcongr

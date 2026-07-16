@@ -146,11 +146,11 @@ theorem hold_apply_two (b : ℕ) : hold (2, 3 + (b : ℤ)) = geomQuarter 2 * pas
   rw [hiid1, PMF.map_comp, PMF.map_apply]
   rw [tsum_eq_single b (fun a ha => by
     rw [if_neg (fun h => ha (by
-      simp only [Function.comp_apply, Fin.sum_cons] at h
+      simp only [Function.comp_apply] at h
       have h' : (3 : ℤ) + b = 3 + a := by simpa using h
       omega))]),
     if_pos (by
-      simp only [Function.comp_apply, Fin.sum_cons]
+      simp only [Function.comp_apply]
       simp)]
 
 /-- Real mass of `pascalNe3`. -/

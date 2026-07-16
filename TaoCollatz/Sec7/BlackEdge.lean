@@ -64,9 +64,9 @@ structure TriangleFamily (n ξ : ℕ) : Type where
     (p.1 : ℝ) + 1 ≤ (n : ℝ) / 2 - (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))
 
 /-- `black_structure` repackaged: a `TriangleFamily` exists. -/
-theorem exists_triangleFamily (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
+theorem exists_triangleFamily (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) :
     Nonempty (TriangleFamily n ξ) := by
-  obtain ⟨T, h0, hcanonical, h1, h2, h3⟩ := black_structure n ξ hξ hn
+  obtain ⟨T, h0, hcanonical, h1, h2, h3⟩ := black_structure n ξ hξ
   exact ⟨⟨T, h0, hcanonical, h1, h2, h3⟩⟩
 
 /-- The white points of the strip `j ≤ ⌊n/2⌋` (renewal coordinates). Case 2's
@@ -259,7 +259,7 @@ theorem edgeWeight_summand_le {A : ℝ} (hA : 0 ≤ A) {m : ℕ} (hm : 2 ≤ m)
         (by exact_mod_cast Nat.le_max_right (m - J) 1) (by linarith)
     linarith
   · rw [if_neg hbig]
-    push_neg at hbig  -- `2 * J ≤ m`
+    push Not at hbig  -- `2 * J ≤ m`
     have hJm : J ≤ m := by omega
     have hmax : max (m - J) 1 = m - J := max_eq_left (by omega : (1 : ℕ) ≤ m - J)
     rw [hmax]
@@ -624,7 +624,7 @@ theorem fpDist_fst_mgf_general {c C' : ℝ} (hc : 0 < c) (hC' : 0 < C')
       + (if K < j then Real.exp (θ * (j : ℝ)) *
           (C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
                   / Real.sqrt (1 + (s : ℝ)))) else 0) with hUdef
-  obtain ⟨hsumT, hleT⟩ := gaussExp_col_tail hc hC'.le hθ0 hθle s K hK25 hbud
+  obtain ⟨hsumT, hleT⟩ := gaussExp_col_tail hc hC'.le hθle s K hK25 hbud
   have hbulksum : Summable
       (fun j : ℕ => if j ≤ K then Real.exp (θ * (K : ℝ)) * M j else 0) := by
     refine summable_of_ne_finset_zero (s := Finset.range (K + 1)) (fun j hj => ?_)
@@ -1290,10 +1290,10 @@ theorem fpDist_edgeWeight_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
       (hold d).toReal * Real.exp (2 * A / (m : ℝ) * (d.1 : ℝ))) := by
     have hne : ∑' d : ℕ × ℤ, hold d * expW2 (2 * A / (m : ℝ)) 0 d ≠ ∞ := by
       rw [← tiltZ]
-      exact tiltZ_hold_ne_top (by linarith [hθnn]) (by linarith [hθ100]) (by norm_num) (by norm_num)
+      exact tiltZ_hold_ne_top (by linarith [hθ100]) (by norm_num) (by norm_num)
     refine (ENNReal.summable_toReal hne).congr (fun d => ?_)
     rw [expW2, ENNReal.toReal_mul, ENNReal.toReal_ofReal (Real.exp_pos _).le]
-    congr 2; push_cast; ring
+    congr 2; ring
   -- apply the Fubini split, then bound each piece
   refine le_trans (fpDist_edgeWeight_split hA.le hm2 s hZf_sum hZh_sum) ?_
   set mA : ℝ := (m : ℝ) ^ (-A) with hmAdef

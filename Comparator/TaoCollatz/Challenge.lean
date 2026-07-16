@@ -2,9 +2,9 @@
 Comparator CHALLENGE for TaoCollatz — trusted vocabulary + non-vacuity anchors.
 
 Imports ONLY Mathlib. Re-declares the development's trusted-base DEFINITIONS
-(`col`, `colMin`, `logSum`, `logProb`, `posInterval`, `HasLogDensity`,
-`AlmostAllPos`) under their real fully-qualified names, with their real bodies,
-so `leanprover/comparator` can certify they are byte-identical to the ones the
+(`col`, `colMin`, `logSum`, `logProb`, `HasLogDensity`, `AlmostAllPos`) under
+their real fully-qualified names, with their real bodies, so
+`leanprover/comparator` can certify they are byte-identical to the ones the
 project actually uses.
 
 The theorems below are the project's proved *non-vacuity anchors*; comparator
@@ -23,6 +23,9 @@ anchors exist to rule out a vacuous reading — see each docstring.
 -/
 import Mathlib
 
+-- Load-bearing, despite looking like a no-op: the package turns warnings into errors
+-- (lakefile.toml) and the statements below are `sorry` by design. Removing this line
+-- fails the Comparator build.
 set_option warningAsError false
 
 namespace TaoCollatz
@@ -44,14 +47,9 @@ noncomputable def logSum (A : Set ℕ) (R : Finset ℕ) : ℝ :=
 noncomputable def logProb (A : Set ℕ) (R : Finset ℕ) : ℝ :=
   logSum A R / logSum Set.univ R
 
-/-- The window `ℕ+ ∩ [1, x]` as a `Finset`. -/
-noncomputable def posInterval (x : ℕ) : Finset ℕ :=
-  (Finset.range (x + 1)).filter (· ≥ 1)
-
-/-- `A ⊂ ℕ+` has logarithmic density `d` (Tao Def. 1.2): the `x → ∞` limit of
-`logProb A (posInterval x)`. -/
+/-- `A ⊂ ℕ+` has logarithmic density `d` (Tao Def. 1.2). -/
 def HasLogDensity (A : Set ℕ) (d : ℝ) : Prop :=
-  Filter.Tendsto (fun x => logProb A (posInterval x)) atTop (𝓝 d)
+  Filter.Tendsto (fun x => logProb A (Finset.Icc 1 x)) atTop (𝓝 d)
 
 /-- `P` holds for *almost all* `N ∈ ℕ+`, i.e. `{N | P N}` has log density `1`. -/
 def AlmostAllPos (P : ℕ → Prop) : Prop :=
@@ -80,7 +78,7 @@ theorem not_almostAllPos_false : ¬ AlmostAllPos fun _ => False := sorry
 natural-density impostor would give `1/2`, so this separates logarithmic from
 natural density — the axis Tao's Thm 1.3 lives on. -/
 theorem logProb_odd_window_two :
-    logProb {N : ℕ | N % 2 = 1} (posInterval 2) = 2 / 3 := sorry
+    logProb {N : ℕ | N % 2 = 1} (Finset.Icc 1 2) = 2 / 3 := sorry
 
 /-! ### The headlines (Tao 2019: Theorem 1.3, and Theorem 3.1 in `Colmin` form)
 
@@ -96,6 +94,6 @@ theorem tao_collatz (f : ℕ → ℝ) (hf : Filter.Tendsto f Filter.atTop Filter
 `Colmin(N) ≤ N₀` on the window `[1, x]` is at least `1 - C/(log N₀)^c`. -/
 theorem tao_collatz_quantitative :
     ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
-      1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (posInterval x) := sorry
+      1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := sorry
 
 end TaoCollatz

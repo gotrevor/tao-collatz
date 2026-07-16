@@ -940,7 +940,7 @@ theorem Gweight_linear_le (d : ℝ) (hd : 0 < d) (n : Nat) :
       linearDecay d * (n + 1 : Nat) * (1 + (n + 1 : Nat)) ≤
           (d ^ 2 / 2) * (n + 1 : Nat) * (1 + (n + 1 : Nat)) := by gcongr
       _ ≤ (d ^ 2 / 2) * (n + 1 : Nat) * (2 * (n + 1 : Nat)) := by
-        gcongr <;> linarith
+        gcongr; linarith
       _ = (d * (n + 1 : Nat)) ^ 2 := by ring
   have hlin : linearDecay d * (n + 1 : Nat) ≤ |d * (n + 1 : Nat)| := by
     rw [abs_of_pos (mul_pos hd (by positivity))]
@@ -1052,7 +1052,7 @@ theorem valuation_dist (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
           mul_le_mul_of_nonneg_left hresDecay' (mul_nonneg (by norm_num) hK.le)
       · have hm := mul_le_mul_of_nonneg_left hgeomDecay'
           (mul_nonneg (by norm_num : (0 : ℝ) ≤ 4) hCt.le)
-        convert hm using 1 <;> ring
+        convert hm using 1; ring
     _ = C * (2 : ℝ) ^ (-c₁ * (n : ℝ)) := by dsimp only [C]; ring
 
 theorem two_rpow_decay_mono {c c' : ℝ} (hcc' : c ≤ c') (n : Nat) :

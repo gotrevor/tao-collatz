@@ -671,7 +671,7 @@ theorem not_globalGood_pointwise_le (A : ℝ) (n : ℕ) (a : Fin n → ℕ) :
         have h3 : ¬ ∀ r, 1 ≤ r → r ≤ n →
             2 * (r : ℝ) - caConst A * (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) +
               Real.log (n : ℝ)) ≤ (sufSum a r : ℝ) := fun h3 => hgg ⟨h1, h2, h3⟩
-        push_neg at h3
+        push Not at h3
         obtain ⟨r, hr1, hrn, hr⟩ := h3
         have hmem : r ∈ Finset.Icc 1 n := Finset.mem_Icc.mpr ⟨hr1, hrn⟩
         have hval : g3 r = P := by rw [hg3def]; dsimp only; rw [if_neg (not_le.mpr hr)]
@@ -680,7 +680,7 @@ theorem not_globalGood_pointwise_le (A : ℝ) (n : ℕ) (a : Fin n → ℕ) :
           _ ≤ (t1 + ∑ i : Fin n, g2 i) + ∑ r ∈ Finset.Icc 1 n, g3 r :=
               le_add_of_nonneg_left (add_nonneg ht1 hSt2)
       · -- G2 fails
-        push_neg at h2
+        push Not at h2
         obtain ⟨i, hi⟩ := h2
         have hval : g2 i = P := by rw [hg2def]; dsimp only; rw [if_neg (not_le.mpr hi)]
         calc P = g2 i := hval.symm
@@ -701,7 +701,7 @@ existential `geomHalf_tail_bound`).  `caConst_tail_exponent` (`A+3 ≤ caConst/4
 theorem geomHalf_tail_bound_explicit (n : ℕ) (lam : ℝ) (hlam : 0 ≤ lam) :
     (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0)
       ≤ 2 * Gweight (1 + n) (1 / 400 * lam) :=
-  iidSum_nat_tail_of_quad geomHalf 2 (by norm_num)
+  iidSum_nat_tail_of_quad geomHalf 2
     (fun t hlo hhi => le_trans (tiltZ_geomHalf_le_quad hlo hhi)
       (ENNReal.ofReal_le_ofReal (by nlinarith [sq_nonneg t]))) n lam hlam
 
@@ -732,7 +732,7 @@ theorem log_ge_of_large (L : ℝ) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → 
 
 /-- **Constant absorption**: a `κ·n^{−β}` bound with `β` at least a full unit above `A+2` is
 eventually below `n^{−(A+2)}`, since `n^{β−(A+2)} ≥ n → ∞` swallows the constant `κ`. -/
-theorem const_rpow_absorb (A κ β : ℝ) (hκ : 0 < κ) (hβ : A + 3 ≤ β) :
+theorem const_rpow_absorb (A κ β : ℝ) (hβ : A + 3 ≤ β) :
     ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → κ * (n : ℝ) ^ (-β) ≤ (n : ℝ) ^ (-(A + 2)) := by
   refine ⟨⌈κ⌉₊ + 1, fun n hn => ?_⟩
   have hn1 : 1 ≤ n := by omega
@@ -771,7 +771,7 @@ theorem g1_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
   set ε : ℝ := δ ^ 2 / (320000 * (A + 3)) with hεdef
   have hεpos : 0 < ε := by rw [hεdef]; positivity
   have hεcancel : (A + 3) * ε = δ ^ 2 / 320000 := by rw [hεdef]; field_simp
-  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A 4 (A + 3) (by norm_num) (le_refl _)
+  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A 4 (A + 3) (le_refl _)
   obtain ⟨nε, hεle⟩ := log_le_eps_mul_of_large ε hεpos
   refine ⟨max (max nκ nε) 1, fun n hn => ?_⟩
   have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
@@ -813,12 +813,12 @@ theorem g1_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
       · exact hg0 b
       · exact le_refl 0
     · rw [if_neg h]
-      push_neg at h
+      push Not at h
       have hb : lam ≤ |(b : ℝ) - 2 * (n : ℕ)| := by
-        have h1 : (b : ℝ) ≤ 2 * (n : ℝ) - lam := by rw [hlamdef]; push_cast; linarith
-        have h2 : lam ≤ 2 * (n : ℝ) - (b : ℝ) := by push_cast; linarith
+        have h1 : (b : ℝ) ≤ 2 * (n : ℝ) - lam := by rw [hlamdef]; linarith
+        have h2 : lam ≤ 2 * (n : ℝ) - (b : ℝ) := by linarith
         calc lam ≤ 2 * (n : ℝ) - (b : ℝ) := h2
-          _ = -((b : ℝ) - 2 * (n : ℕ)) := by push_cast; ring
+          _ = -((b : ℝ) - 2 * (n : ℕ)) := by ring
           _ ≤ |(b : ℝ) - 2 * (n : ℕ)| := neg_le_abs _
       rw [if_pos hb]
   -- tail bound + split Gweight
@@ -853,7 +853,6 @@ theorem g1_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
       have hstep : (0 : ℝ) ≤ δ ^ 2 * (n : ℝ) * ((n : ℝ) - 1) :=
         mul_nonneg (mul_nonneg (sq_nonneg δ) hnpos.le) (by linarith)
       nlinarith [hlamsq, hstep]
-    push_cast
     linarith [hlhs, hrhs]
   calc 2 * (Real.exp (-(1 / 400 * lam) ^ 2 / (1 + (n : ℕ))) + Real.exp (-(1 / 400 * lam)))
       ≤ 2 * ((n : ℝ) ^ (-(A + 3)) + (n : ℝ) ^ (-(A + 3))) := by
@@ -864,7 +863,7 @@ theorem g1_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
 /-- **(6.3) family G2 — the per-coordinate overshoot.** For each `i`, `P(a i > 2·C_A·log n)` is
 polynomially small: `a i` is a single Geom(2) draw (`iid_map_coord`, mean 2), and the deviation
 `λ ≈ 2·C_A·log n` gives `geomHalf_tail_bound ≈ n^{-c·2·C_A}` with `c·C_A ≥ A+3`.  Uniform in `i`. -/
-theorem g2_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → ∀ i : Fin n,
+theorem g2_mass_le (A : ℝ) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → ∀ i : Fin n,
     (∑' a : Fin n → ℕ, if (a i : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ) then 0
       else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) := by
   classical
@@ -872,8 +871,7 @@ theorem g2_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
   have hCpos : 0 < caConst A := by linarith
   have hCexp : A + 3 ≤ caConst A / 200 := by
     have h := caConst_tail_exponent A; linarith
-  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A (4 * Real.exp (1 / 200)) (caConst A / 200)
-    (by positivity) hCexp
+  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A (4 * Real.exp (1 / 200)) (caConst A / 200) hCexp
   obtain ⟨nL, hL⟩ := log_ge_of_large 1
   refine ⟨max (max nκ nL) 1, fun n hn i => ?_⟩
   have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
@@ -909,7 +907,7 @@ theorem g2_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
       · exact hg0 b
       · exact le_refl 0
     · rw [if_neg h]
-      push_neg at h
+      push Not at h
       have hb : lam ≤ |(b : ℝ) - 2 * (1 : ℕ)| := by
         have : lam < (b : ℝ) - 2 * (1 : ℕ) := by push_cast; rw [hlamdef]; linarith
         exact le_of_lt (lt_of_lt_of_le this (le_abs_self _))
@@ -958,7 +956,7 @@ theorem g3_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
     have := mul_le_mul hcge hcge (by positivity) (by linarith)
     nlinarith [this]
   have hC2_320 : 320000 * (A + 3) ≤ C ^ 2 := by nlinarith [hCsq, hApos]
-  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A 4 (A + 3) (by norm_num) (le_refl _)
+  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A 4 (A + 3) (le_refl _)
   obtain ⟨nL, hL⟩ := log_ge_of_large 1
   refine ⟨max (max nκ nL) 1, fun n hn r hr1 hrn => ?_⟩
   have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
@@ -1000,11 +998,11 @@ theorem g3_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
       · exact hg0 b
       · exact le_refl 0
     · rw [if_neg h]
-      push_neg at h
+      push Not at h
       have hb : lam ≤ |(b : ℝ) - 2 * (r : ℕ)| := by
         have h2 : lam ≤ 2 * (r : ℝ) - (b : ℝ) := by linarith
         calc lam ≤ 2 * (r : ℝ) - (b : ℝ) := h2
-          _ = -((b : ℝ) - 2 * (r : ℕ)) := by push_cast; ring
+          _ = -((b : ℝ) - 2 * (r : ℕ)) := by ring
           _ ≤ |(b : ℝ) - 2 * (r : ℕ)| := neg_le_abs _
       rw [if_pos hb]
   refine le_trans hdom (le_trans (geomHalf_tail_bound_explicit r lam hlam0) ?_)
@@ -1039,7 +1037,6 @@ theorem g3_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
     have hkey : (A + 3) * Real.log (n : ℝ) * (1 + (r : ℝ)) ≤ (1 / 400 * lam) ^ 2 := by
       have hlhs2 : (1 / 400 * lam) ^ 2 = lam ^ 2 / 160000 := by ring
       rw [hlhs2]; linarith [hstep, hlamsq]
-    push_cast
     linarith [hkey]
   calc 2 * (Real.exp (-(1 / 400 * lam) ^ 2 / (1 + (r : ℕ))) + Real.exp (-(1 / 400 * lam)))
       ≤ 2 * ((n : ℝ) ^ (-(A + 3)) + (n : ℝ) ^ (-(A + 3))) := by gcongr
@@ -1085,7 +1082,7 @@ theorem prob_not_globalGood_le (A : ℝ) (hA : 0 < A) :
   classical
   obtain ⟨nA, hpos⟩ := caThr_nonneg_large A
   obtain ⟨n1, hg1⟩ := g1_mass_le A hA
-  obtain ⟨n2, hg2⟩ := g2_mass_le A hA
+  obtain ⟨n2, hg2⟩ := g2_mass_le A
   obtain ⟨n3, hg3⟩ := g3_mass_le A hA
   refine ⟨6, by norm_num, max (max nA n1) (max n2 n3) + 1, fun n m hmn hn hreg => ?_⟩
   -- unpack the combined threshold
@@ -1164,7 +1161,7 @@ theorem prob_not_globalGood_le (A : ℝ) (hA : 0 < A) :
           rw [← hsplit]; exact hMle
       _ ≤ (n : ℝ) ^ (-(A + 2)) + (n : ℝ) * (n : ℝ) ^ (-(A + 2))
             + (n : ℝ) * (n : ℝ) ^ (-(A + 2)) := by
-          gcongr <;> first | exact hB1 | exact hB2 | exact hB3
+          gcongr
       _ = (n : ℝ) ^ (-(A + 2)) + 2 * ((n : ℝ) * (n : ℝ) ^ (-(A + 2))) := by ring
   -- n·n^{-(A+2)} = n^{-(A+1)}, and the whole thing ≤ 6·n^{-A} ≤ 6·m^{-A}
   have hnB : (n : ℝ) * (n : ℝ) ^ (-(A + 2)) = (n : ℝ) ^ (-(A + 1)) := by
