@@ -125,8 +125,11 @@ readiness in PENDING_WORK.md and stop.
   `C`-side defect; it does not affect the `c`-path, but it's why the D3 amendment reads the
   way it does.
 - The hand-traced map of the whole tower (values, file:line, min-trees):
-  `notes/effective-constants.md` on branch `effective-constants` (PR #6). Read it once
-  before step 1; trust the Lean source over the note wherever they disagree.
+  `notes/effective-constants.md` on branch `effective-constants` (PR #6). Read it with
+  `git show effective-constants:notes/effective-constants.md` — bare `git`, which is the
+  correct form in the box (the host's git-door wrappers aren't on the box PATH; see
+  box-context). Read it once before step 1; trust the Lean source over the note wherever
+  they disagree.
 - Build: `lake build` (mathlib oleans are shared via lake-base; project modules only).
 - Report per lap: "N of ~37 Sec5 carriers explicit; Sec3 glue M of 6; step-1 branch values
   {c7 ✓, c8 ?, cs ?}".
