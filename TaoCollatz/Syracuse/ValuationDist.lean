@@ -873,7 +873,7 @@ theorem PMF.expect_map_of_nonneg {α β : Type*} (p : PMF α) (f : α → β) (g
   simpa only [Function.comp_apply] using
     PMF.toReal_tsum_mul_ofReal p (fun a => g (f a)) (fun a => hg (f a))
 
-theorem pre_eq_fin_sum (a : Fin n → Nat) : pre a n = ∑ i, a i := by
+theorem pre_eq_fin_sum {n : ℕ} (a : Fin n → Nat) : pre a n = ∑ i, a i := by
   unfold pre
   rw [← Fin.sum_univ_eq_sum_range
     (fun i => if h : i < n then a ⟨i, h⟩ else 0) n]
