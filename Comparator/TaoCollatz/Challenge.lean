@@ -45,7 +45,7 @@ noncomputable def logProb (A : Set ℕ) (R : Finset ℕ) : ℝ :=
   logSum A R / logSum Set.univ R
 
 /-- `A ⊂ ℕ+` has logarithmic density `d` (Tao Def. 1.2): the `x → ∞` limit of
-`logProb A (Finset.Icc 1 x)`, where the window `Finset.Icc 1 x` is `ℕ+ ∩ [1, x]`. -/
+`logProb A (Finset.Icc 1 x)`. -/
 def HasLogDensity (A : Set ℕ) (d : ℝ) : Prop :=
   Filter.Tendsto (fun x => logProb A (Finset.Icc 1 x)) atTop (𝓝 d)
 
