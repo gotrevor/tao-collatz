@@ -123,9 +123,26 @@ hold_weight_expect          Sec7/Monotone.lean:127   ⟨K + M1 + 2*T + 4, …⟩
   → stabilization → … → spine
 ```
 
-So the blueprint-D3 claim ("no `IsBigO`, no filters, no non-constructive choice on the
-load-bearing path") **does not hold**. It holds everywhere else — this is the only such step on
-the whole path, and there is no `IsBigO` anywhere in the repo — but this one carries a constant.
+### 🚩 D3 was not violated. D3 was never enough.
+
+An earlier version of this note said this step made blueprint decision **D3** "not hold." That
+was wrong, and it was refuting a claim D3 never made. D3 says:
+
+> **D3 — Asymptotic notation is reified as explicit existential constants.** […] **No
+> `IsBigO`/filters in load-bearing statements** (uniformity in `n, ξ` is exactly what filter-O
+> obscures…)
+
+D3 constrains **statements**. `hold_weight_expect`'s statement is
+`∃ Cthr : ℕ, 1 ≤ Cthr ∧ ∀ m ≥ Cthr, …` — reified, uniform, filter-free. **D3 holds**, here and
+everywhere on the path (and there is no `IsBigO` anywhere in the repo). The filter is in the
+*proof*.
+
+**The real defect is more interesting: D3 buys a reified statement, not an effective witness.**
+Nothing in it constrains how the witness is *produced*, so a proof can `obtain` its constant from
+a rate-free limit while honoring every letter of the rule. "D3 ⟹ the constants are explicit ⟹
+you can read them off the tower" is a **non-sequitur**, and it is the inference this note was
+originally built on. `Exists` being a `Prop` is what makes the gap unrecoverable: an inexplicit
+witness cannot be fixed downstream, only at the lemma that minted it.
 
 ⚠️ **Be precise about what that does and doesn't mean.** The *mathematics* here is perfectly
 effective: `t^⌈A⌉·(3/4)^t → 0` has an elementary explicit rate, and nothing in Tao's argument is
