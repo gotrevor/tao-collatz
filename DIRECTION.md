@@ -19,12 +19,16 @@ theorem tao_collatz_quantitative_explicit :
       1 - C / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x)
 ```
 
-in a NEW file `TaoCollatz/StatementExplicit.lean`, where `cTao : ℝ` is an explicit
-`noncomputable def` (symbolic in `Real.log 2` — e.g. `1 / (640000000 * Real.log 2)` if step 1
-confirms it), axiom-clean (`[propext, Classical.choice, Quot.sound]`), with `C` still
-existential. Nobody has ever published an explicit exponent for Tao 2019 Thm 3.1
-(MO 341570, open since 2019). `C` is NOT in scope for this campaign (blocked history:
-`notes/effective-constants.md`; the rate-free lemma is already fixed on this branch).
+**appended to `TaoCollatz/Statement.lean`** — ONE trusted file, per the audit doctrine and
+Trevor's ruling (2026-07-16): *"if there's only one Challenge.lean, there should only be one
+Statement.lean."* `cTao : ℝ` is an explicit `noncomputable def` in that same file (symbolic in
+`Real.log 2` — e.g. `1 / (640000000 * Real.log 2)` if step 1 confirms it), axiom-clean
+(`[propext, Classical.choice, Quot.sound]`), with `C` still existential. The docstrings carry
+the provenance split: the two existing headlines are the paper's (Thm 1.3 / Thm 3.1); the
+explicit theorem + `cTao` are OUR augmentation — the paper gives `∃ c` and Remark 1.4 only a
+shape. Say that plainly in the docstring. Nobody has ever published an explicit exponent for
+Tao 2019 Thm 3.1 (MO 341570, open since 2019). `C` is NOT in scope for this campaign (blocked
+history: `notes/effective-constants.md`; the rate-free lemma is already fixed on this branch).
 
 ### 🥇 STEP 1 — route-decisive, do FIRST: lower-bound the `c8` and `cs` branches
 
@@ -36,9 +40,9 @@ branch (`first_passage_approx`, `Sec5/ApproxFormula.lean:3218`) and the cs branc
 down to numerals, and determine a rational/symbolic `c₀` with `c₀ ≤` **every** branch.
 **The final `cTao` value is chosen from this step's output, not from the note.** If either
 branch comes out below `1/(640_000_000·ln 2)`, the smaller value wins — report it, don't
-force the note's number. Deliverable: a comment table in `StatementExplicit.lean` +
-`JUDGE-FLAG:` in PENDING_WORK.md with the three branch values for operator sign-off on the
-`cTao` definition. **Do not proceed to step 3's def until that sign-off.**
+force the note's number. Deliverable: a `JUDGE-FLAG:` in PENDING_WORK.md with the three
+branch values (file:line per hop) for operator sign-off on the `cTao` definition.
+**Do not proceed to step 3's def until that sign-off.**
 
 ### 🥈 STEP 2 — the mechanical pattern (sibling + delegate), bottom-up
 
@@ -66,13 +70,16 @@ branch-vs-branch comparisons beyond step 1's chosen `c₀`. Comparisons against 
 `noncomputable def` — prove ONE `c_foo_pos` lemma per def and use it; do not let laps grind
 `positivity` failures site by site.
 
-### 🥉 STEP 3 — the headline + `cTao`
+### 🥉 STEP 3 — the headline + `cTao`, appended to `Statement.lean`
 
-`StatementExplicit.lean`: `cTao` def (value from step 1's sign-off) + the
+Append to `TaoCollatz/Statement.lean`: the `cTao` def (value from step 1's sign-off) + the
 `tao_collatz_quantitative_explicit` theorem, proved by delegation to the explicit spine.
-File header mirrors `Statement.lean`'s trusted-surface language but says plainly: *this
-statement is ours, beyond the paper* (the paper gives `∃ c`; Remark 1.4 gives only a shape).
-`Statement.lean` itself is **NOT touched**.
+**Append-only**: the two existing headline statements stay byte-identical (differ-watched);
+update the file's header comment to describe the three-statement surface and which are the
+paper's vs ours. The new docstring says plainly: *this statement is our augmentation, beyond
+the paper* (the paper gives `∃ c`; Remark 1.4 gives only a shape). `cTao`'s body must be pure
+Mathlib vocabulary (it will be re-declared verbatim in `Comparator/TaoCollatz/Challenge.lean`
+at step 4), so the file's statement-import surface does not grow.
 
 ### 🏁 STEP 4 — OPERATOR-GATED (do not do in a grind lap)
 
