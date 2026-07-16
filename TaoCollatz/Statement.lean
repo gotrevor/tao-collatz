@@ -25,7 +25,10 @@ theorem tao_collatz (f : ℕ → ℝ) (hf : Filter.Tendsto f Filter.atTop Filter
   exact tao_collatz_spine f hf
 
 /-- **Theorem 3.1** (Tao 2019, `Colmin` form): quantitative version — the log-probability
-that `Colmin(N) ≤ N₀` on the window `[1, x]` is at least `1 - C/(log N₀)^c`. -/
+that `Colmin(N) ≤ N₀` on the window `[1, x]` is at least `1 - C/(log N₀)^c`.
+
+The witnessed `c, C` are explicit (`c ≈ 2.25e-9`, `C ≈ 5.6e30`); their closed forms and
+tuning knobs are in `notes/effective-constants.md` (calculator: `tools/tao_effective_constants.py`). -/
 theorem tao_collatz_quantitative :
     ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (posInterval x) := by
