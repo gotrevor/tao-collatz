@@ -116,14 +116,14 @@ theorem expect_indicator_compl (P : PMF ℕ) (S : Set ℕ) :
     intro V
     refine Summable.of_nonneg_of_le (fun N => mul_nonneg ENNReal.toReal_nonneg
       (Set.indicator_nonneg (fun _ _ => zero_le_one) N)) (fun N => ?_) hsumP
-    by_cases h : N ∈ V <;> simp [Set.indicator_apply, h]
+    by_cases h : N ∈ V <;> simp [h]
   have hadd : P.expect (Set.indicator S 1) + P.expect (Set.indicator Sᶜ 1)
       = ∑' N, (P N).toReal := by
     unfold PMF.expect
     rw [← Summable.tsum_add (hsum S) (hsum Sᶜ)]
     refine tsum_congr fun N => ?_
     by_cases h : N ∈ S <;>
-      simp [Set.indicator_apply, h]
+      simp [h]
   have htot : ∑' N, (P N).toReal = 1 := by
     rw [← ENNReal.tsum_toReal_eq (fun N => PMF.apply_ne_top _ _), P.tsum_coe,
       ENNReal.toReal_one]
@@ -135,7 +135,7 @@ theorem summable_indicator_term (p : PMF ℕ) (V : Set ℕ) :
   refine Summable.of_nonneg_of_le (fun N => mul_nonneg ENNReal.toReal_nonneg
     (Set.indicator_nonneg (fun _ _ => zero_le_one) N)) (fun N => ?_)
     (ENNReal.summable_toReal p.tsum_coe_ne_top)
-  by_cases h : N ∈ V <;> simp [Set.indicator_apply, h]
+  by_cases h : N ∈ V <;> simp [h]
 
 /-- Indicator expectation of a pushforward is the expectation of the preimage indicator. -/
 theorem expect_indicator_map (p : PMF ℕ) (f : ℕ → ℕ) (E : Set ℕ) :
@@ -172,7 +172,7 @@ theorem expect_indicator_union_le (p : PMF ℕ) (S T : Set ℕ) :
     ((summable_indicator_term p S).add (summable_indicator_term p T))
   have hnn : (0 : ℝ) ≤ (p N).toReal := ENNReal.toReal_nonneg
   by_cases hS : N ∈ S <;> by_cases hT : N ∈ T <;>
-    simp [Set.indicator_apply, hS, hT] <;> linarith
+    simp [hS, hT]
 
 /-- **One-scale recursion** (p.17, the display chain): `ℙ(B_x) ≤ ℙ(B_{x^α}) + O(log^{-c}x)`.
 Route: `B_x ⊆ {Pass_x ∈ E}` up to the non-passage event (`stabilization` part 1, note
@@ -339,7 +339,7 @@ theorem descentProb_ladder :
     rw [h0, Finset.sum_range_zero, mul_zero, sub_zero]
     have herr : Cb * y ^ (-cb) ≤ C * y ^ (-c) := by
       refine mul_le_mul (le_max_left _ _) ?_ (Real.rpow_nonneg hy0.le _) hC.le
-      exact Real.rpow_le_rpow_of_exponent_le hy1 (by simp [hcdef, neg_le_neg_iff, min_le_left])
+      exact Real.rpow_le_rpow_of_exponent_le hy1 (by simp [hcdef, neg_le_neg_iff])
     linarith
   | succ j ih =>
     -- one `descentProb_step` at scale `x = y^{α^j}`
@@ -711,7 +711,7 @@ theorem tao_syracuse_quantitative_sum :
       have hRHS : (0 : ℝ) ≤ C * Real.log x / (Real.log N₀) ^ c := by positivity
       linarith
     · -- covering argument over the windows `[N₀^{α^k}, N₀^{α^{k+1}}]`
-      push_neg at hxN
+      push Not at hxN
       have hN₀x : (N₀ : ℝ) < (x : ℝ) := by exact_mod_cast hxN
       have hLxL : Real.log N₀ < Real.log x := Real.log_lt_log hN₀0 hN₀x
       set R := Real.log x / Real.log N₀ with hRdef
@@ -860,7 +860,7 @@ theorem tao_syracuse_quantitative_sum :
             have hAC : Cw * alpha / (alpha - 1) ≤ C := le_max_left _ _
             gcongr
   · -- small `N₀ < X`: trivial harmonic bound `logSum ≤ windowMass 1 x ≤ 4 log x`
-    push_neg at hbig
+    push Not at hbig
     have hLK : (Real.log N₀) ^ c ≤ K1 := by
       have hNX : Real.log N₀ ≤ Real.log X := Real.log_le_log hN₀0 hbig.le
       rcases le_or_gt (Real.log N₀) 1 with hL1 | hL1
@@ -1176,7 +1176,7 @@ theorem logSum_oddPart_pullback (A : Set ℕ) (x : ℕ) :
       have h3 : padicValNat 2 N < 2 ^ padicValNat 2 N := Nat.lt_two_pow_self
       omega
     simp only [Finset.mem_product, Finset.mem_range, hTdef, oddInterval,
-      Finset.mem_filter, Set.mem_setOf_eq]
+      Finset.mem_filter]
     exact ⟨by omega, ⟨by omega, oddPart_odd h0⟩, hA⟩
   have hTnn : (0 : ℝ) ≤ ∑ M ∈ T, (1 : ℝ) / M :=
     Finset.sum_nonneg fun M _ => by positivity

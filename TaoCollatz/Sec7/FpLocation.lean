@@ -213,7 +213,7 @@ theorem fpDist_le_renewal_conv : ∀ (s : ℕ) (e : ℕ × ℤ),
         · rw [if_pos hc]
           exact zero_le
         · rw [if_neg hc]
-          push_neg at hc
+          push Not at hc
           obtain ⟨hd2pos, hd2le⟩ := hc
           set s' : ℕ := s - d'.2.toNat with hs'
           have hs'lt : s' < s := by omega
@@ -228,7 +228,7 @@ theorem fpDist_le_renewal_conv : ∀ (s : ℕ) (e : ℕ × ℤ),
               ≤ hold d' * ∑' q : ℕ × ℤ,
                   (if q.2 ≤ (s' : ℤ) then renewalMass q else 0)
                   * ∑' d : ℕ × ℤ, (if e = d' + q + d then hold d else 0) := by
-                refine mul_le_mul_left' ?_ _
+                refine mul_le_mul_right ?_ _
                 rw [map_apply_ite]
                 refine le_trans (le_of_eq (tsum_congr fun e' =>
                   if_congr Iff.rfl rfl rfl)) ?_
@@ -586,7 +586,6 @@ theorem fpDist_linear_tail_sharp (s : ℕ) (B : ℝ) :
       tiltZ_hold_le_num (k + 1) cond (B / 16)
       (fun e he => by
         dsimp only [cond] at he
-        push_cast
         linarith)
   have hgeom :
       (∑' k : ℕ, ENNReal.ofReal (Real.exp (-(B / 16)))
@@ -1372,9 +1371,9 @@ theorem fpDist_height_tail_le_sixteenth_sharp (s : ℕ) :
               then ENNReal.ofReal (Real.exp (-(1 / 20) * ((s : ℝ) + 150 - (u : ℝ)))) else 0 :=
             (if_pos hu).symm
     · simp only [if_neg hu, tsum_zero, zero_mul, le_refl]
-  refine le_trans (mul_le_mul_left' hstep5 C) ?_
+  refine le_trans (mul_le_mul_right hstep5 C) ?_
   -- Step 6: geometric sum
-  refine le_trans (mul_le_mul_left' (geom_level_sum_le s) C) ?_
+  refine le_trans (mul_le_mul_right (geom_level_sum_le s) C) ?_
   -- Step 7: the numeric bound
   rw [hC, ← ENNReal.ofReal_mul (by norm_num),
     show (1 : ℝ≥0∞) / 16 = ENNReal.ofReal (1 / 16) from by
@@ -2319,7 +2318,7 @@ theorem fpDist_location_bound :
         (not_lt.mpr hls)
     rw [h0, ENNReal.toReal_zero]
     positivity
-  push_neg at hls
+  push Not at hls
   have hlsR : (s : ℝ) ≤ (l : ℝ) := by exact_mod_cast hls.le
   -- ── Step 1: finite-sum reduction of the renewal convolution (in ℝ≥0∞) ──
   set F : Finset (ℕ × ℤ) := (Finset.range (j + 1)) ×ˢ (Finset.Icc (0 : ℤ) (s : ℤ))
@@ -2373,7 +2372,7 @@ theorem fpDist_location_bound :
       · by_cases h2 : p.2 ≤ (s : ℤ)
         · have h3 : p.2 < 0 := by
             by_contra h3
-            push_neg at h3
+            push Not at h3
             exact hp (Finset.mem_product.mpr
               ⟨Finset.mem_range.mpr (by omega), Finset.mem_Icc.mpr ⟨h3, h2⟩⟩)
           rw [renewalMass_zero_of_snd_neg h3, ite_self, zero_mul]
@@ -2607,7 +2606,7 @@ theorem hasSum_int_shift_exp {c : ℝ} (hc : 0 < c) (s : ℕ) :
     rwa [← div_eq_mul_inv] at h
   have hneg : HasSum (fun n : ℕ => f (-(↑n + 1))) 0 := by
     have h0 : (fun n : ℕ => f (-(↑n + 1))) = fun _ => (0 : ℝ) := by
-      funext n; rw [hf]; dsimp only; rw [if_neg (by push_cast; omega)]
+      funext n; rw [hf]; dsimp only; rw [if_neg (by omega)]
     rw [h0]; exact hasSum_zero
   have hnat : HasSum (fun n : ℕ => f (n : ℤ)) (Real.exp (-c) / (1 - Real.exp (-c))) := by
     have h2 : HasSum (fun n : ℕ => f (((n + (s + 1) : ℕ)) : ℤ))
@@ -2620,7 +2619,7 @@ theorem hasSum_int_shift_exp {c : ℝ} (hc : 0 < c) (s : ℕ) :
       rw [he]; exact hgeom
     have hfront : ∑ i ∈ Finset.range (s + 1), f (i : ℤ) = 0 := by
       apply Finset.sum_eq_zero; intro i hi; rw [hf]; dsimp only
-      rw [if_neg (by have := Finset.mem_range.mp hi; push_cast; omega)]
+      rw [if_neg (by have := Finset.mem_range.mp hi; omega)]
     rw [← hasSum_nat_add_iff' (s + 1)]
     simpa [hfront] using h2
   simpa using hnat.of_nat_of_neg_add_one hneg
@@ -2712,7 +2711,7 @@ decay rates shift `γ₂,c ↦ γ₂-θ, c-θ` (still positive) and a bounded pr
 `e^{θ s/4}`.  Threshold `m ≥ 25` + the (7.52) budget give `t ≤ 20·x₀` for the
 Gaussian-to-geometric step (`x² ≥ x₀·x`). -/
 theorem gaussExp_col_tail {c C' θ : ℝ} (hc : 0 < c) (hC' : 0 ≤ C')
-    (hθ0 : 0 ≤ θ) (hθ : θ ≤ min c (c ^ 2 / 20) / 2) (s m : ℕ) (hm : 25 ≤ m)
+    (hθ : θ ≤ min c (c ^ 2 / 20) / 2) (s m : ℕ) (hm : 25 ≤ m)
     (hbud : (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9) :
     Summable (fun j : ℕ => if m < j then
         Real.exp (θ * (j : ℝ)) * (C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))

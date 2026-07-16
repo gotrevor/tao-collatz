@@ -73,7 +73,7 @@ theorem chernoff_clip_le {n : ℕ} (hn : 1 ≤ n) (dev : ℝ) :
     rw [heq, neg_le_neg_iff]
     exact min_le_left _ _
   · -- tail regime: λ = ±1/200, exponent ≤ n/40 − |dev|/200 ≤ −|dev|/400
-    push_neg at hc
+    push Not at hc
     refine ⟨if 0 ≤ dev then (1 / 200 : ℝ) else -(1 / 200), ?_, ?_, ?_⟩
     · split_ifs <;> norm_num
     · split_ifs <;> norm_num
@@ -112,7 +112,7 @@ theorem chernoff_clip_le_nonneg {n : ℕ} (hn : 1 ≤ n) {dev : ℝ} (hdev : 0 �
         ring
       rw [heq, neg_le_neg_iff]
       exact min_le_left _ _
-  · push_neg at hc
+  · push Not at hc
     refine ⟨1 / 200, by norm_num, le_refl _, ?_⟩
     refine le_trans ?_ (neg_le_neg (min_le_right (dev ^ 2 / (4000 * n)) (dev / 400)))
     nlinarith
@@ -245,7 +245,7 @@ theorem iidSum_nat_halfspace_le (p : PMF ℕ) {t : ℝ}
 second-order MGF bound `Z(λ) ≤ 1 + mλ + 1000λ²` on `|λ| ≤ 1/200` satisfies the
 tail bound with `c = 1/400`, `C = 2` — two half-lines, clipped tilt, `Gweight`
 branch matching. -/
-theorem iidSum_nat_tail_of_quad (p : PMF ℕ) (m : ℝ) (hm : 0 ≤ m)
+theorem iidSum_nat_tail_of_quad (p : PMF ℕ) (m : ℝ)
     (hquad : ∀ lam : ℝ, -(1 / 200) ≤ lam → lam ≤ 1 / 200 →
       tiltZ p (expW lam) ≤ ENNReal.ofReal (1 + m * lam + 1000 * lam ^ 2))
     (n : ℕ) (lam : ℝ) (hlam : 0 ≤ lam) :
@@ -395,7 +395,7 @@ theorem iidSum_nat_local_of_quad (p : PMF ℕ) (m : ℝ) (hm0 : 0 ≤ m) (hm4 : 
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · -- n = 0: point mass at the origin
     rw [iidSum_zero, PMF.pure_apply]
-    simp only [Nat.cast_zero, mul_zero, sub_zero, Real.sqrt_one]
+    simp only [Nat.cast_zero, mul_zero, sub_zero]
     split_ifs with h
     · subst h
       rw [ENNReal.toReal_one]
@@ -542,7 +542,7 @@ theorem geomHalf_tail_bound :
       (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0)
         ≤ C * Gweight (1 + n) (c * lam) := by
   refine ⟨1 / 400, by norm_num, 2, by norm_num, fun n lam hlam => ?_⟩
-  exact iidSum_nat_tail_of_quad geomHalf 2 (by norm_num)
+  exact iidSum_nat_tail_of_quad geomHalf 2
     (fun t hlo hhi => le_trans (tiltZ_geomHalf_le_quad hlo hhi)
       (ENNReal.ofReal_le_ofReal (by nlinarith [sq_nonneg t]))) n lam hlam
 
@@ -553,7 +553,7 @@ theorem geomQuarter_tail_bound :
       (∑' L : ℕ, if lam ≤ |(L : ℝ) - 4 * n| then ((iidSum geomQuarter n) L).toReal else 0)
         ≤ C * Gweight (1 + n) (c * lam) := by
   refine ⟨1 / 400, by norm_num, 2, by norm_num, fun n lam hlam => ?_⟩
-  exact iidSum_nat_tail_of_quad geomQuarter 4 (by norm_num)
+  exact iidSum_nat_tail_of_quad geomQuarter 4
     (fun t hlo hhi => tiltZ_geomQuarter_le_quad hlo hhi) n lam hlam
 
 /-- **Lemma 2.2(ii) for `Pascal`** (mean 4). -/
@@ -562,7 +562,7 @@ theorem pascal_tail_bound :
       (∑' L : ℕ, if lam ≤ |(L : ℝ) - 4 * n| then ((iidSum pascal n) L).toReal else 0)
         ≤ C * Gweight (1 + n) (c * lam) := by
   refine ⟨1 / 400, by norm_num, 2, by norm_num, fun n lam hlam => ?_⟩
-  exact iidSum_nat_tail_of_quad pascal 4 (by norm_num)
+  exact iidSum_nat_tail_of_quad pascal 4
     (fun t hlo hhi => tiltZ_pascal_le_quad hlo hhi) n lam hlam
 
 /-- **Lemma 2.2(i) for `Geom(2)`** (paper p.15, displayed instance):

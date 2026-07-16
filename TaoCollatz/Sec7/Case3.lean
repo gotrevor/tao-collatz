@@ -68,7 +68,7 @@ theorem pathSum_cons {T : ℕ} (d : ℕ × ℤ) (w : Fin T → ℕ × ℤ) (p : 
 /-- One-step extension of a partial sum inside the horizon. -/
 theorem pathSum_succ_of_lt {T : ℕ} (v : Fin T → ℕ × ℤ) {p : ℕ} (hp : p < T) :
     pathSum v (p + 1) = pathSum v p + v ⟨p, hp⟩ := by
-  rw [pathSum, pathSum, List.take_succ, List.sum_append]
+  rw [pathSum, pathSum, List.take_add_one, List.sum_append]
   congr 1
   have h : (List.ofFn v)[p]? = some (v ⟨p, hp⟩) := by
     rw [List.getElem?_eq_getElem (by simpa using hp)]
@@ -297,7 +297,7 @@ theorem Q_le_walk_damped (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (hε : 0
       refine ENNReal.tsum_le_tsum fun d => ?_
       -- reorder the constant damping factor inside
       rw [← mul_assoc, mul_comm (ENNReal.ofReal (Real.exp _)) (hold d), mul_assoc]
-      refine mul_le_mul_left' ?_ (hold d)
+      refine mul_le_mul_right ?_ (hold d)
       -- apply the IH at the shifted start, then push the head factor inside
       have hIH := IH (j + d.1) (l + d.2)
       calc ENNReal.ofReal (Real.exp (-(ε ^ 3) * Set.indicator W 1 (j, l)))
@@ -309,7 +309,7 @@ theorem Q_le_walk_damped (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (hε : 0
                   Set.indicator (W ∩ {q : ℕ × ℤ | q.1 ≤ half}) 1
                     (j + d.1 + (pathSum w p).1, l + d.2 + (pathSum w p).2)) *
                 Q half W ε (j + d.1 + (pathSum w P).1) (l + d.2 + (pathSum w P).2)) :=
-            mul_le_mul_left' hIH _
+            mul_le_mul_right hIH _
         _ = _ := by
             rw [← ENNReal.tsum_mul_left]
             refine tsum_congr fun w => ?_
@@ -378,7 +378,7 @@ theorem Q_le_damped_iter (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (hε : 0
                 (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
             Q half W ε (j + e.1 + (pathSum v P).1) (l + e.2 + (pathSum v P).2)) := by
   refine le_trans (Q_le_fpDist_expect half W ε hε s j l) ?_
-  refine ENNReal.tsum_le_tsum fun e => mul_le_mul_left' ?_ _
+  refine ENNReal.tsum_le_tsum fun e => mul_le_mul_right ?_ _
   exact Q_le_walk_damped half W ε hε P (j + e.1) (l + e.2)
 
 /-! ### The prefix-marginal law: post-passage positions are `fpDistPlus` -/
@@ -633,7 +633,7 @@ theorem encFoldAt_succ {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
     (q₀ : ℕ × ℤ) {T : ℕ} (v : Fin T → ℕ × ℤ) {p : ℕ} (hp : p < T) :
     encFoldAt F R g q₀ v (p + 1)
       = encStep F R g (encFoldAt F R g q₀ v p) (v ⟨p, hp⟩) := by
-  rw [encFoldAt, encFoldAt, List.take_succ,
+  rw [encFoldAt, encFoldAt, List.take_add_one,
     List.getElem?_eq_getElem (by simpa using hp)]
   simp [List.foldl_append]
 
@@ -728,7 +728,6 @@ theorem pathSum_snd_ge {T : ℕ} (v : Fin T → ℕ × ℤ) (hv : ∀ i, v i ∈
     have h1 := hold_support_snd_ge _ (hv ⟨p + k, hpk⟩)
     have h2 := IH (by omega)
     show (pathSum v p).2 + 3 * ((k : ℤ) + 1) ≤ (pathSum v (p + k)).2 + (v ⟨p + k, hpk⟩).2
-    push_cast at h2 ⊢
     linarith
 
 /-- An in-strip position (`1 ≤ q₁ ≤ n/2`) outside the white strip is black at
@@ -828,7 +827,6 @@ theorem encFoldAt_barrier_le {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
         rcases le_or_gt t.2.1 q.2 with hle | hgt
         · have h0 : (0 : ℝ) ≤ t.2.2 := F.size_nonneg t htmem
           have : ((t.2.1 : ℤ) : ℝ) ≤ ((q.2 : ℤ) : ℝ) := by exact_mod_cast hle
-          push_cast at this ⊢
           linarith
         · have hpos : (0 : ℝ) < ((t.2.1 - q.2 : ℤ) : ℝ) := by
             have : (0 : ℤ) < t.2.1 - q.2 := by omega
@@ -872,7 +870,7 @@ theorem encFoldAt_count_step {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
   set D : ℕ := ⌈(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌉₊ with hD
   set W : ℕ := D + K + 2 with hW
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   -- the count is flat on the whole window
   have hflat : ∀ r, p ≤ r → r ≤ p + W →
       (encFoldAt F R g q₀ v r).count = (encFoldAt F R g q₀ v p).count := by
@@ -921,7 +919,7 @@ theorem encFoldAt_count_step {n ξ : ℕ} (F : TriangleFamily n ξ) (R g : ℕ)
   have hpigeon : ∃ r, p + D + 1 ≤ r ∧ r ≤ p + D + K + 1 ∧
       q₀ + pathSum v r ∉ whiteStrip n ξ := by
     by_contra hall
-    push_neg at hall
+    push Not at hall
     -- all K+1 positions white ⇒ the total white count exceeds K
     have hone : ∀ i ∈ Finset.range (K + 1),
         (if q₀ + pathSum v (p + D + i + 1) ∈ whiteStrip n ξ then 1 else 0) = 1 := by
@@ -1298,7 +1296,6 @@ theorem encVal_ge_of_reaches {n ξ : ℕ} (F : TriangleFamily n ξ) (R g K : ℕ
   have hbk : (σ.banked : ℝ) ≤ (K : ℝ) := by exact_mod_cast le_trans hbank hwhite
   have hmin : min σ.count R = R := min_eq_right hreach
   rw [hmin]
-  push_cast
   linarith [hbk]
 
 open scoped Classical in
@@ -1439,7 +1436,7 @@ theorem deterministic_encounter_or_bigTriangle {n ξ : ℕ} (F : TriangleFamily 
       t.2.2 < (4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3
   · exact Or.inl (hP₀ T hT q₀ hq₀ v hv hdepth hE hfew)
   · refine Or.inr ?_
-    push_neg at hE
+    push Not at hE
     obtain ⟨p, hp, t, ht, hmem, hbig⟩ := hE
     exact ⟨p, hp, t, ht, hmem, hbig⟩
 
@@ -1516,7 +1513,7 @@ theorem few_white_pointwise_dichotomy {n ξ : ℕ} (F : TriangleFamily n ξ)
   · exact Or.inl ⟨deterministic_encounter_claim_at n ξ F g R (K + 1) A hA P hP q₀ hq₀ v hv
       hdepth hE hSple, hcumK⟩
   · refine Or.inr ?_
-    push_neg at hE
+    push Not at hE
     obtain ⟨p, hp, t, ht, hmem, hbig⟩ := hE
     exact ⟨p, hp, t, ht, hmem, hbig⟩
 
@@ -1627,14 +1624,14 @@ theorem few_white_pointwise_split {n ξ : ℕ} (F : TriangleFamily n ξ)
             Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
               (1 : ℕ × ℤ → ℝ≥0∞)
               (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
-            (fun i _ => zero_le') (Finset.mem_range.mpr (Nat.lt_succ_of_le hp))
+            (fun i _ => zero_le) (Finset.mem_range.mpr (Nat.lt_succ_of_le hp))
           rw [hone] at hsingle
           rw [hT2def]; exact hsingle
         calc (1 : ℝ≥0∞) ≤ T2 := hT2ge
           _ ≤ T1 + T2 := self_le_add_left _ _
           _ ≤ T1 + T2 + T3 := self_le_add_right _ _
   · rw [if_neg hfew, ENNReal.ofReal_zero]
-    exact zero_le'
+    exact zero_le
 
 open scoped Classical in
 /-- **(7.56) reach-`R` mass term.** The first-passage⊗walk mass of the reach-`R`/few-white
@@ -1689,7 +1686,7 @@ theorem few_white_reach_mass_le (A : ℝ) :
       (by push_cast; nlinarith [hRbound])
     rw [ENNReal.le_ofReal_iff_toReal_le hSne hval, hbridge, ← hexp]
     exact hr
-  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_left' (hinner e) _) ?_
+  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_right (hinner e) _) ?_
   rw [ENNReal.tsum_mul_right, (fpDist s).tsum_coe, one_mul]
 
 /-- Poly·geom domination: `x²·exp(−bx) ≤ 4/b²` for `x ≥ 0`, `b > 0` (from `exp(bx) ≥ (bx)²/4`). -/
@@ -1962,10 +1959,10 @@ theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
     calc (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
             Set.indicator _ (1 : ℕ × ℤ → ℝ≥0∞) _)
         ≤ ∑' e : ℕ × ℤ, fpDist s e * 1 := by
-          refine ENNReal.tsum_le_tsum fun e => mul_le_mul_left' ?_ _
+          refine ENNReal.tsum_le_tsum fun e => mul_le_mul_right ?_ _
           calc (∑' v : Fin P → ℕ × ℤ, hold.iid P v * Set.indicator _ (1 : ℕ × ℤ → ℝ≥0∞) _)
               ≤ ∑' v : Fin P → ℕ × ℤ, hold.iid P v * 1 :=
-                ENNReal.tsum_le_tsum fun v => mul_le_mul_left' (hind_le1 _ _) _
+                ENNReal.tsum_le_tsum fun v => mul_le_mul_right (hind_le1 _ _) _
             _ = 1 := by rw [ENNReal.tsum_mul_right, (hold.iid P).tsum_coe, one_mul]
       _ = 1 := by rw [ENNReal.tsum_mul_right, (fpDist s).tsum_coe, one_mul]
   have hGne : ∀ p, G p ≠ ⊤ := fun p => ne_top_of_le_ne_top ENNReal.one_ne_top (hGle1 p)
@@ -2181,14 +2178,14 @@ theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
     with hRHSdef
   have hUB : (∑' x : ℕ × ℤ, fpDistPlus s P x * g x) ≤ RHS := by
     rw [hRHSdef]
-    refine ENNReal.tsum_le_tsum fun x => mul_le_mul_left' ?_ _
+    refine ENNReal.tsum_le_tsum fun x => mul_le_mul_right ?_ _
     rw [hgdef]; exact ENNReal.ofReal_le_ofReal (hcont x)
   have hRHSle1 : RHS ≤ 1 := by
     rw [hRHSdef]
     calc (∑' x : ℕ × ℤ, fpDistPlus s P x *
           ENNReal.ofReal (Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 x))
         ≤ ∑' x : ℕ × ℤ, fpDistPlus s P x * 1 := by
-          refine ENNReal.tsum_le_tsum fun x => mul_le_mul_left' ?_ _
+          refine ENNReal.tsum_le_tsum fun x => mul_le_mul_right ?_ _
           refine ENNReal.ofReal_le_one.mpr ?_
           rw [Set.indicator_apply]; split_ifs <;> norm_num
       _ = 1 := by rw [ENNReal.tsum_mul_right, (fpDistPlus s P).tsum_coe, one_mul]
@@ -2378,13 +2375,13 @@ theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
             ≤ (K : ℝ) then (1 : ℝ) else 0))
       ≤ ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ,
           hold.iid P v * (I1 e v + I2 e v + I3 e v) := by
-    refine ENNReal.tsum_le_tsum fun e => mul_le_mul_left' ?_ _
+    refine ENNReal.tsum_le_tsum fun e => mul_le_mul_right ?_ _
     refine ENNReal.tsum_le_tsum fun v => ?_
     by_cases hv0 : hold.iid P v = 0
     · simp [hv0]
     · have hvsupp : v ∈ (hold.iid P).support := by rw [PMF.mem_support_iff]; exact hv0
       have hvcoord : ∀ i, v i ∈ hold.support := PMF.iid_support_coord hold P v hvsupp
-      exact mul_le_mul_left'
+      exact mul_le_mul_right
         (few_white_pointwise_split F m hmn hpos l g R K A' hA'1 P hPeq hg e v hvcoord) _
   -- linearity: split the integral into the three terms.
   have key : (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ,
@@ -2492,8 +2489,8 @@ theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
           Real.rpow_def_of_pos (by norm_num) _]
         exact Real.exp_le_exp.mpr (by nlinarith [hbig])
       linarith [hexp]
-  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_left'
-    (ENNReal.tsum_le_tsum fun v => mul_le_mul_left' (hpoint e v) _) _) ?_
+  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_right
+    (ENNReal.tsum_le_tsum fun v => mul_le_mul_right (hpoint e v) _) _) ?_
   -- Split the sum: few-white part + the (PMF-averaged) constant tail.
   have key :
       (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
@@ -2688,8 +2685,8 @@ theorem damping_column_mass_le (A : ℝ) (hA : 0 < A) :
             mul_le_mul_of_nonneg_left hWTbound hEXPV0
         _ = 0 + (10 : ℝ) ^ A * (m : ℝ) ^ (-A) * EXPV := by ring
   -- **Step 2 — apply the pointwise bound under the double sum.**
-  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_left'
-    (ENNReal.tsum_le_tsum fun v => mul_le_mul_left' (hpoint e v) _) _) ?_
+  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_right
+    (ENNReal.tsum_le_tsum fun v => mul_le_mul_right (hpoint e v) _) _) ?_
   -- **Step 3 — split the sum and factor the constant `10^A·m^{−A}` out of the damping part.**
   have heq :
       (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
@@ -2763,7 +2760,7 @@ theorem damping_column_mass_le (A : ℝ) (hA : 0 < A) :
                 (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
       ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2)
         + ENNReal.ofReal ((10 : ℝ) ^ A * (m : ℝ) ^ (-A)) * ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) :=
-        add_le_add hb1 (mul_le_mul_left' hb2 _)
+        add_le_add hb1 (mul_le_mul_right hb2 _)
     _ = ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) + ENNReal.ofReal ((m : ℝ) ^ (-A) / 10) := by
         rw [← ENNReal.ofReal_mul hC10nn, hconst10]
     _ ≤ ENNReal.ofReal ((m : ℝ) ^ (-A)) := by
@@ -2827,11 +2824,11 @@ theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
                   Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
                     (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
                 ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A))) := by
-    refine ENNReal.tsum_le_tsum fun e => mul_le_mul_left' ?_ _
+    refine ENNReal.tsum_le_tsum fun e => mul_le_mul_right ?_ _
     refine ENNReal.tsum_le_tsum fun v => ?_
     by_cases hv0 : hold.iid P v = 0
     · simp [hv0]
-    · refine mul_le_mul_left' ?_ _
+    · refine mul_le_mul_right ?_ _
       rw [← ENNReal.ofReal_mul hQM0]
       refine ENNReal.ofReal_le_ofReal ?_
       have hvsupp : v ∈ (hold.iid P).support := by
@@ -2910,7 +2907,7 @@ theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
                 (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
             ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A))
       ≤ ENNReal.ofReal (Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) * ENNReal.ofReal ((m : ℝ) ^ (-A)) :=
-        mul_le_mul_left' (hmass n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2) _
+        mul_le_mul_right (hmass n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2) _
     _ = ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) := by
         rw [← ENNReal.ofReal_mul hQM0]; congr 1; ring
 

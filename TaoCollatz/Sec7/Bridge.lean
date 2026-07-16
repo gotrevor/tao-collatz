@@ -340,7 +340,7 @@ theorem hold_tsum_step_real (f : ℕ × ℤ → ℝ) (hf0 : ∀ d, 0 ≤ f d) (h
     intro b
     calc ∑' d : ℕ × ℤ, hold d * ENNReal.ofReal (f (d.1 + 1, d.2 + (b : ℤ)))
         ≤ ∑' d : ℕ × ℤ, hold d * 1 :=
-          ENNReal.tsum_le_tsum fun d => mul_le_mul_left'
+          ENNReal.tsum_le_tsum fun d => mul_le_mul_right
             (ENNReal.ofReal_le_one.mpr (hf1 _)) _
       _ = 1 := by rw [tsum_congr fun d => mul_one (hold d), hold.tsum_coe]
   have hcb : ∀ b : ℕ, (if b = 3 then (0 : ℝ≥0∞) else pascal b) ≤ pascal b := by

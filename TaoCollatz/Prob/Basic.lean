@@ -91,7 +91,7 @@ theorem tsum_mul_ofReal_le_one (p : PMF α) (f : α → ℝ) (hf : ∀ x, f x �
   calc ∑' x, p x * ENNReal.ofReal (f x)
       ≤ ∑' x, p x * 1 :=
         ENNReal.tsum_le_tsum fun x =>
-          mul_le_mul_left' (ENNReal.ofReal_le_one.mpr (hf x)) _
+          mul_le_mul_right (ENNReal.ofReal_le_one.mpr (hf x)) _
     _ = 1 := by rw [tsum_congr fun x => mul_one (p x), p.tsum_coe]
 
 /-- The empty iid vector carries full mass: expectations collapse. -/

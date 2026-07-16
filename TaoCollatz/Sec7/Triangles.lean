@@ -422,7 +422,7 @@ theorem sfrac_phase_absorb (n ξ : ℕ) (X : ZMod (3 ^ n)) :
   have h3 : (3 : ℚ) ^ n ≠ 0 := by positivity
   have hval : ((ξ * X.val : ℚ)) / 3 ^ n = ((Y.val : ℚ)) / 3 ^ n + t := by
     have : ((ξ * X.val : ℚ)) = (Y.val : ℚ) + 3 ^ n * t := by
-      have := ht; push_cast
+      have := ht
       have h2 : ((ξ * X.val : ℤ) : ℚ) = ((Y.val : ℤ) : ℚ) + ((3 : ℤ) ^ n * t : ℤ) := by
         exact_mod_cast congrArg (fun z : ℤ => (z : ℚ)) (by linarith [ht] : (ξ * X.val : ℤ) = Y.val + 3 ^ n * t)
       push_cast at h2; linarith [h2]
@@ -538,7 +538,7 @@ theorem θq_lower_bound (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (j : ℕ) (l : ℤ) (h2
     rw [hc, ← pow_succ']
     congr 1; omega
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hθc : |c * θ| < 1 / 3 := by
     rw [abs_mul, abs_of_pos hcpos]
     calc c * |θ| < c * (1 / 3 ^ (n - 2 * j)) :=
@@ -563,7 +563,7 @@ theorem θq_lower_bound (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (j : ℕ) (l : ℤ) (h2
 theorem black_nine_le (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) {j : ℕ} {l : ℤ} (h2j : 2 * j + 1 ≤ n)
     (hb : black n ξ j l) : 9 ≤ n - 2 * j := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hle : |θq n ξ j l| ≤ epsBW := hb
   have hlb := θq_lower_bound n ξ hξ j l h2j
   have hpow : (3 : ℚ) ^ (n - 2 * j) ≤ 3 ^ 8 := by
@@ -625,7 +625,7 @@ theorem black_run_le (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) {j : ℕ} {l : ℤ} {t : �
 theorem exists_white_above (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (j : ℕ) (l : ℤ) (h2j : 2 * j + 1 ≤ n) :
     ∃ t : ℕ, ¬ black n ξ j (l + t) := by
   by_contra hall
-  push_neg at hall
+  push Not at hall
   obtain ⟨t, ht⟩ := pow_unbounded_of_one_lt (epsBW * 3 ^ (n - 2 * j))
     (by norm_num : (1 : ℚ) < 2)
   exact absurd (black_run_le n ξ hξ h2j (fun i _ => hall i)) (not_le.mpr ht)
@@ -660,7 +660,7 @@ section CornerSpec
 variable {n ξ : ℕ} {j : ℕ} {l : ℤ}
 
 /-- Everything from `l` up to `l*` is black, provided `(j,l)` is black. -/
-theorem black_of_le_lstar (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l)
+theorem black_of_le_lstar (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n)
     {l' : ℤ} (h1 : l ≤ l') (h2 : l' ≤ lstar n ξ j l) : black n ξ j l' := by
   classical
   have hex := exists_white_above n ξ hξ j l h2j
@@ -707,7 +707,7 @@ theorem leftRun_pos (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n ξ
     0 < leftRun n ξ j l := by
   classical
   have hbl : black n ξ j (lstar n ξ j l) :=
-    black_of_le_lstar hξ h2j hb (le_lstar hξ h2j hb) le_rfl
+    black_of_le_lstar hξ h2j (le_lstar hξ h2j hb) le_rfl
   rw [leftRun, Nat.find_pos]
   intro h
   rcases h with h | h
@@ -725,7 +725,7 @@ theorem black_of_jstar_le (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : blac
   rw [leftRun] at ha
   have hmin := Nat.find_min
     (⟨j + 1, by omega⟩ : ∃ a : ℕ, j < a ∨ ¬ black n ξ (j - a) (lstar n ξ j l)) ha
-  push_neg at hmin
+  push Not at hmin
   have hj' : j - (j - j') = j' := by omega
   rw [hj'] at hmin
   exact hmin.2
@@ -842,7 +842,7 @@ theorem lstar_eq_of {n ξ : ℕ} {j : ℕ} {l L : ℤ} (hl : l ≤ L)
     rw [show l + ((L + 1 - l).toNat : ℤ) = L + 1 from by omega]; exact hw)
   have hge : (L + 1 - l).toNat ≤ Nat.find hex := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hspec := Nat.find_spec hex
     exact hspec (hb _ (by omega) (by omega))
   omega
@@ -861,7 +861,7 @@ theorem jstar_eq_of {n ξ : ℕ} {j J : ℕ} {l : ℤ} (hJ : J ≤ j)
       · left; omega
       · right; rwa [show j - (j - J + 1) = J - 1 from by omega]
     · by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have hspec := Nat.find_spec hexJ
       rcases hspec with h | h
       · omega
@@ -912,7 +912,7 @@ theorem θq_fibre_eq (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n �
   have hup : θq n ξ j l = 2 ^ b * θq n ξ j L := by
     have hcast : l + (b : ℤ) = L := by omega
     have := θq_up_run n ξ j l b (fun i h1 h2 => by
-      apply black_of_le_lstar hξ h2j hb (by omega)
+      apply black_of_le_lstar hξ h2j (Int.le.intro i rfl)
       rw [← hL]; omega)
     rwa [hcast] at this
   -- leftward run: θ(j, L) = 9^a · θ(j', L)
@@ -939,7 +939,7 @@ theorem fibre_le_eps (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n �
     _ ≤ epsBW := hble
 
 /-- The corner phase is nonzero (via the (7.16) lower bound at column `j*`). -/
-theorem corner_phase_pos (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) :
+theorem corner_phase_pos (hξ : ¬ 3 ∣ ξ) (h2j : 2 * j + 1 ≤ n) :
     0 < |θq n ξ (jstar n ξ j l) (lstar n ξ j l)| := by
   have hjj : jstar n ξ j l ≤ j := by unfold jstar; omega
   have h2j' : 2 * jstar n ξ j l + 1 ≤ n := by omega
@@ -967,10 +967,7 @@ theorem black_mem_corner_triangle {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 �
   set b := (lstar n ξ j l - l).toNat with hbdef
   set θs : ℚ := θq n ξ (jstar n ξ j l) (lstar n ξ j l) with hθs
   have hθpos : (0:ℝ) < |(θs : ℝ)| := by
-    have := corner_phase_pos hξ h2j hb
-    rw [← hθs] at this
-    rw [← Rat.cast_abs]
-    exact_mod_cast this
+    exact_mod_cast corner_phase_pos hξ h2j
   have hq : (9 : ℝ) ^ a * 2 ^ b * |(θs : ℝ)| ≤ (epsBW : ℝ) := by
     have := fibre_le_eps hξ h2j hb
     rw [← hθs, ← hadef, ← hbdef] at this
@@ -1001,16 +998,14 @@ theorem black_mem_corner_triangle {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 �
 /-- **Δ* is black** (paper p.39): every point of the corner triangle of a black strip
 point is itself black (exponentiate the size inequality and apply (7.18)). -/
 theorem black_of_mem_corner_triangle {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ ξ)
-    (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) {p : ℕ × ℤ}
+    (h2j : 2 * j + 1 ≤ n) {p : ℕ × ℤ}
     (hp : p ∈ triangle (jstar n ξ j l) (lstar n ξ j l)
       (Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|))) :
     black n ξ p.1 p.2 := by
   obtain ⟨hj1, hl1, hlog⟩ := hp
   set θs : ℚ := θq n ξ (jstar n ξ j l) (lstar n ξ j l) with hθs
   have hθpos : (0:ℝ) < |(θs : ℝ)| := by
-    have := corner_phase_pos hξ h2j hb
-    rw [← hθs] at this
-    rw [← Rat.cast_abs]; exact_mod_cast this
+    exact_mod_cast corner_phase_pos hξ h2j
   have hε : (0:ℝ) < (epsBW : ℝ) := by
     have : (0:ℚ) < epsBW := by unfold epsBW; norm_num
     exact_mod_cast this
@@ -1052,7 +1047,7 @@ theorem black_of_mem_corner_triangle {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 
 /-- **Δ* strip confinement, real form** (paper p.39 / (7.16)): every point of the
 corner triangle satisfies `p.1 + 1 ≤ n/2 - (1/10)·log(1/ε)`. -/
 theorem corner_triangle_confined {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ ξ)
-    (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) {p : ℕ × ℤ}
+    (h2j : 2 * j + 1 ≤ n) {p : ℕ × ℤ}
     (hp : p ∈ triangle (jstar n ξ j l) (lstar n ξ j l)
       (Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|))) :
     (p.1 : ℝ) + 1 ≤ (n : ℝ) / 2 - (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ)) := by
@@ -1061,9 +1056,7 @@ theorem corner_triangle_confined {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 �
   have hjj : jstar n ξ j l ≤ j := by unfold jstar; omega
   have h2j' : 2 * jstar n ξ j l + 1 ≤ n := by omega
   have hθpos : (0:ℝ) < |(θs : ℝ)| := by
-    have := corner_phase_pos hξ h2j hb
-    rw [← hθs] at this
-    rw [← Rat.cast_abs]; exact_mod_cast this
+    exact_mod_cast corner_phase_pos hξ h2j
   have hε : (0:ℝ) < (epsBW : ℝ) := by
     have : (0:ℚ) < epsBW := by unfold epsBW; norm_num
     exact_mod_cast this
@@ -1129,18 +1122,18 @@ theorem corner_triangle_confined {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 �
 /-- Δ* strip confinement, discrete corollary: `2·p.1 + 1 ≤ n` for triangle points
 (the strip hypothesis needed to run the corner machinery at `p`). -/
 theorem corner_triangle_strip {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ ξ)
-    (h2j : 2 * j + 1 ≤ n) (hb : black n ξ j l) {p : ℕ × ℤ}
+    (h2j : 2 * j + 1 ≤ n) {p : ℕ × ℤ}
     (hp : p ∈ triangle (jstar n ξ j l) (lstar n ξ j l)
       (Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|))) :
     2 * p.1 + 1 ≤ n := by
-  have hreal := corner_triangle_confined hξ h2j hb hp
+  have hreal := corner_triangle_confined hξ h2j hp
   have hSpos : (0:ℝ) ≤ Real.log (1 / (epsBW : ℝ)) := by
     apply Real.log_nonneg
     rw [show (epsBW : ℝ) = 1 / 10 ^ 1000 from by
       rw [show epsBW = 1 / 10 ^ 1000 from rfl]; push_cast; norm_num]
     norm_num
   have h2 : 2 * (p.1 : ℝ) + 2 ≤ (n : ℝ) := by linarith
-  exact_mod_cast (by push_cast; linarith : (2 * p.1 + 1 : ℝ) ≤ (n : ℝ))
+  exact_mod_cast (by linarith : (2 * p.1 + 1 : ℝ) ≤ (n : ℝ))
 
 /-- **Corner invariance** (paper p.41, via Claim (*)): every point of the corner
 triangle has the same corner `(j*, l*)` as the point that generated it. This is the
@@ -1158,7 +1151,7 @@ theorem corner_eq {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ ξ)
   -- the column of p up to l* stays in Δ*, hence is black
   have hcol : ∀ l'' : ℤ, p.2 ≤ l'' → l'' ≤ lstar n ξ j l → black n ξ p.1 l'' := by
     intro l'' h1 h2
-    refine black_of_mem_corner_triangle hξ h2j hb (p := (p.1, l'')) ⟨hj1, h2, ?_⟩
+    refine black_of_mem_corner_triangle hξ h2j (p := (p.1, l'')) ⟨hj1, h2, ?_⟩
     show ((p.1 : ℝ) - (jstar n ξ j l : ℝ)) * Real.log 9
         + ((lstar n ξ j l : ℝ) - (l'' : ℝ)) * Real.log 2
         ≤ Real.log ((epsBW : ℝ) / |(θq n ξ (jstar n ξ j l) (lstar n ξ j l) : ℝ)|)
@@ -1172,7 +1165,7 @@ theorem corner_eq {n ξ : ℕ} {j : ℕ} {l : ℤ} (hξ : ¬ 3 ∣ ξ)
     rcases le_or_gt j'' j with hle | hgt
     · exact black_of_jstar_le hξ h2j hb h1 hle
     · have hle' : j'' ≤ p.1 := by omega
-      refine black_of_mem_corner_triangle hξ h2j hb (p := (j'', lstar n ξ j l))
+      refine black_of_mem_corner_triangle hξ h2j (p := (j'', lstar n ξ j l))
         ⟨h1, le_rfl, ?_⟩
       show ((j'' : ℝ) - (jstar n ξ j l : ℝ)) * Real.log 9
           + ((lstar n ξ j l : ℝ) - (lstar n ξ j l : ℝ)) * Real.log 2
@@ -1229,11 +1222,11 @@ theorem corner_top_white_gap {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
     white n ξ a (lstar n ξ w.1 w.2 + h) := by
   have ha2j : 2 * a + 1 ≤ n :=
     corner_triangle_strip (n := n) (j := w.1) (l := w.2)
-      hξ hw2j hwblack hmem
+      hξ hw2j hmem
   have hcorner : lstar n ξ a (lstar n ξ w.1 w.2) = lstar n ξ w.1 w.2 :=
     (corner_eq (n := n) (j := w.1) (l := w.2) (p := (a, lstar n ξ w.1 w.2))
       hξ hw2j hwblack hmem).1
-  have hblackTop := black_of_mem_corner_triangle hξ hw2j hwblack hmem
+  have hblackTop := black_of_mem_corner_triangle hξ hw2j hmem
   have hwhiteStar := white_above_lstar (n := n) (ξ := ξ) (j := a)
     (l := lstar n ξ w.1 w.2) hξ ha2j
   have hwhiteOne := Eq.mp
@@ -1355,7 +1348,7 @@ theorem corner_scale_near_le {n ξ J : ℕ} {L : ℤ}
     pow_le_pow_right₀ (by norm_num) hb
   calc (9 : ℚ) ^ a * 2 ^ b * |θq n ξ J L|
       ≤ 9 ^ (ap + 300) * 2 ^ (bp + 300) * |θq n ξ J L| := by
-        gcongr <;> positivity
+        gcongr
     _ = (9 ^ 300 * 2 ^ 300 : ℚ) *
         (9 ^ ap * 2 ^ bp * |θq n ξ J L|) := by
       rw [pow_add, pow_add]
@@ -1458,7 +1451,7 @@ theorem wb_col_up_of_weak_right {n ξ J : ℕ} {z : ℤ} (t : ℕ)
         rw [show (J - 1) + 1 = J from by omega]
         exact hright t (by omega))
       (by
-        convert hprev using 1 <;> push_cast <;> ring)
+        convert hprev using 1 ; ring)
     simpa using hstep
 
 /-- **Lemma 7.4, Claim (*) in black-point form.** Two black strip points at
@@ -1485,7 +1478,7 @@ theorem black_near_black_mem_corner {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
   have hscale : (9 : ℚ) ^ ap * 2 ^ bp * |θq n ξ J L| ≤ epsBW := by
     simpa [J, L, ap, bp] using fibre_le_eps hξ hp2j hpb
   have hθ : 0 < |θq n ξ J L| := by
-    simpa [J, L] using corner_phase_pos hξ hp2j hpb
+    simpa [J, L] using corner_phase_pos hξ hp2j
   obtain ⟨hpqj, hqpj, hpql, hqpl⟩ := lattice_close_of_sq_dist_lt_sep hdist
   by_cases hqJ : J ≤ q.1
   · by_cases hqL : q.2 ≤ L
@@ -1536,7 +1529,7 @@ theorem black_near_black_mem_corner {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ)
           _ ≤ 1 / 100 := by rw [epsBW]; norm_num
       have hpTopBlack : black n ξ p.1 L := by
         rw [hL]
-        exact black_of_le_lstar hξ hp2j hpb hpL le_rfl
+        exact black_of_le_lstar hξ hp2j hpL le_rfl
       have hpTopWhite : white n ξ p.1 (L + 1) := by
         rw [hL]
         exact white_above_lstar hξ hp2j
@@ -1639,7 +1632,7 @@ theorem lattice_sq_dist_ge_one {q q' : ℕ × ℤ} (h : q ≠ q') :
     (1:ℝ) ≤ ((q.1 : ℝ) - q'.1) ^ 2 + ((q.2 : ℝ) - q'.2) ^ 2 := by
   have hcase : q.1 ≠ q'.1 ∨ q.2 ≠ q'.2 := by
     by_contra hc
-    push_neg at hc
+    push Not at hc
     exact h (Prod.ext hc.1 hc.2)
   rcases hcase with hne | hne
   · have h1 : (1:ℤ) ≤ |(q.1 : ℤ) - (q'.1 : ℤ)| := Int.one_le_abs (by omega)
@@ -1666,7 +1659,7 @@ theorem lattice_sq_dist_ge_one {q q' : ℕ × ℤ} (h : q ≠ q') :
 `j+1 ≤ n/2`) is a union of corner triangles whose point sets are pairwise
 Euclidean-separated by `≥ (1/10)·log(1/ε)` and confined to
 `j+1 ≤ n/2 - (1/10)·log(1/ε)`. -/
-theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
+theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) :
     ∃ T : Set (ℕ × ℤ × ℝ),
       (∀ t ∈ T, 0 ≤ t.2.2) ∧
       (∀ t ∈ T, ∃ p : ℕ × ℤ, p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2 ∧
@@ -1692,12 +1685,11 @@ theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
     have hJle : jstar n ξ p.1 p.2 ≤ p.1 := by unfold jstar; omega
     have hcb : |θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2)| ≤ epsBW :=
       black_of_jstar_le hξ h2j hpb le_rfl hJle
-    have hθpos := corner_phase_pos hξ h2j hpb
     show (0:ℝ) ≤ Real.log
       ((epsBW : ℝ) / |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)|)
     apply Real.log_nonneg
     have hθposR : (0:ℝ) < |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)| := by
-      rw [← Rat.cast_abs]; exact_mod_cast hθpos
+      rw [← Rat.cast_abs]; exact_mod_cast corner_phase_pos hξ h2j
     rw [le_div_iff₀ hθposR, one_mul, ← Rat.cast_abs]
     exact_mod_cast hcb
   · -- every member is a canonical corner triangle, not merely an arbitrary
@@ -1717,14 +1709,14 @@ theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
       have hq' : q ∈ triangle (jstar n ξ w.1 w.2) (lstar n ξ w.1 w.2)
           (Real.log ((epsBW : ℝ)
             / |(θq n ξ (jstar n ξ w.1 w.2) (lstar n ξ w.1 w.2) : ℝ)|)) := hq
-      refine ⟨?_, black_of_mem_corner_triangle hξ h2j hwb hq'⟩
-      have hconf := corner_triangle_confined hξ h2j hwb hq'
+      refine ⟨?_, black_of_mem_corner_triangle hξ h2j hq'⟩
+      have hconf := corner_triangle_confined hξ h2j hq'
       have hS : (0:ℝ) ≤ Real.log (1 / (epsBW : ℝ)) := by
         apply Real.log_nonneg
         rw [show epsBW = 1 / 10 ^ 1000 from rfl]
         push_cast
         norm_num
-      have h2 : (2 * q.1 + 2 : ℝ) ≤ (n : ℝ) := by push_cast; linarith
+      have h2 : (2 * q.1 + 2 : ℝ) ≤ (n : ℝ) := by linarith
       have h2' : 2 * q.1 + 2 ≤ n := by exact_mod_cast h2
       rw [Nat.le_div_iff_mul_le (by norm_num : 0 < 2)]
       omega
@@ -1734,12 +1726,12 @@ theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
     rintro t ⟨w, ⟨hws, hwb⟩, rfl⟩ t' ⟨w', ⟨hws', hwb'⟩, rfl⟩ hne
       p hp p' hp'
     by_contra hsep
-    push_neg at hsep
+    push Not at hsep
     have hw2j := hstrip w.1 hws
     have hw2j' := hstrip w'.1 hws'
-    have hp2j := corner_triangle_strip hξ hw2j hwb hp
-    have hpb := black_of_mem_corner_triangle hξ hw2j hwb hp
-    have hpb' := black_of_mem_corner_triangle hξ hw2j' hwb' hp'
+    have hp2j := corner_triangle_strip hξ hw2j hp
+    have hpb := black_of_mem_corner_triangle hξ hw2j hp
+    have hpb' := black_of_mem_corner_triangle hξ hw2j' hp'
     have hp'near := black_near_black_mem_corner hξ hp2j hpb hpb' hsep
     have hwp := corner_eq hξ hw2j hwb hp
     have hpp' := corner_eq hξ hp2j hpb hp'near
@@ -1753,6 +1745,6 @@ theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
     rw [hjs, hls]
   · -- confinement
     rintro t ⟨w, ⟨hws, hwb⟩, rfl⟩ p hp
-    exact corner_triangle_confined hξ (hstrip w.1 hws) hwb hp
+    exact corner_triangle_confined hξ (hstrip w.1 hws) hp
 
 end TaoCollatz
