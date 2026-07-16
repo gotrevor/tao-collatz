@@ -9,6 +9,19 @@ hand-traced map this campaign formalizes. `blueprint_rules.md` remains BINDING.*
 
 ## CURRENT DIRECTIVE (campaign start, 2026-07-16) — **pin `c` in Lean: kernel-certify an explicit exponent for Theorem 3.1**
 
+> ✅ **STEP-1 SIGN-OFF GRANTED (operator, 2026-07-16 17:45)** — the lap-1 JUDGE-FLAG's branch
+> trace was spot-checked at commit `4fb5304` (the `c/20` witness, `approx_passtime_window`'s
+> `min c₁ c₂` over `first_passage_nonescape`, `Iy_count_ratio`'s `⟨0.2, 6000⟩`,
+> `descentProb_ladder`'s `min cb cs`) — all four citations verbatim. Step 3 may proceed with
+>
+> ```lean
+> noncomputable def cTao : ℝ := 1 / (640000000 * Real.log 2)
+> ```
+>
+> The choice is compiler-adjudicated downstream (a wrong `c₀` fails the `c₀ ≤ branch`
+> obligations; it cannot compile into a false theorem), so this gate is closed. All other
+> rails — append-only `Statement.lean`, step 4 operator-gated — still bind.
+
 ### 🎯 The objective, in one sentence
 
 Produce a theorem
