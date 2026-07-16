@@ -64,9 +64,9 @@ structure TriangleFamily (n ξ : ℕ) : Type where
     (p.1 : ℝ) + 1 ≤ (n : ℝ) / 2 - (1 / 10 : ℝ) * Real.log (1 / (epsBW : ℝ))
 
 /-- `black_structure` repackaged: a `TriangleFamily` exists. -/
-theorem exists_triangleFamily (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) :
+theorem exists_triangleFamily (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
     Nonempty (TriangleFamily n ξ) := by
-  obtain ⟨T, h0, hcanonical, h1, h2, h3⟩ := black_structure n ξ hξ
+  obtain ⟨T, h0, hcanonical, h1, h2, h3⟩ := black_structure n ξ hξ hn
   exact ⟨⟨T, h0, hcanonical, h1, h2, h3⟩⟩
 
 /-- The white points of the strip `j ≤ ⌊n/2⌋` (renewal coordinates). Case 2's
