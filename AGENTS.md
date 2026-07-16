@@ -31,9 +31,28 @@ FALSE GREEN that fails the build (`./tools/blueprint_audit.py`).
 
 ## House rules
 
-- **Statements are copy-not-compose.** Render verbatim against the paper's numbered display, tag
-  `-- RATIFY-<node>`, then freeze. **Never edit a ratified pin** — not to weaken, not to strengthen,
-  not to generalize. Blocked? Write **`JUDGE-FLAG:`** in `PENDING_WORK.md` + your handoff, and move on.
+- **A pin is a claim about the paper, not an API.** Render the paper's statement *plus the standing
+  context it lives in*: Tao's §7 opens *"Let n ≥ 1, let ξ ∈ ℤ/3ⁿℤ be not divisible by 3"*, so both
+  belong in every §7 pin — the numbered display alone states neither. Tag `-- RATIFY-<node>` and
+  **record where each hypothesis comes from** (`hn, hξ: §7 standing context, p.33`). A pin that
+  explains itself needs no defending; the rules below are what you fall back on when it doesn't.
+  - **The proof never dictates the statement.** "The proof didn't use it" is not a reason to trim a
+    hypothesis — a pin is written top-down from the paper, and unused-by-proof is normal. Silence the
+    linter the way mathlib does (`set_option linter.unusedVariables false in` +
+    `@[nolint unusedArguments]` + a why-comment; see `Mathlib/Algebra/Lie/Sl2.lean`).
+  - **Want the stronger lemma? Add it beside the pin, not instead of it.** Keep the frozen statement
+    and put the generalization next to it (`example : Stronger → Pinned := …`, or a free lemma the pin
+    delegates to). Generality and correspondence do not compete for the same line.
+  - **Editing a pin is a re-ratification, not a code change** — the judge's call. Write
+    **`JUDGE-FLAG:`** in `PENDING_WORK.md` + your handoff, and move on. This is a bright line for
+    unattended workers because *"I'm only generalizing it"* has been wrong here before (Lemma 7.10:
+    the two hypotheses were incomparable and the build stayed green). The deeper reason: we are a
+    **third party to a published paper**. A self-formalization can fix the source to match the Lean;
+    we cannot.
+  - ⚠️ **The freeze guards text; the meaning lives in the definitions it quotes.** `black_structure`
+    is pinned, but `black` (7.9), `triangle` (7.11) and `θq` (7.8) are not — edit those and the pin
+    means something new while its bytes never move. A definition rendering a numbered display earns
+    the same provenance comment as a pin, and drifting one is the same re-ratification.
 - **A `sorry` is honest; a weakened theorem is a lie that compiles.** If a statement will not yield,
   **decompose it** into named sub-`sorry`s and prove what you can. **Raising the sorry count that way
   is PROGRESS.** Register load-bearing sub-lemmas as blueprint sub-nodes in the SAME pass you coin
