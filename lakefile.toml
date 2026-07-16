@@ -9,13 +9,13 @@ defaultTargets = ["TaoCollatz"]
 [leanOptions]
 weak.warningAsError = true
 
-# SETTLED 2026-07-16 — decided, not to be re-litigated. `autoImplicit` invents an implicit
-# binder for any unbound identifier in a signature, so an invented variable compiles green
-# into a statement nobody meant. Machine authorship argues FOR this rather than against it:
-# the risk was never typos, it is hallucinated binders, and a wrong-but-green statement is
-# exactly what the comparator harness and the axiom gate cannot see. Matches Mathlib. Unlike
-# the option above this one is NOT `weak.`: it changes what declarations mean, so it must
-# affect the build trace. (`relaxedAutoImplicit` is moot once this is false; Mathlib omits it.)
+# `autoImplicit` invents an implicit binder for any unbound identifier in a signature, so an
+# invented variable can compile green into a statement nobody meant. Machine authorship argues
+# for this rather than against it: the risk is not typos, it is hallucinated binders — and a
+# wrong-but-green statement is what the comparator harness and the axiom gate are both blind
+# to. Matches Mathlib. Unlike the option above this one is not `weak.`: it changes what
+# declarations mean, so it must affect the build trace. (`relaxedAutoImplicit` is moot once
+# this is false; Mathlib omits it too.) It cost exactly one explicit binder to adopt here.
 autoImplicit = false
 
 # Mathlib pinned as a DIRECT require at v4.31.0 (matches the ~/.lake-base/4.31.0 universe
