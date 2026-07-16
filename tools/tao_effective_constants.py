@@ -18,12 +18,20 @@ WHAT IS KNOWN.
   C is NOT currently effective: `hold_weight_expect` (Sec7/Monotone.lean:163) pulls its
     threshold `T` out of a rate-free `Filter.eventually_atTop`, and that constant flows
     all the way to the spine via fine_scale_mixing. Until Monotone.lean:142,163 are given
-    explicit witnesses, `Cfsm` has no value -- in principle, not just in practice.
+    explicit witnesses, no UPPER bound on Cfsm is readable from the proof.
 
-  Even so, a FLOOR on Cfsm is readable from the §6 definitions alone (see cfsm_floor_log10
-  below): Cfsm ≳ 10^(4.98e7). It enters C linearly, so C ≳ 10^(5e7) -- NOT the ~1e30 an
-  earlier version of this script reported by setting Cfsm := 1. That default was a
-  placeholder, and it understated C by ~50 million orders of magnitude.
+    Be precise about what that means. The mathematics is effective -- t^k·(3/4)^t → 0 has
+    an elementary explicit rate, and nothing in Tao's argument is non-constructive. It is
+    this PROOF TEXT that throws the rate away. There is no barrier in principle, only a
+    lemma someone has to write. "C is not effective" is a claim about the current Lean.
+
+  And only the UPPER direction is blocked. A FLOOR needs no unblocking at all -- see
+  cfsm_floor_log10 below, which rides on hold_weight_expect's stated `1 <= Cthr`:
+    Cfsm ≳ 10^(6.86e7), so C ≳ 10^(7e7).
+  NOT the ~1e30 an earlier version of this script reported by setting Cfsm := 1. That
+  default was a placeholder, never derived; it understated C by ~70 million orders of
+  magnitude. For Cfsm to be ≈ 1 you would need C_head ≈ 10^-(5e7), when it is provably
+  ≥ 4^𝔡 = 10^(1.87e7).
 
 The tower (top -> bottom), each layer's transform (declaration lines):
 
@@ -103,9 +111,10 @@ def exponent_c(*, ct: float = CT, geom_scale: float = GEOM_SCALE,
 def cfsm_floor_log10() -> float:
     """log10 of a FLOOR on Cfsm = fine_scale_mixing(1.7), from the §6 definitions.
 
-    This is a floor, not a value: it uses only the 40^𝔡 factor of `osc_mainHigh_bound`,
-    and ignores the (2·C₁+2)^𝔡 term (C₁ ~ 10^3000, driven by epsBW = 1/10^1000) because
-    C₁ contains the non-effective `T`. The real Cfsm is larger.
+    A floor, not a value -- and note it needs NO unblocking. A lower bound only needs
+    C₁ >= 1, which hold_weight_expect states outright; only an UPPER bound waits on `T`.
+    It still ignores the (2·C₁+2)^𝔡 term at its true C₁ (~10^3000, driven by
+    epsBW = 1/10^1000), which the blocker hides. The real Cfsm is larger.
 
         caConst A           = 1000 * (max A 0 + 3)              Sec6/MixingCore.lean:2327
         mainDecayExponent A = A + (caConst A)^2 * ln 2 + 3      Sec6/MixingMain.lean:142
@@ -116,7 +125,12 @@ def cfsm_floor_log10() -> float:
     B = MIX_A + 2.0
     ca = 1000.0 * (max(B, 0.0) + 3.0)
     d = B + ca ** 2 * LN2 + 3.0
-    return d * math.log10(40.0)
+    # C_head >= 4^d: hold_weight_expect states 1 <= Cthr, so n0 = 2*C1+2 >= 4, and
+    # renewal_white_encounters' witness is max((n0)^A, ...) >= 4^A -- then four pure
+    # passthrough layers carry it to osc_mainHigh_bound unchanged. None of this needs
+    # the blocked `T`: a LOWER bound only needs C1 >= 1, which the statement gives.
+    #   Cfsm >= 2*Cm*zeta(2), Cm = 3*C_head*40^d  =>  6*(pi^2/6)*160^d
+    return math.log10(6.0 * (math.pi ** 2 / 6.0)) + d * math.log10(4.0 * 40.0)
 
 
 # ---------------------------------------------------------------------------
@@ -126,7 +140,7 @@ def constant_C_parts(alpha: float, c: float, *, logX: float = 1e6):
     """Return (C_at_cfsm_0, slope, waterfall). C(Cfsm) = C_at_cfsm_0 + slope·Cfsm.
 
     Faithful to the witness tower. Evaluated at Cfsm = 0 and 1 and differenced, because
-    the true Cfsm overflows a float by ~50 million orders of magnitude.
+    the true Cfsm overflows a float by ~70 million orders of magnitude.
     """
     def _C(cfsm: float):
         # --- §5 first-passage base branch: C_fpne = 44 (all literals) --------
@@ -198,7 +212,7 @@ def report(alpha: float, cfsm_log10: float) -> None:
     floor = cfsm_floor_log10()
     log10_C = math.log10(slope) + cfsm_log10
     if cfsm_log10 >= floor - 1e-9:
-        print(f"  Cfsm ≳ 10^{floor:.3e}   (floor from the 40^𝔡 factor alone; see docstring)")
+        print(f"  Cfsm ≳ 10^{floor:.3e}   (needs no unblocking; rides on `1 <= Cthr`)")
         print(f"  ==> C ≳ 10^{log10_C:.3e}")
     else:
         print(f"  Cfsm = 10^{cfsm_log10:g}  <-- BELOW the readable floor 10^{floor:.3e}.")

@@ -12,6 +12,13 @@ The quantitative headline `tao_collatz_quantitative` (Theorem 3.1, Colmin form) 
 constant from a rate-free limit — and once that step is fixed, `C` is not `~10³⁰` but a
 tower of at least `10^(5 × 10⁷)`. Details and the one-line fix below.
 
+> 🧭 **This is a side expedition, and nothing here is part of the result.** The theorem is
+> what `TaoCollatz/Statement.lean` says; these constants are hand-traced from proof *text*,
+> which is a weaker kind of evidence than anything else in this repo, and `C` is not effective
+> at all. So they stay out of `Statement.lean`, out of the theorem, and out of the blueprint
+> until someone formalizes them. Read this as a map for whoever does — not as a claim the
+> repo stands behind.
+
 ## ⚠️ First: what "effective" does and does not mean here
 
 Every constant-carrying lemma on the path is stated `∃ c C x₀ : ℝ, …`, and every proof
@@ -118,8 +125,19 @@ hold_weight_expect          Sec7/Monotone.lean:127   ⟨K + M1 + 2*T + 4, …⟩
 
 So the blueprint-D3 claim ("no `IsBigO`, no filters, no non-constructive choice on the
 load-bearing path") **does not hold**. It holds everywhere else — this is the only such step on
-the whole path, and there is no `IsBigO` anywhere in the repo — but this one carries a
-constant, so `Cfsm` is non-effective *in principle*, not merely un-extracted.
+the whole path, and there is no `IsBigO` anywhere in the repo — but this one carries a constant.
+
+⚠️ **Be precise about what that does and doesn't mean.** The *mathematics* here is perfectly
+effective: `t^⌈A⌉·(3/4)^t → 0` has an elementary explicit rate, and nothing in Tao's argument is
+non-constructive. What is non-effective is **this proof text**, which throws the rate away by
+routing through `Filter.eventually_atTop`. There is no barrier in principle — only a lemma
+someone has to write. "`C` is not effective" is a statement about the current Lean, not about
+Theorem 3.1.
+
+**And an upper bound is the only direction that's blocked.** A *lower* bound needs nothing at
+all: `hold_weight_expect` states `1 ≤ Cthr`, so `C1 ≥ 1`, `n0 = 2·C1 + 2 ≥ 4`, and the floor
+below goes through with no edits. It is the upper bound — the one that makes a constant
+"effective" — that waits on `T`.
 
 ### And `fine_scale_mixing` is not a leaf
 
@@ -139,11 +157,31 @@ Reading the definitions:
 So `B = mainDecayExponent(3.7) = 3.7 + 6700²·ln 2 + 3 ≈ 3.11 × 10⁷`, and the constant carries a
 factor `40^(3.11×10⁷) ≈ 10^(4.98×10⁷)`.
 
-**`Cfsm ≳ 10^(4.98 × 10⁷)`** — a floor, from that one factor alone, before the `(2·C1+2)^B` term
-(where `C1` is itself ~`10^3000`, driven by `epsBW = 1/10^1000`). `Cfsm` enters `C` linearly, so:
+The full floor argument, which needs **no** unblocking — every input is a stated hypothesis or a
+`refine` witness read off the source:
 
-**`C ≳ 10^(5 × 10⁷)`, not `10³⁰`.** The old headline was the formula with an unknown set to a
-placeholder, understating `C` by ~50 million orders of magnitude.
+```
+hold_weight_expect            ∃ Cthr : ℕ, 1 ≤ Cthr ∧ …        Sec7/Monotone.lean:127
+  ⟹ C1 ≥ 1  ⟹  n0 = 2·C1 + 2 ≥ 4                             Sec7/Bridge.lean:517
+renewal_white_encounters      ⟨max ((n0:ℝ)^A) (…), …⟩ ≥ 4^A     Sec7/Bridge.lean:518
+  ⟹ passthrough ×4 (key_fourier_decay → charFn_decay →
+      head_factor_norm_le_charFn → head_uniform_highFreq_of_margin:
+      each is literally `obtain ⟨C, …⟩; refine ⟨C, …⟩`)
+  ⟹ C_head(𝔡) ≥ 4^𝔡
+osc_mainHigh_bound            ⟨3 · C_head(𝔡) · 40^𝔡, …⟩         Sec6/MixingMain.lean:469
+osc_syracZ_high_regime        ⟨2 · max Cm Ce, …⟩ ≥ 2·Cm         Sec6/MixingFromDecay.lean:16
+osc_syracZ_regime_telescope   ⟨2·N^A + C_high·ζ(2), …⟩ ≥ C_high·π²/6   Sec6/MixingRegime.lean:55
+
+  ⟹ Cfsm ≥ 6 · (π²/6) · 4^𝔡 · 40^𝔡 = 6 · (π²/6) · 160^𝔡 ≈ 10^(6.86 × 10⁷)
+```
+
+**`Cfsm ≳ 10^(6.86 × 10⁷)`.** (A weaker floor of `10^(4.98 × 10⁷)` follows from the `40^𝔡` factor
+alone, dropping `C_head`; both are far above 1, and neither touches the `(2·C1+2)^𝔡` term at its
+true `C1`, which the blocker hides.) `Cfsm` enters `C` linearly, so:
+
+**`C ≳ 10^(7 × 10⁷)`, not `10³⁰`.** The old headline was the formula with an unknown set to a
+placeholder, understating `C` by ~70 million orders of magnitude. For `Cfsm` to have been ≈ 1 you
+would need `C_head ≈ 10^(-5×10⁷)`, when it is provably `≥ 4^𝔡 = 10^(1.87×10⁷)`.
 
 ### A second transcendental — `π`, and it rolls up cleanly
 
