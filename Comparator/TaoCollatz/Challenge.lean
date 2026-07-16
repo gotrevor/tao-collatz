@@ -5,8 +5,7 @@ Imports ONLY Mathlib. Re-declares the development's trusted-base DEFINITIONS
 (`col`, `colMin`, `logSum`, `logProb`, `HasLogDensity`, `AlmostAllPos`) under
 their real fully-qualified names, with their real bodies, so
 `leanprover/comparator` can certify they are byte-identical to the ones the
-project actually uses. The `[1, x]` window is Mathlib's own `Finset.Icc 1 x`,
-so it needs no declaration here and no reading at all.
+project actually uses.
 
 The theorems below are the project's proved *non-vacuity anchors*; comparator
 checks the SOLUTION discharges each one against these very definitions.
