@@ -23,6 +23,9 @@ anchors exist to rule out a vacuous reading — see each docstring.
 -/
 import Mathlib
 
+-- Load-bearing, despite looking like a no-op: the package turns warnings into errors
+-- (lakefile.toml) and the statements below are `sorry` by design. Removing this line
+-- fails the Comparator build.
 set_option warningAsError false
 
 namespace TaoCollatz
