@@ -179,12 +179,14 @@ Route: `B_x ⊆ {Pass_x ∈ E}` up to the non-passage event (`stabilization` par
 `1 ∈ E_{N₀}` since `passLoc = 1` off passage and `Syrmin 1 = 1 ≤ N₀`); swap windows by
 `stabilization`'s dTV bound via `abs_expect_indicator_sub_le_dTV`; re-enter `B_{x^α}` by
 `descentEvent_mono` (⌊x⌋₊ ≤ ⌊x^α⌋₊). -/
-theorem descentProb_step :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
+theorem descentProb_step_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
       descentProb ⌊x⌋₊ (x ^ alpha) N₀
-        ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀ + C * (Real.log x) ^ (-c) := by
-  obtain ⟨c, C, x₀, hc, hC, hstab⟩ := stabilization
-  refine ⟨c, 2 * C, max x₀ (Real.exp 1), hc, by linarith, fun x hx N₀ hN₀ => ?_⟩
+        ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀ + C * (Real.log x) ^ (-c_stab) := by
+  obtain ⟨C, x₀, hC, hstab⟩ := stabilization_explicit
+  set c : ℝ := c_stab with hcdef
+  have hc : 0 < c := c_stab_pos
+  refine ⟨2 * C, max x₀ (Real.exp 1), by linarith, fun x hx N₀ hN₀ => ?_⟩
   have hx₀ : x₀ ≤ x := le_trans (le_max_left _ _) hx
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hx1 : (1 : ℝ) ≤ x := by
@@ -271,13 +273,22 @@ theorem descentProb_step :
     _ ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀
         + 2 * C * (Real.log x) ^ (-c) := by nlinarith [herr, hC]
 
+theorem descentProb_step :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
+      descentProb ⌊x⌋₊ (x ^ alpha) N₀
+        ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀ + C * (Real.log x) ^ (-c) := by
+  obtain ⟨C, x₀, hC, h⟩ := descentProb_step_explicit
+  exact ⟨c_stab, C, x₀, c_stab_pos, hC, h⟩
+
 /-- **Base case** (p.17 bottom): at scales `x ≤ N₀`, the event needs only passage —
 `Syrmin(Pass) ≤ Pass ≤ ⌊x⌋ ≤ N₀` — so `first_passage_nonescape` gives `1 − O(x^{-c})`. -/
-theorem descentProb_base :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, x ≤ (N₀ : ℝ) →
-      1 - C * x ^ (-c) ≤ descentProb ⌊x⌋₊ (x ^ alpha) N₀ := by
-  obtain ⟨c, C, x₀, hc, hC, hne⟩ := first_passage_nonescape
-  refine ⟨c, C, max x₀ 0, hc, hC, fun x hx N₀ hxN₀ => ?_⟩
+theorem descentProb_base_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, x ≤ (N₀ : ℝ) →
+      1 - C * x ^ (-c_valSumTail) ≤ descentProb ⌊x⌋₊ (x ^ alpha) N₀ := by
+  obtain ⟨C, x₀, hC, hne⟩ := first_passage_nonescape_explicit
+  set c : ℝ := c_valSumTail with hcdef
+  have hc : 0 < c := c_valSumTail_pos
+  refine ⟨C, max x₀ 0, hC, fun x hx N₀ hxN₀ => ?_⟩
   have hx₀ : x₀ ≤ x := le_trans (le_max_left _ _) hx
   have hx0 : (0 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hkey := hne x hx₀ (x ^ alpha) (Set.mem_insert _ _)
@@ -300,18 +311,39 @@ theorem descentProb_base :
 /-- **Ladder iteration** of `descentProb_step` from `descentProb_base` (p.18 top): climbing
 `j` scales up from a base scale `y ≤ N₀` costs the base error plus a geometric error sum
 `∑_{i<j} (α^{-c})^i · (log y)^{-c}`. The scale after `j` climbs is `y^{α^j}`. -/
-theorem descentProb_ladder :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ : ℕ, ∀ y : ℝ, x₀ ≤ y → y ≤ (N₀ : ℝ) → ∀ j : ℕ,
-      1 - C * y ^ (-c)
-        - C * (Real.log y) ^ (-c) * ∑ i ∈ Finset.range j, (alpha ^ (-c)) ^ i
+theorem descentProb_base :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, x ≤ (N₀ : ℝ) →
+      1 - C * x ^ (-c) ≤ descentProb ⌊x⌋₊ (x ^ alpha) N₀ := by
+  obtain ⟨C, x₀, hC, h⟩ := descentProb_base_explicit
+  exact ⟨c_valSumTail, C, x₀, c_valSumTail_pos, hC, h⟩
+
+/-- Effective-constants campaign: the `c`-witness of the whole Sec3 glue — the ladder min
+over the base (c7) and step (`c_stab`) branches. Since `c_stab ≤ c_valSumTail`, this equals
+`c_stab`, which by the step-1 trace equals the c7 value `1/(640000000·log 2)`. Every hop
+from `descentProb_ladder` to `tao_collatz_quantitative_spine` passes it through unchanged. -/
+noncomputable def c_ladder : ℝ := min c_valSumTail c_stab
+
+theorem c_ladder_pos : 0 < c_ladder := lt_min c_valSumTail_pos c_stab_pos
+
+/-- Sibling of `descentProb_ladder` with the `c`-slot pinned to `c_ladder`; the original
+delegates here. -/
+theorem descentProb_ladder_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ N₀ : ℕ, ∀ y : ℝ, x₀ ≤ y → y ≤ (N₀ : ℝ) → ∀ j : ℕ,
+      1 - C * y ^ (-c_ladder)
+        - C * (Real.log y) ^ (-c_ladder) * ∑ i ∈ Finset.range j, (alpha ^ (-c_ladder)) ^ i
         ≤ descentProb ⌊y ^ (alpha ^ j)⌋₊ ((y ^ (alpha ^ j)) ^ alpha) N₀ := by
-  obtain ⟨cb, Cb, xb, hcb, hCb, hbase⟩ := descentProb_base
-  obtain ⟨cs, Cs, xs, hcs, hCs, hstep⟩ := descentProb_step
+  obtain ⟨Cb, xb, hCb, hbase⟩ := descentProb_base_explicit
+  obtain ⟨Cs, xs, hCs, hstep⟩ := descentProb_step_explicit
+  set cb : ℝ := c_valSumTail with hcbdef
+  set cs : ℝ := c_stab with hcsdef
+  have hcb : 0 < cb := c_valSumTail_pos
+  have hcs : 0 < cs := c_stab_pos
   set c := min cb cs with hcdef
   have hc : 0 < c := lt_min hcb hcs
   set C := max Cb Cs with hCdef
   have hC : 0 < C := lt_of_lt_of_le hCb (le_max_left _ _)
-  refine ⟨c, C, max (max xb xs) (Real.exp 1), hc, hC, fun N₀ y hy hyN j => ?_⟩
+  rw [show c_ladder = c from rfl]
+  refine ⟨C, max (max xb xs) (Real.exp 1), hC, fun N₀ y hy hyN j => ?_⟩
   have hyb : xb ≤ y := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hy
   have hys : xs ≤ y := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hy
   have hye : Real.exp 1 ≤ y := le_trans (le_max_right _ _) hy
@@ -389,11 +421,23 @@ theorem descentProb_ladder :
 /-- **Telescope** (p.18 top): iterating `descentProb_step` down `J ≈ log_α(log x/log N₀)`
 scales from the base `y < N₀^{1/α}` and summing `∑_j (α^j log y)^{-c} ≪ log^{-c} N₀` gives
 `ℙ(B_{x^{1/α}}) ≥ 1 − O(log^{-c}N₀)` — the window `[x, x^α]`, threshold `⌊x^{1/α}⌋`. -/
-theorem descent_whp :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+theorem descentProb_ladder :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ : ℕ, ∀ y : ℝ, x₀ ≤ y → y ≤ (N₀ : ℝ) → ∀ j : ℕ,
+      1 - C * y ^ (-c)
+        - C * (Real.log y) ^ (-c) * ∑ i ∈ Finset.range j, (alpha ^ (-c)) ^ i
+        ≤ descentProb ⌊y ^ (alpha ^ j)⌋₊ ((y ^ (alpha ^ j)) ^ alpha) N₀ := by
+  obtain ⟨C, x₀, hC, h⟩ := descentProb_ladder_explicit
+  exact ⟨c_ladder, C, x₀, c_ladder_pos, hC, h⟩
+
+/-- Sibling of `descent_whp` with the `c`-slot pinned to `c_ladder` (passthrough); the
+original delegates here. -/
+theorem descent_whp_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
       (N₀ : ℝ) ≤ x →
-      1 - C * (Real.log N₀) ^ (-c) ≤ descentProb ⌊x ^ (alpha⁻¹)⌋₊ x N₀ := by
-  obtain ⟨c, Cl, xl, hc, hCl, hlad⟩ := descentProb_ladder
+      1 - C * (Real.log N₀) ^ (-c_ladder) ≤ descentProb ⌊x ^ (alpha⁻¹)⌋₊ x N₀ := by
+  obtain ⟨Cl, xl, hCl, hlad⟩ := descentProb_ladder_explicit
+  set c : ℝ := c_ladder with hcdef
+  have hc : 0 < c := c_ladder_pos
   have halpha1 : (1 : ℝ) < alpha := by norm_num [alpha]
   have halpha0 : (0 : ℝ) < alpha := by linarith
   set r := alpha ^ (-c) with hrdef
@@ -407,8 +451,8 @@ theorem descent_whp :
       _ ≤ Real.exp 1 := Real.exp_le_exp.mpr zero_le_one
       _ ≤ A := hAe
   have hA0 : (0 : ℝ) < A := lt_of_lt_of_le one_pos hA1
-  refine ⟨c, Cl * (1 + (1 - r)⁻¹) * alpha ^ c,
-    max (A ^ alpha) (Real.exp 1), hc, ?_, fun N₀ x hx hN₀lb hN₀x => ?_⟩
+  refine ⟨Cl * (1 + (1 - r)⁻¹) * alpha ^ c,
+    max (A ^ alpha) (Real.exp 1), ?_, fun N₀ x hx hN₀lb hN₀x => ?_⟩
   · have h1r : (0 : ℝ) < (1 - r)⁻¹ := by positivity
     have hac : (0 : ℝ) < alpha ^ c := Real.rpow_pos_of_pos halpha0 _
     positivity
@@ -555,20 +599,31 @@ theorem descent_whp :
 /-- **Window bad-mass** ((3.1), p.18): on any window `[x, x^α]` with `N₀ ≤ x`, the harmonic
 mass of `{Syrmin > N₀}` is `≪ log^{-c}N₀ · log x`. From `descent_whp` +
 `syrMin_le_of_descentEvent` + `logUnifOdd_expect_indicator` + `windowMass_le_half_log`. -/
-theorem window_bad_sum :
+theorem descent_whp :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
       (N₀ : ℝ) ≤ x →
+      1 - C * (Real.log N₀) ^ (-c) ≤ descentProb ⌊x ^ (alpha⁻¹)⌋₊ x N₀ := by
+  obtain ⟨C, x₀, hC, h⟩ := descent_whp_explicit
+  exact ⟨c_ladder, C, x₀, c_ladder_pos, hC, h⟩
+
+/-- Sibling of `window_bad_sum` with the `c`-slot pinned to `c_ladder` (passthrough); the
+original delegates here. -/
+theorem window_bad_sum_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+      (N₀ : ℝ) ≤ x →
       ∑ N ∈ (logWindow x (x ^ alpha)).filter (· ∈ {N | N₀ < syrMin N}), (N : ℝ)⁻¹
-        ≤ C * (Real.log N₀) ^ (-c) * Real.log x := by
+        ≤ C * (Real.log N₀) ^ (-c_ladder) * Real.log x := by
   classical
-  obtain ⟨c, C, x₀d, hc, hC, hwhp⟩ := descent_whp
+  obtain ⟨C, x₀d, hC, hwhp⟩ := descent_whp_explicit
+  set c : ℝ := c_ladder with hcdef
+  have hc : 0 < c := c_ladder_pos
   obtain ⟨x₀z, hnonempty⟩ := logWindow_nonempty_of_large
   have halpha0 : (0 : ℝ) < alpha := by norm_num [alpha]
   have halpha1 : (1 : ℝ) < alpha := by norm_num [alpha]
   set M := max x₀z 1 with hMdef
   have hM1 : (1 : ℝ) ≤ M := le_max_right _ _
   have hM0 : (0 : ℝ) < M := lt_of_lt_of_le one_pos hM1
-  refine ⟨c, 2 * C, max (max x₀d (M ^ alpha)) (Real.exp 1), hc, by linarith,
+  refine ⟨2 * C, max (max x₀d (M ^ alpha)) (Real.exp 1), by linarith,
     fun N₀ x hx hN₀lb hN₀x => ?_⟩
   -- basic sizes
   have hxd : x₀d ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
@@ -665,12 +720,23 @@ theorem window_bad_sum :
 
 /-- **Theorem 3.1, Syracuse sum form** (Tao 2019 p.16, first display):
 `∑_{N ∈ 2ℕ+1 ∩ [1,x], Syrmin(N) > N₀} 1/N ≪ log x / (log N₀)^c`. -/
--- RATIFY-C6a
-theorem tao_syracuse_quantitative_sum :
-    ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+theorem window_bad_sum :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+      (N₀ : ℝ) ≤ x →
+      ∑ N ∈ (logWindow x (x ^ alpha)).filter (· ∈ {N | N₀ < syrMin N}), (N : ℝ)⁻¹
+        ≤ C * (Real.log N₀) ^ (-c) * Real.log x := by
+  obtain ⟨C, x₀, hC, h⟩ := window_bad_sum_explicit
+  exact ⟨c_ladder, C, x₀, c_ladder_pos, hC, h⟩
+
+/-- Sibling of the RATIFY-C6a `tao_syracuse_quantitative_sum` with the `c`-slot pinned to
+`c_ladder` (passthrough); the ratified original (byte-identical) delegates here. -/
+theorem tao_syracuse_quantitative_sum_explicit :
+    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       logSum {N | N₀ < syrMin N} (oddInterval x)
-        ≤ C * Real.log x / (Real.log N₀) ^ c := by
-  obtain ⟨c, Cw, xw, hc, hCw, hwbs⟩ := window_bad_sum
+        ≤ C * Real.log x / (Real.log N₀) ^ c_ladder := by
+  obtain ⟨Cw, xw, hCw, hwbs⟩ := window_bad_sum_explicit
+  set c : ℝ := c_ladder with hcdef
+  have hc : 0 < c := c_ladder_pos
   have halpha1 : (1 : ℝ) < alpha := by norm_num [alpha]
   have halpha0 : (0 : ℝ) < alpha := by linarith
   have hden : (0 : ℝ) < alpha - 1 := by linarith
@@ -687,7 +753,7 @@ theorem tao_syracuse_quantitative_sum :
   have hC0 : (0 : ℝ) < C := by
     have h1 : (0 : ℝ) < Cw * alpha / (alpha - 1) := by positivity
     exact lt_of_lt_of_le h1 (le_max_left _ _)
-  refine ⟨c, C, hc, hC0, fun N₀ x hN₀2 hx2 => ?_⟩
+  refine ⟨C, hC0, fun N₀ x hN₀2 hx2 => ?_⟩
   -- common size facts
   have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
   have hx0 : (0 : ℝ) < (x : ℝ) := by linarith
@@ -974,12 +1040,23 @@ theorem log_le_eight_logSum_univ_oddInterval {x : ℕ} (hx2 : 2 ≤ x) :
 
 /-- **Theorem 3.1, Syracuse probability form** (Tao 2019 p.16, second display):
 `ℙ(Syrmin(Log(2ℕ+1 ∩ [1,x])) ≤ N₀) ≥ 1 − O(log^{-c} N₀)`. -/
--- RATIFY-C6b
-theorem tao_syracuse_quantitative :
+-- RATIFY-C6a
+theorem tao_syracuse_quantitative_sum :
     ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
-      1 - C / (Real.log N₀) ^ c ≤ logProb {N | syrMin N ≤ N₀} (oddInterval x) := by
-  obtain ⟨c, Ca, hc, hCa, hsum⟩ := tao_syracuse_quantitative_sum
-  refine ⟨c, 8 * Ca, hc, by linarith, fun N₀ x hN₀2 hx2 => ?_⟩
+      logSum {N | N₀ < syrMin N} (oddInterval x)
+        ≤ C * Real.log x / (Real.log N₀) ^ c := by
+  obtain ⟨C, hC, h⟩ := tao_syracuse_quantitative_sum_explicit
+  exact ⟨c_ladder, C, c_ladder_pos, hC, h⟩
+
+/-- Sibling of the RATIFY-C6b `tao_syracuse_quantitative` with the `c`-slot pinned to
+`c_ladder` (passthrough); the ratified original (byte-identical) delegates here. -/
+theorem tao_syracuse_quantitative_explicit :
+    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C / (Real.log N₀) ^ c_ladder ≤ logProb {N | syrMin N ≤ N₀} (oddInterval x) := by
+  obtain ⟨Ca, hCa, hsum⟩ := tao_syracuse_quantitative_sum_explicit
+  set c : ℝ := c_ladder with hcdef
+  have hc : 0 < c := c_ladder_pos
+  refine ⟨8 * Ca, by linarith, fun N₀ x hN₀2 hx2 => ?_⟩
   -- size facts
   have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
   have hx0 : (0 : ℝ) < (x : ℝ) := by linarith
@@ -1026,6 +1103,13 @@ theorem tao_syracuse_quantitative :
     calc B / D ≤ (8 * Ca * D / (Real.log N₀) ^ c) / D := h1
       _ = 8 * Ca / (Real.log N₀) ^ c := by field_simp
   linarith [hBD]
+
+-- RATIFY-C6b
+theorem tao_syracuse_quantitative :
+    ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C / (Real.log N₀) ^ c ≤ logProb {N | syrMin N ≤ N₀} (oddInterval x) := by
+  obtain ⟨C, hC, h⟩ := tao_syracuse_quantitative_explicit
+  exact ⟨c_ladder, C, c_ladder_pos, hC, h⟩
 
 /-- **Theorem 1.6** (Tao 2019 p.4): for `f` with `f(N) → ∞`, almost all odd `N`
 (log density on the odd window) satisfy `Syrmin(N) < f(N)`. -/
@@ -1326,13 +1410,16 @@ Sorried wiring theorems, byte-identical in statement to the two frozen
   `→ ∞`), then `almostAllPos_oddPart_of_almostAllOdd` + `oddPart N ≤ N` gives
   `colMin N = syrMin (oddPart N) < f̃ (oddPart N) ≤ f N`. -/
 
-/-- Spine for **Theorem 3.1 (Colmin form)**: statement identical to the frozen
-`tao_collatz_quantitative`. -/
-theorem tao_collatz_quantitative_spine :
-    ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
-      1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
-  obtain ⟨c, Ca, hc, hCa, hsum⟩ := tao_syracuse_quantitative_sum
-  refine ⟨c, 16 * Ca, hc, by linarith, fun N₀ x hN₀2 hx2 => ?_⟩
+/-- Explicit-`c` spine for **Theorem 3.1 (Colmin form)**: `tao_collatz_quantitative_spine`
+with the `c`-slot pinned to `c_ladder` (passthrough); the spine delegates here. This is the
+lemma DIRECTION step 3's `tao_collatz_quantitative_explicit` will consume. -/
+theorem tao_collatz_quantitative_spine_explicit :
+    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C / (Real.log N₀) ^ c_ladder ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
+  obtain ⟨Ca, hCa, hsum⟩ := tao_syracuse_quantitative_sum_explicit
+  set c : ℝ := c_ladder with hcdef
+  have hc : 0 < c := c_ladder_pos
+  refine ⟨16 * Ca, by linarith, fun N₀ x hN₀2 hx2 => ?_⟩
   have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
   have hx0 : (0 : ℝ) < (x : ℝ) := by linarith
   have hlogx0 : (0 : ℝ) < Real.log x := Real.log_pos (by linarith)
@@ -1425,6 +1512,14 @@ theorem tao_collatz_quantitative_spine :
     calc B / D ≤ (16 * Ca * D / (Real.log N₀) ^ c) / D := h1
       _ = 16 * Ca / (Real.log N₀) ^ c := by field_simp
   linarith [hBD]
+
+/-- Spine for **Theorem 3.1 (Colmin form)**: statement identical to the frozen
+`tao_collatz_quantitative`. -/
+theorem tao_collatz_quantitative_spine :
+    ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
+  obtain ⟨C, hC, h⟩ := tao_collatz_quantitative_spine_explicit
+  exact ⟨c_ladder, C, c_ladder_pos, hC, h⟩
 
 /-- Spine for **Theorem 1.3**: statement identical to the frozen `tao_collatz`. -/
 theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
