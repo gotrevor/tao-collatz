@@ -1521,6 +1521,79 @@ theorem tao_collatz_quantitative_spine :
   obtain ⟨C, hC, h⟩ := tao_collatz_quantitative_spine_explicit
   exact ⟨c_ladder, C, c_ladder_pos, hC, h⟩
 
+/-- The traced explicit exponent `1/(640000000 · ln 2)` lower-bounds the whole `c_ladder`
+min-tree (effective-constants campaign, DIRECTION step 3): the binding branch is
+`c_valSumTail = finalDecay (1/4000) / log 2 / 20 = (1/32000000) / log 2 / 20`, and every
+purely numeric leaf of the tree is `≥ 1/5`. -/
+theorem c_ladder_lower : 1 / (640000000 * Real.log 2) ≤ c_ladder := by
+  have hL : (0.6931471803 : ℝ) < Real.log 2 := Real.log_two_gt_d9
+  have hq5 : 1 / (640000000 * Real.log 2) ≤ 1 / 5 := by
+    have h5 : (5 : ℝ) ≤ 640000000 * Real.log 2 := by nlinarith
+    exact one_div_le_one_div_of_le (by norm_num) h5
+  -- the binding branch: both `finalDecay` leaves of `c_valSumGeom` are `≥ 1/32000000`
+  have hfd : ∀ d : ℝ, 1 / 4000 ≤ d →
+      1 / (640000000 * Real.log 2) ≤ finalDecay d / Real.log 2 / 20 := by
+    intro d hd
+    have h1 : (1 : ℝ) / 32000000 ≤ finalDecay d := by
+      unfold finalDecay linearDecay
+      exact le_min (by linarith) (le_min (by nlinarith) (by linarith))
+    calc 1 / (640000000 * Real.log 2) = 1 / 32000000 / Real.log 2 / 20 := by
+          rw [div_div, div_div]; ring
+      _ ≤ finalDecay d / Real.log 2 / 20 := by gcongr
+  have hvst : 1 / (640000000 * Real.log 2) ≤ c_valSumTail := by
+    unfold c_valSumTail c_valSumGeom c_valuationDist
+    rw [← min_div_div_right (by norm_num : (0 : ℝ) ≤ 20)]
+    exact le_min (hfd _ (by norm_num [c_geomTail])) (hfd _ (by norm_num [c_geomTail]))
+  have hq1 : 1 / (640000000 * Real.log 2) ≤ (1 : ℝ) := hq5.trans (by norm_num)
+  have hq02 : 1 / (640000000 * Real.log 2) ≤ (0.2 : ℝ) := hq5.trans (by norm_num)
+  have hq03 : 1 / (640000000 * Real.log 2) ≤ (0.3 : ℝ) := hq5.trans (by norm_num)
+  have hq15 : 1 / (640000000 * Real.log 2) ≤ (1 / 5 : ℝ) := hq5
+  unfold c_ladder c_stab c_fpApprox c_windowReduce c_passtimeWindow c_passtimeInner
+    c_affineReindex c_steppedMid c_truncation c_goodTupleDev c_edgeMass c_earlyReturn
+    c_approxToZ c_IyRatio c_perNTermEval c_perNHarm c_harmonicZ c_harmZfine c_mainZbridge
+  simp only [le_min_iff]
+  tauto
+
+/-- Weakening of the explicit spine to any positive exponent `c₀ ≤ c_ladder`: the bound is
+monotone in the exponent for `log N₀ > 1` (i.e. `N₀ ≥ 3`), and the window `N₀ = 2` is
+absorbed by enlarging `C` so the bound is `≤ 0 ≤ logProb`. -/
+theorem tao_collatz_quantitative_spine_of_le {c₀ : ℝ} (hle : c₀ ≤ c_ladder) :
+    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C / (Real.log N₀) ^ c₀ ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
+  obtain ⟨C, hC, h⟩ := tao_collatz_quantitative_spine_explicit
+  refine ⟨max C ((Real.log 2) ^ c₀), lt_max_of_lt_left hC, fun N₀ x hN₀ hx => ?_⟩
+  have hlp : (0 : ℝ) ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
+    unfold logProb logSum
+    positivity
+  rcases eq_or_lt_of_le hN₀ with hN₀2 | hN₀3
+  · -- `N₀ = 2`: the enlarged `C` makes the bound nonpositive
+    subst hN₀2
+    push_cast
+    have hpow : (0 : ℝ) < (Real.log 2) ^ c₀ :=
+      Real.rpow_pos_of_pos (Real.log_pos one_lt_two) _
+    have h1 : (1 : ℝ) ≤ max C ((Real.log 2) ^ c₀) / (Real.log 2) ^ c₀ :=
+      (one_le_div hpow).2 (le_max_right _ _)
+    linarith
+  · -- `N₀ ≥ 3`: `log N₀ > 1`, so the bound is monotone in the exponent
+    have hN₀3' : (3 : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast hN₀3
+    have hlog1 : (1 : ℝ) ≤ Real.log N₀ := by
+      have h3 : (1 : ℝ) < Real.log 3 :=
+        (Real.lt_log_iff_exp_lt (by norm_num)).2 Real.exp_one_lt_three
+      have := Real.log_le_log (by norm_num : (0 : ℝ) < 3) hN₀3'
+      linarith
+    have hpow0 : (0 : ℝ) < (Real.log N₀) ^ c₀ :=
+      Real.rpow_pos_of_pos (by linarith) _
+    have hpowc : (Real.log N₀) ^ c₀ ≤ (Real.log N₀) ^ c_ladder :=
+      Real.rpow_le_rpow_of_exponent_le hlog1 hle
+    have hbase := h N₀ x hN₀ hx
+    have hmono : C / (Real.log N₀) ^ c_ladder ≤
+        max C ((Real.log 2) ^ c₀) / (Real.log N₀) ^ c₀ := by
+      calc C / (Real.log N₀) ^ c_ladder ≤ C / (Real.log N₀) ^ c₀ := by gcongr
+        _ ≤ max C ((Real.log 2) ^ c₀) / (Real.log N₀) ^ c₀ := by
+            gcongr
+            exact le_max_left _ _
+    linarith
+
 /-- Spine for **Theorem 1.3**: statement identical to the frozen `tao_collatz`. -/
 theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
     AlmostAllPos fun N => (colMin N : ℝ) < f N := by
