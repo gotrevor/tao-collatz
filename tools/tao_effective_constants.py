@@ -14,7 +14,9 @@ nothing in CI ties the two together. Evidence tier: "traced by hand", well below
 anything the kernel certifies. See notes/effective-constants.md.
 
 WHAT IS KNOWN.
-  c ≈ 2.25e-9, exactly 1/(640_000_000 · ln 2). Traceable, and the trace checks out.
+  c <= 1/(640_000_000 · ln 2) ≈ 2.25e-9.  <= and not =: c = min(c7, c8, cs') and only the
+    c7 branch is traced, so this bounds c above. Equality needs c8 >= c7 and cs' >= c7,
+    which nobody has shown. exponent_c() below computes the c7 branch.
   C is NOT currently effective: `hold_weight_expect` (Sec7/Monotone.lean:163) pulls its
     threshold `T` out of a rate-free `Filter.eventually_atTop`, and that constant flows
     all the way to the spine via fine_scale_mixing. Until Monotone.lean:142,163 are given
@@ -96,7 +98,9 @@ def final_decay(d: float, *, quadratic: bool = True) -> float:
 
 def exponent_c(*, ct: float = CT, geom_scale: float = GEOM_SCALE,
                nzero_div: float = NZERO_DIV, quadratic: bool = True) -> float:
-    """The frozen exponent. c = finalDecay(ct·scale)/ln2 / 20 = 1/(640_000_000·ln2).
+    """The c7 branch: finalDecay(ct·scale)/ln2 / 20 = 1/(640_000_000·ln2).
+
+    This bounds the headline c ABOVE (c = min(c7, c8, cs'), and only c7 is traced).
 
     `valSum_lower_geom` (FirstPassage.lean:1215) sets c := min cd cg with
     cd = 1/(320_000·ln2) and cg = 1/(32_000_000·ln2); cg is ~100× smaller, so the min is cg.
@@ -202,7 +206,7 @@ def report(alpha: float, cfsm_log10: float) -> None:
     C0, slope, wf = constant_C_parts(alpha, c)
 
     print(f"  α = {alpha:<10g}  (FirstPassage.lean:116 -- structural, not a knob)")
-    print(f"  c = 1/(640_000_000·ln2) = {c:.4e}      [traceable; trace verified]")
+    print(f"  c ≤ 1/(640_000_000·ln2) = {c:.4e}      [c7 branch; c is a min -- see docstring]")
     print()
     print("  C = C₀ + slope·Cfsm, with")
     print(f"    C₀    = {C0:.3e}   (the Cfsm-free part)")

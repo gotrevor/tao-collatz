@@ -7,7 +7,8 @@ The quantitative headline `tao_collatz_quantitative` (Theorem 3.1, Colmin form) 
     1 - C / (log N₀)^c ≤ logProb {N | colMin N ≤ N₀} [1,x]
 ```
 
-**Short answer:** `c` is traceable and is `1/(640_000_000 · ln 2) ≈ 2.25 × 10⁻⁹`.
+**Short answer:** `c ≤ 1/(640_000_000 · ln 2) ≈ 2.25 × 10⁻⁹` — `≤`, not `=`, because `c` is a
+`min` and only one branch is traced below.
 **No upper bound on `C` is readable from the proof** — one step (`Sec7/Monotone.lean:163`)
 produces its constant from a rate-free limit. That is a defect in this proof text, not a
 barrier: the mathematics is effective and the repair is one lemma. Don't expect `C` to be
@@ -20,7 +21,28 @@ evaluating to `≳ 10^(7 × 10⁷)`, not the `~10³⁰` an earlier draft of this
 > `Statement.lean` and out of the theorem until someone formalizes them. Read this as a map
 > for whoever does — not as a claim the repo stands behind.
 
-## ⚠️ First: what "effective" does and does not mean here
+## Prior art: the values are not published, and Tao's methods *are* effective 📚
+
+- **Tao's paper, p.3** (after Remark 1.4), pointing at Theorem 3.1 — the very theorem formalized
+  here: *"in fact (see Theorem 3.1) our arguments give a constant of the form `C_δ ≪ exp(δ^{-O(1)})`
+  … it is possible in principle that a **sufficiently explicit version** of the arguments here …
+  can be used to show that the Collatz conjecture holds for a set of `N` of positive logarithmic
+  density."* He gives the *shape*, not the value. (Amusingly, that `O(1)` is essentially our
+  `1/c ≈ 4.4 × 10⁸`.)
+- **Tao, [blog comment, 22 Sep 2024](https://terrytao.wordpress.com/2019/09/10/almost-all-collatz-orbits-attain-almost-bounded-values/comment-page-4/#comment-685839)**:
+  *"The methods in my paper **are effective** and would in principle provide such a function,
+  **though I did not attempt to explicitly compute this** as the arguments are rather inefficient."*
+- **[MO 341570](https://mathoverflow.net/questions/341570/explicit-bounds-from-taos-result-on-collatz-conjecture)**
+  (Sep 2019) asks exactly this. Its Q1 — *"Are there any values of `δ < 1` for which an explicit
+  upper bound for `C_δ` is known?"* — **is still open**. The one answer notes only that arXiv v2
+  has "fairly explicit dependence on `δ`."
+
+📌 **So the non-effectivity below is ours, not Tao's.** Tao states his methods are effective; he
+simply never computed the constants. This formalization *introduced* a rate-free step
+(`Sec7/Monotone.lean:163`) that the paper does not have. That is a defect in the rendering, not
+something inherited from the mathematics — and it is worth fixing for that reason alone.
+
+## ⚠️ Next: what "effective" does and does not mean here
 
 Every constant-carrying lemma on the path is stated `∃ c C x₀ : ℝ, …`, and every proof
 `obtain`s the witness from below, then `refine`s a new one:
@@ -40,13 +62,19 @@ numbers, and `tools/tao_effective_constants.py` is an independent re-implementat
 arithmetic that can silently drift from the Lean. Treat the figures here as "traced by hand,"
 one evidence tier below anything the kernel certifies.
 
-## `c` — traceable, and the trace checks out ✅
+## `c` — one branch traced, giving an upper bound ✅
 
 | | value |
 |---|---|
-| **c** | `1 / (640_000_000 · ln 2)` ≈ **2.25 × 10⁻⁹** |
+| **c** | **`≤ 1 / (640_000_000 · ln 2)`** ≈ **2.25 × 10⁻⁹** |
 
-Built from (each `file:line` verified):
+⚠️ **`≤`, not `=`.** `c = min(c7, c8, cs')` (see the min-tree below). Only the `c7` branch is
+traced, and `c` is a `min` including it, so all that follows is `c ≤ c7`. Equality would need
+`c8 ≥ c7` and `cs' ≥ c7` — two numeric facts nobody has established. An earlier version of this
+note stated the value flat, as `=`; that was an overclaim, and it sat in the summary table while
+the body admitted the gap.
+
+The `c7` branch, built from (each `file:line` verified):
 
 ```
 geomHalf tail const  1/400        Prob/LocalInstances.lean:540  (witness at :544)
