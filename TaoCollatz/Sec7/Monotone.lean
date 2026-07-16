@@ -115,6 +115,122 @@ theorem Qm_nonneg (half n ξ : ℕ) (ε A : ℝ) (m : ℕ) : 0 ≤ Qm half n ξ 
   Real.iSup_nonneg fun p =>
     mul_nonneg (Real.rpow_nonneg (by positivity) _) (Q_nonneg _ _ _ _ _)
 
+/-! ### Explicit thresholds for the geometric tail
+
+`hold_weight_expect` needs two cutoffs: a `K` with `(3/4)^K` below a bound, and a `T`
+past which `t^{⌈A⌉}·(3/4)^t` stays below a bound. Producing them from rate-free limits
+(`exists_pow_lt_of_lt_one`, `Filter.eventually_atTop`) mints witnesses no reader can
+trace back to a formula, and those constants reach the spine's headline `C` (BLUEPRINT
+D3 amendment: a reified statement does not by itself make its witness effective). The
+lemmas below give the same facts with `⌈…⌉₊`-explicit witnesses, in the style of
+`exp_neg_mul_le_of_large` / `log_le_eps_mul_of_large` — which live in `Sec7/BlackEdge.lean`,
+*downstream* of this file, hence the private copies here rather than an import. -/
+
+/-- `exp (-ρ m)` drops below any positive bound at the explicit threshold
+`⌈log b⁻¹ / ρ⌉₊` (private copy of `exp_neg_mul_le_of_large`, `Sec7/BlackEdge.lean`). -/
+private theorem exp_neg_mul_le_of_large' (ρ : ℝ) (hρ : 0 < ρ) (b : ℝ) (hb : 0 < b) :
+    ∃ N : ℕ, ∀ m : ℕ, N ≤ m → Real.exp (-ρ * m) ≤ b := by
+  refine ⟨⌈Real.log b⁻¹ / ρ⌉₊, fun m hm => ?_⟩
+  have hx : Real.log b⁻¹ / ρ ≤ (m : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hm)
+  have hρm : Real.log b⁻¹ ≤ (m : ℝ) * ρ := by
+    have h := mul_le_mul_of_nonneg_right hx hρ.le
+    rwa [div_mul_cancel₀ _ hρ.ne'] at h
+  have hfin : -ρ * (m : ℝ) ≤ Real.log b := by rw [Real.log_inv] at hρm; nlinarith [hρm]
+  calc Real.exp (-ρ * (m : ℝ)) ≤ Real.exp (Real.log b) := Real.exp_le_exp.mpr hfin
+    _ = b := Real.exp_log hb
+
+/-- `log m ≤ ε·m` for `m ≥ ⌈(2/ε)²⌉₊ + 1` (private copy of `log_le_eps_mul_of_large`,
+`Sec7/BlackEdge.lean`; proof via `log m ≤ 2√m` and `√m ≥ 2/ε`). -/
+private theorem log_le_eps_mul_of_large' (ε : ℝ) (hε : 0 < ε) :
+    ∃ N : ℕ, ∀ m : ℕ, N ≤ m → Real.log m ≤ ε * m := by
+  refine ⟨⌈(2 / ε) ^ 2⌉₊ + 1, fun m hm => ?_⟩
+  have hm1 : 1 ≤ m := by omega
+  have hmpos : (0 : ℝ) < m := by exact_mod_cast hm1
+  have hsqrt_pos : 0 < Real.sqrt m := Real.sqrt_pos.mpr hmpos
+  have hsq : Real.sqrt (m : ℝ) ^ 2 = (m : ℝ) := Real.sq_sqrt hmpos.le
+  -- log m ≤ 2√m
+  have hlog_le : Real.log m ≤ 2 * Real.sqrt m := by
+    calc Real.log m = Real.log (Real.sqrt m ^ 2) := by rw [hsq]
+      _ = 2 * Real.log (Real.sqrt m) := by rw [Real.log_pow]; push_cast; ring
+      _ ≤ 2 * (Real.sqrt m - 1) := by
+          have := Real.log_le_sub_one_of_pos hsqrt_pos; linarith
+      _ ≤ 2 * Real.sqrt m := by linarith [hsqrt_pos.le]
+  -- √m ≥ 2/ε
+  have hsqrt_lb : 2 / ε ≤ Real.sqrt m := by
+    have hx : ((2 / ε) ^ 2 : ℝ) ≤ (m : ℝ) :=
+      le_trans (Nat.le_ceil _) (by exact_mod_cast (by omega : ⌈(2 / ε) ^ 2⌉₊ ≤ m))
+    calc 2 / ε = Real.sqrt ((2 / ε) ^ 2) := (Real.sqrt_sq (by positivity)).symm
+      _ ≤ Real.sqrt m := Real.sqrt_le_sqrt hx
+  -- combine: 2√m ≤ ε·m
+  have hcomb : 2 * Real.sqrt m ≤ ε * m := by
+    have h1 : (2 : ℝ) ≤ ε * Real.sqrt m := by
+      have := mul_le_mul_of_nonneg_left hsqrt_lb hε.le
+      rwa [mul_div_cancel₀ _ hε.ne'] at this
+    calc 2 * Real.sqrt m ≤ (ε * Real.sqrt m) * Real.sqrt m :=
+          mul_le_mul_of_nonneg_right h1 hsqrt_pos.le
+      _ = ε * (Real.sqrt m ^ 2) := by ring
+      _ = ε * m := by rw [hsq]
+  linarith
+
+/-- `(3/4)^K` drops strictly below any positive bound, with the witness explicit one
+`obtain`-hop away (`⌈log (b/2)⁻¹ / log (4/3)⌉₊`). D3-effective replacement for
+`exists_pow_lt_of_lt_one` at base `3/4`. -/
+private theorem geom_three_quarters_lt (b : ℝ) (hb : 0 < b) :
+    ∃ K : ℕ, (3 / 4 : ℝ) ^ K < b := by
+  obtain ⟨K, hK⟩ := exp_neg_mul_le_of_large' (Real.log (4 / 3))
+    (Real.log_pos (by norm_num)) (b / 2) (half_pos hb)
+  refine ⟨K, ?_⟩
+  have hlog34 : Real.log (3 / 4 : ℝ) = -Real.log (4 / 3) := by
+    rw [show (3 / 4 : ℝ) = (4 / 3)⁻¹ by norm_num, Real.log_inv]
+  calc (3 / 4 : ℝ) ^ K
+      = Real.exp ((K : ℝ) * Real.log (3 / 4)) := by
+        rw [Real.exp_nat_mul, Real.exp_log (by norm_num : (0 : ℝ) < 3 / 4)]
+    _ = Real.exp (-Real.log (4 / 3) * K) := by rw [hlog34, mul_comm]
+    _ ≤ b / 2 := hK K le_rfl
+    _ < b := by linarith
+
+/-- `t^k·(3/4)^t` stays strictly below any positive bound past an explicit threshold
+(`1 + ⌈(4(k+1)/log(4/3))²⌉₊ + ⌈log (b/2)⁻¹ / (log(4/3)/2)⌉₊`, reading the two
+`obtain`s below). D3-effective replacement for the rate-free
+`Filter.eventually_atTop` route through `t^k·(3/4)^t → 0`. -/
+private theorem pow_mul_geom_lt_of_large (k : ℕ) (b : ℝ) (hb : 0 < b) :
+    ∃ T : ℕ, ∀ t : ℕ, T ≤ t → (t : ℝ) ^ k * (3 / 4 : ℝ) ^ t < b := by
+  have hρ : (0 : ℝ) < Real.log (4 / 3) := Real.log_pos (by norm_num)
+  obtain ⟨Nlog, hNlog⟩ := log_le_eps_mul_of_large'
+    (Real.log (4 / 3) / (2 * ((k : ℝ) + 1))) (div_pos hρ (by positivity))
+  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_of_large'
+    (Real.log (4 / 3) / 2) (half_pos hρ) (b / 2) (half_pos hb)
+  refine ⟨1 + Nlog + Nexp, fun t ht => ?_⟩
+  have ht1 : 1 ≤ t := by omega
+  have htpos : (0 : ℝ) < (t : ℝ) := by exact_mod_cast (by omega : 0 < t)
+  have hlogt0 : (0 : ℝ) ≤ Real.log t := Real.log_nonneg (by exact_mod_cast ht1)
+  -- k·log t ≤ (ρ/2)·t via log t ≤ (ρ/(2(k+1)))·t and k/(k+1) ≤ 1
+  have hklog : (k : ℝ) * Real.log t ≤ Real.log (4 / 3) / 2 * t := by
+    have hk1 : (0 : ℝ) < (k : ℝ) + 1 := by positivity
+    have hfrac : (k : ℝ) / ((k : ℝ) + 1) ≤ 1 := by rw [div_le_one hk1]; linarith
+    have hrw : (k : ℝ) * (Real.log (4 / 3) / (2 * ((k : ℝ) + 1)) * t)
+        = (k : ℝ) / ((k : ℝ) + 1) * (Real.log (4 / 3) / 2 * t) := by
+      field_simp
+    calc (k : ℝ) * Real.log t
+        ≤ (k : ℝ) * (Real.log (4 / 3) / (2 * ((k : ℝ) + 1)) * t) :=
+          mul_le_mul_of_nonneg_left (hNlog t (by omega)) (Nat.cast_nonneg k)
+      _ = (k : ℝ) / ((k : ℝ) + 1) * (Real.log (4 / 3) / 2 * t) := hrw
+      _ ≤ Real.log (4 / 3) / 2 * t :=
+          mul_le_of_le_one_left (mul_nonneg (by positivity) htpos.le) hfrac
+  -- rewrite through exp and bound the exponent
+  have hlog34 : Real.log (3 / 4 : ℝ) = -Real.log (4 / 3) := by
+    rw [show (3 / 4 : ℝ) = (4 / 3)⁻¹ by norm_num, Real.log_inv]
+  have hexp_le : (k : ℝ) * Real.log t + (t : ℝ) * Real.log (3 / 4)
+      ≤ -(Real.log (4 / 3) / 2) * t := by
+    rw [hlog34]; linarith [hklog]
+  calc (t : ℝ) ^ k * (3 / 4 : ℝ) ^ t
+      = Real.exp ((k : ℝ) * Real.log t + (t : ℝ) * Real.log (3 / 4)) := by
+        rw [Real.exp_add, Real.exp_nat_mul, Real.exp_log htpos,
+          Real.exp_nat_mul, Real.exp_log (by norm_num : (0 : ℝ) < 3 / 4)]
+    _ ≤ Real.exp (-(Real.log (4 / 3) / 2) * t) := Real.exp_le_exp.mpr hexp_le
+    _ ≤ b / 2 := hNexp t (by omega)
+    _ < b := by linarith
+
 /-- **The Case 1 geometric-expectation leaf** ((7.43) numerics): the holding step's
 first coordinate is `Geom(4)`-distributed, so the expected depth-weight ratio is
 `1 + o(1)`; quantitatively `E[max(m - d₁, 1)^{-A}] ≤ exp(ε³/2)·m^{-A}` once
@@ -123,7 +239,10 @@ three-region split with `δ := exp(ε³/2) - 1 > 0`: head `k ≤ K` (full mass, 
 `≤ (m-K)^{-A} ≤ (1+δ/3)m^{-A}` once `m ≥ ⌈Kc/(c-1)⌉` with `c := (1+δ/3)^{1/A}`),
 middle `K < k ≤ m/2` (tail mass `(3/4)^K ≤ (δ/3)2^{-A}` by choice of `K`, weight
 `≤ 2^A m^{-A}`), tail `k > m/2` (weight `≤ 1`, mass `(3/4)^{m/2} ≤ (δ/3)m^{-A}` for
-large `m` since geometric beats polynomial). -/
+large `m` since geometric beats polynomial). All three cutoffs (`K`, `M1`, `T`) come
+from the explicit-threshold lemmas above, so the witness `Cthr = K + M1 + 2T + 4` is
+traceable to a formula — no rate-free limits (BLUEPRINT D3 amendment; this was the
+lemma that blocked any upper bound on the headline `C`). -/
 theorem hold_weight_expect (A : ℝ) (hA : 0 < A) :
     ∃ Cthr : ℕ, 1 ≤ Cthr ∧ ∀ m : ℕ, Cthr ≤ m →
       ∑' d : ℕ × ℤ, (hold d).toReal * ((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A)
@@ -139,9 +258,8 @@ theorem hold_weight_expect (A : ℝ) (hA : 0 < A) :
   set δ := E - 1 with hδdef
   have hE1 : E = 1 + δ := by rw [hδdef]; ring
   -- middle-region cutoff K: geometric tail beats the δ/3-budget over the 2^A weight
-  obtain ⟨K, hK⟩ := exists_pow_lt_of_lt_one
-    (show (0 : ℝ) < δ / 3 * (2 : ℝ) ^ (-A) by positivity)
-    (show (3 / 4 : ℝ) < 1 by norm_num)
+  -- (explicit witness: K = ⌈log(δ/6·2^{-A})⁻¹ / log(4/3)⌉₊, one hop into the lemma)
+  obtain ⟨K, hK⟩ := geom_three_quarters_lt (δ / 3 * (2 : ℝ) ^ (-A)) (by positivity)
   -- head-region constant c > 1 with c^A = 1 + δ/3
   set c := (1 + δ / 3) ^ A⁻¹ with hcdef
   have hc1 : 1 < c := by
@@ -150,18 +268,9 @@ theorem hold_weight_expect (A : ℝ) (hA : 0 < A) :
   have hcA : c ^ A = 1 + δ / 3 := by
     rw [hcdef, ← Real.rpow_mul (by linarith), inv_mul_cancel₀ hA.ne', Real.rpow_one]
   set M1 := ⌈(K : ℝ) * c / (c - 1)⌉₊ with hM1def
-  -- tail-region threshold T from geometric × polynomial → 0
+  -- tail-region threshold T: geometric × polynomial, explicit-threshold form
   set kA := ⌈A⌉₊ with hkAdef
-  have htend : Filter.Tendsto (fun t : ℕ => (t : ℝ) ^ kA * (3 / 4 : ℝ) ^ t)
-      Filter.atTop (nhds 0) := by
-    have hs : Summable fun t : ℕ => (t : ℝ) ^ kA * (3 / 4 : ℝ) ^ t := by
-      apply Summable.of_norm
-      have h := summable_norm_pow_mul_geometric_of_norm_lt_one (R := ℝ) kA
-        (r := (3 / 4 : ℝ)) (by rw [Real.norm_eq_abs]; norm_num)
-      simpa using h
-    exact hs.tendsto_atTop_zero
-  obtain ⟨T, hT⟩ := Filter.eventually_atTop.mp
-    (htend.eventually_lt_const (show (0 : ℝ) < δ / 3 * (3 : ℝ) ^ (-A) by positivity))
+  obtain ⟨T, hT⟩ := pow_mul_geom_lt_of_large kA (δ / 3 * (3 : ℝ) ^ (-A)) (by positivity)
   refine ⟨K + M1 + 2 * T + 4, by omega, fun m hm => ?_⟩
   have hm0 : (0 : ℝ) < (m : ℝ) := by
     have : 0 < m := by omega
