@@ -48,11 +48,21 @@ jobs:
           name: blueprint-web
           path: blueprint/web
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy blueprint to GitHub Pages
         if: github.event_name != 'pull_request'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: blueprint/web
           destination_dir: blueprint
+          keep_files: true
+
+      # Static landing page at the Pages site root (links to the blueprint + repo).
+      # keep_files preserves /blueprint (and any future /docs) written above.
+      - name: Deploy landing page to Pages root
+        if: github.event_name != 'pull_request'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs-landing
           keep_files: true

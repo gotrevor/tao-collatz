@@ -45,12 +45,14 @@ Trusted base for a skeptical reader: [`TaoCollatz/Statement.lean`](TaoCollatz/St
 [`Comparator/TaoCollatz/Challenge.lean`](Comparator/TaoCollatz/Challenge.lean) (the independent rendering), and the kernel.
 Everything else is machinery.
 
-## Blueprint
+## Blueprint & docs
 
-The dependency blueprint (per-node status, paper cross-references, dep graph) is published on
-GitHub Pages: **https://gotrevor.github.io/tao-collatz/blueprint/**. The source lives in
-[`blueprint/`](blueprint); rebuild locally with [`./blueprint/build.sh`](blueprint/build.sh),
-or on push via [`.github/workflows/docs.yml`](.github/workflows/docs.yml).
+Browse the project online at **https://gotrevor.github.io/tao-collatz/**. The dependency
+blueprint (per-node status, paper cross-references, dep graph) is at
+**[/blueprint/](https://gotrevor.github.io/tao-collatz/blueprint/)**. The blueprint source
+lives in [`blueprint/`](blueprint); rebuild locally with
+[`./blueprint/build.sh`](blueprint/build.sh), or on push via
+[`.github/workflows/docs.yml`](.github/workflows/docs.yml).
 
 ## Build
 
