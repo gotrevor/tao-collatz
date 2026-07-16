@@ -1,10 +1,11 @@
 name = "TaoCollatz"
 defaultTargets = ["TaoCollatz"]
 
-# Warnings-as-errors (standing preference: warnings "are there for a reason"). `lake build`
-# — and so the pre-commit gate + CI — fails on ANY warning, keeping a finished result clean.
-# `weak.` = applied at build time, not baked into oleans. Comparator opts out per-file in
-# Challenge.lean, since challenge files carry `sorry` by design.
+# Warnings-as-errors (standing preference: warnings "are there for a reason"), so a finished
+# result stays clean. `weak.` keeps this out of the build trace, so flipping it forces no
+# rebuild — meaning a warm local tree stays silent and CI, which always builds fresh, is what
+# actually enforces it. Comparator opts out per-file in Challenge.lean (statements there are
+# `sorry` by design); removing that opt-out fails the harness build.
 [leanOptions]
 weak.warningAsError = true
 

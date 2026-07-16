@@ -18,9 +18,10 @@ name: Comparator
 # rewrite the challenge's oleans mid-elaboration could not. That protects a *stranger* checking this
 # repo without trusting us — which is the point.
 #
-# ⚠️ tao-collatz is IN PROGRESS: the headline theorems are still `sorry`, so this harness certifies
-# the trusted VOCABULARY (col/colMin/log-density defs) + the non-vacuity anchors, not Thm 1.3 yet.
-# The headlines join the challenge when they are discharged. See Comparator/TaoCollatz/Challenge.lean.
+# tao-collatz is COMPLETE (2026-07-15): both headlines - Tao's Thm 1.3 (`tao_collatz`) and the
+# Thm 3.1 Colmin form (`tao_collatz_quantitative`) - are discharged and joined the challenge, so
+# this harness certifies them alongside the trusted VOCABULARY (col/colMin/log-density defs) and
+# the non-vacuity anchors. See Comparator/TaoCollatz/Challenge.lean.
 #
 # Linux-only by construction (landrun needs Landlock). No local/macOS path — for a local pre-flight
 # of the statement-identity check, run `scripts/comparator-probe`.
