@@ -1,57 +1,43 @@
-# HANDOFF — effective-constants campaign, lap 1–2 (2026-07-16)
+# HANDOFF — effective-constants campaign, lap 3 (2026-07-16)
 
-**Read `DIRECTION.md` first — it is the directive.** `PENDING_WORK.md` has the step ledger
-and the step-1 JUDGE-FLAG.
+**Read `DIRECTION.md` first — it is the directive.** `PENDING_WORK.md` has the full ledger.
 
-## State
+## State: STEP 3 COMPLETE — the explicit headline is LIVE
 
-- Branch `explicit-rate-hold-weight`, all work committed, full build green (3327 jobs),
-  `tao_stmt_diff.py` ✓ on every commit (31/31 watched statements byte-identical),
-  `lean-axiom-gate --exact` ✓ on headline + new siblings.
-- ✅ **STEP 1 done** — c8/cs branches traced to numerals (JUDGE-FLAG in PENDING_WORK.md).
-  Finding: c8 *contains* c7 as a sub-branch (via `approx_passtime_window` obtaining
-  `first_passage_nonescape`), every other leaf is ≥ 1/5, so the headline's `c` IS
-  `1/(640000000·log 2)` exactly. Proposed `cTao := 1 / (640000000 * Real.log 2)` —
-  **awaiting operator sign-off** (DIRECTION's do-not-proceed gate for step 3).
-- ✅ **STEP 2 done** — the whole `c`-path is de-existentialized, sibling + delegate,
-  bottom-up: Prob/Syracuse leaves → Sec5 (c7, c8, cs chains) → Sec3 glue. Def tree in
-  PENDING_WORK.md. Top of the tower: `tao_collatz_quantitative_spine_explicit`
-  (`Sec3/Reduction.lean`) with witness `c_ladder`.
+- Branch `explicit-rate-hold-weight`, all work committed, full build green (3327 jobs;
+  comparator 8600).
+- ✅ **STEP 3 (3a + 3b + 3c) done in one lap** (commits `4aebe01`, `9b4833a`; operator
+  sign-off `6852905`, step re-order `7c9c494`):
+  - `TaoCollatz/Statement.lean` now the three-statement surface:
+    `cTao := 1/(640000000 * Real.log 2)` + `tao_collatz_quantitative_explicit`, proved
+    (no sorry ever committed — pin and discharge landed together).
+  - Proof route (`Sec3/Reduction.lean`): `c_ladder_lower` (min-tree lower bound; binding
+    branch `c_valSumTail` = exactly `cTao`, numeric leaves ≥ 1/5) +
+    `tao_collatz_quantitative_spine_of_le` (rpow-exponent monotonicity for `N₀ ≥ 3`;
+    `N₀ = 2` absorbed by `max C (log 2)^c₀` and `0 ≤ logProb`).
+  - Comparator: `Challenge.lean` has `cTao` (byte-identical body) + the theorem over the
+    challenge vocabulary, sorry-by-design; `config.json` lists the new name;
+    `Solution.lean` untouched.
+- Evidence (believed clean, judge to verify): `tao_stmt_diff.py` 31/31 byte-identical on
+  every commit; `lean-axiom-gate --exact -i TaoCollatz.Statement` ✓ on all three headlines
+  (note: pass `-i TaoCollatz.Statement`; the default root-lib import chokes on the
+  sourceless `Comparator` lib name); `TaoCollatz/` greps 0 real sorries (12 grep hits are
+  stale docstring prose only).
 
 ## Next lap
 
-**⚡ The operator SIGNED OFF the step-1 JUDGE-FLAG mid-lap (commit `6852905`):
-`cTao = 1/(640000000 * Real.log 2)`, spot-checked at `4fb5304`. Step 3 is UNBLOCKED —
-do it first.**
+1. **STEP 4 is OPERATOR-GATED and flagged READY** in PENDING_WORK.md — ship-PR + PR #6
+   note update belong to the host. Nothing development-side remains in the DIRECTION scope.
+2. If DIRECTION is unchanged when you land: there is no open `c`-path work. Do NOT invent
+   side quests (Sec6/Sec7/`C`-side are forbidden drift). Check DIRECTION for a new
+   directive first; absent one, judge-support work (e.g. keeping ledgers accurate) only.
 
-1. **STEP 3** — append to
-   `TaoCollatz/Statement.lean` (append-only; two existing headlines byte-identical):
-   `noncomputable def cTao : ℝ := 1 / (640000000 * Real.log 2)` + the
-   `tao_collatz_quantitative_explicit` theorem per DIRECTION's shape, proved by delegation
-   to `tao_collatz_quantitative_spine_explicit`. The work needed: `cTao ≤ c_ladder`
-   (chain of `le_min` + `norm_num` + `Real.log_two_gt_d9`/`log_two_lt_d9`; every leaf ≥
-   `1/(640000000·log 2)`, mins collapse), then rpow-exponent antitonicity to move the bound
-   (statement is monotone in `c` for `log N₀ ≥ 1`; the window `2 ≤ N₀ < 3` is absorbed by
-   `C ≥ 1` so the bound is `≤ 0 ≤ logProb` — see DIRECTION). `#print axioms` must be the
-   standard three.
-2. If not signed off: prove the comparison lemma `cTao_le_c_ladder` as a standalone
-   (named per step 1's value) WITHOUT touching Statement.lean, so step 3 becomes a
-   5-minute append; also pre-verify `c_valSumTail = 1/(640000000·Real.log 2)` as a lemma
-   (`unfold` chain + `norm_num [Real.log_pos]` on the min collapses — needs
-   `finalDecay`/`linearDecay` min-collapse facts `1/32000000 ≤ Real.log 2` etc. via
-   `Real.log_two_gt_d9`).
-3. STEP 4 stays OPERATOR-GATED (comparator + PR #6 note) — flag readiness only.
+## Gotchas hit this lap
 
-## Gotchas hit (so you don't re-hit them)
-
-- `set_option maxHeartbeats ... in` and `open Classical in` bind the NEXT declaration only —
-  inserting a def between them and their theorem silently reassigns them (build breaks at
-  200k heartbeats or on `Decidable ¬goodTuple`). Keep such modifiers glued to their theorem.
-- A `/-- docstring -/` must immediately precede its declaration (`set_option` in between is
-  a parse error); two doc comments in a row is a parse error too.
-- Delegations must be inserted AFTER the sibling's body but BEFORE the next consumer —
-  in-file consumers (`tao_syracuse` at `Reduction.lean`) reference the original names.
-- `rw [show c_def = <value> from rfl]` right after `:= by` is the cheap way to reduce a
-  def-carrying goal to the original literal goal; `set x := c_def with h` converts obtained
-  explicit hypotheses back to the original opaque-variable names so bodies stay verbatim.
-- `noncomputable` is required even for `def c : ℝ := 1/400` (Real division).
+- `div_le_div_iff` does not exist under that name in this mathlib — use
+  `one_div_le_one_div_of_le` + `nlinarith`, or `gcongr`.
+- `gcongr` on `a / L / 20 ≤ b / L / 20` discharges everything from context (h1 + log 2 > 0
+  via positivity); appending `<;> linarith` FAILS the build ("linarith does nothing").
+- `lean-axiom-gate` needs `-i TaoCollatz.Statement` in this repo (see above).
+- Unused-binder linter is warningAsError: an unreferenced `(hc₀ : 0 < c₀)` hypothesis
+  fails the build — the spine weakening lemma deliberately takes only `c₀ ≤ c_ladder`.

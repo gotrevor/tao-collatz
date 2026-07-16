@@ -30,9 +30,25 @@
     `tao_collatz_quantitative_spine_explicit` (the lemma step 3 consumes).
   Axiom gate exact throughout. *(Unratified new siblings: judge to read; they are
   statement-copies of ratified originals with a def in the c-slot.)*
-- ⬜ STEP 3 — append to `TaoCollatz/Statement.lean` (ONE trusted file = one audit surface):
-  `cTao` + `tao_collatz_quantitative_explicit`; existing headlines byte-identical.
-- ⬜ STEP 4 — OPERATOR-GATED: comparator additions + PR #6 note update.
+- ✅ STEP 3 — COMPLETE (2026-07-16, lap 3, commits `4aebe01` + `9b4833a`; sign-off
+  `6852905`, re-order `7c9c494`), all three sub-steps in one lap:
+  - **3a+3c**: `cTao := 1/(640000000 * Real.log 2)` + `tao_collatz_quantitative_explicit`
+    appended to `Statement.lean`, pinned AND discharged same-lap by delegation to two new
+    lemmas in `Sec3/Reduction.lean`: `c_ladder_lower` (cTao lower-bounds the whole
+    min-tree — binding branch `c_valSumTail`, both `finalDecay` leaves ≥ 1/32000000,
+    `/log 2 /20` = exactly cTao; every numeric leaf ≥ 1/5) and
+    `tao_collatz_quantitative_spine_of_le` (exponent monotone via
+    `rpow_le_rpow_of_exponent_le` for `N₀ ≥ 3`, `log N₀ > 1` from `exp_one_lt_three`;
+    `N₀ = 2` absorbed by `C := max C (log 2)^c₀`, bound `≤ 0 ≤ logProb`).
+  - **3b**: `cTao` (byte-identical body) + the explicit theorem over the challenge
+    vocabulary in `Comparator/TaoCollatz/Challenge.lean` (sorry-by-design, 8th sibling);
+    name added to `config.json`; `Solution.lean` untouched. Comparator green (8600 jobs).
+  - Evidence (believed clean, judge to verify): full build green 3327 jobs;
+    `tao_stmt_diff.py` 31/31 byte-identical each commit; `lean-axiom-gate --exact -i
+    TaoCollatz.Statement` ✓ on all THREE headlines (2026-07-16); `TaoCollatz/` greps
+    **0 real sorries** — the `sorry-free:TaoCollatz` gate condition holds.
+- ⬜ STEP 4 — OPERATOR-GATED: **READY**. Ship-PR + PR #6 note update are the host's;
+  the development side is done (three-headline surface live, comparator entry in place).
 
 ## JUDGE-FLAGs
 
