@@ -5,7 +5,7 @@ import TaoCollatz.Basic.LogDensity
 # Non-vacuity anchors (comparator witnesses)
 
 Small, fully-proved facts pinning the *semantics* of the trusted-base definitions
-(`col`, `colMin`, `logProb`, `posInterval`, `AlmostAllPos`) against exact finite
+(`col`, `colMin`, `logProb`, `AlmostAllPos`) against exact finite
 instances — the Lean-side companions of the D8 numeric statement traps in
 `tools/check_blueprint.py`. They exist so the comparator challenge
 (`Comparator/TaoCollatz/Challenge.lean`) can certify statements that are proved
@@ -47,17 +47,17 @@ theorem colMin_twentyseven : colMin 27 = 1 := by
   exact (col_iterate_pos (by norm_num) k).trans_eq hk
 
 /-- Any window containing `1` has positive total log-mass. -/
-theorem logSum_univ_pos {x : ℕ} (hx : 1 ≤ x) : 0 < logSum Set.univ (posInterval x) := by
+theorem logSum_univ_pos {x : ℕ} (hx : 1 ≤ x) : 0 < logSum Set.univ (Finset.Icc 1 x) := by
   unfold logSum
   refine Finset.sum_pos' (fun i _ => by positivity) ⟨1, ?_, by norm_num⟩
-  simp only [Finset.mem_filter, Set.mem_univ, and_true, posInterval, Finset.mem_range, ge_iff_le]
+  simp only [Finset.mem_filter, Set.mem_univ, and_true, Finset.mem_Icc]
   omega
 
 /-- The trivial property holds for almost all `N`: the log-density machinery is not
 vacuously strict. -/
 theorem almostAllPos_true : AlmostAllPos fun _ => True := by
   unfold AlmostAllPos HasLogDensity
-  have h : ∀ x : ℕ, 1 ≤ x → logProb {N : ℕ | True} (posInterval x) = 1 := by
+  have h : ∀ x : ℕ, 1 ≤ x → logProb {N : ℕ | True} (Finset.Icc 1 x) = 1 := by
     intro x hx
     unfold logProb
     rw [Set.setOf_true, div_self (logSum_univ_pos hx).ne']
@@ -69,7 +69,7 @@ Together with `almostAllPos_true` this rules out a degenerate reading of
 theorem not_almostAllPos_false : ¬ AlmostAllPos fun _ => False := by
   intro h
   unfold AlmostAllPos HasLogDensity at h
-  have h0 : ∀ x : ℕ, logProb {N : ℕ | False} (posInterval x) = 0 := by
+  have h0 : ∀ x : ℕ, logProb {N : ℕ | False} (Finset.Icc 1 x) = 0 := by
     intro x
     unfold logProb logSum
     rw [Finset.sum_filter]
@@ -80,8 +80,8 @@ theorem not_almostAllPos_false : ¬ AlmostAllPos fun _ => False := by
 /-- The `1/N` weights, pinned on an exact instance: on the window `{1, 2}` the odd
 numbers carry log-mass `(1/1) / (1/1 + 1/2) = 2/3`. A natural-density impostor
 would give `1/2`, so this anchor separates logarithmic from natural density. -/
-theorem logProb_odd_window_two : logProb {N : ℕ | N % 2 = 1} (posInterval 2) = 2 / 3 := by
-  have hwin : posInterval 2 = {1, 2} := by decide
+theorem logProb_odd_window_two : logProb {N : ℕ | N % 2 = 1} (Finset.Icc 1 2) = 2 / 3 := by
+  have hwin : Finset.Icc 1 2 = ({1, 2} : Finset ℕ) := by decide
   unfold logProb logSum
   rw [hwin, Finset.sum_filter, Finset.sum_filter,
     Finset.sum_insert (by decide : (1 : ℕ) ∉ ({2} : Finset ℕ)), Finset.sum_singleton,
