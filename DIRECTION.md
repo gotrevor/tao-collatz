@@ -9,6 +9,19 @@ hand-traced map this campaign formalizes. `blueprint_rules.md` remains BINDING.*
 
 ## CURRENT DIRECTIVE (campaign start, 2026-07-16) — **pin `c` in Lean: kernel-certify an explicit exponent for Theorem 3.1**
 
+> ✅ **STEP-1 SIGN-OFF GRANTED (operator, 2026-07-16 17:45)** — the lap-1 JUDGE-FLAG's branch
+> trace was spot-checked at commit `4fb5304` (the `c/20` witness, `approx_passtime_window`'s
+> `min c₁ c₂` over `first_passage_nonescape`, `Iy_count_ratio`'s `⟨0.2, 6000⟩`,
+> `descentProb_ladder`'s `min cb cs`) — all four citations verbatim. Step 3 may proceed with
+>
+> ```lean
+> noncomputable def cTao : ℝ := 1 / (640000000 * Real.log 2)
+> ```
+>
+> The choice is compiler-adjudicated downstream (a wrong `c₀` fails the `c₀ ≤ branch`
+> obligations; it cannot compile into a false theorem), so this gate is closed. All other
+> rails — append-only `Statement.lean`, step 4 operator-gated — still bind.
+
 ### 🎯 The objective, in one sentence
 
 Produce a theorem
@@ -19,12 +32,18 @@ theorem tao_collatz_quantitative_explicit :
       1 - C / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x)
 ```
 
-in a NEW file `TaoCollatz/StatementExplicit.lean`, where `cTao : ℝ` is an explicit
-`noncomputable def` (symbolic in `Real.log 2` — e.g. `1 / (640000000 * Real.log 2)` if step 1
-confirms it), axiom-clean (`[propext, Classical.choice, Quot.sound]`), with `C` still
-existential. Nobody has ever published an explicit exponent for Tao 2019 Thm 3.1
-(MO 341570, open since 2019). `C` is NOT in scope for this campaign (blocked history:
-`notes/effective-constants.md`; the rate-free lemma is already fixed on this branch).
+**appended to `TaoCollatz/Statement.lean`** — ONE trusted file, because the trusted base is
+whatever a stranger must read in full, and one small file is the smallest honest version of
+that (the same logic that puts anchors and headlines in a single `Challenge.lean`). Provenance
+is a docstring's job, not a file boundary's. `cTao : ℝ` is an explicit `noncomputable def` in
+that same file (symbolic in
+`Real.log 2` — e.g. `1 / (640000000 * Real.log 2)` if step 1 confirms it), axiom-clean
+(`[propext, Classical.choice, Quot.sound]`), with `C` still existential. The docstrings carry
+the provenance split: the two existing headlines are the paper's (Thm 1.3 / Thm 3.1); the
+explicit theorem + `cTao` are OUR augmentation — the paper gives `∃ c` and Remark 1.4 only a
+shape. Say that plainly in the docstring. Nobody has ever published an explicit exponent for
+Tao 2019 Thm 3.1 (MO 341570, open since 2019). `C` is NOT in scope for this campaign (blocked
+history: `notes/effective-constants.md`; the rate-free lemma is already fixed on this branch).
 
 ### 🥇 STEP 1 — route-decisive, do FIRST: lower-bound the `c8` and `cs` branches
 
@@ -36,9 +55,9 @@ branch (`first_passage_approx`, `Sec5/ApproxFormula.lean:3218`) and the cs branc
 down to numerals, and determine a rational/symbolic `c₀` with `c₀ ≤` **every** branch.
 **The final `cTao` value is chosen from this step's output, not from the note.** If either
 branch comes out below `1/(640_000_000·ln 2)`, the smaller value wins — report it, don't
-force the note's number. Deliverable: a comment table in `StatementExplicit.lean` +
-`JUDGE-FLAG:` in PENDING_WORK.md with the three branch values for operator sign-off on the
-`cTao` definition. **Do not proceed to step 3's def until that sign-off.**
+force the note's number. Deliverable: a `JUDGE-FLAG:` in PENDING_WORK.md with the three
+branch values (file:line per hop) for operator sign-off on the `cTao` definition.
+**Do not proceed to step 3's def until that sign-off.**
 
 ### 🥈 STEP 2 — the mechanical pattern (sibling + delegate), bottom-up
 
@@ -66,20 +85,53 @@ branch-vs-branch comparisons beyond step 1's chosen `c₀`. Comparisons against 
 `noncomputable def` — prove ONE `c_foo_pos` lemma per def and use it; do not let laps grind
 `positivity` failures site by site.
 
-### 🥉 STEP 3 — the headline + `cTao`
+### 🥉 STEP 3 — PIN FIRST (do this NOW, before further step-2 grinding): the claim goes into `Statement.lean` AND the Comparator
 
-`StatementExplicit.lean`: `cTao` def (value from step 1's sign-off) + the
-`tao_collatz_quantitative_explicit` theorem, proved by delegation to the explicit spine.
-File header mirrors `Statement.lean`'s trusted-surface language but says plainly: *this
-statement is ours, beyond the paper* (the paper gives `∃ c`; Remark 1.4 gives only a shape).
-`Statement.lean` itself is **NOT touched**.
+*(Re-ordered 2026-07-16 evening, operator: Trevor wants the finish line machine-checkable —
+the comparator entry is no longer gated. Pin the claim now; the proof is what the rest of
+the campaign discharges. This also arms the host's stop gate: `TaoCollatz/` is 0-sorry today,
+so the pinned `sorry` below is exactly what holds the `--done-when sorry-free:TaoCollatz`
+gate open until the claim is real.)*
 
-### 🏁 STEP 4 — OPERATOR-GATED (do not do in a grind lap)
+**3a — append to `TaoCollatz/Statement.lean`** (append-only; the two existing headlines stay
+byte-identical, differ-watched; update the header comment to the three-statement surface,
+paper's vs ours; docstring says plainly this is our augmentation — the paper gives `∃ c`,
+Remark 1.4 only a shape):
 
-Comparator additions (declare `cTao` + the third theorem in
-`Comparator/TaoCollatz/Challenge.lean`, add to `config.json` `theorem_names`) and the PR #6
-note update. These change the public trusted surface → Trevor/judge reads first. Flag
-readiness in PENDING_WORK.md and stop.
+```lean
+/-- The explicit exponent: `1/(640000000 · ln 2)`, traced through the witness tower
+(PR #6's note; step-1 trace ratified 2026-07-16). OUR augmentation, beyond the paper. -/
+noncomputable def cTao : ℝ := 1 / (640000000 * Real.log 2)
+
+/-- **Theorem 3.1, explicit-exponent form** (our augmentation): Theorem 3.1 holds with the
+concrete exponent `cTao`. First published explicit exponent for this theorem
+(MO 341570 open since 2019). -/
+theorem tao_collatz_quantitative_explicit :
+    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
+  sorry
+```
+
+The `sorry` is the pin — census-visible, and it will hold CI red (fresh-checkout
+`weak.warningAsError`) until the claim is real, which is correct and intended.
+
+**3b — same claim into the Comparator** (this makes CI's `comparator` check *define* done):
+in `Comparator/TaoCollatz/Challenge.lean`, declare `cTao` with a **byte-identical** body
+(comparator's closure check demands identity, and never a definition hole) + the theorem
+statement rendered over the challenge's vocabulary, `sorry`-by-design like its 7 siblings
+(the file's `set_option warningAsError false` covers it). Add
+`"TaoCollatz.tao_collatz_quantitative_explicit"` to `theorem_names` in `config.json`.
+**`Solution.lean` needs NO edit** — it imports the development, so comparator finds the
+real theorem there once 3c lands.
+
+**3c — discharge the pin** by delegation to the explicit spine (the step-2 chains), then
+finish any remaining step-2 carriers. When `TaoCollatz/` greps 0 sorries again, the claim
+is live; the host verifies with the axiom gate and CI.
+
+### 🏁 STEP 4 — OPERATOR-GATED (unchanged)
+
+The ship-PR itself and the PR #6 note update are the host's. Flag readiness in
+PENDING_WORK.md and keep grinding anything left.
 
 ### 🔒 Hard rails
 
@@ -116,8 +168,11 @@ readiness in PENDING_WORK.md and stop.
   `C`-side defect; it does not affect the `c`-path, but it's why the D3 amendment reads the
   way it does.
 - The hand-traced map of the whole tower (values, file:line, min-trees):
-  `notes/effective-constants.md` on branch `effective-constants` (PR #6). Read it once
-  before step 1; trust the Lean source over the note wherever they disagree.
+  `notes/effective-constants.md` on branch `effective-constants` (PR #6). Read it with
+  `git show effective-constants:notes/effective-constants.md` — bare `git`, which is the
+  correct form in the box (the host's git-door wrappers aren't on the box PATH; see
+  box-context). Read it once before step 1; trust the Lean source over the note wherever
+  they disagree.
 - Build: `lake build` (mathlib oleans are shared via lake-base; project modules only).
 - Report per lap: "N of ~37 Sec5 carriers explicit; Sec3 glue M of 6; step-1 branch values
   {c7 ✓, c8 ?, cs ?}".

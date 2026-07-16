@@ -994,23 +994,35 @@ theorem two_rpow_neg_nat_le (d : ℝ) (hd : 0 < d) (n k : Nat)
   have hn : 0 ≤ (n : ℝ) := Nat.cast_nonneg n
   nlinarith
 
-/-- **Proposition 1.9.** The valuation vector of an odd distribution whose reduction
-modulo `2ⁿ'` is close to uniform is exponentially close to `Geom(2)ⁿ`. -/
-theorem valuation_dist (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
-    ∃ c₁ C : ℝ, 0 < c₁ ∧ 0 < C ∧ ∀ (n n' : ℕ) (X : PMF ℕ),
+/-- The `c`-witness of `valuation_dist` at slack `c₀` (effective-constants campaign):
+`finalDecay (c_geomTail · c₀) / log 2`. At `c₀ = 1` this is `1 / (320000 · log 2)`. -/
+noncomputable def c_valuationDist (c₀ : ℝ) : ℝ :=
+  finalDecay (c_geomTail * c₀) / Real.log 2
+
+theorem c_valuationDist_pos {c₀ : ℝ} (hc₀ : 0 < c₀) : 0 < c_valuationDist c₀ :=
+  div_pos (finalDecay_pos (mul_pos c_geomTail_pos hc₀)) (Real.log_pos one_lt_two)
+
+/-- `valuation_dist` with the `c`-slot pinned to `c_valuationDist c₀`; only `C` stays
+existential. Sibling of the ratified `valuation_dist`, which delegates here. -/
+theorem valuation_dist_explicit (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (n n' : ℕ) (X : PMF ℕ),
       (2 + c₀) * n ≤ (n' : ℝ) →
       (∀ N ∈ X.support, N % 2 = 1) →
       PMF.dTV (X.map fun N => (N : ZMod (2 ^ n'))) (unifOddMod n') ≤ K * (2 : ℝ) ^ (-(n' : ℝ)) →
       PMF.dTV (X.map fun N => valVec N n) (PMF.iid geomHalf n)
-        ≤ C * (2 : ℝ) ^ (-c₁ * (n : ℝ)) := by
-  obtain ⟨c, hc, Ct, hCt, htail⟩ := geomHalf_tail_bound
+        ≤ C * (2 : ℝ) ^ (-(c_valuationDist c₀) * (n : ℝ)) := by
+  obtain ⟨Ct, hCt, htail⟩ := geomHalf_tail_bound_cExplicit
+  have hc : 0 < c_geomTail := c_geomTail_pos
+  set c : ℝ := c_geomTail with hcdef
   let d := c * c₀
   let c₁ := finalDecay d / Real.log 2
+  have hc₁eq : c₁ = c_valuationDist c₀ := rfl
   let C := 2 * K + 4 * Ct
   have hd : 0 < d := mul_pos hc hc₀
   have hc₁ : 0 < c₁ := div_pos (finalDecay_pos hd) (Real.log_pos one_lt_two)
   have hC : 0 < C := by dsimp only [C]; positivity
-  refine ⟨c₁, C, hc₁, hC, ?_⟩
+  rw [← hc₁eq]
+  refine ⟨C, hC, ?_⟩
   intro n n' X hsize hodd hmod
   let P := X.map fun N => valVec N n
   let Q := geomHalf.iid n
@@ -1054,6 +1066,18 @@ theorem valuation_dist (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
           (mul_nonneg (by norm_num : (0 : ℝ) ≤ 4) hCt.le)
         convert hm using 1; ring
     _ = C * (2 : ℝ) ^ (-c₁ * (n : ℝ)) := by dsimp only [C]; ring
+
+/-- **Proposition 1.9.** The valuation vector of an odd distribution whose reduction
+modulo `2ⁿ'` is close to uniform is exponentially close to `Geom(2)ⁿ`. -/
+theorem valuation_dist (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
+    ∃ c₁ C : ℝ, 0 < c₁ ∧ 0 < C ∧ ∀ (n n' : ℕ) (X : PMF ℕ),
+      (2 + c₀) * n ≤ (n' : ℝ) →
+      (∀ N ∈ X.support, N % 2 = 1) →
+      PMF.dTV (X.map fun N => (N : ZMod (2 ^ n'))) (unifOddMod n') ≤ K * (2 : ℝ) ^ (-(n' : ℝ)) →
+      PMF.dTV (X.map fun N => valVec N n) (PMF.iid geomHalf n)
+        ≤ C * (2 : ℝ) ^ (-c₁ * (n : ℝ)) := by
+  obtain ⟨C, hC, h⟩ := valuation_dist_explicit c₀ K hc₀ hK
+  exact ⟨c_valuationDist c₀, C, c_valuationDist_pos hc₀, hC, h⟩
 
 theorem two_rpow_decay_mono {c c' : ℝ} (hcc' : c ≤ c') (n : Nat) :
     (2 : ℝ) ^ (-c' * (n : ℝ)) ≤ (2 : ℝ) ^ (-c * (n : ℝ)) := by

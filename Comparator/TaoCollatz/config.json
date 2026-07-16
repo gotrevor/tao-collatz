@@ -8,7 +8,8 @@
     "TaoCollatz.not_almostAllPos_false",
     "TaoCollatz.logProb_odd_window_two",
     "TaoCollatz.tao_collatz",
-    "TaoCollatz.tao_collatz_quantitative"
+    "TaoCollatz.tao_collatz_quantitative",
+    "TaoCollatz.tao_collatz_quantitative_explicit"
   ],
   "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
   "enable_nanoda": true

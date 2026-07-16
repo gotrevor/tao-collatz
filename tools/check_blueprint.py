@@ -662,6 +662,83 @@ def check15():
     print(f"15. C6 (1.2) oddPart pullback: constant 2 exact and >1.8-tight          OK (x=2^16)")
 
 
+def check16():
+    # Effective-constants campaign (2026-07-16, DIRECTION step 3): exact-arithmetic mirror
+    # of the c_* witness min-tree (Sec5 + Sec3 glue) and the cTao pin in Statement.lean.
+    #   cTao := 1/(640000000 * ln 2)
+    # Every tree value is either a rational q, or r/ln2 for rational r.  Represent as
+    # (r, kind) with kind in {"rat", "overlog"} and compare decisively under BOTH endpoints
+    # of the d9 bracket ln 2 in (0.6931471803, 0.6931471808) (Real.log_two_gt_d9/lt_d9,
+    # the same facts the Lean proof of c_ladder_lower uses).
+    Llo, Lhi = Fraction(6931471803, 10**10), Fraction(6931471808, 10**10)
+
+    def le(a, b):
+        """Decisive a <= b under both ln2 endpoints; raises if the bracket can't decide."""
+        (ra, ka), (rb, kb) = a, b
+        if ka == kb:
+            return ra <= rb
+        if ka == "overlog":                    # ra/L <= rb  <=>  ra <= rb*L
+            lo, hi = ra <= rb * Llo, ra <= rb * Lhi
+        else:                                  # ra <= rb/L  <=>  ra*L <= rb
+            lo, hi = ra * Lhi <= rb, ra * Llo <= rb
+        assert lo == hi, ("ln2 bracket indecisive", a, b)
+        return lo
+
+    def vmin(a, b):
+        return a if le(a, b) else b
+
+    rat = lambda q: (Fraction(q), "rat")
+    overlog = lambda r: (Fraction(r), "overlog")
+
+    def linearDecay(d):                        # ValuationDist.lean:921
+        return min(d * d / 2, d)
+    def finalDecay(d, wrong=False):            # ValuationDist.lean:965 (min with ln 2)
+        ld = min(d / 2, d) if wrong else linearDecay(d)   # `wrong` forgets the square — trap
+        assert ld <= Llo                       # so the min with ln2 is the rational branch
+        return ld
+
+    def ladder(wrong=False):
+        c_geomTail = Fraction(1, 400)                                     # LocalInstances:540
+        c_valuationDist1 = overlog(finalDecay(c_geomTail * 1, wrong))     # ValuationDist:999
+        cg = overlog(finalDecay(c_geomTail * Fraction(1, 10), wrong))     # FirstPassage:1210
+        c_valSumGeom = vmin(c_valuationDist1, cg)
+        c_valSumTail = (c_valSumGeom[0] / 20, c_valSumGeom[1])            # FirstPassage:1323
+        # c8 chain (ApproxFormula.lean)
+        c_goodTupleDev, c_edgeMass, c_earlyReturn, c_truncation = rat(1), rat(Fraction(1, 5)), rat(1), rat(1)
+        c_passtimeInner = vmin(c_goodTupleDev, c_edgeMass)                # :1673
+        c_passtimeWindow = vmin(c_valSumTail, c_passtimeInner)            # :1792
+        c_windowReduce = vmin(c_goodTupleDev, c_passtimeWindow)           # :1895
+        c_steppedMid = vmin(c_goodTupleDev, c_earlyReturn)                # :3073
+        c_affineReindex = vmin(c_steppedMid, c_truncation)                # :3362
+        c_fpApprox = vmin(c_windowReduce, c_affineReindex)                # :3425
+        # cs chain (Stabilization.lean)
+        c_perNHarm, c_harmZfine, c_mainZbridge = rat(Fraction(3, 10)), rat(Fraction(3, 10)), rat(1)
+        c_harmonicZ = vmin(c_harmZfine, c_mainZbridge)                    # :2185
+        c_perNTermEval = vmin(c_perNHarm, c_harmonicZ)                    # :2554
+        c_IyRatio = rat(Fraction(2, 10))
+        c_approxToZ = vmin(c_IyRatio, c_perNTermEval)                     # :2712
+        c_stab = vmin(vmin(c_valSumTail, c_fpApprox), c_approxToZ)        # :2880
+        return vmin(c_valSumTail, c_stab)                                 # Reduction:324
+
+    cTao = overlog(Fraction(1, 640_000_000))
+    lad = ladder()
+    # (a) the tree collapses EXACTLY onto the pinned value (binding branch c_valSumTail):
+    assert lad == cTao, lad
+    # (b) c_ladder_lower's content: cTao <= every leaf, decisively under the bracket:
+    for leaf in [overlog(Fraction(1, 320_000)), overlog(Fraction(1, 32_000_000)),
+                 rat(1), rat(Fraction(1, 5)), rat(Fraction(2, 10)), rat(Fraction(3, 10))]:
+        assert le(cTao, leaf), leaf
+    # (c) trap: the plausible-wrong linearDecay (min(d/2, d), square forgotten — the same
+    # born-wrong family as the C8 Aff floor) yields a DIFFERENT ladder, so the pin's value
+    # is sensitive to the definition bodies it rests on:
+    assert ladder(wrong=True) != cTao
+    assert ladder(wrong=True) == overlog(Fraction(1, 160_000))
+    # (d) float sanity of the headline number (NB: the lap-1 ledger's "≈2.2547e-9" was a
+    # float slip; the true value is 2.25421e-9 — caught by this very check):
+    assert abs(float(cTao[0]) / log(2) - 2.25421e-9) < 5e-14
+    print("16. cTao min-tree: collapses to 1/(640000000·ln2); lower-bounds all leaves OK")
+
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
@@ -673,4 +750,5 @@ if __name__ == "__main__":
     check12(n=16, xi=7, damp=0.5)                 # second geometry
     check13()                                     # C8 (5.8) exact-reindex trap
     check14(); check15()                          # C6 §3 pins (Thm 3.1 forms, (1.2) pullback)
+    check16()                                     # cTao explicit-exponent min-tree
     print("ALL CHECKS PASS ✅")
