@@ -8,16 +8,17 @@ The quantitative headline `tao_collatz_quantitative` (Theorem 3.1, Colmin form) 
 ```
 
 **Short answer:** `c` is traceable and is `1/(640_000_000 · ln 2) ≈ 2.25 × 10⁻⁹`.
-**`C` is not currently effective** — one step on the load-bearing path produces its
-constant from a rate-free limit — and once that step is fixed, `C` is not `~10³⁰` but a
-tower of at least `10^(5 × 10⁷)`. Details and the one-line fix below.
+**No upper bound on `C` is readable from the proof** — one step (`Sec7/Monotone.lean:163`)
+produces its constant from a rate-free limit. That is a defect in this proof text, not a
+barrier: the mathematics is effective and the repair is one lemma. Don't expect `C` to be
+small when someone writes it — the witness carries a `40^𝔡` factor with `𝔡 ≈ 3 × 10⁷`,
+evaluating to `≳ 10^(7 × 10⁷)`, not the `~10³⁰` an earlier draft of this note claimed.
 
 > 🧭 **This is a side expedition, and nothing here is part of the result.** The theorem is
 > what `TaoCollatz/Statement.lean` says; these constants are hand-traced from proof *text*,
-> which is a weaker kind of evidence than anything else in this repo, and `C` is not effective
-> at all. So they stay out of `Statement.lean`, out of the theorem, and out of the blueprint
-> until someone formalizes them. Read this as a map for whoever does — not as a claim the
-> repo stands behind.
+> which is a weaker kind of evidence than anything else in this repo. So they stay out of
+> `Statement.lean` and out of the theorem until someone formalizes them. Read this as a map
+> for whoever does — not as a claim the repo stands behind.
 
 ## ⚠️ First: what "effective" does and does not mean here
 
@@ -87,11 +88,13 @@ Worth recording, because it is what makes `c` actionable: **no `c` on the path d
 its `c` as `min c1 c2` from `Iy_count_ratio` (`:2541`) and `perNTerm_eval` (`:2487`), consuming
 `mainZ_bound` only for a bare `C`. The blocker below is entirely on the `C` side.
 
-## `C` — 🚩 not currently effective
+## `C` — 🚩 no upper bound readable from the proof
 
 An earlier version of this note reported `C ≈ 5.6 × 10³⁰` from `C ≈ 1.4×10²⁸ + 5.6×10³⁰·Cfsm`
 **evaluated at `Cfsm := 1`**, and described `Cfsm` as "the one §6 kernel leaf not further
-reduced — pin it if you want an exact figure." Both halves are wrong.
+reduced — pin it if you want an exact figure." Both halves are wrong: `Cfsm := 1` was a
+placeholder nobody derived, and pinning it is not bookkeeping — the rate it needs is not in
+the proof.
 
 ### It is blocked on a rate-free limit
 
