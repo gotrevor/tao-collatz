@@ -45,6 +45,8 @@ Trusted base for a skeptical reader: [`TaoCollatz/Statement.lean`](TaoCollatz/St
 [`Comparator/TaoCollatz/Challenge.lean`](Comparator/TaoCollatz/Challenge.lean) (the independent rendering), and the kernel.
 Everything else is machinery.
 
+Announced and discussed on the Lean Zulip: [#AI authored projects](https://leanprover.zulipchat.com/#narrow/channel/583339-AI-authored-projects/topic/Formalized.3A.20Tao.2C.20.22almost.20all.20Collatz.20orbits.20attain.20almost.E2.80.A6.22/with/610975676).
+
 ## Blueprint & docs
 
 Browse the project online at **https://gotrevor.github.io/tao-collatz/**. The dependency
