@@ -301,7 +301,7 @@ theorem Q_black_edge_of_case3 (A : ℝ) (hA : 0 < A)
   obtain ⟨C3, hC3⟩ := hcase3
   refine ⟨max C2 C3, fun n ξ hξ m hm hmn l h1 hnw => ?_⟩
   have hn1 : 1 ≤ n := by omega
-  obtain ⟨F⟩ := exists_triangleFamily n ξ hξ hn1
+  obtain ⟨F⟩ := exists_triangleFamily n ξ hξ
   -- the phase point is black
   have hb : black n ξ (n / 2 - m - 1) l := by
     by_contra hw

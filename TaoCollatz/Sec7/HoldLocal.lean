@@ -37,7 +37,7 @@ theorem tilt_hold_map_mass {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 �
     (hm : (1 / 32 : ℝ) ≤ (hold y).toReal) :
     (1 / 400 : ℝ)
       ≤ (((tilt hold (expW2 l1 l2) (tiltZ_hold_ne_zero l1 l2)
-            (tiltZ_hold_ne_top h1lo h1hi h2lo h2hi)).map (modPair N))
+            (tiltZ_hold_ne_top h1hi h2lo h2hi)).map (modPair N))
           (modPair N y)).toReal :=
   le_trans (tilt_hold_apply_ge h1lo h1hi h2lo h2hi y hy1 hy2 hy2' hm)
     (ENNReal.toReal_mono (PMF.apply_ne_top _ _) (PMF.apply_le_map_apply _ _ _))
@@ -50,10 +50,10 @@ theorem tiltHold_apply_le_center {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1)
     (h1hi : l1 ≤ 1 / 50) (h2lo : -(1 / 50) ≤ l2) (h2hi : l2 ≤ 1 / 50)
     (n : ℕ) (v : ℕ × ℤ) :
     ((iidSum (tilt hold (expW2 l1 l2) (tiltZ_hold_ne_zero l1 l2)
-        (tiltZ_hold_ne_top h1lo h1hi h2lo h2hi)) n) v).toReal
+        (tiltZ_hold_ne_top h1hi h2lo h2hi)) n) v).toReal
       ≤ 6553600000000 / (1 + (n : ℝ)) := by
   set p := tilt hold (expW2 l1 l2) (tiltZ_hold_ne_zero l1 l2)
-    (tiltZ_hold_ne_top h1lo h1hi h2lo h2hi) with hp
+    (tiltZ_hold_ne_top h1hi h2lo h2hi) with hp
   have hdec : ∀ (N : ℕ) [NeZero N], 4 ≤ N → ∀ ξ : ZMod N × ZMod N,
       ‖charFn (p.map (modPair N)) ξ‖ ^ 2
         ≤ 1 - (((nd ξ.1 : ℝ) / N) ^ 2 + ((nd ξ.2 : ℝ) / N) ^ 2) / 80000 := by
@@ -97,7 +97,7 @@ theorem holdSum_apply_le_chernoff {l1 l2 : ℝ}
   have h2lo' : -(1 / 50) ≤ l2 := by linarith
   have h2hi' : l2 ≤ 1 / 50 := by linarith
   have hZ0 := tiltZ_hold_ne_zero l1 l2
-  have hZt := tiltZ_hold_ne_top h1lo' h1hi' h2lo' h2hi'
+  have hZt := tiltZ_hold_ne_top h1hi' h2lo' h2hi'
   set u : ℝ := 4 * l1 + 16 * l2 + 1000 * (l1 ^ 2 + l2 ^ 2) with hu
   set θ : ℝ := l1 * j + l2 * l with hθ
   have hwv0 : expW2 l1 l2 (j, l) ≠ 0 := by
@@ -257,7 +257,7 @@ theorem holdSum_halfspace_le {l1 l2 : ℝ}
   have h2lo' : -(1 / 50) ≤ l2 := by linarith
   have h2hi' : l2 ≤ 1 / 50 := by linarith
   have hZ0 := tiltZ_hold_ne_zero l1 l2
-  have hZt := tiltZ_hold_ne_top h1lo' h1hi' h2lo' h2hi'
+  have hZt := tiltZ_hold_ne_top h1hi' h2lo' h2hi'
   set u : ℝ := 4 * l1 + 16 * l2 + 1000 * (l1 ^ 2 + l2 ^ 2) with hu
   -- Markov under the tilt
   have hM : (∑' d : ℕ × ℤ, if cond d then (iidSum hold n) d else 0)
