@@ -98,14 +98,11 @@ theorem tao_collatz_quantitative :
 
 /-! ### The explicit-exponent augmentation (beyond the paper: Tao 2019 proves only `∃ c`) -/
 
-/-- The explicit exponent — OUR augmentation, beyond the paper: the collapse of the
-development's witness min-tree, mirrored in exact arithmetic by `tools/check_blueprint.py`
-(check 16). -/
+/-- The explicit exponent — OUR augmentation, beyond the paper. -/
 noncomputable def cTao : ℝ := 1 / (640000000 * Real.log 2)
 
 /-- **Theorem 3.1, explicit-exponent form** (our augmentation): Theorem 3.1 holds with the
-concrete exponent `cTao` — the explicit value asked for by
-[MO 341570](https://mathoverflow.net/questions/341570). -/
+concrete exponent `cTao`. -/
 theorem tao_collatz_quantitative_explicit :
     ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       1 - C / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := sorry
