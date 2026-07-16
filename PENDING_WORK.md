@@ -12,13 +12,24 @@
 - ✅ STEP 1 — c8/cs branches traced to numerals (2026-07-16, this lap). Result: **no branch
   is below the note's value**; `c₀ = 1/(640000000 · Real.log 2)` lower-bounds every branch.
   JUDGE-FLAG below has the per-hop trace. Awaiting operator sign-off before step 3's def.
-- 🔄 STEP 2 — sibling+delegate de-existentialization of the `c`-path (Sec5 ~37 carriers,
-  Sec3 glue ×6). **c7 chain done (lap 1, 2026-07-16)**: `c_geomTail := 1/400`
-  (`Prob/LocalInstances.lean`), `c_valuationDist c₀` (`Syracuse/ValuationDist.lean`),
-  `two_rpow_neg_nZero_le_explicit`, `c_valSumGeom`, `c_valSumTail := c_valSumGeom / 20`,
-  `first_passage_nonescape_explicit` (`Sec5/FirstPassage.lean`). All ratified originals
-  byte-identical, proofs now delegate. Next: the c8 chain in `Sec5/ApproxFormula.lean`
-  (goodTuple/passtime/affine carriers), then cs chain in `Stabilization.lean`, then Sec3 glue.
+- ✅ STEP 2 — sibling+delegate de-existentialization of the `c`-path COMPLETE (2026-07-16,
+  laps 1–2). Every `c`-carrying hop from the spine to the leaves is now a named
+  `noncomputable def` with an explicit-`c` sibling; all ratified originals byte-identical
+  (differ ✓ each commit), delegating. The def tree:
+  - c7 chain: `c_geomTail := 1/400` → `c_valuationDist c₀` → `c_valSumGeom` →
+    `c_valSumTail := c_valSumGeom/20` (= `1/(640000000·log 2)`) → `first_passage_nonescape_explicit`.
+  - c8 chain (`Sec5/ApproxFormula.lean`): `c_goodTupleDev := 1`, `c_edgeMass := 1/5`,
+    `c_passtimeInner`, `c_passtimeWindow := min c_valSumTail c_passtimeInner` (wires c7→c8),
+    `c_windowReduce`, `c_earlyReturn := 1`, `c_steppedMid`, `c_truncation := 1`,
+    `c_affineReindex`, `c_fpApprox` → `first_passage_approx_explicit` (WATCHED orig intact).
+  - cs chain (`Sec5/Stabilization.lean`): `c_perNHarm := 0.3`, `c_harmZfine := 0.3`,
+    `c_mainZbridge := 1`, `c_harmonicZ`, `c_perNTermEval`, `c_IyRatio := 0.2`,
+    `c_approxToZ` → `c_stab := min (min c_valSumTail c_fpApprox) c_approxToZ` →
+    `stabilization_explicit` (WATCHED orig intact).
+  - Sec3 glue: `c_ladder := min c_valSumTail c_stab` → `..._explicit` siblings through
+    `tao_collatz_quantitative_spine_explicit` (the lemma step 3 consumes).
+  Axiom gate exact throughout. *(Unratified new siblings: judge to read; they are
+  statement-copies of ratified originals with a def in the c-slot.)*
 - ⬜ STEP 3 — append to `TaoCollatz/Statement.lean` (ONE trusted file = one audit surface):
   `cTao` + `tao_collatz_quantitative_explicit`; existing headlines byte-identical.
 - ⬜ STEP 4 — OPERATOR-GATED: comparator additions + PR #6 note update.
