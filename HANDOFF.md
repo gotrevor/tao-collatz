@@ -1,43 +1,45 @@
-# HANDOFF — effective-constants campaign, lap 3 (2026-07-16)
+# HANDOFF — effective-constants campaign COMPLETE (2026-07-16, lap 3–4)
 
-**Read `DIRECTION.md` first — it is the directive.** `PENDING_WORK.md` has the full ledger.
+**Read `DIRECTION.md` first.** `PENDING_WORK.md` has the full ledger. Operator has called
+this a merge checkpoint: **ship-PR & merge are the host's next move (step 4)** — nothing
+development-side remains.
 
-## State: STEP 3 COMPLETE — the explicit headline is LIVE
+## Final state
 
-- Branch `explicit-rate-hold-weight`, all work committed, full build green (3327 jobs;
-  comparator 8600).
-- ✅ **STEP 3 (3a + 3b + 3c) done in one lap** (commits `4aebe01`, `9b4833a`; operator
-  sign-off `6852905`, step re-order `7c9c494`):
-  - `TaoCollatz/Statement.lean` now the three-statement surface:
-    `cTao := 1/(640000000 * Real.log 2)` + `tao_collatz_quantitative_explicit`, proved
-    (no sorry ever committed — pin and discharge landed together).
-  - Proof route (`Sec3/Reduction.lean`): `c_ladder_lower` (min-tree lower bound; binding
-    branch `c_valSumTail` = exactly `cTao`, numeric leaves ≥ 1/5) +
-    `tao_collatz_quantitative_spine_of_le` (rpow-exponent monotonicity for `N₀ ≥ 3`;
-    `N₀ = 2` absorbed by `max C (log 2)^c₀` and `0 ≤ logProb`).
-  - Comparator: `Challenge.lean` has `cTao` (byte-identical body) + the theorem over the
-    challenge vocabulary, sorry-by-design; `config.json` lists the new name;
-    `Solution.lean` untouched.
-- Evidence (believed clean, judge to verify): `tao_stmt_diff.py` 31/31 byte-identical on
-  every commit; `lean-axiom-gate --exact -i TaoCollatz.Statement` ✓ on all three headlines
-  (note: pass `-i TaoCollatz.Statement`; the default root-lib import chokes on the
-  sourceless `Comparator` lib name); `TaoCollatz/` greps 0 real sorries (12 grep hits are
-  stale docstring prose only).
+- Branch `explicit-rate-hold-weight`, tree clean, all green:
+  - Full build 3327 jobs; comparator 8600 jobs.
+  - `tao_stmt_diff.py` 31/31 byte-identical on every commit.
+  - `lean-axiom-gate --exact -i TaoCollatz.Statement` ✓ on all three headlines
+    (`tao_collatz`, `tao_collatz_quantitative`, `tao_collatz_quantitative_explicit`).
+  - `TaoCollatz/` 0 real sorries; `./tools/check_blueprint.py` ALL CHECKS PASS (16 checks).
+- **The headline deliverable is LIVE**: `TaoCollatz/Statement.lean` is the three-statement
+  surface with `cTao := 1/(640000000 * Real.log 2)` and `tao_collatz_quantitative_explicit`
+  proved (commit `4aebe01`), via `c_ladder_lower` + `tao_collatz_quantitative_spine_of_le`
+  (`Sec3/Reduction.lean`). Comparator entry in place (`9b4833a`); `config.json` lists the
+  new theorem name; `Solution.lean` untouched.
+- **check16** (`005ac86`): exact-arithmetic numeric trap for the cTao min-tree (blueprint
+  rule "every pin ships with a trap") — collapses exactly to `1/(640000000·ln 2)`,
+  lower-bounds every leaf, fires on the square-forgotten `linearDecay` rendering. It also
+  caught a float slip in the lap-1 ledger (true value 2.25421e-9, not 2.2547e-9; corrected).
 
-## Next lap
+## For the host (step 4)
 
-1. **STEP 4 is OPERATOR-GATED and flagged READY** in PENDING_WORK.md — ship-PR + PR #6
-   note update belong to the host. Nothing development-side remains in the DIRECTION scope.
-2. If DIRECTION is unchanged when you land: there is no open `c`-path work. Do NOT invent
-   side quests (Sec6/Sec7/`C`-side are forbidden drift). Check DIRECTION for a new
-   directive first; absent one, judge-support work (e.g. keeping ledgers accurate) only.
+- Ship-PR + PR #6 note update. Note the corrected float above when updating the note.
+- Judge still owes ratification reads on: the step-2 explicit siblings (statement-copies of
+  ratified originals with a def in the c-slot), and the new `Statement.lean` /
+  `Challenge.lean` additions. Believed clean; judge's dated run makes it true.
 
-## Gotchas hit this lap
+## Loose ends (cosmetic only, deliberately not done)
 
-- `div_le_div_iff` does not exist under that name in this mathlib — use
-  `one_div_le_one_div_of_le` + `nlinarith`, or `gcongr`.
-- `gcongr` on `a / L / 20 ≤ b / L / 20` discharges everything from context (h1 + log 2 > 0
-  via positivity); appending `<;> linarith` FAILS the build ("linarith does nothing").
-- `lean-axiom-gate` needs `-i TaoCollatz.Statement` in this repo (see above).
-- Unused-binder linter is warningAsError: an unreferenced `(hc₀ : 0 < c₀)` hypothesis
-  fails the build — the spine weakening lemma deliberately takes only `c₀ ≤ c_ladder`.
+- ~12 module docstrings still carry historical "carries `sorry`" prose from before the
+  summit (e.g. `Sec5/FirstPassage.lean:15`, `Prob/Basic.lean:17`). Stale but harmless;
+  a reviewer greps 0 real sorries. Left for a docs pass to avoid churn at merge time.
+
+## Gotchas this campaign (see also lap-3 list in git history)
+
+- `div_le_div_iff` doesn't exist here — use `one_div_le_one_div_of_le` or `gcongr`.
+- `gcongr` fully discharges `a/L/20 ≤ b/L/20` from context; a trailing `<;> linarith`
+  FAILS the build ("linarith does nothing").
+- `lean-axiom-gate` needs `-i TaoCollatz.Statement` (default root-lib import chokes on the
+  sourceless `Comparator` lib name).
+- Unused-binder linter is warningAsError: an unreferenced hypothesis fails the build.
