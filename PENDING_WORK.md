@@ -58,7 +58,7 @@ Source-level trace of every `c`-carrying hop from the spine down. All three `sta
 branches and the Sec3 glue are now traced to numerals; **the c7 value is the global minimum**
 and the note's proposed value is confirmed. Operator sign-off requested on the `cTao` def.
 
-**c7 branch (`first_passage_nonescape`)** = `1/(640000000·ln 2)` ≈ 2.2547e-9:
+**c7 branch (`first_passage_nonescape`)** = `1/(640000000·ln 2)` ≈ 2.25421e-9 (lap-3 correction: lap-1 wrote 2.2547e-9, a float slip caught by check16):
 - `geomHalf_tail_bound` witness `ct = 1/400` — `Prob/LocalInstances.lean:544`
 - `valSum_lower_geom` (`Sec5/FirstPassage.lean:1211-1217`): `d := ct·0.1 = 1/4000`;
   `cg := finalDecay d / log 2` with `linearDecay d = min(d²/2, d) = 1/32000000`
