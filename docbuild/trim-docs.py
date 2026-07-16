@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Trim doc-gen4 output to just the gallery library, linking dependencies out to
+"""Trim doc-gen4 output to just this project's library, linking dependencies out to
 the officially hosted Mathlib docs instead of shipping ~1.3 GB of them.
 
 doc-gen4 has no native "document only my library" mode: the `:docs` facet renders
 the entire import closure (all of Mathlib, Std, Init, Lean, Batteries, ...). For a
-small showcase repo that is 99.6% bloat. This post-build step keeps only the
-gallery library's pages + the doc-gen4 chrome, deletes the dependency module trees,
+single-project repo that is 99.6% bloat. This post-build step keeps only the named
+library's pages + the doc-gen4 chrome, deletes the dependency module trees,
 and rewrites every cross-reference into a dependency so it points at
 https://leanprover-community.github.io/mathlib4_docs/ (whose paths match doc-gen4's
 exactly). Result: a few MB instead of ~1.3 GB, with upstream links that still work.
@@ -36,7 +36,8 @@ def build_link_rewriter(dep_mods):
     if not dep_mods:
         return lambda html: html
     # Longest names first so e.g. `LeanSearchClient` wins over a `Lean` prefix; the
-    # trailing (/|.html) boundary already prevents `Lean` matching `LeanGallery`.
+    # trailing (/|.html) boundary already prevents `Lean` matching a kept lib that
+    # merely starts with it.
     alt = "|".join(re.escape(m) for m in sorted(dep_mods, key=len, reverse=True))
     pat = re.compile(
         r'((?:href|src|data-path)=")((?:\.\.?/)*)(?=(?:%s)(?:/|\.html))' % alt
