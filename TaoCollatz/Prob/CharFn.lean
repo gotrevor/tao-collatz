@@ -68,7 +68,7 @@ theorem sum_pairChar (z : ZMod N × ZMod N) :
     ∑ ξ : ZMod N × ZMod N, pairChar ξ z = if z = 0 then ((N : ℂ) ^ 2) else 0 := by
   have hsplit : ∑ ξ : ZMod N × ZMod N, pairChar ξ z
       = (∑ t : ZMod N, ZMod.stdAddChar (z.1 * t))
-        * (∑ t : ZMod N, ZMod.stdAddChar (z.2 * t)) := by
+      * (∑ t : ZMod N, ZMod.stdAddChar (z.2 * t)) := by
     rw [Finset.sum_mul_sum, Fintype.sum_prod_type]
     refine Finset.sum_congr rfl fun ξ₁ _ => Finset.sum_congr rfl fun ξ₂ _ => ?_
     rw [pairChar, AddChar.map_add_eq_mul, mul_comm ξ₁ z.1, mul_comm ξ₂ z.2]
@@ -78,7 +78,7 @@ theorem sum_pairChar (z : ZMod N × ZMod N) :
   · rw [if_neg hz]
     have : z.1 ≠ 0 ∨ z.2 ≠ 0 := by
       by_contra h
-      push_neg at h
+      push Not at h
       exact hz (Prod.ext h.1 h.2)
     rcases this with h1 | h2
     · rw [if_neg h1, zero_mul]
@@ -411,7 +411,7 @@ theorem nd_le_natAbs (x : ℤ) : nd ((x : ZMod N)) ≤ x.natAbs := by
   have hval : (((x : ZMod N)).val : ℤ) = x % N := ZMod.val_intCast x
   have h0 : 0 ≤ x % N := Int.emod_nonneg x hNz
   have hlt : x % N < N := Int.emod_lt_of_pos x hNI
-  have hq := Int.ediv_add_emod x N
+  have hq := Int.mul_ediv_add_emod x N
   rcases le_or_gt 0 x with hx | hx
   · have hqnn : 0 ≤ x / N := Int.ediv_nonneg hx hNI.le
     have hNq : 0 ≤ (N : ℤ) * (x / N) := mul_nonneg hNI.le hqnn
@@ -421,7 +421,7 @@ theorem nd_le_natAbs (x : ℤ) : nd ((x : ZMod N)) ≤ x.natAbs := by
     omega
   · have hqle : x / N ≤ -1 := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have hge : 0 ≤ x / N := by omega
       have hprod : 0 ≤ (N : ℤ) * (x / N) := mul_nonneg hNI.le hge
       linarith [hq, h0]
@@ -530,10 +530,10 @@ theorem sum_zmod_eq_sum_range (f : ℕ → ℝ) :
     ∑ t : ZMod N, f t.val = ∑ m ∈ Finset.range N, f m :=
   Finset.sum_nbij' (fun t => t.val) (fun m => (m : ZMod N))
     (fun t _ => Finset.mem_range.mpr (ZMod.val_lt t))
-    (fun m _ => Finset.mem_univ _)
+    (fun _ _ => Finset.mem_univ _)
     (fun t _ => ZMod.natCast_rightInverse t)
-    (fun m hm => ZMod.val_cast_of_lt (Finset.mem_range.mp hm))
-    (fun t _ => rfl)
+    (fun _ => (ZMod.val_cast_of_lt <| Finset.mem_range.mp ·))
+    (fun _ _ => rfl)
 
 /-- **1-D Gaussian summation on `ZMod N`** ((E) of node S3): the exponential sum of
 quadratic cyclic-distance decay is at most twice the geometric constant, uniformly

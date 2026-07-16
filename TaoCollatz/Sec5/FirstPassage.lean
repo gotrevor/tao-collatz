@@ -576,7 +576,7 @@ theorem classMass_ap_form :
   obtain ⟨haylo, hamod⟩ : ylo ≤ a ∧ a % (2 ^ n') = ρ := Nat.find_spec hex
   have ha_lt : a < ylo + 2 ^ n' := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     have hle : 2 ^ n' ≤ a := by omega
     have hre : a - 2 ^ n' + 2 ^ n' = a := Nat.sub_add_cancel hle
     have h2 : (a - 2 ^ n') % (2 ^ n') = ρ := by
@@ -586,7 +586,6 @@ theorem classMass_ap_form :
   have haR : (a : ℝ) < y + (2 ^ n' : ℕ) := by
     have h1 : (a : ℝ) + 1 ≤ (ylo : ℝ) + (2 ^ n' : ℕ) := by exact_mod_cast ha_lt
     push_cast at h1 ⊢
-    push_cast at hylo_lt
     linarith
   have haleyα : (a : ℝ) < y ^ alpha := by
     have hle : ((2 ^ n' : ℕ) : ℝ) ≤ y := hMy
@@ -694,7 +693,7 @@ theorem intTest_class_dev :
   have hy1 : (1 : ℝ) ≤ y := by
     rcases hy with h | h <;> rw [h] <;>
       · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
-        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha <;> positivity)
+        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha; positivity)
   have hypos : (0 : ℝ) < y := lt_of_lt_of_le one_pos hy1
   have hyα_ge : y ≤ y ^ alpha := by
     calc y = y ^ (1 : ℝ) := (Real.rpow_one y).symm
@@ -807,7 +806,7 @@ theorem intTest_D_lower :
   obtain ⟨haylo, haodd⟩ : ylo ≤ a ∧ a % 2 = 1 := Nat.find_spec hex
   have ha_lt : a < ylo + 2 := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     exact Nat.find_min hex (show a - 2 < a by omega) ⟨by omega, by omega⟩
   have haR : (a : ℝ) < y + 3 := by
     have h1 : (a : ℝ) < (ylo : ℝ) + 2 := by exact_mod_cast ha_lt
@@ -877,7 +876,7 @@ theorem intTest_D_lower :
     rw [hWM]
     calc (count : ℝ) * Yα⁻¹
         = ∑ _i ∈ Finset.range count, Yα⁻¹ := by
-          rw [Finset.sum_const, Finset.card_range]; ring
+          rw [Finset.sum_const, Finset.card_range]; ring_nf
       _ ≤ ∑ i ∈ Finset.range count, ((a : ℝ) + 2 * (i : ℝ))⁻¹ := Finset.sum_le_sum hterm
   -- count lower bound: `yhi + 1 ≤ a + 2·count`
   have hcountnat : yhi + 1 ≤ a + 2 * count := by omega
@@ -939,7 +938,7 @@ theorem windowMass_estimate :
   obtain ⟨haylo, haodd⟩ : ylo ≤ a ∧ a % 2 = 1 := Nat.find_spec hex
   have ha_lt : a < ylo + 2 := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     exact Nat.find_min hex (show a - 2 < a by omega) ⟨by omega, by omega⟩
   have haR : (a : ℝ) < y + 3 := by
     have h1 : (a : ℝ) < (ylo : ℝ) + 2 := by exact_mod_cast ha_lt
@@ -1089,7 +1088,7 @@ theorem intTest_error :
   have hy1 : (1 : ℝ) ≤ y := by
     rcases hy with h | h <;> rw [h] <;>
       · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
-        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha <;> positivity)
+        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha; positivity)
   have hypos : (0 : ℝ) < y := lt_of_lt_of_le one_pos hy1
   have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
     rw [show (1 : ℝ) = (1 : ℝ) ^ alpha from (Real.one_rpow _).symm]
@@ -1221,7 +1220,7 @@ theorem valSum_lower_geom :
   have hy1 : (1 : ℝ) ≤ y := by
     rcases hy with h | h <;> rw [h] <;>
       · rw [show (1 : ℝ) = (1 : ℝ) ^ (_ : ℝ) from (Real.one_rpow _).symm]
-        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha <;> positivity)
+        exact Real.rpow_le_rpow (by norm_num) hx1 (by unfold alpha; positivity)
   have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
     rw [show (1 : ℝ) = (1 : ℝ) ^ alpha from (Real.one_rpow _).symm]
     exact Real.rpow_le_rpow (by norm_num) hy1 (by unfold alpha; positivity)
@@ -1302,7 +1301,7 @@ theorem valSum_lower_tail :
 /-- **Sub-linear powers are eventually dominated.**  For `0 ≤ θ < 1` and `ε > 0`, `x^θ ≤ ε·x` for
 all large `x`.  (Take `x₀ = max 1 ((1/ε)^{1/(1-θ)}`).)  The workhorse for the `O(x^{0.99}) ≤ x`
 closing of the descent. -/
-theorem rpow_le_eps_mul_of_lt_one {θ ε : ℝ} (hθ0 : 0 ≤ θ) (hθ1 : θ < 1) (hε : 0 < ε) :
+theorem rpow_le_eps_mul_of_lt_one {θ ε : ℝ} (hθ1 : θ < 1) (hε : 0 < ε) :
     ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → x ^ θ ≤ ε * x := by
   refine ⟨max 1 ((1 / ε) ^ (1 / (1 - θ))), le_max_left _ _, fun x hx => ?_⟩
   have hx1 : 1 ≤ x := le_trans (le_max_left _ _) hx
@@ -1382,9 +1381,9 @@ theorem descent_passes :
       ∀ N ∈ (logUnifOdd y (y ^ alpha)).support,
         1.9 * (nZero x : ℝ) < (valSum N (nZero x) : ℝ) → passes ⌊x⌋₊ N := by
   obtain ⟨xa, hxa1, hxa⟩ := rpow_le_eps_mul_of_lt_one (θ := (0.99 : ℝ)) (ε := (1 / 4 : ℝ))
-    (by norm_num) (by norm_num) (by norm_num)
+    (by norm_num) (by norm_num)
   obtain ⟨xb, hxb1, hxb⟩ := rpow_le_eps_mul_of_lt_one (θ := (0.2 : ℝ)) (ε := (1 / 4 : ℝ))
-    (by norm_num) (by norm_num) (by norm_num)
+    (by norm_num) (by norm_num)
   obtain ⟨xc, hxc1, hpow⟩ := descent_pow_bounds
   refine ⟨max (max xa xb) (max xc 2), fun x hx y hy N hNsupp hval => ?_⟩
   have hxa' : xa ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
@@ -1513,7 +1512,7 @@ theorem first_passage_nonescape :
     by_cases hp1 : ¬ passes ⌊x⌋₊ N
     · have hvle : (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ) := by
         by_contra hgt
-        push_neg at hgt
+        push Not at hgt
         exact hp1 (hdesc x hxd y hy N hsupp hgt)
       rw [Set.indicator_of_mem (show N ∈ {N | ¬ passes ⌊x⌋₊ N} from hp1),
           Set.indicator_of_mem

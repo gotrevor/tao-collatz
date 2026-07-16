@@ -149,7 +149,7 @@ theorem tiltZ_pascalNe3_add (lam : ℝ) :
 /-! ### Numeric strip bounds on the box `|λ| ≤ 1/50` -/
 
 /-- `e^x ≤ (1-x)⁻¹` on `[0, 1)` (from `1 - x ≤ e^{-x}`). -/
-theorem exp_le_inv_one_sub {x : ℝ} (h0 : 0 ≤ x) (h1 : x < 1) :
+theorem exp_le_inv_one_sub {x : ℝ} (h1 : x < 1) :
     Real.exp x ≤ (1 - x)⁻¹ := by
   have hpos : 0 < 1 - x := by linarith
   have hexp : 0 < Real.exp x := Real.exp_pos x
@@ -173,7 +173,7 @@ theorem geom_closed_le {q q' : ℝ} (h0 : 0 ≤ q) (hqq : q ≤ q') (h1 : q' < 1
   have h0' : 0 ≤ q' := le_trans h0 hqq
   have hstep : ENNReal.ofReal q * (1 - ENNReal.ofReal q)⁻¹
       ≤ ENNReal.ofReal q' * (1 - ENNReal.ofReal q')⁻¹ := by
-    gcongr <;> exact ENNReal.ofReal_le_ofReal hqq
+    gcongr
   refine le_trans hstep (le_of_eq ?_)
   rw [show (1 : ℝ≥0∞) = ENNReal.ofReal 1 from ENNReal.ofReal_one.symm,
     ← ENNReal.ofReal_sub 1 h0', ← ENNReal.ofReal_inv_of_pos h1q',
@@ -184,7 +184,7 @@ theorem tiltZ_geomHalf_le {lam : ℝ} (hhi : lam ≤ 1 / 50) :
     tiltZ geomHalf (expW lam) ≤ ENNReal.ofReal (25 / 24) := by
   have hexp : Real.exp lam ≤ 50 / 49 := by
     calc Real.exp lam ≤ Real.exp (1 / 50) := Real.exp_le_exp.mpr hhi
-      _ ≤ (1 - 1 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num) (by norm_num)
+      _ ≤ (1 - 1 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num)
       _ ≤ 50 / 49 := by norm_num
   rw [tiltZ_geomHalf]
   calc ENNReal.ofReal (Real.exp lam / 2) * (1 - ENNReal.ofReal (Real.exp lam / 2))⁻¹
@@ -220,7 +220,7 @@ theorem tiltZ_pascalNe3_le {lam : ℝ} (hlo : -(1 / 50) ≤ lam) (hhi : lam ≤ 
     tiltZ pascalNe3 (expW lam) ≤ ENNReal.ofReal (57 / 50) := by
   have hexp2 : Real.exp lam < 2 := by
     calc Real.exp lam ≤ Real.exp (1 / 50) := Real.exp_le_exp.mpr hhi
-      _ ≤ (1 - 1 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num) (by norm_num)
+      _ ≤ (1 - 1 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num)
       _ < 2 := by norm_num
   have hZp : tiltZ pascal (expW lam) ≤ ENNReal.ofReal (625 / 576) := by
     rw [tiltZ_pascal hexp2]
@@ -365,7 +365,7 @@ theorem tiltZ_hold_ne_zero (l1 l2 : ℝ) : tiltZ hold (expW2 l1 l2) ≠ 0 := by
 geometric series with ratio `(3/4)·e^{λ₁}·Z_{ne3}(λ₂) ≤ 171/196 < 1`, giving
 `Z_hold ≤ 1 + (1 - 171/196)⁻¹ = 221/25`. The explicit constant feeds the tilted
 atom-mass lower bounds of step (F3). -/
-theorem tiltZ_hold_le {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 ≤ 1 / 50)
+theorem tiltZ_hold_le {l1 l2 : ℝ} (h1hi : l1 ≤ 1 / 50)
     (h2lo : -(1 / 50) ≤ l2) (h2hi : l2 ≤ 1 / 50) :
     tiltZ hold (expW2 l1 l2) ≤ ENNReal.ofReal (221 / 25) := by
   have hZ0 := tiltZ_pascalNe3_ne_zero l2
@@ -374,12 +374,12 @@ theorem tiltZ_hold_le {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 ≤ 1 /
     ne_top_of_le_ne_top ENNReal.ofReal_ne_top hZle
   have hexp1 : Real.exp l1 ≤ 50 / 49 := by
     calc Real.exp l1 ≤ Real.exp (1 / 50) := Real.exp_le_exp.mpr h1hi
-      _ ≤ (1 - 1 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num) (by norm_num)
+      _ ≤ (1 - 1 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num)
       _ ≤ 50 / 49 := by norm_num
   have hexp3 : Real.exp (3 * l2) ≤ 50 / 47 := by
     calc Real.exp (3 * l2) ≤ Real.exp (3 / 50) :=
           Real.exp_le_exp.mpr (by linarith)
-      _ ≤ (1 - 3 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num) (by norm_num)
+      _ ≤ (1 - 3 / 50)⁻¹ := exp_le_inv_one_sub (by norm_num)
       _ ≤ 50 / 47 := by norm_num
   rw [tiltZ_hold_factor l1 l2 hZ0 hZt]
   have hbound : ∀ k : ℕ, geomQuarter k
@@ -471,10 +471,10 @@ theorem tiltZ_hold_le {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 ≤ 1 /
 
 /-- **`Hold` MGF finiteness on the box `|λᵢ| ≤ 1/50`** (paper (7.30), the Lemma 7.6
 engine): corollary of the numeric bound `tiltZ_hold_le`. -/
-theorem tiltZ_hold_ne_top {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 ≤ 1 / 50)
+theorem tiltZ_hold_ne_top {l1 l2 : ℝ} (h1hi : l1 ≤ 1 / 50)
     (h2lo : -(1 / 50) ≤ l2) (h2hi : l2 ≤ 1 / 50) :
     tiltZ hold (expW2 l1 l2) ≠ ∞ :=
-  ne_top_of_le_ne_top ENNReal.ofReal_ne_top (tiltZ_hold_le h1lo h1hi h2lo h2hi)
+  ne_top_of_le_ne_top ENNReal.ofReal_ne_top (tiltZ_hold_le h1hi h2lo h2hi)
 
 /-! ### Tilted `Hold` atom masses (step (F3b)) -/
 
@@ -491,9 +491,9 @@ theorem tilt_hold_apply_ge {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 �
     (hm : (1 / 32 : ℝ) ≤ (hold y).toReal) :
     (1 / 400 : ℝ)
       ≤ ((tilt hold (expW2 l1 l2) (tiltZ_hold_ne_zero l1 l2)
-          (tiltZ_hold_ne_top h1lo h1hi h2lo h2hi)) y).toReal := by
+          (tiltZ_hold_ne_top h1hi h2lo h2hi)) y).toReal := by
   have hZ0 := tiltZ_hold_ne_zero l1 l2
-  have hZt := tiltZ_hold_ne_top h1lo h1hi h2lo h2hi
+  have hZt := tiltZ_hold_ne_top h1hi h2lo h2hi
   rw [tilt_apply, ENNReal.toReal_mul, ENNReal.toReal_mul]
   -- weight lower bound: the exponent is ≥ -1/5 on the window
   have hw : (4 / 5 : ℝ) ≤ (expW2 l1 l2 y).toReal := by
@@ -506,7 +506,7 @@ theorem tilt_hold_apply_ge {l1 l2 : ℝ} (h1lo : -(1 / 50) ≤ l1) (h1hi : l1 �
   -- partition function upper bound in ℝ
   have hZr : (tiltZ hold (expW2 l1 l2)).toReal ≤ 221 / 25 := by
     have h := ENNReal.toReal_mono ENNReal.ofReal_ne_top
-      (tiltZ_hold_le h1lo h1hi h2lo h2hi)
+      (tiltZ_hold_le h1hi h2lo h2hi)
     rwa [ENNReal.toReal_ofReal (by norm_num)] at h
   have hZpos : 0 < (tiltZ hold (expW2 l1 l2)).toReal := ENNReal.toReal_pos hZ0 hZt
   have hinv : (25 / 221 : ℝ) ≤ ((tiltZ hold (expW2 l1 l2))⁻¹).toReal := by
@@ -830,7 +830,7 @@ theorem tiltZ_hold_snd_le {μ : ℝ} (hlo : -(1 / 100) ≤ μ) (hhi : μ ≤ 1 /
 /-- Square-root-free comparison in `ℝ≥0∞`: `x² ≤ y² → x ≤ y`. -/
 theorem ennreal_le_of_sq_le_sq {x y : ℝ≥0∞} (h : x ^ 2 ≤ y ^ 2) : x ≤ y := by
   by_contra hc
-  push_neg at hc
+  push Not at hc
   have hlt : y ^ 2 < x ^ 2 := by
     rw [sq, sq]
     exact ENNReal.mul_lt_mul hc hc
