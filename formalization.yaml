@@ -29,7 +29,8 @@ status:
 
     The comparator harness (`Comparator/TaoCollatz/`) certifies BOTH the trusted vocabulary and
     the headlines: the Mathlib-only rendering of every definition the headlines are stated in
-    (`col`, `colMin`, `logSum`, `logProb`, `posInterval`, `HasLogDensity`, `AlmostAllPos`) is
+    (`col`, `colMin`, `logSum`, `logProb`, `HasLogDensity`, `AlmostAllPos`; the `[1, x]` window is
+    Mathlib's own `Finset.Icc 1 x`) is
     byte-identical to the ones the development uses; five proved NON-VACUITY ANCHORS pin their
     semantics against exact finite instances (notably `logProb_odd_window_two`, which separates
     logarithmic from natural density — the axis Theorem 1.3 lives on); and the two headline
