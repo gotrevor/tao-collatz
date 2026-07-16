@@ -9,6 +9,15 @@ defaultTargets = ["TaoCollatz"]
 [leanOptions]
 weak.warningAsError = true
 
+# SETTLED 2026-07-16 — decided, not to be re-litigated. `autoImplicit` invents an implicit
+# binder for any unbound identifier in a signature, so an invented variable compiles green
+# into a statement nobody meant. Machine authorship argues FOR this rather than against it:
+# the risk was never typos, it is hallucinated binders, and a wrong-but-green statement is
+# exactly what the comparator harness and the axiom gate cannot see. Matches Mathlib. Unlike
+# the option above this one is NOT `weak.`: it changes what declarations mean, so it must
+# affect the build trace. (`relaxedAutoImplicit` is moot once this is false; Mathlib omits it.)
+autoImplicit = false
+
 # Mathlib pinned as a DIRECT require at v4.31.0 (matches the ~/.lake-base/4.31.0 universe
 # store, so `lake-base link` CoW-clones the prebuilt oleans in — no 40-min cold build).
 [[require]]
