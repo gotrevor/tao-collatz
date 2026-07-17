@@ -2028,22 +2028,37 @@ theorem c_windowReduce_pos : 0 < c_windowReduce :=
 the discarded mass lies in `{¬ good} ∪ {¬ (passes ∧ T_x ∈ I_y)}`, each `≪ log^{-c} x` by the two
 PROVED whp lemmas `approx_good_tuple_whp` (5.12) and `approx_passtime_window` (5.16).  (On the
 complementary good∩window event, `{Pass ∈ E}` is the disjoint union over `n ∈ I_y` of
-`{T_x = n ∧ Pass ∈ E ∧ good}`, so the partition is exact there.) -/
-theorem first_passage_window_reduce_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+`{T_x = n ∧ Pass ∈ E ∧ good}`, so the partition is exact there.)
+
+The `C`-slot: `C_goodTupleDev + C_passtimeWindow` (big-C campaign, step 2). -/
+noncomputable def C_windowReduce : ℝ := C_goodTupleDev + C_passtimeWindow
+
+theorem C_windowReduce_pos : 0 < C_windowReduce :=
+  add_pos C_goodTupleDev_pos C_passtimeWindow_pos
+
+/-- Sibling of `first_passage_window_reduce` with the `c`/`C` slots pinned at
+(`c_windowReduce`, `C_windowReduce`) — the `_atC` form (big-C campaign, step 2),
+cutoff existential. -/
+theorem first_passage_window_reduce_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
               - firstPassMid x E y|
-            ≤ C * (Real.log x) ^ (-c_windowReduce) := by
-  obtain ⟨Cg, xg, hCg, hgood⟩ := approx_good_tuple_whp_explicit
-  obtain ⟨Cw, xw, hCw, hwin⟩ := approx_passtime_window_explicit
+            ≤ C_windowReduce * (Real.log x) ^ (-c_windowReduce) := by
+  obtain ⟨xg, hgood⟩ := approx_good_tuple_whp_atC
+  obtain ⟨xw, hwin⟩ := approx_passtime_window_atC
+  set Cg : ℝ := C_goodTupleDev with hCgdef
+  set Cw : ℝ := C_passtimeWindow with hCwdef
+  have hCg : 0 < Cg := C_goodTupleDev_pos
+  have hCw : 0 < Cw := C_passtimeWindow_pos
   set cg : ℝ := c_goodTupleDev with hcgdef
   set cw : ℝ := c_passtimeWindow with hcwdef
   have hcg : 0 < cg := c_goodTupleDev_pos
   have hcw : 0 < cw := c_passtimeWindow_pos
-  rw [show c_windowReduce = min cg cw from rfl]
-  refine ⟨Cg + Cw, max (max xg xw) (Real.exp 1), by positivity,
+  rw [show c_windowReduce = min cg cw from rfl,
+    show C_windowReduce = Cg + Cw from rfl]
+  refine ⟨max (max xg xw) (Real.exp 1),
     fun x hx E hE y hy => ?_⟩
   have hxg : xg ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxw : xw ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -2162,6 +2177,19 @@ theorem first_passage_window_reduce_explicit :
     _ ≤ Cg * (Real.log x) ^ (-(min cg cw)) + Cw * (Real.log x) ^ (-(min cg cw)) :=
         add_le_add (mul_le_mul_of_nonneg_left hA hCg.le) (mul_le_mul_of_nonneg_left hB hCw.le)
     _ = (Cg + Cw) * (Real.log x) ^ (-(min cg cw)) := by ring
+
+/-- Sibling of `first_passage_window_reduce` with the `c`-slot pinned to `c_windowReduce`;
+the original delegates here.  Now delegates to `first_passage_window_reduce_atC` (big-C
+campaign, step 2: `C := C_windowReduce`). -/
+theorem first_passage_window_reduce_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
+              - firstPassMid x E y|
+            ≤ C * (Real.log x) ^ (-c_windowReduce) := by
+  obtain ⟨x₀, h⟩ := first_passage_window_reduce_atC
+  exact ⟨C_windowReduce, x₀, C_windowReduce_pos, h⟩
 
 theorem first_passage_window_reduce :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
