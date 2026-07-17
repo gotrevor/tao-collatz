@@ -582,32 +582,51 @@ noncomputable def c_goodTupleDev : ℝ := 1
 
 theorem c_goodTupleDev_pos : 0 < c_goodTupleDev := by norm_num [c_goodTupleDev]
 
-/-- **(5.12) analytic core** — the summed per-prefix deviation bound, with the `c`-slot pinned
-to `c_goodTupleDev` (`C` and the threshold stay existential; the ratified original delegates
-here).  Each of the `n₀ + 1`
-prefixes `valSum N n` deviates from its mean `2n` by `≥ log^{0.6} x` with probability
-`≪ exp(−c log^{0.2} x)` (transfer to `geomHalf.iid` via C5 `valuation_dist`, then the two-sided
-S3 `geomHalf_tail_bound`); the sum over prefixes is still `≪ log^{-c} x`.  This is the ONLY analytic
-hole of `approx_good_tuple_whp` — the union-bound skeleton around it is proved. -/
-theorem goodTuple_prefix_dev_sum_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The (5.12) per-prefix deviation constant: `2·Ct + Cd` at `Ct = C_geomTail`,
+`Cd = C_valuationDistC K_intTest` (big-C campaign, step 2).
+
+(The `_atC` below is the **(5.12) analytic core** — the summed per-prefix deviation bound.
+Each of the `n₀ + 1` prefixes `valSum N n` deviates from its mean `2n` by `≥ log^{0.6} x`
+with probability `≪ exp(−c log^{0.2} x)` (transfer to `geomHalf.iid` via C5
+`valuation_dist`, then the two-sided S3 `geomHalf_tail_bound`); the sum over prefixes is
+still `≪ log^{-c} x`.  This is the ONLY analytic hole of `approx_good_tuple_whp` — the
+union-bound skeleton around it is proved.) -/
+noncomputable def C_goodTupleDev : ℝ := 2 * C_geomTail + C_valuationDistC K_intTest
+
+theorem C_goodTupleDev_pos : 0 < C_goodTupleDev := by
+  unfold C_goodTupleDev
+  nlinarith [C_geomTail_pos, C_valuationDistC_pos K_intTest_pos]
+
+theorem goodTuple_prefix_dev_sum_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         ∑ n ∈ Finset.range (nZero x + 1),
             (logUnifOdd y (y ^ alpha)).expect
               (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1)
-          ≤ C * (Real.log x) ^ (-c_goodTupleDev) := by
+          ≤ C_goodTupleDev * (Real.log x) ^ (-c_goodTupleDev) := by
   rw [show c_goodTupleDev = 1 from rfl]
-  obtain ⟨K, hK, x₀e, herr⟩ := integral_test_logUnif
-  obtain ⟨cd, Cd, hcd, hCd, hdist⟩ := valuation_dist 1 K (by norm_num) hK
-  obtain ⟨ct, hct, Ct, hCt, htail⟩ := geomHalf_tail_bound
+  obtain ⟨x₀e, herr⟩ := integral_test_logUnif_atC
+  have hdist := valuation_dist_atC 1 K_intTest (by norm_num) K_intTest_pos
+  have htail := geomHalf_tail_bound_atC
+  set Cd : ℝ := C_valuationDistC K_intTest with hCddef
+  have hCd : 0 < Cd := C_valuationDistC_pos K_intTest_pos
+  set K : ℝ := K_intTest with hKdef
+  have hK : 0 < K := K_intTest_pos
+  set Ct : ℝ := C_geomTail with hCtdef
+  have hCt : 0 < Ct := C_geomTail_pos
+  set ct : ℝ := c_geomTail with hctdef
+  have hct : 0 < ct := c_geomTail_pos
+  set cd : ℝ := c_valuationDist 1 with hcddef
+  have hcd : 0 < cd := c_valuationDist_pos one_pos
   obtain ⟨κ, x₀g, hκ, hGdecay⟩ := Gweight_prefix_decay (d := ct) hct
   obtain ⟨x₀A, hA⟩ := log_rpow_mul_exp_neg_le_one (p := 2) (κ := κ) (θ := 0.2)
     (by norm_num) hκ (by norm_num)
   obtain ⟨cq, x₀q, hcq, hqle⟩ := two_rpow_neg_nZero_le hcd
   obtain ⟨x₀B, hB⟩ := log_rpow_mul_exp_neg_le_one (p := 2) (κ := cq) (θ := 1)
     (by norm_num) hcq (by norm_num)
-  refine ⟨2 * Ct + Cd, max x₀e (max x₀A (max x₀q (max x₀B (max (Real.exp 20) x₀g)))),
-    by positivity, fun x hx y hy => ?_⟩
+  rw [show C_goodTupleDev = 2 * Ct + Cd from rfl]
+  refine ⟨max x₀e (max x₀A (max x₀q (max x₀B (max (Real.exp 20) x₀g)))),
+    fun x hx y hy => ?_⟩
   simp only [max_le_iff] at hx
   obtain ⟨hxe, hxA, hxq, hxB, hx20, hxg⟩ := hx
   have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 20) hx20
@@ -755,6 +774,18 @@ theorem goodTuple_prefix_dev_sum_explicit :
         linarith [hAterm, hBterm]
     _ = (2 * Ct + Cd) * (Real.log x) ^ (-(1 : ℝ)) := by ring
 
+/-- Original explicit-`c` form: delegates to `goodTuple_prefix_dev_sum_atC` (big-C
+campaign, step 2: `C := C_goodTupleDev`). -/
+theorem goodTuple_prefix_dev_sum_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        ∑ n ∈ Finset.range (nZero x + 1),
+            (logUnifOdd y (y ^ alpha)).expect
+              (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1)
+          ≤ C * (Real.log x) ^ (-c_goodTupleDev) := by
+  obtain ⟨x₀, h⟩ := goodTuple_prefix_dev_sum_atC
+  exact ⟨C_goodTupleDev, x₀, C_goodTupleDev_pos, h⟩
+
 theorem goodTuple_prefix_dev_sum :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
@@ -765,18 +796,21 @@ theorem goodTuple_prefix_dev_sum :
   obtain ⟨C, x₀, hC, h⟩ := goodTuple_prefix_dev_sum_explicit
   exact ⟨c_goodTupleDev, C, x₀, c_goodTupleDev_pos, hC, h⟩
 
-/-- Sibling of `approx_good_tuple_whp` with the `c`-slot pinned to `c_goodTupleDev`
-(passthrough); the original delegates here. -/
-theorem approx_good_tuple_whp_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- Sibling of `approx_good_tuple_whp` with the `c`/`C` slots pinned at
+(`c_goodTupleDev`, `C_goodTupleDev`) — the `_atC` form (big-C campaign, step 2),
+cutoff existential. -/
+theorem approx_good_tuple_whp_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1)
-          ≤ C * (Real.log x) ^ (-c_goodTupleDev) := by
-  obtain ⟨C, x₀, hC, hsum⟩ := goodTuple_prefix_dev_sum_explicit
+          ≤ C_goodTupleDev * (Real.log x) ^ (-c_goodTupleDev) := by
+  obtain ⟨x₀, hsum⟩ := goodTuple_prefix_dev_sum_atC
+  set C : ℝ := C_goodTupleDev with hCdef
+  have hC : 0 < C := C_goodTupleDev_pos
   set c : ℝ := c_goodTupleDev with hcdef
   have hc : 0 < c := c_goodTupleDev_pos
-  refine ⟨C, max x₀ 1, hC, fun x hx y hy => ?_⟩
+  refine ⟨max x₀ 1, fun x hx y hy => ?_⟩
   have hx0 : x₀ ≤ x := le_trans (le_max_left _ _) hx
   have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
@@ -844,6 +878,18 @@ theorem approx_good_tuple_whp_explicit :
           P.expect (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1) :=
         expect_le_sum_of_indicator_le _ _ _ _ hpw2
     _ ≤ C * (Real.log x) ^ (-c) := hsum x hx0 y hy
+
+/-- Sibling of `approx_good_tuple_whp` with the `c`-slot pinned to `c_goodTupleDev`
+(passthrough); the original delegates here.  Now delegates to `approx_good_tuple_whp_atC`
+(big-C campaign, step 2: `C := C_goodTupleDev`). -/
+theorem approx_good_tuple_whp_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1)
+          ≤ C * (Real.log x) ^ (-c_goodTupleDev) := by
+  obtain ⟨x₀, h⟩ := approx_good_tuple_whp_atC
+  exact ⟨C_goodTupleDev, x₀, C_goodTupleDev_pos, h⟩
 
 theorem approx_good_tuple_whp :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
