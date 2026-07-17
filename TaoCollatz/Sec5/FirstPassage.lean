@@ -681,12 +681,12 @@ theorem classMass_ap_form :
       rw [← hcast]; push_cast; exact_mod_cast hcount_lower
     linarith [hyhi_le]
 
-theorem intTest_class_dev :
-    ∃ c : ℝ, 0 < c ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+theorem intTest_class_dev_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       ∃ t : ℝ, ∀ r : ZMod (2 ^ (3 * nZero x)), r.val % 2 = 1 →
-        |classMass y (y ^ alpha) (3 * nZero x) r - t| ≤ c / y := by
+        |classMass y (y ^ alpha) (3 * nZero x) r - t| ≤ 2 / y := by
   obtain ⟨x₀b, hbridge⟩ := classMass_ap_form
-  refine ⟨2, by norm_num, max x₀b 1, fun x hx y hy => ?_⟩
+  refine ⟨max x₀b 1, fun x hx y hy => ?_⟩
   have hxb : x₀b ≤ x := le_trans (le_max_left _ _) hx
   have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   -- `y ≥ 1`, `y^α ≥ y`, positivity
@@ -755,14 +755,21 @@ theorem intTest_class_dev :
     _ ≤ 1 / y + 1 / y := by linarith [hinv_a]
     _ = 2 / y := by ring
 
+/-- Original ∃-form of the per-class deviation: delegates to `intTest_class_dev_atC`
+(big-C campaign, step 2: `c := 2`, cutoff existential via `classMass_ap_form`). -/
+theorem intTest_class_dev :
+    ∃ c : ℝ, 0 < c ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      ∃ t : ℝ, ∀ r : ZMod (2 ^ (3 * nZero x)), r.val % 2 = 1 →
+        |classMass y (y ^ alpha) (3 * nZero x) r - t| ≤ c / y :=
+  ⟨2, by norm_num, intTest_class_dev_atC⟩
+
 /-- **Window normalizer lower bound** — `D = ∑_{N ∈ [y,y^α] odd} 1/N` exceeds a positive constant for
 large `x`.  (In fact `D ≍ (α−1)/2 · log y → ∞`; a constant `1/2` suffices for the reduction, since
 `dTV = (1/D)·O(2^{3n₀}/y)` and dividing by any positive constant preserves the decay.)  Owed:
 one-class `AntitoneOn.integral_le_sum` on the odds gives `D ≥ (1/2)∫ − O(1/y)`. -/
-theorem intTest_D_lower :
-    ∃ D₀ : ℝ, 0 < D₀ ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
-      D₀ ≤ windowMass y (y ^ alpha) := by
-  refine ⟨1/8, by norm_num, ?_⟩
+theorem intTest_D_lower_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      (1/8 : ℝ) ≤ windowMass y (y ^ alpha) := by
   obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
   refine ⟨max x₀z ((2:ℝ) ^ (2000:ℝ)), fun x hx y hy => ?_⟩
   have hxz : x₀z ≤ x := le_trans (le_max_left _ _) hx
@@ -886,6 +893,13 @@ theorem intTest_D_lower :
   refine le_trans ?_ hWMlb
   rw [← div_eq_mul_inv, le_div_iff₀ hyαpos]
   linarith only [hcountR, h2y, hy8]
+
+/-- Original ∃-form of the window-normalizer lower bound: delegates to
+`intTest_D_lower_atC` (big-C campaign, step 2: `D₀ := 1/8`, cutoff existential). -/
+theorem intTest_D_lower :
+    ∃ D₀ : ℝ, 0 < D₀ ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      D₀ ≤ windowMass y (y ^ alpha) :=
+  ⟨1/8, by norm_num, intTest_D_lower_atC⟩
 
 /-- **Window normalizer two-sided estimate (5.19).**  `D = windowMass y (y^α) = ∑_{N∈[y,y^α] odd} 1/N`
 equals the harmonic normaliser `(α−1)/2 · log y` up to an absolute additive `O(1)`.  This is the
@@ -1076,17 +1090,24 @@ theorem logWindow_nonempty_of_large :
   have h2 : ⌊y ^ alpha⌋₊ ≤ ⌈y ^ alpha⌉₊ := Nat.floor_le_ceil _
   omega
 
-theorem intTest_error :
-    ∃ K : ℝ, 0 < K ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The integral-test dTV constant: `c/D₀` at `c = 2` (`intTest_class_dev_atC`),
+`D₀ = 1/8` (`intTest_D_lower_atC`) — big-C campaign, step 2. -/
+noncomputable def K_intTest : ℝ := 2 / (1 / 8)
+
+theorem K_intTest_pos : 0 < K_intTest := by unfold K_intTest; norm_num
+
+theorem intTest_error_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
                 (unifOddMod (3 * nZero x))
-          ≤ K * ((2 : ℝ) ^ (3 * (nZero x : ℝ)) / y) := by
-  obtain ⟨c, hc, x₀d, hdev⟩ := intTest_class_dev
-  obtain ⟨D₀, hD₀, x₀D, hDl⟩ := intTest_D_lower
+          ≤ K_intTest * ((2 : ℝ) ^ (3 * (nZero x : ℝ)) / y) := by
+  obtain ⟨x₀d, hdev⟩ := intTest_class_dev_atC
+  obtain ⟨x₀D, hDl⟩ := intTest_D_lower_atC
   obtain ⟨x₀n, hnon⟩ := logWindow_nonempty_of_large
   obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
-  refine ⟨c / D₀, by positivity, max (max x₀d x₀D) (max x₀n (max x₀z 1)), fun x hx y hy => ?_⟩
+  rw [show K_intTest = 2 / (1/8 : ℝ) from rfl]
+  refine ⟨max (max x₀d x₀D) (max x₀n (max x₀z 1)), fun x hx y hy => ?_⟩
   have hxd : x₀d ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxD : x₀D ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
   have hxn : x₀n ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_right _ _)) hx
@@ -1103,7 +1124,8 @@ theorem intTest_error :
     exact Real.rpow_le_rpow (by norm_num) hy1 (by unfold alpha; positivity)
   -- the pieces
   have hn'pos : 0 < 3 * nZero x := by have := hzpos x hxz; omega
-  have hDpos : 0 < windowMass y (y ^ alpha) := lt_of_lt_of_le hD₀ (hDl x hxD y hy)
+  have hDpos : 0 < windowMass y (y ^ alpha) :=
+    lt_of_lt_of_le (by norm_num : (0:ℝ) < 1/8) (hDl x hxD y hy)
   obtain ⟨t, ht⟩ := hdev x hxd y hy
   have hbound := intTest_dTV_le hyα1 (hnon x hxn y hy) hn'pos hDpos ht
   refine le_trans hbound ?_
@@ -1117,12 +1139,22 @@ theorem intTest_error :
     rw [show n' = (n' - 1) + 1 by omega, pow_succ]
     push_cast; ring
   rw [hpow]
-  have hDge : D₀ ≤ windowMass y (y ^ alpha) := hDl x hxD y hy
-  rw [show 2 * (c / y) * B / windowMass y (y ^ alpha) = 2 * c * B / (y * windowMass y (y ^ alpha)) by
-        field_simp,
-      show c / D₀ * (2 * B / y) = 2 * c * B / (y * D₀) by field_simp]
+  have hDge : (1/8 : ℝ) ≤ windowMass y (y ^ alpha) := hDl x hxD y hy
+  rw [show 2 * (2 / y) * B / windowMass y (y ^ alpha)
+        = 2 * 2 * B / (y * windowMass y (y ^ alpha)) by field_simp,
+      show 2 / (1/8 : ℝ) * (2 * B / y) = 2 * 2 * B / (y * (1/8)) by field_simp]
   apply div_le_div_of_nonneg_left (by positivity) (by positivity)
   exact mul_le_mul_of_nonneg_left hDge hypos.le
+
+/-- Original ∃-form of the integral-test error estimate: delegates to `intTest_error_atC`
+(big-C campaign, step 2: `K := K_intTest`). -/
+theorem intTest_error :
+    ∃ K : ℝ, 0 < K ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
+                (unifOddMod (3 * nZero x))
+          ≤ K * ((2 : ℝ) ^ (3 * (nZero x : ℝ)) / y) :=
+  ⟨K_intTest, K_intTest_pos, intTest_error_atC⟩
 
 /-- **The integral test** (Tao pp.20, the one new analytic brick of C7).  For the log-uniform window
 `N_y` on odds in `[y, y^α]`, its reduction mod `2^{3 n₀}` is within `≪ 2^{-3 n₀}` (total variation)
@@ -1132,20 +1164,31 @@ of the uniform law on odd residues.  This is precisely the hypothesis consumed b
 Proof idea (owed): the count of odd `N ∈ [y,y^α]` in a fixed residue class mod `2^{3n₀}` is
 `(1 + O(2^{3n₀}/y))` times the average, by comparing `∑_{N ≡ r} 1/N` to `∫ dt/t` over the window
 (the "integral test" / summation-by-parts); with `2^{3n₀} ≍ x^{0.3} ≪ y ≍ x`, the error is `≪ 2^{-3n₀}`. -/
+theorem integral_test_logUnif_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
+                (unifOddMod (3 * nZero x))
+          ≤ K_intTest * (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) := by
+  -- Assembled from the analytic error estimate `intTest_error` (dTV ≤ K·2^{3n₀}/y) and the numeric
+  -- closure `intTest_numeric` (2^{3n₀}/y ≤ 2^{-3n₀}).  Only `intTest_error` carries owed content.
+  obtain ⟨x₀e, herr⟩ := intTest_error_atC
+  obtain ⟨x₀n, _, hnum⟩ := intTest_numeric
+  refine ⟨max x₀e x₀n, fun x hx y hy => ?_⟩
+  have hxe : x₀e ≤ x := le_trans (le_max_left _ _) hx
+  have hxn : x₀n ≤ x := le_trans (le_max_right _ _) hx
+  exact le_trans (herr x hxe y hy)
+    (mul_le_mul_of_nonneg_left (hnum x hxn y hy) K_intTest_pos.le)
+
+/-- Original ∃-form of the integral test: delegates to `integral_test_logUnif_atC`
+(big-C campaign, step 2: `K := K_intTest`). -/
 theorem integral_test_logUnif :
     ∃ K : ℝ, 0 < K ∧ ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
                 (unifOddMod (3 * nZero x))
-          ≤ K * (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) := by
-  -- Assembled from the analytic error estimate `intTest_error` (dTV ≤ K·2^{3n₀}/y) and the numeric
-  -- closure `intTest_numeric` (2^{3n₀}/y ≤ 2^{-3n₀}).  Only `intTest_error` carries owed content.
-  obtain ⟨K, hK, x₀e, herr⟩ := intTest_error
-  obtain ⟨x₀n, _, hnum⟩ := intTest_numeric
-  refine ⟨K, hK, max x₀e x₀n, fun x hx y hy => ?_⟩
-  have hxe : x₀e ≤ x := le_trans (le_max_left _ _) hx
-  have hxn : x₀n ≤ x := le_trans (le_max_right _ _) hx
-  exact le_trans (herr x hxe y hy) (mul_le_mul_of_nonneg_left (hnum x hxn y hy) hK.le)
+          ≤ K * (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) :=
+  ⟨K_intTest, K_intTest_pos, integral_test_logUnif_atC⟩
 
 /-- **Lower-tail (underflow) analogue of `geomHalf_overflow_le_Gweight`.**  For the iid `Geom(2)`
 vector, the mass on `{∑ ≤ 2n − λ}` is `≤ C·G_{1+n}(c·λ)`, because `∑ ≤ 2n − λ ⟹ |∑ − 2n| ≥ λ`.
