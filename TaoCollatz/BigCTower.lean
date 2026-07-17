@@ -3305,7 +3305,8 @@ private theorem X_spine_le_tenTower_eleven : X_spine ≤ tenTower 11 := by
   exact max_le hwindow
     (exp_one_le_tenTower_three.trans (tenTower_mono (by omega)))
 
-/-- A sharper intermediate ceiling: the assembled constant is below a tower of 63 tens. -/
+/-- Headline ceiling: `tenTower 62` is a right-associated tower containing exactly 63
+copies of `10`, i.e. `10↑↑63`. -/
 theorem C_tao_assembled_le_tenTower_sixty_two :
     C_tao_assembled ≤ tenTower 62 := by
   have hfirst : C_windowBad * alpha / (alpha - 1) ≤ tenTower 61 := by
@@ -3361,21 +3362,17 @@ theorem C_tao_assembled_le_tenTower_sixty_two :
   unfold C_tao_assembled
   exact max_le hspine (hsmall.trans (tenTower_mono (by omega)))
 
-/-- Headline ceiling: `tenTower 99` is a tower containing exactly 100 copies of `10`. -/
-theorem C_tao_assembled_le_tower_of_one_hundred_tens :
-    C_tao_assembled ≤ tenTower 99 :=
-  C_tao_assembled_le_tenTower_sixty_two.trans (tenTower_mono (by omega))
-
-/-- The two reportable parameters, in one kernel-checked statement. -/
+/-- The two reportable parameters, in one kernel-checked statement: one may take
+`c = 1/(640000000 log 2)` and `C = 10↑↑63`, a right-associated tower of exactly 63 tens. -/
 theorem tao_collatz_assembled_readable_parameters :
     cTao = 1 / (640000000 * Real.log 2) ∧
-      C_tao_assembled ≤ tenTower 99 :=
-  ⟨rfl, C_tao_assembled_le_tower_of_one_hundred_tens⟩
+      C_tao_assembled ≤ tenTower 62 :=
+  ⟨rfl, C_tao_assembled_le_tenTower_sixty_two⟩
 
-/-- A directly citable version of Theorem 3.1 with `C` equal to a tower of 100 tens. -/
-theorem tao_collatz_quantitative_tower_of_one_hundred_tens :
+/-- A directly citable version of Theorem 3.1 with `C` equal to a tower of 63 tens. -/
+theorem tao_collatz_quantitative_tower_of_sixty_three_tens :
     ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
-      1 - tenTower 99 / (Real.log N₀) ^ cTao
+      1 - tenTower 62 / (Real.log N₀) ^ cTao
         ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
   intro N₀ x hN₀ hx
   have hbase := tao_collatz_quantitative_assembled N₀ x hN₀ hx
@@ -3383,9 +3380,9 @@ theorem tao_collatz_quantitative_tower_of_one_hundred_tens :
   have hden : 0 < (Real.log N₀) ^ cTao :=
     Real.rpow_pos_of_pos (Real.log_pos hN₀real) _
   have hfrac : C_tao_assembled / (Real.log N₀) ^ cTao ≤
-      tenTower 99 / (Real.log N₀) ^ cTao :=
+      tenTower 62 / (Real.log N₀) ^ cTao :=
     (div_le_div_iff_of_pos_right hden).2
-      C_tao_assembled_le_tower_of_one_hundred_tens
+      C_tao_assembled_le_tenTower_sixty_two
   linarith
 
 end TaoCollatz
