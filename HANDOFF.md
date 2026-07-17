@@ -1,4 +1,51 @@
-# HANDOFF — big-C campaign, lap 9 (review, 2026-07-17)
+# HANDOFF — big-C campaign, lap 9 (review + B1 transcription, 2026-07-17)
+
+## State at lap end (branch `explicit-big-c`, all committed, build green)
+
+HEAD `281eee7`. Full `lake build` green (3327 jobs) at every commit; differ
+`tools/tao_stmt_diff.py fabea6f HEAD` 35/35 (no watched statement touched);
+`check_blueprint.py` 19/19. Still exactly 1 real `sorry` (`Statement.lean:65`, the pin).
+
+## 🚨 ROUTE BLOCKED — operator ruling owed (read `ROUTE-ESCALATION-2026-07-17.md` FIRST)
+
+STEP 3 (discharge via `C_ladder ≤ CTao`) is STOPPED: the fully-reified `C_ladder` is a
+tower ≫ pin (lap-8 C0-arm flag, machine-checked check19). Lap-9 review sharpened it —
+**transcription route dead, but the pin is dischargeable in truth** (true renewal constant
+≈ head `10^(9.36×10¹⁰) < CTao`; the C0-arm is vacuous-`Q` slop). Two operator options in the
+escalation doc: **A** re-pin `CTao` tower-form (cheap), **B** tighten via `renewal_large_n_tight`
+(keeps CTao, research). **Do NOT edit the pin; do NOT start Option B without a ruling.**
+
+## Lap 9 progress (5 commits, all green)
+
+1. **`8f25699` — REVIEW + escalation.** Sharpened the C0-arm NO-GO (source-read the renewal
+   proof / `Q_polynomial_decay` / `encWindowIter` / `white`); wrote `ROUTE-ESCALATION-2026-07-17.md`,
+   crux decomposition (`renewal_large_n_tight`) in PENDING_WORK lap-9, DIRECTION route-banner,
+   STATUS refresh.
+2. **`a235201` — `geomHalf_tail_bound` C-slot** (`LocalInstances.lean`): `C_geomTail := 2`,
+   `geomHalf_tail_bound_atC` (pins c=1/400 + C=2); `_cExplicit` + ratified form delegate.
+3. **`b8f4ccb` — `good_tuple_whp_iid` C-slot**: `C_goodWhp := 2·C_geomTail` (=4),
+   `good_tuple_whp_iid_atC` (C-pinned, cutoff ∃). Rail: `set ct/Ct` re-bind names → 120-line
+   union-bound body ports verbatim after a `show`.
+4. **`281eee7` — B1 rib fully big-C**: `C_syracZsub := C_goodWhp` (=4),
+   `syracZ_sub_perNGoodMass_bound_atC` (passthrough); `C_harmZfine := 4·C_syracZsub` (=16),
+   `perNHarmonic_eq_harmZfine_approx_atC` (`set Ccn/Cw` rail). **Sec5 (5.20) B1 rib now fully
+   constant-explicit; B2/`C_mainZbridge` was lap 8.**
+
+## Next (grind orders, bottom-up — continue ONLY step-2 transcription until the ruling)
+
+- **`harmonic_to_Z` big-C sibling** — combine B1 (`C_harmZfine`=16) + B2 (`C_mainZbridge`) via
+  the triangle through `harmZfine`. See `harmonic_to_Z_explicit` (~Stab:2247, the c-form
+  combining the two `_explicit`s). Constant `= C_harmZfine + C_mainZbridge` (triangle ineq),
+  cutoff `max`. Then `perNTerm_eval` (combines A `perNTerm_harmonic_approx` + B), then
+  `stabilization`. Then FirstPassage (16) / ApproxFormula (23) / Sec3 (7) / Syracuse (1) /
+  Prob (1). **Method rail (proven this lap):** for a passthrough/scale node, `set` the
+  ∃-obtained constant NAMES to the pinned defs (`set Ccn := 4`, `set Cw := C_foo`) then the
+  body ports verbatim; pin the C-slot, keep the cutoff `∃` (cutoffs feed the x₀-threshold, not
+  CTao); make ratified ∃-form + any c-form `_explicit` delegate.
+
+---
+
+# (lap 9 review baton below — superseded by the state above; kept for the escalation detail)
 
 ## 🔬 Lap 9 (REVIEW): C0-arm NO-GO SHARPENED + escalated — read `ROUTE-ESCALATION-2026-07-17.md`
 
