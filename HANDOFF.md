@@ -1,6 +1,12 @@
 # HANDOFF — big-C campaign, lap 7 (2026-07-17)
 
-## Lap 7 progress (in flight)
+## State at lap end (branch `explicit-big-c`, all committed, build green)
+
+- HEAD `95cd52f`. Full `lake build` green (3327 jobs) at every commit; differ
+  `tools/tao_stmt_diff.py fabea6f HEAD` 35/35 character-identical; `check_blueprint.py`
+  18/18. Still exactly 1 real `sorry` (`Statement.lean:68`, the campaign pin).
+
+## Lap 7 progress (complete)
 
 - **`few_white_mass_le` explicit (DONE, `f24aa11`)**: defs `K_fewWhite/R_fewWhite/P_fewWhite/
   B_fewWhite/Cthr_fewWhite` + `one_le_R/P_fewWhite`, `R_fewWhite_bound`; `_core` rail
@@ -16,10 +22,33 @@
   P_fewWhite A = P; intro h ...` then original body verbatim (avoids set/motive issues in
   `Fin P` positions; remember to also revert `one_le_P_fewWhite` when the body's omegas
   need `1 ≤ P`; repo linter wants merged `intro` lists).
-- **Next: STEP-2 wiring of C2 into `prop_7_8_at`** (BlackEdgeQ.lean): threshold
-  `max (max (C_hold A) (Cthr_dampingCol A)) 1` → `Q_polynomial_decay` C0 symbolic → extend
-  check18 with the C0-arm assert. Then `renewal_white_encounters` (Bridge.lean) + Fourier,
-  Sec6/Sec5/Sec3, then STEP 3.
+- **Case-2 edgeWeight subtree explicit (DONE, `95cd52f`)**, BlackEdge.lean: defs
+  `T_mgfNumeric A δ c C'` (= 25+N₁+N₃+N₈₅+N₄ over `T_logSq`/`T_expNeg`),
+  `T_fstMgf A δ = T_mgfNumeric A δ c_fpLocation C_fpCol`, `T_fstTail A δ`,
+  `T_holdTail A δ`, `T_edgeWeight A δ` (at `ε = min(δ/8,2)`); `_at` siblings, ∃-forms
+  delegate. **Rail refinement:** after `unfold T_*`, `set c : ℝ := c_fpLocation with hcdef`
+  re-binds the ∃-obtained constant NAMES the body already uses → bodies port verbatim
+  with zero textual edits (set also rewrites earlier hyps like `hcol`). Keep the original
+  `set_option maxHeartbeats` + docstring ON the `_at` (moving the statement leaves them
+  orphaned before the def — parse error).
+
+## Next steps (bottom-up, in order)
+
+1. **`Q_black_edge_case2` explicit** (BlackEdgeQ.lean:~117): witness is
+   `max (max Cw Ce) 2` with `Cw` from `fpDist_white_exit` (= `T_whiteExitDeep`, via
+   `fpDist_white_exit_deep_at`; the wrapper `fpDist_white_exit` in BlackEdgeQ.lean:40
+   delegates — give it an `_at` too) and `Ce = T_edgeWeight A δ*` at whatever `δ` the
+   case2 body instantiates (read the body around BlackEdgeQ.lean:117-142; the obtain is
+   `fpDist_edgeWeight_le A hA` — find the δ argument). Name `Cthr_case2 A`.
+2. **`Q_black_edge` explicit** (Case3.lean end): witness `max (Cthr_case2 A)
+   (Cthr_dampingCol A)` via `Q_black_edge_of_case3` — that combinator itself does the
+   max; either make an `_at` of the combinator in BlackEdgeQ.lean or inline in Case3.
+3. **`prop_7_8` explicit**: `prop_7_8_at` already takes `C2` as an arg (BlackEdgeQ:337);
+   witness `max (max (C_hold A) C2) 1` with `C2 = max (Cthr_case2 A) (Cthr_dampingCol A)`.
+   Then `Q_polynomial_decay` C0-arm fully symbolic (Monotone.lean consumer) → extend
+   check18 with the C0-arm assert (lap-5 finding: C0-arm ≪ `n₀^B` head).
+4. Then `renewal_white_encounters` (Bridge.lean:~507) + Fourier passthrough, Sec6 (8),
+   Sec5 (37), Sec3 (7), then STEP 3 (`C_ladder ≤ CTao` + Statement.lean discharge).
 
 ---
 
