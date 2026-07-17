@@ -739,6 +739,76 @@ def check16():
     print("16. cTao min-tree: collapses to 1/(640000000·ln2); lower-bounds all leaves OK")
 
 
+def check17():
+    # Big-C campaign (2026-07-17, DIRECTION step 1): log10-space float mirror of the
+    # C-ladder, walked off the ACTUAL Lean witnesses (file:line per hop).  This is the
+    # go/no-go map against the pin CTao = 10^(10^9) — and the verdict is NO-GO: the
+    # traced ladder is 10^(9.39e10), EXCEEDING the pin by a factor ~94 in the exponent.
+    # The check asserts the trace (so the flag is machine-checked), NOT ladder <= pin.
+    from math import log10
+    ln2, ln3, ln43 = log(2), log(3), log(4 / 3)
+
+    # --- exponent tower (Sec6) ---
+    # Stabilization.lean:2118 consumes fine_scale_mixing 1.7;
+    # MixingRegime.lean:48 telescope calls the high regime at A+2 = 3.7;
+    # MixingMain.lean:465 osc_mainHigh_bound obtains head_uniform_highFreq_of_margin at
+    #   B := mainDecayExponent 3.7, with caConst A = 1000*(max A 0 + 3)  (MixingCore.lean)
+    #   and mainDecayExponent A = A + (caConst A)^2 * log 2 + 3          (MixingMain.lean:142)
+    A_high = 3.7
+    ca = 1000 * (A_high + 3)                     # caConst 3.7 = 6700
+    B = A_high + ca ** 2 * ln2 + 3               # ≈ 3.1115e7
+    assert abs(B - 3.11154e7) < 1e2, B
+    # head chain is pure passthrough at the SAME exponent B:
+    #   head_uniform_highFreq_of_margin (MixingMain.lean:240) <- head_factor_norm_le_charFn
+    #   (MixingCore.lean:1076) <- charFn_decay (Sec7/Decay.lean:18) <- key_fourier_decay
+    #   (Sec7/Reduction.lean:930) <- renewal_white_encounters (Sec7/Bridge.lean:507)
+    #   <- hold_weight_expect (Sec7/Monotone.lean:246), each literally obtain⟨C⟩;refine⟨C,…⟩.
+
+    # --- hold_weight_expect's explicit witness Cthr = K + M1 + 2T + 4 (Monotone.lean:246) ---
+    # epsBW = 1/10^1000 (Sec7/Setup.lean:97); delta := exp(epsBW^3/2) - 1 ≈ 0.5e-3000.
+    log10_delta = log10(0.5) - 3000
+    # K: geom_three_quarters_lt (Monotone.lean:180) at b = delta/3 * 2^-B gives
+    #   K = ceil( ln((b/2)^-1) / ln(4/3) ) = ceil( (ln(6/delta) + B ln2) / ln(4/3) )
+    K = ((log(6) - log10_delta * log(10)) + B * ln2) / ln43
+    assert abs(K - 7.50e7) < 1e6, K
+    # M1 = ceil(K*c/(c-1)) (Monotone.lean:283) with c = (1+delta/3)^(1/B), so
+    #   c/(c-1) ≈ 3B/delta — THE 1/delta ≈ 2e3000 FACTOR THE PIN'S SIZING MISSED.
+    log10_M1 = log10(K) + log10(3 * B) - log10_delta
+    assert abs(log10_M1 - 3016.15) < 0.05, log10_M1
+    # T: pow_mul_geom_lt_of_large (Monotone.lean:196) at k=ceil(B), b = delta/3*3^-B:
+    #   T = 1 + ceil((4(B+1)/ln(4/3))^2) + ceil(ln((b/2)^-1)/(ln(4/3)/2)) ≈ 1.87e17 — tiny vs M1.
+    T = (4 * (B + 1) / ln43) ** 2 + ((log(6) - log10_delta * log(10)) + B * ln3) / (ln43 / 2)
+    assert T < 2e17
+    # Cthr ≈ M1; n0 := 2*Cthr + 2 (Bridge.lean:517)
+    log10_n0 = log10(2) + log10_M1
+    # renewal_white_encounters witness: max(n0^B, C0*exp(eps^3/2)*3^B) >= n0^B (Bridge.lean:518)
+    log10_head = log10_n0 * B
+    assert abs(log10_head - 9.3859e10) < 1e7, log10_head
+    # osc_mainHigh_bound witness 3*C_head*40^B (MixingMain.lean:469); high regime doubles it
+    # (MixingFromDecay.lean:16); telescope adds 2N^A + C_high*zeta(2) (MixingRegime.lean:55);
+    # Sec5/Sec3 glue multiplies by ~4e14*2*16 (notes/effective-constants.md) — all additive
+    # noise in log10 next to log10_head:
+    log10_ladder = log10(3) + log10_head + B * log10(40) + log10(2) + log10(1.645) + 15.2
+    assert abs(log10_ladder - 9.3908e10) < 1e7, log10_ladder
+    # (a) THE FINDING: the traced ladder EXCEEDS the pin CTao = 10^(10^9) ~94-fold in exponent:
+    PIN_EXP = 1e9
+    assert log10_ladder > 90 * PIN_EXP, log10_ladder
+    # (b) and it is NOT witness slop: any C satisfying renewal_white_encounters' frozen
+    # statement at A=B obeys C >= sup_n exp(-eps^3*n/2)*n^B  (since #white <= n/2, the
+    # damping expectation is >= exp(-eps^3 n/2)); at n = 2B/eps^3 that floor is 10^(9.36e10):
+    log10_floor = B * (log10(2 * B) + 3000 - log10(2.718281828459045))
+    assert log10_floor > 90 * PIN_EXP, log10_floor
+    assert log10_floor < log10_ladder
+    # (c) trap/diagnosis: under the sizing assumption that C1 is T-dominated (M1's 1/delta
+    # term missed), the ladder DOES fit under the pin — pinpointing the single responsible
+    # term (M1 = ceil(K*c/(c-1)), Monotone.lean:283):
+    log10_ladder_noM1 = log10(2 * T) * B + B * log10(40)
+    assert log10_ladder_noM1 < PIN_EXP, log10_ladder_noM1
+    print("17. big-C ladder: log10 C_ladder ≈ %.4e  >  pin exponent 1e9 (×%.0f) — "
+          "JUDGE-FLAGGED (forced floor %.4e; M1's 1/δ≈2e3000 is the term)"
+          % (log10_ladder, log10_ladder / PIN_EXP, log10_floor))
+
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
@@ -751,4 +821,5 @@ if __name__ == "__main__":
     check13()                                     # C8 (5.8) exact-reindex trap
     check14(); check15()                          # C6 §3 pins (Thm 3.1 forms, (1.2) pullback)
     check16()                                     # cTao explicit-exponent min-tree
+    check17()                                     # big-C ladder map (JUDGE-FLAGGED: > pin)
     print("ALL CHECKS PASS ✅")
