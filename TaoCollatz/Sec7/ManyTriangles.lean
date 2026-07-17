@@ -3949,6 +3949,16 @@ theorem encounter_apex_proximity :
     · linarith only [hlow, hAp25]
     · linarith only [hup]
 
+/-- The constant of `encounter_apex_proximity_rpow` (X10a), symbolic
+(big-C campaign, step 2): `2`. -/
+noncomputable def C_apexProx : ℝ := 2
+
+/-- The `s`-threshold of `encounter_apex_proximity_rpow` (X10a), symbolic
+(big-C campaign, step 2): `10^8`. -/
+def S_apexProx : ℕ := 10 ^ 8
+
+theorem C_apexProx_ge_one : (1 : ℝ) ≤ C_apexProx := by unfold C_apexProx; norm_num
+
 set_option maxHeartbeats 1600000 in
 /-- **X10a — apex confinement** (paper p.53, (7.63)→(7.65)): outside the escape
 event `E′`, a big-triangle encounter pins the endpoint to the triangle's apex.
@@ -3969,12 +3979,13 @@ family triangle `t'` of size `≥ s' ≥ 100A²(1+p)`:
 
 The `s`-threshold `S₀` is absolute; the glue absorbs `s < S₀` into the
 `C·exp(−cA²(1+p))` term (bounded `s` bounds `m`, `s'`, `A`, `p` on the
-nontrivial branch). PROVED (lap 58). -/
-theorem encounter_apex_proximity_rpow :
-    ∃ C₂ ≥ (1 : ℝ), ∃ S₀ : ℕ, ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+nontrivial branch). PROVED (lap 58).
+`_at` sibling at the symbolic `C_apexProx`/`S_apexProx` (big-C campaign, step 2). -/
+theorem encounter_apex_proximity_rpow_at :
+    ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
         (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
-      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S₀ ≤ s →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S_apexProx ≤ s →
         ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
       ∀ (A : ℝ), 5 ≤ A → ∀ (p s' : ℕ),
         (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
@@ -3985,10 +3996,10 @@ theorem encounter_apex_proximity_rpow :
       ∀ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2 →
         ((j + e.1, l + e.2) : ℕ × ℤ) ∈ triangle t'.1 t'.2.1 t'.2.2 →
       (t'.1 : ℝ) ≤ (j : ℝ) + e.1
-        ∧ (j : ℝ) + e.1 - t'.1 ≤ C₂ * A ^ 2 * (1 + (p : ℝ))
+        ∧ (j : ℝ) + e.1 - t'.1 ≤ C_apexProx * A ^ 2 * (1 + (p : ℝ))
         ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)|
-            ≤ C₂ * A ^ 2 * (1 + (p : ℝ)) := by
-  refine ⟨2, by norm_num, 10 ^ 8, ?_⟩
+            ≤ C_apexProx * A ^ 2 * (1 + (p : ℝ)) := by
+  unfold C_apexProx S_apexProx
   intro n ξ hξ F t₀ ht₀ j l hmem s hs hS₀ hdeep A hA p s' hs'm hbig e he2 hh hc
     t' ht' hsize hmem'
   obtain ⟨hjΔj, hllΔ, hbud⟩ := hmem
@@ -4259,17 +4270,40 @@ theorem encounter_apex_proximity_rpow :
     · linarith only [hlow, hAp25]
     · linarith only [hup]
 
+/-- `encounter_apex_proximity_rpow`, original `∃`-form: delegates to the `_at`
+sibling at `C_apexProx`/`S_apexProx`. -/
+theorem encounter_apex_proximity_rpow :
+    ∃ C₂ ≥ (1 : ℝ), ∃ S₀ : ℕ, ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S₀ ≤ s →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (A : ℝ), 5 ≤ A → ∀ (p s' : ℕ),
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+        100 * A ^ 2 * (1 + (p : ℝ)) ≤ (s' : ℝ) →
+      ∀ e : ℕ × ℤ, (s : ℤ) < e.2 →
+        (e.2 : ℝ) ≤ (s : ℝ) + 2 * A ^ 2 * (1 + (p : ℝ)) →
+        |(e.1 : ℝ) - (s : ℝ) / 4| ≤ 2 * (s : ℝ) ^ (0.6 : ℝ) →
+      ∀ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2 →
+        ((j + e.1, l + e.2) : ℕ × ℤ) ∈ triangle t'.1 t'.2.1 t'.2.2 →
+      (t'.1 : ℝ) ≤ (j : ℝ) + e.1
+        ∧ (j : ℝ) + e.1 - t'.1 ≤ C₂ * A ^ 2 * (1 + (p : ℝ))
+        ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)|
+            ≤ C₂ * A ^ 2 * (1 + (p : ℝ)) :=
+  ⟨C_apexProx, C_apexProx_ge_one, S_apexProx, encounter_apex_proximity_rpow_at⟩
+
 /-- **ℤ-row `Gweight` engine** (X10b step (i), lap 59): the X6 envelope summed
 over ALL integer columns is `≤ K·√t`, uniformly in the real centre `μ`. Fold
 the negative axis onto ℕ (`Gweight` is even) and pay with
 `sum_range_Gweight_le` once per side. Stated in `ℝ≥0∞` (no summability side
 conditions), matching the (7.61)-tail glue pattern. -/
-theorem tsum_int_Gweight_le {c : ℝ} (hc : 0 < c) :
-    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ,
+theorem tsum_int_Gweight_le_core (c K : ℝ) (_hc : 0 < c) (hK : 0 < K)
+    (hrow : ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ N : ℕ,
+      ∑ j ∈ Finset.range N, Gweight t (c * ((j : ℝ) - μ)) ≤ K * Real.sqrt t) :
+    ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ,
       ∑' y : ℤ, ENNReal.ofReal (Gweight t (c * ((y : ℝ) - μ)))
-        ≤ ENNReal.ofReal (K * Real.sqrt t) := by
-  obtain ⟨K, hK, hrow⟩ := sum_range_Gweight_le hc
-  refine ⟨2 * K, by linarith, fun t ht μ => ?_⟩
+        ≤ ENNReal.ofReal (2 * K * Real.sqrt t) := by
+  intro t ht μ
   have ht0 : (0 : ℝ) < t := lt_of_lt_of_le one_pos ht
   set g : ℤ → ℝ≥0∞ := fun y => ENNReal.ofReal (Gweight t (c * ((y : ℝ) - μ)))
     with hg
@@ -4319,6 +4353,35 @@ theorem tsum_int_Gweight_le {c : ℝ} (hc : 0 < c) :
         rw [← ENNReal.ofReal_add (by positivity) (by positivity)]; ring_nf
     _ = ENNReal.ofReal (2 * K * Real.sqrt t) := rfl
 
+/-- The constant of `tsum_int_Gweight_le`, symbolic (big-C campaign, step 2):
+`2·K_rowG c` (both half-axes pay one row engine each). -/
+noncomputable def K_intG (c : ℝ) : ℝ := 2 * K_rowG c
+
+theorem K_intG_pos {c : ℝ} (hc : 0 < c) : 0 < K_intG c := by
+  unfold K_intG
+  linarith [K_rowG_pos hc]
+
+/-- `tsum_int_Gweight_le`, `_explicitC` sibling: `tsum_int_Gweight_le_core` at
+`K_rowG c`, folded into `K_intG c`. -/
+theorem tsum_int_Gweight_le_explicitC {c : ℝ} (hc : 0 < c) :
+    ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ,
+      ∑' y : ℤ, ENNReal.ofReal (Gweight t (c * ((y : ℝ) - μ)))
+        ≤ ENNReal.ofReal (K_intG c * Real.sqrt t) := by
+  have h := tsum_int_Gweight_le_core c (K_rowG c) hc (K_rowG_pos hc)
+    (sum_range_Gweight_le_explicitC hc)
+  intro t ht μ
+  have hs := h t ht μ
+  unfold K_intG
+  exact hs
+
+/-- `tsum_int_Gweight_le`, original `∃`-form: delegates to the `_explicitC`
+sibling at `K_intG c`. -/
+theorem tsum_int_Gweight_le {c : ℝ} (hc : 0 < c) :
+    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ,
+      ∑' y : ℤ, ENNReal.ofReal (Gweight t (c * ((y : ℝ) - μ)))
+        ≤ ENNReal.ofReal (K * Real.sqrt t) :=
+  ⟨K_intG c, K_intG_pos hc, tsum_int_Gweight_le_explicitC hc⟩
+
 /-- **Separated-set `Gweight` engine** (X10b step (ii), p.54, lap 59): the X6
 envelope summed over a `D`-separated set `S` of integer columns is
 `≤ 4 + K·√t/⌊D/2⌋`, uniformly in the real centre `μ`. At most one element of
@@ -4328,13 +4391,15 @@ columns between it and the centre (`Gweight` is even and antitone in
 `|·−μ|`), the blocks are pairwise disjoint, and `tsum_int_Gweight_le` pays
 for all of them at once. This is the p.54 "summing and using the `≫ s'`-
 separated nature of `Σ`" step. -/
-theorem separated_Gweight_tsum_le {c : ℝ} (hc : 0 < c) :
-    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D →
+theorem separated_Gweight_tsum_le_core (c K : ℝ) (hc : 0 < c) (hK : 0 < K)
+    (hrowZ : ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ,
+      ∑' y : ℤ, ENNReal.ofReal (Gweight t (c * ((y : ℝ) - μ)))
+        ≤ ENNReal.ofReal (K * Real.sqrt t)) :
+    ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D →
       ∀ S : Set ℤ, (∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)|) →
       ∑' σ : S, ENNReal.ofReal (Gweight t (c * (((σ : ℤ) : ℝ) - μ)))
         ≤ ENNReal.ofReal (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ)) := by
-  obtain ⟨K, hK, hrowZ⟩ := tsum_int_Gweight_le hc
-  refine ⟨K, hK, fun t ht μ D hD S hsep => ?_⟩
+  intro t ht μ D hD S hsep
   have ht0 : (0 : ℝ) < t := lt_of_lt_of_le one_pos ht
   set h : ℕ := ⌊D / 2⌋₊ with hhdef
   have hh1 : 1 ≤ h := Nat.le_floor (by linarith)
@@ -4552,22 +4617,44 @@ theorem separated_Gweight_tsum_le {c : ℝ} (hc : 0 < c) :
     _ = ENNReal.ofReal (4 + K * Real.sqrt t / (h : ℝ)) := by
         rw [← ENNReal.ofReal_add (by norm_num) (by positivity)]
 
+/-- `separated_Gweight_tsum_le`, `_explicitC` sibling:
+`separated_Gweight_tsum_le_core` at `K_intG c` (constant passes through). -/
+theorem separated_Gweight_tsum_le_explicitC {c : ℝ} (hc : 0 < c) :
+    ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D →
+      ∀ S : Set ℤ, (∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)|) →
+      ∑' σ : S, ENNReal.ofReal (Gweight t (c * (((σ : ℤ) : ℝ) - μ)))
+        ≤ ENNReal.ofReal (4 + K_intG c * Real.sqrt t / (⌊D / 2⌋₊ : ℝ)) :=
+  separated_Gweight_tsum_le_core c (K_intG c) hc (K_intG_pos hc)
+    (tsum_int_Gweight_le_explicitC hc)
+
+/-- `separated_Gweight_tsum_le`, original `∃`-form: delegates to the
+`_explicitC` sibling at `K_intG c`. -/
+theorem separated_Gweight_tsum_le {c : ℝ} (hc : 0 < c) :
+    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D →
+      ∀ S : Set ℤ, (∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)|) →
+      ∑' σ : S, ENNReal.ofReal (Gweight t (c * (((σ : ℤ) : ℝ) - μ)))
+        ≤ ENNReal.ofReal (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ)) :=
+  ⟨K_intG c, K_intG_pos hc, separated_Gweight_tsum_le_explicitC hc⟩
+
 /-- **Banded `Gweight` sum engine** (X10b step (iii), lap 59): the envelope
 summed over the UNION of width-`W` bands around a `D`-separated set `S` of
 integer columns is `≤ (2W+1)·(4 + K√t/⌊D/2⌋)`. Injection: a banded column `x`
 remembers its apex `σ(x)` and offset `x − σ(x) ∈ [−⌊W⌋, ⌊W⌋]`; for each fixed
 offset `r`, the shifted set is still `D`-separated and
 `separated_Gweight_tsum_le` (centre `μ − r`) pays for it. -/
-theorem banded_Gweight_tsum_le {c : ℝ} (hc : 0 < c) :
-    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D → ∀ W : ℝ, 1 ≤ W →
+theorem banded_Gweight_tsum_le_core (c K : ℝ) (_hc : 0 < c) (hK : 0 < K)
+    (hsep_engine : ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D →
+      ∀ S : Set ℤ, (∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)|) →
+      ∑' σ : S, ENNReal.ofReal (Gweight t (c * (((σ : ℤ) : ℝ) - μ)))
+        ≤ ENNReal.ofReal (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ))) :
+    ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D → ∀ W : ℝ, 1 ≤ W →
       ∀ S : Set ℤ, (∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)|) →
       ∑' x : {x : ℤ | ∃ σ ∈ S, |(x : ℝ) - (σ : ℝ)| ≤ W},
           ENNReal.ofReal (Gweight t (c * (((x : ℤ) : ℝ) - μ)))
         ≤ ENNReal.ofReal ((2 * W + 1)
             * (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ))) := by
   classical
-  obtain ⟨K, hK, hsep_engine⟩ := separated_Gweight_tsum_le hc
-  refine ⟨K, hK, fun t ht μ D hD W hW S hsep => ?_⟩
+  intro t ht μ D hD W hW S hsep
   have ht0 : (0 : ℝ) < t := lt_of_lt_of_le one_pos ht
   have hh1 : 1 ≤ ⌊D / 2⌋₊ := Nat.le_floor (by linarith)
   have hh0R : (0 : ℝ) < (⌊D / 2⌋₊ : ℝ) := by exact_mod_cast hh1
@@ -4645,6 +4732,29 @@ theorem banded_Gweight_tsum_le {c : ℝ} (hc : 0 < c) :
         rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (by positivity)]
         exact ENNReal.ofReal_le_ofReal
           (mul_le_mul_of_nonneg_right hcardle (by positivity))
+
+/-- `banded_Gweight_tsum_le`, `_explicitC` sibling: `banded_Gweight_tsum_le_core`
+at `K_intG c` (constant passes through). -/
+theorem banded_Gweight_tsum_le_explicitC {c : ℝ} (hc : 0 < c) :
+    ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D → ∀ W : ℝ, 1 ≤ W →
+      ∀ S : Set ℤ, (∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)|) →
+      ∑' x : {x : ℤ | ∃ σ ∈ S, |(x : ℝ) - (σ : ℝ)| ≤ W},
+          ENNReal.ofReal (Gweight t (c * (((x : ℤ) : ℝ) - μ)))
+        ≤ ENNReal.ofReal ((2 * W + 1)
+            * (4 + K_intG c * Real.sqrt t / (⌊D / 2⌋₊ : ℝ))) :=
+  banded_Gweight_tsum_le_core c (K_intG c) hc (K_intG_pos hc)
+    (separated_Gweight_tsum_le_explicitC hc)
+
+/-- `banded_Gweight_tsum_le`, original `∃`-form: delegates to the `_explicitC`
+sibling at `K_intG c`. -/
+theorem banded_Gweight_tsum_le {c : ℝ} (hc : 0 < c) :
+    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D → ∀ W : ℝ, 1 ≤ W →
+      ∀ S : Set ℤ, (∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)|) →
+      ∑' x : {x : ℤ | ∃ σ ∈ S, |(x : ℝ) - (σ : ℝ)| ≤ W},
+          ENNReal.ofReal (Gweight t (c * (((x : ℤ) : ℝ) - μ)))
+        ≤ ENNReal.ofReal ((2 * W + 1)
+            * (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ))) :=
+  ⟨K_intG c, K_intG_pos hc, banded_Gweight_tsum_le_explicitC hc⟩
 
 /-- **The qualifying apexes are `s'/10`-separated** (X10b step (iv), p.54):
 two DISTINCT family triangles of size `≥ s'` whose lower tips both lie within
