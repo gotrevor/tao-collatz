@@ -1204,3 +1204,9 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_syracZsub := X_goodWhp` (pure passthrough) + `syracZ_sub_perNGoodMass_bound_atCX`;
   `_atC` delegates. Audit 20/38, next `perNHarmonic_eq_harmZfine_approx_atCX`.
+
+### Successor lap 18 (2026-07-17) — phase 3 entry 4/11
+
+- `X_harmZfine := max (max X_cnBound X_syracZsub) (exp 1024)` +
+  `perNHarmonic_eq_harmZfine_approx_atCX`; `_atC` delegates. Audit 21/38, next
+  `harmonic_to_Z_atCX`.

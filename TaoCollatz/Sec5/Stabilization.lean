@@ -2256,19 +2256,25 @@ noncomputable def C_harmZfine : ℝ := 4 * C_syracZsub
 theorem C_harmZfine_pos : 0 < C_harmZfine := by
   unfold C_harmZfine; exact mul_pos (by norm_num) C_syracZsub_pos
 
+/-- The `perNHarmonic_eq_harmZfine_approx` cutoff (X-chase): the witness max-tree copied
+verbatim from the `_atC` proof, with `x₀w := X_syracZsub`. -/
+noncomputable def X_harmZfine : ℝ := max (max X_cnBound X_syracZsub) (Real.exp 1024)
+
 /-- Sibling of `perNHarmonic_eq_harmZfine_approx` with BOTH slots pinned (`c := c_harmZfine`,
-`C := C_harmZfine`); the `_at` form (big-C campaign, step 2), cutoff existential.  Uses
-`cn_bound_at` (Ccn=4) + `syracZ_sub_perNGoodMass_bound_atC` (Cw=C_syracZsub); `set Ccn/Cw`
+`C := C_harmZfine`) at the explicit cutoff `X_harmZfine` (X-chase).  Uses
+`cn_bound_at` (Ccn=4) + `syracZ_sub_perNGoodMass_bound_atCX` (Cw=C_syracZsub); `set Ccn/Cw`
 re-bind the constant names so the Hölder body ports verbatim. -/
-theorem perNHarmonic_eq_harmZfine_approx_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+theorem perNHarmonic_eq_harmZfine_approx_atCX :
+    ∀ x : ℝ, X_harmZfine ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |perNHarmonic x E n - harmZfine x E n| ≤ C_harmZfine * (Real.log x) ^ (-c_harmZfine) := by
-  obtain ⟨x₀w, hwhp⟩ := syracZ_sub_perNGoodMass_bound_atC
+  have hwhp := syracZ_sub_perNGoodMass_bound_atCX
+  set x₀w : ℝ := X_syracZsub with hx₀wdef
   have hcn := cn_bound_at
   rw [show c_harmZfine = 0.3 from rfl]
-  refine ⟨max (max X_cnBound x₀w) (Real.exp 1024), fun x hx E hE y hy n hn => ?_⟩
+  rw [show X_harmZfine = max (max X_cnBound x₀w) (Real.exp 1024) from rfl]
+  intro x hx E hE y hy n hn
   show |perNHarmonic x E n - harmZfine x E n| ≤ 4 * C_syracZsub * Real.log x ^ (-(0.3 : ℝ))
   set Ccn : ℝ := (4 : ℝ) with hCcndef
   set Cw : ℝ := C_syracZsub with hCwdef
@@ -2310,6 +2316,15 @@ theorem perNHarmonic_eq_harmZfine_approx_atC :
     _ ≤ (Cw * Real.log x ^ (-(1 : ℝ))) * (Ccn * Real.log x ^ (0.7 : ℝ)) :=
         mul_le_mul_of_nonneg_right hsum (by positivity)
     _ = Ccn * Cw * Real.log x ^ (-(0.3 : ℝ)) := by rw [← hmul]; ring
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `perNHarmonic_eq_harmZfine_approx_atCX` (X-chase: `x₀ := X_harmZfine`). -/
+theorem perNHarmonic_eq_harmZfine_approx_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNHarmonic x E n - harmZfine x E n| ≤ C_harmZfine * (Real.log x) ^ (-c_harmZfine) :=
+  ⟨X_harmZfine, perNHarmonic_eq_harmZfine_approx_atCX⟩
 
 /-- Sibling of `perNHarmonic_eq_harmZfine_approx` with the `c`-slot pinned to `c_harmZfine`;
 the original delegates here.  Now delegates to `perNHarmonic_eq_harmZfine_approx_atC`
