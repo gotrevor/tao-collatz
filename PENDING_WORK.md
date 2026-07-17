@@ -887,3 +887,44 @@ position — new mathematics beyond arXiv:1909.03562. The operator ruling (scope
 extension vs accept-the-pin-sorry) is now the only fork; on-path unflagged Lean work is
 exhausted to my present sight (remaining ideas are all inside the flagged new-math
 scope).
+
+### Lap 18 (2026-07-17) — the exp-depth door is REFUTED EMPIRICALLY (check26); the campaign's route map is CLOSED
+
+Lap 18 self-adopted option (a) per the lap-12 autonomy precedent (operator absent;
+DIRECTION mandates chip-never-stop) and ran the blueprint-mandated numeric trap BEFORE
+pinning `deep_entry_exp_decay` as a Lean conjecture. **The trap fires: the conjecture is
+FALSE, not merely unprovable.**
+
+- **check26 (Monte-Carlo over the EXACT phase field):** conditional entry-height tails
+  P(ht ≥ u | entry) at (30,7,9e-3) and (26,101,1/101) decay LINEARLY toward the max
+  triangle size (observed tail ratios 0.40/0.32 where exponential predicts 3e-7/6e-6).
+  Mechanism, structural: a triangle is entered from the SIDE at a height uniform over
+  its extent, so the entry-depth tail inherits the triangle SIZE SPECTRUM.
+- **Worst-case-in-ξ the spectrum is not exp-thin:** planting one giant (apex at chosen
+  (j₀,l₀), depth u) is a single satisfiable congruence condition on ξ mod 3^n. (7.39)
+  quantifies uniformly in ξ, so exp-depth decay of deep-black hits is FALSE as needed.
+- **Reconciliation (why Tao's (7.39) is still true):** the paper never needs entry-depth
+  rarity — crossings bank whites at re-encounter exits (the (7.57) ledger), and the
+  TOWER constant absorbs the worst-case giant tilings via iterated horizons. The tower
+  is not slop and not merely "the price of avoiding equidistribution": even WITH full
+  equidistribution for typical ξ, the uniform-in-ξ statement faces planted giants.
+
+**Route map, now closed on every branch (all machine-checked):** union/dilated floors
+≥ 10^6033 ≫ 3053 (check22); flat-envelope contradiction, budget-independent (check23);
+count×point-mass ceiling = Lemma 7.10's C/u (check25); expectation accounting fails
+(7.39) by >10⁹ orders (check25); exp-depth hypothesis empirically false + plantable
+(check26). **Conclusion: `Q_black_edge_tight` — and with it any discharge of the pin
+`CTao = 10^(10¹¹)` over the frozen statements — is beyond reach not for want of proof
+technique but because the tight constant is (to every analysis this campaign could
+mount) NOT TRUE of the frozen architecture; the assembled constant is genuinely a
+tower.** The disclosed pin sorry is the honest end-state of Option B.
+
+**JUDGE-FLAG (lap 18, upgrading lap 16): recommend CLOSING the big-C campaign.** The
+judge-level options are now only: (i) accept the disclosed pin sorry permanently (the 3
+merged headlines stay axiom-clean; the pin was a stretch goal), or (ii) re-pin CTao at a
+tower value (out of scope for any lap; guts the challenge per DIRECTION), or (iii) a
+"tighten-C" successor campaign doing statement/def surgery on epsBW /
+hold_weight_expect / caConst (the judge's 2026-07-16 ruling banked this as follow-up;
+NOTE: check23's flat-envelope contradiction is architecture-level and survives constant
+surgery — such a campaign must REDESIGN the encounter accounting, not just shrink
+constants). No lap-executable work remains in scope.

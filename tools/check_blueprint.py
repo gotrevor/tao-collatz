@@ -1203,6 +1203,67 @@ def check25():
           " vs W^-A, A~3.1e7).  Lap-16 JUDGE-FLAG CONFIRMED independently.")
 
 
+def check26(samples=200000):
+    # Big-C campaign lap 18 (2026-07-17): EMPIRICAL REFUTATION of the exp-depth door
+    # (the check23(ii) hypothesis).  Before pinning `deep_entry_exp_decay` as a Lean
+    # conjecture, the blueprint rules demand a numeric trap — and the trap FIRES:
+    # entry heights into the black set are NOT exponentially rare.  Monte-Carlo the
+    # free Hold walk over the EXACT phase field (decompose_black instances): the
+    # conditional tail P(entry height >= u | entry) decays LINEARLY toward the max
+    # triangle size, not exponentially — because a triangle is entered from the SIDE
+    # at a height uniform over its extent, so the entry-depth tail inherits the
+    # triangle SIZE SPECTRUM.  Worst-case-in-xi the spectrum is not exp-thin (a
+    # single giant is plantable via one congruence condition on xi mod 3^n), so
+    # `P(entry ht >= u) <= C e^{-cu}` UNIFORM IN xi is FALSE, not merely unprovable.
+    # Combined with check22 (poly rates force union floors >> budget), check23
+    # (tower intrinsic), check25 (expectation accounting fails (7.39)): NO route to
+    # the tight constant remains — the tower is the true price of (7.39), and the
+    # pin admits no proof over the frozen statements within budget.
+    rng = random.Random(18)
+    def sample_geom_half():
+        a = 1
+        while rng.random() < 0.5:
+            a += 1
+        return a
+    def sample_pascal_ne3():
+        while True:
+            b = sample_geom_half() + sample_geom_half()
+            if b != 3:
+                return b
+    def sample_hold():
+        k = 1
+        while rng.random() < 0.75:
+            k += 1
+        return (k, 3 + sum(sample_pascal_ne3() for _ in range(k - 1)))
+    for (n, xi, eps) in [(30, 7, Fraction(9, 1000)), (26, 101, Fraction(1, 101))]:
+        black, corner = decompose_black(n, xi, eps, n // 2, range(-1500, 1500))
+        smax = max(log(float(eps) / float(abs(black[corner[p]])))
+                   for p in black) / log(2)  # max size, in 2^-height units
+        heights = {}
+        tot = 0
+        for _ in range(samples):
+            j, l = rng.randint(1, 3), rng.randint(-1400, 1300)
+            while j <= n // 2 and l < 1400:
+                if (j, l) in black:
+                    js, ls = corner[(j, l)]
+                    heights[ls - l] = heights.get(ls - l, 0) + 1
+                    tot += 1
+                    break
+                dj, dl = sample_hold()
+                j += dj; l += dl
+        tail = lambda u: sum(v for k, v in heights.items() if k >= u) / tot
+        u1, u2 = int(smax * 0.25), int(smax * 0.65)
+        t1, t2 = tail(u1), tail(u2)
+        # exponential would force t2/t1 <= e^{-(u2-u1)}; observed is ~linear:
+        exp_pred = 2.718281828 ** (-(u2 - u1))
+        assert t2 / t1 > 100 * exp_pred, (n, xi, t1, t2, exp_pred)
+        assert t2 > 0.01, (n, xi, t2)   # deep entries are COMMON, not rare
+        print(f"26. exp-depth door REFUTED empirically n={n} xi={xi}: "
+              f"P(ht>={u1})={t1:.3f}, P(ht>={u2})={t2:.3f} over {tot} entries — "
+              f"ratio {t2/t1:.2f} vs exp-prediction {exp_pred:.1e} (uniform side-entry"
+              f" into giants; tail inherits the size spectrum, poly not exp)")
+
+
 def check22():
     # Big-C campaign lap 14 (2026-07-17): OPTION-B FEASIBILITY MAP — machine-checked
     # record of the lap-13b/14 floor arithmetic for `Q_black_edge_tight` (the crux).
@@ -1269,4 +1330,5 @@ if __name__ == "__main__":
     check23()                                     # lap-15 flat contradiction + exp-depth door
     check24()                                     # lap-16 shallow-tip witness (JUDGE-FLAG)
     check25()                                     # lap-17b point-mass half (flag CONFIRMED)
+    check26()                                     # lap-18 exp-depth door REFUTED empirically
     print("ALL CHECKS PASS ✅")
