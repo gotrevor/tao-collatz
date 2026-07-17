@@ -1013,3 +1013,27 @@ empirically") → lap-18 ledger ("all machine-checked") → escalation ("every r
 "recommend campaign close". Each hop dropped a qualifier, because an unhedged claim is
 strictly more quotable. A hedge only survives if it is welded to the verb — hence the
 in-place correction of check26's own print line rather than a note filed elsewhere.
+
+---
+
+### Post-close review (2026-07-17 08:03 EDT) — explicit assembled C is a distinct, unblocked objective
+
+The user asked for an explicit bound while instructing us to assume such a bound exists. The
+review found that the closed campaign conflated **the fixed small pin** with **existence of a
+closed explicit Lean constant**. Checks 19/23 obstruct the former through the frozen §7
+architecture; they do not obstruct the latter. Fresh `#print axioms` output for the tower
+route is trust-base-only (believed clean, judge to verify), and the route is already explicit
+through `C_spine X`. Its only open transcription input is the existential Sec5/Sec3 cutoff
+`X`, and the abandoned lap-11 X-chase already completed its FirstPassage bottom ten nodes.
+
+An operator-ready, dependency-ordered successor plan is now in
+`BIG_C_EXPLICIT_BOUND_PLAN.md`. It finishes the X-chase, defines
+`C_tao_assembled := max (C_spine X_spine) ((log 2)^cTao)`, and proves an additive
+`tao_collatz_quantitative_assembled` theorem. It uses the existing tower proof (fresh axiom
+print trust-base-only; believed clean, judge to verify), leaves the two current sorries
+isolated, and makes no claim that the assembled constant fits under the frozen `CTao`.
+
+**JUDGE-FLAG: the user-requested objective is new and executable, but the live operator-owned
+`DIRECTION.md` closes this branch and explicitly forbids the X-chase. Activate the successor
+only by an operator/judge directive adopting `BIG_C_EXPLICIT_BOUND_PLAN.md`. Until then, do
+not launch a treadmill or edit the frozen pin.**
