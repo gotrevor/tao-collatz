@@ -927,6 +927,110 @@ def check19():
           % (log10_C0arm_robust, loglog_C0arm, logloglog_P))
 
 
+def check20():
+    # Big-C campaign lap 11 (2026-07-17): STEP-2 COMPLETE — the Sec5/Sec3 GLUE is now
+    # Lean-explicit (C_geomTail .. C_spine X), so recompute it here FROM THE DEF BODIES
+    # AS WRITTEN and cross-assert against check17's coarse "+15.2" glue model.  This is
+    # the numeric trap for the lap-9/10/11 defs: a mis-transcription (wrong summand,
+    # dropped factor, min/max flip) breaks (a) the exact leaf values or (b) the glue
+    # magnitude.  Sources (file:def):
+    #   Prob/LocalInstances: C_geomTail = 2
+    #   Syracuse/ValuationDist: C_valuationDistC K = 2K + 4*C_geomTail
+    #   Sec5/FirstPassage: K_intTest = 2/(1/8); C_valSumGeom = C_valuationDistC K + 2*C_geomTail
+    #   Sec5/ApproxFormula: C_goodTupleDev = 2*C_geomTail + C_valuationDistC K_intTest;
+    #     C_edgeMass = 2/(1/10000); C_passtimeInner = C_goodTupleDev + C_edgeMass;
+    #     C_passtimeWindow = C_valSumGeom + C_passtimeInner;
+    #     C_windowReduce = C_goodTupleDev + C_passtimeWindow; C_steppedMid = C_goodTupleDev+1;
+    #     C_affineReindex = C_steppedMid+1; C_fpApprox = C_windowReduce + C_affineReindex
+    #   Sec5/Stabilization: C_epsPerNHarm = 2 + 3*(3/(1/10000)) + 2*3/(alpha-1);
+    #     C_perNHarm = C_epsPerNHarm*4; C_goodWhp = 2*C_geomTail; C_syracZsub = C_goodWhp;
+    #     C_harmZfine = 4*C_syracZsub; C_mainZbridge = 4*C_fineScale(1.7)*(1/200000)^-1.7;
+    #     C_harmonicZ = C_harmZfine + C_mainZbridge; C_perNTermEval = C_perNHarm + C_harmonicZ;
+    #     C_mainZ = C_perNHarm + C_harmonicZ + 1000*(1+C_fpApprox);
+    #     C_approxToZ = (2/log(4/3)+6000)*C_perNTermEval + C_mainZ*6000;
+    #     C_windowStable = 2*C_approxToZ; C_stab = C_valSumGeom + 4*C_fpApprox + 2*C_windowStable
+    #   Sec3/Reduction: C_descStep = 2*C_stab; C_descLadder = max C_valSumGeom C_descStep;
+    #     C_descWhp = C_descLadder*(1+(1-alpha^-c_ladder)^-1)*alpha^c_ladder;
+    #     C_windowBad = 2*C_descWhp;
+    #     C_syrSum X = max (C_windowBad*alpha/(alpha-1)) (4*max 1 (log X)^c_ladder);
+    #     C_syrProb X = 8*C_syrSum X; C_spine X = 16*C_syrSum X
+    from math import log10, expm1
+    ln43 = log(4 / 3)
+    alpha = 1.001
+    # --- exact leaves (trap (a)) ---
+    C_geomTail = 2.0
+    K_intTest = 2 / (1 / 8)
+    C_valuationDistC = 2 * K_intTest + 4 * C_geomTail
+    assert (K_intTest, C_valuationDistC) == (16.0, 40.0)
+    C_valSumGeom = C_valuationDistC + 2 * C_geomTail
+    C_goodTupleDev = 2 * C_geomTail + C_valuationDistC
+    assert C_valSumGeom == 44.0 and C_goodTupleDev == 44.0
+    C_edgeMass = 2 / (1 / 10000)
+    C_passtimeInner = C_goodTupleDev + C_edgeMass
+    C_passtimeWindow = C_valSumGeom + C_passtimeInner
+    C_windowReduce = C_goodTupleDev + C_passtimeWindow
+    C_steppedMid = C_goodTupleDev + 1
+    C_affineReindex = C_steppedMid + 1
+    C_fpApprox = C_windowReduce + C_affineReindex
+    assert C_fpApprox == 20178.0, C_fpApprox
+    C_epsPerNHarm = 2 + 3 * (3 / (1 / 10000)) + 2 * 3 / (alpha - 1)
+    C_perNHarm = C_epsPerNHarm * 4
+    assert abs(C_perNHarm - 384008.0) < 1e-6, C_perNHarm
+    C_harmZfine = 4 * (2 * C_geomTail)          # 4*C_syracZsub, C_syracZsub = C_goodWhp
+    assert C_harmZfine == 16.0
+    # --- the tower seam: C_mainZbridge = 4*C_fineScale(1.7)*(2e5)^1.7 (log10-space).
+    # C_fineScale(1.7) = 2*N^1.7 + C_oscHigh(3.7)*zeta(2), C_oscHigh = 2*max(C_oscMainHigh,6),
+    # C_oscMainHigh(3.7) = 3*C_renewalWhite(B)*40^B — the N^1.7 cutoff term is additive
+    # noise (N would need 10^(5.5e10) digits to matter) and is dropped here.
+    # HEAD-ARM VARIANT (check17's GO route / Option-B target): C_renewalWhite = n0^B.
+    ln2, ln10 = log(2), log(10)
+    A_high = 3.7
+    ca = 1000 * (A_high + 3)
+    B = A_high + ca ** 2 * ln2 + 3
+    log10_delta = log10(0.5) - 3000
+    K = ((log(6) - log10_delta * ln10) + B * ln2) / ln43
+    log10_M1 = log10(K) + log10(3 * B) - log10_delta
+    log10_n0 = log10(2) + log10_M1
+    log10_head = log10_n0 * B                    # = check17's head
+    log10_oscMainHigh = log10(3) + log10_head + B * log10(40)
+    zeta2 = 1.6449340668
+    log10_fineScale = log10_oscMainHigh + log10(2) + log10(zeta2)
+    log10_mainZbridge = log10(4) + log10_fineScale + 1.7 * log10(2e5)
+    # C_harmonicZ ≈ C_perNTermEval ≈ C_mainZ ≈ C_mainZbridge (small addends are noise):
+    log10_harmonicZ = log10_mainZbridge
+    # C_approxToZ = (2/ln43 + 6000)*C_perNTermEval + C_mainZ*6000 ≈ 1.2e4 * C:
+    log10_approxToZ = log10_harmonicZ + log10((2 / ln43 + 6000) + 6000)
+    log10_stab = log10(2) + log10(2) + log10_approxToZ     # C_stab ≈ 2*C_windowStable
+    log10_descLadder = log10(2) + log10_stab               # = C_descStep (max picks it)
+    # the descent geometric factor (1 + (1-alpha^-c)^-1)*alpha^c at c = c_ladder
+    # = 1/(640000000*ln2)  (check16's binding branch; c_stab arms are all >> it):
+    c_lad = 1 / (640000000 * ln2)
+    geo = (1 + 1 / (-expm1(-c_lad * log(alpha)))) * alpha ** c_lad
+    assert abs(geo - 4.4385e11) < 1e8, geo
+    log10_descWhp = log10_descLadder + log10(geo)
+    log10_windowBad = log10(2) + log10_descWhp
+    # C_syrSum X: (log X)^c_lad ≈ 1 for ANY tower cutoff X (even log X = 2000^5 = 3.2e16
+    # gives (3.2e16)^c ≈ exp(8.6e-8)) — so the max picks the C_windowBad arm:
+    assert (2000.0 ** 5) ** c_lad < 1.0000002
+    log10_syrSum = log10_windowBad + log10(alpha / (alpha - 1))
+    log10_spine_head = log10(16) + log10_syrSum
+    # (b) glue magnitude: everything added over 3*head*40^B is < 40 orders — additive
+    # noise vs 9.39e10, confirming check17's coarse "+15.2" was immaterial slack:
+    glue = log10_spine_head - (log10(3) + log10_head + B * log10(40))
+    assert 15 < glue < 40, glue
+    # (c) cross-assert the head-route ladder against check17's total (tolerance 1e7):
+    assert abs(log10_spine_head - 9.3908e10) < 1e7, log10_spine_head
+    # (d) route mirror (check19): the AS-WRITTEN max in C_renewalWhite picks the C0-arm
+    # (log10 >= 4.5e32 robust) >> head arm, so the as-written C_spine X EXCEEDS the pin —
+    # step 3 stays STOPPED pending the operator's A/B ruling.
+    log10_C0arm_robust = 4.5e32
+    assert log10_C0arm_robust > log10_head
+    print("20. lap-11 glue defs (Sec5/Sec3, C_geomTail..C_spine) mirror the Lean bodies: "
+          "leaves exact (C_fpApprox=20178, C_perNHarm=384008), glue = %.1f orders, "
+          "head-route log10 C_spine ≈ %.4e (matches check17 GO); as-written max picks "
+          "the C0-arm (check19 route conclusion unchanged)" % (glue, log10_spine_head))
+
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
@@ -942,4 +1046,5 @@ if __name__ == "__main__":
     check17()                                     # big-C ladder map (GO vs re-pinned 1e11)
     check18()                                     # step-2 symbolic defs vs the ladder
     check19()                                     # lap-8 C0-arm NO-GO trace (JUDGE-FLAG)
+    check20()                                     # lap-11 Sec5/Sec3 glue defs vs ladder
     print("ALL CHECKS PASS ✅")
