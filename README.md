@@ -51,10 +51,21 @@ Announced and discussed on the Lean Zulip: [#AI authored projects](https://leanp
 
 Browse the project online at **https://gotrevor.github.io/tao-collatz/**. The dependency
 blueprint (per-node status, paper cross-references, dep graph) is at
-**[/blueprint/](https://gotrevor.github.io/tao-collatz/blueprint/)**. The blueprint source
+**[/blueprint/](https://gotrevor.github.io/tao-collatz/blueprint/)**, and the doc-gen4 Lean
+API reference is at **[/docs/](https://gotrevor.github.io/tao-collatz/docs/)** — the target
+of every "Lean" link in the blueprint. The blueprint source
 lives in [`blueprint/`](blueprint); rebuild locally with
 [`./blueprint/build.sh`](blueprint/build.sh), or on push via
 [`.github/workflows/docs.yml`](.github/workflows/docs.yml).
+
+The API docs are rendered by the nested [`docbuild/`](docbuild) sub-project (doc-gen4's
+recommended layout: it keeps the doc generator out of the main build graph). doc-gen4 has no
+"document only my library" mode, so it renders the whole import closure (~1.3 GB, 99.6%
+Mathlib); [`docbuild/trim-docs.py`](docbuild/trim-docs.py) then keeps only the `TaoCollatz`
+pages and relinks dependency references to the hosted
+[mathlib4_docs](https://leanprover-community.github.io/mathlib4_docs/), leaving a few MB.
+Those upstream links track *current* Mathlib while this project is pinned to v4.31.0, so an
+occasional declaration that has since moved may 404.
 
 ## Build
 
