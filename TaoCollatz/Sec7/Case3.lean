@@ -3429,19 +3429,81 @@ theorem Q_black_edge_case3 (A : ℝ) (hA : 0 < A) :
         ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
   ⟨Cthr_dampingCol A, Q_black_edge_case3_at A hA⟩
 
-/-- The black-edge case split, now fed by the sole downstream X11 gate. -/
+/-- **`Q_black_edge` threshold**, symbolic (big-C campaign, step 2): the case
+split's `max C2 C3` at the explicit Case-2/Case-3 thresholds. -/
+noncomputable def Cthr_blackEdge (A : ℝ) : ℕ :=
+  max (Cthr_case2 A) (Cthr_dampingCol A)
+
+/-- The black-edge case split, `_at` sibling (big-C campaign, step 2):
+`Q_black_edge_of_case3`'s body inlined at the explicit case thresholds
+(`Cthr_case2 A`, `Cthr_dampingCol A`), constant names re-bound via `set`,
+body verbatim. -/
+theorem Q_black_edge_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr_blackEdge A ≤ m → m ≤ n / 2 → ∀ l : ℤ,
+      1 ≤ n / 2 - m → (n / 2 - m, l) ∉ whiteSet n ξ →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  classical
+  have hC2 := Q_black_edge_case2_at A hA
+  have hC3 := Q_black_edge_case3_at A hA
+  unfold Cthr_blackEdge
+  set C2 : ℕ := Cthr_case2 A with hC2def
+  set C3 : ℕ := Cthr_dampingCol A with hC3def
+  intro n ξ hξ m hm hmn l h1 hnw
+  have hn1 : 1 ≤ n := by omega
+  obtain ⟨F⟩ := exists_triangleFamily n ξ hξ
+  -- the phase point is black
+  have hb : black n ξ (n / 2 - m - 1) l := by
+    by_contra hw
+    exact hnw ⟨h1, hw⟩
+  -- hence lies in some triangle of the family
+  have hmem0 : (n / 2 - m - 1, l) ∈
+      {p : ℕ × ℤ | p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2} := ⟨by omega, hb⟩
+  rw [F.cover] at hmem0
+  simp only [Set.mem_iUnion, exists_prop] at hmem0
+  obtain ⟨t, ht, hmem⟩ := hmem0
+  -- the height budget
+  have hl : l ≤ t.2.1 := hmem.2.1
+  set s : ℕ := (t.2.1 - l).toNat with hs
+  have hsZ : (s : ℤ) = t.2.1 - l := by omega
+  -- (7.52): s·log 2 ≤ (m+1)·log 9
+  have hbudget : (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 :=
+    budget_le_of_mem_triangle F ht hmem (by omega)
+  rcases le_or_gt (s : ℝ) ((m : ℝ) / Real.log m ^ 2) with hcase | hcase
+  · exact hC2 n ξ hξ F m (le_trans (le_max_left _ _) hm) hmn l h1
+      t ht hmem s hsZ hcase
+  · exact hC3 n ξ hξ F m (le_trans (le_max_right _ _) hm) hmn l h1
+      t ht hmem s hsZ hcase hbudget
+
+/-- The black-edge case split, original `∃`-form: delegates to the `_at`
+sibling at `Cthr_blackEdge A`. -/
 theorem Q_black_edge (A : ℝ) (hA : 0 < A) :
     ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ,
       1 ≤ n / 2 - m → (n / 2 - m, l) ∉ whiteSet n ξ →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
         ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
-  Q_black_edge_of_case3 A hA (Q_black_edge_case3 A hA)
+  ⟨Cthr_blackEdge A, Q_black_edge_at A hA⟩
 
-/-- **Proposition 7.8 (Monotonicity)**, assembled from the black-edge bound. -/
+/-- **Proposition 7.8 threshold**, symbolic (big-C campaign, step 2):
+`prop_7_8_at`'s `max (max (C_hold A) C2) 1` at `C2 = Cthr_blackEdge A`. -/
+noncomputable def Cthr_prop78 (A : ℝ) : ℕ :=
+  max (max (C_hold A) (Cthr_blackEdge A)) 1
+
+/-- **Proposition 7.8 (Monotonicity)**, `_at` sibling (big-C campaign, step 2):
+`prop_7_8_at` instantiated at the explicit black-edge threshold. -/
+theorem prop_7_8_explicitC (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr_prop78 A ≤ m → m ≤ n / 2 →
+      Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  have h := prop_7_8_at A hA (Cthr_blackEdge A) (Q_black_edge_at A hA)
+  unfold Cthr_prop78
+  exact h
+
+/-- **Proposition 7.8 (Monotonicity)**, original `∃`-form: delegates to the
+`_at` sibling at `Cthr_prop78 A`. -/
 theorem prop_7_8 (A : ℝ) (hA : 0 < A) :
     ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
       Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
-  prop_7_8_of_black_edge A hA (Q_black_edge A hA)
+  ⟨Cthr_prop78 A, prop_7_8_explicitC A hA⟩
 
 /-- Paper (7.37), assembled from Proposition 7.8. -/
 theorem Q_polynomial_decay (A : ℝ) (hA : 0 < A) :

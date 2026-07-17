@@ -33,10 +33,23 @@ l_Δ + O(1))` with probability `≫ 1`; every endpoint exceeds height `l_Δ`
 separation put it outside every OTHER triangle, hence white by `cover`;
 in-strip follows from `s/4 + O(√(1+s)) ≪ m`.
 
-OPEN (node X8, the hardest Case-2 kernel): consumes `fpDist_location_bound`
-(X6) and the geometric fight between the paper's `O(1)` exit-ring constants
-and the fixed `ε = 10⁻⁴` separation `(1/10)·log(1/ε) ≈ 0.92` — numerically
-validated ≈ 0.99 white-exit mass (harness check 9, 2026-07-10). -/
+`_at` sibling (big-C campaign, step 2): the wrapper at the explicit deep
+constants `p_whiteExit = 3/4`, `T_whiteExitDeep`; the budget hypothesis is
+dropped on the floor exactly as in the `∃`-form's original proof. -/
+theorem fpDist_white_exit_at :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
+      ∀ F : TriangleFamily n ξ, ∀ m : ℕ, T_whiteExitDeep ≤ m → m ≤ n / 2 →
+      ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      p_whiteExit ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
+        * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) :=
+  fun n ξ hξ F m hm hmn l hl t ht htmem s hs _hbudget =>
+    fpDist_white_exit_deep_at n ξ hξ F m hm hmn l hl t ht htmem s hs
+
+/-- **The (7.50)/(7.51) white-exit bound**, original `∃`-form: delegates to the
+`_at` sibling at `p₀ = p_whiteExit = 3/4`, `Cthr = T_whiteExitDeep`. -/
 theorem fpDist_white_exit :
     ∃ p₀ > (0 : ℝ), ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
       ∀ F : TriangleFamily n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
@@ -45,11 +58,9 @@ theorem fpDist_white_exit :
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
       p₀ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
-        * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) := by
-  obtain ⟨p₀, hp₀, Cthr, h⟩ := fpDist_white_exit_deep
-  exact ⟨p₀, by linarith, Cthr,
-    fun n ξ hξ F m hm hmn l hl t ht htmem s hs _hbudget =>
-      h n ξ hξ F m hm hmn l hl t ht htmem s hs⟩
+        * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2) :=
+  ⟨p_whiteExit, lt_of_lt_of_le (by norm_num) p_whiteExit_ge, T_whiteExitDeep,
+    fpDist_white_exit_at⟩
 
 /-- `edgeWeight A m e ≤ 1` for `A ≥ 0`: each landing weight `max(·,1)^{-A} ≤ 1`
 and `hold` is a PMF, so the average is `≤ 1`. -/
@@ -104,6 +115,18 @@ theorem rpow_neg_le_edgeWeight {A : ℝ} (hA : 0 ≤ A) {m : ℕ} (hm : 1 ≤ m)
         rw [tsum_mul_right, hold_tsum_toReal, one_mul]
     _ ≤ edgeWeight A m e := hsummL.tsum_le_tsum hterm hsummR
 
+/-- **The Case-2 weight-degradation budget** `δ = c·p₀/2` (big-C campaign, step 2):
+the (7.48) slack at the explicit white-exit mass `p₀ = p_whiteExit` and the
+(7.47) gain `c = 1 - e^{-ε³}` at `ε = epsBW`. -/
+noncomputable def delta_case2 : ℝ :=
+  (1 - Real.exp (-(epsBW : ℝ) ^ 3)) * p_whiteExit / 2
+
+/-- **`Q_black_edge_case2` threshold**, symbolic (big-C campaign, step 2):
+`max (max Cw Ce) 2` with `Cw` the white-exit threshold and `Ce` the
+weight-degradation threshold at `δ = delta_case2`. -/
+noncomputable def Cthr_case2 (A : ℝ) : ℕ :=
+  max (max T_whiteExitDeep (T_edgeWeight A delta_case2)) 2
+
 /-- **Case 2 of Proposition 7.8** ((7.46)–(7.51) assembly, paper pp.46–48):
 black edge start whose triangle-top budget satisfies `s ≤ m/log²m`. Route:
 `Q_le_fpDist_expect` ((7.45) entry) + `Q_fp_endpoint_le` per endpoint, then
@@ -112,11 +135,13 @@ the (7.47) split `E[(1-(1-e^{-ε³})·1_W)·w] ≤ E[w] - (1-e^{-ε³})·m^{-A}�
 `(1-e^{-ε³})·p₀/2`) and `fpDist_white_exit`:
 `Q ≤ ((1+δ) - (1-e^{-ε³})·p₀)·m^{-A}·Q_{m-1} ≤ m^{-A}·Q_{m-1}`.
 
-OPEN (node X8 assembly): mechanical once the two kernels above land; the
-remaining work is `ℝ≥0∞`→`ℝ` bookkeeping across the fpDist tsum. -/
-theorem Q_black_edge_case2 (A : ℝ) (hA : 0 < A) :
-    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
-      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+PROVED (node X8 assembly); `_at` sibling (big-C campaign, step 2): the two
+kernel `obtain`s are replaced by the explicit `_at` kernels
+(`fpDist_white_exit_at`, `fpDist_edgeWeight_le_at` at `δ = delta_case2`) and
+the constant names `p₀/Cw/Ce` re-bound via `set`, body verbatim. -/
+theorem Q_black_edge_case2_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_case2 A ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
@@ -134,12 +159,17 @@ theorem Q_black_edge_case2 (A : ℝ) (hA : 0 < A) :
     rw [sub_pos]; exact Real.exp_lt_one_iff.mpr (neg_lt_zero.mpr (pow_pos hεpos 3))
   have hc_le : 1 - Real.exp (-(epsBW : ℝ) ^ 3) ≤ 1 := by
     have := Real.exp_pos (-(epsBW : ℝ) ^ 3); linarith
-  -- the white-exit mass `p₀ > 0` and the (7.48) weight-degradation with `δ = c·p₀/2`
-  obtain ⟨p₀, hp₀pos, Cw, hWhite⟩ := fpDist_white_exit
-  obtain ⟨Ce, hEdge⟩ := fpDist_edgeWeight_le A hA
-    ((1 - Real.exp (-(epsBW : ℝ) ^ 3)) * p₀ / 2)
+  -- the white-exit mass `p₀ > 0` and the (7.48) weight-degradation with `δ = c·p₀/2`,
+  -- both at the EXPLICIT constants (re-bound to the body's names via `set`)
+  have hp₀pos : (0 : ℝ) < p_whiteExit := lt_of_lt_of_le (by norm_num) p_whiteExit_ge
+  have hWhite := fpDist_white_exit_at
+  have hEdge := fpDist_edgeWeight_le_at A hA
+    ((1 - Real.exp (-(epsBW : ℝ) ^ 3)) * p_whiteExit / 2)
     (div_pos (mul_pos hc_pos hp₀pos) (by norm_num))
-  refine ⟨max (max Cw Ce) 2, ?_⟩
+  unfold Cthr_case2 delta_case2
+  set p₀ : ℝ := p_whiteExit with hp₀def
+  set Cw : ℕ := T_whiteExitDeep with hCwdef
+  set Ce : ℕ := T_edgeWeight A ((1 - Real.exp (-(epsBW : ℝ) ^ 3)) * p₀ / 2) with hCedef
   intro n ξ hξ F m hm hmn l hl t ht htmem s hs hbudget
   have hmCw : Cw ≤ m := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hm
   have hmCe : Ce ≤ m := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hm
@@ -275,6 +305,18 @@ theorem Q_black_edge_case2 (A : ℝ) (hA : 0 < A) :
               * edgeWeight A m e) := tsum_mul_left
     _ ≤ QM * mA := mul_le_mul_of_nonneg_left hSmain hQM0
     _ = mA * QM := mul_comm _ _
+
+/-- **Case 2 of Proposition 7.8**, original `∃`-form: delegates to the `_at`
+sibling at `Cthr_case2 A = max (max T_whiteExitDeep (T_edgeWeight A delta_case2)) 2`. -/
+theorem Q_black_edge_case2 (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
+  ⟨Cthr_case2 A, Q_black_edge_case2_at A hA⟩
 
 /-- **The (7.41) edge bound for BLACK starts** (Cases 2–3 of Proposition 7.8,
 paper (7.44)–(7.67), pp.46–49): the case split. The black phase point
