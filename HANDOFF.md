@@ -20,9 +20,14 @@ continues (next: `renewal_white_encounters` explicit, Fourier passthrough, Sec6)
   (Case3.lean). `Q_black_edge_at` inlines the `Q_black_edge_of_case3` combinator body;
   `prop_7_8_explicitC` = `prop_7_8_at` @ explicit args + unfold. ∃-forms delegate.
   Differ 35/35, checks 18/18, full build green.
-- **Next**: lap-7 step 3 remainder — `Q_polynomial_decay` C0-arm fully symbolic
-  (`Q_polynomial_decay_of_prop_7_8`, Monotone.lean consumer) + extend check18 with the
-  C0-arm assert; then step 4 (renewal/Fourier/Sec6/Sec5/Sec3, STEP 3 discharge).
+- **Sec7 spine COMPLETE (`8b8fc5b`)**: `C_renewalWhite A = max ((2·C_hold A+2)^A)
+  (C_polyDecay A·e^{ε³/2}·3^A)` (Bridge.lean); `renewal_white_encounters_at`,
+  `key_fourier_decay_at` (Reduction.lean), `charFn_decay_at` (Decay.lean) — the whole
+  §7 chain from the fpDist kernels to Prop 1.17 is now constant-explicit. Watch: the
+  delegating ∃-forms need `open Classical in` (the filter's DecidablePred).
+- **Next**: Sec6 (8 slots: `fine_scale_mixing`/`stabilization` chain — check17 names the
+  hops: `head_uniform_highFreq_of_margin` → `osc_mainHigh_bound` → MixingRegime telescope),
+  then Sec5 (37), Sec3 (7). STEP 3 remains STOPPED on the lap-8 JUDGE-FLAG.
 
 ---
 
