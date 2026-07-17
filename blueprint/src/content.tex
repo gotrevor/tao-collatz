@@ -478,6 +478,17 @@ path; explicitness contract per \texttt{BIG\_C\_EXPLICIT\_BOUND\_PLAN.md}, enfor
 \texttt{tools/ExplicitnessClosure.lean} + \texttt{big\_c\_cutoff\_audit.py --complete}).
 \lapsrisk{0}{low}{100\%}
 \end{theorem}
+\begin{proof}
+  \leanok
+  Kernel-clean (axioms = the standard three, no \texttt{sorryAx}; host-verified
+  2026-07-17 — receipt in the source comment above this node).  Delegation:
+  \texttt{tao\_collatz\_quantitative\_spine\_atCX} at the closed cutoff, weakened to the
+  exponent \(c_{\mathrm{Tao}}\) by monotonicity (\texttt{\_of\_le}); the \(N_0 = 2\)
+  window is absorbed by the second \texttt{max} arm.  \texttt{BigCTower.lean} then proves
+  the readable ceiling \(C_{\mathrm{assembled}} \le 10\uparrow\uparrow 63\)
+  (\texttt{tenTower 62}), rendered on the trusted surface as \texttt{CTao} +
+  \texttt{tao\_collatz\_quantitative\_fully\_explicit} (\texttt{Statement.lean}).
+\end{proof}
 
 \section{First passage (§5)}
 

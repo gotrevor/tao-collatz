@@ -89,6 +89,14 @@ PINNED_NAMES = [
     # Their drift-watch baseline is THE RATIFYING COMMIT (git log --grep 'ratify.*assembled')
     # forward — that is the ref a future run passes for the full 36-name set.
     "X_spine", "C_tao_assembled", "tao_collatz_quantitative_assembled",
+    # ✅ RATIFIED 2026-07-17 (Trevor's direction, host-verified #print axioms = the standard
+    # three): the readable tower headline on the trusted surface. `CTao := tenTower 62`
+    # (= 10↑↑63) + `tao_collatz_quantitative_fully_explicit` live in Statement.lean;
+    # `tenTower` (the def VALUE is the pin — the recursion itself) lives in
+    # Basic/ExplicitConstants.lean, as does `cTao` (relocated from Statement.lean in the
+    # same pass, text verbatim — a pin may move files; SEARCH_FILES covers relocation).
+    # Baseline: the commit introducing them (git log --grep 'Statement.*fully-explicit').
+    "CTao", "tenTower", "tao_collatz_quantitative_fully_explicit",
 ]
 
 SEARCH_FILES = [
@@ -114,8 +122,16 @@ SEARCH_FILES = [
     # are inert (found in no file → reported ✗ at both refs), the exact silent-guard failure
     # this differ's header warns about.
     "TaoCollatz/ExplicitBigC.lean",
+    # The readable tower headline (2026-07-17): `tenTower` + relocated `cTao` live in the
+    # Mathlib-only leaf; `CTao` + `fully_explicit` live in Statement.lean (above); the
+    # tower-ceiling chase lives in BigCTower.lean. Without these lines the new watched
+    # names are inert — the silent-guard failure this differ's header warns about.
+    "TaoCollatz/Basic/ExplicitConstants.lean",
+    "TaoCollatz/BigCTower.lean",
     # The judge-owned comparator surface — a campaign box is under exactly the pressure
-    # this differ exists for.  (`CTao`/`fully_explicit` were retired from here 2026-07-17.)
+    # this differ exists for.  (`CTao`/`fully_explicit` were retired from here 2026-07-17,
+    # then RETURNED 2026-07-17 later the same day as *proved* statements in Statement.lean
+    # — the names above; the Challenge file itself still does not carry them.)
     "Comparator/TaoCollatz/Challenge.lean",
 ]
 

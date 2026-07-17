@@ -1,4 +1,5 @@
-import TaoCollatz.Statement
+import TaoCollatz.Basic.ExplicitConstants
+import TaoCollatz.Sec3.Reduction
 
 /-!
 # The assembled explicit big-C theorem (Ruling II successor campaign)
