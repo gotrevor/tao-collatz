@@ -1180,10 +1180,10 @@ theorem logUnifOdd_expect_indicator_eq {lo hi : ℝ} (h : (logWindow lo hi).None
 slabs a `log^{-0.2}x` fraction of the whole window.  Proof: the window is the odd AP `{a+2i : i<count}`
 (as in `intTest_D_lower`), so `harmonic_ap_integral_bound` gives
 `windowMass ≥ ½·log((a+2·count)/a) − 1/a ≥ ½·((α−1)log y − 3/y) − 1/y`, and `log y ≥ α·log x`. -/
-theorem windowMass_ge_clog :
-    ∃ c x₀ : ℝ, 0 < c ∧ ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
-      c * Real.log x ≤ windowMass y (y ^ alpha) := by
-  refine ⟨1 / 10000, (2:ℝ) ^ (2000:ℝ), by norm_num, fun x hx y hy => ?_⟩
+theorem windowMass_ge_clog_at :
+    ∀ x : ℝ, (2:ℝ) ^ (2000:ℝ) ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      (1 / 10000 : ℝ) * Real.log x ≤ windowMass y (y ^ alpha) := by
+  intro x hx y hy
   have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := hx
   have hyset : y = x ^ alpha ∨ y = x ^ alpha ^ 2 := by simpa [Set.mem_insert_iff] using hy
   obtain ⟨hMy, h2y⟩ := window_arith hx2000 hyset
@@ -1332,6 +1332,13 @@ theorem windowMass_ge_clog :
   calc (1:ℝ) / 10000 * Real.log x
       ≤ (1/2 : ℝ) * ((alpha - 1) * Real.log y - 3 / y) - (a:ℝ)⁻¹ := hfinal
     _ ≤ windowMass y Yα := hWMlb
+
+/-- Original ∃-form of the window-normalizer growth bound: delegates to
+`windowMass_ge_clog_at` (big-C campaign, step 2: `c := 1/10000`, cutoff `2^2000`). -/
+theorem windowMass_ge_clog :
+    ∃ c x₀ : ℝ, 0 < c ∧ ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      c * Real.log x ≤ windowMass y (y ^ alpha) :=
+  ⟨1 / 10000, (2:ℝ) ^ (2000:ℝ), by norm_num, windowMass_ge_clog_at⟩
 
 /-- **The log-uniform window is a finite odd arithmetic progression.**  For a nonempty window
 `logWindow lo hi` (`lo > 0`), there are `a` (the least odd `≥ ⌈lo⌉`) and a length `count ≥ 1` with

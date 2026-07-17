@@ -1455,14 +1455,17 @@ theorem tsum_tsum_le_tsum_tsum {α β : Type*} {f g : α → β → ℝ}
 identity (rib 1, `perNHarmonic_eq_sum_cn`): `perNHarmonic = ∑_X perNGoodMass·c_n ≤ (sup c_n)·∑_X
 syracZ = sup c_n ≤ C·log^{0.7}x` (`cn_bound`; `perNGoodMass ≤ syracZ` pointwise, total `syracZ` mass
 `1`).  Turns the relative errors of the (5.19) reduction into absolute `O(log^{-c})` errors. -/
-theorem perNHarmonic_le :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+theorem perNHarmonic_le_at :
+    ∀ x : ℝ, max X_cnBound (Real.exp 1024) ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          perNHarmonic x E n ≤ C * (Real.log x) ^ (0.7 : ℝ) := by
+          perNHarmonic x E n ≤ 4 * (Real.log x) ^ (0.7 : ℝ) := by
   classical
-  obtain ⟨Ccn, xcn, hCcn, hcn⟩ := cn_bound
-  refine ⟨Ccn, max xcn (Real.exp 1024), hCcn, fun x hx E hE y hy n hn => ?_⟩
+  have hcn := cn_bound_at
+  set Ccn : ℝ := (4 : ℝ) with hCcndef
+  set xcn : ℝ := X_cnBound with hxcndef
+  have hCcn : (0 : ℝ) < Ccn := by norm_num
+  intro x hx E hE y hy n hn
   have hxcn : xcn ≤ x := le_trans (le_max_left _ _) hx
   have hx1024 : Real.exp 1024 ≤ x := le_trans (le_max_right _ _) hx
   have hkn : n - mZero x ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
@@ -1493,6 +1496,15 @@ theorem perNHarmonic_le :
         Finset.sum_le_sum fun X _ => mul_le_mul (hpoint X) (hcn x hxcn E hE y hy n hn X)
           (cn_nonneg x E n X) ENNReal.toReal_nonneg
     _ = Ccn * Real.log x ^ (0.7 : ℝ) := by rw [← Finset.sum_mul, hmass1, one_mul]
+
+/-- Original ∃-form of the crude `perNHarmonic` size bound: delegates to
+`perNHarmonic_le_at` (big-C campaign, step 2: `C := 4`, cutoff `max X_cnBound (exp 1024)`). -/
+theorem perNHarmonic_le :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          perNHarmonic x E n ≤ C * (Real.log x) ^ (0.7 : ℝ) :=
+  ⟨4, max X_cnBound (Real.exp 1024), by norm_num, perNHarmonic_le_at⟩
 
 /-- **(5.19) harmonic reduction of `perNTerm`** — sub-lemma A of `perNTerm_eval`.  Each per-`n` term
 equals its harmonic content divided by the harmonic normaliser `norm = ((α−1)/2)·log y`, up to a

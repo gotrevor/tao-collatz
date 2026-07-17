@@ -893,12 +893,11 @@ denominator estimate the (5.19) single-value mass needs: `logUnifOdd(N*) = (1/N*
 is the AP `{a + 2i : i < count}` with `a ≈ y`, `a + 2·count ≈ y^α`; the integral test
 (`harmonic_ap_integral_bound` at step `M=2`) gives `D = (1/2)·log((a+2count)/a) + O(1/y)`, and the two
 log endpoints match `(1/2)(log y^α − log y) = (α−1)/2·log y` up to `O(1/y)`. -/
-theorem windowMass_estimate :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
-      |windowMass y (y ^ alpha) - (alpha - 1) / 2 * Real.log y| ≤ C := by
-  refine ⟨3, ?_⟩
+theorem windowMass_estimate_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      |windowMass y (y ^ alpha) - (alpha - 1) / 2 * Real.log y| ≤ 3 := by
   obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
-  refine ⟨max x₀z ((2:ℝ) ^ (2000:ℝ)), by norm_num, fun x hx y hy => ?_⟩
+  refine ⟨max x₀z ((2:ℝ) ^ (2000:ℝ)), fun x hx y hy => ?_⟩
   have hxz : x₀z ≤ x := le_trans (le_max_left _ _) hx
   have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hyset : y = x ^ alpha ∨ y = x ^ alpha ^ 2 := by simpa [Set.mem_insert_iff] using hy
@@ -1028,6 +1027,15 @@ theorem windowMass_estimate :
   rw [hT, abs_le]
   obtain ⟨hh1, hh2⟩ := hharm
   constructor <;> nlinarith [hh1, hh2, hP_lo, hP_hi, hQ_lo, hQ_hi, hia, h2Y, h3y, hyαpos, hy0]
+
+/-- Original ∃-form of the window normalizer estimate: delegates to
+`windowMass_estimate_atC` (big-C campaign, step 2: `C := 3`, cutoff existential via
+`nZero_pos_of_large`). -/
+theorem windowMass_estimate :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      |windowMass y (y ^ alpha) - (alpha - 1) / 2 * Real.log y| ≤ C := by
+  obtain ⟨x₀, h⟩ := windowMass_estimate_atC
+  exact ⟨3, x₀, by norm_num, h⟩
 
 /-- **Window nonemptiness** — for large `x` there is an odd integer in `[y, y^α]` (the interval has
 length `y^α − y → ∞`).  Owed: an explicit odd point, e.g. `2⌊y/2⌋+1`. -/
