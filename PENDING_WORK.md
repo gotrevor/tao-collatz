@@ -1316,3 +1316,36 @@ is odd, and the pin is branch-only so retiring is free).
   `tao_collatz_quantitative_explicit` all exactly `[propext, Classical.choice,
   Quot.sound]`; blueprint audit 0 orange / 0 drift / 0 false-green (C6x on the
   MISSED-FLIP roll); differ 33/33; `TaoCollatz/` zero sorries.
+
+### JUDGE RATIFICATION (2026-07-17, host-side) — assembled deliverable COMPLETE ✅
+
+The Ruling-II successor ran to completion (laps 16–35, fired by Trevor; self-handoff `55e0e92`,
+no strike). The box's final handoff was honest — it claimed the deliverable "believed clean,
+**judge to verify**" and left `C6x` `\notready` for the judge, over-claiming nothing.
+
+**Verified host-side (not box-claimed):**
+- `#print axioms tao_collatz_quantitative_assembled` and `C_tao_assembled` → both
+  `[propext, Classical.choice, Quot.sound]`, **no `sorryAx`**. Transitively certifies the whole
+  X-chase spine sorry-free — stronger than any grep.
+- `tools/ExplicitnessClosure.lean` (the step-0 closure walk, my binding amendment): its FIRST
+  real run on a real seed reported `CLOSURE_SIZE=209`, `LEAF_COUNT=177`, **EXPLICITNESS clean**
+  — no witness selector in the definitional spine. The `comparator-probe` vacuous-pass failure
+  mode did **not** recur; smoke-tested separately (bad seed → "refusing to pass vacuously").
+- `big_c_cutoff_audit.py --complete` green; `check_blueprint.py` ALL 27 (check27 = the assembled
+  trap, mutation-traps included); `tao_stmt_diff.py fabea6f HEAD` 33/33; `lean-sorry -c
+  TaoCollatz` = 0; `lake build` green (3328 jobs).
+- Statement read against the plan's "Exact deliverable": `C_tao_assembled = max (C_spine
+  X_spine) ((Real.log 2) ^ cTao)`, theorem discharges by `tao_collatz_quantitative_spine_atCX_of_le
+  c_ladder_lower`. Matches.
+
+**Ratified:** blueprint C6x → `\leanok` (judge-set); `X_spine` + `C_tao_assembled` +
+`tao_collatz_quantitative_assembled` added to the `tao_stmt_diff.py` watch list (baseline = the
+ratifying commit forward — they did not exist at `fabea6f`).
+
+**The whole arc, in one line:** the *pin* (a fixed small numeral over a frozen tower) had no
+route and was retired; the *assembled* successor (close the term, claim no smallness) landed
+axiom-clean. Peer review (Codex) found the successor Ruling I had ruled out too broadly, and
+the box then executed it cleanly. Both directions of the review mechanism worked.
+
+**Owed to Trevor (not grind):** (1) comparator `theorem_names` add — public, paired not
+executed; (2) Zulip follow-up "C landed, as a tower" (Ren drafts / Trevor posts); (3) merge/PR.

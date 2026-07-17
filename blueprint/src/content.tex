@@ -454,12 +454,16 @@ harmonic-mass bounds on the full window.  Headline route: C6b at \(\tilde f\) + 
 \end{proof}
 
 % ---- Ruling II successor (2026-07-17): the assembled explicit big-C layer.  Additive on
-% the clean library; the retired CTao pin is NOT this node.  \notready pending judge
-% ratification (rule 1: never self-\leanok).  Numeric/structural trap: check27.
+% the clean library; the retired CTao pin is NOT this node.  Numeric/structural trap: check27.
+% \leanok set by JUDGE ratification 2026-07-17 (host-verified, NOT self-set by a lap):
+% #print axioms {tao_collatz_quantitative_assembled, C_tao_assembled} = [propext,
+% Classical.choice, Quot.sound] (no sorryAx); ExplicitnessClosure walked 209 project defs
+% with no witness selector; big_c_cutoff_audit --complete green; check27 pass; library
+% sorry census 0; statement read against BIG_C_EXPLICIT_BOUND_PLAN.md "Exact deliverable".
 \begin{theorem}[Assembled fully-explicit Thm 3.1 (our augmentation)]\label{C6x}
   \lean{X_spine, C_tao_assembled, tao_collatz_quantitative_assembled}
   \uses{C6a, C6s}
-  \notready
+  \leanok
 Beyond the paper: Theorem 3.1 with BOTH slots closed --- the explicit exponent
 \(c_{\mathrm{Tao}}\) and a closed (tower-valued, deliberately non-small) constant
 \(C_{\mathrm{assembled}} = \max(C_{\mathrm{spine}}(X_{\mathrm{spine}}),

@@ -80,9 +80,15 @@ PINNED_NAMES = [
     # This is the ONE legitimate way a name leaves this list: a deliberate, recorded
     # un-ratification by the pin's owner. A name must NEVER be dropped here to make a diff
     # go green — that is the exact attack this file exists to stop (see the note in `main`).
-    # Successor: `C_tao_assembled` + `tao_collatz_quantitative_assembled` (ExplicitBigC.lean)
-    # get added here the moment the judge ratifies them, per
-    # [[guard-ratified-statements-by-name]] — ratify a statement ⟹ pin it the same pass.
+    # ✅ RATIFIED 2026-07-17 (judge, host-verified) — the Ruling II successor deliverable.
+    # `tao_collatz_quantitative_assembled` (+ its constant `C_tao_assembled` and cutoff
+    # `X_spine`) proves Thm 3.1 at a closed tower-valued constant; #print axioms = the
+    # standard three, no sorryAx; ExplicitnessClosure walked 209 project defs clean.
+    # ⚠️ BASELINE: these three did not exist at `fabea6f`, so the campaign-baseline
+    # invocation `tao_stmt_diff.py fabea6f HEAD` reports them NOT-FOUND-at-old by design.
+    # Their drift-watch baseline is THE RATIFYING COMMIT (git log --grep 'ratify.*assembled')
+    # forward — that is the ref a future run passes for the full 36-name set.
+    "X_spine", "C_tao_assembled", "tao_collatz_quantitative_assembled",
 ]
 
 SEARCH_FILES = [

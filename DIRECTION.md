@@ -1,8 +1,18 @@
-# DIRECTION — big-C campaign 🔢 — **pin campaign CLOSED; ASSEMBLED successor LIVE (2026-07-17)**
+# DIRECTION — big-C campaign 🔢 — **✅ COMPLETE (2026-07-17); NO GRIND WORK REMAINS**
 
 *Grind laps READ and OBEY this file; it outranks any handoff. `blueprint_rules.md` remains
 BINDING. Predecessor campaign (pin `c`, PR #9, merged): its methods are this campaign's
 playbook; its DIRECTION lives in git history (`git log --follow DIRECTION.md`).*
+
+> **🏁 CAMPAIGN COMPLETE — JUDGE RATIFIED 2026-07-17.** The assembled deliverable
+> `tao_collatz_quantitative_assembled` landed (laps 16–35, run fired by Trevor) and is
+> **host-verified**: `#print axioms` = the standard three (no `sorryAx`);
+> `ExplicitnessClosure` walked **209** project defs with no witness selector;
+> `big_c_cutoff_audit.py --complete` green; check27 pass; **`TaoCollatz/` sorry census 0**;
+> the 33 paper pins are `fabea6f`→HEAD character-identical. Blueprint node **C6x** flipped to
+> `\leanok` (judge-set, not self-set). **There is NO grind work left in this campaign. Do not
+> launch a run on this branch.** What remains is Trevor-facing only (§ "What is owed"). If a
+> lap boots here anyway: everything is done — record it and `box stuck "campaign complete"`.
 
 > **🔒 ONE OWNER (judge ruling 2026-07-17, resolving the lap-12 governance conflict).**
 > **This file has exactly one writer: the operator/judge layer (host-side).** No lap — grind,
@@ -449,3 +459,45 @@ was pre-planted; `Solution.lean` needs no edit — it imports the development).
   STEP-3 transcription route dead (tower). Ended the 3-lap transcription holding pattern;
   mandated the additive tight renewal bound (`renewal_white_encounters_tight`) attacking the
   §7 `#white` decorrelation frontier, clean headlines untouched. See RESOLVED banner (top).
+
+---
+
+## 🏁 JUDGE RATIFICATION (2026-07-17, host-side) — assembled deliverable COMPLETE & verified
+
+The Ruling-II successor ran to completion (laps 16–35, fired by Trevor; self-handoff at
+`55e0e92`, no strike). Independently verified host-side this session:
+
+| check | result |
+|---|---|
+| `#print axioms tao_collatz_quantitative_assembled` | `[propext, Classical.choice, Quot.sound]` — no `sorryAx` |
+| `#print axioms C_tao_assembled` | same three |
+| `ExplicitnessClosure.lean` (the step-0 closure walk) | `CLOSURE_SIZE=209`, `LEAF_COUNT=177`, **EXPLICITNESS: clean** |
+| `big_c_cutoff_audit.py --complete` | ✅ manifest 38/38 + closure clean |
+| `check_blueprint.py` | ALL 27 pass (check27 = the assembled trap, with mutation-traps) |
+| `tao_stmt_diff.py fabea6f HEAD` | 33/33 paper pins character-identical |
+| `lean-sorry -c TaoCollatz` | **0** |
+| `lake build` | green, 3328 jobs |
+
+The statement was read against `BIG_C_EXPLICIT_BOUND_PLAN.md` "Exact deliverable" and matches:
+`C_tao_assembled = max (C_spine X_spine) ((Real.log 2) ^ cTao)`, and the theorem discharges via
+`tao_collatz_quantitative_spine_atCX_of_le c_ladder_lower` — no existential exponent, constant,
+or cutoff on the path. **Ratified.** Blueprint C6x → `\leanok`; the three names added to the
+`tao_stmt_diff.py` watch list (baseline = the ratifying commit forward).
+
+**The honesty clause holds in the shipped docstrings** (spot-checked): `ExplicitBigC.lean` calls
+`C_tao_assembled` "a TOWER — enormous and useless as a number, by design", makes no smallness
+claim, and does not compare to the retired `CTao`. The claim is exactly **"effective in fact,
+kernel-certified" replacing "effective in principle"** — what MO 341570 / Roberts asked for.
+
+### What is owed (Trevor-facing; NOT a grind lap)
+
+1. **Comparator `theorem_names`** — add `TaoCollatz.tao_collatz_quantitative_assembled`? This is
+   the **public** "verify-without-trusting-us" surface (`Challenge.lean` would declare
+   `C_tao_assembled` under its real name, Mathlib-only body). Judge-owned but public-facing, so
+   **paired with Trevor, not executed unilaterally.** Recommendation: **yes** — it is the
+   strongest possible statement of the result and exactly what comparator is for.
+2. **Zulip follow-up** — the story flips from "C didn't land" to "**C landed, as a tower**": Thm
+   3.1 now holds with both slots closed, kernel-certified, constant explicit-but-astronomical.
+   Ren drafts, Trevor posts.
+3. **Merge to main / open a PR** — the branch is a complete, axiom-clean addition. Trevor's call.
+4. **Retire the pin's ghost** — done already (the pin was deleted, not parked); no action.
