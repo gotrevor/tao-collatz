@@ -15,13 +15,21 @@ namespace TaoCollatz
 
 /-- **Proposition 1.17** (character-sum decay): for every `A`, the character sum of
 `Syrac(ℤ/3ⁿℤ)` at any frequency `ξ` not divisible by 3 is `≤ C·n^{-A}`, uniformly in `ξ`. -/
+theorem charFn_decay_at (A : ℝ) (hA : 0 < A) :
+    ∀ n : ℕ, 1 ≤ n → ∀ ξ : ZMod (3 ^ n), ¬ (3 ∣ ξ.val) →
+      ‖(syracZ n).cexpect fun Y => eC (-(ξ.val * Y.val : ℚ) / 3 ^ n)‖
+        ≤ C_renewalWhite A * (n : ℝ) ^ (-A) := by
+  have hC := key_fourier_decay_at A hA
+  intro n hn ξ hξ
+  rw [syracZ, cexpect_map _ _ _ (fun Y => (eC_norm _).le)]
+  exact hC n hn ξ hξ
+
+/-- **Proposition 1.17**, original `∃`-form: delegates to the `_at` sibling at
+`C_renewalWhite A` (big-C campaign, step 2). -/
 theorem charFn_decay (A : ℝ) (hA : 0 < A) :
     ∃ C > 0, ∀ n : ℕ, 1 ≤ n → ∀ ξ : ZMod (3 ^ n), ¬ (3 ∣ ξ.val) →
       ‖(syracZ n).cexpect fun Y => eC (-(ξ.val * Y.val : ℚ) / 3 ^ n)‖
-        ≤ C * (n : ℝ) ^ (-A) := by
-  obtain ⟨C, hC0, hC⟩ := key_fourier_decay A hA
-  refine ⟨C, hC0, fun n hn ξ hξ => ?_⟩
-  rw [syracZ, cexpect_map _ _ _ (fun Y => (eC_norm _).le)]
-  exact hC n hn ξ hξ
+        ≤ C * (n : ℝ) ^ (-A) :=
+  ⟨C_renewalWhite A, C_renewalWhite_pos A, charFn_decay_at A hA⟩
 
 end TaoCollatz
