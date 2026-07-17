@@ -3341,19 +3341,24 @@ existential.  **Lemma 5.3 + (5.18)–(5.21)** — window-stability of the affine
 `approxMainTerm x E y` agrees across the two nested windows `y = x^α` and `y = x^{α²}` up to
 `O(log^{-c} x)`.  PROVED from `approxMainTerm_to_Z` by the triangle inequality through the
 window-independent `mainZ x E`: both windows evaluate to `(2/log(4/3))·mainZ x E + O(log^{-c} x)`
-with the **same** `mainZ`, so their difference is `O(log^{-c} x)`. -/
-theorem approxMainTerm_window_stable_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+with the **same** `mainZ`, so their difference is `O(log^{-c} x)`.
+X-chase cutoff: a pure passthrough, `X_windowStable := X_approxToZ`. -/
+noncomputable def X_windowStable : ℝ := X_approxToZ
+
+theorem approxMainTerm_window_stable_atCX :
+    ∀ x : ℝ, X_windowStable ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         |approxMainTerm x E (x ^ alpha) - approxMainTerm x E (x ^ alpha ^ 2)|
           ≤ C_windowStable * (Real.log x) ^ (-c_approxToZ) := by
-  obtain ⟨x₀, hZ⟩ := approxMainTerm_to_Z_atC
+  have hZ := approxMainTerm_to_Z_atCX
+  set x₀ : ℝ := X_approxToZ with hx₀def
   set C : ℝ := C_approxToZ with hCdef
   have hC : 0 < C := C_approxToZ_pos
   set c : ℝ := c_approxToZ with hcdef
   have hc : 0 < c := c_approxToZ_pos
   rw [show C_windowStable = 2 * C from rfl]
-  refine ⟨x₀, fun x hx E hE => ?_⟩
+  rw [show X_windowStable = x₀ from rfl]
+  intro x hx E hE
   have hmem1 : (x ^ alpha) ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ) := Set.mem_insert _ _
   have hmem2 : (x ^ alpha ^ 2) ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ) :=
     Set.mem_insert_of_mem _ rfl
@@ -3366,6 +3371,15 @@ theorem approxMainTerm_window_stable_atC :
     _ ≤ C * (Real.log x) ^ (-c) + C * (Real.log x) ^ (-c) := by
         rw [abs_sub_comm (2 / Real.log (4 / 3) * mainZ x E)]; exact add_le_add h1 h2
     _ = 2 * C * (Real.log x) ^ (-c) := by ring
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `approxMainTerm_window_stable_atCX` (X-chase: `x₀ := X_windowStable`). -/
+theorem approxMainTerm_window_stable_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        |approxMainTerm x E (x ^ alpha) - approxMainTerm x E (x ^ alpha ^ 2)|
+          ≤ C_windowStable * (Real.log x) ^ (-c_approxToZ) :=
+  ⟨X_windowStable, approxMainTerm_window_stable_atCX⟩
 
 /-- Original explicit-`c` form of the window stability: delegates to
 `approxMainTerm_window_stable_atC` (big-C campaign, step 2: `C := C_windowStable`). -/

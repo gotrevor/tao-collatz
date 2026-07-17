@@ -1237,3 +1237,8 @@ is odd, and the pin is branch-only so retiring is free).
 - `X_approxToZ := max (max (max X_IyRatio X_mainZ) X_perNTermEval) (exp 1)` +
   `approxMainTerm_to_Z_atCX` (the C9 crux node at its explicit cutoff); `_atC` delegates.
   Audit 26/38, next `approxMainTerm_window_stable_atCX`.
+
+### Successor lap 24 (2026-07-17) — phase 3 entry 10/11
+
+- `X_windowStable := X_approxToZ` (pure passthrough) + `approxMainTerm_window_stable_atCX`;
+  `_atC` delegates. Audit 27/38, next `X_stab` + `stabilization_atCX` (phase-3 capstone).
