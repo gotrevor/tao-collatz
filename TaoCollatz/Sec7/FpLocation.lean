@@ -2795,23 +2795,23 @@ theorem hasSum_int_shift_exp {c : ℝ} (hc : 0 < c) (s : ℕ) :
     simpa [hfront] using h2
   simpa using hnat.of_nat_of_neg_add_one hneg
 
-/-- **First-passage column marginal** (the `l`-collapse of Lemma 7.7): summing the
-`fpDist_location_bound` (X6) Gaussian envelope over the height coordinate `l`
-(mass lives only on `l > s`, so the `e^{-c(l-s)}` factor collapses geometrically)
-gives a per-column bound `≤ C'·Gweight(1+s, c(j-s/4))/√(1+s)`. This is the shared
-prerequisite of both white-exit tails: `fpDist_out_of_strip_le` sums it over the
-columns `j > m`, and the separation argument reads column-wise Gaussian decay. -/
-theorem fpDist_col_le :
-    ∃ c > (0 : ℝ), ∃ C' > (0 : ℝ), ∀ (s j : ℕ),
+/-- **Core of the first-passage column marginal, constants abstracted** (big-C
+campaign, step 2): given the Lemma 7.7 location bound at `(c, C)`, the height
+coordinate `l` sums geometrically (mass lives only on `l > s`), giving the
+per-column bound with constant `C·e^{-c}/(1-e^{-c})`. -/
+theorem fpDist_col_le_core (c C : ℝ) (hc : 0 < c) (hC : 0 < C)
+    (hbound : ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+      (fpDist s (j, l)).toReal
+        ≤ C * (Real.exp (-c * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+            * Gweight (1 + s) (c * ((j : ℝ) - s / 4))) :
+    ∀ (s j : ℕ),
       ∑' l : ℤ, (fpDist s (j, l)).toReal
-        ≤ C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
+        ≤ C * (Real.exp (-c) / (1 - Real.exp (-c)))
+            * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
                   / Real.sqrt (1 + (s : ℝ))) := by
-  obtain ⟨c, hc, C, hC, hbound⟩ := fpDist_location_bound
   have he1 : Real.exp (-c) < 1 := by rw [Real.exp_lt_one_iff]; linarith
   have he0 : (0 : ℝ) < Real.exp (-c) := Real.exp_pos _
   have hpos : (0 : ℝ) < 1 - Real.exp (-c) := by linarith
-  refine ⟨c, hc, C * (Real.exp (-c) / (1 - Real.exp (-c))),
-    mul_pos hC (div_pos he0 hpos), ?_⟩
   intro s j
   set G : ℝ := Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4)) with hG
   have hGnn : 0 ≤ G := Gweight_nonneg _ _
@@ -2846,6 +2846,46 @@ theorem fpDist_col_le :
     _ = A * (Real.exp (-c) / (1 - Real.exp (-c))) := hdom.tsum_eq
     _ = C * (Real.exp (-c) / (1 - Real.exp (-c))) * (G / Real.sqrt (1 + (s : ℝ))) := by
         rw [hA]; ring
+
+/-- The constant of the first-passage column marginal, symbolic (big-C campaign,
+step 2): `C_fpCol = C_fpLocation · e^{-c}/(1-e^{-c})` at `c = c_fpLocation`. -/
+noncomputable def C_fpCol : ℝ :=
+  C_fpLocation * (Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation)))
+
+theorem C_fpCol_pos : 0 < C_fpCol := by
+  have hc := c_fpLocation_pos
+  have he1 : Real.exp (-c_fpLocation) < 1 := by rw [Real.exp_lt_one_iff]; linarith
+  unfold C_fpCol
+  exact mul_pos C_fpLocation_pos (div_pos (Real.exp_pos _) (by linarith))
+
+/-- The first-passage column marginal, `_explicitC` sibling: `fpDist_col_le_core`
+at (`c_fpLocation`, `C_fpLocation`), constant folded into `C_fpCol`. -/
+theorem fpDist_col_le_explicitC :
+    ∀ (s j : ℕ),
+      ∑' l : ℤ, (fpDist s (j, l)).toReal
+        ≤ C_fpCol * (Gweight (1 + (s : ℝ)) (c_fpLocation * ((j : ℝ) - (s : ℝ) / 4))
+                  / Real.sqrt (1 + (s : ℝ))) := by
+  have h := fpDist_col_le_core c_fpLocation C_fpLocation c_fpLocation_pos
+    C_fpLocation_pos fpDist_location_bound_explicitC
+  intro s j
+  have hs := h s j
+  unfold C_fpCol
+  exact hs
+
+/-- **First-passage column marginal** (the `l`-collapse of Lemma 7.7): summing the
+`fpDist_location_bound` (X6) Gaussian envelope over the height coordinate `l`
+(mass lives only on `l > s`, so the `e^{-c(l-s)}` factor collapses geometrically)
+gives a per-column bound `≤ C'·Gweight(1+s, c(j-s/4))/√(1+s)`. This is the shared
+prerequisite of both white-exit tails: `fpDist_out_of_strip_le` sums it over the
+columns `j > m`, and the separation argument reads column-wise Gaussian decay.
+Original `∃`-form: delegates to the `_explicitC` sibling at
+`c_fpLocation`/`C_fpCol`. -/
+theorem fpDist_col_le :
+    ∃ c > (0 : ℝ), ∃ C' > (0 : ℝ), ∀ (s j : ℕ),
+      ∑' l : ℤ, (fpDist s (j, l)).toReal
+        ≤ C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
+                  / Real.sqrt (1 + (s : ℝ))) :=
+  ⟨c_fpLocation, c_fpLocation_pos, C_fpCol, C_fpCol_pos, fpDist_col_le_explicitC⟩
 
 /-- **ℕ-tail shifted geometric** (companion of `hasSum_int_shift_exp`): the
 exponential `e^{-γ(j-a)}` restricted to the tail `j > m` sums to
