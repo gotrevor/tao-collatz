@@ -25,9 +25,19 @@ continues (next: `renewal_white_encounters` explicit, Fourier passthrough, Sec6)
   `key_fourier_decay_at` (Reduction.lean), `charFn_decay_at` (Decay.lean) — the whole
   §7 chain from the fpDist kernels to Prop 1.17 is now constant-explicit. Watch: the
   delegating ∃-forms need `open Classical in` (the filter's DecidablePred).
-- **Next**: Sec6 (8 slots: `fine_scale_mixing`/`stabilization` chain — check17 names the
-  hops: `head_uniform_highFreq_of_margin` → `osc_mainHigh_bound` → MixingRegime telescope),
-  then Sec5 (37), Sec3 (7). STEP 3 remains STOPPED on the lap-8 JUDGE-FLAG.
+- **Sec6 head+main explicit (`f74bbfc`, `4ad9985`)**: MixingCore trio
+  (`tail_factor_norm_le`/`head_factor_norm_le_charFn`/`dft_condDens_norm_le` at
+  `C_renewalWhite`), `head_uniform_highFreq_of_margin_at`; cutoffs `N_caWindow A`,
+  `N_condWindowB C` (both via the existing `T_logLin`); `C_oscMainHigh A =
+  3·C_renewalWhite(mainDecayExponent A)·40^(mainDecayExponent A)`, `N_oscMainHigh A`,
+  `osc_mainHigh_bound_at`. Rail note: when the original docstring precedes the spot
+  where the new def goes, MOVE the def+its docstring ABOVE the original docstring
+  (two adjacent docstrings = parse error).
+- **Next**: remaining Sec6 slots — MixingError.lean:1078/1194 (two `∃ C, ∃ n₀` osc
+  error bounds), MixingFromDecay.lean:12/30 (high-regime + telescope wrappers),
+  MixingRegime.lean:44/46 (`fine_scale_mixing` consumer), then `stabilization`
+  (Stabilization.lean:2118 consumer at A=1.7), then Sec5 (37), Sec3 (7).
+  STEP 3 remains STOPPED on the lap-8 JUDGE-FLAG.
 
 ---
 
