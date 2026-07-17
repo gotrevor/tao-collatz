@@ -573,14 +573,15 @@ estimate (first marginal of `hold` is `Geom(4)`): split at `d₁ ≤ m/2`, where
 weight ratio `(m - d₁)^{-A}/m^{-A} ≤ 2^A` needs only `exp(ε³/2)`-room from the
 sub-1 mass at `d₁ ≥ 1`, and the tail `P(d₁ > m/2) ≤ (3/4)^{m/2}` is
 super-polynomial (that leaf is `hold_weight_expect`, proved). -/
-theorem Q_white_case1 (A : ℝ) (hA : 0 < A) :
-    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ,
+theorem Q_white_case1_explicitC (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, C_hold A ≤ m → m ≤ n / 2 → ∀ l : ℤ,
       (n / 2 - m, l) ∈ whiteSet n ξ →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
         ≤ Real.exp (-(epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A)
           * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
-  obtain ⟨C0, hC0one, hC0⟩ := hold_weight_expect A hA
-  refine ⟨C0, fun n ξ _ m hm hmn l hw => ?_⟩
+  have hC0one := one_le_C_hold A
+  have hC0 := hold_weight_expect_explicitC A hA
+  intro n ξ _ m hm hmn l hw
   set half := n / 2 with hhalf
   set ε : ℝ := (epsBW : ℝ) with hεdef
   have hε0 : (0 : ℝ) ≤ ε := by
@@ -650,6 +651,16 @@ theorem Q_white_case1 (A : ℝ) (hA : 0 < A) :
         congr 1
         ring_nf
     _ = Real.exp (-ε ^ 3 / 2) * (m : ℝ) ^ (-A) * QM := by ring
+
+/-- `Q_white_case1`, original `∃`-form: delegates to the `_explicitC` sibling at the
+symbolic witness `C_hold A` (big-C campaign, step 2). -/
+theorem Q_white_case1 (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ,
+      (n / 2 - m, l) ∈ whiteSet n ξ →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ Real.exp (-(epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A)
+          * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
+  ⟨C_hold A, Q_white_case1_explicitC A hA⟩
 
 /-- **Case 1, warm-up form** ((7.42)–(7.43)): if the starting point is white, one step of
 the recursion (7.35) already contracts by `exp(-ε³)`:

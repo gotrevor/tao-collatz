@@ -334,17 +334,16 @@ depth `m-1` with the same weight, so `le_Qm` bounds them by `Q_{m-1}` directly. 
 points (`p₁ = ⌊n/2⌋ - m`, weight `m^A`) satisfy (7.41) `Q ≤ m^{-A}·Q_{m-1}`: white
 starts by `Q_white_case1` (Case 1, proved), black starts by the supplied
 `Q_black_edge` bound. -/
-theorem prop_7_8_of_black_edge (A : ℝ) (hA : 0 < A)
-    (hblack :
-      ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+theorem prop_7_8_at (A : ℝ) (hA : 0 < A) (C2 : ℕ)
+    (hC2 : ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, C2 ≤ m → m ≤ n / 2 →
         ∀ l : ℤ, 1 ≤ n / 2 - m → (n / 2 - m, l) ∉ whiteSet n ξ →
         Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
           ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :
-    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, max (max (C_hold A) C2) 1 ≤ m → m ≤ n / 2 →
       Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
-  obtain ⟨C1, hC1⟩ := Q_white_case1 A hA
-  obtain ⟨C2, hC2⟩ := hblack
-  refine ⟨max (max C1 C2) 1, fun n ξ hξ m hm hmn => ?_⟩
+  have hC1 := Q_white_case1_explicitC A hA
+  set C1 := C_hold A with hC1def
+  intro n ξ hξ m hm hmn
   have hmC1 : C1 ≤ m := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hm
   have hmC2 : C2 ≤ m := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hm
   have hm1 : 1 ≤ m := le_trans (le_max_right _ _) hm
@@ -394,24 +393,37 @@ theorem prop_7_8_of_black_edge (A : ℝ) (hA : 0 < A)
   · -- interior point: admissible at depth m-1 with the same weight
     exact le_Qm (n / 2) n ξ (epsBW : ℝ) A hA.le hε0 (m - 1) hp1 (by omega)
 
+/-- `prop_7_8_of_black_edge`, original `∃`-form: delegates to the threshold-explicit
+`prop_7_8_at` (big-C campaign, step 2; witness `max (max (C_hold A) C2) 1`). -/
+theorem prop_7_8_of_black_edge (A : ℝ) (hA : 0 < A)
+    (hblack :
+      ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+        ∀ l : ℤ, 1 ≤ n / 2 - m → (n / 2 - m, l) ∉ whiteSet n ξ →
+        Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+          ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  obtain ⟨C2, hC2⟩ := hblack
+  exact ⟨max (max (C_hold A) C2) 1, prop_7_8_at A hA C2 hC2⟩
+
 /-- Paper (7.37), the consequence of (7.39) + Proposition 7.8 by forward induction on `m`:
 `Q(j,l) ≪_A max(⌊n/2⌋ - j, 1)^{-A}`, uniformly in `n, ξ, j, l`. This is what feeds
-(7.36) `E Q(Hold) ≪_A n^{-A}` and hence Proposition 7.3 in `Decay.lean`. -/
-theorem Q_polynomial_decay_of_prop_7_8 (A : ℝ) (hA : 0 < A)
-    (hmono :
-      ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+(7.36) `E Q(Hold) ≪_A n^{-A}` and hence Proposition 7.3 in `Decay.lean`.
+Threshold-explicit form (big-C campaign, step 2): the constant is `(max C0 1)^A` where
+`C0` is the supplied Prop-7.8 threshold. -/
+theorem Q_polynomial_decay_at (A : ℝ) (hA : 0 < A) (C0 : ℕ)
+    (hC0 : ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, C0 ≤ m → m ≤ n / 2 →
         Qm (n / 2) n ξ (epsBW : ℝ) A m
           ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :
-    ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
-      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l ≤ C * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
-  obtain ⟨C0, hC0⟩ := hmono
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l
+        ≤ ((max C0 1 : ℕ) : ℝ) ^ A * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
   set Cb := max C0 1 with hCbdef
   have hCb1 : 1 ≤ Cb := le_max_right _ _
   have hCbR : (1 : ℝ) ≤ ((Cb : ℕ) : ℝ) := by exact_mod_cast hCb1
   have hCbA1 : (1 : ℝ) ≤ ((Cb : ℕ) : ℝ) ^ A := by
     calc (1 : ℝ) = (1 : ℝ) ^ A := (Real.one_rpow A).symm
       _ ≤ ((Cb : ℕ) : ℝ) ^ A := Real.rpow_le_rpow zero_le_one hCbR hA.le
-  refine ⟨((Cb : ℕ) : ℝ) ^ A, Real.rpow_pos_of_pos (by linarith) A, ?_⟩
   intro n ξ hξ j l hj
   have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
     have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
@@ -447,5 +459,19 @@ theorem Q_polynomial_decay_of_prop_7_8 (A : ℝ) (hA : 0 < A)
       _ = ((Cb : ℕ) : ℝ) ^ A * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
           rw [hw, Nat.cast_one, Real.one_rpow, mul_one]
 
+/-- `Q_polynomial_decay_of_prop_7_8`, original `∃`-form: delegates to the
+threshold-explicit `Q_polynomial_decay_at` (big-C campaign, step 2). -/
+theorem Q_polynomial_decay_of_prop_7_8 (A : ℝ) (hA : 0 < A)
+    (hmono :
+      ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+        Qm (n / 2) n ξ (epsBW : ℝ) A m
+          ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :
+    ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l ≤ C * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
+  obtain ⟨C0, hC0⟩ := hmono
+  refine ⟨((max C0 1 : ℕ) : ℝ) ^ A, Real.rpow_pos_of_pos ?_ A,
+    Q_polynomial_decay_at A hA C0 hC0⟩
+  have h1 : (1 : ℕ) ≤ max C0 1 := le_max_right _ _
+  exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one h1
 
 end TaoCollatz
