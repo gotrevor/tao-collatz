@@ -143,7 +143,7 @@
 </li>
   <li><p>\(\mathbb {Z}[1/2]\) <em>is eliminated.</em> The paper’s offset map is replaced by its integer multiple \(\texttt{fnat}\, n\, a = \sum _{m{\lt}n} 3^{n-1-m} 2^{\, a_{[1,m]}}\), so the iteration identity (1.7)\(\times 2^{|a|}\) lives entirely in \(\mathbb {N}\) (node&#160;<a href="chp-dictionary.html#C2">3.2</a>). </p>
 </li>
-  <li><p><em>Asymptotics are reified.</em> \(X\ll Y\) becomes \(\exists C{\gt}0,\  X\le C\, Y\); \(\ll _A\) becomes \(\forall A{\gt}0,\exists C{\gt}0\). No <span class="ttfamily">IsBigO</span>/filters in load-bearing statements (uniformity in \(n,\xi \) is exactly what filter-\(O\) would hide). </p>
+  <li><p><em>Asymptotics are reified.</em> \(X\ll Y\) becomes \(\exists C{\gt}0,\  X\le C\, Y\); \(\ll _A\) becomes \(\forall A{\gt}0,\exists C{\gt}0\). No <span class="ttfamily">IsBigO</span>/filters in load-bearing statements (uniformity in \(n,\xi \) is exactly what filter-\(O\) would hide). This constrains <em>statements</em> only, and does not by itself make a constant effective: a proof may still <span class="ttfamily">obtain</span> its witness from a rate-free limit and satisfy D3 while defeating its purpose. Where a constant is meant to be effective the witness must be an explicit term; since <span class="ttfamily">Exists</span> is a <span class="ttfamily">Prop</span>, an inexplicit one cannot be recovered downstream. See <span class="ttfamily">notes/effective-constants.md</span>. </p>
 </li>
   <li><p><em>The small constant is a numeral.</em> \(\varepsilon := 10^{-4}\) (candidate; validated per-site). </p>
 </li>
