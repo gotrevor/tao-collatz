@@ -104,7 +104,12 @@ The Lean development departs from the paper's presentation in eight deliberate w
   \item[\textbf{D3}] \emph{Asymptotics are reified.}  \(X\ll Y\) becomes
         \(\exists C>0,\ X\le C\,Y\); \(\ll_A\) becomes \(\forall A>0,\exists C>0\).  No
         \texttt{IsBigO}/filters in load-bearing statements (uniformity in \(n,\xi\) is
-        exactly what filter-\(O\) would hide).
+        exactly what filter-\(O\) would hide).  This constrains \emph{statements} only, and
+        does not by itself make a constant effective: a proof may still \texttt{obtain} its
+        witness from a rate-free limit and satisfy D3 while defeating its purpose.  Where a
+        constant is meant to be effective the witness must be an explicit term; since
+        \texttt{Exists} is a \texttt{Prop}, an inexplicit one cannot be recovered downstream.
+        See \texttt{notes/effective-constants.md}.
   \item[\textbf{D4}] \emph{The small constant is a numeral.}  \(\varepsilon := 10^{-4}\)
         (candidate; validated per-site).
   \item[\textbf{D6}] \emph{The infinite renewal process is finitized} by the downward
