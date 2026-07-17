@@ -48,12 +48,13 @@ uniformity is load-bearing — the paper says so explicitly on p.12).
 `≪` into `∃ C` buys a legible, uniform *statement*; it says nothing about how the witness gets
 *produced*. A proof can still `obtain` its constant from a rate-free limit
 (`Filter.eventually_atTop`, `exists_pow_lt_of_lt_one`) and satisfy every letter of D3 while
-destroying the reason for it. **This happened**: `hold_weight_expect` (`Sec7/Monotone.lean:163`)
-takes `T` from a rate-free `Tendsto`, and that constant reaches the spine through
-`fine_scale_mixing`, so no upper bound on the headline `C` is readable from the proof.
+destroying the reason for it. **This happened**: `hold_weight_expect` (`Sec7/Monotone.lean`)
+took `T` from a rate-free `Tendsto`, and that constant reached the spine through
+`fine_scale_mixing`, so no upper bound on the headline `C` was readable from the proof (fixed
+by giving the extraction explicit thresholds; the statement did not change).
 **So: where a constant is meant to be effective, the witness must be an explicit term** — an
 arithmetic expression or a `⌈…⌉₊`, as in `exp_neg_mul_le_of_large` / `log_le_eps_mul_of_large`
-(`Sec7/BlackEdge.lean:302,316`), the pattern §7 uses everywhere else. `Exists` is a `Prop`, so
+(`Sec7/BlackEdge.lean`), the pattern §7 uses everywhere else. `Exists` is a `Prop`, so
 an inexplicit witness is **unrecoverable downstream** — it can only be fixed at the lemma that
 minted it. Detail: `notes/effective-constants.md`.
 
