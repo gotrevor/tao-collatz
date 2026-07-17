@@ -288,3 +288,29 @@ check18 with the C0-arm assert. See HANDOFF.md.
 **Next attack:** `few_white_estar_mass_le` (Case3:~2010, `obtain … := estar_union_le_rpow`)
 → `few_white_mass_le` → damping chain → `Q_black_edge_case3` (reifies `C2`) → wire into
 `prop_7_8_at`.
+
+### Lap 6c (2026-07-17) — `estar_scaled_numeric` explicit + forward-trace of C2 ✅
+
+- **Forward-trace done** (map before mine): `Q_black_edge_case3` exposes ONLY a threshold
+  `Cthr : ℕ` (no free multiplicative constant); it passes UNCHANGED up through
+  `damped_iter_expectation_le` and `damping_expectation/column_mass_le`. The thresholds
+  COMBINE at `few_white_mass_le` (Case3:2472):
+  `Cthr = max (max Cthr_e Cthr_c) (max (10·g) (max ⌈B^2.5⌉ ⌈10·500^(1/A)⌉))` with
+  `Cthr_e = 10^30`, `Cthr_c = T_colTail A P` (✓), `g = g_manyTri` (✓),
+  `B = 4^{A'}(1+P)^3`, `P = encWindowIter A' (K+1) R`, `K = ⌈(A+3)log10/epsBW³⌉₊`,
+  `R = ⌈((K+1)+(A+5)log10+2)/ε₀⌉₊`, `ε₀ = eps0_manyTri` (✓), and
+  `A' = 2A + A₀_estarScaled`. So the ONE missing input to `few_white_mass_le` was
+  `estar_scaled_numeric`'s witness `A₀`. **This threshold C2 feeds the ladder as `Cthr^A`
+  in `Q_polynomial_decay`'s C0-arm (dominated by the `n₀^B` head — lap-5 audit).**
+- **`estar_scaled_numeric_at`** (Case3): new defs `Kthr_estarScaled C'`,
+  `Warg_estarScaled C' c`, `A0_estarScaled C' c A₀e = max A₀e (max 1 (max Kthr √(max 0 Warg)))`;
+  `_at` proves the conjunction at that witness via `unfold`-prefix + verbatim body (the
+  `set`-locals re-abstract the unfolded formulas cleanly); `∃`-form delegates
+  `⟨A0_estarScaled C' c A₀e, estar_scaled_numeric_at …⟩`. Full build green, differ 35/35.
+
+**Next attack:** `few_white_estar_mass_le` — name `A0_fewEstar =
+A0_estarScaled C_estarUnion c_estarUnion A0_estarUnion`, `A' = 2A + A0_fewEstar`,
+`Cthr_e = 10^30`; via a `_core` (abstract `C'`/`c`/`A₀`/`hnum`/`hestar`, body verbatim
+after the two obtains, `A'` fixed) delegating over `estar_union_le_rpow_explicitC` +
+`estar_scaled_numeric_at`. Then `few_white_mass_le` (the big `max`), then the damping
+passthrough chain → `Q_black_edge_case3` reifies C2 → wire into `prop_7_8_at`.

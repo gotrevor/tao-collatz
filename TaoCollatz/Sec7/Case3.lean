@@ -1894,6 +1894,22 @@ theorem sq_mul_exp_neg_le_inv (b : ℝ) (hb : 0 < b) (x : ℝ) (hx : 0 < x) :
   rw [hexpneg, mul_one_div, div_le_div_iff₀ hexppos (by positivity : (0:ℝ) < b ^ 3 * x)]
   nlinarith [hcube, hexppos, hx, hb]
 
+/-- **E∗-scaled cleared-denominator threshold** (X11b): the `A₀ ≥ Kthr` requirement that makes
+both linear-in-`A₀` term-1 bounds fit `1/4000`. -/
+noncomputable def Kthr_estarScaled (C' : ℝ) : ℝ :=
+  3456000 * C' / ((2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3)
+    + 216000 * C' / (Real.log 4) ^ 3
+
+/-- **E∗-scaled complete-the-square argument** (X11b): the `A₀² ≥ Warg` requirement for term 2. -/
+noncomputable def Warg_estarScaled (C' c : ℝ) : ℝ :=
+  (16 * c * Real.log (2000 * C') + (Real.log 10) ^ 2) / (16 * c ^ 2)
+
+/-- **E∗-scaled threshold** `A₀` (X11b): `max A₀e (max 1 (max Kthr √(max 0 Warg)))` — the
+`estar_scaled_numeric` witness, joining the E∗ threshold `A₀e`, the floor `1`, the term-1
+cleared-denominator bound `Kthr`, and the term-2 completing-the-square bound `√Warg`. -/
+noncomputable def A0_estarScaled (C' c A₀e : ℝ) : ℝ :=
+  max A₀e (max 1 (max (Kthr_estarScaled C') (Real.sqrt (max 0 (Warg_estarScaled C' c)))))
+
 -- HEARTBEAT: large single-shot constant-chase (two poly·geom dominations + complete-the-square
 -- over the base-16-vs-10 comparison); the `Real.log 4`/`Real.log 10` denominators make the calc
 -- defeq checks heavy. Pure real inequality, no `native_decide`.
@@ -1905,11 +1921,12 @@ scaling `2A` makes the effective base `4² = 16 > 10`, so `4^{−A'} = 4^{−A�
 `10^{−A}`; the leftover poly·geom `(2A+A₀)²·(10/16)^A` is dominated (`x²·r^x ≤ 4/log(1/r)²`)
 and the `exp(−c·A'²)` term closed by completing the square. `A₀` is chosen `≥ A₀e` (the E∗
 threshold) and `≥ 1`. -/
-theorem estar_scaled_numeric (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA₀e : 1 ≤ A₀e) :
-    ∃ A₀ : ℝ, A₀e ≤ A₀ ∧ 1 ≤ A₀ ∧ ∀ A : ℝ, 0 < A →
-      C' * (2 * A + A₀) ^ 2 * (4 : ℝ) ^ (-(2 * A + A₀))
-        + C' * Real.exp (-c * (2 * A + A₀) ^ 2)
+theorem estar_scaled_numeric_at (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA₀e : 1 ≤ A₀e) :
+    A₀e ≤ A0_estarScaled C' c A₀e ∧ 1 ≤ A0_estarScaled C' c A₀e ∧ ∀ A : ℝ, 0 < A →
+      C' * (2 * A + A0_estarScaled C' c A₀e) ^ 2 * (4 : ℝ) ^ (-(2 * A + A0_estarScaled C' c A₀e))
+        + C' * Real.exp (-c * (2 * A + A0_estarScaled C' c A₀e) ^ 2)
         ≤ (10 : ℝ) ^ (-A - 3) := by
+  unfold A0_estarScaled Kthr_estarScaled Warg_estarScaled
   have hL4 : (0 : ℝ) < Real.log 4 := Real.log_pos (by norm_num)
   have hL10 : (0 : ℝ) < Real.log 10 := Real.log_pos (by norm_num)
   have hL85 : (0 : ℝ) < 2 * Real.log 4 - Real.log 10 := by
@@ -1931,7 +1948,7 @@ theorem estar_scaled_numeric (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA�
     le_trans (le_max_left _ _) (le_trans (le_max_right _ _) (le_max_right _ _))
   have hA₀sqrt : Real.sqrt X2 ≤ A₀ :=
     le_trans (le_max_right _ _) (le_trans (le_max_right _ _) (le_max_right _ _))
-  refine ⟨A₀, hA₀e_le, hA₀1, ?_⟩
+  refine ⟨hA₀e_le, hA₀1, ?_⟩
   intro A hA
   -- rpow → exp conversions
   have h4y : (4 : ℝ) ^ (-(2 * A + A₀))
@@ -2077,6 +2094,15 @@ theorem estar_scaled_numeric (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA�
   calc C' * (2 * A + A₀) ^ 2 * (4 : ℝ) ^ (-(2 * A + A₀)) + C' * Real.exp (-c * (2 * A + A₀) ^ 2)
       ≤ (1 / 2) * (10 : ℝ) ^ (-A - 3) + (1 / 2) * (10 : ℝ) ^ (-A - 3) := add_le_add hterm1 hterm2
     _ = (10 : ℝ) ^ (-A - 3) := by ring
+
+/-- **Numeric closure for the E∗ term**, original `∃`-form: delegates to
+`estar_scaled_numeric_at` at the named witness `A0_estarScaled C' c A₀e`. -/
+theorem estar_scaled_numeric (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA₀e : 1 ≤ A₀e) :
+    ∃ A₀ : ℝ, A₀e ≤ A₀ ∧ 1 ≤ A₀ ∧ ∀ A : ℝ, 0 < A →
+      C' * (2 * A + A₀) ^ 2 * (4 : ℝ) ^ (-(2 * A + A₀))
+        + C' * Real.exp (-c * (2 * A + A₀) ^ 2)
+        ≤ (10 : ℝ) ^ (-A - 3) :=
+  ⟨A0_estarScaled C' c A₀e, estar_scaled_numeric_at C' c A₀e hC' hc hA₀e⟩
 
 open scoped Classical in
 /-- **(7.56) E∗ mass term.** The first-passage⊗walk mass of the union-over-`p` big-triangle
