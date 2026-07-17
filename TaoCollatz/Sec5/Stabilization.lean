@@ -2471,15 +2471,19 @@ noncomputable def C_harmonicZ : ℝ := C_harmZfine + C_mainZbridge
 theorem C_harmonicZ_pos : 0 < C_harmonicZ :=
   add_pos C_harmZfine_pos C_mainZbridge_pos
 
+/-- The `harmonic_to_Z` cutoff (X-chase): the witness max-tree copied verbatim from the
+`_atC` proof, with `x1 := X_harmZfine`, `x2 := X_mainZbridge`. -/
+noncomputable def X_harmonicZ : ℝ := max (max X_harmZfine X_mainZbridge) (Real.exp 1)
+
 /-- Sibling of `harmonic_to_Z` with the `c`/`C` slots pinned at
-(`c_harmonicZ`, `C_harmonicZ`) — the `_atC` form (big-C campaign, step 2), cutoff
-existential (B1's cutoff is existential). -/
-theorem harmonic_to_Z_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+(`c_harmonicZ`, `C_harmonicZ`) and the cutoff at `X_harmonicZ` (X-chase). -/
+theorem harmonic_to_Z_atCX :
+    ∀ x : ℝ, X_harmonicZ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |perNHarmonic x E n - mainZ x E| ≤ C_harmonicZ * (Real.log x) ^ (-c_harmonicZ) := by
-  obtain ⟨x1, h1⟩ := perNHarmonic_eq_harmZfine_approx_atC
+  have h1 := perNHarmonic_eq_harmZfine_approx_atCX
+  set x1 : ℝ := X_harmZfine with hx1def
   have h2 := harmZfine_to_mainZ_at
   set C1 : ℝ := C_harmZfine with hC1def
   set C2 : ℝ := C_mainZbridge with hC2def
@@ -2491,7 +2495,8 @@ theorem harmonic_to_Z_atC :
   have hc1 : 0 < c1 := c_harmZfine_pos
   have hc2 : 0 < c2 := c_mainZbridge_pos
   rw [show C_harmonicZ = C1 + C2 from rfl, show c_harmonicZ = min c1 c2 from rfl]
-  refine ⟨max (max x1 x2) (Real.exp 1), fun x hx E hE y hy n hn => ?_⟩
+  rw [show X_harmonicZ = max (max x1 x2) (Real.exp 1) from rfl]
+  intro x hx E hE y hy n hn
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hx1 : x1 ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hx2 : x2 ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -2512,6 +2517,15 @@ theorem harmonic_to_Z_atC :
         add_le_add (mul_le_mul_of_nonneg_left hLc1 hC1.le)
           (mul_le_mul_of_nonneg_left hLc2 hC2.le)
     _ = (C1 + C2) * L ^ (-(min c1 c2)) := by ring
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `harmonic_to_Z_atCX` (X-chase: `x₀ := X_harmonicZ`). -/
+theorem harmonic_to_Z_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNHarmonic x E n - mainZ x E| ≤ C_harmonicZ * (Real.log x) ^ (-c_harmonicZ) :=
+  ⟨X_harmonicZ, harmonic_to_Z_atCX⟩
 
 /-- Sibling of `harmonic_to_Z` with the `c`-slot pinned to `c_harmonicZ`; the original
 delegates here.  Now delegates to `harmonic_to_Z_atC` (big-C campaign, step 2:

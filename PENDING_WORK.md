@@ -1210,3 +1210,8 @@ is odd, and the pin is branch-only so retiring is free).
 - `X_harmZfine := max (max X_cnBound X_syracZsub) (exp 1024)` +
   `perNHarmonic_eq_harmZfine_approx_atCX`; `_atC` delegates. Audit 21/38, next
   `harmonic_to_Z_atCX`.
+
+### Successor lap 19 (2026-07-17) — phase 3 entry 5/11
+
+- `X_harmonicZ := max (max X_harmZfine X_mainZbridge) (exp 1)` + `harmonic_to_Z_atCX`;
+  `_atC` delegates. Audit 22/38, next `mainZ_bound_atCX`.
