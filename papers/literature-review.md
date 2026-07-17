@@ -120,6 +120,40 @@ the assembly lives inside the `Q_black_edge_case3` sorry.
 - Consumability: unchanged downstream — the single-point mass uses the LOWER l-bound
   (`2^{-l} = n^{O(C_A²)}·3^{-n}`), absorbed by taking A′ large exactly as the paper does.
 
+### §7 renewal constant — the tower vs the true constant (big-C route re-cost, added lap 12, 2026-07-17)
+
+*Added by the big-C campaign's deep-reflection lap 12. Route-decisive for the explicit-`C`
+stretch pin `tao_collatz_quantitative_fully_explicit` (`CTao = 10^(10¹¹)`); orthogonal to the
+3 merged headlines, which are axiom-clean and DONE.*
+
+- **Prop 7.3 (`renewal_white_encounters`, Bridge.lean) proves `E[exp(-ε³·#white)] ≤ C·n^{-A}`
+  with `C = C_renewalWhite A = max(n₀^A, C_polyDecay A·e^{ε³/2}·3^A)`.** The head arm `n₀^A ≈
+  10^(9.36×10¹⁰) < CTao` (check17 GO). The second arm is a **triple-exponential tower**:
+  `C_polyDecay A = (Cthr_prop78 A)^A`, `Cthr_prop78 ⊇ Cthr_fewWhite ⊇ B_fewWhite^{2.5}`,
+  `B_fewWhite = 4^{2A+A0}(1+P)³`, `P = encWindowIter(…)` a cubic recurrence over ~10³⁰¹⁰ steps
+  (check19). So the honestly-transcribed constant cannot fit under any single-exponential pin.
+- **The tower is provably slop, not a floor** (lap-12 source read of `renewal_white_encounters_at`,
+  Bridge.lean:522–691): the `n^{-A}` decay comes ENTIRELY from `hold_weight_expect` (Geom(4)
+  hold-tail at `m=n/2`); `C_polyDecay` enters ONLY as a multiplicative constant via the
+  `Q_polynomial_decay` pointwise bound, where `Q ≤ 1` already holds in the applied range
+  (`m ≈ 10³⁰¹⁶ ≪ Cthr_prop78`, so Q is vacuous). Tao's Prop 7.3 has a small constant; the
+  tower is an artifact of the formalization's crude `few_white_mass_le` (7.67) horizon.
+- **Route (operator options A/B from `ROUTE-ESCALATION-2026-07-17.md`) RESOLVED lap 12 →
+  Option B.** A (re-pin `CTao` tower-form) edits the watched judge-owned pin — out of scope.
+  B keeps `CTao` and re-proves the bound with a tight constant (statement-faithful,
+  differ-neutral, ADDITIVE — a new `renewal_white_encounters_tight`, leaving the clean-headline
+  `renewal_white_encounters` untouched). Crux = a `#white` lower-tail estimate beating the
+  (7.67) tower horizon.
+- **What the source supports (feasibility, honest).** The heuristic: black = `|θq| ≤ ε =
+  10⁻¹⁰⁰⁰` is measure-~2ε rare ⟹ `#white ≈ p·n/2` (ε-independent Pascal `b_j=3` rate) ⟹
+  `E(n) ≈ exp(-ε³p·n/2)`, peak of `n^A E(n)` at `n* ≈ 2A/(ε³p) ≈ 10³⁰⁰⁸ < n₀` (head arm). Tao
+  §7 proves the decorrelation via triangle encounters (Lemmas 7.4/7.9/7.10) — which inherently
+  build the tower horizon to accumulate enough independent encounters. A tight route needs the
+  few-white mass shown exp-small from `n ≈ n₀` (not `n ≈ P`). **This is genuinely uncertain**
+  and is a real quantitative improvement to §7, NOT a transcription; the "white frequent"
+  claim asserts the hard part is easy and must be TESTED, not assumed. This is the campaign's
+  live 🟡 frontier.
+
 ## Standing deviations of the formalization from the source (fidelity ledger)
 
 | where | paper | ours | why | ratified |

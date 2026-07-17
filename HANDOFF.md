@@ -1,3 +1,43 @@
+# HANDOFF — big-C campaign, lap 12 (DEEP REFLECTION) — ROUTE RESOLVED → OPTION B 🧘
+
+**Read `DIRECTION.md` RESOLVED banner (top) FIRST — it outranks this file.** The 3-lap
+"transcription-only, awaiting operator" holding pattern is OVER. Route resolved this lap to
+**Option B** (autonomous altitude authority; operator unavailable). Below is superseded lap-11
+transcription detail — kept for method rails, NOT for its "continue X-chase" orders.
+
+## State (branch `explicit-big-c`, all committed, build green)
+
+HEAD after this lap's synthesis commit. `lake build` green (3327 jobs). `#print axioms`
+re-run lap 12: 3 merged headlines `[propext, Classical.choice, Quot.sound]`; pin adds
+`sorryAx`. Exactly **1 real `sorry`** (`Statement.lean:65`, the pin). Differ unaffected
+(no watched statement touched). Hole #4 (C8) confirmed resolved in-tree.
+
+## What lap 12 decided (the whole point)
+
+- **RESOLVED the fired route trigger → Option B.** Full rationale in DIRECTION.md RESOLVED
+  banner + PENDING_WORK `## Reflection — 2026-07-17 (lap 12, deep)`. Short: Option A edits the
+  watched judge-owned pin (out of scope); B keeps `CTao`, is a proof over frozen statements,
+  and is where the real §7 math is. Core destination (Tao's theorem) already reached — the pin
+  is a stretch goal.
+- **Localized the tower** to `Q_polynomial_decay` in `renewal_white_encounters_at`
+  (Bridge.lean:522–691): decay from `hold_weight_expect`, tower `C0=C_polyDecay` is vacuous
+  multiplicative slop (`Q ≤ 1` in range).
+
+## Next actions (Option B — ADDITIVE, do NOT touch the clean headlines)
+
+1. **`Sec7/Bridge.lean`: add `renewal_white_encounters_tight`** — same shape as
+   `renewal_white_encounters_at`, constant `C_renewalWhite_tight A := ((2·C_hold A+2:ℕ):ℝ)^A`
+   (head arm only, no `max`-tower). Copy the small-n arm verbatim from the existing proof;
+   for the large-n arm, keep the two-bridge + `hold_weight_expect` skeleton and leave the
+   tower-elimination as a named sub-`sorry` `renewal_tail_tight`. This raises src `sorry` 1→2
+   (progress). Concrete statement + reduction in PENDING_WORK Reflection.
+2. **Never re-prove the existing `renewal_white_encounters`** (clean headlines depend on it).
+3. **Chip `renewal_tail_tight`** = the `#white` lower-tail estimate beating `few_white_mass_le`'s
+   tower horizon. Smallest probe first; the "white frequent" heuristic is UNVERIFIED — test it.
+4. **Do NOT** continue the X-chase or any tower-ladder transcription (deprecated this lap).
+
+---
+
 # HANDOFF — big-C campaign, lap 11 COMPLETE (C-SURFACE DONE + X-CHASE STARTED, 2026-07-17)
 
 ## State (branch `explicit-big-c`, all committed, build green)

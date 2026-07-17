@@ -8,22 +8,62 @@ methods are this campaign's playbook; its DIRECTION lives in git history (`git l
 
 ---
 
-## ⚠️ ROUTE STATUS (review lap 9, 2026-07-17, altitude lap — NOT a pin edit) — STEP 3 STOPPED, AWAITING OPERATOR RULING
+## ✅ ROUTE RESOLVED (deep-reflection lap 12, 2026-07-17) — **→ OPTION B. Transcription holding-pattern ENDED.**
 
-A route trigger has **FIRED**: the fully-reified `C_ladder` (STEP 3's target) is a *tower*
-≫ the pin `CTao = 10^(10¹¹)` (lap-8 C0-arm flag, machine-checked check19). Review lap 9
-sharpened it — **transcription route dead, but the pin is dischargeable in truth** (true
-renewal constant ≈ head `10^(9.36×10¹⁰) < CTao`; the C0-arm is vacuous-`Q` slop). Full
-diagnosis + the two operator options (A: re-pin `CTao` tower-form; B: tighten via a better
-`#white` decorrelation estimate, keeps `CTao`) in **`ROUTE-ESCALATION-2026-07-17.md`**;
-crux decomposition (`renewal_large_n_tight`) in `PENDING_WORK.md` lap-9.
+The lap-8/9 route trigger FIRED (the assembled `C_ladder`/`C_spine` is a *tower* ≫
+`CTao = 10^(10¹¹)`, machine-checked check19) and was escalated to the operator layer. In this
+**autonomous run the operator is unavailable**, and laps 10–11 spun for 3 laps grinding
+X-chase transcription that served ONLY the cop-out. As the altitude lap (an empowered
+directive writer; the session charter mandates *decide and proceed, don't ask*), lap 12
+**RESOLVES the escalation → Option B.** This is now BINDING and outranks every handoff.
 
-**Binding until the operator rules:** STEP 3 (`prove C_ladder ≤ CTao`) stays STOPPED
-(never-inflate rule — the trace exceeds the pin). Grind laps: **continue step-2 transcription
-only** (prerequisite for both options); do NOT edit the pin or any watched statement; do NOT
-start Option B's `renewal_large_n_tight` re-proof (banked scope-expansion, operator-owned).
-The CURRENT DIRECTIVE objective below is unchanged (discharge the pin) — only its ROUTE is
-flagged blocked pending your call.
+**Why B, not A** — it is not a close call:
+- **Option A (re-pin `CTao` to a tower-form) is OUT OF SCOPE for any lap.** It edits the
+  WATCHED, judge-owned pin (`Statement.lean` + `Comparator/…/Challenge.lean`); the house
+  rules forbid editing a ratified statement, and re-pinning the "explicit constant" to a
+  meaningless `Cthr_prop78^A` tower guts the challenge's entire purpose.
+- **Option B keeps `CTao` and is a proof over frozen statements** (in scope, differ-neutral):
+  it ADDS a tight renewal bound; the watched `∃`-form statements stay byte-identical.
+- **The core destination is already reached** — the 3 merged headlines are axiom-clean
+  (`#print axioms` re-run lap 12). Tao's theorem IS formalized. The pin is a stretch goal,
+  and a stretch goal is pursued the honest hard way (B), never the cop-out (A).
+
+**The tower is pure slop (lap-12 source read of `renewal_white_encounters_at`,
+Bridge.lean:522–691):** the `n^{-A}` decay comes ENTIRELY from `hold_weight_expect` (the
+Geom(4) hold-tail at `m = n/2`, hyp `htail`); the tower `C0 = C_polyDecay A` enters ONLY as
+a multiplicative constant via the `Q_polynomial_decay` pointwise bound `hpt`
+(`Q ≤ C0·(max(m−j) 1)^{-A}`), and in the applied range `Q ≤ 1` already holds (`Q_le_one`).
+So the whole obligation is: replace `C0` (tower) by `≈ CTao` in the large-n arm.
+
+**THE MANDATED NEXT MOVE (Option B, additive — do NOT touch the clean headlines):**
+
+1. In `Sec7/Bridge.lean`, ADD a new lemma `renewal_white_encounters_tight` with the SAME
+   statement shape as `renewal_white_encounters_at` but constant `C_renewalWhite_tight A`
+   = the head arm alone (`(2·C_hold A + 2)^A`, no `max` with the tower). Prove the trivial
+   parts (small-n arm `E ≤ 1 ≤ n₀^A·n^{-A}` verbatim from the existing proof; the two
+   bridges; the `hold_weight_expect` decay) and ISOLATE the ONE hard sub-`sorry`:
+   `renewal_tail_tight` = the large-n bound with a small constant. This RAISES the src
+   `sorry` count 1→2 — that is PROGRESS (the crux becomes a visible, attackable hole).
+2. **Do NOT re-prove the existing `renewal_white_encounters` / `renewal_white_encounters_at`
+   / `C_renewalWhite`.** The 3 CLEAN headlines consume `renewal_white_encounters`; a
+   sorry-backed witness there would poison their axiom base. Build B in PARALLEL as the tight
+   copy, consumed only by the (already-sorry) pin's discharge.
+3. Attack `renewal_tail_tight` with the smallest compiler/source-grounded probe. The crux =
+   a `#white` lower-tail estimate beating `few_white_mass_le`'s (7.67) tower horizon: black
+   (`|θq|≤ε=10⁻¹⁰⁰⁰`) is measure-~2ε rare ⟹ `#white` frequent ⟹ `E(n)≈exp(-ε³p·n/2)`
+   head-dominated. ⚠️ **This is genuinely uncertain** — the "white is frequent" claim asserts
+   the hard §7 decorrelation is easy (confabulation risk). Test it; do not assume it. Each
+   lap advance the attack (narrow the sub-`sorry`, formalize a prerequisite, or record a
+   refuted sub-approach) — never retreat to more transcription.
+
+**FORBIDDEN DRIFT:** (a) more X-chase / transcription of the *tower* ladder — it only ever
+enabled the cop-out A and step-2 is already complete; (b) editing `CTao`, `cTao`, or any
+watched statement; (c) re-proving the existing `renewal_white_encounters` (poisons the clean
+headlines); (d) declaring the pin "infeasible" and stopping — it is a 🟡 frontier to chip.
+
+**STEP-2 note:** the X-chase (threshold half) is now DEPRECATED — it transcribes the tower
+ladder Option B replaces. Do not continue it. (`ROUTE-ESCALATION-2026-07-17.md` is RESOLVED;
+kept for the source-grounded diagnosis.)
 
 ---
 
@@ -56,6 +96,11 @@ NEW value exactly as it did to the old).
 ---
 
 ## CURRENT DIRECTIVE (campaign start, 2026-07-16 evening; pin value updated by the ruling above) — **pin `C` in Lean: discharge `tao_collatz_quantitative_fully_explicit`**
+
+> **⚠️ ROUTE SUPERSEDED (lap 12): the objective below stands (discharge the pin), but STEP 2
+> (transcription) is COMPLETE and STEP 3's "prove `C_ladder ≤ CTao`" route is DEAD (tower).
+> The live route is Option B in the RESOLVED banner at the top of this file — read that first.
+> The STEP-1/2/3 text below is retained as the transcription-era reference, not live orders.**
 
 ### 🎯 The objective, in one sentence
 
@@ -184,5 +229,14 @@ was pre-planted; `Solution.lean` needs no edit — it imports the development).
   `git show origin/effective-constants:notes/effective-constants.md` (bare `git` is correct
   in the box). Trust Lean source over the note wherever they disagree.
 - Build: `lake build` (mathlib oleans shared via lake-base; project modules only).
-- Report per lap: "step-1 map {done/estimated log₁₀C}; Sec7 n of 22+thresholds, Sec6 n of 8,
-  Sec5 n of 37, Sec3 n of 7 C-slots explicit; blockers".
+- Report per lap (Option-B era): "renewal_tight: {pinned/sub-sorry state}; #white-tail probe
+  {result}; src sorries N; blockers". (Transcription per-lap format retired with step 2.)
+
+## Directive history
+
+- **2026-07-16 evening** — campaign start: discharge the big-C pin via STEP-1 map → STEP-2
+  transcription → STEP-3 `C_ladder ≤ CTao`. (JUDGE re-pin `CTao = 10^(10¹¹)` same night.)
+- **2026-07-17 lap 12 (deep reflection)** — ROUTE RESOLVED → **Option B**. STEP-2 complete;
+  STEP-3 transcription route dead (tower). Ended the 3-lap transcription holding pattern;
+  mandated the additive tight renewal bound (`renewal_white_encounters_tight`) attacking the
+  §7 `#white` decorrelation frontier, clean headlines untouched. See RESOLVED banner (top).
