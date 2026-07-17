@@ -6,10 +6,10 @@ entries in `PENDING_WORK.md`.
 
 ## State (branch `explicit-big-c`, all committed, build green)
 
-- HEAD ≈ `071e8b4` + ledger commits. Differ `tools/tao_stmt_diff.py fabea6f HEAD`:
+- HEAD: lap-4 series through `67c580f` (X10b). Always diff vs re-pin commit `fabea6f`. Differ `tools/tao_stmt_diff.py fabea6f HEAD`:
   35/35 character-identical (always diff vs the re-pin commit `fabea6f`, not the tool's
   default). check_blueprint.py all green incl. check18 (mirrors the new symbolic defs).
-- **Done so far (Sec7 ≈ 11 of 22+thresholds):**
+- **Done so far (Sec7 ≈ 21 of 22+thresholds — see PENDING_WORK.md lap-4 for the new defs):**
   - `hold_weight_expect` (ladder-dominant node): `deltaBW/cHold/K_geom/T_powGeom/
     K_hold/M1_hold/T_hold/C_hold` + core + `_explicitC` + delegation (Monotone.lean).
   - `Q_white_case1_explicitC` (at `C_hold A`); combinator cores `prop_7_8_at`

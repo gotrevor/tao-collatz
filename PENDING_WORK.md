@@ -175,6 +175,38 @@ and on up `few_white_mass_le` → `damping_column_mass_le` → `damped_iter_expe
 Fourier passthrough + `renewal_white_encounters` wiring, and the estar/markov/
 many_triangles leaves.
 
+### Lap 4 (2026-07-17) — (7.61) tails + X10a/X10b + Gweight-ℤ engines explicit ✅
+
+- `fpDist_col_le` → `C_fpCol = C_fpLocation·e^{−c}/(1−e^{−c})` at `c = c_fpLocation
+  = 1/12800` (FpLocation.lean; geometric factor ≈ 1.3e4, ladder-negligible).
+- ManyTriangles.lean: `K_rowG c = 10 + 2/(1−e^{−c}) + 4/c` (row engine);
+  `c_fpColDev/C_fpColDev` (`fpDist_col_dev`, rate `min(cL²/2, cL/2)`, constant
+  `CL·K_rowG(cL/2)·geo`); `c_fpColTail = min(c_fpColDev,1/2000)`,
+  `C_fpColTail = C_fpColDev+1`; `c_fpHeight = c_fpLocation/2`,
+  `C_fpHeight = C_fpLocation·K_rowG(c_fpLocation)·geo(c/2)`;
+  `c_fpHeightTail = min(c_fpHeight/2, 1/6250)`, `C_fpHeightTail = C_fpHeight+1`.
+  (`holdSum_col_tail`/`holdSum_height_tail` carry inline-explicit constants — nothing owed.)
+- Case3.lean: `T_colTail A P = 400(P+1)+32+T_expRpow A (c_fpColTail/16960)
+  (1/(4·C_fpColTail))` (`col_tail_mass_le`, `_at` sibling via core).
+- X10a: `C_apexProx = 2`, `S_apexProx = 10^8` (`encounter_apex_proximity_rpow_at`).
+- Gweight-ℤ chain: `K_intG c = 2·K_rowG c` through `tsum_int_Gweight_le` →
+  `separated_Gweight_tsum_le` → `banded_Gweight_tsum_le` (constant passes through).
+- X10b: `C_encSep = 12·C_fpCol + 120·C_fpCol·K_intG c_fpLocation`, `S₀ = 0`
+  (`encounter_separated_sum_explicitC`).
+- All via the `_core` rail; originals byte-identical (differ 35/35 each commit).
+- Census: Sec7 ≈ 21 of 22+thresholds explicit.
+
+**Next attack:** `triangle_encounter_le_rpow` (ManyTriangles.lean:~5123) — all four
+inputs now explicit (`fpDistPlus_height_tail`, `fpDistPlus_col_tail`,
+`encounter_apex_proximity_rpow`, `encounter_separated_sum`); witness shape
+`⟨C, c, A₀⟩` over those. Then `triangle_encounter_le` assembly, then the Case3
+`few_white` cluster (`estar_union_le_rpow`, `reaches_fewWhite_mass_le(_ten)`,
+`fstar_markov`, `few_white_estar/reach_mass_le`, `many_triangles_white` at
+`fpDist_white_exit_deep`) → `few_white_mass_le` → `damping_expectation_le` →
+`damping_column_mass_le` → `damped_iter_expectation_le` → `Q_black_edge_case3` →
+wire `C2` into `prop_7_8_at`. Then `renewal_white_encounters` + Fourier passthrough,
+then Sec6 (8 slots), Sec5 (37), Sec3 (7).
+
 ## Optimization observations
 
 - `hold_weight_expect` (`Sec7/Monotone.lean:246`): the statement demands
