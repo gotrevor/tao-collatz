@@ -414,3 +414,16 @@ B1 `perNHarmonic_eq_harmZfine_approx_explicit` → `harmonic_to_Z` → stabiliza
 FirstPassage/ApproxFormula/Sec3/Syracuse/Prob). It is prerequisite for BOTH options and is
 the only clearly in-scope Lean work. Do NOT touch the pin or any watched statement; do NOT
 start `renewal_large_n_tight` without a ruling.
+
+**B1 constant chain (in progress, all SMALL numerals — this Sec5 mixing chain is unrelated to
+the epsBW blow-up):** bottom-up `geomHalf_tail_bound` (C=2) → `good_tuple_whp_iid` (2·Ct=4) →
+`syracZ_sub_perNGoodMass_bound` (=C_goodWhp) → `perNHarmonic_eq_harmZfine_approx` (4·Cw=16).
+The cutoffs cascade deep (`good_tuple_whp_iid`'s x₀ ← `log_rpow_mul_exp_neg_le_one`/
+`Gweight_prefix_decay`) but feed the x₀-threshold, NOT CTao → **pin the C-slot, keep the
+cutoff existential** for these nodes.
+- **DONE (lap 9, `LocalInstances.lean`):** `C_geomTail := 2`, `geomHalf_tail_bound_atC`
+  (pins both c=1/400 and C=2); `_cExplicit` + ratified `geomHalf_tail_bound` delegate.
+- **NEXT:** `good_tuple_whp_iid_atC` — `C_goodWhp := 2·C_geomTail` (=4), body copies the
+  ∃-form but obtains from `geomHalf_tail_bound_atC` (Ct=2 concrete) so the `2·Ct` witness is
+  `4`; keep `∃ x₀`. Then `syracZ_sub…_atC` (delegates), then the `perNHarmonic` big-C sibling
+  `C_harmZfine := 4·C_goodWhp` (=16) that `harmonic_to_Z` will consume.

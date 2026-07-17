@@ -541,17 +541,35 @@ noncomputable def c_geomTail : ℝ := 1 / 400
 
 theorem c_geomTail_pos : 0 < c_geomTail := by norm_num [c_geomTail]
 
-/-- `geomHalf_tail_bound` with the `c`-slot pinned to `c_geomTail`; only `C` stays
-existential. Sibling of the ratified `geomHalf_tail_bound`, which delegates here. -/
-theorem geomHalf_tail_bound_cExplicit :
-    ∃ C > (0 : ℝ), ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
+/-- The `C`-witness of `geomHalf_tail_bound` (big-C campaign, step 2): the sub-Gaussian
+tilt gives the union-bound constant `C = 2`.  Bottom of the Sec5 B1 constant chain
+(`good_tuple_whp_iid` uses `2·C_geomTail`; a small numeral — this mixing chain is unrelated
+to the `epsBW` blow-up). -/
+noncomputable def C_geomTail : ℝ := 2
+
+theorem C_geomTail_pos : 0 < C_geomTail := by norm_num [C_geomTail]
+
+/-- `geomHalf_tail_bound` with BOTH slots pinned (`c := c_geomTail`, `C := C_geomTail`);
+the `_at` form (big-C campaign, step 2).  `geomHalf_tail_bound_cExplicit` and the ratified
+`geomHalf_tail_bound` both delegate here. -/
+theorem geomHalf_tail_bound_atC :
+    ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
       (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0)
-        ≤ C * Gweight (1 + n) (c_geomTail * lam) := by
-  refine ⟨2, by norm_num, fun n lam hlam => ?_⟩
-  unfold c_geomTail
+        ≤ C_geomTail * Gweight (1 + n) (c_geomTail * lam) := by
+  intro n lam hlam
+  unfold C_geomTail c_geomTail
   exact iidSum_nat_tail_of_quad geomHalf 2
     (fun t hlo hhi => le_trans (tiltZ_geomHalf_le_quad hlo hhi)
       (ENNReal.ofReal_le_ofReal (by nlinarith [sq_nonneg t]))) n lam hlam
+
+/-- `geomHalf_tail_bound` with the `c`-slot pinned to `c_geomTail`; only `C` stays
+existential. Sibling of the ratified `geomHalf_tail_bound`, which delegates here.
+Now delegates to the fully-pinned `geomHalf_tail_bound_atC`. -/
+theorem geomHalf_tail_bound_cExplicit :
+    ∃ C > (0 : ℝ), ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
+      (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0)
+        ≤ C * Gweight (1 + n) (c_geomTail * lam) :=
+  ⟨C_geomTail, C_geomTail_pos, geomHalf_tail_bound_atC⟩
 
 /-- **Lemma 2.2(ii) for `Geom(2)`** (paper p.15, displayed instance):
 `P(||Geom(2)_n| − 2n| ≥ λ) ≪ G_n(cλ)`. -/
