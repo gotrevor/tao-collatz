@@ -1544,18 +1544,28 @@ noncomputable def c_edgeMass : ℝ := 1/5
 
 theorem c_edgeMass_pos : 0 < c_edgeMass := by norm_num [c_edgeMass]
 
-/-- Sibling of `passtime_edge_mass` with the `c`-slot pinned to `c_edgeMass`; `C` and the
-threshold stay existential. The original delegates here. -/
-theorem passtime_edge_mass_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The (5.16) edge-mass constant: `2/cD` at `cD = 1/10000` (`windowMass_ge_clog_at`)
+— big-C campaign, step 2. -/
+noncomputable def C_edgeMass : ℝ := 2 / (1 / 10000)
+
+theorem C_edgeMass_pos : 0 < C_edgeMass := by unfold C_edgeMass; norm_num
+
+/-- Sibling of `passtime_edge_mass` with the `c`/`C` slots pinned at
+(`c_edgeMass`, `C_edgeMass`) — the `_atC` form (big-C campaign, step 2), cutoff
+existential. -/
+theorem passtime_edge_mass_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect (Set.indicator (Edge x y) 1)
-          ≤ C * (Real.log x) ^ (-c_edgeMass) := by
+          ≤ C_edgeMass * (Real.log x) ^ (-c_edgeMass) := by
   classical
   obtain ⟨xn, hnon⟩ := logWindow_nonempty_of_large
-  obtain ⟨cD, xD, hcD, hDlb⟩ := windowMass_ge_clog
-  rw [show c_edgeMass = 1/5 from rfl]
-  refine ⟨2/cD, max (max ((2:ℝ) ^ (2000:ℝ)) xn) xD, by positivity,
+  have hDlb := windowMass_ge_clog_at
+  set cD : ℝ := (1 / 10000 : ℝ) with hcDdef
+  have hcD : 0 < cD := by rw [hcDdef]; norm_num
+  set xD : ℝ := (2:ℝ) ^ (2000:ℝ) with hxDdef
+  rw [show c_edgeMass = 1/5 from rfl, show C_edgeMass = 2/cD from rfl]
+  refine ⟨max (max ((2:ℝ) ^ (2000:ℝ)) xn) xD,
     fun x hx y hy => ?_⟩
   have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxn : xn ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -1708,6 +1718,17 @@ theorem passtime_edge_mass_explicit :
     _ ≤ 2 / cD * Real.log x ^ (-(1/5):ℝ) * windowMass y (y ^ alpha) :=
         mul_le_mul_of_nonneg_left (hDlb x hxD y hy) (by positivity)
 
+/-- Sibling of `passtime_edge_mass` with the `c`-slot pinned to `c_edgeMass`; `C` and the
+threshold stay existential. The original delegates here.  Now delegates to
+`passtime_edge_mass_atC` (big-C campaign, step 2: `C := C_edgeMass`). -/
+theorem passtime_edge_mass_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator (Edge x y) 1)
+          ≤ C * (Real.log x) ^ (-c_edgeMass) := by
+  obtain ⟨x₀, h⟩ := passtime_edge_mass_atC
+  exact ⟨C_edgeMass, x₀, C_edgeMass_pos, h⟩
+
 /-- **Paper (5.16), window term.**  On the event that `N_y` *does* pass, the passage time nonetheless
 lands outside `I_y` only with probability `≪ log^{-c} x`.  Reduction (proved here): the event
 `{passes ∧ T_x ∉ I_y}` is contained (up to the even-support null set) in `{¬ good tuple} ∪ Edge`, so
@@ -1728,25 +1749,37 @@ noncomputable def c_passtimeInner : ℝ := min c_goodTupleDev c_edgeMass
 theorem c_passtimeInner_pos : 0 < c_passtimeInner :=
   lt_min c_goodTupleDev_pos c_edgeMass_pos
 
-/-- Sibling of `passtime_window_inner` with the `c`-slot pinned to `c_passtimeInner`; `C` and
-the threshold stay existential. The original delegates here. -/
-theorem passtime_window_inner_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The (5.16) inner-window constant: `C_goodTupleDev + C_edgeMass` (big-C campaign,
+step 2). -/
+noncomputable def C_passtimeInner : ℝ := C_goodTupleDev + C_edgeMass
+
+theorem C_passtimeInner_pos : 0 < C_passtimeInner :=
+  add_pos C_goodTupleDev_pos C_edgeMass_pos
+
+/-- Sibling of `passtime_window_inner` with the `c`/`C` slots pinned at
+(`c_passtimeInner`, `C_passtimeInner`) — the `_atC` form (big-C campaign, step 2),
+cutoff existential. -/
+theorem passtime_window_inner_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1)
-          ≤ C * (Real.log x) ^ (-c_passtimeInner) := by
+          ≤ C_passtimeInner * (Real.log x) ^ (-c_passtimeInner) := by
   classical
-  obtain ⟨C1, x1, hC1, hgoodwhp⟩ := approx_good_tuple_whp_explicit
-  obtain ⟨C2, x2, hC2, hmass⟩ := passtime_edge_mass_explicit
+  obtain ⟨x1, hgoodwhp⟩ := approx_good_tuple_whp_atC
+  obtain ⟨x2, hmass⟩ := passtime_edge_mass_atC
   obtain ⟨x3, hx3one, hincl⟩ := passtime_edge_of_good
+  set C1 : ℝ := C_goodTupleDev with hC1def
+  set C2 : ℝ := C_edgeMass with hC2def
+  have hC1 : 0 < C1 := C_goodTupleDev_pos
+  have hC2 : 0 < C2 := C_edgeMass_pos
   set c1 : ℝ := c_goodTupleDev with hc1def
   set c2 : ℝ := c_edgeMass with hc2def
   have hc1 : 0 < c1 := c_goodTupleDev_pos
   have hc2 : 0 < c2 := c_edgeMass_pos
-  rw [show c_passtimeInner = min c1 c2 from rfl]
-  refine ⟨C1 + C2, max (max (max x1 x2) x3) (Real.exp 1),
-    by positivity, fun x hx y hy => ?_⟩
+  rw [show c_passtimeInner = min c1 c2 from rfl,
+    show C_passtimeInner = C1 + C2 from rfl]
+  refine ⟨max (max (max x1 x2) x3) (Real.exp 1), fun x hx y hy => ?_⟩
   have hx1 : x1 ≤ x :=
     le_trans (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) (le_max_left _ _)) hx
   have hx2 : x2 ≤ x :=
@@ -1833,6 +1866,18 @@ theorem passtime_window_inner_explicit :
         add_le_add hmono1 hmono2
     _ = (C1 + C2) * (Real.log x) ^ (-(min c1 c2)) := by ring
 
+/-- Sibling of `passtime_window_inner` with the `c`-slot pinned to `c_passtimeInner`; `C` and
+the threshold stay existential. The original delegates here.  Now delegates to
+`passtime_window_inner_atC` (big-C campaign, step 2: `C := C_passtimeInner`). -/
+theorem passtime_window_inner_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1)
+          ≤ C * (Real.log x) ^ (-c_passtimeInner) := by
+  obtain ⟨x₀, h⟩ := passtime_window_inner_atC
+  exact ⟨C_passtimeInner, x₀, C_passtimeInner_pos, h⟩
+
 theorem passtime_window_inner :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
@@ -1855,21 +1900,37 @@ Equivalently the complement `{N : ¬(passes ∧ T_x ∈ I_y)}` has probability `
 `first_passage_nonescape` (C7, paper (1.19)/(5.5), **proved axiom-clean**), folded into `log^{-c} x`
 via `escape_to_log`.  The second term is `passtime_window_inner` (the integral-test window piece).
 This lemma **wires C7 into C8** — the whole of C8's dependence on C7 — leaving only the window
-integral test open. -/
-theorem approx_passtime_window_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+integral test open.
+
+The `C`-slot: `C_valSumGeom + C_passtimeInner` — the reified C7 constant plus the inner
+window constant (big-C campaign, step 2). -/
+noncomputable def C_passtimeWindow : ℝ := C_valSumGeom + C_passtimeInner
+
+theorem C_passtimeWindow_pos : 0 < C_passtimeWindow :=
+  add_pos C_valSumGeom_pos C_passtimeInner_pos
+
+/-- Sibling of `approx_passtime_window` with the `c`/`C` slots pinned at
+(`c_passtimeWindow`, `C_passtimeWindow`) — the `_atC` form (big-C campaign, step 2),
+cutoff existential. -/
+theorem approx_passtime_window_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} 1)
-          ≤ C * (Real.log x) ^ (-c_passtimeWindow) := by
-  obtain ⟨C₁, x₁, hC₁, hesc⟩ := first_passage_nonescape_explicit
-  obtain ⟨C₂, x₂, hC₂, hwin⟩ := passtime_window_inner_explicit
+          ≤ C_passtimeWindow * (Real.log x) ^ (-c_passtimeWindow) := by
+  obtain ⟨x₁, hesc⟩ := first_passage_nonescape_atC
+  obtain ⟨x₂, hwin⟩ := passtime_window_inner_atC
+  set C₁ : ℝ := C_valSumGeom with hC1def
+  set C₂ : ℝ := C_passtimeInner with hC2def
+  have hC₁ : 0 < C₁ := C_valSumGeom_pos
+  have hC₂ : 0 < C₂ := C_passtimeInner_pos
   set c₁ : ℝ := c_valSumTail with hc1def
   set c₂ : ℝ := c_passtimeInner with hc2def
   have hc₁ : 0 < c₁ := c_valSumTail_pos
   have hc₂ : 0 < c₂ := c_passtimeInner_pos
-  rw [show c_passtimeWindow = min c₁ c₂ from rfl]
-  refine ⟨C₁ + C₂, max (max x₁ x₂) (Real.exp 1), by positivity,
+  rw [show c_passtimeWindow = min c₁ c₂ from rfl,
+    show C_passtimeWindow = C₁ + C₂ from rfl]
+  refine ⟨max (max x₁ x₂) (Real.exp 1),
     fun x hx y hy => ?_⟩
   have hx1 : x₁ ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hx2 : x₂ ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -1909,6 +1970,18 @@ theorem approx_passtime_window_explicit :
     _ ≤ C₁ * (Real.log x) ^ (-(min c₁ c₂)) + C₂ * (Real.log x) ^ (-(min c₁ c₂)) :=
         add_le_add (mul_le_mul_of_nonneg_left hA hC₁.le) (mul_le_mul_of_nonneg_left hB hC₂.le)
     _ = (C₁ + C₂) * (Real.log x) ^ (-(min c₁ c₂)) := by ring
+
+/-- Sibling of `approx_passtime_window` with the `c`-slot pinned to `c_passtimeWindow`;
+the original delegates here.  Now delegates to `approx_passtime_window_atC` (big-C
+campaign, step 2: `C := C_passtimeWindow`). -/
+theorem approx_passtime_window_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} 1)
+          ≤ C * (Real.log x) ^ (-c_passtimeWindow) := by
+  obtain ⟨x₀, h⟩ := approx_passtime_window_atC
+  exact ⟨C_passtimeWindow, x₀, C_passtimeWindow_pos, h⟩
 
 /-! ## C8 assembly: the `first_passage_approx` (5.8) chain, decomposed
 
