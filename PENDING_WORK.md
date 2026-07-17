@@ -554,3 +554,42 @@ record it and the true obstruction; do not weaken the pin or inflate a def.
 
 **Route verdict:** trigger FIRED, escalation RESOLVED this lap (autonomous authority) →
 route CHANGED to Option B. Not "direction KEPT."
+
+### Lap 12 (grind, same day) — crux pinned + decisive route-test on `renewal_tail_tight`
+
+**Pinned** `renewal_white_encounters_tight` (`Bridge.lean`, `548dfc5`): small-`n` arm proved,
+large-`n` arm = the named crux `sorry`. Then ran the directive's mandated first probe (source
+read of `Q`, `Q_polynomial_decay`, `θq`) to test Option-B feasibility. Findings:
+
+**The exact reduction chain (source-grounded):**
+`renewal_tail_tight` (large-`n` arm, `n ≥ n₀`) ⟸ **tight `Q_polynomial_decay`**
+`Q (n/2) (whiteSet n ξ) ε j l ≤ C_Qtight A · (max(n/2−j) 1)^{-A}` with a HEAD-sized
+`C_Qtight A` (`C_Qtight·exp(ε³/2)·3^A ≤ n₀^A`) ⟸ a **white-frequency / few-white lower-tail
+estimate** beating `few_white_mass_le`'s tower horizon. The large-`n` bridge assembly
+(`bridge_vector` + `bridge_renewal` + `hold_weight_expect`) in `renewal_white_encounters_at`
+is REUSABLE verbatim with `C0 := C_Qtight` — the ONLY new content is the tight Q bound.
+Def `Q` (Holding.lean:201): `Q = 1` past strip, else `exp(-ε³·1_W(j,l))·∑_d hold(d)·Q(j+d.1,…)`
+— accumulates `exp(-ε³)` per white point over `half−j` steps.
+
+**Feasibility CONFIRMED (the true threshold sits inside the applied range):** tight `Q ≤
+n₀^A·(m−j)^{-A}` (m=n/2) ⟺ `#white ≥ (A/ε³)·log((m−j)/n₀)` for `m−j > n₀`. With `#white ≈
+p·(m−j)` (p an ε-independent Pascal `b_j=3` fraction) this holds for `m−j ≥ ~10³⁰⁰⁸`, and the
+applied `m−j ≈ n/2 ≥ n₀ ≈ 10³⁰¹⁶ > 10³⁰⁰⁸`. So the statement is TRUE (not born-wrong) and the
+tower is genuinely slop. The whole obligation is a rigorous `#white ≳ p·(m−j)` off an exp-rare set.
+
+**Sub-approach REFUTED (deterministic run-length shortcut):** hoped `θq_succ_j` (`θq(j+1)=9·θq(j)+k`;
+for black, `|θq|≤ε=10⁻¹⁰⁰⁰ ⟹ 9|θq|<½ ⟹ θq(j+1)=9·θq(j)` exactly) bounds black-run length, giving
+a cheap deterministic `#white` lower bound. It FAILS: `θq` can be as small as the resolution floor
+`~3^{-n}`, so a ×9 growth run from `3^{-n}` to `ε` lasts `~log₉(ε·3^n) ≈ n/2` steps — an entire
+walk can be one black run. #white-frequency is genuinely probabilistic/equidistribution (needs the
+random hold-walk to spread `θq` off the thin black set) — exactly Tao's §7 content, done tighter.
+So there is NO cheap route around the decorrelation; the crux is real §7 mathematics (a 🟡 frontier).
+
+**NEXT-LAP build plan (concrete):** (1) add `C_Qtight A` def + `Q_polynomial_decay_tight` (sorry)
+in `Bridge.lean`; (2) discharge `renewal_tail_tight` by copying the `renewal_white_encounters_at`
+large-`n` block with `C0 := C_Qtight A` and a glue lemma `C_Qtight·exp(ε³/2)·3^A ≤ n₀^A` (via
+`div_mul_cancel`-style, denominator `>0`) — this CLOSES `renewal_white_encounters_tight` modulo
+`Q_polynomial_decay_tight`, converting the opaque crux into proven plumbing + one clean analytic
+sorry. (3) Then the real frontier: prove `Q_polynomial_decay_tight` via a poly-horizon white-count.
+Mind the constant tightness in (1) — pick `C_Qtight` with a safety factor over `n₀^A/(exp·3^A)` so
+the pin isn't born-wrong-by-tightness (headroom to CTao is 6.4%, ample).
