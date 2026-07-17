@@ -2038,17 +2038,22 @@ noncomputable def C_passtimeWindow : ℝ := C_valSumGeom + C_passtimeInner
 theorem C_passtimeWindow_pos : 0 < C_passtimeWindow :=
   add_pos C_valSumGeom_pos C_passtimeInner_pos
 
-/-- Sibling of `approx_passtime_window` with the `c`/`C` slots pinned at
-(`c_passtimeWindow`, `C_passtimeWindow`) — the `_atC` form (big-C campaign, step 2),
-cutoff existential. -/
-theorem approx_passtime_window_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `approx_passtime_window` cutoff (X-chase): witness copied verbatim from the `_atC`
+proof at the explicit upstream names. -/
+noncomputable def X_passtimeWindow : ℝ :=
+  max (max X_firstPassNonescape X_passtimeInner) (Real.exp 1)
+
+/-- Universal-cutoff form of `approx_passtime_window_atC` (X-chase). -/
+theorem approx_passtime_window_atCX :
+    ∀ x : ℝ, X_passtimeWindow ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} 1)
           ≤ C_passtimeWindow * (Real.log x) ^ (-c_passtimeWindow) := by
-  obtain ⟨x₁, hesc⟩ := first_passage_nonescape_atC
-  obtain ⟨x₂, hwin⟩ := passtime_window_inner_atC
+  have hesc := first_passage_nonescape_atCX
+  have hwin := passtime_window_inner_atCX
+  set x₁ : ℝ := X_firstPassNonescape with hx₁def
+  set x₂ : ℝ := X_passtimeInner with hx₂def
   set C₁ : ℝ := C_valSumGeom with hC1def
   set C₂ : ℝ := C_passtimeInner with hC2def
   have hC₁ : 0 < C₁ := C_valSumGeom_pos
@@ -2058,9 +2063,9 @@ theorem approx_passtime_window_atC :
   have hc₁ : 0 < c₁ := c_valSumTail_pos
   have hc₂ : 0 < c₂ := c_passtimeInner_pos
   rw [show c_passtimeWindow = min c₁ c₂ from rfl,
-    show C_passtimeWindow = C₁ + C₂ from rfl]
-  refine ⟨max (max x₁ x₂) (Real.exp 1),
-    fun x hx y hy => ?_⟩
+    show C_passtimeWindow = C₁ + C₂ from rfl,
+    show X_passtimeWindow = max (max x₁ x₂) (Real.exp 1) from rfl]
+  intro x hx y hy
   have hx1 : x₁ ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hx2 : x₂ ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
@@ -2099,6 +2104,15 @@ theorem approx_passtime_window_atC :
     _ ≤ C₁ * (Real.log x) ^ (-(min c₁ c₂)) + C₂ * (Real.log x) ^ (-(min c₁ c₂)) :=
         add_le_add (mul_le_mul_of_nonneg_left hA hC₁.le) (mul_le_mul_of_nonneg_left hB hC₂.le)
     _ = (C₁ + C₂) * (Real.log x) ^ (-(min c₁ c₂)) := by ring
+
+/-- ∃-form of `approx_passtime_window_atCX` (X-chase: `x₀ := X_passtimeWindow`). -/
+theorem approx_passtime_window_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | ¬ (passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∈ Iy x y)} 1)
+          ≤ C_passtimeWindow * (Real.log x) ^ (-c_passtimeWindow) :=
+  ⟨X_passtimeWindow, approx_passtime_window_atCX⟩
 
 /-- Sibling of `approx_passtime_window` with the `c`-slot pinned to `c_passtimeWindow`;
 the original delegates here.  Now delegates to `approx_passtime_window_atC` (big-C

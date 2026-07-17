@@ -1138,3 +1138,8 @@ is odd, and the pin is branch-only so retiring is free).
 - `X_edgeOfGood := exp 100000` (`passtime_edge_of_good_atX`, heartbeat shield kept on the
   big theorem) + `X_passtimeInner` / `passtime_window_inner_atCX`; delegates in place.
   Audit 8/38, next `approx_passtime_window_atCX`.
+
+### Successor lap 6 (2026-07-17) — phase 2 entry 5/13
+
+- `X_passtimeWindow` + `approx_passtime_window_atCX`; `_atC` delegates. Audit 9/38,
+  next `first_passage_window_reduce_atCX`.
