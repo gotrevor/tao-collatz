@@ -8,7 +8,35 @@ methods are this campaign's playbook; its DIRECTION lives in git history (`git l
 
 ---
 
-## CURRENT DIRECTIVE (campaign start, 2026-07-16 evening) — **pin `C` in Lean: discharge `tao_collatz_quantitative_fully_explicit`**
+## JUDGE RULING (2026-07-16 late evening) — lap-1 JUDGE-FLAG acknowledged; `CTao` re-pinned at `10^(10¹¹)`; steps 2/3 are LIVE 🟢
+
+The lap-1 flag is **upheld**: the trace and the statement-forced floor were verified
+independently host-side (arithmetic re-derived from scratch; the `epsBW`/`hold_weight_expect`/
+`renewal_white_encounters`/`mainDecayExponent` hops read against source; check17 green).
+The original pin's exponent sizing missed `M1`'s `1/δ ≈ 2×10³⁰⁰⁰` factor, and the floor
+argument shows no proof over the frozen tower fits under `10^(10⁹)` — the miss was in the
+pin's VALUE (operator sizing), not in the tower or the campaign design. Resolution:
+
+- **`CTao := 10 ^ (100000000000 : ℕ)` (= `10^(10¹¹)`) in BOTH pin files** — done in the
+  re-pin commit (`git log --grep 'JUDGE re-pin'`). Exponent headroom over the traced
+  ladder ≈ 6.1×10⁹ (~6.5%), i.e. ~195 digits of slack on `n₀` (slack on `log₁₀ n₀`
+  amplifies by `×B`) — orders beyond any plausible log-arithmetic proof slop.
+- **check17 now asserts the GO** (`ladder < 0.95 × 10¹¹`) and keeps the lap-1 finding
+  (ladder and floor vs the old pin) as machine-checked record.
+- **Differ baseline advances to the re-pin commit** — see the hard-rails note below.
+- Options (ii)/(iii) — shrinking `epsBW`, reshaping `hold_weight_expect`, lowering
+  `caConst` — are statement/def surgery on the proven tower: **out of scope for this
+  campaign**, banked as a candidate follow-up ("tighten-C") for after discharge. Step 2's
+  symbolic-def scaffolding is exactly what such a campaign would build on, so nothing is
+  lost by transcribing first. Keep reporting optimization observations.
+
+**Steps 2 and 3 are unblocked. Resume at step 2, bottom-up, per the directive below**
+(read `10^(10¹¹)` wherever it says the pin; the never-inflate/STOP rule applies to the
+NEW value exactly as it did to the old).
+
+---
+
+## CURRENT DIRECTIVE (campaign start, 2026-07-16 evening; pin value updated by the ruling above) — **pin `C` in Lean: discharge `tao_collatz_quantitative_fully_explicit`**
 
 ### 🎯 The objective, in one sentence
 
@@ -17,7 +45,7 @@ Discharge the `sorry` on the PRE-PLANTED, JUDGE-OWNED pin (already in
 you write the PROOF, never the statement):
 
 ```lean
-noncomputable def CTao : ℝ := 10 ^ (1000000000 : ℕ)
+noncomputable def CTao : ℝ := 10 ^ (100000000000 : ℕ)
 
 theorem tao_collatz_quantitative_fully_explicit :
     ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
@@ -26,9 +54,10 @@ theorem tao_collatz_quantitative_fully_explicit :
 
 `CTao` is a deliberate ROUND UPPER BOUND, not the assembled value. The statement WEAKENS as
 `C` grows (`1 - C/(log N₀)^c` only shrinks), so any `C_ladder ≤ CTao` inequality over the
-development's assembled constant discharges it. Operator's sizing: the assembled constant is
-estimated `≈ 10^(2–3×10⁸)` — dominated by `(2·C1+2)^𝔡 · 40^𝔡` with `𝔡 = mainDecayExponent 3.7
-= 3.7 + 6700²·ln 2 + 3 ≈ 3.11×10⁷` — so `10^(10⁹)` has ~3× headroom in the exponent.
+development's assembled constant discharges it. Sizing (post-ruling, step-1-traced): the
+assembled constant is `≈ 10^(9.39×10¹⁰)` — dominated by `n₀^𝔡` with `𝔡 = mainDecayExponent
+3.7 ≈ 3.11×10⁷` and `n₀ ≈ 10^3016` (the `1/δ` in `hold_weight_expect`'s witness) — so
+`10^(10¹¹)` has ≈ 6.1×10⁹ exponent headroom (~195 digits of slack on `n₀`).
 **If the traced ladder threatens to EXCEED `CTao`: STOP that thread and `JUDGE-FLAG:` with
 the trace. Never inflate the pin — it is not yours to edit, in either file.**
 
@@ -97,9 +126,11 @@ was pre-planted; `Solution.lean` needs no edit — it imports the development).
 
 - **Never edit a ratified statement.** `tools/tao_stmt_diff.py` per commit; the WATCHED set
   now includes `cTao`, `CTao` (def VALUES are pinned, not just types), both `explicit`
-  theorems, and `Comparator/TaoCollatz/Challenge.lean` is in its search scope. ⚠️ The two
-  newest pins were born in this campaign's setup commit — run the differ against that
-  commit or later (vs `origin/main` they report "missing in old", which is expected).
+  theorems, and `Comparator/TaoCollatz/Challenge.lean` is in its search scope. ⚠️ `CTao`'s
+  value was changed ONCE, by the judge (the re-pin commit:
+  `git log --grep 'JUDGE re-pin' -1`) — run the differ against that commit or later
+  (vs the setup commit it reports the `CTao` value change, vs `origin/main` the pins are
+  "missing in old"; both are expected).
 - **Comparator/ and `formalization.yaml` are judge-owned. Do not touch them.** The
   challenge entry is already planted; there is nothing for a lap to do there.
 - **`comparator` CI is red until done — that is the design.** It flips green exactly when

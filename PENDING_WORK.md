@@ -10,7 +10,8 @@ history of this file.)*
 - [x] **Step 1 — check17 numeric mirror + the full C-ladder map** (value + file:line per
       node; report estimated `log₁₀ C_ladder` vs the pin's `10⁹`) — **DONE lap 1:
       `log₁₀ C_ladder ≈ 9.39×10¹⁰ > 10⁹` ⟹ NO-GO, JUDGE-FLAGGED below; steps 2/3 halted
-      per DIRECTION's never-inflate rule**
+      per DIRECTION's never-inflate rule** — *resolved by the JUDGE RULING below
+      (re-pin `10^(10¹¹)`); steps 2/3 LIVE against the new pin*
 - [ ] **Step 2 — de-existentialize the C-slots + feeding thresholds, bottom-up**
       (Sec7 22 + thresholds → Sec6 8 → Sec5 37 → Sec3 7 → Syracuse 1 → Prob 1)
 - [ ] **Step 3 — `C_ladder ≤ CTao` discharge, Statement.lean sorry closed, axiom gate
@@ -78,6 +79,30 @@ judge-owned; for sizing reference: the floor scales as `(3000 + log₁₀(2B))·
 traced ladder with ~6% exponent headroom (tight; `10^(10^12)` is safe); (ii) shrinking
 `epsBW` (ε = 10⁻¹⁰ would give floor ≈ 10^(1.2×10⁹), still > 10⁹) or (iii) lowering
 `caConst`/`mainDecayExponent` are statement/def surgery, i.e. re-ratification territory.**
+
+### JUDGE RULING (2026-07-16 late evening) — flag ACKNOWLEDGED; re-pin `10^(10¹¹)`; steps 2/3 LIVE ✅
+
+The lap-1 flag is **upheld and answered**. Host-side verification was independent of
+check17: the ladder and floor arithmetic re-derived from scratch (agrees to 4 digits:
+ladder exponent 9.3908×10¹⁰, floor 9.3575×10¹⁰, ×93.9 over the old pin), and the
+load-bearing hops read against source (`epsBW` Setup.lean:97; `M1 = ⌈K·c/(c−1)⌉` with
+`c = (1+δ/3)^{1/A}` Monotone.lean; the `Fin (n/2)` white-count bound behind the floor,
+Bridge.lean:507). The miss was the PIN'S VALUE (operator sizing that modeled `C1` as
+`T`-dominated — check17 part (c)), not the tower or the campaign design.
+
+**Resolution: `CTao := 10^(10¹¹)`** in `Statement.lean` + `Challenge.lean` (the JUDGE
+re-pin commit; differ baseline advances to it). check17 flipped to assert the GO
+(`ladder < 0.95×10¹¹`) while keeping the lap-1 finding as machine-checked record. Why
+`10^(10¹¹)` and not more: exponent headroom over the traced ladder is ≈ 6.1×10⁹ ≈ 195
+digits of slack on `n₀` (slack on `log₁₀ n₀` amplifies ×B), versus single-digit expected
+slack from 9-decimal log bounds and ceiling roundups — and any overflow is caught
+numerically by check17's exact final assert before Lean grinding, so the tight-pin
+failure mode is one cheap flag round-trip, not wasted proof work. Why not options
+(ii)/(iii): `epsBW`/`hold_weight_expect`/`caConst` surgery is re-ratification of the
+proven tower (and `ε = 10⁻¹⁰` still floors at 10^(1.16×10⁹), over the OLD pin anyway) —
+banked as a candidate follow-up "tighten-C" campaign for after discharge, which step 2's
+symbolic-def scaffolding directly enables. The two optimization observations below stay
+open for that campaign.
 
 ## Optimization observations
 

@@ -742,9 +742,11 @@ def check16():
 def check17():
     # Big-C campaign (2026-07-17, DIRECTION step 1): log10-space float mirror of the
     # C-ladder, walked off the ACTUAL Lean witnesses (file:line per hop).  This is the
-    # go/no-go map against the pin CTao = 10^(10^9) — and the verdict is NO-GO: the
-    # traced ladder is 10^(9.39e10), EXCEEDING the pin by a factor ~94 in the exponent.
-    # The check asserts the trace (so the flag is machine-checked), NOT ladder <= pin.
+    # go/no-go map against the pin.  History: the ORIGINAL pin CTao = 10^(10^9) was a
+    # NO-GO — the traced ladder 10^(9.39e10) exceeded it ~94-fold in the exponent
+    # (lap-1 JUDGE-FLAG); the JUDGE re-pin 2026-07-16 set CTao = 10^(10^11), under which
+    # the same trace is a GO with ~6.5% exponent headroom.  The check asserts BOTH: the
+    # trace/floor that forced the re-pin (machine-checked record) AND ladder < live pin.
     from math import log10
     ln2, ln3, ln43 = log(2), log(3), log(4 / 3)
 
@@ -790,23 +792,31 @@ def check17():
     # noise in log10 next to log10_head:
     log10_ladder = log10(3) + log10_head + B * log10(40) + log10(2) + log10(1.645) + 15.2
     assert abs(log10_ladder - 9.3908e10) < 1e7, log10_ladder
-    # (a) THE FINDING: the traced ladder EXCEEDS the pin CTao = 10^(10^9) ~94-fold in exponent:
-    PIN_EXP = 1e9
-    assert log10_ladder > 90 * PIN_EXP, log10_ladder
-    # (b) and it is NOT witness slop: any C satisfying renewal_white_encounters' frozen
+    # (a) THE RECORD (lap-1 flag): the traced ladder EXCEEDED the original pin
+    # CTao = 10^(10^9) ~94-fold in the exponent — the reason for the JUDGE re-pin:
+    OLD_PIN_EXP = 1e9
+    assert log10_ladder > 90 * OLD_PIN_EXP, log10_ladder
+    # (b) and it was NOT witness slop: any C satisfying renewal_white_encounters' frozen
     # statement at A=B obeys C >= sup_n exp(-eps^3*n/2)*n^B  (since #white <= n/2, the
     # damping expectation is >= exp(-eps^3 n/2)); at n = 2B/eps^3 that floor is 10^(9.36e10):
     log10_floor = B * (log10(2 * B) + 3000 - log10(2.718281828459045))
-    assert log10_floor > 90 * PIN_EXP, log10_floor
+    assert log10_floor > 90 * OLD_PIN_EXP, log10_floor
     assert log10_floor < log10_ladder
     # (c) trap/diagnosis: under the sizing assumption that C1 is T-dominated (M1's 1/delta
-    # term missed), the ladder DOES fit under the pin — pinpointing the single responsible
-    # term (M1 = ceil(K*c/(c-1)), Monotone.lean:283):
+    # term missed), the ladder DOES fit under the original pin — pinpointing the single
+    # responsible term (M1 = ceil(K*c/(c-1)), Monotone.lean:283):
     log10_ladder_noM1 = log10(2 * T) * B + B * log10(40)
-    assert log10_ladder_noM1 < PIN_EXP, log10_ladder_noM1
-    print("17. big-C ladder: log10 C_ladder ≈ %.4e  >  pin exponent 1e9 (×%.0f) — "
-          "JUDGE-FLAGGED (forced floor %.4e; M1's 1/δ≈2e3000 is the term)"
-          % (log10_ladder, log10_ladder / PIN_EXP, log10_floor))
+    assert log10_ladder_noM1 < OLD_PIN_EXP, log10_ladder_noM1
+    # (d) THE GO: under the live pin CTao = 10^(10^11) (JUDGE re-pin 2026-07-16) the
+    # traced ladder fits with ~6.5% exponent headroom — an exponent budget ≈ 6.1e9,
+    # i.e. ~195 digits of slack on n0 (slack on log10(n0) amplifies by ×B):
+    PIN_EXP = 1e11
+    assert log10_ladder < 0.95 * PIN_EXP, log10_ladder
+    print("17. big-C ladder: log10 C_ladder ≈ %.4e  <  live pin exponent 1e11 "
+          "(%.1f%% headroom) — GO after JUDGE re-pin (old pin 1e9 exceeded ×%.0f, "
+          "forced floor %.4e; M1's 1/δ≈2e3000 is the term)"
+          % (log10_ladder, 100 * (1 - log10_ladder / PIN_EXP),
+             log10_ladder / OLD_PIN_EXP, log10_floor))
 
 
 if __name__ == "__main__":
@@ -821,5 +831,5 @@ if __name__ == "__main__":
     check13()                                     # C8 (5.8) exact-reindex trap
     check14(); check15()                          # C6 §3 pins (Thm 3.1 forms, (1.2) pullback)
     check16()                                     # cTao explicit-exponent min-tree
-    check17()                                     # big-C ladder map (JUDGE-FLAGGED: > pin)
+    check17()                                     # big-C ladder map (GO vs re-pinned 1e11)
     print("ALL CHECKS PASS ✅")

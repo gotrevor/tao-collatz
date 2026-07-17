@@ -1,5 +1,10 @@
 # HANDOFF — big-C campaign, lap 1 (2026-07-17)
 
+> **JUDGE RULING LANDED (2026-07-16 late evening, host):** the lap-1 JUDGE-FLAG below is
+> **answered** — `CTao` re-pinned at `10^(10¹¹)` in both pin files, differ baseline
+> advanced to the re-pin commit, check17 flipped to assert the GO. `DIRECTION.md` carries
+> the ruling; **step 2 is LIVE**. The "blocked" state described below is historical.
+
 **Read `DIRECTION.md` first — it outranks this file. Then the lap-1 entry in
 `PENDING_WORK.md`, which is this lap's whole content.**
 

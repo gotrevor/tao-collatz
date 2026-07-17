@@ -48,10 +48,13 @@ theorem tao_collatz_quantitative_explicit :
   exact tao_collatz_quantitative_spine_of_le c_ladder_lower
 
 /-- The explicit constant — OUR augmentation, beyond the paper. A round upper bound with
-deliberate headroom, not an optimized value: the development's assembled constant is
-estimated ≈ `10^(3×10⁸)` (the `(2·C1+2)^𝔡·40^𝔡` core with `𝔡 ≈ 3.11×10⁷`); any upper
-bound discharges the statement, and a round pin survives proof churn. -/
-noncomputable def CTao : ℝ := 10 ^ (1000000000 : ℕ)
+deliberate headroom, not an optimized value: the traced ladder over the frozen tower is
+≈ `10^(9.39×10¹⁰)` (check17; dominated by `n₀^𝔡` with `𝔡 ≈ 3.11×10⁷` and
+`n₀ ≈ 10^3016` — the `1/δ ≈ 2×10³⁰⁰⁰` factor in `hold_weight_expect`'s witness), and the
+statement-forced floor is ≈ `10^(9.36×10¹⁰)`; any upper bound discharges the statement,
+and a round pin survives proof churn. JUDGE re-pin 2026-07-16: `10^(10⁹)` → `10^(10¹¹)`
+(the original sizing missed the `1/δ` factor; lap-1 JUDGE-FLAG, ledger + DIRECTION). -/
+noncomputable def CTao : ℝ := 10 ^ (100000000000 : ℕ)
 
 -- The campaign pin: `sorry` by design until the big-C campaign discharges it. The local
 -- warningAsError shield keeps `lake build` (and the pre-commit green-gate) working while
