@@ -367,3 +367,50 @@ follow-up "tighten-C" campaign per the 2026-07-16 ruling) continues bottom-up
 mirror the ruling's own list: re-pin (would need a tower-form `CTao`), or the banked
 "tighten-C" statement surgery (`epsBW`, `A0_estarScaled`'s linear shape,
 `hold_weight_expect`).
+
+### Lap 9 (2026-07-17) — REVIEW: C0-arm NO-GO SHARPENED — transcription dead, but pin true; crux decomposed 🔬
+
+**Route trigger (lap-8 flag) confirmed FIRED and escalated:
+`ROUTE-ESCALATION-2026-07-17.md`.** A fresh-mind source read (renewal proof Bridge.lean:522–691,
+`Q_polynomial_decay` Case3.lean:3531, `encWindowIter` Case3.lean:1020, `white` Setup.lean:100–103)
+splits the lap-8 conclusion into two claims that lap-8 conflated:
+
+- **Transcription route DEAD (upheld):** `C_renewalWhite`'s large-n arm is a tower. Solid, check19.
+- **Pin `10^(10¹¹)` UN-provable (NOT established by lap-8):** lap-8's forcedness is
+  witness-propagation (bounds *this proof's* witness), not a direct floor on the *final*
+  renewal constant. There is **no** tower-level floor on `C` analogous to lap-1's head floor.
+
+**New structural finding (the sharpening):**
+1. The C0-arm is the constant on the **large-n branch** (`n ≥ n₀ ≈ 10³⁰¹⁶`, Bridge.lean:592),
+   multiplying `Q_polynomial_decay` at `m = n/2 ≈ 10³⁰¹⁶`. But `Q_polynomial_decay`'s
+   constant only bites for `m−j > Cthr_prop78 = P` (the tower). Since `m ≪ P`, **Q is
+   VACUOUS in the whole applied range** — the tower constant is insurance slop, not a rate.
+2. `white ⟺ |θq| > epsBW = 10⁻¹⁰⁰⁰`, so black ≈ 2ε ≈ 0-mass ⟹ `#white ≈ p·(n/2)`
+   (ε-INDEPENDENT fraction) ⟹ `E(n) ≈ exp(-ε³·p·n/2)`. Peak of `n^A·E(n)` at
+   `n* ≈ 2A/ε³ ≈ 10³⁰⁰⁸ < n₀` (⇒ inside the HEAD arm, forced floor `10^(9.36×10¹⁰)`, check17
+   GO). **True large-n contribution ≈ exp(-10¹⁶) ≈ 0** ⟹ true renewal constant ≈ head < CTao.
+3. So the pin is **dischargeable in truth** (head fits with 6% room), but the development
+   can't reach it: its only `#white` lower-tail control (`few_white_mass_le`) carries the
+   crude (7.67) triangle-exit **tower** horizon `P`, whereas the true decorrelation is
+   ~poly(1/ε) (black runs of length L have mass ≈ (2ε)^L).
+
+**CRUX DECOMPOSITION (the real attack — Option B, the only route that keeps CTao = 10¹¹).**
+Named sub-lemma to prove (statement-faithful, re-proves an `∃` with a tighter witness —
+NO surgery, differ-neutral):
+
+    renewal_large_n_tight :  ∀ n ≥ n₀,  E[exp(-ε³·#white(b,n))]  ≤  CTao · n^{-A}
+
+Since `n^A ≤ CTao` for `n ≤ 10³²¹⁵`, the sub-lemma is TRIVIAL (E ≤ 1) on `[n₀, 10³²¹⁵]`; the
+real content is `n > 10³²¹⁵` (still `≪ P`), where the TRUE `E(n) ≈ 0` but the development
+proves nothing. **Precise obstruction:** `few_white_mass_le`'s horizon `P = encWindowIter …`
+is a cubic tower; a discharge needs the few-white mass shown exp-small from `n ≈ n₀` (not
+`n ≈ P`). This is a genuine quantitative improvement to Tao §7 decorrelation — feasible
+(large-n has ≈∞ room; only the head's forced 6% window binds) but hard, and it is the banked
+"tighten-C" scope-expansion → **needs an operator ruling before a grind lap starts it**
+(the pin/route pivot is operator-owned; STEP 3 is STOPPED).
+
+**Grind marching orders until the ruling:** continue step-2 transcription bottom-up (Sec5
+B1 `perNHarmonic_eq_harmZfine_approx_explicit` → `harmonic_to_Z` → stabilization, then
+FirstPassage/ApproxFormula/Sec3/Syracuse/Prob). It is prerequisite for BOTH options and is
+the only clearly in-scope Lean work. Do NOT touch the pin or any watched statement; do NOT
+start `renewal_large_n_tight` without a ruling.

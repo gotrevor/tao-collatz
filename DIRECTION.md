@@ -8,6 +8,25 @@ methods are this campaign's playbook; its DIRECTION lives in git history (`git l
 
 ---
 
+## ⚠️ ROUTE STATUS (review lap 9, 2026-07-17, altitude lap — NOT a pin edit) — STEP 3 STOPPED, AWAITING OPERATOR RULING
+
+A route trigger has **FIRED**: the fully-reified `C_ladder` (STEP 3's target) is a *tower*
+≫ the pin `CTao = 10^(10¹¹)` (lap-8 C0-arm flag, machine-checked check19). Review lap 9
+sharpened it — **transcription route dead, but the pin is dischargeable in truth** (true
+renewal constant ≈ head `10^(9.36×10¹⁰) < CTao`; the C0-arm is vacuous-`Q` slop). Full
+diagnosis + the two operator options (A: re-pin `CTao` tower-form; B: tighten via a better
+`#white` decorrelation estimate, keeps `CTao`) in **`ROUTE-ESCALATION-2026-07-17.md`**;
+crux decomposition (`renewal_large_n_tight`) in `PENDING_WORK.md` lap-9.
+
+**Binding until the operator rules:** STEP 3 (`prove C_ladder ≤ CTao`) stays STOPPED
+(never-inflate rule — the trace exceeds the pin). Grind laps: **continue step-2 transcription
+only** (prerequisite for both options); do NOT edit the pin or any watched statement; do NOT
+start Option B's `renewal_large_n_tight` re-proof (banked scope-expansion, operator-owned).
+The CURRENT DIRECTIVE objective below is unchanged (discharge the pin) — only its ROUTE is
+flagged blocked pending your call.
+
+---
+
 ## JUDGE RULING (2026-07-16 late evening) — lap-1 JUDGE-FLAG acknowledged; `CTao` re-pinned at `10^(10¹¹)`; steps 2/3 are LIVE 🟢
 
 The lap-1 flag is **upheld**: the trace and the statement-forced floor were verified

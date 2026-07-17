@@ -1,3 +1,33 @@
+# HANDOFF — big-C campaign, lap 9 (review, 2026-07-17)
+
+## 🔬 Lap 9 (REVIEW): C0-arm NO-GO SHARPENED + escalated — read `ROUTE-ESCALATION-2026-07-17.md`
+
+Fresh-mind review. **The lap-8 route trigger has FIRED; I confirmed it and sharpened it.**
+Source-read the renewal proof (Bridge.lean:522–691), `Q_polynomial_decay` (Case3.lean:3531),
+`encWindowIter` (Case3.lean:1020), and `white` (Setup.lean:100–103). Findings:
+
+- **Transcription route DEAD (lap-8 upheld):** `C_renewalWhite`'s large-n arm is a cubic
+  tower (`C_polyDecay = Cthr_prop78^A`, `Cthr_prop78` ⊇ `encWindowIter` tower). check19 solid.
+- **But the pin is DISCHARGEABLE IN TRUTH** (lap-8 over-read "STEP 3 dead" as "pin dead"):
+  the C0-arm multiplies `Q_polynomial_decay` at `m = n/2 ≈ 10³⁰¹⁶ ≪ Cthr_prop78`, i.e. in
+  Q's **vacuous** regime → tower is insurance slop. `white ⟺ |θq|>10⁻¹⁰⁰⁰` is frequent ⟹
+  `#white ≈ p·n/2` ⟹ `E(n) ≈ exp(-ε³p·n/2)`, peak at `n*≈10³⁰⁰⁸ < n₀` (the HEAD arm, forced
+  floor `10^(9.36×10¹⁰) < CTao`). True large-n contribution ≈ 0 ⟹ **true renewal constant
+  ≈ head < CTao** (6% room, check17). The development can't reach it because its only
+  `#white` lower-tail control (`few_white_mass_le`) uses the crude (7.67) **tower** horizon,
+  not the true ~poly(1/ε) decorrelation.
+- **Escalated to operator** (owns the pin): `ROUTE-ESCALATION-2026-07-17.md` — Option A re-pin
+  `CTao` tower-form (cheap), Option B tighten via `renewal_large_n_tight` (research, keeps
+  CTao). Crux decomposed in PENDING_WORK lap-9. STATUS + DIRECTION route-note refreshed.
+- **Grind orders until the ruling:** STEP 3 STOPPED; continue step-2 transcription (Sec5 B1
+  `perNHarmonic_eq_harmZfine_approx_explicit` → `harmonic_to_Z` → stabilization, then
+  FirstPassage/ApproxFormula/Sec3/Syracuse/Prob). It is prereq for BOTH options. Do NOT edit
+  the pin or any watched statement; do NOT start Option B without an operator ruling.
+- Docs-only lap (no Lean touched) → build unchanged green at `ada7ad3`; `check_blueprint.py`
+  19/19 pass; differ unchanged 35/35.
+
+---
+
 # HANDOFF — big-C campaign, lap 8 in progress (2026-07-17)
 
 ## 🚨 JUDGE-FLAG (lap 8): C0-arm NO-GO — read PENDING_WORK.md lap-8 entry
