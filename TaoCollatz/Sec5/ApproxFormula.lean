@@ -1002,6 +1002,9 @@ edge).  Off the support (`N > y^α`) the upper disjunct holds trivially, so `Edg
 noncomputable def Edge (x y : ℝ) : Set ℕ :=
   {N | (N : ℝ) ≤ y * Real.exp (sEdge x) ∨ y ^ alpha * Real.exp (- sEdge x) ≤ (N : ℝ)}
 
+/-- The `passtime_edge_of_good` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_edgeOfGood : ℝ := Real.exp 100000
+
 -- HEARTBEAT: the (5.15) interval-algebra proof carries ~40 chained `have`s over the orbit
 -- estimate + three margin lemmas; the single proof term exceeds the default whnf budget.
 set_option maxHeartbeats 1600000 in
@@ -1014,14 +1017,16 @@ Route (owed): from `syr_iterate_good_bracket'` derive (a) `T_x(N) ≥ (log(N/x) 
 (lower orbit bound ⇒ `Syr^{T} ≤ x` forces `T` large), and (b) `T_x(N) ≤ n*` for the explicit
 `n* = ⌈(log(N/x) + O(log^{0.6}x))/log(4/3)⌉ ≤ nZero x` witnessing `Syr^{n*} ≤ x` (upper orbit bound,
 absorbing the `+3^{n*}` rounding since `3^{n*} ≤ x/2` in range); then rearrange against `IyLo`/`IyHi`
-(`log(4/3) > 0`) and `log(4/3)·log^{0.8}x + O(log^{0.6}x) ≤ log^{0.8}x` for `x` large. -/
-theorem passtime_edge_of_good :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+(`log(4/3) > 0`) and `log(4/3)·log^{0.8}x + O(log^{0.6}x) ≤ log^{0.8}x` for `x` large.
+Universal-cutoff form (X-chase). -/
+theorem passtime_edge_of_good_atX :
+    1 ≤ X_edgeOfGood ∧ ∀ x : ℝ, X_edgeOfGood ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ N : ℕ, N % 2 = 1 →
         goodTuple x (nZero x) (valVec N (nZero x)) →
         passes ⌊x⌋₊ N → passTime ⌊x⌋₊ N ∉ Iy x y → N ∈ Edge x y := by
   classical
-  refine ⟨Real.exp 100000, Real.one_le_exp (by norm_num), fun x hx y hy N hodd hgood hpass hTnotIy => ?_⟩
+  rw [show X_edgeOfGood = Real.exp 100000 from rfl]
+  refine ⟨Real.one_le_exp (by norm_num), fun x hx y hy N hodd hgood hpass hTnotIy => ?_⟩
   -- positivity / basic
   have hxe : Real.exp 100000 ≤ x := hx
   have hx1 : (1 : ℝ) < x := lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (100000 : ℝ)]) hxe
@@ -1274,6 +1279,14 @@ theorem passtime_edge_of_good :
   have hTin : T ∈ Iy x y :=
     Finset.mem_filter.mpr ⟨Finset.mem_range.mpr (by rw [← hνdef]; omega), hIyLo, hIyHi⟩
   exact hTnotIy hTin
+
+/-- ∃-form of `passtime_edge_of_good_atX` (X-chase: `x₀ := X_edgeOfGood`). -/
+theorem passtime_edge_of_good :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ N : ℕ, N % 2 = 1 →
+        goodTuple x (nZero x) (valVec N (nZero x)) →
+        passes ⌊x⌋₊ N → passTime ⌊x⌋₊ N ∉ Iy x y → N ∈ Edge x y :=
+  ⟨X_edgeOfGood, passtime_edge_of_good_atX.1, passtime_edge_of_good_atX.2⟩
 
 open Classical in
 /-- **Log-uniform indicator expectation as a window-mass ratio.**  For a nonempty window, the
@@ -1855,19 +1868,26 @@ noncomputable def C_passtimeInner : ℝ := C_goodTupleDev + C_edgeMass
 theorem C_passtimeInner_pos : 0 < C_passtimeInner :=
   add_pos C_goodTupleDev_pos C_edgeMass_pos
 
-/-- Sibling of `passtime_window_inner` with the `c`/`C` slots pinned at
-(`c_passtimeInner`, `C_passtimeInner`) — the `_atC` form (big-C campaign, step 2),
-cutoff existential. -/
-theorem passtime_window_inner_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `passtime_window_inner` cutoff (X-chase): witness copied verbatim from the `_atC`
+proof at the explicit upstream names. -/
+noncomputable def X_passtimeInner : ℝ :=
+  max (max (max X_goodTupleWhp X_edgeMass) X_edgeOfGood) (Real.exp 1)
+
+/-- Universal-cutoff form of `passtime_window_inner_atC` (X-chase). -/
+theorem passtime_window_inner_atCX :
+    ∀ x : ℝ, X_passtimeInner ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1)
           ≤ C_passtimeInner * (Real.log x) ^ (-c_passtimeInner) := by
   classical
-  obtain ⟨x1, hgoodwhp⟩ := approx_good_tuple_whp_atC
-  obtain ⟨x2, hmass⟩ := passtime_edge_mass_atC
-  obtain ⟨x3, hx3one, hincl⟩ := passtime_edge_of_good
+  have hgoodwhp := approx_good_tuple_whp_atCX
+  have hmass := passtime_edge_mass_atCX
+  have hx3one := passtime_edge_of_good_atX.1
+  have hincl := passtime_edge_of_good_atX.2
+  set x1 : ℝ := X_goodTupleWhp with hx1def
+  set x2 : ℝ := X_edgeMass with hx2def
+  set x3 : ℝ := X_edgeOfGood with hx3def
   set C1 : ℝ := C_goodTupleDev with hC1def
   set C2 : ℝ := C_edgeMass with hC2def
   have hC1 : 0 < C1 := C_goodTupleDev_pos
@@ -1877,8 +1897,9 @@ theorem passtime_window_inner_atC :
   have hc1 : 0 < c1 := c_goodTupleDev_pos
   have hc2 : 0 < c2 := c_edgeMass_pos
   rw [show c_passtimeInner = min c1 c2 from rfl,
-    show C_passtimeInner = C1 + C2 from rfl]
-  refine ⟨max (max (max x1 x2) x3) (Real.exp 1), fun x hx y hy => ?_⟩
+    show C_passtimeInner = C1 + C2 from rfl,
+    show X_passtimeInner = max (max (max x1 x2) x3) (Real.exp 1) from rfl]
+  intro x hx y hy
   have hx1 : x1 ≤ x :=
     le_trans (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) (le_max_left _ _)) hx
   have hx2 : x2 ≤ x :=
@@ -1964,6 +1985,15 @@ theorem passtime_window_inner_atC :
     _ ≤ C1 * (Real.log x) ^ (-(min c1 c2)) + C2 * (Real.log x) ^ (-(min c1 c2)) :=
         add_le_add hmono1 hmono2
     _ = (C1 + C2) * (Real.log x) ^ (-(min c1 c2)) := by ring
+
+/-- ∃-form of `passtime_window_inner_atCX` (X-chase: `x₀ := X_passtimeInner`). -/
+theorem passtime_window_inner_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | passes ⌊x⌋₊ N ∧ passTime ⌊x⌋₊ N ∉ Iy x y} 1)
+          ≤ C_passtimeInner * (Real.log x) ^ (-c_passtimeInner) :=
+  ⟨X_passtimeInner, passtime_window_inner_atCX⟩
 
 /-- Sibling of `passtime_window_inner` with the `c`-slot pinned to `c_passtimeInner`; `C` and
 the threshold stay existential. The original delegates here.  Now delegates to

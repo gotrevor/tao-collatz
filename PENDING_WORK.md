@@ -1132,3 +1132,9 @@ is odd, and the pin is branch-only so retiring is free).
 - `X_edgeMass` + `passtime_edge_mass_atCX`; `_atC` delegates. Both upstreams
   (`logWindow_nonempty_atX`, `windowMass_ge_clog_at`) were already explicit. Audit 7/38,
   next `passtime_window_inner_atCX`.
+
+### Successor lap 5 (2026-07-17) — phase 2 entry 4/13
+
+- `X_edgeOfGood := exp 100000` (`passtime_edge_of_good_atX`, heartbeat shield kept on the
+  big theorem) + `X_passtimeInner` / `passtime_window_inner_atCX`; delegates in place.
+  Audit 8/38, next `approx_passtime_window_atCX`.
