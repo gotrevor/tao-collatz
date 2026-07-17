@@ -2119,10 +2119,21 @@ first passage `≥ 0.8m` and the extra `P` Geom(4) steps `≥ 0.1m` each have ma
 absorbed here into `≤ m^{−A}/2` for `m ≥ Cthr`. Bridged to `fpDistPlus_col_tail` via
 `fpDist_walk_eq_fpDistPlus`; the deviation scale uses `budget_le_of_mem_triangle`
 (`s·log2 ≤ (m+2)log9`). Stated for any horizon `P ≥ 1` (`Cthr` absorbs the `P`-dependence).
-Placed above `few_white_mass_le` so the (7.56) assembly can consume its bad-column term. -/
-theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
-    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
-      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+Placed above `few_white_mass_le` so the (7.56) assembly can consume its bad-column term.
+**Core, constants abstracted** (big-C campaign, step 2): given the column tail at
+`(c, C)` and an exponential-vs-rpow threshold `Nexp` at rate `c/16960` and target
+`1/(4C)`, the bound holds past the threshold `400(P+1) + 32 + Nexp`. -/
+theorem col_tail_mass_le_core (A : ℝ) (_hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P)
+    (c C : ℝ) (hc : 0 < c) (hC : 0 < C)
+    (htail : ∀ s p : ℕ, ∀ D : ℝ, 10 * (1 + (p : ℝ)) ≤ D →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 e
+        ≤ C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D)))
+    (Nexp : ℕ)
+    (hNexp : ∀ m : ℕ, Nexp ≤ m →
+      Real.exp (-(c / 16960) * (m : ℝ)) ≤ 1 / (4 * C) * (m : ℝ) ^ (-A)) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, 400 * (P + 1) + 32 + Nexp ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
@@ -2132,11 +2143,6 @@ theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
             then (1 : ℝ) else 0))
         ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) := by
   classical
-  obtain ⟨c, hc, C, hC, htail⟩ := fpDistPlus_col_tail
-  -- final tail threshold: `2C·exp(−(c/16960)m) ≤ m^{−A}/2`, i.e. `exp ≤ (1/4C)·m^{−A}`.
-  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_rpow_neg A hA (c / 16960) (by positivity)
-    (1 / (4 * C)) (by positivity)
-  refine ⟨400 * (P + 1) + 32 + Nexp, ?_⟩
   intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
   have hmpos : (0 : ℝ) < (m : ℝ) := by exact_mod_cast (by omega : 0 < m)
   set D : ℝ := (m : ℝ) / 40 with hDdef
@@ -2243,6 +2249,49 @@ theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
           Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 x := hRHSreal
     _ ≤ C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D)) := htail s P D hDbound
     _ ≤ (m : ℝ) ^ (-A) / 2 := hfinal
+
+/-- The threshold of `col_tail_mass_le`, symbolic (big-C campaign, step 2):
+`400(P+1) + 32 + T_expRpow A (c_fpColTail/16960) (1/(4·C_fpColTail))`. -/
+noncomputable def T_colTail (A : ℝ) (P : ℕ) : ℕ :=
+  400 * (P + 1) + 32 + T_expRpow A (c_fpColTail / 16960) (1 / (4 * C_fpColTail))
+
+/-- `col_tail_mass_le`, `_at` sibling: `col_tail_mass_le_core` at
+(`c_fpColTail`, `C_fpColTail`) and the `T_expRpow` threshold, folded into
+`T_colTail A P`. -/
+theorem col_tail_mass_le_at (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, T_colTail A P ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) := by
+  have h := col_tail_mass_le_core A hA P hP1 c_fpColTail C_fpColTail
+    c_fpColTail_pos C_fpColTail_pos fpDistPlus_col_tail_explicitC
+    (T_expRpow A (c_fpColTail / 16960) (1 / (4 * C_fpColTail)))
+    (exp_neg_mul_le_rpow_neg_at A hA (c_fpColTail / 16960)
+      (div_pos c_fpColTail_pos (by norm_num)) (1 / (4 * C_fpColTail))
+      (one_div_pos.mpr (mul_pos four_pos C_fpColTail_pos)))
+  unfold T_colTail
+  exact h
+
+/-- `col_tail_mass_le`, original `∃`-form: delegates to the `_at` sibling at
+`T_colTail A P`. -/
+theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) :=
+  ⟨T_colTail A P, col_tail_mass_le_at A hA P hP1⟩
 
 /-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first
 passage encounters at most `K := ⌈(A+3)·log10/ε³⌉` whites with probability `≤ 10^{−(A+2)}`.
