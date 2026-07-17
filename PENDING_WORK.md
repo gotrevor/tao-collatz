@@ -637,3 +637,57 @@ POLY in `K` (the check21 window says there are 8.3 orders between that and `C_ho
 Fallback decomposition if the horizon is irreducibly iterated: split
 `Q_black_edge_tight` into (i) a single-window estimate with poly horizon and (ii) the
 window-chaining induction, and attack (i).
+
+### Lap 13b (2026-07-17, same day) — DECISIVE PROBE: the Case-3 architecture floor vs the pin budget
+
+**Question probed (per lap-13 plan):** can `Q_black_edge_tight` (threshold `C_hold ~ 10³⁰¹⁶`,
+budget `log₁₀ C2 ≤ ~3054` since the final constant is `C2^A`, `A ≈ 3.11e7`, ladder cap
+`0.95e11`) be proved by the existing (7.54)–(7.56) Case-3 machinery with the
+`encWindowIter` tower flattened?
+
+**ANSWER: NO — the tower is removable, but the E∗ UNION BOUND is the real wall.**
+Source-grounded chain (all shapes read from the Lean, not the paper):
+
+- Per-time E∗ mass is Lemma 7.10 verbatim (`bigTriangle_walk_le_rpow_explicitC`,
+  Case3.lean:462, wrapping `triangle_encounter_le_rpow_explicitC`):
+  `mass_p(s') ≤ C·A²(1+p)/s' + C·exp(−c·A²(1+p))`, VALID ONLY for `s' ≤ m^{0.4}`
+  (the X10 regime cap; `s > m^{0.8}` deep-triangle regime).
+- Forced parameters (architecture-intrinsic, in their cheapest possible form):
+  `K ≥ ~2/ε³ ~ 10³⁰⁰⁰` (the >K-white damping arm must beat a CONSTANT:
+  `exp(−ε³K) ≤ 1/4`; NOTE — the current code's `K_fewWhite = (A+3)ln10/ε³` targets
+  `10^{-A-3}`, but a sharper end-weight bracketing [split travel at `T₀ ~ 2·4P` instead
+  of `0.9m`, weight `(m−T₀)^{-A} ≈ m^{-A}` since `4PA/m ≪ 1` at `m ≥ 10^{3054}`-scale]
+  reduces the needed mass budget to O(1) — a real lap-13 improvement, but it only shaves
+  `log₁₀ K` from 3008 to 3000.3);
+  `R ≥ K/ε₀ = 100K` (hreach); `P ≥ K` (cannot see K+1 whites in fewer steps).
+- The union `Σ_{p≤P} A²(1+p)/s'_p ≤ O(1)` with the cap `s'_p ≤ m^{0.4}` forces (either
+  keeping the cubic envelope to its cap, or flat-capping): `m^{0.4} ≳ A²P²`, i.e.
+  `log₁₀ m ≥ (2·log₁₀ P + 2·log₁₀ A + 1)/0.4 ≈ (2·3002 + 15)/0.4 ≈ 15,050`.
+- **Floor ≈ 10^15050 vs budget 10^3054 — refuted by ~5× in the exponent, robustly**
+  (even `cap = m^{1.0}` gives ~6,020 > 3054; the `Σ(1+p) ~ P²` and the cap exponent
+  BOTH have to fall to fit, and neither alone suffices).
+
+**What survives — the monotone-column dilation idea (NEW, untested):** hold steps have
+`d.1 ≥ 1`, so the walk's column coordinate is strictly increasing: over the whole horizon
+the trajectory sweeps a column interval of length `~4P ~ 10^{3003}`, which is `≪ s ~
+m/log²m ~ 10^{3010}` — the walk never leaves an `o(1)` fraction of the initial fpDist
+spread. So the P-fold union (Tao's crude choice; he only needed `O_{A,ε,R}(1)`) can
+plausibly be replaced by a SINGLE dilated-set hitting estimate:
+`P(∃p ≤ P: X_p ∈ bigSet) ≤ P(entry e lands in the 4P-column-dilated big set)`.
+Back-of-envelope with dilation-linear measure growth: `total ~ A²·4P/s'²`, giving
+`s' ≥ ~6A√P ~ 10^{1509}` and (through the 0.4 cap) `m ≥ 10^{3772}` — OVER budget but
+within striking distance; if the diagonal geometry (heights rise ≥3/step, triangles are
+diagonal objects) or a fresh-column rate argument improves the dilation factor, it fits.
+**The decisive unknown is X10's triangle geometry.**
+
+**NEXT PROBE (lap 14):** read `triangle_encounter_le` (X10, Lemma 7.10) — statement and
+proof — and extract (i) where `(1+p)` enters (walk-spread union vs genuine per-time cost),
+(ii) the true measure of the `4P`-dilated `bigTriangleSet` under `fpDist s`
+(anti-concentration at dilated scale), (iii) whether the `s' ≤ m^{0.4}` cap can be `s^{0.5}`
+of the CURRENT depth rather than the starting depth. Compute the exact floor of the
+dilated-hit variant; if `> 3054` after honest accounting, Option B's black-edge route is
+architecturally DEAD and the finding must go back to the route level (candidates then:
+(a) re-derive §6 with smaller `caConst` to shrink `A` — out of current scope, big; (b)
+re-escalate the pin as unreachable-by-B with the machine-checked floor as evidence).
+Numeric mirror of this floor arithmetic: add to check_blueprint as check22 WITH the
+lap-14 X10 reading (don't trap numbers that are still moving).
