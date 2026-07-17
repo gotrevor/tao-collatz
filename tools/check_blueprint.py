@@ -1031,6 +1031,66 @@ def check20():
           "the C0-arm (check19 route conclusion unchanged)" % (glue, log10_spine_head))
 
 
+def check21():
+    # Big-C campaign lap 13 (2026-07-17): OPTION-B TIGHT PIN, RESIZED — the numeric trap
+    # for Bridge.lean's C_renewalWhite_tight / C_Qtight / Q_black_edge_tight cluster.
+    # (a) WHY the lap-12 pin had to be resized (machinery floor): the lap-12
+    #     C_Qtight = n0^A/(exp(eps^3/2)*3^A) ≈ (n0/3)^A is BELOW the floor
+    #     (C_hold)^A that Q_polynomial_decay_at can deliver (its constant is the
+    #     trivial-regime crossover (max C0 1)^A with C0 >= C_hold intrinsically):
+    #     n0/3 = (2*C_hold+2)/3 < C_hold for C_hold > 2 — the old statement was
+    #     plausibly TRUE but unprovable through the Prop-7.8 apparatus.
+    # (b) the lap-13 assembly really lands: exact-arithmetic instance check of the
+    #     sharp-bridge Nat inequality  C1*n <= (2*C1+2)*(n//2)  for n >= 2*C1+2,
+    #     at the boundary and parity cases (this is hkey in the Lean proof — the
+    #     step that replaced the crude n <= 3*(n//2) / 3^A bridge).
+    # (c) sizing: the resized constant 2*n0^A still clears the pin with ~6% headroom
+    #     (factor 2 = +0.30103 digits on 9.386e10), and exp(eps^3/2) <= 2 trivially.
+    # (d) crux feasibility window (recorded, NOT proved): white-frequency threshold
+    #     K_fewWhite ~ 10^3007.9 < C_hold ~ 10^3016.15 — Q_black_edge_tight's
+    #     threshold C_hold has ~8 orders of room over the true decorrelation scale.
+    from math import log10
+    ln2, ln10, ln43 = log(2), log(10), log(4 / 3)
+    A_high = 3.7
+    ca = 1000 * (A_high + 3)
+    B = A_high + ca ** 2 * ln2 + 3                       # ~3.11e7 (as check17)
+    PIN_EXP = 1e11
+    # (a) floor argument (scale-free): n0/3 < C_hold  <=>  2*C_hold+2 < 3*C_hold:
+    for C in (3, 10 ** 10, 10 ** 3016):
+        assert 2 * C + 2 < 3 * C
+    # (b) exact Nat bridge instances (hkey), boundary + parity sweep:
+    for C1 in (1, 2, 3, 17, 10 ** 6 + 1):
+        n0 = 2 * C1 + 2
+        for n in (n0, n0 + 1, n0 + 2, n0 + 3, 10 * n0 + 1):
+            assert C1 * n <= n0 * (n // 2), (C1, n)
+            # and the crude bridge the lap-12 glue was built for, for contrast:
+            assert n <= 3 * (n // 2)
+    # counter-instance guard: the sharp bridge can FAIL below n0 (e.g. n = 1, where
+    # n//2 = 0), so the small-n arm split at n0 is load-bearing:
+    assert any(C1 * n > (2 * C1 + 2) * (n // 2)
+               for C1 in (5,) for n in (1, 3))
+    # (c) sizing of the resized constant 2*n0^B (log10-space, same trace as check17):
+    log10_delta = log10(0.5) - 3000
+    K = ((log(6) - log10_delta * ln10) + B * ln2) / ln43
+    log10_M1 = log10(K) + log10(3 * B) - log10_delta
+    log10_n0 = log10(2) + log10_M1
+    log10_tight = log10(2) + log10_n0 * B                # C_renewalWhite_tight, resized
+    assert log10_tight - (log10_n0 * B) < 0.302          # factor 2 = 0.30103 digits
+    assert log10_tight < 0.95 * PIN_EXP, log10_tight     # still a GO
+    # exp(eps^3/2) <= 2: eps^3/2 = 0.5e-3000 <= 1/2 and e^0.5 < 2:
+    assert 2.718281828459045 ** 0.5 < 2
+    # (d) crux window: K_fewWhite ~ 10^3007.9 vs C_hold ~ 10^3016.15:
+    # K_fewWhite = ceil((A+3)*ln10/eps^3), eps^3 = 1e-3000:
+    log10_K_fw = log10((B + 3) * ln10) + 3000
+    assert log10_K_fw < log10_M1, (log10_K_fw, log10_M1)
+    assert log10_M1 - log10_K_fw > 7, (log10_K_fw, log10_M1)
+    print("21. lap-13 tight resize: machinery floor n0/3 < C_hold confirmed; sharp Nat "
+          "bridge C1*n <= n0*(n//2) exact on boundary/parity sweep; resized "
+          "log10 C_renewalWhite_tight ≈ %.4e < 0.95e11 (GO); crux window "
+          "K_fewWhite 10^%.1f << C_hold 10^%.1f (~%.1f orders)"
+          % (log10_tight, log10_K_fw, log10_M1, log10_M1 - log10_K_fw))
+
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
@@ -1047,4 +1107,5 @@ if __name__ == "__main__":
     check18()                                     # step-2 symbolic defs vs the ladder
     check19()                                     # lap-8 C0-arm NO-GO trace (JUDGE-FLAG)
     check20()                                     # lap-11 Sec5/Sec3 glue defs vs ladder
+    check21()                                     # lap-13 tight resize (Option B pin)
     print("ALL CHECKS PASS ✅")

@@ -1,3 +1,47 @@
+# HANDOFF — big-C campaign, lap 13 — TIGHT PIN RESIZED TO MACHINERY FLOOR; CRUX = `Q_black_edge_tight` 🎯
+
+**Read `DIRECTION.md` RESOLVED banner FIRST** (Option B is the live route; the note there
+mandating the constant "`(2·C_hold A + 2)^A`, no max" is amended by this lap's sizing
+correction — see below and PENDING_WORK "Lap 13").
+
+## State (branch `explicit-big-c`, all committed, build green)
+
+`lake build` green (3327 jobs). Exactly **2 real sorries**: the pin (`Statement.lean:65`)
+and the campaign crux **`Q_black_edge_tight`** (`Sec7/Bridge.lean:~737`). Differ
+`tools/tao_stmt_diff.py fabea6f HEAD` 35/35; `blueprint_audit` clean;
+`check_blueprint.py` **21/21** (check21 is new, lap 13). Headlines untouched.
+
+## What lap 13 did (sizing correction on the lap-12 pin — my own unratified addition)
+
+1. **Caught a born-wrong-by-tightness pin.** Lap-12's `C_Qtight ≈ (n₀/3)^A` is BELOW the
+   `(C_hold A)^A` floor that `Q_polynomial_decay_at` can deliver (its constant is the
+   trivial-regime crossover `(max C0 1)^A`, threshold `C0 ≥ C_hold A` intrinsic via
+   `hold_weight_expect`): `(2C+2)/3 < C`. Plausibly true, but unprovable through the
+   Prop-7.8 apparatus. Full argument: PENDING_WORK "Lap 13".
+2. **Resized (Bridge.lean):** `C_Qtight := (max (C_hold A) 1)^A` (the floor);
+   `C_renewalWhite_tight := 2·(2·C_hold A+2)^A` (sharp bridge `C_hold·n ≤ n₀·(n/2)` — an
+   exact ℕ inequality replacing the `3^A` hop — plus `exp(ε³/2) ≤ 2`; costs +0.30 digits
+   of the ~6.4e9-digit headroom; check21 asserts the GO at 9.3858e10 < 0.95e11).
+3. **`Q_polynomial_decay_tight` is now DERIVED** (zero own sorries) from the single new
+   crux via `prop_7_8_at` + `Q_polynomial_decay_at`. `C_Qtight_glue` deleted (obsolete).
+4. **check21** added: floor argument, exact boundary/parity sweep of the sharp bridge,
+   resized GO, crux feasibility window (`K_fewWhite 10^3007.9 ≪ C_hold 10^3016.1`).
+
+## Next actions
+
+1. **THE frontier: `Q_black_edge_tight`** (`Bridge.lean:~737`): black-edge (7.39) at poly
+   threshold `C_hold A`, statement verbatim `prop_7_8_at`'s `hC2` slot. The tower in the
+   existing proof (`Q_black_edge_case3` chain) is the HORIZON `P_fewWhite =
+   encWindowIter…(R ~ 10³⁰¹⁰)`, not the estimate. **Smallest next probe**: read
+   `Q_black_edge_case3`'s assembly — which of the three (7.56) mass terms forces the
+   horizon to iterate, and can the K-white budget run at `K_fewWhite ~ 10³⁰⁰⁸` with a
+   horizon POLY in `K`? Fallback: split into single-window estimate (poly horizon) +
+   window-chaining induction. Multi-lap 🟡 — chip, never retreat to transcription.
+2. **Never re-prove / touch `renewal_white_encounters`** (clean headlines depend on it).
+3. **No X-chase / tower transcription** (deprecated lap 12).
+
+---
+
 # HANDOFF — big-C campaign, lap 12 (DEEP REFLECTION) — ROUTE RESOLVED → OPTION B 🧘
 
 **Read `DIRECTION.md` RESOLVED banner (top) FIRST — it outranks this file.** The 3-lap

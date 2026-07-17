@@ -61,14 +61,19 @@ one genuinely new brick is a `#white` lower-tail / decorrelation estimate beatin
 ## Outstanding
 
 ### Short-term (Option B, in scope now — ADDITIVE, never touch the clean headlines)
-- ✅ **DONE lap 12**: `renewal_white_encounters_tight` PROVED modulo one clean sorry.
-  Head-only `C_renewalWhite_tight A := n₀^A`; small-`n` arm + large-`n` bridge assembly (with
-  `C_Qtight`/`C_Qtight_glue`, `n₀^A·n^{-A}`, no tower) all proven. Clean headlines untouched.
-- **NEXT — the frontier: prove `Q_polynomial_decay_tight`** (`Bridge.lean:~730`) — the sole
-  remaining Option-B sorry: `Q ≤ C_Qtight A·(max(n/2−j) 1)^{-A}`, a poly-horizon `#white`
-  lower-tail estimate beating `few_white_mass_le`'s tower horizon. Feasibility confirmed (true
-  threshold ~10³⁰⁰⁸ < applied n₀ ~10³⁰¹⁶). Smallest first probe: source-read `few_white_mass_le`
-  (Case3) + how its `encWindowIter` horizon is forced. Genuine multi-lap §7 decorrelation.
+- ✅ **DONE lap 12**: `renewal_white_encounters_tight` PROVED modulo one clean sorry
+  (no tower). ✅ **DONE lap 13 (sizing correction)**: the lap-12 tight constants were
+  born-wrong-by-tightness (below the `(C_hold)^A` machinery floor); RESIZED to
+  `C_Qtight := (max (C_hold A) 1)^A`, `C_renewalWhite_tight := 2·(2·C_hold A+2)^A`
+  (sharp ℕ bridge `C_hold·n ≤ n₀·(n/2)` replaces the `3^A` hop; still a check21 GO,
+  9.3858e10 < 0.95e11). `Q_polynomial_decay_tight` now DERIVED from the single crux.
+- **NEXT — the frontier: prove `Q_black_edge_tight`** (`Bridge.lean:~737`) — the sole
+  remaining Option-B sorry: the black-edge estimate (7.39) at poly threshold `C_hold A`
+  (statement = `prop_7_8_at`'s `hC2` slot verbatim). The tower in the existing
+  `Q_black_edge_case3` proof is its HORIZON `P_fewWhite = encWindowIter…(R ~ 10³⁰¹⁰)`.
+  Crux window: `K_fewWhite ~ 10³⁰⁰⁸ ≪ C_hold ~ 10³⁰¹⁶` (~8.3 orders). Next probe: which
+  (7.56) mass term forces the horizon to iterate; can it run poly in `K`? Genuine
+  multi-lap §7 decorrelation.
 - Do NOT re-prove the *existing* `renewal_white_encounters` (the clean headlines consume it —
   a sorry-backed witness there would poison their axiom base). Option B is a parallel, tight copy.
 
