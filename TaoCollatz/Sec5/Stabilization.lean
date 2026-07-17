@@ -3205,34 +3205,44 @@ noncomputable def c_stab : ℝ := min (min c_valSumTail c_fpApprox) c_approxToZ
 theorem c_stab_pos : 0 < c_stab :=
   lt_min (lt_min c_valSumTail_pos c_fpApprox_pos) c_approxToZ_pos
 
--- RATIFY-3: window endpoints spelled per the spec's guidance as `[x^α, x^{α²}]` and
--- `[x^{α²}, x^{α³}]` (using `alpha^2`, `alpha^3`), which the SKELETON-SPEC flagged as the
--- intended reading of its nested-pow shorthand. Judge against §5 pp.25–28.
--- RELOCATED (2026-07-15) from `Sec5/FirstPassage.lean` VERBATIM (byte-identical statement) so the
--- assembly can consume C8 (`first_passage_approx`) + C10 (`fine_scale_mixing`) without an import cycle.
-/-- **Proposition 1.11** (stabilization): the passage-location law is stable across the
-two nearby log-windows, and non-passage is rare. The spine's key input. -/
-theorem stabilization_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- **The reified stabilization constant** (Prop 1.11, the Sec5 spine capstone): C7 leg +
+4× the C8 leg + 2× the window-stability leg (big-C campaign, step 2). -/
+noncomputable def C_stab : ℝ := C_valSumGeom + 4 * C_fpApprox + 2 * C_windowStable
+
+theorem C_stab_pos : 0 < C_stab :=
+  add_pos (add_pos C_valSumGeom_pos (mul_pos (by norm_num) C_fpApprox_pos))
+    (mul_pos (by norm_num) C_windowStable_pos)
+
+/-- Sibling of the WATCHED `stabilization` with the `c`/`C` slots pinned at
+(`c_stab`, `C_stab`) — the `_atC` form (big-C campaign, step 2), cutoff existential.
+**This completes the Sec5 spine.**  Prop 1.11: the passage-location law is stable across
+the two nearby log-windows, and non-passage is rare. -/
+theorem stabilization_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       (∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
-          ≤ C * x ^ (-c_stab)) ∧
+          ≤ C_stab * x ^ (-c_stab)) ∧
       PMF.dTV ((logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).map (passLoc ⌊x⌋₊))
               ((logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).map (passLoc ⌊x⌋₊))
-        ≤ C * (Real.log x) ^ (-c_stab) := by
-  obtain ⟨C7, x7, hC7, h7⟩ := first_passage_nonescape_explicit
-  obtain ⟨C8, x8, hC8, h8⟩ := first_passage_approx_explicit
-  obtain ⟨Cs, xs, hCs, hstab⟩ := approxMainTerm_window_stable_explicit
+        ≤ C_stab * (Real.log x) ^ (-c_stab) := by
+  obtain ⟨x7, h7⟩ := first_passage_nonescape_atC
+  obtain ⟨x8, h8⟩ := first_passage_approx_atC
+  obtain ⟨xs, hstab⟩ := approxMainTerm_window_stable_atC
+  set C7 : ℝ := C_valSumGeom with hC7def
+  set C8 : ℝ := C_fpApprox with hC8def
+  set Cs : ℝ := C_windowStable with hCsdef
+  have hC7 : 0 < C7 := C_valSumGeom_pos
+  have hC8 : 0 < C8 := C_fpApprox_pos
+  have hCs : 0 < Cs := C_windowStable_pos
   set c7 : ℝ := c_valSumTail with hc7def
   set c8 : ℝ := c_fpApprox with hc8def
   set cs : ℝ := c_approxToZ with hcsdef
   have hc7 : 0 < c7 := c_valSumTail_pos
   have hc8 : 0 < c8 := c_fpApprox_pos
   have hcs : 0 < cs := c_approxToZ_pos
-  rw [show c_stab = min (min c7 c8) cs from rfl]
-  refine ⟨C7 + 4 * C8 + 2 * Cs,
-    max (max (max x7 x8) xs) (Real.exp 1),
-    by positivity, ?_⟩
+  rw [show c_stab = min (min c7 c8) cs from rfl,
+    show C_stab = C7 + 4 * C8 + 2 * Cs from rfl]
+  refine ⟨max (max (max x7 x8) xs) (Real.exp 1), ?_⟩
   intro x hx
   -- thresholds
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
@@ -3322,6 +3332,25 @@ theorem stabilization_explicit :
       _ = (4 * C8 + 2 * Cs) * (Real.log x) ^ (-c) := by ring
       _ ≤ (C7 + 4 * C8 + 2 * Cs) * (Real.log x) ^ (-c) := by
           apply mul_le_mul_of_nonneg_right _ hLnn; linarith
+
+-- RATIFY-3: window endpoints spelled per the spec's guidance as `[x^α, x^{α²}]` and
+-- `[x^{α²}, x^{α³}]` (using `alpha^2`, `alpha^3`), which the SKELETON-SPEC flagged as the
+-- intended reading of its nested-pow shorthand. Judge against §5 pp.25–28.
+-- RELOCATED (2026-07-15) from `Sec5/FirstPassage.lean` VERBATIM (byte-identical statement) so the
+-- assembly can consume C8 (`first_passage_approx`) + C10 (`fine_scale_mixing`) without an import cycle.
+/-- **Proposition 1.11** (stabilization): the passage-location law is stable across the
+two nearby log-windows, and non-passage is rare. The spine's key input.  Now delegates to
+`stabilization_atC` (big-C campaign, step 2: `C := C_stab`). -/
+theorem stabilization_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      (∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
+          ≤ C * x ^ (-c_stab)) ∧
+      PMF.dTV ((logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).map (passLoc ⌊x⌋₊))
+              ((logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).map (passLoc ⌊x⌋₊))
+        ≤ C * (Real.log x) ^ (-c_stab) := by
+  obtain ⟨x₀, h⟩ := stabilization_atC
+  exact ⟨C_stab, x₀, C_stab_pos, h⟩
 
 -- RATIFY-3 (see above): statement byte-identical to the ratified pin; the proof body lives in
 -- `stabilization_explicit` (effective-constants campaign, sibling + delegate).
