@@ -1,6 +1,36 @@
-# HANDOFF — big-C campaign, lap 9 (review + B1 transcription, 2026-07-17)
+# HANDOFF — big-C campaign, lap 10 in progress (Sec5 spine, 2026-07-17)
 
-## State at lap end (branch `explicit-big-c`, all committed, build green)
+## State (branch `explicit-big-c`, all committed, build green)
+
+HEAD `2db3ae6`. Full `lake build` green (3327 jobs) at every commit; differ
+`tools/tao_stmt_diff.py fabea6f HEAD` 35/35; `check_blueprint.py` 19/19. Still exactly
+1 real `sorry` (`Statement.lean:65`, the pin). Route status unchanged: STEP 3 STOPPED
+(see below), step-2 transcription continues.
+
+## Lap 10 progress (3 commits)
+
+1. **`13d622f` — `harmonic_to_Z` big-C**: `C_harmonicZ := C_harmZfine + C_mainZbridge`,
+   `harmonic_to_Z_atC` (cutoff ∃), triangle through `harmZfine`; `_explicit` delegates.
+2. **`ac405c7` — leaf-A inputs**: `windowMass_estimate_atC` (C=3, cutoff ∃,
+   FirstPassage.lean), `windowMass_ge_clog_at` (c=1/10000, cutoff `2^2000`, fully
+   explicit, ApproxFormula.lean), `perNHarmonic_le_at` (C=4 via `cn_bound_at`).
+3. **`2db3ae6` — leaf A + per-n eval**: `C_epsPerNHarm := 2+3·(3/(1/10000))+2·3/(α−1)`,
+   `C_perNHarm := C_epsPerNHarm·4`, `perNTerm_harmonic_approx_atC` (300-line body ported
+   via `set`-rebind; **rail: `set Cw := 3`/`set CH := 4` BEFORE obtaining
+   `Nstar_mem_logWindow`, whose `4/3` literals must not be abstracted**);
+   `C_perNTermEval := C_perNHarm + C_harmonicZ`, `perNTerm_eval_atC`.
+   **Sec5 (5.19)+(5.20) per-`n` chain now fully constant-explicit.**
+
+## Next (grind orders): `stabilization` (watched) — combines `perNTerm_eval` +
+`Iy_card_bracket` + `first_passage_approx` (C8, already explicit from the c-campaign?
+check `first_passage_approx_explicit` C-slot). Then FirstPassage (16) / ApproxFormula
+(23) / Sec3 (7) / Syracuse (1) / Prob (1) slot sweeps.
+
+---
+
+# (lap 9 baton below)
+
+## State at lap 9 end (branch `explicit-big-c`, all committed, build green)
 
 HEAD `281eee7`. Full `lake build` green (3327 jobs) at every commit; differ
 `tools/tao_stmt_diff.py fabea6f HEAD` 35/35 (no watched statement touched);
