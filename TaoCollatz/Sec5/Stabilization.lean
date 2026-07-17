@@ -1173,6 +1173,9 @@ theorem Nstar_odd {k : ℕ} (ā : Fin k → ℕ) (hpos : ∀ i, 1 ≤ ā i) {M :
       (by have := pre_pos hk1 ā hpos (m := k) hk1; omega : pre ā k ≠ 0)).mul_left M
     omega
 
+/-- The `Nstar_mem_logWindow` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_NstarWindow : ℝ := max (Real.exp 1073741824) X_twoMZero
+
 -- HEARTBEAT: one large log-arithmetic assembly (window bounds × margin rpow algebra × casts); the
 -- many linarith/nlinarith/positivity calls exhaust the default per-declaration budget cumulatively.
 set_option maxHeartbeats 1600000 in
@@ -1184,8 +1187,8 @@ Log-arithmetic: `3^{n−m₀}·N* = M·2^{pre ā}·(1 − fnat/(M·2^{pre}))` wi
 = O(x^{-2/5})`, so `log N* = log M + pre·log 2 − (n−m₀)·log 3 + O(x^{-c}) = log x + n·log(4/3) ±
 (log^{0.7} + log 2·log^{0.6} + o(1))·x`, and the `±log^{0.8}x` margins built into `IyLo`/`IyHi` (5.9)
 dominate the slack.  **[C9 leaf A sub-lemma — pure log-arithmetic; does NOT consume C10.]** -/
-theorem Nstar_mem_logWindow :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+theorem Nstar_mem_logWindow_atX :
+    ∀ x : ℝ, X_NstarWindow ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
         ∀ ā : Fin (n - mZero x) → ℕ, goodTuple x (n - mZero x) ā →
           ∀ M : ℕ, M % 2 = 1 →
@@ -1196,8 +1199,10 @@ theorem Nstar_mem_logWindow :
             ((M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā) / 3 ^ (n - mZero x))
               ∈ logWindow y (y ^ alpha) := by
   classical
-  obtain ⟨x₁, _, htwo⟩ := two_mZero_le_of_mem_Iy
-  refine ⟨max (Real.exp 1073741824) x₁, fun x hx y hy n hn ā hg M hModd hMlo hMhi hdvd hle => ?_⟩
+  have htwo := two_mZero_le_of_mem_Iy_at
+  set x₁ : ℝ := X_twoMZero with hx₁def
+  rw [show X_NstarWindow = max (Real.exp 1073741824) x₁ from rfl]
+  intro x hx y hy n hn ā hg M hModd hMlo hMhi hdvd hle
   have hxbig : Real.exp 1073741824 ≤ x := le_trans (le_max_left _ _) hx
   have hxx1 : x₁ ≤ x := le_trans (le_max_right _ _) hx
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hxbig
@@ -1375,6 +1380,20 @@ theorem Nstar_mem_logWindow :
     have hfnn : (0 : ℝ) ≤ (fnat (n - mZero x) ā : ℝ) := Nat.cast_nonneg _
     linarith [hQhi, hfnn]
 
+/-- ∃-form of `Nstar_mem_logWindow_atX` (X-chase: `x₀ := X_NstarWindow`). -/
+theorem Nstar_mem_logWindow :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+        ∀ ā : Fin (n - mZero x) → ℕ, goodTuple x (n - mZero x) ā →
+          ∀ M : ℕ, M % 2 = 1 →
+            Real.exp (-Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x ≤ (M : ℝ) →
+            (M : ℝ) ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x →
+            3 ^ (n - mZero x) ∣ (M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā) →
+            fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x) →
+            ((M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā) / 3 ^ (n - mZero x))
+              ∈ logWindow y (y ^ alpha) :=
+  ⟨X_NstarWindow, Nstar_mem_logWindow_atX⟩
+
 /-- **`N*` cast to ℝ** — the exact-division value `(M·2^{pre ā} − fnat)/3^k` as a real quotient
 (the division is exact by the affine divisibility). -/
 theorem Nstar_cast {k : ℕ} (ā : Fin k → ℕ) {M : ℕ}
@@ -1533,23 +1552,31 @@ noncomputable def C_perNHarm : ℝ := C_epsPerNHarm * 4
 theorem C_perNHarm_pos : 0 < C_perNHarm :=
   mul_pos C_epsPerNHarm_pos (by norm_num)
 
+/-- The `perNTerm_harmonic_approx` cutoff (X-chase): witness copied verbatim from the
+`_atC` proof at the explicit upstream names (last arm: `exp Cε`,
+`Cε = 2 + 3·(Cw/cD) + 2·Cw/(α−1)` at `Cw = 3`, `cD = 1/10000`). -/
+noncomputable def X_perNHarm : ℝ :=
+  max (max X_windowBase ((2 : ℝ) ^ (2000 : ℝ)))
+    (max (max (max X_cnBound (Real.exp 1024)) X_NstarWindow)
+      (max (Real.exp 1024)
+        (Real.exp (2 + 3 * ((3 : ℝ) / (1 / 10000)) + 2 * 3 / (alpha - 1)))))
+
 -- HEARTBEAT: one large analytic assembly (per-(ā,M) window/harmonic algebra with two nlinarith
 -- cores, plus nested-tsum summability plumbing); the many nlinarith/positivity calls exhaust the
 -- default per-declaration budget cumulatively (mirrors `Nstar_mem_logWindow`).
 set_option maxHeartbeats 1600000 in
 open Classical in
-/-- Sibling of `perNTerm_harmonic_approx` with the `c`/`C` slots pinned at
-(`c_perNHarm`, `C_perNHarm`) — the `_atC` form (big-C campaign, step 2), cutoff existential
-(`windowMass_estimate_atC` / `Nstar_mem_logWindow` cutoffs are existential). -/
-theorem perNTerm_harmonic_approx_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- Universal-cutoff form of `perNTerm_harmonic_approx_atC` (X-chase). -/
+theorem perNTerm_harmonic_approx_atCX :
+    ∀ x : ℝ, X_perNHarm ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |perNTerm x E y n - perNHarmonic x E n / ((alpha - 1) / 2 * Real.log y)|
             ≤ C_perNHarm * (Real.log x) ^ (-c_perNHarm) / ((alpha - 1) / 2 * Real.log y) := by
   rw [show c_perNHarm = 0.3 from rfl]
   classical
-  obtain ⟨xw, hw⟩ := windowMass_estimate_atC
+  have hw := windowMass_estimate_atCX
+  set xw : ℝ := X_windowBase with hxwdef
   have hDlbAll := windowMass_ge_clog_at
   have hHAll := perNHarmonic_le_at
   -- (`set` the pinned constants FIRST, then obtain `Nstar_mem_logWindow` — its statement
@@ -1562,7 +1589,8 @@ theorem perNTerm_harmonic_approx_atC :
   have hCwpos : (0 : ℝ) < Cw := by rw [hCwdef]; norm_num
   have hcDpos : (0 : ℝ) < cD := by rw [hcDdef]; norm_num
   have hCHpos : (0 : ℝ) < CH := by rw [hCHdef]; norm_num
-  obtain ⟨xN, hNwin⟩ := Nstar_mem_logWindow
+  have hNwin := Nstar_mem_logWindow_atX
+  set xN : ℝ := X_NstarWindow with hxNdef
   have halpha1 : (0 : ℝ) < alpha - 1 := by norm_num [alpha]
   have hC1nn : (0 : ℝ) ≤ Cw / cD := (div_pos hCwpos hcDpos).le
   have hC2nn : (0 : ℝ) ≤ 2 * Cw / (alpha - 1) :=
@@ -1572,8 +1600,9 @@ theorem perNTerm_harmonic_approx_atC :
   have hCeq : C_perNHarm = Cε * CH := by
     rw [hCεdef, hCwdef, hcDdef, hCHdef]; unfold C_perNHarm C_epsPerNHarm; norm_num
   rw [hCeq]
-  refine ⟨max (max xw xD) (max (max xH xN) (max (Real.exp 1024) (Real.exp Cε))),
-    fun x hx E hE y hy n hn => ?_⟩
+  rw [show X_perNHarm = max (max xw xD) (max (max xH xN) (max (Real.exp 1024) (Real.exp Cε)))
+    from rfl]
+  intro x hx E hE y hy n hn
   simp only [max_le_iff] at hx
   obtain ⟨⟨hxw, hxD⟩, ⟨hxH, hxN⟩, hx1024, hxCε⟩ := hx
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hx1024
@@ -1861,6 +1890,15 @@ theorem perNTerm_harmonic_approx_atC :
       field_simp
       ring
     linarith [hUP, hid, hkey]
+
+/-- ∃-form of `perNTerm_harmonic_approx_atCX` (X-chase: `x₀ := X_perNHarm`). -/
+theorem perNTerm_harmonic_approx_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNTerm x E y n - perNHarmonic x E n / ((alpha - 1) / 2 * Real.log y)|
+            ≤ C_perNHarm * (Real.log x) ^ (-c_perNHarm) / ((alpha - 1) / 2 * Real.log y) :=
+  ⟨X_perNHarm, perNTerm_harmonic_approx_atCX⟩
 
 /-- Sibling of `perNTerm_harmonic_approx` with the `c`-slot pinned to `c_perNHarm`; the
 original delegates here.  Now delegates to `perNTerm_harmonic_approx_atC` (big-C campaign,

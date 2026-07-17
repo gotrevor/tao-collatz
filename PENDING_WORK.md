@@ -1187,3 +1187,9 @@ is odd, and the pin is branch-only so retiring is free).
 - `X_fpApprox` + `first_passage_approx_atCX` — **C8 at its explicit cutoff**; `_atC`
   delegates. The whole `ApproxFormula.lean` cutoff spine is now closed-form.
   Audit 17/38, next `perNTerm_harmonic_approx_atCX` (phase 3, Stabilization.lean).
+
+### Successor lap 15 (2026-07-17) — phase 3 entry 1/11
+
+- `X_NstarWindow` (+ `Nstar_mem_logWindow_atX`) and `X_perNHarm` +
+  `perNTerm_harmonic_approx_atCX` (heartbeat shields kept on the theorems, not the defs);
+  delegates in place. Audit 18/38, next `good_tuple_whp_iid_atCX`.
