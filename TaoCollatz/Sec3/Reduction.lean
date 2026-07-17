@@ -185,19 +185,25 @@ theorem C_descStep_pos : 0 < C_descStep := mul_pos (by norm_num) C_stab_pos
 Route: `B_x ⊆ {Pass_x ∈ E}` up to the non-passage event (`stabilization` part 1, note
 `1 ∈ E_{N₀}` since `passLoc = 1` off passage and `Syrmin 1 = 1 ≤ N₀`); swap windows by
 `stabilization`'s dTV bound via `abs_expect_indicator_sub_le_dTV`; re-enter `B_{x^α}` by
-`descentEvent_mono` (⌊x⌋₊ ≤ ⌊x^α⌋₊). -/
-theorem descentProb_step_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
+`descentEvent_mono` (⌊x⌋₊ ≤ ⌊x^α⌋₊).
+X-chase cutoff: the witness max-tree copied verbatim, `x₀ := X_stab`. -/
+noncomputable def X_descStep : ℝ := max X_stab (Real.exp 1)
+
+/-- One-scale recursion at the explicit cutoff `X_descStep` (X-chase). -/
+theorem descentProb_step_atCX :
+    ∀ x : ℝ, X_descStep ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
       descentProb ⌊x⌋₊ (x ^ alpha) N₀
         ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀
           + C_descStep * (Real.log x) ^ (-c_stab) := by
-  obtain ⟨x₀, hstab⟩ := stabilization_atC
+  have hstab := stabilization_atCX
+  set x₀ : ℝ := X_stab with hx₀def
   set C : ℝ := C_stab with hCdef
   have hC : 0 < C := C_stab_pos
   set c : ℝ := c_stab with hcdef
   have hc : 0 < c := c_stab_pos
   rw [show C_descStep = 2 * C from rfl]
-  refine ⟨max x₀ (Real.exp 1), fun x hx N₀ hN₀ => ?_⟩
+  rw [show X_descStep = max x₀ (Real.exp 1) from rfl]
+  intro x hx N₀ hN₀
   have hx₀ : x₀ ≤ x := le_trans (le_max_left _ _) hx
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hx1 : (1 : ℝ) ≤ x := by
@@ -283,6 +289,15 @@ theorem descentProb_step_atC :
         + C * (Real.log x) ^ (-c) := by linarith [hchain2]
     _ ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀
         + 2 * C * (Real.log x) ^ (-c) := by nlinarith [herr, hC]
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `descentProb_step_atCX` (X-chase: `x₀ := X_descStep`). -/
+theorem descentProb_step_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
+      descentProb ⌊x⌋₊ (x ^ alpha) N₀
+        ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀
+          + C_descStep * (Real.log x) ^ (-c_stab) :=
+  ⟨X_descStep, descentProb_step_atCX⟩
 
 /-- Explicit-`c` form of the one-scale recursion: delegates to `descentProb_step_atC`
 (big-C campaign, step 2: `C := C_descStep`). -/

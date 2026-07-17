@@ -1249,3 +1249,8 @@ is odd, and the pin is branch-only so retiring is free).
   `stabilization_atCX` — **Prop 1.11 at its explicit cutoff; the Sec5 spine is fully
   X-chased.** `_atC` delegates. Audit 28/38, next phase 4: `X_descStep` +
   `descentProb_step_atCX` (Sec3/Reduction.lean).
+
+### Successor lap 26 (2026-07-17) — phase 4 entry 1/?
+
+- `X_descStep := max X_stab (exp 1)` + `descentProb_step_atCX` (Sec3 one-scale recursion);
+  `_atC` delegates. Audit 29/38, next `X_descBase` + `descentProb_base_atCX`.
