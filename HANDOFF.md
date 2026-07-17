@@ -1,68 +1,73 @@
-# HANDOFF — big-C campaign, laps 4–5 (2026-07-17)
+# HANDOFF — big-C campaign, lap 6 (2026-07-17)
 
-**Read `DIRECTION.md` first — it outranks this file.** Judge re-pin `CTao = 10^(10¹¹)`
-is live; step 2 (sibling+delegate, bottom-up) is in progress. Then read the lap-4/5
-entries in `PENDING_WORK.md` (and lap-2/2b/3 for the earlier defs).
+**Read `DIRECTION.md` first — it outranks this file.** STEP 2 (sibling+delegate, bottom-up)
+is live against the judge re-pin `CTao = 10^(10¹¹)`. Then read the lap-6* entries in
+`PENDING_WORK.md`, and `STATUS.md` for the durable overview.
 
 ## State (branch `explicit-big-c`, all committed, build green)
 
-- HEAD `98bcf6b` (Lemma 7.9 + F* chain). **Always diff vs the re-pin commit:**
-  `tools/tao_stmt_diff.py fabea6f HEAD` → 35/35 character-identical at every commit
-  this lap. `check_blueprint.py` all green (17 = ladder GO, 18 = symbolic-def mirror).
-- **Sec7 ≈ 26 of 22+thresholds sites done** (the census over-counts because thresholds
-  and sub-engines got their own defs). Fully explicit now:
-  - X6 chain (laps 2–3): `C_hold`-tower, `c/C_fpLocation` etc. (Monotone/HoldLocal/
-    FpLocation).
-  - (7.61) tails (lap 4): `C_fpCol`, `K_rowG`, `c/C_fpColDev`, `c/C_fpColTail`,
-    `c/C_fpHeight`, `c/C_fpHeightTail` (FpLocation + ManyTriangles);
-    `T_colTail A P` (Case3 `col_tail_mass_le`).
-  - X10 (laps 4–5): `C_apexProx=2`/`S_apexProx=1e8` (X10a), `K_intG` (Gweight-ℤ
-    engines), `C_encSep` (X10b), `M_encTri=1e27`/`c_encTri`/`C_encTri`
-    (`triangle_encounter_le_rpow`, 420-line core), `C_triEnc = max C_encTri 1e11`
-    (the pinned `triangle_encounter_le`).
-  - X9 white-exit (lap 5): `T_gaussColTail c C'`, `T_outStrip`,
-    `fpDist_any_triangle_le_at` (thr 0), `p_whiteExit=3/4`/`T_whiteExitDeep`
-    (`fpDist_white_exit_deep`), `eps0_manyTri=1/100`/`g_manyTri`
-    (`many_triangles_white` → `fstar_markov` → `reaches_fewWhite_mass_le(_ten)`).
+- HEAD `937f407`. Full `lake build` green (3327 jobs). Differ vs re-pin baseline:
+  `tools/tao_stmt_diff.py fabea6f HEAD` → **35/35 character-identical** every commit.
+  `check_blueprint.py` all 18 pass (17 = ladder GO 9.39×10¹⁰ < 10¹¹, 18 = symbolic mirror).
+- **Exactly 1 real `sorry`** in `TaoCollatz/`: `Statement.lean:68`
+  (`tao_collatz_quantitative_fully_explicit`, the campaign pin). The 3 merged headlines
+  are `#print axioms`-clean (trust base only). Everything else is docstring history.
 
-## Key finding (lap 5) — the e^{ch·Mth} scare is benign
+## What lap 6 did (review + Case3 E∗/few_white cluster)
 
-`C_encTri` contains `exp(c_fpHeightTail·10²⁷)` (log₁₀ ≈ 8.5×10²¹ ≫ ladder head
-9.39×10¹⁰). Traced consumption: every downstream hop (few_white → Q_black_edge_case3
-→ prop_7_8 → Q_polynomial_decay → renewal_white_encounters C0-arm) converts constants
-into THRESHOLDS via `T_expRpow`-style lemmas — logarithmic collapse — so the C0-arm
-lands at log₁₀ ~10⁸–10⁹ and check17's GO stands. **When Q_polynomial_decay's C0 is
-fully explicit, extend check18 to assert C0-arm < head numerically.**
-
-## Method rails (binding, learned)
-
-- `_core` pattern for any body >100 lines: constants as ∀-bound vars + hypothesis
-  bundle, body verbatim, sibling = core @ defs + `unfold` + `exact`. (`set+clear_value`
-  refuted — times out.)
-- Unused hypothesis binders in cores → `_h` prefix or the build errors
-  (warningAsError). Docstrings strand when defs are inserted above a theorem — move
-  them onto the delegating sibling.
-- Statements byte-identical; never touch a watched pin (differ per commit).
-- Never evaluate big numerals; log-arithmetic only.
+- **Review lap (6):** validated direction (sound + current, no route-trigger fired),
+  created durable `STATUS.md`, left operator-owned CURRENT DIRECTIVE untouched.
+- **Forward-trace of C2 (6c):** `Q_black_edge_case3` exposes ONLY a threshold `Cthr : ℕ`
+  (no free multiplicative constant); it passes UNCHANGED up through the damping chain and
+  combines only at `few_white_mass_le`. C2 feeds the ladder as `Cthr^A` in
+  `Q_polynomial_decay`'s C0-arm (dominated by the `n₀^B` head — lap-5 audit). **So the
+  whole damping chain above `few_white_mass_le` is a threshold passthrough.**
+- **Nodes made explicit this lap** (Case3.lean, all ∃-forms delegate byte-identically):
+  - `few_white_reach_mass_le` → `_at` at `eps0_manyTri`/`g_manyTri`.
+  - `bigTriangle_walk_le_rpow` → `_explicitC` at `C_encTri`/`c_encTri`, A₀=5.
+  - `estar_union_le_rpow` → defs `C_estarUnion=4·C_encTri`, `c_estarUnion`, `A0_estarUnion`
+    (via `_core` rail); `_pos`/`one_le_` lemmas.
+  - `estar_scaled_numeric` → defs `Kthr_estarScaled`, `Warg_estarScaled`,
+    `A0_estarScaled C' c A₀e`; `_at` via `unfold`-prefix + verbatim body.
+  - `few_white_estar_mass_le` → def `A0_fewEstar`; `_at` at `A'=2A+A0_fewEstar`,
+    `Cthr=10^30`.
 
 ## Next steps (bottom-up continuation, in order)
 
-1. Case3.lean `few_white_reach_mass_le` (≈1700): ε₀/g passthrough from
-   `reaches_fewWhite_mass_le_ten_at` — same core/`_at` pattern as the fstar chain.
-2. `bigTriangle_walk_le_rpow` (Case3:467) and `estar_union_le_rpow` (Case3:~1200):
-   over `triangle_encounter_le_rpow_explicitC` (already explicit).
-3. `few_white_estar_mass_le` (∃A' ∃Cthr) → `few_white_mass_le` (∃P ∃Cthr; consumes
-   `T_colTail`) → `damping_expectation_le` → `damping_column_mass_le` →
-   `damped_iter_expectation_le` → `Q_black_edge_case3` — this reifies `C2`, then
-   wire it into `prop_7_8_at` (BlackEdgeQ.lean) → `Q_polynomial_decay` constant
-   fully symbolic → extend check18 with the C0-arm assert (see key finding).
-4. Then `renewal_white_encounters` (Bridge.lean:507, `n0 := 2·C_hold+2`, witness
-   max) + Fourier passthrough (`key_fourier_decay` → `charFn_decay`), then Sec6
-   (8 slots), Sec5 (37), Sec3 (7), then STEP 3 (the `C_ladder ≤ CTao` inequality
-   and the Statement.lean discharge).
+1. **`few_white_mass_le`** (Case3:~2505, **WATCHED** — keep ∃-form byte-identical, differ
+   must stay 35/35). It combines all thresholds (line ~2545):
+   `Cthr = max (max 10^30 (T_colTail A P)) (max (10·g_manyTri) (max ⌈B^2.5⌉ ⌈10·500^(1/A)⌉))`,
+   `P = encWindowIter (2A+A0_fewEstar) (K+1) R`, `K = ⌈(A+3)log10/epsBW³⌉₊`,
+   `R = ⌈((K+1)+(A+5)log10+2)/eps0_manyTri⌉₊`, `B = 4^{2A+A0_fewEstar}(1+P)^3`.
+   **All inputs are now explicit** — name `P_fewWhite A`, `K_fewWhite A`, `R_fewWhite A`,
+   `Cthr_fewWhite A` as defs, write `_explicitC` sibling, delegate. Watch: `col_tail_mass_le`
+   is called with `P := P_fewWhite A`, so `T_colTail A P_fewWhite` appears.
+2. **Damping passthrough** (Case3): `damping_expectation_le` → `damping_column_mass_le`
+   (obtains `Cthr, P` from few_white; may combine with `col_tail`) → `damped_iter_expectation_le`
+   → `Q_black_edge_case3` (this reifies **C2** = the final Cthr). Each currently carries
+   `Cthr`/`P` unchanged — mostly `obtain … refine ⟨Cthr, …⟩` passthroughs; make each an `_at`.
+3. **Wire C2 into `prop_7_8_at`** (BlackEdgeQ.lean): threshold `max (max (C_hold A) C2) 1`
+   → `Q_polynomial_decay` C0 fully symbolic → extend check18 with the C0-arm assert
+   (assert C0-arm < head numerically; see lap-5 finding — the `e^{ch·Mth}` term collapses
+   logarithmically through threshold conversions).
+4. Then `renewal_white_encounters` (Bridge.lean:~507) + Fourier passthrough
+   (`key_fourier_decay` → `charFn_decay`), then Sec6 (8 slots), Sec5 (37), Sec3 (7),
+   then STEP 3 (`C_ladder ≤ CTao` + Statement.lean discharge).
+
+## Method rails (binding, learned)
+
+- `_core` for bodies >100 lines: constants as ∀-bound vars + hypothesis bundle, body
+  verbatim, sibling = core @ defs + `unfold` + `exact`. (`set+clear_value` refuted — times out.)
+- **For a `set`-based witness** (like `estar_scaled_numeric`): `unfold <defs>` at the body
+  head, keep the original `set`-lines verbatim; they re-abstract the unfolded formulas cleanly.
+- **Delegate through a def by defeq:** `le_trans hest (hnum A hA)` closes even when `hnum`
+  mentions `A0_estarScaled …` and the goal mentions `A0_fewEstar` (its def) — `le_trans`
+  unifies by defeq. But `linarith` does NOT unfold defs: give it the fact ascribed to the
+  def-atom (`have h : … ≤ A0_fewEstar := (…).1`).
+- Statements byte-identical; never touch a watched pin (differ per commit).
+- Never evaluate big numerals; log-arithmetic only. `git-safe` for git writes.
 
 ## Watchouts
 
-- Comparator/ + formalization.yaml judge-owned; comparator CI red-until-done is by
-  design. `lean-sorry -c TaoCollatz` = 1 (Statement.lean pin) is correct.
-- `git-safe` for all git writes (bare `git show` OK for reads).
+- Comparator/ + formalization.yaml judge-owned; comparator CI red-until-done by design.
+- `lean-sorry -c TaoCollatz` = 1 (Statement.lean pin) is correct.
