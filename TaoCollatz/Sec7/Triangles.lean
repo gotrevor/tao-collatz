@@ -143,6 +143,97 @@ theorem theta_run_top_lower {n ξ : ℕ} {j : ℕ} {l : ℤ}
         have : (1 : ℚ) - epsBW ≤ 2 * |θq n ξ j (l + 1)| := by linarith
         linarith [this]
 
+/-- **Depth-δ run-top lower bound** (lap 17, option-(a) prerequisite): the
+`theta_run_top_lower` argument at an ARBITRARY depth level `δ` in place of `ε`.
+If `|θ(j,l)| ≤ δ` and `δ < |θ(j,l+1)|` (a δ-deep run tops out at `l`), then
+`|θ(j,l+h)| ≥ (1−δ)/2^h` for all `h ≥ 1`: the wrap integer at the top step is
+forced nonzero (else the point above were δ/2-deep), and each further step up
+at worst halves the phase. Exact ℚ arithmetic. -/
+theorem theta_deep_run_top_lower {n ξ : ℕ} {j : ℕ} {l : ℤ} {δ : ℚ} (hδ : 0 ≤ δ)
+    (hd : |θq n ξ j l| ≤ δ) (hw : δ < |θq n ξ j (l + 1)|) :
+    ∀ h : ℕ, 1 ≤ h → (1 - δ) / 2 ^ h ≤ |θq n ξ j (l + h)| := by
+  intro h h1
+  induction h with
+  | zero => omega
+  | succ m ih =>
+    by_cases hm : 1 ≤ m
+    · -- step: `|θ(l+m+1)| ≥ |θ(l+m)|/2`
+      have IH := ih hm
+      obtain ⟨k, hk⟩ := θq_pred_l n ξ j (l + ((m + 1 : ℕ) : ℤ))
+      have hcast : l + ((m + 1 : ℕ) : ℤ) - 1 = l + (m : ℤ) := by push_cast; ring
+      rw [hcast] at hk
+      have hhalf := θq_abs_le_half n ξ j (l + (m : ℤ))
+      have habs : |θq n ξ j (l + (m : ℤ))|
+          ≤ 2 * |θq n ξ j (l + ((m + 1 : ℕ) : ℤ))| := by
+        by_cases hk0 : k = 0
+        · rw [hk0] at hk
+          push_cast at hk
+          rw [hk, add_zero, abs_mul]
+          norm_num
+        · have hk1 : (1 : ℚ) ≤ |(k : ℚ)| := by
+            have : 1 ≤ |k| := Int.one_le_abs hk0
+            exact_mod_cast this
+          have h2θ : |2 * θq n ξ j (l + ((m + 1 : ℕ) : ℤ))|
+              = |θq n ξ j (l + (m : ℤ)) - k| := by
+            rw [show (2 : ℚ) * θq n ξ j (l + ((m + 1 : ℕ) : ℤ))
+                = θq n ξ j (l + (m : ℤ)) - k from by linarith [hk]]
+          have hlow : |(k : ℚ)| - |θq n ξ j (l + (m : ℤ))|
+              ≤ |θq n ξ j (l + (m : ℤ)) - k| := by
+            calc |(k : ℚ)| - |θq n ξ j (l + (m : ℤ))|
+                ≤ |(k : ℚ) - θq n ξ j (l + (m : ℤ))| := abs_sub_abs_le_abs_sub _ _
+              _ = |θq n ξ j (l + (m : ℤ)) - k| := abs_sub_comm _ _
+          have := abs_mul (2 : ℚ) (θq n ξ j (l + ((m + 1 : ℕ) : ℤ)))
+          rw [h2θ] at this
+          rw [show |(2 : ℚ)| = 2 from by norm_num] at this
+          linarith
+      calc (1 - δ) / 2 ^ (m + 1)
+          = ((1 - δ) / 2 ^ m) / 2 := by ring
+        _ ≤ |θq n ξ j (l + (m : ℤ))| / 2 := by linarith
+        _ ≤ |θq n ξ j (l + ((m + 1 : ℕ) : ℤ))| := by linarith
+    · -- base `h = 1`: the wrap integer is forced nonzero
+      have hm0 : m = 0 := by omega
+      subst hm0
+      obtain ⟨k, hk⟩ := θq_pred_l n ξ j (l + 1)
+      rw [show l + 1 - 1 = l from by ring] at hk
+      by_cases hk0 : k = 0
+      · exfalso
+        rw [hk0] at hk
+        push_cast at hk
+        rw [add_zero] at hk
+        have habs : |θq n ξ j l| = 2 * |θq n ξ j (l + 1)| := by
+          rw [hk, abs_mul]; norm_num
+        have : |θq n ξ j (l + 1)| ≤ δ := by linarith [abs_nonneg (θq n ξ j (l + 1))]
+        linarith
+      · have hk1 : (1 : ℚ) ≤ |(k : ℚ)| := by
+          have : 1 ≤ |k| := Int.one_le_abs hk0
+          exact_mod_cast this
+        have h2θ : |2 * θq n ξ j (l + 1)| = |θq n ξ j l - k| := by
+          rw [show (2 : ℚ) * θq n ξ j (l + 1) = θq n ξ j l - k from by linarith [hk]]
+        have hlow : |(k : ℚ)| - |θq n ξ j l| ≤ |θq n ξ j l - k| := by
+          calc |(k : ℚ)| - |θq n ξ j l| ≤ |(k : ℚ) - θq n ξ j l| :=
+              abs_sub_abs_le_abs_sub _ _
+            _ = |θq n ξ j l - k| := abs_sub_comm _ _
+        have habs2 := abs_mul (2 : ℚ) (θq n ξ j (l + 1))
+        rw [h2θ, show |(2 : ℚ)| = 2 from by norm_num] at habs2
+        have hgoalcast : l + ((0 + 1 : ℕ) : ℤ) = l + 1 := by push_cast; ring
+        rw [hgoalcast]
+        have : (1 : ℚ) - δ ≤ 2 * |θq n ξ j (l + 1)| := by linarith
+        linarith [this]
+
+/-- **Per-column exponential spacing of deep points** (lap 17, option-(a)
+prerequisite; the counting backbone of any fine-scale anti-concentration
+attack): if a δ-deep run tops out at `(j,l)` and another δ-deep point sits at
+height `l + h`, then `1 − δ ≤ δ·2^h` — i.e. the next deep point above a run
+top is at least `log₂((1−δ)/δ)` away. At depth `δ = ε·2^{−u}` the spacing
+grows linearly in `u`: deep points are the SPARSER the deeper. -/
+theorem deep_column_spacing {n ξ : ℕ} {j : ℕ} {l : ℤ} {δ : ℚ} {h : ℕ}
+    (hδ : 0 ≤ δ) (hd : |θq n ξ j l| ≤ δ) (hw : δ < |θq n ξ j (l + 1)|)
+    (h1 : 1 ≤ h) (hd' : |θq n ξ j (l + h)| ≤ δ) : 1 - δ ≤ δ * 2 ^ h := by
+  have hlow := theta_deep_run_top_lower hδ hd hw h h1
+  have h2 : (0:ℚ) < (2:ℚ) ^ h := by positivity
+  rw [div_le_iff₀ h2] at hlow
+  nlinarith [hlow, hd', h2]
+
 /-- **The vertical white gap**: above the top of a black column run, the next
 `13` lattice heights are white.  At `ε = 10⁻⁹⁰` the exact-rational lower
 bound `(1-ε)/2^13 > ε` has ample room. -/

@@ -837,3 +837,23 @@ axiom-clean and the pin is a stretch goal whose remaining distance is a new theo
 `exists_triangleFamily`) — size-≥S family triangles have apex phase ≤ ε·e^{−S}
 (near-definitional from `canonical` + `cornerTriple`; true and needed by any exp-depth
 route, including option (a)). Build green; check24 added (24/24).
+
+### Lap 17 (2026-07-17) — option-(a) prerequisites, part 1: per-column isolation FORMALIZED
+
+Flag from lap 16 stands (operator to rule). On-path work any ruling keeps:
+
+1. **DONE — `theta_deep_run_top_lower` + `deep_column_spacing` (Triangles.lean, after
+   `theta_run_top_lower`):** the run-top argument at ARBITRARY depth δ (exact ℚ, wrap
+   integer forced nonzero at the top step, halving above), and its counting corollary —
+   a δ-deep point above a δ-run top is ≥ log₂((1−δ)/δ) away (`1 − δ ≤ δ·2^h`). At depth
+   `δ = ε·2^{−u}` the per-column spacing is ≥ log₂(1/ε) + u ≈ 3322 + u: deep points are
+   sparser the deeper, LINEARLY in depth. This is the deterministic half of any
+   fine-scale anti-concentration statement (count × point-mass union bound).
+2. **NEXT (part 2): the point-mass half.** Read `charFn_decay` / `key_fourier_decay`
+   consumers: what bound on the walk's l-coordinate point mass (local-CLT shape
+   `sup_e P(l = e) ≤ C/√k` after k renewal steps) does the existing Fourier machinery
+   yield, and at what horizon cost? If a usable point-mass bound exists, the chain
+   count(u) × pointmass gives `P(entry height ≥ u) ≲ L/((u+3322)·√k)` — POLYNOMIAL, not
+   yet exponential, in u; check whether the architecture (check23 sizing) can consume a
+   polynomial depth-decay with the linear spacing (the check22 "dilated+linear" arm fit
+   at 3019 with 34 orders margin — the analogous computation for depth is open).
