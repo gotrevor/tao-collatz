@@ -1,11 +1,50 @@
-# HANDOFF — big-C campaign, lap 11 COMPLETE (STEP 2 TRANSCRIPTION COMPLETE, 2026-07-17)
+# HANDOFF — big-C campaign, lap 11 COMPLETE (C-SURFACE DONE + X-CHASE STARTED, 2026-07-17)
 
 ## State (branch `explicit-big-c`, all committed, build green)
 
-HEAD `6e7e627`. Full `lake build` green (3327 jobs) at every commit; differ
-`tools/tao_stmt_diff.py fabea6f HEAD` 35/35; `check_blueprint.py` 19/19. Still exactly
-1 real `sorry` (`Statement.lean:65`, the pin). Route status unchanged: STEP 3 STOPPED
-(operator ruling owed, `ROUTE-ESCALATION-2026-07-17.md`).
+HEAD `967f462`. Full `lake build` green at every commit (pre-commit gate); differ
+`tools/tao_stmt_diff.py fabea6f HEAD` 35/35; `check_blueprint.py` **20/20** (check20 is
+new). Still exactly 1 real `sorry` (`Statement.lean:65`, the pin). Route status
+unchanged: STEP 3 STOPPED (operator ruling owed, `ROUTE-ESCALATION-2026-07-17.md`).
+
+## Lap 11 second half (4 commits after the `6e7e627` milestone)
+
+- **`28cf7e9`** — handoff/ledger for the C-surface milestone.
+- **`d209f9a`** — **check20**: Sec5/Sec3 glue recomputed from the Lean def bodies —
+  leaves exact (C_fpApprox=20178, C_perNHarm=384008), glue = 31.3 orders (additive noise
+  vs the 9.39e10 head; check17's coarse "+15.2" was ~16 orders low, immaterial),
+  head-route `C_spine` matches check17's GO, as-written max picks the C0-arm (check19
+  conclusion unchanged).
+- **`0d93e29`** — PENDING_WORK addendum: **step-2 scope correction** — the "feeding
+  thresholds" half = the **X-chase** (de-existentialize the Sec5/Sec3 cutoffs; `C_syrSum X`
+  is the one place a threshold feeds CTao). Probe: ALL cutoff leaves are explicit
+  (`2^11`, `2^2000`, `exp(2000^5)`, `(1/ε)^(1/(1-θ))`; max/rpow builders only — no
+  tendsto-opaque leaf). Key simplification: step 3 only needs `(log X)^c ≤ log X` (c ≤ 1)
+  + `log X ≤ 10^17`-ish — numeral log-arithmetic, no tower rpow.
+- **`2873233`, `967f462`** — **X-chase begun** (FirstPassage bottom, 10 nodes):
+  `X_nZeroPos = 2^11`, `X_windowBase = max X_nZeroPos 2^2000` (shared by 4 nodes),
+  `X_intTestDev`, `X_intTestErr`, `X_intTestLogUnif`, `X_valSumGeom`,
+  `X_rpowNZero = 2^20`, `X_valSumTail`. **Rail**: convert each `_atC` to an `_atCX`
+  ∀-form (`∀ x, X_foo ≤ x → …`) via `have h := upstream_atCX; set x₀u := X_upstream;
+  rw [show X_foo = <witness max-tree over set-names> from rfl]; intro x hx …` then body
+  VERBATIM; keep the old ∃-form as a one-line delegate `⟨X_foo, foo_atCX⟩` (byte-identical
+  statement). Watch the adjacent-docstring parse error when inserting defs (bit twice).
+
+## Next (X-chase continuation, bottom-up)
+
+1. **FirstPassage remainder**: `rpow_le_eps_mul_of_lt_one` (witness
+   `max 1 ((1/ε)^(1/(1-θ)))` → def `X_rpowEps θ ε`), `descent_pow_bounds` (`2^30`),
+   `descent_passes` (`max (max xa xb) (max xc 2)` at the two rpowEps instances + descPow),
+   then **`first_passage_nonescape_atCX`** (`max X_valSumTail X_descPasses`).
+2. **ApproxFormula** (C8 chain, ~16 cutoffs), **Stabilization** (C9 chain — includes the
+   `exp(2000^5)` leaf in `mainZ_bound_atC`/`Iy_card_bracket`, `X_mainZbridge`,
+   `X_twoMZero=e^100000` etc. already defs), **Sec3** (7: step/base/ladder/whp/windowBad —
+   ends at `X_syrSum := max xw (exp 1)`, the `X` of `C_syrSum`).
+3. Then `log X_syrSum ≤ 10^17`-ish bound lemma (numeral log-arithmetic; see memory
+   `lean-linarith-decimal-rpow-poison` for the rpow-atom rail) — completes step 2's
+   threshold half. STEP 3 stays STOPPED (operator A/B ruling owed).
+4. When resuming, also mirror new X defs in check_blueprint (extend check20 or add
+   check21: assert `log10(log X_syrSum) < 17`).
 
 ## Lap 11 (6 commits) — **STEP-2 TRANSCRIPTION COMPLETE: spine fully constant-explicit**
 
