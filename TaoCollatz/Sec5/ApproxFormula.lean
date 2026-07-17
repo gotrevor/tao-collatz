@@ -1637,23 +1637,27 @@ noncomputable def C_edgeMass : ℝ := 2 / (1 / 10000)
 
 theorem C_edgeMass_pos : 0 < C_edgeMass := by unfold C_edgeMass; norm_num
 
-/-- Sibling of `passtime_edge_mass` with the `c`/`C` slots pinned at
-(`c_edgeMass`, `C_edgeMass`) — the `_atC` form (big-C campaign, step 2), cutoff
-existential. -/
-theorem passtime_edge_mass_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `passtime_edge_mass` cutoff (X-chase): witness copied verbatim from the `_atC`
+proof (`xn := X_windowBase`, the `logWindow_nonempty_atX` cutoff). -/
+noncomputable def X_edgeMass : ℝ :=
+  max (max ((2:ℝ) ^ (2000:ℝ)) X_windowBase) ((2:ℝ) ^ (2000:ℝ))
+
+/-- Universal-cutoff form of `passtime_edge_mass_atC` (X-chase). -/
+theorem passtime_edge_mass_atCX :
+    ∀ x : ℝ, X_edgeMass ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect (Set.indicator (Edge x y) 1)
           ≤ C_edgeMass * (Real.log x) ^ (-c_edgeMass) := by
   classical
-  obtain ⟨xn, hnon⟩ := logWindow_nonempty_of_large
+  have hnon := logWindow_nonempty_atX
   have hDlb := windowMass_ge_clog_at
   set cD : ℝ := (1 / 10000 : ℝ) with hcDdef
   have hcD : 0 < cD := by rw [hcDdef]; norm_num
   set xD : ℝ := (2:ℝ) ^ (2000:ℝ) with hxDdef
+  set xn : ℝ := X_windowBase with hxndef
   rw [show c_edgeMass = 1/5 from rfl, show C_edgeMass = 2/cD from rfl]
-  refine ⟨max (max ((2:ℝ) ^ (2000:ℝ)) xn) xD,
-    fun x hx y hy => ?_⟩
+  rw [show X_edgeMass = max (max ((2:ℝ) ^ (2000:ℝ)) xn) xD from rfl]
+  intro x hx y hy
   have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxn : xn ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
   have hxD : xD ≤ x := le_trans (le_max_right _ _) hx
@@ -1804,6 +1808,14 @@ theorem passtime_edge_mass_atC :
     _ = 2 / cD * Real.log x ^ (-(1/5):ℝ) * (cD * Real.log x) := hErpow.symm
     _ ≤ 2 / cD * Real.log x ^ (-(1/5):ℝ) * windowMass y (y ^ alpha) :=
         mul_le_mul_of_nonneg_left (hDlb x hxD y hy) (by positivity)
+
+/-- ∃-form of `passtime_edge_mass_atCX` (X-chase: `x₀ := X_edgeMass`). -/
+theorem passtime_edge_mass_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator (Edge x y) 1)
+          ≤ C_edgeMass * (Real.log x) ^ (-c_edgeMass) :=
+  ⟨X_edgeMass, passtime_edge_mass_atCX⟩
 
 /-- Sibling of `passtime_edge_mass` with the `c`-slot pinned to `c_edgeMass`; `C` and the
 threshold stay existential. The original delegates here.  Now delegates to

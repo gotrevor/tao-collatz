@@ -1126,3 +1126,9 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_goodTupleWhp := max X_goodTupleDev 1` + `approx_good_tuple_whp_atCX`; `_atC`
   delegates. Audit 6/38, next `passtime_edge_mass_atCX`.
+
+### Successor lap 4 (2026-07-17) — phase 2 entry 3/13
+
+- `X_edgeMass` + `passtime_edge_mass_atCX`; `_atC` delegates. Both upstreams
+  (`logWindow_nonempty_atX`, `windowMass_ge_clog_at`) were already explicit. Audit 7/38,
+  next `passtime_window_inner_atCX`.
