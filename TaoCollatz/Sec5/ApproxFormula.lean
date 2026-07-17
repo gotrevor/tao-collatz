@@ -2628,15 +2628,19 @@ theorem expect_mono_on_support {α : Type*} (p : PMF α) (S T : Set α)
     · rw [Set.indicator_of_notMem haS]
       exact Set.indicator_nonneg (fun _ _ => zero_le_one) a
 
+/-- The `mZero_le_of_mem_Iy` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_mZeroIy : ℝ := Real.exp 100000
+
 /-- **(5.17) interval brick** — every summation index `n ∈ I_y` satisfies `1 ≤ m₀ ≤ n`.  `m₀ ≈
 (α−1)/100·log x ≈ 10⁻⁵·log x` while `IyLo ≈ log(y/x)/log(4/3) + log^{0.8}x ≥ (α−1)·log x/log(4/3) ≈
 3·10⁻³·log x`, so `m₀ ≤ IyLo ≤ n` with room to spare; and `m₀ ≥ 1` once `log x ≥ 100/(α−1)`.  (Pure
 interval arithmetic on the frozen `α`; reuses the `log(4/3) ∈ [1/4,1/3]` idiom.) -/
-theorem mZero_le_of_mem_Iy :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+theorem mZero_le_of_mem_Iy_atX :
+    1 ≤ X_mZeroIy ∧ ∀ x : ℝ, X_mZeroIy ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
         1 ≤ mZero x ∧ mZero x ≤ n := by
-  refine ⟨Real.exp 100000, Real.one_le_exp (by norm_num), fun x hx y hy n hn => ?_⟩
+  rw [show X_mZeroIy = Real.exp 100000 from rfl]
+  refine ⟨Real.one_le_exp (by norm_num), fun x hx y hy n hn => ?_⟩
   have hxe : Real.exp 100000 ≤ x := hx
   have hx1 : (1 : ℝ) < x := lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (100000 : ℝ)]) hxe
   have hxpos : 0 < x := by linarith
@@ -2686,6 +2690,13 @@ theorem mZero_le_of_mem_Iy :
     linarith [hmle, hbridge, hdiv, hlog08]
   have hnge : IyLo x y ≤ (n : ℝ) := (mem_Iy_bounds hn).1
   exact ⟨hm1, by exact_mod_cast le_trans hIyLo_ge hnge⟩
+
+/-- ∃-form of `mZero_le_of_mem_Iy_atX` (X-chase: `x₀ := X_mZeroIy`). -/
+theorem mZero_le_of_mem_Iy :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+        1 ≤ mZero x ∧ mZero x ≤ n :=
+  ⟨X_mZeroIy, mZero_le_of_mem_Iy_atX.1, mZero_le_of_mem_Iy_atX.2⟩
 
 /-- The `two_mZero_le_of_mem_Iy` cutoff, symbolic (big-C campaign, step 2). -/
 noncomputable def X_twoMZero : ℝ := Real.exp 100000
@@ -3156,8 +3167,14 @@ theorem passes_of_eprime {x : ℝ} {E : Set ℕ} {N k : ℕ} (hm : 1 ≤ mZero x
 `exp(−log^{0.7}x)·(4/3)^{m₀}·x` STRICTLY exceeds `(3/4)·x·2^{2log^{0.6}x} + x^{1/5}`.  Since
 `m₀ = ⌊log x/100000⌋`, `(4/3)^{m₀} ≥ (3/4)·x^{log(4/3)/100000}`, so the floor grows like `x^{1+δ}`
 (δ > 0) while the RHS grows like `x·exp(O(log^{0.6}x))` — sub-`x^{1+δ}`.  This is exactly why a good
-orbit that already passed (`≤ x`, decreasing) can NEVER re-attain the `(4/3)^{m₀}x` floor. -/
-theorem earlyReturn_size_contra : ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+orbit that already passed (`≤ x`, decreasing) can NEVER re-attain the `(4/3)^{m₀}x` floor.
+The cutoff (X-chase): witness copied verbatim from the proof
+(`θ := 5 / ((α−1)/100 · log(4/3))`). -/
+noncomputable def X_earlyReturnSize : ℝ :=
+  Real.exp (max 1 ((5 / ((alpha - 1) / 100 * Real.log (4 / 3)) + 1) ^ (10 / 3 : ℝ)))
+
+/-- Universal-cutoff form of `earlyReturn_size_contra` (X-chase). -/
+theorem earlyReturn_size_contra_atX : 1 ≤ X_earlyReturnSize ∧ ∀ x : ℝ, X_earlyReturnSize ≤ x →
     (3 / 4 : ℝ) * x * (2 : ℝ) ^ (2 * Real.log x ^ (0.6 : ℝ)) + x ^ ((1 : ℝ) / 5)
       < Real.exp (-Real.log x ^ (0.7 : ℝ)) * (4 / 3 : ℝ) ^ mZero x * x := by
   have hβpos : (0 : ℝ) < (alpha - 1) / 100 := by unfold alpha; norm_num
@@ -3173,8 +3190,8 @@ theorem earlyReturn_size_contra : ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x�
     rwa [Real.log_exp] at this
   set θ := 5 / ((alpha - 1) / 100 * Real.log (4 / 3)) with hθdef
   have hθpos : 0 < θ := by rw [hθdef]; positivity
-  refine ⟨Real.exp (max 1 ((θ + 1) ^ (10 / 3 : ℝ))),
-    Real.one_le_exp_iff.mpr (le_trans zero_le_one (le_max_left _ _)), fun x hx => ?_⟩
+  rw [show X_earlyReturnSize = Real.exp (max 1 ((θ + 1) ^ (10 / 3 : ℝ))) from rfl]
+  refine ⟨Real.one_le_exp_iff.mpr (le_trans zero_le_one (le_max_left _ _)), fun x hx => ?_⟩
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hx
   have hx1 : (1 : ℝ) ≤ x :=
     le_trans (Real.one_le_exp_iff.mpr (le_trans zero_le_one (le_max_left _ _))) hx
@@ -3261,6 +3278,12 @@ theorem earlyReturn_size_contra : ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x�
   rw [Real.exp_lt_exp]
   nlinarith [hmaster]
 
+/-- ∃-form of `earlyReturn_size_contra_atX` (X-chase: `x₀ := X_earlyReturnSize`). -/
+theorem earlyReturn_size_contra : ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+    (3 / 4 : ℝ) * x * (2 : ℝ) ^ (2 * Real.log x ^ (0.6 : ℝ)) + x ^ ((1 : ℝ) / 5)
+      < Real.exp (-Real.log x ^ (0.7 : ℝ)) * (4 / 3 : ℝ) ^ mZero x * x :=
+  ⟨X_earlyReturnSize, earlyReturn_size_contra_atX.1, earlyReturn_size_contra_atX.2⟩
+
 open Classical in
 /-- **(5.17) reverse leg — the early-return event is EMPTY for large `x`** (PROVED modulo the analytic
 size gap `earlyReturn_size_contra`).  Case B: a `good⁽ⁿ⁻ᵐ⁰⁾` orbit that already passed `≤ ⌊x⌋` at
@@ -3273,20 +3296,27 @@ noncomputable def c_earlyReturn : ℝ := 1
 
 theorem c_earlyReturn_pos : 0 < c_earlyReturn := by norm_num [c_earlyReturn]
 
-/-- Sibling of `reverse_early_return_whp` with the `c`-slot pinned to `c_earlyReturn`; the
-original delegates here. -/
-theorem reverse_early_return_whp_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `reverse_early_return_whp` cutoff (X-chase): witness copied verbatim from the
+`_atC` proof at the explicit upstream names. -/
+noncomputable def X_earlyReturn : ℝ :=
+  max (max X_earlyReturnSize X_mZeroIy) (Real.exp 1)
+
+/-- Universal-cutoff form of `reverse_early_return_whp_atC` (X-chase). -/
+theorem reverse_early_return_whp_atCX :
+    ∀ x : ℝ, X_earlyReturn ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           ∑ n ∈ Iy x y, (logUnifOdd y (y ^ alpha)).expect
               (Set.indicator {N | goodTuple x (n - mZero x) (valVec N (n - mZero x)) ∧ Eprime x E (syr^[n - mZero x] N) ∧
                 passTime ⌊x⌋₊ N < n - mZero x} 1)
             ≤ 1 * (Real.log x) ^ (-c_earlyReturn) := by
-  obtain ⟨xs, hxs1, hsize⟩ := earlyReturn_size_contra
-  obtain ⟨xi, _hxi1, hint⟩ := mZero_le_of_mem_Iy
+  have hsize := earlyReturn_size_contra_atX.2
+  have hint := mZero_le_of_mem_Iy_atX.2
+  set xs : ℝ := X_earlyReturnSize with hxsdef
+  set xi : ℝ := X_mZeroIy with hxidef
   rw [show c_earlyReturn = 1 from rfl]
-  refine ⟨max (max xs xi) (Real.exp 1), fun x hx E hE y hy => ?_⟩
+  rw [show X_earlyReturn = max (max xs xi) (Real.exp 1) from rfl]
+  intro x hx E hE y hy
   have hxs : xs ≤ x := (le_max_left xs xi).trans ((le_max_left _ _).trans hx)
   have hxi : xi ≤ x := (le_max_right xs xi).trans ((le_max_left _ _).trans hx)
   have hexp : Real.exp 1 ≤ x := (le_max_right _ _).trans hx
@@ -3371,6 +3401,17 @@ theorem reverse_early_return_whp_atC :
     _ = 0 := Finset.sum_const_zero
     _ ≤ 1 * (Real.log x) ^ (-(1 : ℝ)) :=
         mul_nonneg (by norm_num) (Real.rpow_nonneg hlogpos.le _)
+
+/-- ∃-form of `reverse_early_return_whp_atCX` (X-chase: `x₀ := X_earlyReturn`). -/
+theorem reverse_early_return_whp_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          ∑ n ∈ Iy x y, (logUnifOdd y (y ^ alpha)).expect
+              (Set.indicator {N | goodTuple x (n - mZero x) (valVec N (n - mZero x)) ∧ Eprime x E (syr^[n - mZero x] N) ∧
+                passTime ⌊x⌋₊ N < n - mZero x} 1)
+            ≤ 1 * (Real.log x) ^ (-c_earlyReturn) :=
+  ⟨X_earlyReturn, reverse_early_return_whp_atCX⟩
 
 /-- Sibling of `reverse_early_return_whp` with the `c`-slot pinned to `c_earlyReturn`; the
 original delegates here.  Now delegates to `reverse_early_return_whp_atC` (big-C campaign,
