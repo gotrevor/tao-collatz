@@ -749,28 +749,35 @@ noncomputable def C_windowBad : ℝ := 2 * C_descWhp
 
 theorem C_windowBad_pos : 0 < C_windowBad := mul_pos (by norm_num) C_descWhp_pos
 
+/-- The `window_bad_sum` cutoff (X-chase): the witness max-tree copied verbatim from the
+`_atC` proof, with `x₀d := X_descWhp`, `x₀z := X_windowBase` (so `M = max X_windowBase 1`). -/
+noncomputable def X_windowBad : ℝ :=
+  max (max X_descWhp ((max X_windowBase 1) ^ (alpha : ℝ))) (Real.exp 1)
+
 /-- Sibling of `window_bad_sum` with the `c`/`C` slots pinned at (`c_ladder`, `C_windowBad`)
-— the `_atC` form (big-C campaign, step 2), cutoff existential. -/
-theorem window_bad_sum_atC :
-    ∃ x₀ : ℝ, ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+and the cutoff at `X_windowBad` (X-chase). -/
+theorem window_bad_sum_atCX :
+    ∀ N₀ : ℕ, ∀ x : ℝ, X_windowBad ≤ x → X_windowBad ≤ (N₀ : ℝ) →
       (N₀ : ℝ) ≤ x →
       ∑ N ∈ (logWindow x (x ^ alpha)).filter (· ∈ {N | N₀ < syrMin N}), (N : ℝ)⁻¹
         ≤ C_windowBad * (Real.log N₀) ^ (-c_ladder) * Real.log x := by
   classical
-  obtain ⟨x₀d, hwhp⟩ := descent_whp_atC
+  have hwhp := descent_whp_atCX
+  set x₀d : ℝ := X_descWhp with hx₀ddef
   set C : ℝ := C_descWhp with hCdef
   have hC : 0 < C := C_descWhp_pos
   set c : ℝ := c_ladder with hcdef
   have hc : 0 < c := c_ladder_pos
-  obtain ⟨x₀z, hnonempty⟩ := logWindow_nonempty_of_large
+  have hnonempty := logWindow_nonempty_atX
+  set x₀z : ℝ := X_windowBase with hx₀zdef
   have halpha0 : (0 : ℝ) < alpha := by norm_num [alpha]
   have halpha1 : (1 : ℝ) < alpha := by norm_num [alpha]
   set M := max x₀z 1 with hMdef
   have hM1 : (1 : ℝ) ≤ M := le_max_right _ _
   have hM0 : (0 : ℝ) < M := lt_of_lt_of_le one_pos hM1
   rw [show C_windowBad = 2 * C from rfl]
-  refine ⟨max (max x₀d (M ^ alpha)) (Real.exp 1),
-    fun N₀ x hx hN₀lb hN₀x => ?_⟩
+  rw [show X_windowBad = max (max x₀d (M ^ alpha)) (Real.exp 1) from rfl]
+  intro N₀ x hx hN₀lb hN₀x
   -- basic sizes
   have hxd : x₀d ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hN₀d : x₀d ≤ (N₀ : ℝ) :=
@@ -863,6 +870,15 @@ theorem window_bad_sum_atC :
         refine mul_le_mul_of_nonneg_left hmass_ub ?_
         positivity
     _ = 2 * C * (Real.log N₀) ^ (-c) * Real.log x := by ring
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `window_bad_sum_atCX` (X-chase: `x₀ := X_windowBad`). -/
+theorem window_bad_sum_atC :
+    ∃ x₀ : ℝ, ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+      (N₀ : ℝ) ≤ x →
+      ∑ N ∈ (logWindow x (x ^ alpha)).filter (· ∈ {N | N₀ < syrMin N}), (N : ℝ)⁻¹
+        ≤ C_windowBad * (Real.log N₀) ^ (-c_ladder) * Real.log x :=
+  ⟨X_windowBad, window_bad_sum_atCX⟩
 
 /-- Explicit-`c` form of the window bad-mass: delegates to `window_bad_sum_atC`
 (big-C campaign, step 2: `C := C_windowBad`). -/

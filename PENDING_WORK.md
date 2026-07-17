@@ -1269,3 +1269,8 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_descWhp := max ((max X_descLadder e)^α) e` + `descent_whp_atCX`; `_atC` delegates.
   Audit 32/38, next `X_windowBad` + `window_bad_sum_atCX`.
+
+### Successor lap 30 (2026-07-17) — phase 4 entry 5
+
+- `X_windowBad := max (max X_descWhp ((max X_windowBase 1)^α)) e` + `window_bad_sum_atCX`;
+  `_atC` delegates. Audit 33/38, next `X_syrSum` + `tao_syracuse_quantitative_sum_atCX`.
