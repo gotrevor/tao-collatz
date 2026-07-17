@@ -109,8 +109,16 @@ was pre-planted; `Solution.lean` needs no edit — it imports the development).
   Remove the shield together with the `sorry` at discharge — never widen it.
 - No `native_decide` (mints axioms; the gate is `--exact`). No new `axiom`. No linter
   silencing without a why-comment.
-- **Do NOT optimize constants.** This campaign transcribes the proof's constants; a smaller
-  `C` is explicitly out of scope (the pin has headroom precisely so you never need to).
+- **Do NOT optimize constants — but DO report optimizations you notice.** This campaign
+  transcribes the proof's constants; the pin has headroom precisely so you never NEED a
+  smaller `C`. But extraction walks every witness with the lights on, and if you SEE slack —
+  a factor that cancels, a threshold far cruder than its use, a `max` whose second arm is
+  never the binder, a lemma invoked with a constant orders looser than what its proof gives —
+  that is potentially REAL MATHEMATICS (nobody has ever traced these constants before).
+  Write it up in PENDING_WORK.md under `## Optimization observations` (site, file:line, what
+  the slack is, estimated effect on `log₁₀ C`), flag `JUDGE-FLAG:` if it looks structural,
+  and move on WITHOUT implementing: statements stay frozen, the pin stays, the transcription
+  stays faithful. Observations are free; edits are not.
 - **A failure to prove `bound ≤` is INFORMATION** — report it (the ladder is bigger than
   mapped, or the map is wrong); `JUDGE-FLAG:`, don't weaken statements and don't inflate
   defs.
