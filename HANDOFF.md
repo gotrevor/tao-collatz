@@ -1,4 +1,20 @@
-# HANDOFF — big-C campaign, lap 6 (2026-07-17)
+# HANDOFF — big-C campaign, lap 7 (2026-07-17)
+
+## Lap 7 progress (in flight)
+
+- **`few_white_mass_le` explicit (DONE, `f24aa11`)**: defs `K_fewWhite/R_fewWhite/P_fewWhite/
+  B_fewWhite/Cthr_fewWhite` + `one_le_R/P_fewWhite`, `R_fewWhite_bound`; `_core` rail
+  (`A',ε₀,g,K,R,P,B,Cthr_e,Cthr_c` ∀-bound, the three mass terms as hypotheses, threshold
+  max-expr explicit in statement); `_at` instantiates at the explicit constants (delegation
+  via defeq — `le_of_eq rfl`/`rfl` close `hPeq`/`hBdef` through the defs); watched ∃-form
+  delegates. Differ 35/35, 18/18 checks, full build green.
+- **Next: damping passthrough** (handoff step 2 below): `damping_expectation_le` →
+  `damping_column_mass_le` → `damped_iter_expectation_le` → `Q_black_edge_case3` (reifies C2
+  = `Cthr_fewWhite`). Then step 3 wiring into `prop_7_8_at` + extend check18 C0-arm.
+
+---
+
+# (lap 6 baton below — still the reference for method rails)
 
 **Read `DIRECTION.md` first — it outranks this file.** STEP 2 (sibling+delegate, bottom-up)
 is live against the judge re-pin `CTao = 10^(10¹¹)`. Then read the lap-6* entries in
