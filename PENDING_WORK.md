@@ -457,3 +457,26 @@ the Sec5 existential cutoffs into the constant; symbolic form of the `n₀^B` la
   cutoffs (needed by BOTH options; pure transcription, not the banned Option-B re-proof).
 - STEP 3 remains STOPPED (`ROUTE-ESCALATION-2026-07-17.md`): do NOT edit the pin; do NOT
   start `renewal_large_n_tight`.
+
+### Lap 11 addendum (same day) — check20 + step-2 scope correction
+
+- **check20 committed (`d209f9a`)**: Sec5/Sec3 glue mirrored from the Lean def bodies —
+  leaves exact (C_fpApprox=20178, C_perNHarm=384008), glue 31.3 orders (check17's coarse
+  "+15.2" was ~16 orders low, immaterial at its 1e7 tolerance), head-route C_spine matches
+  the check17 GO, as-written max picks the C0-arm (check19 conclusion unchanged).
+- **Scope correction**: step 2 read "C-slots + FEEDING THRESHOLDS". The C-slot surface is
+  complete, but `C_syrSum X` still takes the existential cutoff `X` — the one threshold
+  that FEEDS CTao (via the `4·max 1 (log X)^c_ladder` arm). So the threshold half = the
+  **X-chase**: de-existentialize the Sec5/Sec3 cutoffs bottom-up (`X_*` defs, the exact
+  pattern Sec6/Sec7 finished in lap 8 with `N_*`/`T_*`).
+- **X-chase probe (done)**: all Sec5 cutoff leaves are EXPLICIT (`2^11`, `2^2000`,
+  `exp(2000^5)`, `e^100000`, `(1/ε)^(1/(1-θ))`; builders are max/rpow — no tendsto-opaque
+  leaf anywhere on the path). Numerically `(log X)^c_ladder ≤ 2` needs only
+  `log X ≤ exp(0.693/c_ladder) ≈ exp(3.1×10⁸)` — the biggest leaf gives `log X ≈ 2000⁵ =
+  3.2×10¹⁶`, so the headroom is ~8 orders IN THE EXPONENT. The chase is transcription,
+  not analysis.
+- **Next lap orders**: X-chase bottom-up through Sec5 (FirstPassage → ApproxFormula →
+  Stabilization) then Sec3, `_atCX` (∀-form, both slots pinned) siblings with the set-rail;
+  finish with `X_spine` explicit and `(log X_spine)^c_ladder ≤ 2` proved, making
+  `C_syrSum X_spine` closed-form. That completes step 2's threshold half; STEP 3 stays
+  STOPPED regardless (operator A/B ruling owed).
