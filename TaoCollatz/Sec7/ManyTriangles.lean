@@ -5934,9 +5934,24 @@ paper's deep hypothesis `s > m/log²m` (`m = n/2 - j`), restored byte-identical 
 `e08871e` after judge pass 26. Proved as a thin corollary of the `_rpow` engine
 `triangle_encounter_le_rpow`: for `m ≥ 10²⁷` the regime bridges via `log_sq_le_rpow`
 (`log²m ≤ m^{0.2}` ⟹ `m^{0.8} ≤ m/log²m < s`); for `m < 10²⁷` the LHS is a
-sub-probability `≤ 1` while the RHS `≥ maxC/s' > 1` once `maxC ≥ 10¹¹ > m^{0.4} ≥ s'`. -/
-theorem triangle_encounter_le :
-    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+sub-probability `≤ 1` while the RHS `≥ maxC/s' > 1` once `maxC ≥ 10¹¹ > m^{0.4} ≥ s'`.
+**Core, constants abstracted** (big-C campaign, step 2): given the `_rpow`
+engine at `(C, c, A₀)`, the (7.60) bound holds at `(max C 10¹¹, c, A₀)`. -/
+theorem triangle_encounter_le_core (C c A₀ : ℝ)
+    (hC : 0 < C) (_hc : 0 < c) (hA₀ : 1 ≤ A₀)
+    (hEng : ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (p s' : ℕ), 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+        ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+          + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ)))) :
+    ∀ (A : ℝ), A₀ ≤ A →
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
         (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
@@ -5946,12 +5961,10 @@ theorem triangle_encounter_le :
         (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
       ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
           * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
-        ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
-          + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) := by
+        ≤ max C ((10 : ℝ) ^ (11 : ℕ)) * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+          + max C ((10 : ℝ) ^ (11 : ℕ))
+              * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) := by
   classical
-  obtain ⟨C, hC, c, hc, A₀, hA₀, hEng⟩ := triangle_encounter_le_rpow
-  refine ⟨max C ((10 : ℝ) ^ (11 : ℕ)), lt_of_lt_of_le hC (le_max_left _ _),
-    c, hc, A₀, hA₀, ?_⟩
   intro A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep p s' hs'1 hs'm
   set m : ℕ := n / 2 - j with hmdef
   have hs'0 : (0 : ℝ) < (s' : ℝ) := by exact_mod_cast hs'1
@@ -6029,5 +6042,52 @@ theorem triangle_encounter_le :
       _ ≤ max C ((10 : ℝ) ^ (11 : ℕ)) * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
             + max C ((10 : ℝ) ^ (11 : ℕ)) * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) :=
           le_add_of_nonneg_right hexp_nn
+
+/-- The constant of `triangle_encounter_le` (the pinned (7.60) form), symbolic
+(big-C campaign, step 2): `max C_encTri 10¹¹`. -/
+noncomputable def C_triEnc : ℝ := max C_encTri ((10 : ℝ) ^ (11 : ℕ))
+
+theorem C_triEnc_pos : 0 < C_triEnc := by
+  unfold C_triEnc
+  exact lt_of_lt_of_le C_encTri_pos (le_max_left _ _)
+
+/-- `triangle_encounter_le`, `_explicitC` sibling: `triangle_encounter_le_core`
+at (`C_encTri`, `c_encTri`, `A₀ = 5`), folded into `C_triEnc`. -/
+theorem triangle_encounter_le_explicitC :
+    ∀ (A : ℝ), 5 ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+      ∀ (p s' : ℕ), 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+        ≤ C_triEnc * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+          + C_triEnc * Real.exp (-c_encTri * A ^ 2 * (1 + (p : ℝ))) := by
+  have h := triangle_encounter_le_core C_encTri c_encTri 5
+    C_encTri_pos c_encTri_pos (by norm_num)
+    triangle_encounter_le_rpow_explicitC
+  unfold C_triEnc
+  exact h
+
+/-- **Lemma 7.10 (X10), the (7.60) bound**, original pinned `∃`-form: delegates
+to the `_explicitC` sibling at `C_triEnc`/`c_encTri`, `A₀ = 5`. -/
+theorem triangle_encounter_le :
+    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+      ∀ (p s' : ℕ), 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+        ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+          + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) :=
+  ⟨C_triEnc, C_triEnc_pos, c_encTri, c_encTri_pos, 5, by norm_num,
+    triangle_encounter_le_explicitC⟩
 
 end TaoCollatz
