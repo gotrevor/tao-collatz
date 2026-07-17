@@ -174,19 +174,30 @@ theorem expect_indicator_union_le (p : PMF ℕ) (S T : Set ℕ) :
   by_cases hS : N ∈ S <;> by_cases hT : N ∈ T <;>
     simp [hS, hT]
 
-/-- **One-scale recursion** (p.17, the display chain): `ℙ(B_x) ≤ ℙ(B_{x^α}) + O(log^{-c}x)`.
+/-- The one-scale recursion constant: two `stabilization` legs (big-C campaign, step 2). -/
+noncomputable def C_descStep : ℝ := 2 * C_stab
+
+theorem C_descStep_pos : 0 < C_descStep := mul_pos (by norm_num) C_stab_pos
+
+/-- Sibling of `descentProb_step` with the `c`/`C` slots pinned at (`c_stab`, `C_descStep`)
+— the `_atC` form (big-C campaign, step 2), cutoff existential.
+**One-scale recursion** (p.17, the display chain): `ℙ(B_x) ≤ ℙ(B_{x^α}) + O(log^{-c}x)`.
 Route: `B_x ⊆ {Pass_x ∈ E}` up to the non-passage event (`stabilization` part 1, note
 `1 ∈ E_{N₀}` since `passLoc = 1` off passage and `Syrmin 1 = 1 ≤ N₀`); swap windows by
 `stabilization`'s dTV bound via `abs_expect_indicator_sub_le_dTV`; re-enter `B_{x^α}` by
 `descentEvent_mono` (⌊x⌋₊ ≤ ⌊x^α⌋₊). -/
-theorem descentProb_step_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
+theorem descentProb_step_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
       descentProb ⌊x⌋₊ (x ^ alpha) N₀
-        ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀ + C * (Real.log x) ^ (-c_stab) := by
-  obtain ⟨C, x₀, hC, hstab⟩ := stabilization_explicit
+        ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀
+          + C_descStep * (Real.log x) ^ (-c_stab) := by
+  obtain ⟨x₀, hstab⟩ := stabilization_atC
+  set C : ℝ := C_stab with hCdef
+  have hC : 0 < C := C_stab_pos
   set c : ℝ := c_stab with hcdef
   have hc : 0 < c := c_stab_pos
-  refine ⟨2 * C, max x₀ (Real.exp 1), by linarith, fun x hx N₀ hN₀ => ?_⟩
+  rw [show C_descStep = 2 * C from rfl]
+  refine ⟨max x₀ (Real.exp 1), fun x hx N₀ hN₀ => ?_⟩
   have hx₀ : x₀ ≤ x := le_trans (le_max_left _ _) hx
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hx1 : (1 : ℝ) ≤ x := by
@@ -273,6 +284,15 @@ theorem descentProb_step_explicit :
     _ ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀
         + 2 * C * (Real.log x) ^ (-c) := by nlinarith [herr, hC]
 
+/-- Explicit-`c` form of the one-scale recursion: delegates to `descentProb_step_atC`
+(big-C campaign, step 2: `C := C_descStep`). -/
+theorem descentProb_step_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
+      descentProb ⌊x⌋₊ (x ^ alpha) N₀
+        ≤ descentProb ⌊x ^ alpha⌋₊ (x ^ alpha ^ 2) N₀ + C * (Real.log x) ^ (-c_stab) := by
+  obtain ⟨x₀, h⟩ := descentProb_step_atC
+  exact ⟨C_descStep, x₀, C_descStep_pos, h⟩
+
 theorem descentProb_step :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, 1 ≤ N₀ →
       descentProb ⌊x⌋₊ (x ^ alpha) N₀
@@ -280,15 +300,19 @@ theorem descentProb_step :
   obtain ⟨C, x₀, hC, h⟩ := descentProb_step_explicit
   exact ⟨c_stab, C, x₀, c_stab_pos, hC, h⟩
 
-/-- **Base case** (p.17 bottom): at scales `x ≤ N₀`, the event needs only passage —
+/-- Sibling of `descentProb_base` with the `c`/`C` slots pinned at
+(`c_valSumTail`, `C_valSumGeom`) — the `_atC` form (big-C campaign, step 2), cutoff
+existential.  **Base case** (p.17 bottom): at scales `x ≤ N₀`, the event needs only passage —
 `Syrmin(Pass) ≤ Pass ≤ ⌊x⌋ ≤ N₀` — so `first_passage_nonescape` gives `1 − O(x^{-c})`. -/
-theorem descentProb_base_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, x ≤ (N₀ : ℝ) →
-      1 - C * x ^ (-c_valSumTail) ≤ descentProb ⌊x⌋₊ (x ^ alpha) N₀ := by
-  obtain ⟨C, x₀, hC, hne⟩ := first_passage_nonescape_explicit
+theorem descentProb_base_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, x ≤ (N₀ : ℝ) →
+      1 - C_valSumGeom * x ^ (-c_valSumTail) ≤ descentProb ⌊x⌋₊ (x ^ alpha) N₀ := by
+  obtain ⟨x₀, hne⟩ := first_passage_nonescape_atC
+  set C : ℝ := C_valSumGeom with hCdef
+  have hC : 0 < C := C_valSumGeom_pos
   set c : ℝ := c_valSumTail with hcdef
   have hc : 0 < c := c_valSumTail_pos
-  refine ⟨C, max x₀ 0, hC, fun x hx N₀ hxN₀ => ?_⟩
+  refine ⟨max x₀ 0, fun x hx N₀ hxN₀ => ?_⟩
   have hx₀ : x₀ ≤ x := le_trans (le_max_left _ _) hx
   have hx0 : (0 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hkey := hne x hx₀ (x ^ alpha) (Set.mem_insert _ _)
@@ -308,6 +332,14 @@ theorem descentProb_base_explicit :
     (descentEvent ⌊x⌋₊ N₀)ᶜ {N | ¬ passes ⌊x⌋₊ N} hsub
   linarith [le_trans hmono hkey]
 
+/-- Explicit-`c` form of the base case: delegates to `descentProb_base_atC`
+(big-C campaign, step 2: `C := C_valSumGeom`). -/
+theorem descentProb_base_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, x ≤ (N₀ : ℝ) →
+      1 - C * x ^ (-c_valSumTail) ≤ descentProb ⌊x⌋₊ (x ^ alpha) N₀ := by
+  obtain ⟨x₀, h⟩ := descentProb_base_atC
+  exact ⟨C_valSumGeom, x₀, C_valSumGeom_pos, h⟩
+
 /-- **Ladder iteration** of `descentProb_step` from `descentProb_base` (p.18 top): climbing
 `j` scales up from a base scale `y ≤ N₀` costs the base error plus a geometric error sum
 `∑_{i<j} (α^{-c})^i · (log y)^{-c}`. The scale after `j` climbs is `y^{α^j}`. -/
@@ -325,15 +357,28 @@ noncomputable def c_ladder : ℝ := min c_valSumTail c_stab
 
 theorem c_ladder_pos : 0 < c_ladder := lt_min c_valSumTail_pos c_stab_pos
 
-/-- Sibling of `descentProb_ladder` with the `c`-slot pinned to `c_ladder`; the original
-delegates here. -/
-theorem descentProb_ladder_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ N₀ : ℕ, ∀ y : ℝ, x₀ ≤ y → y ≤ (N₀ : ℝ) → ∀ j : ℕ,
-      1 - C * y ^ (-c_ladder)
-        - C * (Real.log y) ^ (-c_ladder) * ∑ i ∈ Finset.range j, (alpha ^ (-c_ladder)) ^ i
+/-- The ladder-iteration constant: max of the base (C7) and step legs
+(big-C campaign, step 2). -/
+noncomputable def C_descLadder : ℝ := max C_valSumGeom C_descStep
+
+theorem C_descLadder_pos : 0 < C_descLadder :=
+  lt_of_lt_of_le C_valSumGeom_pos (le_max_left _ _)
+
+/-- Sibling of `descentProb_ladder` with the `c`/`C` slots pinned at
+(`c_ladder`, `C_descLadder`) — the `_atC` form (big-C campaign, step 2), cutoff
+existential. -/
+theorem descentProb_ladder_atC :
+    ∃ x₀ : ℝ, ∀ N₀ : ℕ, ∀ y : ℝ, x₀ ≤ y → y ≤ (N₀ : ℝ) → ∀ j : ℕ,
+      1 - C_descLadder * y ^ (-c_ladder)
+        - C_descLadder * (Real.log y) ^ (-c_ladder)
+            * ∑ i ∈ Finset.range j, (alpha ^ (-c_ladder)) ^ i
         ≤ descentProb ⌊y ^ (alpha ^ j)⌋₊ ((y ^ (alpha ^ j)) ^ alpha) N₀ := by
-  obtain ⟨Cb, xb, hCb, hbase⟩ := descentProb_base_explicit
-  obtain ⟨Cs, xs, hCs, hstep⟩ := descentProb_step_explicit
+  obtain ⟨xb, hbase⟩ := descentProb_base_atC
+  obtain ⟨xs, hstep⟩ := descentProb_step_atC
+  set Cb : ℝ := C_valSumGeom with hCbdef
+  set Cs : ℝ := C_descStep with hCsdef
+  have hCb : 0 < Cb := C_valSumGeom_pos
+  have hCs : 0 < Cs := C_descStep_pos
   set cb : ℝ := c_valSumTail with hcbdef
   set cs : ℝ := c_stab with hcsdef
   have hcb : 0 < cb := c_valSumTail_pos
@@ -342,8 +387,8 @@ theorem descentProb_ladder_explicit :
   have hc : 0 < c := lt_min hcb hcs
   set C := max Cb Cs with hCdef
   have hC : 0 < C := lt_of_lt_of_le hCb (le_max_left _ _)
-  rw [show c_ladder = c from rfl]
-  refine ⟨C, max (max xb xs) (Real.exp 1), hC, fun N₀ y hy hyN j => ?_⟩
+  rw [show c_ladder = c from rfl, show C_descLadder = C from rfl]
+  refine ⟨max (max xb xs) (Real.exp 1), fun N₀ y hy hyN j => ?_⟩
   have hyb : xb ≤ y := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hy
   have hys : xs ≤ y := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hy
   have hye : Real.exp 1 ≤ y := le_trans (le_max_right _ _) hy
@@ -417,6 +462,16 @@ theorem descentProb_ladder_explicit :
     have hCL : C * Real.log y ^ (-c) * (alpha ^ (-c)) ^ j
         = C * ((alpha ^ (-c)) ^ j * Real.log y ^ (-c)) := by ring
     linarith [hs, ih]
+
+/-- Explicit-`c` form of the ladder iteration: delegates to `descentProb_ladder_atC`
+(big-C campaign, step 2: `C := C_descLadder`). -/
+theorem descentProb_ladder_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ N₀ : ℕ, ∀ y : ℝ, x₀ ≤ y → y ≤ (N₀ : ℝ) → ∀ j : ℕ,
+      1 - C * y ^ (-c_ladder)
+        - C * (Real.log y) ^ (-c_ladder) * ∑ i ∈ Finset.range j, (alpha ^ (-c_ladder)) ^ i
+        ≤ descentProb ⌊y ^ (alpha ^ j)⌋₊ ((y ^ (alpha ^ j)) ^ alpha) N₀ := by
+  obtain ⟨x₀, h⟩ := descentProb_ladder_atC
+  exact ⟨C_descLadder, x₀, C_descLadder_pos, h⟩
 
 /-- **Telescope** (p.18 top): iterating `descentProb_step` down `J ≈ log_α(log x/log N₀)`
 scales from the base `y < N₀^{1/α}` and summing `∑_j (α^j log y)^{-c} ≪ log^{-c} N₀` gives
