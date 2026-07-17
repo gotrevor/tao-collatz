@@ -1174,15 +1174,29 @@ theorem tao_syracuse_quantitative_sum :
   obtain ⟨C, hC, h⟩ := tao_syracuse_quantitative_sum_explicit
   exact ⟨c_ladder, C, c_ladder_pos, hC, h⟩
 
+/-- The Theorem-3.1 (Syracuse probability form) constant, cutoff-parameterized like
+`C_syrSum` (big-C campaign, step 2): the complement split costs the harmonic-mass
+comparison factor `8`. -/
+noncomputable def C_syrProb (X : ℝ) : ℝ := 8 * C_syrSum X
+
+theorem C_syrProb_pos (X : ℝ) : 0 < C_syrProb X :=
+  mul_pos (by norm_num) (C_syrSum_pos X)
+
 /-- Sibling of the RATIFY-C6b `tao_syracuse_quantitative` with the `c`-slot pinned to
-`c_ladder` (passthrough); the ratified original (byte-identical) delegates here. -/
-theorem tao_syracuse_quantitative_explicit :
-    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
-      1 - C / (Real.log N₀) ^ c_ladder ≤ logProb {N | syrMin N ≤ N₀} (oddInterval x) := by
-  obtain ⟨Ca, hCa, hsum⟩ := tao_syracuse_quantitative_sum_explicit
+`c_ladder` and the `C`-slot pinned to `C_syrProb X` at an existentially-supplied cutoff
+`X` — the `_atC` form (big-C campaign, step 2). -/
+theorem tao_syracuse_quantitative_atC :
+    ∃ X : ℝ, ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C_syrProb X / (Real.log N₀) ^ c_ladder
+        ≤ logProb {N | syrMin N ≤ N₀} (oddInterval x) := by
+  obtain ⟨X, hsum⟩ := tao_syracuse_quantitative_sum_atC
+  set Ca : ℝ := C_syrSum X with hCadef
+  have hCa : 0 < Ca := C_syrSum_pos X
   set c : ℝ := c_ladder with hcdef
   have hc : 0 < c := c_ladder_pos
-  refine ⟨8 * Ca, by linarith, fun N₀ x hN₀2 hx2 => ?_⟩
+  refine ⟨X, ?_⟩
+  rw [show C_syrProb X = 8 * Ca from rfl]
+  intro N₀ x hN₀2 hx2
   -- size facts
   have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
   have hx0 : (0 : ℝ) < (x : ℝ) := by linarith
@@ -1229,6 +1243,15 @@ theorem tao_syracuse_quantitative_explicit :
     calc B / D ≤ (8 * Ca * D / (Real.log N₀) ^ c) / D := h1
       _ = 8 * Ca / (Real.log N₀) ^ c := by field_simp
   linarith [hBD]
+
+/-- Sibling of the RATIFY-C6b `tao_syracuse_quantitative` with the `c`-slot pinned to
+`c_ladder`; delegates to `tao_syracuse_quantitative_atC` (big-C campaign, step 2:
+`C := C_syrProb X` at the existentially-supplied cutoff `X`). -/
+theorem tao_syracuse_quantitative_explicit :
+    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C / (Real.log N₀) ^ c_ladder ≤ logProb {N | syrMin N ≤ N₀} (oddInterval x) := by
+  obtain ⟨X, h⟩ := tao_syracuse_quantitative_atC
+  exact ⟨C_syrProb X, C_syrProb_pos X, h⟩
 
 -- RATIFY-C6b
 theorem tao_syracuse_quantitative :
@@ -1536,16 +1559,32 @@ Sorried wiring theorems, byte-identical in statement to the two frozen
   `→ ∞`), then `almostAllPos_oddPart_of_almostAllOdd` + `oddPart N ≤ N` gives
   `colMin N = syrMin (oddPart N) < f̃ (oddPart N) ≤ f N`. -/
 
-/-- Explicit-`c` spine for **Theorem 3.1 (Colmin form)**: `tao_collatz_quantitative_spine`
-with the `c`-slot pinned to `c_ladder` (passthrough); the spine delegates here. This is the
-lemma DIRECTION step 3's `tao_collatz_quantitative_explicit` will consume. -/
-theorem tao_collatz_quantitative_spine_explicit :
-    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
-      1 - C / (Real.log N₀) ^ c_ladder ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
-  obtain ⟨Ca, hCa, hsum⟩ := tao_syracuse_quantitative_sum_explicit
+/-- **The full spine constant** (Theorem 3.1, `Colmin` form), cutoff-parameterized
+(big-C campaign, step 2): the (1.2) `oddPart` pullback doubles the C6a sum-form cost and
+the harmonic-mass comparison contributes the factor `8` — total `16·C_syrSum X`.  With the
+Sec5/Sec3 chain this is the FULLY SYMBOLIC top-level constant: `CTao` discharge means
+exhibiting `X` and proving `C_spine X ≤ CTao`. -/
+noncomputable def C_spine (X : ℝ) : ℝ := 16 * C_syrSum X
+
+theorem C_spine_pos (X : ℝ) : 0 < C_spine X :=
+  mul_pos (by norm_num) (C_syrSum_pos X)
+
+/-- Sibling of the WATCHED `tao_collatz_quantitative_spine` with the `c`-slot pinned to
+`c_ladder` and the `C`-slot pinned to `C_spine X` at an existentially-supplied cutoff `X`
+— the `_atC` form (big-C campaign, step 2).  **This is the top of the step-2
+transcription.** -/
+theorem tao_collatz_quantitative_spine_atC :
+    ∃ X : ℝ, ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C_spine X / (Real.log N₀) ^ c_ladder
+        ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
+  obtain ⟨X, hsum⟩ := tao_syracuse_quantitative_sum_atC
+  set Ca : ℝ := C_syrSum X with hCadef
+  have hCa : 0 < Ca := C_syrSum_pos X
   set c : ℝ := c_ladder with hcdef
   have hc : 0 < c := c_ladder_pos
-  refine ⟨16 * Ca, by linarith, fun N₀ x hN₀2 hx2 => ?_⟩
+  refine ⟨X, ?_⟩
+  rw [show C_spine X = 16 * Ca from rfl]
+  intro N₀ x hN₀2 hx2
   have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
   have hx0 : (0 : ℝ) < (x : ℝ) := by linarith
   have hlogx0 : (0 : ℝ) < Real.log x := Real.log_pos (by linarith)
@@ -1638,6 +1677,16 @@ theorem tao_collatz_quantitative_spine_explicit :
     calc B / D ≤ (16 * Ca * D / (Real.log N₀) ^ c) / D := h1
       _ = 16 * Ca / (Real.log N₀) ^ c := by field_simp
   linarith [hBD]
+
+/-- Explicit-`c` spine for **Theorem 3.1 (Colmin form)**: `tao_collatz_quantitative_spine`
+with the `c`-slot pinned to `c_ladder`; delegates to `tao_collatz_quantitative_spine_atC`
+(big-C campaign, step 2: `C := C_spine X`).  This is the lemma DIRECTION step 3's
+`tao_collatz_quantitative_explicit` will consume. -/
+theorem tao_collatz_quantitative_spine_explicit :
+    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C / (Real.log N₀) ^ c_ladder ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
+  obtain ⟨X, h⟩ := tao_collatz_quantitative_spine_atC
+  exact ⟨C_spine X, C_spine_pos X, h⟩
 
 /-- Spine for **Theorem 3.1 (Colmin form)**: statement identical to the frozen
 `tao_collatz_quantitative`. -/
