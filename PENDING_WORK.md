@@ -1176,3 +1176,8 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_truncReindex` + `first_passage_truncation_reindex_atCX`; `_atC` delegates.
   Audit 15/38, next `first_passage_affine_reindex_atCX`.
+
+### Successor lap 13 (2026-07-17) — phase 2 entry 12/13
+
+- `X_affineReindex` + `first_passage_affine_reindex_atCX`; `_atC` delegates.
+  Audit 16/38, next `first_passage_approx_atCX` (C8 capstone).

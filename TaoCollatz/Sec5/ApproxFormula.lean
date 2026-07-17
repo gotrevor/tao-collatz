@@ -3928,17 +3928,22 @@ noncomputable def C_affineReindex : ℝ := C_steppedMid + 1
 theorem C_affineReindex_pos : 0 < C_affineReindex :=
   add_pos C_steppedMid_pos one_pos
 
-/-- Sibling of `first_passage_affine_reindex` with the `c`/`C` slots pinned at
-(`c_affineReindex`, `C_affineReindex`) — the `_atC` form (big-C campaign, step 2),
-cutoff existential. -/
-theorem first_passage_affine_reindex_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `first_passage_affine_reindex` cutoff (X-chase): witness copied verbatim from the
+`_atC` proof at the explicit upstream names. -/
+noncomputable def X_affineReindex : ℝ :=
+  max (max X_stepbackReduce X_truncReindex) (Real.exp 1)
+
+/-- Universal-cutoff form of `first_passage_affine_reindex_atC` (X-chase). -/
+theorem first_passage_affine_reindex_atCX :
+    ∀ x : ℝ, X_affineReindex ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |firstPassMid x E y - approxMainTerm x E y|
             ≤ C_affineReindex * (Real.log x) ^ (-c_affineReindex) := by
-  obtain ⟨x₁, hsr⟩ := first_passage_stepback_reduce_atC
-  obtain ⟨x₂, htr⟩ := first_passage_truncation_reindex_atC
+  have hsr := first_passage_stepback_reduce_atCX
+  have htr := first_passage_truncation_reindex_atCX
+  set x₁ : ℝ := X_stepbackReduce with hx₁def
+  set x₂ : ℝ := X_truncReindex with hx₂def
   set C₁ : ℝ := C_steppedMid with hC1def
   have hC₁ : 0 < C₁ := C_steppedMid_pos
   set C₂ : ℝ := (1 : ℝ) with hC2def
@@ -3948,9 +3953,9 @@ theorem first_passage_affine_reindex_atC :
   have hc₁ : 0 < c₁ := c_steppedMid_pos
   have hc₂ : 0 < c₂ := c_truncation_pos
   rw [show c_affineReindex = min c₁ c₂ from rfl,
-    show C_affineReindex = C₁ + C₂ from rfl]
-  refine ⟨max (max x₁ x₂) (Real.exp 1),
-    fun x hx E hE y hy => ?_⟩
+    show C_affineReindex = C₁ + C₂ from rfl,
+    show X_affineReindex = max (max x₁ x₂) (Real.exp 1) from rfl]
+  intro x hx E hE y hy
   have hx1 : x₁ ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hx2 : x₂ ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
@@ -3968,6 +3973,15 @@ theorem first_passage_affine_reindex_atC :
     _ ≤ C₁ * (Real.log x) ^ (-(min c₁ c₂)) + C₂ * (Real.log x) ^ (-(min c₁ c₂)) :=
         add_le_add (mul_le_mul_of_nonneg_left hA hC₁.le) (mul_le_mul_of_nonneg_left hB hC₂.le)
     _ = (C₁ + C₂) * (Real.log x) ^ (-(min c₁ c₂)) := by ring
+
+/-- ∃-form of `first_passage_affine_reindex_atCX` (X-chase: `x₀ := X_affineReindex`). -/
+theorem first_passage_affine_reindex_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |firstPassMid x E y - approxMainTerm x E y|
+            ≤ C_affineReindex * (Real.log x) ^ (-c_affineReindex) :=
+  ⟨X_affineReindex, first_passage_affine_reindex_atCX⟩
 
 /-- Sibling of `first_passage_affine_reindex` with the `c`-slot pinned to `c_affineReindex`;
 the original delegates here.  Now delegates to `first_passage_affine_reindex_atC` (big-C
