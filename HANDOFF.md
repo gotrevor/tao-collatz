@@ -19,6 +19,16 @@
   differ green vs setup commit (35/35 character-identical); blueprint audit green;
   `lean-sorry -c TaoCollatz` still 1 (the pin, by design).
 
+## Self-stop gate note (for the host/operator)
+
+`box done` was signalled lap 1 and DECLINED by the repo-wide gate: "10 open sorries".
+All 10 are governance-gated — 1 is the `Statement.lean` CTao pin (undischargeable over
+the frozen tower, per the JUDGE-FLAG), 9 are the `Comparator/TaoCollatz/Challenge.lean`
+stubs, which are judge-owned (DIRECTION: "Comparator/ … Do not touch them"; comparator
+CI red-until-done is the design). No lap can lower this count without violating
+DIRECTION. The run needs an operator stop or a `--done-when` scoped away from
+`Comparator/`; relaunched laps will find no in-scope proof work until the flag clears.
+
 ## For the next lap
 
 - **Blocked on the operator/judge answering the JUDGE-FLAG** (re-pin at `10^(10^11)`+ /
