@@ -1231,3 +1231,9 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_IyRatio := max X_IyCard (exp(2000⁵))` + `Iy_count_ratio_atCX`; `_atC` delegates.
   Audit 25/38, next `approxMainTerm_to_Z_atCX`.
+
+### Successor lap 23 (2026-07-17) — phase 3 entry 9/11
+
+- `X_approxToZ := max (max (max X_IyRatio X_mainZ) X_perNTermEval) (exp 1)` +
+  `approxMainTerm_to_Z_atCX` (the C9 crux node at its explicit cutoff); `_atC` delegates.
+  Audit 26/38, next `approxMainTerm_window_stable_atCX`.

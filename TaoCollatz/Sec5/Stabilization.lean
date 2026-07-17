@@ -3166,9 +3166,14 @@ theorem C_approxToZ_pos : 0 < C_approxToZ :=
       C_perNTermEval_pos)
     (mul_pos C_mainZ_pos (by norm_num))
 
+/-- The `approxMainTerm_to_Z` cutoff (X-chase): the witness max-tree copied verbatim from
+the `_atC` proof, with `x1 := X_IyRatio`, `xz := X_mainZ`, `x2 := X_perNTermEval`. -/
+noncomputable def X_approxToZ : ℝ :=
+  max (max (max X_IyRatio X_mainZ) X_perNTermEval) (Real.exp 1)
+
 /-- Sibling of `approxMainTerm_to_Z` with the `c`/`C` slots pinned at
-(`c_approxToZ`, `C_approxToZ`) — the `_atC` form (big-C campaign, step 2), cutoff
-existential.  (5.21) main-term evaluation:
+(`c_approxToZ`, `C_approxToZ`) and the cutoff at `X_approxToZ` (X-chase).
+(5.21) main-term evaluation:
 `approxMainTerm x E y = (2 / log(4/3))·mainZ x E + O(log^{-c} x)`.  This subsumes Tao's pp.25–27
 chain: the single-value mass formula (5.19)
 `ℙ(Aff_ā(N_y)=M) = (1+O(x^{-c}))·2^{-|ā|}·3^{n−m₀} / (((α−1)/2)·log y · M)`; the harmonic-sum reduction
@@ -3179,15 +3184,18 @@ and the interval count `#I_y` (5.9) `= (1+O(log^{-c}x))·(α−1)/log(4/3)·log 
 **[C9 CRUX — the sole remaining C9 hole; this is where C10 enters.]**  Target is `y`-independent (`Z`),
 which is the faithful rendering of the paper's cancellation; `approxMainTerm_window_stable` below is a
 one-line triangle over this. -/
-theorem approxMainTerm_to_Z_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+theorem approxMainTerm_to_Z_atCX :
+    ∀ x : ℝ, X_approxToZ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |approxMainTerm x E y - 2 / Real.log (4 / 3) * mainZ x E|
             ≤ C_approxToZ * (Real.log x) ^ (-c_approxToZ) := by
-  obtain ⟨x1, h9⟩ := Iy_count_ratio_atC
-  obtain ⟨xz, hZb⟩ := mainZ_bound_atC
-  obtain ⟨x2, hp⟩ := perNTerm_eval_atC
+  have h9 := Iy_count_ratio_atCX
+  have hZb := mainZ_bound_atCX
+  have hp := perNTerm_eval_atCX
+  set x1 : ℝ := X_IyRatio with hx1def
+  set xz : ℝ := X_mainZ with hxzdef
+  set x2 : ℝ := X_perNTermEval with hx2def
   set C1 : ℝ := (6000 : ℝ) with hC1def
   set Cz : ℝ := C_mainZ with hCzdef
   set C2 : ℝ := C_perNTermEval with hC2def
@@ -3204,7 +3212,8 @@ theorem approxMainTerm_to_Z_atC :
   have hb2 : (0 : ℝ) < 2 / Real.log (4 / 3) := by positivity
   rw [show c_approxToZ = min c1 c2 from rfl,
     show C_approxToZ = (2 / Real.log (4 / 3) + C1) * C2 + Cz * C1 from rfl]
-  refine ⟨max (max (max x1 xz) x2) (Real.exp 1), fun x hx E hE y hy => ?_⟩
+  rw [show X_approxToZ = max (max (max x1 xz) x2) (Real.exp 1) from rfl]
+  intro x hx E hE y hy
   -- thresholds
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hx1 : x1 ≤ x :=
@@ -3288,6 +3297,16 @@ theorem approxMainTerm_to_Z_atC :
     _ ≤ (2 / Real.log (4 / 3) + C1) * C2 * L ^ (-c) + Cz * C1 * L ^ (-c) :=
         add_le_add hStepA hStepB
     _ = ((2 / Real.log (4 / 3) + C1) * C2 + Cz * C1) * L ^ (-c) := by ring
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `approxMainTerm_to_Z_atCX` (X-chase: `x₀ := X_approxToZ`). -/
+theorem approxMainTerm_to_Z_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |approxMainTerm x E y - 2 / Real.log (4 / 3) * mainZ x E|
+            ≤ C_approxToZ * (Real.log x) ^ (-c_approxToZ) :=
+  ⟨X_approxToZ, approxMainTerm_to_Z_atCX⟩
 
 /-- Original explicit-`c` form of the (5.21) evaluation: delegates to
 `approxMainTerm_to_Z_atC` (big-C campaign, step 2: `C := C_approxToZ`). -/
