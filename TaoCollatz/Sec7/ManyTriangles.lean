@@ -2430,19 +2430,22 @@ bounds it by `max 1 (e^ε·X) ≤ e^{2ε}` (`encChainX_le_exp`), with the entere
 hypothesis supplied by the Y-induction `encExpect_entered_le` at budget `R − 1`.
 The smallness shell: `ε₀ = min(1/100, (2p₀−1)/2)` makes `(1−p₀)(e^ε+1) ≤ 1` (via
 `e^ε(1−ε) ≤ 1`) and `e^{ε−1}X ≤ e^{2ε−1} ≤ 1`. -/
-theorem many_triangles_white :
-    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
-    ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+theorem many_triangles_white_core (p₀ : ℝ) (Cthr : ℕ) (hp₀ : 51 / 100 ≤ p₀)
+    (hkernel : ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
+      ∀ F : TriangleFamily n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      p₀ ≤ ∑' e : ℕ × ℤ, (fpDist s e).toReal
+        * Set.indicator (whiteStrip n ξ) 1 (n / 2 - m + e.1, l + e.2)) :
+    ∀ ε : ℝ, 0 < ε → ε ≤ min (1 / 100) ((2 * min p₀ 1 - 1) / 2) →
     ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
     ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (j' : ℕ) (l' : ℤ),
-    encExpect F R g ε T (encInit j' l') ≤ Real.exp (2 * ε) := by
-  obtain ⟨p₀, hp₀, Cthr, hkernel⟩ := fpDist_white_exit_deep
+    encExpect F R Cthr ε T (encInit j' l') ≤ Real.exp (2 * ε) := by
   -- normalize the mass into (1/2, 1]
   set p₁ : ℝ := min p₀ 1 with hp₁def
   have hp : 1 / 2 < p₁ := lt_min (by linarith) (by norm_num)
   have hp1 : p₁ ≤ 1 := min_le_right _ _
-  refine ⟨min (1 / 100) ((2 * p₁ - 1) / 2),
-    lt_min (by norm_num) (by nlinarith), min_le_left _ _, Cthr, ?_⟩
   intro ε hε hεε₀ n ξ hξ F R hR T j' l'
   have hε100 : ε ≤ 1 / 100 := le_trans hεε₀ (min_le_left _ _)
   have hεp : ε ≤ (2 * p₁ - 1) / 2 := le_trans hεε₀ (min_le_right _ _)
@@ -2514,6 +2517,48 @@ theorem many_triangles_white :
     _ ≤ Real.exp ε * Real.exp ε :=
         mul_le_mul_of_nonneg_left hXe (Real.exp_pos _).le
     _ = Real.exp (2 * ε) := by rw [← Real.exp_add]; ring_nf
+
+/-- The `ε`-cap of `many_triangles_white` (Lemma 7.9), symbolic (big-C campaign,
+step 2): `min(1/100, (2·min(p_whiteExit,1)−1)/2) = 1/100` at `p_whiteExit = 3/4`. -/
+noncomputable def eps0_manyTri : ℝ := min (1 / 100) ((2 * min p_whiteExit 1 - 1) / 2)
+
+/-- The encounter-depth gate of `many_triangles_white` (Lemma 7.9), symbolic:
+the white-exit threshold `T_whiteExitDeep`. -/
+noncomputable def g_manyTri : ℕ := T_whiteExitDeep
+
+theorem eps0_manyTri_pos : 0 < eps0_manyTri := by
+  have h := p_whiteExit_ge
+  unfold eps0_manyTri
+  exact lt_min (by norm_num) (by
+    have h1 : (51 : ℝ) / 100 ≤ min p_whiteExit 1 := le_min h (by norm_num)
+    linarith)
+
+theorem eps0_manyTri_le : eps0_manyTri ≤ 1 / 100 := by
+  unfold eps0_manyTri
+  exact min_le_left _ _
+
+/-- `many_triangles_white`, `_at` sibling: `many_triangles_white_core` at
+(`p_whiteExit`, `T_whiteExitDeep`), folded into `eps0_manyTri`/`g_manyTri`. -/
+theorem many_triangles_white_at :
+    ∀ ε : ℝ, 0 < ε → ε ≤ eps0_manyTri →
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+    ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (j' : ℕ) (l' : ℤ),
+    encExpect F R g_manyTri ε T (encInit j' l') ≤ Real.exp (2 * ε) := by
+  have h := many_triangles_white_core p_whiteExit T_whiteExitDeep
+    p_whiteExit_ge fpDist_white_exit_deep_at
+  unfold eps0_manyTri g_manyTri
+  exact h
+
+/-- **Lemma 7.9 — many triangles usually implies many white points**, original
+`∃`-form: delegates to the `_at` sibling at `eps0_manyTri`/`g_manyTri`. -/
+theorem many_triangles_white :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
+    ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+    ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (j' : ℕ) (l' : ℤ),
+    encExpect F R g ε T (encInit j' l') ≤ Real.exp (2 * ε) :=
+  ⟨eps0_manyTri, eps0_manyTri_pos, eps0_manyTri_le, g_manyTri,
+    many_triangles_white_at⟩
 
 /-! ### The (7.61) endpoint tails (X10, p.52): the `tsum_Gweight_row` engine,
 the first-passage height tail, and the `p`-step Chernoff tail -/

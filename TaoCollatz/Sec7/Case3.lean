@@ -594,7 +594,22 @@ theorem (`many_triangles_white`). Composing them fixes the encoding gate `g` (fr
 probabilistic input to the Case-3 assembly: for any tilt `ε ≤ ε₀`, encounter
 budget `R ≥ 1`, horizon `T` and start `q₀`, the walk-mass on which the (7.57)
 integrand `encVal` reaches `lam` is `≤ e^{2ε}/lam`. This is the (7.56) half of the
-`Q_black_edge_case3` join (the deterministic (7.67) claim supplies the other). -/
+`Q_black_edge_case3` join (the deterministic (7.67) claim supplies the other).
+`_at` sibling at `eps0_manyTri`/`g_manyTri` (big-C campaign, step 2). -/
+theorem fstar_markov_at :
+    ∀ ε : ℝ, 0 < ε → ε ≤ eps0_manyTri →
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (lam : ℝ), 0 < lam →
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if lam ≤ encVal ε R
+              ((List.ofFn v).foldl (encStep F R g_manyTri) (encInit q₀.1 q₀.2))
+            then (1 : ℝ) else 0)
+        ≤ Real.exp (2 * ε) / lam := by
+  intro ε hε hεε₀ n ξ hξ F R hR T q₀ lam hlam
+  exact fstar_markov_le F R g_manyTri ε hε.le T q₀
+    (many_triangles_white_at ε hε hεε₀ n ξ hξ F R hR T q₀.1 q₀.2) lam hlam
+
+/-- `fstar_markov`, original `∃`-form: delegates to the `_at` sibling. -/
 theorem fstar_markov :
     ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
       ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
@@ -603,12 +618,8 @@ theorem fstar_markov :
         ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
           (if lam ≤ encVal ε R ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2))
             then (1 : ℝ) else 0)
-        ≤ Real.exp (2 * ε) / lam := by
-  obtain ⟨ε₀, hε₀pos, hε₀100, g, hmany⟩ := many_triangles_white
-  refine ⟨ε₀, hε₀pos, hε₀100, g, ?_⟩
-  intro ε hε hεε₀ n ξ hξ F R hR T q₀ lam hlam
-  exact fstar_markov_le F R g ε hε.le T q₀
-    (hmany ε hε hεε₀ n ξ hξ F R hR T q₀.1 q₀.2) lam hlam
+        ≤ Real.exp (2 * ε) / lam :=
+  ⟨eps0_manyTri, eps0_manyTri_pos, eps0_manyTri_le, g_manyTri, fstar_markov_at⟩
 
 /-! ### Machinery for the deterministic claim (7.67) -/
 
@@ -1304,9 +1315,15 @@ the joint-walk mass of the event {fold reaches `R` encounters ∧ ≤ `K` whites
 `≤ e^{2ε}/e^{−K+εR}`. Since that event is contained in `F∗ = {encVal ≥ e^{−K+εR}}`
 (`encVal_ge_of_reaches`), the bound is `fstar_markov` at `lam = e^{−K+εR}`. The X11d
 choice `R := ⌈(K+(A+3)log10+2)/ε⌉` makes the RHS `≤ 10^{−A−1}`. -/
-theorem reaches_fewWhite_mass_le :
-    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
-      ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+theorem reaches_fewWhite_mass_le_core (ε₀ : ℝ) (g : ℕ)
+    (hmark : ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (lam : ℝ), 0 < lam →
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if lam ≤ encVal ε R ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2))
+            then (1 : ℝ) else 0)
+        ≤ Real.exp (2 * ε) / lam) :
+    ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
       ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
       ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
         ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
@@ -1314,8 +1331,6 @@ theorem reaches_fewWhite_mass_le :
               ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K
             then (1 : ℝ) else 0)
           ≤ Real.exp (2 * ε) / Real.exp (-(K : ℝ) + ε * R) := by
-  obtain ⟨ε₀, hε₀pos, hε₀le, g, hmark⟩ := fstar_markov
-  refine ⟨ε₀, hε₀pos, hε₀le, g, ?_⟩
   intro ε hεpos hεle n ξ hξ F R hR T q₀ K
   have hlam : (0 : ℝ) < Real.exp (-(K : ℝ) + ε * R) := Real.exp_pos _
   have hsum : Summable (fun v : Fin T → ℕ × ℤ => (hold.iid T v).toReal) :=
@@ -1369,6 +1384,35 @@ theorem reaches_fewWhite_mass_le :
   exact le_trans (Summable.tsum_le_tsum hle hsumL hsumR)
     (hmark ε hεpos hεle n ξ hξ F R hR T q₀ (Real.exp (-(K : ℝ) + ε * R)) hlam)
 
+/-- `reaches_fewWhite_mass_le`, `_at` sibling at `eps0_manyTri`/`g_manyTri`. -/
+theorem reaches_fewWhite_mass_le_at :
+    ∀ ε : ℝ, 0 < ε → ε ≤ eps0_manyTri →
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit q₀.1 q₀.2)).count
+              ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit q₀.1 q₀.2)).cumWhite ≤ K
+            then (1 : ℝ) else 0)
+          ≤ Real.exp (2 * ε) / Real.exp (-(K : ℝ) + ε * R) :=
+  reaches_fewWhite_mass_le_core eps0_manyTri g_manyTri fstar_markov_at
+
+/-- `reaches_fewWhite_mass_le`, original `∃`-form: delegates to the `_at`
+sibling. -/
+theorem reaches_fewWhite_mass_le :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
+      ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
+              ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K
+            then (1 : ℝ) else 0)
+          ≤ Real.exp (2 * ε) / Real.exp (-(K : ℝ) + ε * R) :=
+  ⟨eps0_manyTri, eps0_manyTri_pos, eps0_manyTri_le, g_manyTri,
+    reaches_fewWhite_mass_le_at⟩
+
 /-- **The (7.56) numerical closure**: with the X11d block count
 `R := ⌈(K+(A+3)log10+2)/ε⌉` (encoded as the hypothesis `εR ≥ K+(A+3)log10+2`), the
 Markov ratio `e^{2ε}/e^{−K+εR} ≤ 10^{−(A+1)}`. Uses `e^a/e^b = e^{a−b}` and
@@ -1393,6 +1437,24 @@ open scoped Classical in
 is `≤ 10^{−(A+1)}`. Composes `reaches_fewWhite_mass_le` (the Markov join) with
 `fewWhite_num_closure` (the numerical `R`-choice). This is the F∗ term X11d subtracts
 from the (7.56) white-count split. -/
+theorem reaches_fewWhite_mass_le_ten_at :
+    ∀ ε : ℝ, 0 < ε → ε ≤ eps0_manyTri → ∀ A : ℝ,
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
+        (K : ℝ) + (A + 3) * Real.log 10 + 2 ≤ ε * R →
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit q₀.1 q₀.2)).count
+              ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit q₀.1 q₀.2)).cumWhite ≤ K
+            then (1 : ℝ) else 0)
+          ≤ (10 : ℝ) ^ (-(A + 1)) := by
+  intro ε hεpos hεle A n ξ hξ F R hR T q₀ K hRbound
+  exact le_trans (reaches_fewWhite_mass_le_at ε hεpos hεle n ξ hξ F R hR T q₀ K)
+    (fewWhite_num_closure A ε (by linarith [hεle, eps0_manyTri_le]) K R hRbound)
+
+/-- `reaches_fewWhite_mass_le_ten`, original `∃`-form: delegates to the `_at`
+sibling. -/
 theorem reaches_fewWhite_mass_le_ten :
     ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
       ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ → ∀ A : ℝ,
@@ -1403,12 +1465,9 @@ theorem reaches_fewWhite_mass_le_ten :
           (if R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
               ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K
             then (1 : ℝ) else 0)
-          ≤ (10 : ℝ) ^ (-(A + 1)) := by
-  obtain ⟨ε₀, hε₀pos, hε₀le, g, hmass⟩ := reaches_fewWhite_mass_le
-  refine ⟨ε₀, hε₀pos, hε₀le, g, ?_⟩
-  intro ε hεpos hεle A n ξ hξ F R hR T q₀ K hRbound
-  exact le_trans (hmass ε hεpos hεle n ξ hξ F R hR T q₀ K)
-    (fewWhite_num_closure A ε (by linarith [hεle, hε₀le]) K R hRbound)
+          ≤ (10 : ℝ) ^ (-(A + 1)) :=
+  ⟨eps0_manyTri, eps0_manyTri_pos, eps0_manyTri_le, g_manyTri,
+    reaches_fewWhite_mass_le_ten_at⟩
 
 open scoped Classical in
 /-- **The X11c geometry join** (contrapositive of `deterministic_encounter_claim`):
