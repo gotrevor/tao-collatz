@@ -2799,16 +2799,20 @@ theorem three_pow_nZero_le {x : ℝ} (hx1 : 1 ≤ x) : (3 : ℝ) ^ nZero x ≤ x
         mul_le_mul_of_nonneg_right hlog3le hquot
     _ = Real.log x * (1 / 5) := by field_simp; ring
 
+/-- The `slack_key` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_slackKey : ℝ := Real.exp ((2 * Real.log 2 + 1) ^ (10 : ℕ))
+
 /-- **Slack core** for the (5.17) window: `2·log 2·log^{0.6}x + 1 ≤ log^{0.7}x` for `x` large
-(`log^{0.7} = log^{0.6}·log^{0.1}`, and `log^{0.1}x ≥ 2 log 2 + 1` once `log x ≥ (2 log 2 + 1)^{10}`). -/
-theorem slack_key :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+(`log^{0.7} = log^{0.6}·log^{0.1}`, and `log^{0.1}x ≥ 2 log 2 + 1` once `log x ≥ (2 log 2 + 1)^{10}`).
+Universal-cutoff form (X-chase). -/
+theorem slack_key_atX :
+    1 ≤ X_slackKey ∧ ∀ x : ℝ, X_slackKey ≤ x →
       2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ) + 1 ≤ (Real.log x) ^ (0.7 : ℝ) := by
   have hl2 : (0 : ℝ) ≤ Real.log 2 := Real.log_nonneg (by norm_num)
   have hb : (0 : ℝ) ≤ 2 * Real.log 2 + 1 := by positivity
   have hb1 : (1 : ℝ) ≤ 2 * Real.log 2 + 1 := by linarith
-  refine ⟨Real.exp ((2 * Real.log 2 + 1) ^ (10 : ℕ)), Real.one_le_exp (by positivity),
-    fun x hx => ?_⟩
+  rw [show X_slackKey = Real.exp ((2 * Real.log 2 + 1) ^ (10 : ℕ)) from rfl]
+  refine ⟨Real.one_le_exp (by positivity), fun x hx => ?_⟩
   have hL : (2 * Real.log 2 + 1) ^ (10 : ℕ) ≤ Real.log x := by
     rw [← Real.log_exp ((2 * Real.log 2 + 1) ^ (10 : ℕ))]; exact Real.log_le_log (Real.exp_pos _) hx
   have hL1 : (1 : ℝ) ≤ Real.log x := le_trans (one_le_pow₀ hb1) hL
@@ -2866,22 +2870,28 @@ theorem slack_lower {x : ℝ}
             mul_nonneg (Real.exp_pos (-1)).le (by linarith : (0 : ℝ) ≤ Real.exp 1 - 8 / 3)]
         exact mul_le_mul_of_nonneg_right he8 (Real.exp_pos _).le
 
+/-- The `stepback_passage_scale` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_stepbackScale : ℝ := max X_mZeroIy (Real.exp 100000)
+
 /-- **(5.17) passage orbit-straddle core** — on `{T_x N = n ∧ good⁽ⁿ⁰⁾}` with `N` odd, `n ∈ I_y`, the
 passage-scaled quantity `(3/4)^n·N` is pinned near `x`:
 `(3/8)·x·2^{−log^{0.6}x} ≤ (3/4)^n·N ≤ x·2^{log^{0.6}x}`.
 Upper: `Syr^n N ≤ ⌊x⌋ ≤ x` with the good bracket lower half.  Lower: `Syr^{n−1}N > ⌊x⌋ > x−1` (passage
 minimality) with the good bracket upper half at `n−1`, absorbing the `+3^{n−1}` rounding via
 `three_pow_nZero_le` (`3^{n−1} ≤ x^{1/5} ≤ x/2`).  This is the genuine first-passage content of the
-size window; everything else is `±`-slack absorption (`slack_upper`/`slack_lower`). -/
-theorem stepback_passage_scale :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+size window; everything else is `±`-slack absorption (`slack_upper`/`slack_lower`).
+Universal-cutoff form (X-chase). -/
+theorem stepback_passage_scale_atX :
+    1 ≤ X_stepbackScale ∧ ∀ x : ℝ, X_stepbackScale ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
         ∀ N : ℕ, N % 2 = 1 → passTime ⌊x⌋₊ N = n →
           goodTuple x (nZero x) (valVec N (nZero x)) →
             (3 / 8) * x * (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) ≤ (3 / 4 : ℝ) ^ n * (N : ℝ) ∧
               (3 / 4 : ℝ) ^ n * (N : ℝ) ≤ x * (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) := by
-  obtain ⟨xmz, _hxmz1, hmz⟩ := mZero_le_of_mem_Iy
-  refine ⟨max xmz (Real.exp 100000), le_max_of_le_right (Real.one_le_exp (by norm_num)),
+  have hmz := mZero_le_of_mem_Iy_atX.2
+  set xmz : ℝ := X_mZeroIy with hxmzdef
+  rw [show X_stepbackScale = max xmz (Real.exp 100000) from rfl]
+  refine ⟨le_max_of_le_right (Real.one_le_exp (by norm_num)),
     fun x hx y hy n hn N hodd hT hgood => ?_⟩
   have hxmz : xmz ≤ x := le_trans (le_max_left _ _) hx
   have hxexp : Real.exp 100000 ≤ x := le_trans (le_max_right _ _) hx
@@ -2967,14 +2977,33 @@ theorem stepback_passage_scale :
     rw [key] at hup2
     exact hup2
 
+/-- ∃-form of `slack_key_atX` (X-chase: `x₀ := X_slackKey`). -/
+theorem slack_key :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      2 * Real.log 2 * (Real.log x) ^ (0.6 : ℝ) + 1 ≤ (Real.log x) ^ (0.7 : ℝ) :=
+  ⟨X_slackKey, slack_key_atX.1, slack_key_atX.2⟩
+
+/-- ∃-form of `stepback_passage_scale_atX` (X-chase: `x₀ := X_stepbackScale`). -/
+theorem stepback_passage_scale :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+        ∀ N : ℕ, N % 2 = 1 → passTime ⌊x⌋₊ N = n →
+          goodTuple x (nZero x) (valVec N (nZero x)) →
+            (3 / 8) * x * (2 : ℝ) ^ (-(Real.log x ^ (0.6 : ℝ))) ≤ (3 / 4 : ℝ) ^ n * (N : ℝ) ∧
+              (3 / 4 : ℝ) ^ n * (N : ℝ) ≤ x * (2 : ℝ) ^ (Real.log x ^ (0.6 : ℝ)) :=
+  ⟨X_stepbackScale, stepback_passage_scale_atX.1, stepback_passage_scale_atX.2⟩
+
+/-- The `stepback_size_window` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_stepbackSize : ℝ := max (max X_stepbackScale X_slackKey) X_mZeroIy
 
 /-- **(5.17) size-window brick** — on `{T_x N = n ∧ good⁽ⁿ⁰⁾}`, `N` odd, `n ∈ I_y`, the stepped-back
 iterate `M = Syr^{n−m₀}N` lands in the `E'` size window `exp(±log^{0.7}x)·(4/3)^{m₀}·x`.  Assembled from
 the passage core `stepback_passage_scale` (pinning `(3/4)^n·N ≍ x`), the good bracket at `k = n−m₀`
 (`syr_iterate_good_bracket'`), the pow split `pow_stepback_eq` ((3/4)^{n−m₀}=(4/3)^{m₀}(3/4)^n), and the
-`±`-slack absorption `slack_upper`/`slack_lower` (with `three_pow_nZero_le` for the `+3^{n−m₀}` term). -/
-theorem stepback_size_window :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+`±`-slack absorption `slack_upper`/`slack_lower` (with `three_pow_nZero_le` for the `+3^{n−m₀}` term).
+Universal-cutoff form (X-chase); the cutoff def is just above. -/
+theorem stepback_size_window_atX :
+    1 ≤ X_stepbackSize ∧ ∀ x : ℝ, X_stepbackSize ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
         ∀ N : ℕ, N % 2 = 1 → passTime ⌊x⌋₊ N = n →
           goodTuple x (nZero x) (valVec N (nZero x)) →
@@ -2982,10 +3011,15 @@ theorem stepback_size_window :
                 ≤ (syr^[n - mZero x] N : ℝ) ∧
               (syr^[n - mZero x] N : ℝ)
                 ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x := by
-  obtain ⟨xps, hxps1, hscale⟩ := stepback_passage_scale
-  obtain ⟨xsk, _hxsk1, hsk⟩ := slack_key
-  obtain ⟨xmz, _hxmz1, hmz⟩ := mZero_le_of_mem_Iy
-  refine ⟨max (max xps xsk) xmz, le_max_of_le_left (le_max_of_le_left hxps1),
+  have hxps1 := stepback_passage_scale_atX.1
+  have hscale := stepback_passage_scale_atX.2
+  have hsk := slack_key_atX.2
+  have hmz := mZero_le_of_mem_Iy_atX.2
+  set xps : ℝ := X_stepbackScale with hxpsdef
+  set xsk : ℝ := X_slackKey with hxskdef
+  set xmz : ℝ := X_mZeroIy with hxmzdef
+  rw [show X_stepbackSize = max (max xps xsk) xmz from rfl]
+  refine ⟨le_max_of_le_left (le_max_of_le_left hxps1),
     fun x hx y hy n hn N hodd hT hgood => ?_⟩
   have hxps : xps ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxsk : xsk ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -3043,6 +3077,21 @@ theorem stepback_size_window :
     have hB := mul_nonneg (mul_nonneg hQpos.le hxpos.le) (sub_nonneg.mpr hSU)
     nlinarith [hbr_hi, hA, hB, h3k]
 
+/-- ∃-form of `stepback_size_window_atX` (X-chase: `x₀ := X_stepbackSize`). -/
+theorem stepback_size_window :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+        ∀ N : ℕ, N % 2 = 1 → passTime ⌊x⌋₊ N = n →
+          goodTuple x (nZero x) (valVec N (nZero x)) →
+            Real.exp (-Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x
+                ≤ (syr^[n - mZero x] N : ℝ) ∧
+              (syr^[n - mZero x] N : ℝ)
+                ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x :=
+  ⟨X_stepbackSize, stepback_size_window_atX.1, stepback_size_window_atX.2⟩
+
+/-- The `firstPassMid_le_steppedMid` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_fpmLeStepped : ℝ := max X_stepbackSize X_mZeroIy
+
 open Classical in
 /-- **(5.17) forward leg** — `firstPassMid ≤ steppedMid`, a deterministic event inclusion with NO
 error.  For each `n ∈ I_y` the good-passage event
@@ -3053,15 +3102,20 @@ error.  For each `n ∈ I_y` the good-passage event
   `mZero_le_of_mem_Iy`, and `passes N` from `T_x N = n ≥ 1`);
 * `M % 2 = 1` from `syr_iterate_odd`;
 * the `E'` size window is `stepback_size_window`.
-Hence `S_n ⊆ T_n` on the odd support and the finite `I_y`-sum is monotone. -/
-theorem firstPassMid_le_steppedMid :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+Hence `S_n ⊆ T_n` on the odd support and the finite `I_y`-sum is monotone.
+Universal-cutoff form (X-chase). -/
+theorem firstPassMid_le_steppedMid_atX :
+    1 ≤ X_fpmLeStepped ∧ ∀ x : ℝ, X_fpmLeStepped ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           firstPassMid x E y ≤ steppedMid x E y := by
-  obtain ⟨xw, hxw1, hwin⟩ := stepback_size_window
-  obtain ⟨xi, _hxi1, hint⟩ := mZero_le_of_mem_Iy
-  refine ⟨max xw xi, le_max_of_le_left hxw1, fun x hx E hE y hy => ?_⟩
+  have hxw1 := stepback_size_window_atX.1
+  have hwin := stepback_size_window_atX.2
+  have hint := mZero_le_of_mem_Iy_atX.2
+  set xw : ℝ := X_stepbackSize with hxwdef
+  set xi : ℝ := X_mZeroIy with hxidef
+  rw [show X_fpmLeStepped = max xw xi from rfl]
+  refine ⟨le_max_of_le_left hxw1, fun x hx E hE y hy => ?_⟩
   have hxw : xw ≤ x := le_trans (le_max_left _ _) hx
   have hxi : xi ≤ x := le_trans (le_max_right _ _) hx
   have hx1 : (1 : ℝ) ≤ x := le_trans hxw1 hxw
@@ -3094,6 +3148,14 @@ theorem firstPassMid_le_steppedMid :
   · rw [hLM]; exact hL
   · exact (hwin x hxw y hy n hn N hNodd hT hG).1
   · exact (hwin x hxw y hy n hn N hNodd hT hG).2
+
+/-- ∃-form of `firstPassMid_le_steppedMid_atX` (X-chase: `x₀ := X_fpmLeStepped`). -/
+theorem firstPassMid_le_steppedMid :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          firstPassMid x E y ≤ steppedMid x E y :=
+  ⟨X_fpmLeStepped, firstPassMid_le_steppedMid_atX.1, firstPassMid_le_steppedMid_atX.2⟩
 
 /-- **`Eprime` forces the passage index** — the disjointness key for the (5.17) reverse leg.  If
 `N` passes, `m₀ ≤ n`, and the step-back `Syr^{n−m₀}N` satisfies `E'` (in particular passes at time
@@ -3664,21 +3726,36 @@ theorem steppedMid_le_firstPassMid_add :
   obtain ⟨C, x₀, hC, h⟩ := steppedMid_le_firstPassMid_add_explicit
   exact ⟨c_steppedMid, C, x₀, c_steppedMid_pos, hC, h⟩
 
-/-- Sibling of `first_passage_stepback_reduce` with the `c`-slot pinned to `c_steppedMid`
-(passthrough); the original delegates here. -/
+/-- The `first_passage_stepback_reduce` cutoff (X-chase): witness copied verbatim from the
+`_atC` proof at the explicit upstream names. -/
+noncomputable def X_stepbackReduce : ℝ := max X_fpmLeStepped X_steppedMid
+
+/-- Universal-cutoff form of `first_passage_stepback_reduce_atC` (X-chase). -/
+theorem first_passage_stepback_reduce_atCX :
+    ∀ x : ℝ, X_stepbackReduce ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |firstPassMid x E y - steppedMid x E y|
+            ≤ C_steppedMid * (Real.log x) ^ (-c_steppedMid) := by
+  have hfwd := firstPassMid_le_steppedMid_atX.2
+  have hrev := steppedMid_le_firstPassMid_add_atCX
+  set x₁ : ℝ := X_fpmLeStepped with hx₁def
+  set x₂ : ℝ := X_steppedMid with hx₂def
+  rw [show X_stepbackReduce = max x₁ x₂ from rfl]
+  intro x hx E hE y hy
+  have h1 := hfwd x (le_trans (le_max_left _ _) hx) E hE y hy
+  have h2 := hrev x (le_trans (le_max_right _ _) hx) E hE y hy
+  rw [abs_le]
+  exact ⟨by linarith, by linarith⟩
+
+/-- ∃-form of `first_passage_stepback_reduce_atCX` (X-chase: `x₀ := X_stepbackReduce`). -/
 theorem first_passage_stepback_reduce_atC :
     ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |firstPassMid x E y - steppedMid x E y|
-            ≤ C_steppedMid * (Real.log x) ^ (-c_steppedMid) := by
-  obtain ⟨x₁, _hx₁, hfwd⟩ := firstPassMid_le_steppedMid
-  obtain ⟨x₂, hrev⟩ := steppedMid_le_firstPassMid_add_atC
-  refine ⟨max x₁ x₂, fun x hx E hE y hy => ?_⟩
-  have h1 := hfwd x (le_trans (le_max_left _ _) hx) E hE y hy
-  have h2 := hrev x (le_trans (le_max_right _ _) hx) E hE y hy
-  rw [abs_le]
-  exact ⟨by linarith, by linarith⟩
+            ≤ C_steppedMid * (Real.log x) ^ (-c_steppedMid) :=
+  ⟨X_stepbackReduce, first_passage_stepback_reduce_atCX⟩
 
 /-- Sibling of `first_passage_stepback_reduce` with the `c`-slot pinned to `c_steppedMid`
 (passthrough); the original delegates here.  Now delegates to
