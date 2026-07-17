@@ -76,4 +76,16 @@ noncomputable def C_tao_assembled : ℝ :=
 theorem C_tao_assembled_pos : 0 < C_tao_assembled :=
   lt_max_of_lt_left (C_spine_pos X_spine)
 
+/-- **Theorem 3.1, assembled fully-explicit form** (Ruling II successor deliverable):
+Theorem 3.1 holds with BOTH slots closed — the concrete exponent `cTao` and the concrete
+(tower-valued) constant `C_tao_assembled`.  No existential exponent, constant, or cutoff
+remains on the proof path; the cutoff `X_spine` is absorbed into the constant.  This is
+additive: it re-pins nothing and makes no smallness claim about `C_tao_assembled`. -/
+theorem tao_collatz_quantitative_assembled :
+    ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C_tao_assembled / (Real.log N₀) ^ cTao
+        ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
+  rw [show C_tao_assembled = max (C_spine X_spine) ((Real.log 2) ^ cTao) from rfl]
+  exact tao_collatz_quantitative_spine_atCX_of_le c_ladder_lower
+
 end TaoCollatz

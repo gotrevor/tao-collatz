@@ -1300,3 +1300,19 @@ is odd, and the pin is branch-only so retiring is free).
   Audit 37/38, next (FINAL entry): `tao_collatz_quantitative_assembled` + check 27 +
   blueprint sub-node in the same commit, then the completion gates
   (`big_c_cutoff_audit.py --complete`, ExplicitnessClosure walk, #print axioms).
+
+### Successor lap 35 (2026-07-17) — PHASE 5 / CAMPAIGN COMPLETE (38/38)
+
+- `tao_collatz_quantitative_assembled` PROVED (one-line from
+  `tao_collatz_quantitative_spine_atCX_of_le c_ladder_lower` after unfolding the max) —
+  Theorem 3.1 with BOTH slots closed: exponent `cTao`, constant `C_tao_assembled`
+  (tower-valued, explicit, no smallness claim). Same commit: check 27
+  (`check_blueprint.py` — X_spine tree mirror with omit/min-swap traps, C_tao_assembled
+  both-arms-live, invokes `big_c_cutoff_audit.py --complete`) + blueprint sub-node `C6x`
+  (\notready, judge to ratify).
+- Completion evidence (believed clean, judge to verify): audit `--complete` ✅
+  (closure 209 defs / 177 leaves, no witness selectors); `#print axioms` for
+  `tao_collatz_quantitative_assembled` / `tao_collatz` / `tao_collatz_quantitative` /
+  `tao_collatz_quantitative_explicit` all exactly `[propext, Classical.choice,
+  Quot.sound]`; blueprint audit 0 orange / 0 drift / 0 false-green (C6x on the
+  MISSED-FLIP roll); differ 33/33; `TaoCollatz/` zero sorries.

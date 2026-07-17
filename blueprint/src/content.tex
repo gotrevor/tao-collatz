@@ -453,6 +453,23 @@ harmonic-mass bounds on the full window.  Headline route: C6b at \(\tilde f\) + 
   \texttt{exact}.  Trust-the-treadmill flip; judge flip-back allowed.
 \end{proof}
 
+% ---- Ruling II successor (2026-07-17): the assembled explicit big-C layer.  Additive on
+% the clean library; the retired CTao pin is NOT this node.  \notready pending judge
+% ratification (rule 1: never self-\leanok).  Numeric/structural trap: check27.
+\begin{theorem}[Assembled fully-explicit Thm 3.1 (our augmentation)]\label{C6x}
+  \lean{X_spine, C_tao_assembled, tao_collatz_quantitative_assembled}
+  \uses{C6a, C6s}
+  \notready
+Beyond the paper: Theorem 3.1 with BOTH slots closed --- the explicit exponent
+\(c_{\mathrm{Tao}}\) and a closed (tower-valued, deliberately non-small) constant
+\(C_{\mathrm{assembled}} = \max(C_{\mathrm{spine}}(X_{\mathrm{spine}}),
+\log^{c_{\mathrm{Tao}}}2)\), where \(X_{\mathrm{spine}}\) is the X-chase closure of the
+development's cutoff tree (no existential exponent, constant, or cutoff on the proof
+path; explicitness contract per \texttt{BIG\_C\_EXPLICIT\_BOUND\_PLAN.md}, enforced by
+\texttt{tools/ExplicitnessClosure.lean} + \texttt{big\_c\_cutoff\_audit.py --complete}).
+\lapsrisk{0}{low}{100\%}
+\end{theorem}
+
 \section{First passage (§5)}
 
 \begin{definition}[First-passage data and the log-uniform window]\label{C7d}

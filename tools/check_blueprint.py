@@ -1332,6 +1332,86 @@ def check22():
           % (budget, union_04, union_05, dil_04, dil_05, lin, budget - lin))
 
 
+def check27():
+    # Ruling II successor (2026-07-17): structural mirror of the X-chase cutoff tree
+    # feeding X_spine and of C_tao_assembled, transliterated from the Lean def bodies of
+    # THIS campaign's pins (Sec5/Stabilization phase 3, Sec3/Reduction phase 4,
+    # ExplicitBigC.lean phase 5); earlier-campaign X-nodes enter as opaque toy leaves.
+    # Toy semantics: exact Fractions; EXP(t) := t + 10 and POWA(v) := v + 1 are strictly
+    # monotone stand-ins for Real.exp and (.)^alpha (alpha = 1.001 > 1, arguments >= 1 on
+    # this tree), preserving max-structure and reachability while the tower stays finite.
+    # THE TRAP: X_twoMZero is reachable ONLY through X_mainZbridge -> X_harmonicZ.  Given
+    # a dominating toy value T there, the CORRECT tree returns exactly T + 1 (the single
+    # ^alpha bump on the X_descWhp arm); a variant omitting that leaf from X_mainZbridge,
+    # or one with X_harmonicZ's outer max mis-rendered as min, loses it.  Then
+    # C_tao_assembled = max(C_spine X_spine, (log 2)^cTao) must respond to BOTH arms.
+    # Finally the explicitness closure must be clean: big_c_cutoff_audit.py --complete.
+    def EXP(t):
+        return Fraction(t) + 10
+
+    def POWA(v):
+        return v + 1
+
+    def spine(twoMZero, omit=False, minswap=False):
+        e1 = EXP(1)
+        # opaque leaves (earlier-campaign pins, trapped by checks 18/20 and the audit)
+        X_windowBase = max(Fraction(2 ** 11), Fraction(2) ** 2000)
+        X_firstPassNonescape = Fraction(10 ** 6)
+        X_fpApprox = Fraction(10 ** 7)
+        X_perNHarm = Fraction(10 ** 8)
+        X_logRpowExp = Fraction(500)     # X_logRpowExp 2 (K_Gweight c_geomTail) 0.2
+        # this campaign's pins, transliterated body-by-body
+        X_cnBound = EXP(1024)
+        X_mZeroLin = EXP(200000)
+        X_goodWhp = max(X_logRpowExp, max(EXP(20), EXP(20)))    # X_Gweight = exp 20
+        X_syracZsub = X_goodWhp
+        X_harmZfine = max(max(X_cnBound, X_syracZsub), EXP(1024))
+        X_mainZbridge = (max(EXP(200000), max(X_mZeroLin, X_cnBound)) if omit else
+                         max(EXP(200000), max(twoMZero, max(X_mZeroLin, X_cnBound))))
+        outer = min if minswap else max
+        X_harmonicZ = outer(max(X_harmZfine, X_mainZbridge), e1)
+        X_IyCard = EXP(2000 ** 5)
+        X_mainZ = max(max(X_perNHarm, X_harmonicZ),
+                      max(X_fpApprox, max(X_IyCard, EXP(2000 ** 5))))
+        X_perNTermEval = max(max(X_perNHarm, X_harmonicZ), e1)
+        X_IyRatio = max(X_IyCard, EXP(2000 ** 5))
+        X_approxToZ = max(max(max(X_IyRatio, X_mainZ), X_perNTermEval), e1)
+        X_windowStable = X_approxToZ
+        X_stab = max(max(max(X_firstPassNonescape, X_fpApprox), X_windowStable), e1)
+        X_descStep = max(X_stab, e1)
+        X_descBase = max(X_firstPassNonescape, Fraction(0))
+        X_descLadder = max(max(X_descBase, X_descStep), e1)
+        X_descWhp = max(POWA(max(X_descLadder, e1)), e1)
+        X_windowBad = max(max(X_descWhp, POWA(max(X_windowBase, Fraction(1)))), e1)
+        X_syrSum = max(X_windowBad, e1)
+        return X_syrSum                                          # X_spine := X_syrSum
+
+    T = Fraction(2) ** 3000                     # dominates every other toy leaf
+    assert spine(T) == T + 1, spine(T)          # deep non-first leaf + exactly one ^alpha
+    assert spine(T + 7) == T + 8                # responds (reachability, not coincidence)
+    assert spine(T, omit=True) < T              # dropping the leaf loses it
+    assert spine(T, minswap=True) < T           # max->min at X_harmonicZ loses it
+    # C_tao_assembled = max (C_spine X_spine) ((log 2)^cTao), C_spine X = 16 * C_syrSum X,
+    # C_syrSum X = max (C_windowBad*alpha/(alpha-1)) (4*max 1 ((log X)^c_ladder)):
+    # structural mirror only (the tower is never materialized); both arms must be live.
+    def c_tao(cwb_arm, logx_arm, log2_arm):
+        c_syr = max(cwb_arm, 4 * max(Fraction(1), logx_arm))
+        return max(16 * c_syr, log2_arm)
+    base = c_tao(Fraction(5), Fraction(3), Fraction(1))
+    assert c_tao(Fraction(50), Fraction(3), Fraction(1)) > base      # C-arm 1 live
+    assert c_tao(Fraction(5), Fraction(30), Fraction(1)) > base      # C-arm 2 live
+    assert c_tao(Fraction(5), Fraction(3), Fraction(10 ** 3)) > base  # log2^cTao arm live
+    # explicitness closure: the full 38-entry manifest + closure walk must be clean
+    import subprocess, sys, os
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    r = subprocess.run([sys.executable, os.path.join(root, "tools", "big_c_cutoff_audit.py"),
+                        "--complete"], capture_output=True, text=True, cwd=root)
+    assert r.returncode == 0, r.stdout + r.stderr
+    print("27. assembled big-C: X_spine tree mirror (leaf reachable, one ^alpha bump; "
+          "omit/min-swap variants fail), C_tao_assembled both arms live, "
+          "cutoff audit --complete clean  OK")
+
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
@@ -1354,4 +1434,5 @@ if __name__ == "__main__":
     check24()                                     # lap-16 shallow-tip witness (JUDGE-FLAG)
     check25()                                     # lap-17b point-mass half (flag CONFIRMED)
     check26()                                     # lap-18 exp-depth door REFUTED empirically
+    check27()                                     # Ruling II assembled big-C (X_spine tree)
     print("ALL CHECKS PASS ✅")
