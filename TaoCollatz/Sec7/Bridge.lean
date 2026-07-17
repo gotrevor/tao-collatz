@@ -690,4 +690,99 @@ theorem renewal_white_encounters (A : ℝ) (hA : 0 < A) :
         ≤ C * (n : ℝ) ^ (-A) :=
   ⟨C_renewalWhite A, C_renewalWhite_pos A, renewal_white_encounters_at A hA⟩
 
+/-- The **tight** Proposition 7.3 constant (big-C campaign, Option B, lap 12): the head arm
+`n₀^A = (2·C_hold A + 2)^A` alone, DROPPING the vacuous `C_polyDecay` tower.  Numerically
+`n₀^A ≈ 10^(9.36×10¹⁰) < CTao = 10^(10¹¹)` (check17 GO).  This is what the head-route ladder
+needs to clear the pin. -/
+noncomputable def C_renewalWhite_tight (A : ℝ) : ℝ := ((2 * C_hold A + 2 : ℕ) : ℝ) ^ A
+
+theorem C_renewalWhite_tight_pos (A : ℝ) : 0 < C_renewalWhite_tight A :=
+  Real.rpow_pos_of_pos (by positivity) A
+
+set_option warningAsError false in
+open Classical in
+/-- **Proposition 7.3, TIGHT form** (Option B, lap 12 — ADDITIVE; the clean-headline
+`renewal_white_encounters` is deliberately left UNTOUCHED, since it feeds the axiom-clean
+headlines and a sorry-backed witness there would poison their axiom base).  Same
+expected-damping bound as `renewal_white_encounters_at`, but with the head-only constant
+`C_renewalWhite_tight A`, no `C_polyDecay` tower.
+
+Route rationale (DIRECTION.md RESOLVED banner, 2026-07-17): the `n^{-A}` decay is supplied by
+`hold_weight_expect`; the tower `C0 = C_polyDecay A` in `renewal_white_encounters_at` enters
+only as a multiplicative constant via the `Q_polynomial_decay` bound, where `Q ≤ 1` already
+holds in the applied range — it is vacuous slop.  Discharging this bound at the head constant
+is what lets the head-route ladder clear `CTao`.
+
+The small-`n` arm (`n < n₀`, trivial `E ≤ 1 ≤ n₀^A·n^{-A}`) is PROVED.  The large-`n` arm is
+the campaign **crux** `renewal_tail_tight`: a `#white` lower-tail / decorrelation estimate
+beating `few_white_mass_le`'s (7.67) tower horizon — the Option-B frontier (PENDING_WORK
+Reflection 2026-07-17 lap 12).  Left as a named `sorry`; chip it. -/
+theorem renewal_white_encounters_tight (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → 1 ≤ n →
+      (PMF.iid pascal (n / 2)).expect (fun b =>
+        Real.exp (-((epsBW : ℝ) ^ 3) *
+          ((Finset.univ.filter fun j : Fin (n / 2) =>
+            b j = 3 ∧ white n ξ (j : ℕ) ((pre b ((j : ℕ) + 1) : ℤ))).card : ℝ)))
+        ≤ C_renewalWhite_tight A * (n : ℝ) ^ (-A) := by
+  intro n ξ hξ hn
+  set C1 : ℕ := C_hold A with hC1def
+  set n0 : ℕ := 2 * C1 + 2 with hn0
+  have hn0R : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  -- E ≤ 1 always: each damping factor exp(-ε³·#white) ≤ 1, total mass 1.
+  -- (verbatim from `renewal_white_encounters_at`, self-contained.)
+  have hE1 : (PMF.iid pascal (n / 2)).expect (fun b =>
+      Real.exp (-((epsBW : ℝ) ^ 3) *
+        ((Finset.univ.filter fun j : Fin (n / 2) =>
+          b j = 3 ∧ white n ξ (j : ℕ) ((pre b ((j : ℕ) + 1) : ℤ))).card : ℝ))) ≤ 1 := by
+    unfold PMF.expect
+    have hterm : ∀ b : Fin (n / 2) → ℕ,
+        ((PMF.iid pascal (n / 2)) b).toReal *
+          Real.exp (-((epsBW : ℝ) ^ 3) *
+            ((Finset.univ.filter fun j : Fin (n / 2) =>
+              b j = 3 ∧ white n ξ (j : ℕ) ((pre b ((j : ℕ) + 1) : ℤ))).card : ℝ))
+          ≤ ((PMF.iid pascal (n / 2)) b).toReal := by
+      intro b
+      have hle1 : Real.exp (-((epsBW : ℝ) ^ 3) *
+          ((Finset.univ.filter fun j : Fin (n / 2) =>
+            b j = 3 ∧ white n ξ (j : ℕ) ((pre b ((j : ℕ) + 1) : ℤ))).card : ℝ)) ≤ 1 := by
+        rw [Real.exp_le_one_iff, neg_mul, neg_nonpos]
+        positivity
+      calc ((PMF.iid pascal (n / 2)) b).toReal * _ ≤ _ * 1 :=
+            mul_le_mul_of_nonneg_left hle1 ENNReal.toReal_nonneg
+        _ = ((PMF.iid pascal (n / 2)) b).toReal := mul_one _
+    have hsum : Summable fun b : Fin (n / 2) → ℕ => ((PMF.iid pascal (n / 2)) b).toReal :=
+      ENNReal.summable_toReal (PMF.iid pascal (n / 2)).tsum_coe_ne_top
+    have hsumf : Summable fun b : Fin (n / 2) → ℕ =>
+        ((PMF.iid pascal (n / 2)) b).toReal *
+          Real.exp (-((epsBW : ℝ) ^ 3) *
+            ((Finset.univ.filter fun j : Fin (n / 2) =>
+              b j = 3 ∧ white n ξ (j : ℕ) ((pre b ((j : ℕ) + 1) : ℤ))).card : ℝ)) :=
+      Summable.of_nonneg_of_le
+        (fun b => mul_nonneg ENNReal.toReal_nonneg (Real.exp_pos _).le) hterm hsum
+    calc ∑' b, ((PMF.iid pascal (n / 2)) b).toReal * _
+        ≤ ∑' b, ((PMF.iid pascal (n / 2)) b).toReal := hsumf.tsum_le_tsum hterm hsum
+      _ = 1 := by
+          rw [← ENNReal.tsum_toReal_eq (fun b => ((PMF.iid pascal (n / 2)).apply_ne_top b)),
+            (PMF.iid pascal (n / 2)).tsum_coe, ENNReal.toReal_one]
+  rcases lt_or_ge n n0 with hsmall | hbig
+  · -- small n: trivial head bound  E ≤ 1 ≤ n₀^A·n^{-A}  (shape from renewal_white_encounters_at).
+    calc (PMF.iid pascal (n / 2)).expect _ ≤ 1 := hE1
+      _ ≤ (n0 : ℝ) ^ A * (n : ℝ) ^ (-A) := by
+          have h1 : (n : ℝ) ≤ (n0 : ℝ) := by exact_mod_cast hsmall.le
+          have h2 : (1 : ℝ) = (n : ℝ) ^ A * (n : ℝ) ^ (-A) := by
+            rw [← Real.rpow_add hn0R, add_neg_cancel, Real.rpow_zero]
+          rw [h2]
+          exact mul_le_mul_of_nonneg_right
+            (Real.rpow_le_rpow hn0R.le h1 hA.le) (Real.rpow_nonneg hn0R.le _)
+      _ = C_renewalWhite_tight A * (n : ℝ) ^ (-A) := by
+          unfold C_renewalWhite_tight; rw [hn0, hC1def]
+  · -- large n (n ≥ n₀): THE CRUX — `renewal_tail_tight`, the Option-B decorrelation frontier.
+    -- The two bridges + `hold_weight_expect` give ≤ C0·exp(ε³/2)·3^A·n^{-A} with C0 = tower;
+    -- the tight bound replaces C0 by a small constant via a #white lower-tail estimate beating
+    -- `few_white_mass_le`'s tower horizon.  See PENDING_WORK Reflection 2026-07-17 lap 12.
+    sorry
+
 end TaoCollatz
