@@ -95,11 +95,23 @@ evaluate, never compare it to `CTao`, and never imply smallness. The value on of
 **"effective in fact, kernel-certified"** replacing **"effective in principle"** — that, and
 nothing more, is the claim.
 
-**Relaunch gate:** the repo-root sorry census can never reach 0 (the 9 comparator
-`Challenge.lean` stubs are sorry-by-design forever), and this campaign *intentionally* leaves
-2 src sorries standing. So `--done-when` must key on the **audit**, not a sorry count:
-`--done-when 'cmd:python3 tools/big_c_cutoff_audit.py --complete'`. A `sorry-free:` gate is
-wrong for this campaign and will refuse to launch or never fire.
+**Relaunch gate (CORRECTED against the tool — the first draft of this line invented a flag):**
+- ❌ **There is no `--done-when 'cmd:…'` form.** `lean-treadmill --done-when` accepts **only**
+  `sorry-free:<path>`, and an unrecognized spec **fails toward running** (never a false halt) —
+  so a made-up spec does not error, it *silently never fires*. Do not use one.
+- ❌ **`--done-when 'sorry-free:TaoCollatz'` is WRONG here** — the library is sorry-clean **as of
+  the pin retirement (0 sorries)**, so it would be met on lap 1 and halt the run instantly. This
+  campaign's objective is to **ADD a theorem**, not to remove a `sorry`; no sorry-count predicate
+  can express it.
+- ✅ **Self-stop cannot fire on this repo, so no `--forever` is needed.** The gate scans
+  `src/` if present **else the repo root** (mathlib layout — this repo has no `src/`), and the
+  root permanently carries the **8 comparator `Challenge.lean` stubs** (sorry-by-design forever).
+  A lap's stop sentinel is therefore never honored.
+- ✅ **Keep `box stuck` ALIVE — this is why `--forever` is actively harmful here.** `--forever`
+  *declines* the stuck-bail, and escalate-and-stop is the lane this campaign's governance rests
+  on (Ruling I). Self-stop is already impossible; `--forever` would buy nothing and cost the exit.
+- **The operator stops the run** when `tools/big_c_cutoff_audit.py --complete` goes green (or on
+  a `JUDGE-FLAG`). `--max-duration` is the backstop.
 
 ---
 
