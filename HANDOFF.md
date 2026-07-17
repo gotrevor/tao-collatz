@@ -1,30 +1,56 @@
-# HANDOFF — big-C campaign, lap 10 in progress (Sec5 spine, 2026-07-17)
+# HANDOFF — big-C campaign, lap 10 COMPLETE (C7 + C8 reified, 2026-07-17)
 
 ## State (branch `explicit-big-c`, all committed, build green)
 
-HEAD `2db3ae6`. Full `lake build` green (3327 jobs) at every commit; differ
+HEAD `250e4ed`. Full `lake build` green (3327 jobs) at every commit; differ
 `tools/tao_stmt_diff.py fabea6f HEAD` 35/35; `check_blueprint.py` 19/19. Still exactly
 1 real `sorry` (`Statement.lean:65`, the pin). Route status unchanged: STEP 3 STOPPED
-(see below), step-2 transcription continues.
+(operator ruling owed, see `ROUTE-ESCALATION-2026-07-17.md`); step-2 transcription
+continues and is what this lap advanced.
 
-## Lap 10 progress (3 commits)
+## Lap 10 progress (9 commits) — **C7 and C8 constants fully reified**
 
-1. **`13d622f` — `harmonic_to_Z` big-C**: `C_harmonicZ := C_harmZfine + C_mainZbridge`,
-   `harmonic_to_Z_atC` (cutoff ∃), triangle through `harmZfine`; `_explicit` delegates.
-2. **`ac405c7` — leaf-A inputs**: `windowMass_estimate_atC` (C=3, cutoff ∃,
-   FirstPassage.lean), `windowMass_ge_clog_at` (c=1/10000, cutoff `2^2000`, fully
-   explicit, ApproxFormula.lean), `perNHarmonic_le_at` (C=4 via `cn_bound_at`).
-3. **`2db3ae6` — leaf A + per-n eval**: `C_epsPerNHarm := 2+3·(3/(1/10000))+2·3/(α−1)`,
-   `C_perNHarm := C_epsPerNHarm·4`, `perNTerm_harmonic_approx_atC` (300-line body ported
-   via `set`-rebind; **rail: `set Cw := 3`/`set CH := 4` BEFORE obtaining
-   `Nstar_mem_logWindow`, whose `4/3` literals must not be abstracted**);
-   `C_perNTermEval := C_perNHarm + C_harmonicZ`, `perNTerm_eval_atC`.
-   **Sec5 (5.19)+(5.20) per-`n` chain now fully constant-explicit.**
+1. **`13d622f`** — `harmonic_to_Z_atC`: `C_harmonicZ := C_harmZfine + C_mainZbridge`.
+2. **`ac405c7`** — leaf-A inputs: `windowMass_estimate_atC` (C=3), `windowMass_ge_clog_at`
+   (c=1/10000, cutoff `2^2000`, fully explicit), `perNHarmonic_le_at` (C=4).
+3. **`2db3ae6`** — leaf A + per-n eval: `C_perNHarm := C_epsPerNHarm·4`
+   (`C_epsPerNHarm = 2+3·(3/(1/10000))+2·3/(α−1)`), `C_perNTermEval := C_perNHarm +
+   C_harmonicZ`. **Rail:** `set Cw := 3`/`set CH := 4` BEFORE obtaining
+   `Nstar_mem_logWindow` (its `4/3` literals must not be abstracted).
+4. **`c4b03de`** — `Iy_count_ratio_atC` (C=6000).
+5. **`d88cb62`** — integral-test chain: `intTest_class_dev_atC` (c=2),
+   `intTest_D_lower_atC` (D₀=1/8), `K_intTest := 2/(1/8)` (=16), `intTest_error_atC`,
+   `integral_test_logUnif_atC`.
+6. **`bb97151`** — **C7 REIFIED**: `valuation_dist_atC` (`C_valuationDistC K := 2K +
+   4·C_geomTail`, ValuationDist.lean), `C_valSumGeom := C_valuationDistC K_intTest +
+   2·C_geomTail` (=44), `valSum_lower_geom/tail_atC`, `first_passage_nonescape_atC`.
+7. **`7daed64`** — C8 leaf: `C_goodTupleDev := 2·C_geomTail + C_valuationDistC K_intTest`
+   (=44), `goodTuple_prefix_dev_sum_atC`, `approx_good_tuple_whp_atC`.
+8. **`a099d0f`** — `C_windowReduce := C_goodTupleDev + C_passtimeWindow`
+   (`C_edgeMass := 2/(1/10000)`, `C_passtimeInner`, `C_passtimeWindow := C_valSumGeom +
+   C_passtimeInner` — C7 wired into C8).
+9. **`250e4ed`** — **C8 REIFIED**: `C_fpApprox := C_windowReduce + C_affineReindex`
+   (`C_steppedMid := C_goodTupleDev + 1`, `C_affineReindex := C_steppedMid + 1`;
+   early-return and truncation constants are the numeral 1). `first_passage_approx_atC`.
 
-## Next (grind orders): `stabilization` (watched) — combines `perNTerm_eval` +
-`Iy_card_bracket` + `first_passage_approx` (C8, already explicit from the c-campaign?
-check `first_passage_approx_explicit` C-slot). Then FirstPassage (16) / ApproxFormula
-(23) / Sec3 (7) / Syracuse (1) / Prob (1) slot sweeps.
+**Rails re-proven this lap:** (i) the `set`-rebind port works at scale (300-line bodies,
+zero textual edits beyond the head); (ii) adjacent docstrings = parse error — MERGE into
+one when inserting a def above an existing docstring; (iii) `rw [show C_foo = <set-names>
+from rfl]` closes by zeta+delta defeq through `set` fvars.
+
+## Next (grind orders, bottom-up — step-2 only until the operator ruling)
+
+1. **`mainZ_bound` C-slot** (Stabilization.lean ~2620): witness `CA + CB + 1000·(1+C8)`
+   — all three inputs now pinned (`C_perNHarm`, `C_harmonicZ`, `C_fpApprox`). Obtains are
+   ∃c∃C-forms; swap to `_atC`s + set-rail. Name `C_mainZ`.
+2. **`approxMainTerm_to_Z_atC`**: `(2/log(4/3) + 6000)·C_perNTermEval + C_mainZ·6000`
+   (pattern at Stabilization.lean:2977 — the c-form already has the shape).
+3. **`approxMainTerm_window_stable_atC`**: `2×` that.
+4. **`stabilization_atC`** (WATCHED — keep ∃-form byte-identical, differ must stay 35/35):
+   `C_valSumGeom + 4·C_fpApprox + 2·C_windowStable`. **This completes the Sec5 spine.**
+5. Then remaining slot sweeps: FirstPassage leftovers, ApproxFormula leftovers,
+   Sec3 (7), Syracuse (1), Prob (1). Then all constants feeding `C_ladder` are symbolic
+   — ready for whichever option the operator picks (A re-pin / B tighten).
 
 ---
 
