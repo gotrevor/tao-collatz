@@ -1657,19 +1657,19 @@ theorem C_spine_pos (X : ℝ) : 0 < C_spine X :=
   mul_pos (by norm_num) (C_syrSum_pos X)
 
 /-- Sibling of the WATCHED `tao_collatz_quantitative_spine` with the `c`-slot pinned to
-`c_ladder` and the `C`-slot pinned to `C_spine X` at an existentially-supplied cutoff `X`
-— the `_atC` form (big-C campaign, step 2).  **This is the top of the step-2
-transcription.** -/
-theorem tao_collatz_quantitative_spine_atC :
-    ∃ X : ℝ, ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
-      1 - C_spine X / (Real.log N₀) ^ c_ladder
+`c_ladder` and the `C`-slot pinned to the fully closed `C_spine X_syrSum` (X-chase).
+**This is the top of the transcription** — the statement is cutoff-free, so the closed
+cutoff enters only through the constant. -/
+theorem tao_collatz_quantitative_spine_atCX :
+    ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C_spine X_syrSum / (Real.log N₀) ^ c_ladder
         ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
-  obtain ⟨X, hsum⟩ := tao_syracuse_quantitative_sum_atC
+  have hsum := tao_syracuse_quantitative_sum_atCX
+  set X : ℝ := X_syrSum with hXdef
   set Ca : ℝ := C_syrSum X with hCadef
   have hCa : 0 < Ca := C_syrSum_pos X
   set c : ℝ := c_ladder with hcdef
   have hc : 0 < c := c_ladder_pos
-  refine ⟨X, ?_⟩
   rw [show C_spine X = 16 * Ca from rfl]
   intro N₀ x hN₀2 hx2
   have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
@@ -1764,6 +1764,14 @@ theorem tao_collatz_quantitative_spine_atC :
     calc B / D ≤ (16 * Ca * D / (Real.log N₀) ^ c) / D := h1
       _ = 16 * Ca / (Real.log N₀) ^ c := by field_simp
   linarith [hBD]
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff-parameter existential.
+Delegates to `tao_collatz_quantitative_spine_atCX` (X-chase: `X := X_syrSum`). -/
+theorem tao_collatz_quantitative_spine_atC :
+    ∃ X : ℝ, ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C_spine X / (Real.log N₀) ^ c_ladder
+        ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) :=
+  ⟨X_syrSum, tao_collatz_quantitative_spine_atCX⟩
 
 /-- Explicit-`c` spine for **Theorem 3.1 (Colmin form)**: `tao_collatz_quantitative_spine`
 with the `c`-slot pinned to `c_ladder`; delegates to `tao_collatz_quantitative_spine_atC`

@@ -1280,3 +1280,9 @@ is odd, and the pin is branch-only so retiring is free).
 - `X_syrSum := max X_windowBad (exp 1)` + `tao_syracuse_quantitative_sum_atCX` — the C6a
   sum form with the fully closed constant `C_syrSum X_syrSum`; `_atC` delegates.
   Audit 34/38, next `tao_collatz_quantitative_spine_atCX`.
+
+### Successor lap 32 (2026-07-17) — PHASE 4 COMPLETE (7/7)
+
+- `tao_collatz_quantitative_spine_atCX` — the Colmin spine at the fully closed
+  `C_spine X_syrSum` (cutoff-free statement); `_atC` delegates. Audit 35/38, next phase 5:
+  `TaoCollatz/ExplicitBigC.lean` (`X_spine`, `tao_collatz_quantitative_spine_atCX_of_le`).
