@@ -397,10 +397,15 @@ marginal `iidMap_pre` (Sec6 is not imported here), the Gweight decay for a fixed
 `d·log^{0.6}x` over prefixes `n ≤ nZero x`, and the two-sided prefix analogue of
 `iid_geomHalf_overflow_eq`. -/
 
-/-- Real-variable version of `log_le_eps_mul_of_large`: `log w ≤ ε w` for `w` large. -/
-theorem log_le_eps_mul_real {ε : ℝ} (hε : 0 < ε) :
-    ∃ w₀ : ℝ, ∀ w : ℝ, w₀ ≤ w → Real.log w ≤ ε * w := by
-  refine ⟨(2 / ε) ^ 2, fun w hw => ?_⟩
+/-- The `log_le_eps_mul_real` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_logEpsMul (ε : ℝ) : ℝ := (2 / ε) ^ 2
+
+/-- Real-variable version of `log_le_eps_mul_of_large`: `log w ≤ ε w` for `w` large.
+Universal-cutoff form (X-chase). -/
+theorem log_le_eps_mul_real_atX {ε : ℝ} (hε : 0 < ε) :
+    ∀ w : ℝ, X_logEpsMul ε ≤ w → Real.log w ≤ ε * w := by
+  rw [show X_logEpsMul ε = (2 / ε) ^ 2 from rfl]
+  intro w hw
   have hwpos : 0 < w := lt_of_lt_of_le (by positivity) hw
   have hsqrt_pos : 0 < Real.sqrt w := Real.sqrt_pos.mpr hwpos
   have hsq : Real.sqrt w ^ 2 = w := Real.sq_sqrt hwpos.le
@@ -423,13 +428,26 @@ theorem log_le_eps_mul_real {ε : ℝ} (hε : 0 < ε) :
       _ = ε * w := by rw [hsq]
   linarith
 
+/-- ∃-form of `log_le_eps_mul_real_atX` (X-chase: `w₀ := X_logEpsMul ε`). -/
+theorem log_le_eps_mul_real {ε : ℝ} (hε : 0 < ε) :
+    ∃ w₀ : ℝ, ∀ w : ℝ, w₀ ≤ w → Real.log w ≤ ε * w :=
+  ⟨X_logEpsMul ε, log_le_eps_mul_real_atX hε⟩
+
+/-- The `log_rpow_mul_exp_neg_le_one` cutoff (X-chase): witness copied verbatim from its
+proof, at the explicit `X_logEpsMul` upstream. -/
+noncomputable def X_logRpowExp (p κ θ : ℝ) : ℝ :=
+  Real.exp (max ((max (X_logEpsMul (κ * θ / p)) 1) ^ (1/θ)) 1)
+
 /-- Superpolynomial-decay core: for `p, κ, θ > 0`, once `x` is large,
-`(log x)^p · exp(−κ·(log x)^θ) ≤ 1`.  (Polynomial-in-`log x` beaten by a stretched exponential.) -/
-theorem log_rpow_mul_exp_neg_le_one {p κ θ : ℝ} (hp : 0 < p) (hκ : 0 < κ) (hθ : 0 < θ) :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+`(log x)^p · exp(−κ·(log x)^θ) ≤ 1`.  (Polynomial-in-`log x` beaten by a stretched exponential.)
+Universal-cutoff form (X-chase). -/
+theorem log_rpow_mul_exp_neg_le_one_atX {p κ θ : ℝ} (hp : 0 < p) (hκ : 0 < κ) (hθ : 0 < θ) :
+    ∀ x : ℝ, X_logRpowExp p κ θ ≤ x →
       (Real.log x) ^ p * Real.exp (-κ * (Real.log x) ^ θ) ≤ 1 := by
-  obtain ⟨s₀, hs₀⟩ := log_le_eps_mul_real (ε := κ * θ / p) (by positivity)
-  refine ⟨Real.exp (max ((max s₀ 1) ^ (1/θ)) 1), fun x hx => ?_⟩
+  have hs₀ := log_le_eps_mul_real_atX (ε := κ * θ / p) (by positivity)
+  set s₀ : ℝ := X_logEpsMul (κ * θ / p) with hs₀def
+  rw [show X_logRpowExp p κ θ = Real.exp (max ((max s₀ 1) ^ (1/θ)) 1) from rfl]
+  intro x hx
   have hlogx : (max ((max s₀ 1) ^ (1/θ)) 1) ≤ Real.log x := by
     rw [← Real.log_exp (max ((max s₀ 1) ^ (1/θ)) 1)]
     exact Real.log_le_log (Real.exp_pos _) hx
@@ -465,6 +483,12 @@ theorem log_rpow_mul_exp_neg_le_one {p κ θ : ℝ} (hp : 0 < p) (hκ : 0 < κ) 
         mul_le_mul_of_nonneg_right hexp (Real.exp_pos _).le
     _ = 1 := by rw [← Real.exp_add, show κ * s + -κ * s = 0 by ring, Real.exp_zero]
 
+/-- ∃-form of `log_rpow_mul_exp_neg_le_one_atX` (X-chase: `x₀ := X_logRpowExp p κ θ`). -/
+theorem log_rpow_mul_exp_neg_le_one {p κ θ : ℝ} (hp : 0 < p) (hκ : 0 < κ) (hθ : 0 < θ) :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      (Real.log x) ^ p * Real.exp (-κ * (Real.log x) ^ θ) ≤ 1 :=
+  ⟨X_logRpowExp p κ θ, log_rpow_mul_exp_neg_le_one_atX hp hκ hθ⟩
+
 /-- Inline copy of `pre_eq_fin_sum_castLE` (lives in Sec6, not visible here). -/
 theorem pre_eq_fin_sum_castLE' {n : ℕ} (a : Fin n → ℕ) {r : ℕ} (h : r ≤ n) :
     pre a r = ∑ i : Fin r, a (Fin.castLE h i) := by
@@ -483,14 +507,24 @@ theorem iidMap_pre' (n r : ℕ) (h : r ≤ n) :
   rw [hcomp, ← PMF.map_comp, iid_map_castLE geomHalf r n h]
   rfl
 
-/-- The prefix Gweight decay: for `d > 0`, each `Gweight (1+n) (d·log^{0.6} x)` with `n ≤ nZero x`
-is bounded by a stretched exponential `2·exp(−κ·log^{0.2} x)`.  (Both the `exp(−·²/(1+n))` term
-— using `1+n ≤ log x / 4` — and the `exp(−d·log^{0.6}x)` term dominate `exp(−κ log^{0.2}x)`.) -/
-theorem Gweight_prefix_decay {d : ℝ} (hd : 0 < d) :
-    ∃ κ x₀ : ℝ, 0 < κ ∧ ∀ x : ℝ, x₀ ≤ x → ∀ n : ℕ, n ≤ nZero x →
+/-- The `Gweight_prefix_decay` rate (X-chase): the `κ`-witness copied verbatim from its proof. -/
+noncomputable def K_Gweight (d : ℝ) : ℝ := min (4 * d ^ 2) d
+
+theorem K_Gweight_pos {d : ℝ} (hd : 0 < d) : 0 < K_Gweight d :=
+  lt_min (by positivity) hd
+
+/-- The `Gweight_prefix_decay` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_Gweight : ℝ := Real.exp 20
+
+/-- Universal-cutoff form of `Gweight_prefix_decay` (X-chase), at the explicit rate
+`K_Gweight d` and cutoff `X_Gweight`. -/
+theorem Gweight_prefix_decay_atX {d : ℝ} (hd : 0 < d) :
+    ∀ x : ℝ, X_Gweight ≤ x → ∀ n : ℕ, n ≤ nZero x →
       Gweight (1 + n) (d * (Real.log x ^ (0.6:ℝ)))
-        ≤ 2 * Real.exp (-κ * (Real.log x ^ (0.2:ℝ))) := by
-  refine ⟨min (4 * d ^ 2) d, Real.exp 20, lt_min (by positivity) hd, fun x hx n hn => ?_⟩
+        ≤ 2 * Real.exp (-(K_Gweight d) * (Real.log x ^ (0.2:ℝ))) := by
+  rw [show X_Gweight = Real.exp 20 from rfl,
+    show K_Gweight d = min (4 * d ^ 2) d from rfl]
+  refine fun x hx n hn => ?_
   have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos _) hx
   set L : ℝ := Real.log x with hLdef
   have hL20 : (20 : ℝ) ≤ L := by
@@ -545,6 +579,16 @@ theorem Gweight_prefix_decay {d : ℝ} (hd : 0 < d) :
     _ ≤ Real.exp (-κ * P02) + Real.exp (-κ * P02) := add_le_add hterm1 hterm2
     _ = 2 * Real.exp (-κ * P02) := by ring
 
+/-- The prefix Gweight decay: for `d > 0`, each `Gweight (1+n) (d·log^{0.6} x)` with `n ≤ nZero x`
+is bounded by a stretched exponential `2·exp(−κ·log^{0.2} x)`.  (Both the `exp(−·²/(1+n))` term
+— using `1+n ≤ log x / 4` — and the `exp(−d·log^{0.6}x)` term dominate `exp(−κ log^{0.2}x)`.)
+∃-form: delegates to `Gweight_prefix_decay_atX` (X-chase). -/
+theorem Gweight_prefix_decay {d : ℝ} (hd : 0 < d) :
+    ∃ κ x₀ : ℝ, 0 < κ ∧ ∀ x : ℝ, x₀ ≤ x → ∀ n : ℕ, n ≤ nZero x →
+      Gweight (1 + n) (d * (Real.log x ^ (0.6:ℝ)))
+        ≤ 2 * Real.exp (-κ * (Real.log x ^ (0.2:ℝ))) :=
+  ⟨K_Gweight d, X_Gweight, K_Gweight_pos hd, Gweight_prefix_decay_atX hd⟩
+
 /-- Prefix analogue of `iid_geomHalf_overflow_eq`, two-sided: the prefix deviation mass under
 `geomHalf.iid n₀` equals the `iidSum geomHalf n` deviation mass, for `n ≤ n₀`. -/
 theorem iid_prefix_twosided_eq (n₀ n : ℕ) (h : n ≤ n₀) (lam : ℝ) :
@@ -597,15 +641,25 @@ theorem C_goodTupleDev_pos : 0 < C_goodTupleDev := by
   unfold C_goodTupleDev
   nlinarith [C_geomTail_pos, C_valuationDistC_pos K_intTest_pos]
 
-theorem goodTuple_prefix_dev_sum_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `goodTuple_prefix_dev_sum` cutoff (X-chase): the witness max-tree copied verbatim
+from the `_atC` proof, with the obtained locals replaced by their explicit upstream names
+(`κ := K_Gweight c_geomTail`, `cq := c_valuationDist 1 / 20`). -/
+noncomputable def X_goodTupleDev : ℝ :=
+  max X_intTestLogUnif
+    (max (X_logRpowExp 2 (K_Gweight c_geomTail) 0.2)
+      (max X_rpowNZero
+        (max (X_logRpowExp 2 (c_valuationDist 1 / 20) 1) (max (Real.exp 20) X_Gweight))))
+
+/-- Universal-cutoff form of `goodTuple_prefix_dev_sum_atC` (X-chase). -/
+theorem goodTuple_prefix_dev_sum_atCX :
+    ∀ x : ℝ, X_goodTupleDev ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         ∑ n ∈ Finset.range (nZero x + 1),
             (logUnifOdd y (y ^ alpha)).expect
               (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1)
           ≤ C_goodTupleDev * (Real.log x) ^ (-c_goodTupleDev) := by
   rw [show c_goodTupleDev = 1 from rfl]
-  obtain ⟨x₀e, herr⟩ := integral_test_logUnif_atC
+  have herr := integral_test_logUnif_atCX
   have hdist := valuation_dist_atC 1 K_intTest (by norm_num) K_intTest_pos
   have htail := geomHalf_tail_bound_atC
   set Cd : ℝ := C_valuationDistC K_intTest with hCddef
@@ -618,15 +672,25 @@ theorem goodTuple_prefix_dev_sum_atC :
   have hct : 0 < ct := c_geomTail_pos
   set cd : ℝ := c_valuationDist 1 with hcddef
   have hcd : 0 < cd := c_valuationDist_pos one_pos
-  obtain ⟨κ, x₀g, hκ, hGdecay⟩ := Gweight_prefix_decay (d := ct) hct
-  obtain ⟨x₀A, hA⟩ := log_rpow_mul_exp_neg_le_one (p := 2) (κ := κ) (θ := 0.2)
+  have hκ : 0 < K_Gweight ct := K_Gweight_pos hct
+  have hGdecay := Gweight_prefix_decay_atX (d := ct) hct
+  have hA := log_rpow_mul_exp_neg_le_one_atX (p := 2) (κ := K_Gweight ct) (θ := 0.2)
     (by norm_num) hκ (by norm_num)
-  obtain ⟨cq, x₀q, hcq, hqle⟩ := two_rpow_neg_nZero_le hcd
-  obtain ⟨x₀B, hB⟩ := log_rpow_mul_exp_neg_le_one (p := 2) (κ := cq) (θ := 1)
+  have hcq : 0 < cd / 20 := by positivity
+  have hqle := two_rpow_neg_nZero_le_atX hcd
+  have hB := log_rpow_mul_exp_neg_le_one_atX (p := 2) (κ := cd / 20) (θ := 1)
     (by norm_num) hcq (by norm_num)
+  set κ : ℝ := K_Gweight ct with hκdef
+  set cq : ℝ := cd / 20 with hcqdef
+  set x₀e : ℝ := X_intTestLogUnif with hx₀edef
+  set x₀A : ℝ := X_logRpowExp 2 κ 0.2 with hx₀Adef
+  set x₀q : ℝ := X_rpowNZero with hx₀qdef
+  set x₀B : ℝ := X_logRpowExp 2 cq 1 with hx₀Bdef
+  set x₀g : ℝ := X_Gweight with hx₀gdef
   rw [show C_goodTupleDev = 2 * Ct + Cd from rfl]
-  refine ⟨max x₀e (max x₀A (max x₀q (max x₀B (max (Real.exp 20) x₀g)))),
-    fun x hx y hy => ?_⟩
+  rw [show X_goodTupleDev
+      = max x₀e (max x₀A (max x₀q (max x₀B (max (Real.exp 20) x₀g)))) from rfl]
+  intro x hx y hy
   simp only [max_le_iff] at hx
   obtain ⟨hxe, hxA, hxq, hxB, hx20, hxg⟩ := hx
   have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 20) hx20
@@ -773,6 +837,16 @@ theorem goodTuple_prefix_dev_sum_atC :
     _ ≤ 2 * Ct * (Real.log x) ^ (-(1 : ℝ)) + Cd * (Real.log x) ^ (-(1 : ℝ)) := by
         linarith [hAterm, hBterm]
     _ = (2 * Ct + Cd) * (Real.log x) ^ (-(1 : ℝ)) := by ring
+
+/-- ∃-form of `goodTuple_prefix_dev_sum_atCX` (X-chase: `x₀ := X_goodTupleDev`). -/
+theorem goodTuple_prefix_dev_sum_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        ∑ n ∈ Finset.range (nZero x + 1),
+            (logUnifOdd y (y ^ alpha)).expect
+              (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1)
+          ≤ C_goodTupleDev * (Real.log x) ^ (-c_goodTupleDev) :=
+  ⟨X_goodTupleDev, goodTuple_prefix_dev_sum_atCX⟩
 
 /-- Original explicit-`c` form: delegates to `goodTuple_prefix_dev_sum_atC` (big-C
 campaign, step 2: `C := C_goodTupleDev`). -/

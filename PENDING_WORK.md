@@ -1112,3 +1112,12 @@ is odd, and the pin is branch-only so retiring is free).
   `descent_pow_bounds`, `descent_passes`, `first_passage_nonescape_atC`) all delegate.
   Witnesses copy-not-compose from the frozen proof bodies. File green first pass;
   differ 33/33; audit 4/38, next target `goodTuple_prefix_dev_sum_atCX` (phase 2).
+
+### Successor lap 2 (2026-07-17) — phase 2 entry 1/13
+
+- `goodTuple_prefix_dev_sum_atCX` landed (green first pass). Required de-existentializing
+  three helpers first: `X_logEpsMul`/`log_le_eps_mul_real_atX`, `X_logRpowExp`/
+  `log_rpow_mul_exp_neg_le_one_atX`, `K_Gweight`+`X_Gweight`/`Gweight_prefix_decay_atX`
+  (the obtained rate `κ` was itself existential — now the closed `min (4d²) d`).
+  `X_goodTupleDev` = the verbatim 6-arm max-tree at explicit locals. Audit 5/38, next
+  `approx_good_tuple_whp_atCX`.
