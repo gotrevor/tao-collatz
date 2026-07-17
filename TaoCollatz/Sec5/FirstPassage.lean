@@ -1179,10 +1179,10 @@ theorem geomHalf_underflow_le_Gweight (c C : ℝ)
 
 /-- **(5.1) conversion**: geometric decay `2^{-c·n₀}` (with `n₀ = nZero x ≍ log x/(10 log 2)`) is
 `≤ x^{-c/20}` for `x ≥ 2^20`.  Turns a `2^{-c n₀}` bound into an `x^{-c'}` bound. -/
-theorem two_rpow_neg_nZero_le {c : ℝ} (hc : 0 < c) :
-    ∃ c' x₀ : ℝ, 0 < c' ∧ ∀ x : ℝ, x₀ ≤ x →
-      (2 : ℝ) ^ (-c * (nZero x : ℝ)) ≤ x ^ (-c') := by
-  refine ⟨c / 20, (2 : ℝ) ^ (20 : ℕ), by positivity, fun x hx => ?_⟩
+theorem two_rpow_neg_nZero_le_explicit {c : ℝ} (hc : 0 < c) :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      (2 : ℝ) ^ (-c * (nZero x : ℝ)) ≤ x ^ (-(c / 20)) := by
+  refine ⟨(2 : ℝ) ^ (20 : ℕ), fun x hx => ?_⟩
   have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
   have hx0 : (0 : ℝ) < x := lt_of_lt_of_le (by positivity) hx
   have hxlog : (20 : ℝ) * Real.log 2 ≤ Real.log x := by
@@ -1196,25 +1196,47 @@ theorem two_rpow_neg_nZero_le {c : ℝ} (hc : 0 < c) :
   apply Real.exp_le_exp.mpr
   nlinarith [hν, hxlog, hc, hlog2, mul_pos hc hlog2]
 
-/-- **Paper (5.5)** in `2^{-c n₀}` form — the probabilistic lower tail.  Feed `integral_test_logUnif`
-into `valuation_dist` (5.4), then bound `ℙ(∑ valVec ≤ 1.9 n₀) = ℙ(deviation ≥ 0.1 n₀)` on the
-`Geom(2)^{n₀}` side by `geomHalf_underflow_le_Gweight`, and control the difference by the dTV. -/
-theorem valSum_lower_geom :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- **(5.1) conversion**: geometric decay `2^{-c·n₀}` (with `n₀ = nZero x ≍ log x/(10 log 2)`) is
+`≤ x^{-c/20}` for `x ≥ 2^20`.  Turns a `2^{-c n₀}` bound into an `x^{-c'}` bound. -/
+theorem two_rpow_neg_nZero_le {c : ℝ} (hc : 0 < c) :
+    ∃ c' x₀ : ℝ, 0 < c' ∧ ∀ x : ℝ, x₀ ≤ x →
+      (2 : ℝ) ^ (-c * (nZero x : ℝ)) ≤ x ^ (-c') := by
+  obtain ⟨x₀, h⟩ := two_rpow_neg_nZero_le_explicit hc
+  exact ⟨c / 20, x₀, by positivity, h⟩
+
+/-- The `c`-witness of `valSum_lower_geom` (effective-constants campaign):
+`min cd cg` with `cd = c_valuationDist 1` and `cg = finalDecay (c_geomTail · 0.1) / log 2`.
+Numerically `cd = 1/(320000·log 2)`, `cg = 1/(32000000·log 2)`, so the min is `cg`. -/
+noncomputable def c_valSumGeom : ℝ :=
+  min (c_valuationDist 1) (finalDecay (c_geomTail * 0.1) / Real.log 2)
+
+theorem c_valSumGeom_pos : 0 < c_valSumGeom :=
+  lt_min (c_valuationDist_pos one_pos)
+    (div_pos (finalDecay_pos (mul_pos c_geomTail_pos (by norm_num)))
+      (Real.log_pos one_lt_two))
+
+/-- `valSum_lower_geom` with the `c`-slot pinned to `c_valSumGeom`; `C` and the threshold
+stay existential. Sibling of the ratified `valSum_lower_geom`, which delegates here. -/
+theorem valSum_lower_geom_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
-          ≤ C * (2 : ℝ) ^ (-c * (nZero x : ℝ)) := by
+          ≤ C * (2 : ℝ) ^ (-c_valSumGeom * (nZero x : ℝ)) := by
   obtain ⟨K, hK, x₀e, herr⟩ := integral_test_logUnif
-  obtain ⟨cd, Cd, hcd, hCd, hdist⟩ := valuation_dist 1 K (by norm_num) hK
-  obtain ⟨ct, hct, Ct, hCt, htail⟩ := geomHalf_tail_bound
-  set d : ℝ := ct * 0.1 with hddef
-  have hd : 0 < d := by rw [hddef]; positivity
+  obtain ⟨Cd, hCd, hdist⟩ := valuation_dist_explicit 1 K (by norm_num) hK
+  obtain ⟨Ct, hCt, htail⟩ := geomHalf_tail_bound_cExplicit
+  set cd : ℝ := c_valuationDist 1 with hcddef
+  have hcd : 0 < cd := c_valuationDist_pos one_pos
+  set d : ℝ := c_geomTail * 0.1 with hddef
+  have hd : 0 < d := mul_pos c_geomTail_pos (by norm_num)
   set cg : ℝ := finalDecay d / Real.log 2 with hcgdef
   have hcg : 0 < cg := div_pos (finalDecay_pos hd) (Real.log_pos one_lt_two)
   set c : ℝ := min cd cg with hcdef
   have hc : 0 < c := lt_min hcd hcg
-  refine ⟨c, Cd + 2 * Ct, max x₀e 1, hc, by positivity, fun x hx y hy => ?_⟩
+  have hceq : c_valSumGeom = c := rfl
+  rw [hceq]
+  refine ⟨Cd + 2 * Ct, max x₀e 1, by positivity, fun x hx y hy => ?_⟩
   have hxe : x₀e ≤ x := le_trans (le_max_left _ _) hx
   have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hy1 : (1 : ℝ) ≤ y := by
@@ -1248,8 +1270,9 @@ theorem valSum_lower_geom :
     simp only [Function.comp_apply, Set.indicator_apply, Set.mem_setOf_eq, hEdef,
       pre_valVec (le_refl (nZero x)), Pi.one_apply]
   have hQside : Q.expect (Set.indicator E 1)
-      ≤ Ct * Gweight (1 + nZero x) (ct * (0.1 * (nZero x : ℝ))) := by
-    have key := geomHalf_underflow_le_Gweight ct Ct htail (nZero x) (0.1 * (nZero x : ℝ)) (by positivity)
+      ≤ Ct * Gweight (1 + nZero x) (c_geomTail * (0.1 * (nZero x : ℝ))) := by
+    have key := geomHalf_underflow_le_Gweight c_geomTail Ct htail (nZero x)
+      (0.1 * (nZero x : ℝ)) (by positivity)
     rw [show (2 : ℝ) * (nZero x : ℝ) - 0.1 * (nZero x : ℝ) = 1.9 * (nZero x : ℝ) from by ring] at key
     refine le_trans (le_of_eq ?_) key
     rw [hQdef, hEdef]
@@ -1260,9 +1283,9 @@ theorem valSum_lower_geom :
   have hXevent : P.expect (Set.indicator E 1) ≤ Q.expect (Set.indicator E 1) + P.dTV Q := by
     have := le_abs_self (P.expect (Set.indicator E 1) - Q.expect (Set.indicator E 1))
     linarith [hevent, this]
-  have hGdecay : Gweight (1 + nZero x) (ct * (0.1 * (nZero x : ℝ)))
+  have hGdecay : Gweight (1 + nZero x) (c_geomTail * (0.1 * (nZero x : ℝ)))
       ≤ 2 * (2 : ℝ) ^ (-cg * (nZero x : ℝ)) := by
-    rw [show ct * (0.1 * (nZero x : ℝ)) = d * (nZero x : ℝ) from by rw [hddef]; ring]
+    rw [show c_geomTail * (0.1 * (nZero x : ℝ)) = d * (nZero x : ℝ) from by rw [hddef]; ring]
     refine le_trans (Gweight_linear_le d hd (nZero x)) ?_
     rw [hcgdef]
     have hexp := exp_linearDecay_le_two_rpow d (nZero x)
@@ -1274,13 +1297,48 @@ theorem valSum_lower_geom :
   rw [htarget]
   calc P.expect (Set.indicator E 1)
       ≤ Q.expect (Set.indicator E 1) + P.dTV Q := hXevent
-    _ ≤ Ct * Gweight (1 + nZero x) (ct * (0.1 * (nZero x : ℝ)))
+    _ ≤ Ct * Gweight (1 + nZero x) (c_geomTail * (0.1 * (nZero x : ℝ)))
           + Cd * (2 : ℝ) ^ (-cd * (nZero x : ℝ)) := add_le_add hQside hdistPQ
     _ ≤ Ct * (2 * (2 : ℝ) ^ (-cg * (nZero x : ℝ))) + Cd * (2 : ℝ) ^ (-cd * (nZero x : ℝ)) := by
         gcongr
     _ ≤ Ct * (2 * (2 : ℝ) ^ (-c * (nZero x : ℝ))) + Cd * (2 : ℝ) ^ (-c * (nZero x : ℝ)) := by
         gcongr
     _ = (Cd + 2 * Ct) * (2 : ℝ) ^ (-c * (nZero x : ℝ)) := by ring
+
+/-- **Paper (5.5)** in `2^{-c n₀}` form — the probabilistic lower tail.  Feed `integral_test_logUnif`
+into `valuation_dist` (5.4), then bound `ℙ(∑ valVec ≤ 1.9 n₀) = ℙ(deviation ≥ 0.1 n₀)` on the
+`Geom(2)^{n₀}` side by `geomHalf_underflow_le_Gweight`, and control the difference by the dTV. -/
+theorem valSum_lower_geom :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
+          ≤ C * (2 : ℝ) ^ (-c * (nZero x : ℝ)) := by
+  obtain ⟨C, x₀, hC, h⟩ := valSum_lower_geom_explicit
+  exact ⟨c_valSumGeom, C, x₀, c_valSumGeom_pos, hC, h⟩
+
+/-- The `c`-witness of `valSum_lower_tail` / `first_passage_nonescape` — and, by the step-1
+branch trace (PENDING_WORK.md 2026-07-16), of the whole `c`-tower: `c_valSumGeom / 20`,
+numerically `1 / (640000000 · log 2)`. -/
+noncomputable def c_valSumTail : ℝ := c_valSumGeom / 20
+
+theorem c_valSumTail_pos : 0 < c_valSumTail :=
+  div_pos c_valSumGeom_pos (by norm_num)
+
+/-- `valSum_lower_tail` with the `c`-slot pinned to `c_valSumTail`; `C` and the threshold
+stay existential. Sibling of the ratified `valSum_lower_tail`, which delegates here. -/
+theorem valSum_lower_tail_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
+          ≤ C * x ^ (-c_valSumTail) := by
+  obtain ⟨C, x₀g, hC, hgeom⟩ := valSum_lower_geom_explicit
+  obtain ⟨x₀c, hconv⟩ := two_rpow_neg_nZero_le_explicit c_valSumGeom_pos
+  refine ⟨C, max x₀g x₀c, hC, fun x hx y hy => ?_⟩
+  have hxg : x₀g ≤ x := le_trans (le_max_left _ _) hx
+  have hxc : x₀c ≤ x := le_trans (le_max_right _ _) hx
+  exact le_trans (hgeom x hxg y hy) (mul_le_mul_of_nonneg_left (hconv x hxc) hC.le)
 
 /-- **Paper (5.5)** — the lower-tail bound: the total valuation `|ā^{(n₀)}(N_y)| = valSum N_y n₀`
 falls at or below `1.9 n₀` with probability `≪ x^{-c}`.  Assembled from `valSum_lower_geom`
@@ -1291,12 +1349,8 @@ theorem valSum_lower_tail :
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
           ≤ C * x ^ (-c) := by
-  obtain ⟨c, C, x₀g, hc, hC, hgeom⟩ := valSum_lower_geom
-  obtain ⟨c', x₀c, hc', hconv⟩ := two_rpow_neg_nZero_le hc
-  refine ⟨c', C, max x₀g x₀c, hc', hC, fun x hx y hy => ?_⟩
-  have hxg : x₀g ≤ x := le_trans (le_max_left _ _) hx
-  have hxc : x₀c ≤ x := le_trans (le_max_right _ _) hx
-  exact le_trans (hgeom x hxg y hy) (mul_le_mul_of_nonneg_left (hconv x hxc) hC.le)
+  obtain ⟨C, x₀, hC, h⟩ := valSum_lower_tail_explicit
+  exact ⟨c_valSumTail, C, x₀, c_valSumTail_pos, hC, h⟩
 
 /-- **Sub-linear powers are eventually dominated.**  For `0 ≤ θ < 1` and `ε > 0`, `x^θ ≤ ε·x` for
 all large `x`.  (Take `x₀ = max 1 ((1/ε)^{1/(1-θ)}`).)  The workhorse for the `O(x^{0.99}) ≤ x`
@@ -1451,39 +1505,20 @@ theorem descent_passes :
   have hfloor : x - 1 < (⌊x⌋₊ : ℝ) := by have := Nat.lt_floor_add_one x; linarith
   exact_mod_cast (lt_of_le_of_lt hsyrR hfloor).le
 
--- RATIFY-C7: paper (1.19), §5 pp.20–21. Stated character-identically to the FIRST CONJUNCT of
--- `stabilization` below, which is where this content had been absorbed. Judge against p.20.
-/-- **Paper (1.19)** — first-passage non-escape: a log-uniformly chosen odd `N_y` in the window
-`[y, y^α]` fails ever to descend to `≤ x` with probability `≪ x^{-c}`.
 
-This is node **C7**. It is stated here as its own theorem because Tao proves it separately
-(§5 pp.20–21) and **C8's proof consumes it** — it had previously existed *only* as the first
-conjunct of `stabilization`, i.e. absorbed into a downstream node's statement, which is precisely
-how a blueprint node ends up owing a proof while naming no theorem of its own.
-`stabilization` is WATCHED and is NOT touched; this sits beside it (always allowed).
-
-**Route** (Tao pp.20–21). Every step but the first runs over already-proved machinery:
-1. ⚠️ **The integral test** — `dTV(N_y mod 2^{n'}, unifOddMod n') ≪ 2^{-n'}` for the log-uniform
-   window. **Not in Lean yet.** It is exactly the hypothesis Prop 1.9 (`valuation_dist`) takes,
-   and it is the ONLY new analytic brick in this node. Tao: "a routine application of the
-   integral test" (with plenty of room to spare).
-2. Prop 1.9 (C5 ✅ axiom-clean) ⟹ `dTV(valVec N n₀, geomHalf.iid n₀) ≪ 2^{-c·n₀}`   — (5.4).
-3. Lemma 2.2 (S3 ✅ axiom-clean; `geomHalf_tail_bound` is TWO-SIDED, so it covers this LOWER
-   tail) ⟹ `P(|ā^{(n₀)}(N_y)| ≤ 1.9·n₀) ≪ 2^{-c·n₀} ≪ x^{-c}`   — (5.5).
-4. Descent arithmetic: if `|ā^{(n₀)}| > 1.9·n₀` then by (1.5)/(1.7)
-   `Syr^{n₀}(N_y) ≤ 3^{n₀}·2^{-1.9n₀}·x^{α³} + O(3^{n₀}) = O(x^{0.99}) ≤ x`, hence
-   `T_x(N_y) ≤ n₀ < ∞`. Here `n₀ := ⌊log x / (10·log 2)⌋` (5.1), so `2^{n₀} ≍ x^{0.1}`.
--/
-theorem first_passage_nonescape :
-    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- `first_passage_nonescape` with the `c`-slot pinned to `c_valSumTail`; `C` and the
+threshold stay existential. Sibling of the ratified `first_passage_nonescape` (which
+delegates here). This is the c7 branch of the stabilization min-tree. -/
+theorem first_passage_nonescape_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
-          ≤ C * x ^ (-c) := by
+          ≤ C * x ^ (-c_valSumTail) := by
   -- Assembly of the C7 route: {¬passes} ⊆ {valSum ≤ 1.9 n₀} (descent, contrapositive), and the
   -- latter has mass ≪ x^{-c} (the (5.5) lower tail).  Only the two named sub-lemmas carry content.
-  obtain ⟨c, C, x₀t, hc, hC, htail⟩ := valSum_lower_tail
+  obtain ⟨C, x₀t, hC, htail⟩ := valSum_lower_tail_explicit
   obtain ⟨x₀d, hdesc⟩ := descent_passes
-  refine ⟨c, C, max x₀t x₀d, hc, hC, ?_⟩
+  refine ⟨C, max x₀t x₀d, hC, ?_⟩
   intro x hx y hy
   have hxt : x₀t ≤ x := le_trans (le_max_left _ _) hx
   have hxd : x₀d ≤ x := le_trans (le_max_right _ _) hx
@@ -1523,6 +1558,37 @@ theorem first_passage_nonescape :
   · have h0 : (logUnifOdd y (y ^ alpha)) N = 0 := by
       rw [PMF.mem_support_iff] at hsupp; exact not_not.mp hsupp
     rw [h0]; simp
+
+-- RATIFY-C7: paper (1.19), §5 pp.20–21. Stated character-identically to the FIRST CONJUNCT of
+-- `stabilization` below, which is where this content had been absorbed. Judge against p.20.
+/-- **Paper (1.19)** — first-passage non-escape: a log-uniformly chosen odd `N_y` in the window
+`[y, y^α]` fails ever to descend to `≤ x` with probability `≪ x^{-c}`.
+
+This is node **C7**. It is stated here as its own theorem because Tao proves it separately
+(§5 pp.20–21) and **C8's proof consumes it** — it had previously existed *only* as the first
+conjunct of `stabilization`, i.e. absorbed into a downstream node's statement, which is precisely
+how a blueprint node ends up owing a proof while naming no theorem of its own.
+`stabilization` is WATCHED and is NOT touched; this sits beside it (always allowed).
+
+**Route** (Tao pp.20–21). Every step but the first runs over already-proved machinery:
+1. ⚠️ **The integral test** — `dTV(N_y mod 2^{n'}, unifOddMod n') ≪ 2^{-n'}` for the log-uniform
+   window. **Not in Lean yet.** It is exactly the hypothesis Prop 1.9 (`valuation_dist`) takes,
+   and it is the ONLY new analytic brick in this node. Tao: "a routine application of the
+   integral test" (with plenty of room to spare).
+2. Prop 1.9 (C5 ✅ axiom-clean) ⟹ `dTV(valVec N n₀, geomHalf.iid n₀) ≪ 2^{-c·n₀}`   — (5.4).
+3. Lemma 2.2 (S3 ✅ axiom-clean; `geomHalf_tail_bound` is TWO-SIDED, so it covers this LOWER
+   tail) ⟹ `P(|ā^{(n₀)}(N_y)| ≤ 1.9·n₀) ≪ 2^{-c·n₀} ≪ x^{-c}`   — (5.5).
+4. Descent arithmetic: if `|ā^{(n₀)}| > 1.9·n₀` then by (1.5)/(1.7)
+   `Syr^{n₀}(N_y) ≤ 3^{n₀}·2^{-1.9n₀}·x^{α³} + O(3^{n₀}) = O(x^{0.99}) ≤ x`, hence
+   `T_x(N_y) ≤ n₀ < ∞`. Here `n₀ := ⌊log x / (10·log 2)⌋` (5.1), so `2^{n₀} ≍ x^{0.1}`.
+ -/
+theorem first_passage_nonescape :
+    ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
+          ≤ C * x ^ (-c) := by
+  obtain ⟨C, x₀, hC, h⟩ := first_passage_nonescape_explicit
+  exact ⟨c_valSumTail, C, x₀, c_valSumTail_pos, hC, h⟩
 
 -- NOTE (2026-07-15): **Proposition 1.11 `stabilization` (C9) RELOCATED to `Sec5/Stabilization.lean`**
 -- (statement byte-identical / RATIFY-3 preserved).  Its proof composes C8 (`first_passage_approx`,

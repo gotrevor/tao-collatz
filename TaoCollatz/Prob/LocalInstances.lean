@@ -535,16 +535,32 @@ theorem iidSum_nat_local_of_quad (p : PMF ℕ) (m : ℝ) (hm0 : 0 ≤ m) (hm4 : 
 
 /-! ### The six ratified d=1 Lemma 2.2 statements (moved from `Prob/LocalBound.lean`) -/
 
+/-- The `c`-witness of `geomHalf_tail_bound` (effective-constants campaign, DIRECTION step 2):
+the sub-Gaussian tilt window of `Geom(2)` gives `c = 1/400`. -/
+noncomputable def c_geomTail : ℝ := 1 / 400
+
+theorem c_geomTail_pos : 0 < c_geomTail := by norm_num [c_geomTail]
+
+/-- `geomHalf_tail_bound` with the `c`-slot pinned to `c_geomTail`; only `C` stays
+existential. Sibling of the ratified `geomHalf_tail_bound`, which delegates here. -/
+theorem geomHalf_tail_bound_cExplicit :
+    ∃ C > (0 : ℝ), ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
+      (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0)
+        ≤ C * Gweight (1 + n) (c_geomTail * lam) := by
+  refine ⟨2, by norm_num, fun n lam hlam => ?_⟩
+  unfold c_geomTail
+  exact iidSum_nat_tail_of_quad geomHalf 2
+    (fun t hlo hhi => le_trans (tiltZ_geomHalf_le_quad hlo hhi)
+      (ENNReal.ofReal_le_ofReal (by nlinarith [sq_nonneg t]))) n lam hlam
+
 /-- **Lemma 2.2(ii) for `Geom(2)`** (paper p.15, displayed instance):
 `P(||Geom(2)_n| − 2n| ≥ λ) ≪ G_n(cλ)`. -/
 theorem geomHalf_tail_bound :
     ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
       (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0)
         ≤ C * Gweight (1 + n) (c * lam) := by
-  refine ⟨1 / 400, by norm_num, 2, by norm_num, fun n lam hlam => ?_⟩
-  exact iidSum_nat_tail_of_quad geomHalf 2
-    (fun t hlo hhi => le_trans (tiltZ_geomHalf_le_quad hlo hhi)
-      (ENNReal.ofReal_le_ofReal (by nlinarith [sq_nonneg t]))) n lam hlam
+  obtain ⟨C, hC, h⟩ := geomHalf_tail_bound_cExplicit
+  exact ⟨c_geomTail, c_geomTail_pos, C, hC, h⟩
 
 /-- **Lemma 2.2(ii) for `geomQuarter`** (mean 4; §7.3 consumes this through
 `Hold`'s first coordinate). -/

@@ -96,4 +96,15 @@ theorem tao_collatz_quantitative :
     ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := sorry
 
+/-! ### The explicit-exponent augmentation (beyond the paper: Tao 2019 proves only `∃ c`) -/
+
+/-- The explicit exponent — OUR augmentation, beyond the paper. -/
+noncomputable def cTao : ℝ := 1 / (640000000 * Real.log 2)
+
+/-- **Theorem 3.1, explicit-exponent form** (our augmentation): Theorem 3.1 holds with the
+concrete exponent `cTao`. -/
+theorem tao_collatz_quantitative_explicit :
+    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := sorry
+
 end TaoCollatz
