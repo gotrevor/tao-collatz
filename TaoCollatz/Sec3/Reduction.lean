@@ -318,16 +318,22 @@ theorem descentProb_step :
 /-- Sibling of `descentProb_base` with the `c`/`C` slots pinned at
 (`c_valSumTail`, `C_valSumGeom`) — the `_atC` form (big-C campaign, step 2), cutoff
 existential.  **Base case** (p.17 bottom): at scales `x ≤ N₀`, the event needs only passage —
-`Syrmin(Pass) ≤ Pass ≤ ⌊x⌋ ≤ N₀` — so `first_passage_nonescape` gives `1 − O(x^{-c})`. -/
-theorem descentProb_base_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, x ≤ (N₀ : ℝ) →
+`Syrmin(Pass) ≤ Pass ≤ ⌊x⌋ ≤ N₀` — so `first_passage_nonescape` gives `1 − O(x^{-c})`.
+X-chase cutoff: the witness max-tree copied verbatim, `x₀ := X_firstPassNonescape`. -/
+noncomputable def X_descBase : ℝ := max X_firstPassNonescape 0
+
+/-- Base case at the explicit cutoff `X_descBase` (X-chase). -/
+theorem descentProb_base_atCX :
+    ∀ x : ℝ, X_descBase ≤ x → ∀ N₀ : ℕ, x ≤ (N₀ : ℝ) →
       1 - C_valSumGeom * x ^ (-c_valSumTail) ≤ descentProb ⌊x⌋₊ (x ^ alpha) N₀ := by
-  obtain ⟨x₀, hne⟩ := first_passage_nonescape_atC
+  have hne := first_passage_nonescape_atCX
+  set x₀ : ℝ := X_firstPassNonescape with hx₀def
   set C : ℝ := C_valSumGeom with hCdef
   have hC : 0 < C := C_valSumGeom_pos
   set c : ℝ := c_valSumTail with hcdef
   have hc : 0 < c := c_valSumTail_pos
-  refine ⟨max x₀ 0, fun x hx N₀ hxN₀ => ?_⟩
+  rw [show X_descBase = max x₀ 0 from rfl]
+  intro x hx N₀ hxN₀
   have hx₀ : x₀ ≤ x := le_trans (le_max_left _ _) hx
   have hx0 : (0 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hkey := hne x hx₀ (x ^ alpha) (Set.mem_insert _ _)
@@ -346,6 +352,13 @@ theorem descentProb_base_atC :
   have hmono := expect_mono_on_support (logUnifOdd (x ^ alpha) ((x ^ alpha) ^ alpha))
     (descentEvent ⌊x⌋₊ N₀)ᶜ {N | ¬ passes ⌊x⌋₊ N} hsub
   linarith [le_trans hmono hkey]
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `descentProb_base_atCX` (X-chase: `x₀ := X_descBase`). -/
+theorem descentProb_base_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ N₀ : ℕ, x ≤ (N₀ : ℝ) →
+      1 - C_valSumGeom * x ^ (-c_valSumTail) ≤ descentProb ⌊x⌋₊ (x ^ alpha) N₀ :=
+  ⟨X_descBase, descentProb_base_atCX⟩
 
 /-- Explicit-`c` form of the base case: delegates to `descentProb_base_atC`
 (big-C campaign, step 2: `C := C_valSumGeom`). -/
