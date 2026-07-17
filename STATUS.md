@@ -1,6 +1,20 @@
 # STATUS — tao-collatz-explicit-big-c 📊
 
-**Big-C campaign: discharge the explicit-constant pin `tao_collatz_quantitative_fully_explicit`.** · **Build**: 🟢 green (3327 jobs) · **Updated**: lap 12 (deep reflection) · 2026-07-17 · `548dfc5` · **ROUTE RESOLVED → Option B; crux PINNED in src (see DIRECTION)**
+**Big-C campaign: discharge the explicit-constant pin `tao_collatz_quantitative_fully_explicit`.** · **Build**: 🟢 green (3327 jobs, judge-verified 2026-07-17) · **Updated**: JUDGE RULING lap 19 · 2026-07-17 · **🏁 CAMPAIGN CLOSED — pin stays `sorry` as a documented open frontier**
+
+> **🏁 CLOSED by judge ruling, 2026-07-17** (full text: `DIRECTION.md` → "JUDGE RULING").
+> No viable route to the pin over the frozen §7 statements; **no lap-executable work remains
+> — do not launch a grind run on this branch.** The branch is pushed and preserved as the record.
+> **Nothing public changes:** `origin/main` has no `CTao`/`sorry`/`fully_explicit` and its
+> comparator lists 8 theorems (pin absent) — the pin lives only here, unmerged. Main is green
+> and stays green by not merging.
+> **Grade, stated honestly:** *no route found + strong structural evidence the door is dead* —
+> **not** "proved closed" (lap 18's "all machine-checked" over-read its checks; check26 tests
+> rate `c=1` only, check25 is arithmetic on its own comment's hand-derivation). The conclusion
+> survives on independent evidence: `tools/judge_probe_depth_tail.py`.
+> **No successor is spec'd.** "tighten-C" is not launch-ready: check23(i) is architecture-level
+> and survives constant surgery; the lap-1 tighten-C sizings predate the tower and are void.
+> Entry gate for any future attempt = break or confirm check23(i) by re-derivation.
 
 ## Where it stands
 

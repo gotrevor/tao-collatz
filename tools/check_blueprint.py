@@ -1204,21 +1204,35 @@ def check25():
 
 
 def check26(samples=200000):
-    # Big-C campaign lap 18 (2026-07-17): EMPIRICAL REFUTATION of the exp-depth door
-    # (the check23(ii) hypothesis).  Before pinning `deep_entry_exp_decay` as a Lean
-    # conjecture, the blueprint rules demand a numeric trap — and the trap FIRES:
-    # entry heights into the black set are NOT exponentially rare.  Monte-Carlo the
-    # free Hold walk over the EXACT phase field (decompose_black instances): the
-    # conditional tail P(entry height >= u | entry) decays LINEARLY toward the max
-    # triangle size, not exponentially — because a triangle is entered from the SIDE
-    # at a height uniform over its extent, so the entry-depth tail inherits the
-    # triangle SIZE SPECTRUM.  Worst-case-in-xi the spectrum is not exp-thin (a
-    # single giant is plantable via one congruence condition on xi mod 3^n), so
-    # `P(entry ht >= u) <= C e^{-cu}` UNIFORM IN xi is FALSE, not merely unprovable.
-    # Combined with check22 (poly rates force union floors >> budget), check23
-    # (tower intrinsic), check25 (expectation accounting fails (7.39)): NO route to
-    # the tight constant remains — the tower is the true price of (7.39), and the
-    # pin admits no proof over the frozen statements within budget.
+    # Big-C campaign lap 18 (2026-07-17): numeric trap on the exp-depth door (the
+    # check23(ii) hypothesis), run before pinning `deep_entry_exp_decay` as a Lean
+    # conjecture.  Monte-Carlo the free Hold walk over the EXACT phase field
+    # (decompose_black instances) and measure the conditional entry-height tail
+    # P(entry height >= u | entry).
+    #
+    # ⚠️ JUDGE CORRECTION (host-side ruling 2026-07-17) — READ BEFORE CITING THIS CHECK.
+    # This check's ASSERT is sound but NARROW, and its original print line ("REFUTED
+    # empirically ... poly not exp") claimed more than it tests.  `exp_pred` below
+    # hardcodes **rate c = 1**; the observed ratios fit an exponential with c ~ 0.08-0.14
+    # perfectly.  So what this check establishes is exactly: **the tail is far heavier
+    # than a RATE-1 exponential** — not that it is polynomial, and not that the door is
+    # false.  The lap-18 ledger's "route map closed on every branch (all machine-checked)"
+    # over-read it, and the overstatement then compounded hop by hop into the
+    # campaign-close recommendation.
+    #
+    # The lap-18 CONCLUSION nevertheless survives, on independent evidence with a
+    # different origin — see `tools/judge_probe_depth_tail.py`, which fits a FREE-rate
+    # exponential (c ~ 3/smax -> 0 with n: no uniform rate exists), shows the tail is a
+    # scaling form F(u/smax) (collapse within 1.8x across smax 25->38 and eps 100x, and
+    # RISING with n where a fixed-rate exponential must fall), and confirms lap-18's
+    # unchecked plantability prose exactly (xi = 2^{l0-1} mod 3^n forces |theta| = 3^-n;
+    # and typical xi land within ~2 nats of it, so near-giants are GENERIC).
+    #
+    # The honest grade of the door, per the ruling: **no route found + strong structural
+    # evidence it is dead — NOT proved closed.**  Every measurement here lives at
+    # n = 22..30, eps ~ 1e-2, smax ~ 25-38 nats, while the door lives at n ~ 10^3016,
+    # eps = 1e-1000, S ~ 4613 nats.  A Monte Carlo at n=30 cannot prove a statement about
+    # n=10^3016.  See DIRECTION.md "JUDGE RULING (2026-07-17)".
     rng = random.Random(18)
     def sample_geom_half():
         a = 1
@@ -1254,14 +1268,17 @@ def check26(samples=200000):
         tail = lambda u: sum(v for k, v in heights.items() if k >= u) / tot
         u1, u2 = int(smax * 0.25), int(smax * 0.65)
         t1, t2 = tail(u1), tail(u2)
-        # exponential would force t2/t1 <= e^{-(u2-u1)}; observed is ~linear:
+        # a RATE-1 exponential would force t2/t1 <= e^{-(u2-u1)}.  NB (judge 2026-07-17):
+        # c = 1 is hardcoded here, so this refutes rate-1 decay ONLY — a c ~ 0.1
+        # exponential fits the observed ratios fine.  The free-rate analysis that
+        # actually decides the door lives in tools/judge_probe_depth_tail.py.
         exp_pred = 2.718281828 ** (-(u2 - u1))
         assert t2 / t1 > 100 * exp_pred, (n, xi, t1, t2, exp_pred)
         assert t2 > 0.01, (n, xi, t2)   # deep entries are COMMON, not rare
-        print(f"26. exp-depth door REFUTED empirically n={n} xi={xi}: "
+        print(f"26. entry-height tail >> RATE-1 exponential, n={n} xi={xi}: "
               f"P(ht>={u1})={t1:.3f}, P(ht>={u2})={t2:.3f} over {tot} entries — "
-              f"ratio {t2/t1:.2f} vs exp-prediction {exp_pred:.1e} (uniform side-entry"
-              f" into giants; tail inherits the size spectrum, poly not exp)")
+              f"ratio {t2/t1:.2f} vs rate-1 prediction {exp_pred:.1e}.  ⚠️ tests c=1 only; "
+              f"free-rate verdict (c ~ 3/smax -> 0, scaling form) → judge_probe_depth_tail.py")
 
 
 def check22():

@@ -928,3 +928,88 @@ hold_weight_expect / caConst (the judge's 2026-07-16 ruling banked this as follo
 NOTE: check23's flat-envelope contradiction is architecture-level and survives constant
 surgery — such a campaign must REDESIGN the encounter accounting, not just shrink
 constants). No lap-executable work remains in scope.
+
+---
+
+### JUDGE RULING (2026-07-17, host-side, lap 19) — campaign-close **UPHELD**; evidence grade **corrected**; route map is "no route found," not "proved closed" 🏁
+
+First independent judge read since lap 5 (laps 6–18 were self-graded: the route-closure
+checks were written by the sessions that concluded closure). Full ruling + the successor
+gate: `DIRECTION.md` → "JUDGE RULING (2026-07-17)".
+
+**Judge-observed this session (not box-claimed):**
+- Branch pushed, `fabea6f..5df3106`, 93 commits (boxes can't push; they were local-only).
+- All 26 blueprint checks reproduce on a host run.
+- `tools/tao_stmt_diff.py fabea6f HEAD` → **35/35 character-identical**, `CTao` and the pin
+  included. **The never-touch-pins invariant held across 93 commits.**
+- `lake build` **green** (exit 0, 3327 jobs), exactly **2 src `sorry`**: the pin
+  (`Statement.lean:68`) + the isolated crux (`Bridge.lean:742`). Option B's scaffold landed
+  exactly as lap 12 designed it (1→2 sorries = the crux made visible and attackable).
+- **`origin/main` carries no `CTao`, no `sorry`, no `fully_explicit`**; main's comparator
+  `config.json` lists **8** theorem names, pin **absent**. The pin lives only on this
+  unmerged branch. **Public main is green and stays green by not merging.**
+
+**UPHELD:** no viable route to discharging `CTao = 10^(10¹¹)` over the frozen §7 statements.
+Stop grinding. The pin stays `sorry` as a documented open frontier; the 3 merged headlines
+(the actual destination) are untouched, axiom-clean, and public.
+
+**CORRECTED — "closed on every branch (all machine-checked)" (lap 18) overstates the checks.**
+- **check19 / 22 / 23:** ✅ arithmetic solid. 23(i)'s flat-envelope contradiction
+  (`4·c_hit·R ≤ 1`, false by 300+ orders for any `c_hit ≥ 1e-15`) is the real structural
+  finding of this campaign, and it is **budget-independent**.
+- **check24:** ✅ valid — one witness kills a universal. Refutes **a route**, not the door
+  (its own print says so).
+- **check25:** 🟡 **a calculator for the box's own hand-derivation.** Its modelling inputs
+  (per-crossing tail `~C2·W/u`, tail index 1) live in the **comment**, not in code; the
+  assert then does trivial arithmetic on them. Two instruments sharing an origin are one
+  instrument. Supports the conclusion; does not verify it.
+- **check26:** 🔴 **the test does not test the conclusion.** `exp_pred = e^{-(u2-u1)}`
+  hardcodes **rate c = 1**; the observed data fits `c ≈ 0.08–0.14` perfectly. It refutes
+  rate-1 decay only — never "poly not exp". Comment + print line corrected in place this
+  lap so the overstatement cannot be re-parroted.
+
+**The conclusion survives on new, independently-originated evidence** — `tools/judge_probe_depth_tail.py`
+(new this lap, passes):
+1. **Free-rate fit** (5 instances): `c ≈ 3/smax`; `smax` grows `+log₂3` per row (linear in
+   `n`) ⟹ `c → 0` with `n` ⟹ **no uniform exponential rate exists.** (R² cannot separate exp
+   from power here; the **scaling of the fitted rate** is the signal, not the fit quality.)
+2. **Collapse test:** tails agree within **1.4–1.8×** at matched `u/smax` across `smax` 25→38
+   and `eps` 100×, and **rise** with `n` where a fixed-rate exponential must **fall ~2.3×**.
+   The tail is a scaling form `F(u/smax)`. Lap-18's "inherits the size spectrum" **mechanism
+   is right** — check26 just couldn't see it.
+3. **Plantability** (lap-18 prose, previously unchecked): **confirmed exactly** —
+   `ξ ≡ 2^{l₀-1} (mod 3^n)` ⟹ `|θ(1,l₀)| = 3^{-n}`, the minimal grid phase, one satisfiable
+   congruence. **Stronger than claimed:** typical ξ land within ~2 nats of the planted
+   maximum ⟹ near-giants are **generic**, not merely worst-case-in-ξ.
+
+**Why the grade still matters even though the decision is unchanged.** "Proved closed" and
+"no route found" both say *stop grinding* — which is why upholding is safe. But the pin
+becomes a **publicly documented open frontier**, and "we proved no route exists" is exactly
+the claim a stranger would check and find unsupported. All empirical evidence sits at
+`n = 22..30`, `eps ≈ 1e-2`, `smax ≈ 25–38` nats; the door lives at `n ≈ 10^3016`,
+`eps = 1e-1000`, `S ≈ 4613` nats. A Monte Carlo at `n=30` cannot prove a statement about
+`n=10^3016`. (Under the verified scaling form the door fails there by a **wider** margin than
+lap 18 claimed — `F(4613/10^3016) ≈ F(0) ≈ 1`, no decay where the door needs it. Right
+argument; still an extrapolation.)
+
+**Successor:** **none launched, none spec'd.** "tighten-C" is **not** launch-ready — check23(i)
+is architecture-level and survives constant surgery, so shrinking `epsBW` / reshaping
+`hold_weight_expect` / lowering `caConst` does not reach it. The lap-1 tighten-C sizings
+(`~10^(5.6×10⁸)`, `~10^(1.2×10⁹)`) **predate the tower discovery and are void — do not cite
+them.** Entry gate for any future attempt: **independently break or confirm check23(i)** by
+re-derivation. That is a mathematics question for a human/judge, not a grind lap.
+
+**Governance (the lap-12 conflict, resolved):** DIRECTION.md now declares **one owner** (the
+operator/judge layer) and explicitly overrides the treadmill governor's "altitude laps own
+DIRECTION.md" for this repo. Two authority layers in one file resolve to the looser one, so
+the file had no effective owner — lap 12 rewrote the operator banner legally-under-one-rule
+and illegally-under-the-other. Its content stayed in-lane; the next such rewrite need not.
+The hatch that made lap 12 feel forced (operator absent + "chip-never-stop") **now exists and
+is proven**: `box stuck` fired correctly at 06:37 EDT. Escalate-and-stop is the lane.
+
+**Meta (the transferable lesson):** the failure here was not a bad check, it was **an
+epistemic grade that inflated across summarization hops** — check26's print ("REFUTED
+empirically") → lap-18 ledger ("all machine-checked") → escalation ("every route closed") →
+"recommend campaign close". Each hop dropped a qualifier, because an unhedged claim is
+strictly more quotable. A hedge only survives if it is welded to the verb — hence the
+in-place correction of check26's own print line rather than a note filed elsewhere.

@@ -1,14 +1,109 @@
-# DIRECTION — big-C campaign 🔢
+# DIRECTION — big-C campaign 🔢 — **CLOSED 2026-07-17**
 
-*Grind laps READ and OBEY this file; it outranks any handoff. The operator layer (host-side)
-is the only writer of the CURRENT DIRECTIVE. Keep reports as "N of M carriers explicit."
-`blueprint_rules.md` remains BINDING. Predecessor campaign (pin `c`, PR #9, merged): its
-methods are this campaign's playbook; its DIRECTION lives in git history (`git log
---follow DIRECTION.md`).*
+*Grind laps READ and OBEY this file; it outranks any handoff. `blueprint_rules.md` remains
+BINDING. Predecessor campaign (pin `c`, PR #9, merged): its methods are this campaign's
+playbook; its DIRECTION lives in git history (`git log --follow DIRECTION.md`).*
+
+> **🔒 ONE OWNER (judge ruling 2026-07-17, resolving the lap-12 governance conflict).**
+> **This file has exactly one writer: the operator/judge layer (host-side).** No lap — grind,
+> review, reflection, or altitude — may write DIRECTION.md. The treadmill governor's general
+> "altitude laps own DIRECTION.md" rule is **overridden here** and does not apply to this repo.
+> A lap that believes the directive is wrong does not rewrite it: it records the argument in
+> `PENDING_WORK.md` as a `JUDGE-FLAG:` and **stops the loop with `box stuck`**.
+> *Why:* lap 12 rewrote this banner under the governor's rule while the header claimed
+> operator-exclusivity — two authority layers in one file resolve to the looser one, so the
+> file had no effective owner. Lap 12's content stayed in-lane, but the next such rewrite
+> need not. The escape hatch that made lap 12's rewrite feel necessary (operator absent, and
+> "chip-never-stop" left no legal way to halt) **now exists and is proven**: `box stuck`
+> fired correctly at 06:37 EDT on 2026-07-17. Escalate-and-stop is the lane.
 
 ---
 
-## ✅ ROUTE RESOLVED (deep-reflection lap 12, 2026-07-17) — **→ OPTION B. Transcription holding-pattern ENDED.**
+## 🏁 JUDGE RULING (2026-07-17 morning) — **CAMPAIGN CLOSED. The pin stays `sorry` as a documented open frontier.**
+
+**The lap-18 campaign-close recommendation is UPHELD — with its evidence grade corrected.**
+Verified host-side this session, independently of the box: branch pushed (93 commits,
+`fabea6f..5df3106`); all 26 blueprint checks reproduce; `tools/tao_stmt_diff.py fabea6f HEAD`
+= **35/35 character-identical** (no watched statement moved in 93 commits — the never-touch-
+pins invariant held); `lake build` **green**, exactly 2 src `sorry` (the pin
+`Statement.lean:68` + the isolated crux `Bridge.lean:742`), i.e. Option B's scaffold landed
+as designed.
+
+**What is upheld:** there is **no viable route** to discharging `CTao = 10^(10¹¹)` over the
+frozen §7 statements. Every door this campaign opened is either refuted at its mechanism or
+has no mechanism left. Grinding further is waste — **stop.**
+
+**What is corrected — the route map is NOT "machine-checked closed on every branch"**
+(PENDING_WORK lap 18). That phrase overstates what the checks do, and the overstatement
+compounded across three hops (check print → lap-18 ledger → escalation doc → "campaign
+close"), each hop dropping a qualifier. Graded honestly:
+
+| check | what it actually establishes | grade |
+|---|---|---|
+| 19 (tower) | arithmetic **solid**; scoped correctly (it bounds *this proof's witness*, not every proof's) | ✅ machine-checked |
+| 22, 23 | budget/floor arithmetic **solid**; 23(i)'s flat-envelope contradiction is the real structural finding | ✅ machine-checked |
+| 24 (shallow tip) | valid — one witness kills a universal ("set-dist grows with size"). Refutes **a route**, not the door | ✅ (route-refutation) |
+| 25 (point-mass) | **arithmetic on the box's own hand-derivation.** The modeling inputs (per-crossing tail `~C2·W/u`, tail index 1) live in the *comment*, not in code. A calculator for a claim shares that claim's origin | 🟡 supports, does not verify |
+| 26 (exp-depth) | **the test does not test the conclusion.** `exp_pred = e^{-(u2-u1)}` hardcodes **rate c = 1**; the observed data fits an exponential with `c ≈ 0.08–0.14` *perfectly*. As written it refutes rate-1 decay only | 🔴 unsound as written |
+
+**The conclusion survives anyway — on evidence this session generated, not the box's.**
+Three independent probes (scratchpad, reproducible; see the lap-19 ledger entry):
+1. **Free-rate fit** over 5 instances: fitted `c ≈ 3/smax`, with `smax` growing `+log₂3` per
+   row (linearly in `n`). So `c → 0` with `n`: **no uniform exponential rate exists.**
+2. **Collapse test:** at matched `u/smax` the tails agree within **1.4–1.8×** across
+   instances spanning `smax` 25→38 and `eps` 100×, and the trend **rises** with `n` where a
+   fixed-rate exponential must **fall ~2.3×**. The tail is a scaling form `F(u/smax)` — the
+   box's *mechanism* claim ("inherits the size spectrum") is **right**, though check26 could
+   not have shown it.
+3. **Plantability** (lap-18 prose, previously unchecked): **confirmed exactly.** `ξ ≡ 2^{l₀-1}
+   (mod 3^n)` forces `|θ(1,l₀)| = 3^{-n}` — the minimal grid phase, a maximal triangle — one
+   satisfiable congruence. **Stronger than lap 18 claimed:** typical ξ land within ~2 nats of
+   the planted maximum, so near-giants are **generic**, not merely worst-case-in-ξ.
+
+**The honest grade, therefore: "no route found, plus strong structural evidence the door is
+dead" — NOT "proved closed."** All empirical evidence sits at `n = 22..30`, `eps ≈ 10⁻²`,
+`smax ≈ 25–38` nats. The door lives at `n ≈ 10^3016`, `eps = 10⁻¹⁰⁰⁰`, `S ≈ 4613` nats. A
+Monte Carlo at `n = 30` cannot prove a statement about `n = 10^3016`; lap 18's "**FALSE**, not
+merely unprovable" is **not established**. (Under the verified scaling form the door fails by
+a far wider margin than lap 18 claimed — at `smax ≈ 10^3016` the depth-4613 tail is `F(≈0) ≈ 1`,
+no decay at all where the door needs it. That is the *right* argument, and it is still an
+extrapolation, not a proof.)
+
+**The decision is invariant to that correction — which is exactly why upholding is safe.**
+"Proved closed" and "no route found" both say: stop grinding. But the record must be honest,
+because the pin becomes a **documented open frontier**, and "we proved no route exists" is
+precisely the claim a stranger would check and find unsupported.
+
+### What is now true, and what happens next
+
+- **The campaign is CLOSED. No lap-executable work remains. Do not launch a grind run on this
+  branch.** The branch is preserved (pushed) as the record.
+- **The pin stays `sorry`.** It is a stretch goal that did not land. **The core destination
+  was reached and is untouched:** the 3 headlines (`tao_collatz`, `_quantitative`,
+  `_quantitative_explicit`) are merged, axiom-clean, and **public**. Tao's theorem IS formalized.
+- **No public surgery is required, and none is authorized.** Verified this session against
+  `origin/main`: main's `Statement.lean` carries **no `CTao`, no `sorry`, no
+  `fully_explicit`**, and main's `Comparator/TaoCollatz/config.json` lists **8** theorem
+  names — the pin is **not among them**. The pin, `CTao`, and the 4th config entry live
+  **only on this unmerged branch**. Public main is green and stays green **by not merging**.
+  (This corrects the 2026-07-17 handoff's framing, which assumed retiring the pin would touch
+  public surfaces. It does not.)
+- **NO successor campaign is spec'd or launched.** The banked "tighten-C" follow-up is **not**
+  launch-ready and must not be fired as a fleet campaign. check23(i)'s flat-envelope
+  contradiction (`4·c_hit·R ≤ 1`, false by ~300+ orders for every `c_hit ≥ 10⁻¹⁵`) is
+  **architecture-level and budget-independent** — it survives constant surgery, so shrinking
+  `epsBW` / reshaping `hold_weight_expect` / lowering `caConst` does not reach it. The lap-1
+  tighten-C sizings (`~10^(5.6×10⁸)`, `~10^(1.2×10⁹)`) **predate the tower discovery and are
+  void** — do not cite them.
+  **Entry gate for any future tighten-C:** independently **break or confirm check23(i)** by
+  re-derivation. That is a judge/human mathematics question, not a grind lap. Until someone
+  has a genuinely new idea about the *encounter accounting*, there is nothing to fire.
+
+---
+
+## 📜 HISTORY — superseded by the ruling above
+
+## ~~✅ ROUTE RESOLVED (deep-reflection lap 12, 2026-07-17)~~ — **→ OPTION B. Transcription holding-pattern ENDED.** *(SUPERSEDED: Option B ran to laps 13–18 and closed; see the ruling above. Retained for the source-grounded diagnosis and the route-map record.)*
 
 The lap-8/9 route trigger FIRED (the assembled `C_ladder`/`C_spine` is a *tower* ≫
 `CTao = 10^(10¹¹)`, machine-checked check19) and was escalated to the operator layer. In this
