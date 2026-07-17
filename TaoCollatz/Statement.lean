@@ -47,24 +47,25 @@ theorem tao_collatz_quantitative_explicit :
       1 - C / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
   exact tao_collatz_quantitative_spine_of_le c_ladder_lower
 
-/-- The explicit constant — OUR augmentation, beyond the paper. A round upper bound with
-deliberate headroom, not an optimized value: the traced ladder over the frozen tower is
-≈ `10^(9.39×10¹⁰)` (check17; dominated by `n₀^𝔡` with `𝔡 ≈ 3.11×10⁷` and
-`n₀ ≈ 10^3016` — the `1/δ ≈ 2×10³⁰⁰⁰` factor in `hold_weight_expect`'s witness), and the
-statement-forced floor is ≈ `10^(9.36×10¹⁰)`; any upper bound discharges the statement,
-and a round pin survives proof churn. JUDGE re-pin 2026-07-16: `10^(10⁹)` → `10^(10¹¹)`
-(the original sizing missed the `1/δ` factor; lap-1 JUDGE-FLAG, ledger + DIRECTION). -/
-noncomputable def CTao : ℝ := 10 ^ (100000000000 : ℕ)
+/- **The `CTao` pin was RETIRED 2026-07-17** (judge ruling, Trevor's call).
 
--- The campaign pin: `sorry` by design until the big-C campaign discharges it. The local
--- warningAsError shield keeps `lake build` (and the pre-commit green-gate) working while
--- the pin is open; remove the shield together with the `sorry`.
-set_option warningAsError false in
-/-- **Theorem 3.1, fully explicit form** (our augmentation): Theorem 3.1 holds with the
-concrete exponent `cTao` and the concrete constant `CTao` — no existential remains. -/
-theorem tao_collatz_quantitative_fully_explicit :
-    ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
-      1 - CTao / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
-  sorry
+`CTao := 10 ^ (10¹¹)` and `tao_collatz_quantitative_fully_explicit` lived here as a
+sorry-by-design campaign pin: a guess that some round numeral bounds this development's
+multiplicative constant. **The guess was wrong, and not by a little.** The constant §7
+actually assembles is a *tower* — `C_renewalWhite` embeds `C_polyDecay = Cthr_prop78^A`,
+whose `encWindowIter` cubic recurrence runs ~10^3010 steps — so no fixed-exponent numeral
+can bound it, and the natural rescue (a tight renewal bound) has no route we could find.
+Keeping an aspirational `sorry` on a statement we had evidence was unreachable would have
+been a claim we could not back, so it is gone rather than parked.
+
+Its successor is honest about the size instead of guessing at it: see `ExplicitBigC.lean`
+for `C_tao_assembled` — a *closed term* for the constant, assembled from the proof as
+written, with no smallness claim whatsoever. That converts "effective in principle" (Tao's
+methods are effective; nobody computed the constant) into "effective in fact,
+kernel-certified" — which is what [MO 341570](https://mathoverflow.net/questions/341570)
+actually asks for.
+
+History: `git log --follow` this file; the full route map, the machine-checked evidence,
+and the judge rulings are in `PENDING_WORK.md` + `DIRECTION.md`. -/
 
 end TaoCollatz

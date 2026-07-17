@@ -71,11 +71,18 @@ PINNED_NAMES = [
     # The trusted base — the two headline theorems
     "tao_collatz", "tao_collatz_quantitative",
     # The explicit augmentation (PR #9, ratified + merged 2026-07-16) — the def pins guard
-    # the VALUES (see `statement`'s def branch). `CTao` + `fully_explicit` live only in
-    # Comparator/TaoCollatz/Challenge.lean until the big-C campaign discharges them; the
-    # challenge is judge-owned, so any drift there is a ratification revocation.
+    # the VALUES (see `statement`'s def branch).
     "cTao", "tao_collatz_quantitative_explicit",
-    "CTao", "tao_collatz_quantitative_fully_explicit",
+    # ⚖️ RATIFICATION REVOKED 2026-07-17 (judge ruling; Trevor's call): `CTao` and
+    # `tao_collatz_quantitative_fully_explicit` were REMOVED from the watch list because
+    # they were REMOVED FROM THE REPO — the pin was a wrong guess (the assembled constant
+    # is a tower, check19) and was retired rather than left as an aspirational `sorry`.
+    # This is the ONE legitimate way a name leaves this list: a deliberate, recorded
+    # un-ratification by the pin's owner. A name must NEVER be dropped here to make a diff
+    # go green — that is the exact attack this file exists to stop (see the note in `main`).
+    # Successor: `C_tao_assembled` + `tao_collatz_quantitative_assembled` (ExplicitBigC.lean)
+    # get added here the moment the judge ratifies them, per
+    # [[guard-ratified-statements-by-name]] — ratify a statement ⟹ pin it the same pass.
 ]
 
 SEARCH_FILES = [
@@ -96,8 +103,8 @@ SEARCH_FILES = [
     "TaoCollatz/Basic/Collatz.lean",
     "TaoCollatz/Syracuse/SyracRV.lean",
     "TaoCollatz/Statement.lean",
-    # The judge-owned comparator surface — `CTao`/`fully_explicit` live ONLY here until
-    # discharged, and a campaign box is under exactly the pressure this differ exists for.
+    # The judge-owned comparator surface — a campaign box is under exactly the pressure
+    # this differ exists for.  (`CTao`/`fully_explicit` were retired from here 2026-07-17.)
     "Comparator/TaoCollatz/Challenge.lean",
 ]
 

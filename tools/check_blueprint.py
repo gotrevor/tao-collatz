@@ -740,6 +740,12 @@ def check16():
 
 
 def check17():
+    # ⚠️ 2026-07-17: the `CTao = 10^(10^11)` pin these checks compare against was RETIRED
+    # (judge ruling; Trevor's call) — the guess was wrong by a tower.  checks 17/19 are kept
+    # as the machine-checked RECORD of the ladder trace and the C0-arm NO-GO that killed it;
+    # the "pin exponent 1e11" they print is a historical line, NOT a live gate.  The successor
+    # (`C_tao_assembled`, ExplicitBigC.lean) makes no smallness claim, so nothing compares to
+    # a numeral anymore.  See DIRECTION.md "JUDGE RULING II".
     # Big-C campaign (2026-07-17, DIRECTION step 1): log10-space float mirror of the
     # C-ladder, walked off the ACTUAL Lean witnesses (file:line per hop).  This is the
     # go/no-go map against the pin.  History: the ORIGINAL pin CTao = 10^(10^9) was a
@@ -812,7 +818,7 @@ def check17():
     # i.e. ~195 digits of slack on n0 (slack on log10(n0) amplifies by ×B):
     PIN_EXP = 1e11
     assert log10_ladder < 0.95 * PIN_EXP, log10_ladder
-    print("17. big-C ladder: log10 C_ladder ≈ %.4e  <  live pin exponent 1e11 "
+    print("17. big-C ladder: log10 C_ladder ≈ %.4e  <  (RETIRED 2026-07-17) pin exponent 1e11 "
           "(%.1f%% headroom) — GO after JUDGE re-pin (old pin 1e9 exceeded ×%.0f, "
           "forced floor %.4e; M1's 1/δ≈2e3000 is the term)"
           % (log10_ladder, 100 * (1 - log10_ladder / PIN_EXP),
@@ -922,7 +928,7 @@ def check19():
     # frozen tower with the current witnesses.  JUDGE-FLAG: see PENDING_WORK.md lap 8.
     print("19. C0-arm NO-GO (JUDGE-FLAG lap 8): log10(C0-arm) >= %.1e ROBUST "
           "(any c); central trace log10(log10) ≈ %.2e (ch=1/51200); with iterated "
-          "P: log10(log10) ≈ 10^%.1f — all >> live pin exponent 1e11 (check17's GO "
+          "P: log10(log10) ≈ 10^%.1f — all >> the (RETIRED 2026-07-17) pin exponent 1e11 (check17's GO "
           "covered the n0^B head arm only)"
           % (log10_C0arm_robust, loglog_C0arm, logloglog_P))
 
