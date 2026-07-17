@@ -1831,24 +1831,40 @@ theorem perNTerm_harmonic_approx :
   obtain ⟨C, x₀, hC, h⟩ := perNTerm_harmonic_approx_explicit
   exact ⟨c_perNHarm, C, x₀, c_perNHarm_pos, hC, h⟩
 
+/-- The `C`-witness of `good_tuple_whp_iid` (big-C campaign, step 2): `2·C_geomTail = 4`
+(the `Z` + prefix-deviation union bound doubles the `geomHalf` tail constant).  The cutoff is
+kept existential — it feeds the `x₀`-threshold (via `log_rpow_mul_exp_neg_le_one` /
+`Gweight_prefix_decay`), NOT `CTao`. -/
+noncomputable def C_goodWhp : ℝ := 2 * C_geomTail
+
+theorem C_goodWhp_pos : 0 < C_goodWhp := by
+  unfold C_goodWhp; exact mul_pos (by norm_num) C_geomTail_pos
+
 open Classical in
-/-- **iid good-tuple whp bound (Tao (5.11)/(5.12), iid form).**  Under the `geomHalf.iid k` law, a length-`k`
-tuple fails to be good with probability `≪ log^{-1}x` (for `k ≤ n₀`).  This is the iid half of
-`goodTuple_prefix_dev_sum` — `¬good` means a coord is `0` (mass `0`, since `geomHalf` has no atom at `0`)
-or some prefix `pre a m` deviates from `2m` by `≥ log^{0.6}x` (each `≪ exp(−c·log^{0.2}x)` via
-`geomHalf_tail_bound`; sum over the `≤ k+1 ≤ log x` prefixes, then the `log x·exp(−c log^{0.2}) ≤ log^{-1}`
-shrink).  No dTV transfer is needed because the base law is already `geomHalf.iid`. -/
-theorem good_tuple_whp_iid :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ k : ℕ, k ≤ nZero x →
+/-- `good_tuple_whp_iid` with the `C`-slot pinned to `C_goodWhp` (big-C campaign, step 2);
+the cutoff stays existential.  The ratified-shape `good_tuple_whp_iid` delegates here.  Body
+verbatim from the ∃-form: `set ct/Ct` re-bind the constant NAMES to `c_geomTail`/`C_geomTail`
+(via `geomHalf_tail_bound_atC`) so the union-bound body ports with zero edits. -/
+theorem good_tuple_whp_iid_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ k : ℕ, k ≤ nZero x →
       (∑' ā : Fin k → ℕ,
           if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
-        ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
+        ≤ C_goodWhp * (Real.log x) ^ (-(1 : ℝ)) := by
   classical
-  obtain ⟨ct, hct, Ct, hCt, htail⟩ := geomHalf_tail_bound
+  set ct : ℝ := c_geomTail
+  set Ct : ℝ := C_geomTail
+  have hct : (0 : ℝ) < ct := c_geomTail_pos
+  have hCt : (0 : ℝ) < Ct := C_geomTail_pos
+  have htail : ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
+      (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0)
+        ≤ Ct * Gweight (1 + n) (ct * lam) := geomHalf_tail_bound_atC
   obtain ⟨κ, x₀g, hκ, hGdecay⟩ := Gweight_prefix_decay (d := ct) hct
   obtain ⟨x₀A, hA⟩ := log_rpow_mul_exp_neg_le_one (p := 2) (κ := κ) (θ := 0.2)
     (by norm_num) hκ (by norm_num)
-  refine ⟨2 * Ct, max x₀A (max (Real.exp 20) x₀g), by positivity, fun x hx k hk => ?_⟩
+  refine ⟨max x₀A (max (Real.exp 20) x₀g), fun x hx k hk => ?_⟩
+  show (∑' ā : Fin k → ℕ,
+      if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
+        ≤ 2 * Ct * (Real.log x) ^ (-(1 : ℝ))
   simp only [max_le_iff] at hx
   obtain ⟨hxA, hx20, hxg⟩ := hx
   have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 20) hx20
@@ -1966,6 +1982,22 @@ theorem good_tuple_whp_iid :
           (mul_le_mul_of_nonneg_right hn1L (Real.exp_pos _).le) (by positivity)
     _ ≤ 2 * Ct * (Real.log x) ^ (-(1 : ℝ)) :=
         mul_le_mul_of_nonneg_left shrink (by positivity)
+
+open Classical in
+/-- **iid good-tuple whp bound (Tao (5.11)/(5.12), iid form).**  Under the `geomHalf.iid k` law, a length-`k`
+tuple fails to be good with probability `≪ log^{-1}x` (for `k ≤ n₀`).  This is the iid half of
+`goodTuple_prefix_dev_sum` — `¬good` means a coord is `0` (mass `0`, since `geomHalf` has no atom at `0`)
+or some prefix `pre a m` deviates from `2m` by `≥ log^{0.6}x` (each `≪ exp(−c·log^{0.2}x)` via
+`geomHalf_tail_bound`; sum over the `≤ k+1 ≤ log x` prefixes, then the `log x·exp(−c log^{0.2}) ≤ log^{-1}`
+shrink).  No dTV transfer is needed because the base law is already `geomHalf.iid`.
+Delegates to `good_tuple_whp_iid_atC` (big-C campaign, step 2: `C := C_goodWhp`). -/
+theorem good_tuple_whp_iid :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ k : ℕ, k ≤ nZero x →
+      (∑' ā : Fin k → ℕ,
+          if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
+        ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
+  obtain ⟨x₀, h⟩ := good_tuple_whp_iid_atC
+  exact ⟨C_goodWhp, x₀, C_goodWhp_pos, h⟩
 
 /-- **B1 rib 2 — the good-tuple whp residual.**  Dropping the `1_good` restriction from `perNGoodMass`
 only *adds* nonnegative mass, and the total added mass over all residues is exactly `ℙ(¬good)` under the

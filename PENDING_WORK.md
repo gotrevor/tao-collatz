@@ -423,7 +423,12 @@ The cutoffs cascade deep (`good_tuple_whp_iid`'s x₀ ← `log_rpow_mul_exp_neg_
 cutoff existential** for these nodes.
 - **DONE (lap 9, `LocalInstances.lean`):** `C_geomTail := 2`, `geomHalf_tail_bound_atC`
   (pins both c=1/400 and C=2); `_cExplicit` + ratified `geomHalf_tail_bound` delegate.
-- **NEXT:** `good_tuple_whp_iid_atC` — `C_goodWhp := 2·C_geomTail` (=4), body copies the
-  ∃-form but obtains from `geomHalf_tail_bound_atC` (Ct=2 concrete) so the `2·Ct` witness is
-  `4`; keep `∃ x₀`. Then `syracZ_sub…_atC` (delegates), then the `perNHarmonic` big-C sibling
-  `C_harmZfine := 4·C_goodWhp` (=16) that `harmonic_to_Z` will consume.
+- **DONE (lap 9, `Stabilization.lean`):** `C_goodWhp := 2·C_geomTail` (=4),
+  `good_tuple_whp_iid_atC` (C-pinned, cutoff ∃). Rail: `set ct/Ct := c_geomTail/C_geomTail`
+  + `htail := geomHalf_tail_bound_atC` re-bind the constant NAMES → 120-line union-bound body
+  ports verbatim after a `show … ≤ 2*Ct*log⁻¹`; ratified `good_tuple_whp_iid` delegates.
+- **NEXT:** `syracZ_sub_perNGoodMass_bound` big-C sibling — `C_syracZsub := C_goodWhp` (its
+  witness is exactly the good_tuple constant, obtained at Stabilization:1987); body copies the
+  ∃-form but obtains from `good_tuple_whp_iid_atC`. Then the `perNHarmonic` big-C sibling
+  `C_harmZfine := 4·C_goodWhp` (=16, `4 = Ccn` from `cn_bound_at`) that `harmonic_to_Z`
+  consumes; then up `harmonic_to_Z` → `perNTerm_eval` → `stabilization`.
