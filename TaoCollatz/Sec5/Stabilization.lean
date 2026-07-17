@@ -2861,14 +2861,14 @@ theorem c_IyRatio_pos : 0 < c_IyRatio := by norm_num [c_IyRatio]
 the harmonic normaliser: `#I_y / (((α−1)/2)·log y) = 2/log(4/3) + O(log^{-c}x)`.  This is the pure
 lattice-point count `#{n∈[IyLo,IyHi]}` = interval length `+ O(1)` (via `IyHi−IyLo = (α−1)log y/log(4/3)
 − 2log^{0.8}x`), whose ratio telescopes the window into the **y-free** `2/log(4/3)`. -/
-theorem Iy_count_ratio_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+theorem Iy_count_ratio_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         |((Iy x y).card : ℝ) / ((alpha - 1) / 2 * Real.log y) - 2 / Real.log (4 / 3)|
-          ≤ C * (Real.log x) ^ (-c_IyRatio) := by
+          ≤ 6000 * (Real.log x) ^ (-c_IyRatio) := by
   obtain ⟨xB, hB⟩ := Iy_card_bracket
   rw [show c_IyRatio = 0.2 from rfl]
-  refine ⟨6000, max xB (Real.exp ((2000 : ℝ) ^ (5 : ℕ))), by norm_num,
+  refine ⟨max xB (Real.exp ((2000 : ℝ) ^ (5 : ℕ))),
     fun x hx y hy => ?_⟩
   have hxB : xB ≤ x := le_trans (le_max_left _ _) hx
   have hxe : Real.exp ((2000 : ℝ) ^ (5 : ℕ)) ≤ x := le_trans (le_max_right _ _) hx
@@ -2929,6 +2929,16 @@ theorem Iy_count_ratio_explicit :
         have halpha : alpha - 1 = 0.001 := by norm_num [alpha]
         rw [halpha]
         nlinarith [hvL, hu1, hvpos.le, hLpos.le]
+
+/-- Original explicit-`c` form of the (5.9) count ratio: delegates to `Iy_count_ratio_atC`
+(big-C campaign, step 2: `C := 6000`, cutoff existential via `Iy_card_bracket`). -/
+theorem Iy_count_ratio_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        |((Iy x y).card : ℝ) / ((alpha - 1) / 2 * Real.log y) - 2 / Real.log (4 / 3)|
+          ≤ C * (Real.log x) ^ (-c_IyRatio) := by
+  obtain ⟨x₀, h⟩ := Iy_count_ratio_atC
+  exact ⟨6000, x₀, by norm_num, h⟩
 
 theorem Iy_count_ratio :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
