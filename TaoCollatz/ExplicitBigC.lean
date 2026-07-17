@@ -65,4 +65,15 @@ theorem tao_collatz_quantitative_spine_atCX_of_le {c₀ : ℝ} (hle : c₀ ≤ c
             exact le_max_left _ _
     linarith
 
+/-- A closed multiplicative constant for the explicit-exponent theorem
+(big-C campaign, Ruling II).  The second arm is exactly the `N₀ = 2` cost of weakening
+`c_ladder` to `cTao` (see `tao_collatz_quantitative_spine_atCX_of_le`).  This term is a
+TOWER — enormous and useless as a number, by design: the deliverable is explicitness
+(closed def bodies all the way down), never smallness. -/
+noncomputable def C_tao_assembled : ℝ :=
+  max (C_spine X_spine) ((Real.log 2) ^ cTao)
+
+theorem C_tao_assembled_pos : 0 < C_tao_assembled :=
+  lt_max_of_lt_left (C_spine_pos X_spine)
+
 end TaoCollatz

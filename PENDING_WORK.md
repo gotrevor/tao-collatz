@@ -1293,3 +1293,10 @@ is odd, and the pin is branch-only so retiring is free).
   `X_spine := X_syrSum` + `tao_collatz_quantitative_spine_atCX_of_le` (the ∃-form
   `spine_of_le` body verbatim at the closed `C_spine X_spine`). Audit 36/38, next
   `C_tao_assembled` + `C_tao_assembled_pos`.
+
+### Successor lap 34 (2026-07-17) — phase 5 entry 2/3
+
+- `C_tao_assembled := max (C_spine X_spine) ((log 2)^cTao)` + `C_tao_assembled_pos`.
+  Audit 37/38, next (FINAL entry): `tao_collatz_quantitative_assembled` + check 27 +
+  blueprint sub-node in the same commit, then the completion gates
+  (`big_c_cutoff_audit.py --complete`, ExplicitnessClosure walk, #print axioms).
