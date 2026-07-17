@@ -69,6 +69,43 @@ theorem exists_triangleFamily (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) :
   obtain ⟨T, h0, hcanonical, h1, h2, h3⟩ := black_structure n ξ hξ
   exact ⟨⟨T, h0, hcanonical, h1, h2, h3⟩⟩
 
+/-- **Big triangles have exponentially deep apexes** (lap 16, Option B probe;
+true for ANY route): a family triangle of size `≥ S` has apex phase
+`|θq(apex)| ≤ ε·e^{−S}`. Near-definitional: by `canonical` every member is a
+`cornerTriple`, whose size is `log(ε/|θ*|)` by construction, so size `≥ S`
+inverts to exactly this depth bound. -/
+theorem bigTriangle_apex_deep {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ) (F : TriangleFamily n ξ)
+    {t : ℕ × ℤ × ℝ} (ht : t ∈ F.T) {S : ℝ} (hS : S ≤ t.2.2) :
+    |(θq n ξ t.1 t.2.1 : ℝ)| ≤ (epsBW : ℝ) * Real.exp (-S) := by
+  obtain ⟨p, hps, hpb, rfl⟩ := F.canonical t ht
+  have h2j : 2 * p.1 + 1 ≤ n := by
+    have := (Nat.le_div_iff_mul_le (by norm_num : 0 < 2)).mp hps
+    omega
+  have hθpos : (0:ℝ) < |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)| := by
+    exact_mod_cast corner_phase_pos hξ h2j
+  have hε : (0:ℝ) < (epsBW : ℝ) := by
+    have h : (0:ℚ) < epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h
+  simp only [cornerTriple] at hS ⊢
+  have hexp : Real.exp S ≤ (epsBW : ℝ)
+      / |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)| := by
+    have h := Real.exp_le_exp.mpr hS
+    rwa [Real.exp_log (by positivity)] at h
+  have h1 : |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)| * Real.exp S
+      ≤ (epsBW : ℝ) := by
+    calc |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)| * Real.exp S
+        ≤ |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)|
+            * ((epsBW : ℝ)
+              / |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)|) :=
+          mul_le_mul_of_nonneg_left hexp hθpos.le
+      _ = (epsBW : ℝ) := mul_div_cancel₀ _ (ne_of_gt hθpos)
+  calc |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)|
+      = |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)|
+        * Real.exp S * Real.exp (-S) := by
+        rw [mul_assoc, ← Real.exp_add]; simp
+    _ ≤ (epsBW : ℝ) * Real.exp (-S) :=
+        mul_le_mul_of_nonneg_right h1 (Real.exp_pos _).le
+
 /-- The white points of the strip `j ≤ ⌊n/2⌋` (renewal coordinates). Case 2's
 white-exit gain ((7.47)) only counts endpoints that are white AND still inside
 the strip: beyond the strip edge `Q ≡ 1` and no damping is available. -/

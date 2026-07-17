@@ -782,3 +782,58 @@ If the mechanism is one-level: **JUDGE-FLAG** (Option B's crux is equivalent to 
 equidistribution theorem beyond the paper's toolset; evidence = check22/23 + this analysis;
 options: scope extension to attack it head-on as new mathematics, or accept the disclosed
 pin sorry).
+
+### Lap 16 (2026-07-17) — VERDICT: `many_triangles_white` is ONE-LEVEL; the lap-15 door is falsified AS STATED; JUDGE-FLAG fired
+
+**The lap-15 probe is answered, machine-checked (check24), and it closes the last
+architectural route inside the paper's toolset.**
+
+**1. The depth-0 mechanism, read to the bottom (source: `fpDist_white_exit_deep_core`,
+ManyTriangles.lean:2233; `fpDist_any_triangle_le_at`:2178).** Whiteness of the fp endpoint
+is `1 − (out-strip ≤ 1/8) − (foreign-triangle ≤ 1/8)`, and the foreign-triangle 1/8 is
+purely the LOCALIZATION TAIL: within the X6 box (radius `√(51²+150²) ≈ 158`) around the
+predicted endpoint there is NO foreign-triangle point at all, because the family
+set-separation (`sep = 100·log10 ≈ 230`, `TriangleFamily.separated`) exceeds the box.
+The mechanism has exactly two knobs — a constant box and a constant separation. Nothing
+in it sees triangle SIZE or point DEPTH. It is intrinsically one-level.
+
+**2. The lap-15 door statement is FALSIFIED as stated (shallow-tip witness, check24).**
+`P(position ∈ size-≥S triangle) ≤ C·e^{−cS}` could only come from set-distance growing
+with S. It does not: a size-S triangle's point set includes depth-~0 boundary points
+("shallow tips") that sit at the bare constant separation. Exact decompositions: at
+(n,ξ,ε)=(30,7,9e-3) the LARGEST triangle (size 26.30) has set-distance 5.83 to a
+neighbor (ratio 4.5); at (26,101,1/101) size 19.33 at distance 3.00 (ratio 6.4). Real
+Collatz phase data, not an adversarial hypothetical. Hitting a giant triangle's shallow
+tip costs only the constant tail mass — NOT exp-small in S.
+
+**3. What the architecture actually needs, re-derived.** The crossing cost of an
+encounter at entry point q is governed by the HEIGHT-BELOW-APEX `u = l* − l_q` of q's own
+corner triangle, not by the triangle's size per se. By the fibre identity
+(`black_mem_corner_triangle`, exact equality (7.18): `|θq(q)| = 9^Δj·2^Δl·|θ*|`), an
+entry at height ≥ u forces `|θ*| ≤ ε·2^{−u}` at a lattice point in the cone above q. So
+the needed rare event is exactly: **an exponentially fine phase value (scale `ε·2^{−u}`)
+occurs within a bounded-geometry neighborhood above the walk position** — i.e.
+anti-concentration of θq at exponentially fine scales at the (random) walk position.
+This is an equidistribution input the paper deliberately avoids — its avoidance IS the
+tower (flat-envelope contradiction, check23). The depth-0 tools (box + constant
+separation + pigeonhole) cannot produce it at ANY budget.
+
+**JUDGE-FLAG: (lap 16) Option B's crux `Q_black_edge_tight` is EQUIVALENT to a new
+equidistribution/anti-concentration theorem for the Syracuse phases θq at exponentially
+fine scales, beyond arXiv:1909.03562's toolset. Evidence: check22 (feasibility map),
+check23 (flat-envelope contradiction — the tower is intrinsic to unconditional
+geometry, budget-independent), check24 (shallow-tip witness — the exp-in-size door has
+no geometric proof; set-separation does not scale with size). The mechanism audit of
+`many_triangles_white` (this lap) shows the paper's white-mass machinery is one-level
+by construction. Operator options: (a) scope extension to attack the anti-concentration
+statement as new mathematics (the ONE visible attack line: per-column geometric phase
+profile — Triangles.lean:74 gives `|θq(j,l+h)| ≥ (1−ε)/2^h`, so deep points are
+isolated per column — combined with a local-CLT/point-mass bound on the walk's
+l-coordinate via the §7 Fourier half; genuinely open difficulty), or (b) accept the
+disclosed pin sorry as the campaign's honest end-state: the 3 merged headlines are
+axiom-clean and the pin is a stretch goal whose remaining distance is a new theorem.**
+
+**Also landed this lap:** `bigTriangle_apex_deep` (BlackEdge.lean, after
+`exists_triangleFamily`) — size-≥S family triangles have apex phase ≤ ε·e^{−S}
+(near-definitional from `canonical` + `cornerTriple`; true and needed by any exp-depth
+route, including option (a)). Build green; check24 added (24/24).

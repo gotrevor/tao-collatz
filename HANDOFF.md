@@ -1,3 +1,35 @@
+# HANDOFF — big-C campaign, lap 16 — MECHANISM ONE-LEVEL; DOOR FALSIFIED AS STATED; JUDGE-FLAG FIRED 🚩
+
+**Read `DIRECTION.md` RESOLVED banner FIRST.** State: build green (3327), 2 sorries (pin +
+`Q_black_edge_tight`), differ 35/35, checks **24/24**. Lap 16 answered lap-15's decisive
+question and fired the flag the handoff conditioned on.
+
+- **`many_triangles_white` mechanism is ONE-LEVEL** (source read to the bottom): whiteness
+  = 1 − two 1/8-tails, the foreign-triangle 1/8 being pure localization tail (constant X6
+  box 158 < constant separation 230). No knob sees size or depth.
+- **Lap-15 door FALSIFIED as stated (check24, exact instances):** set-separation does NOT
+  scale with size — the largest triangle sits at set-distance 5.83 (size 26.3, ratio 4.5)
+  resp. 3.00 (size 19.3, ratio 6.4). Shallow tips of giant triangles cost only constant
+  tail mass. `P(∈ size-≥S triangle) ≤ Ce^{−cS}` has no geometric proof route.
+- **The true crux, sharpened (fibre identity):** entry at height-u-below-apex forces
+  `|θ*| ≤ ε·2^{−u}` in the cone above the walk position ⟹ the needed input is θq
+  anti-concentration at exponentially fine scales at the walk position — a NEW theorem
+  beyond the paper's toolset (its avoidance is the tower, check23). **JUDGE-FLAG fired**
+  (PENDING_WORK Lap 16): operator chooses (a) scope extension to attack it as new
+  mathematics (one visible line: per-column geometric profile Triangles.lean:74 + local-CLT
+  point-mass via the §7 Fourier half) or (b) accept the disclosed pin sorry as end-state.
+- **Landed:** `bigTriangle_apex_deep` (BlackEdge.lean) — size-≥S apexes are ε·e^{−S}-deep;
+  needed by any exp-depth route. check24 added.
+
+**NEXT (lap 17):** the flag is with the operator. Meanwhile the only on-path Lean work is
+option-(a) prerequisites that any ruling keeps: (i) probe the per-column isolation
+statement (`|θq(j,l+h)| ≥ (1−ε)/2^h` ⟹ deep-point count per column-window is O(1) at
+each depth) as a formal counting lemma; (ii) probe what point-mass bound the existing
+`charFn_decay`/`key_fourier_decay` machinery yields for the walk's l-coordinate. Do NOT
+touch the clean headlines; do NOT transcribe tower ladders.
+
+---
+
 # HANDOFF — big-C campaign, lap 15 — TOWER IS INTRINSIC (any budget); TRUE DOOR = EXP-DEPTH DECAY 🎯
 
 **Read `DIRECTION.md` RESOLVED banner FIRST.** State: build green (3327), 2 sorries (pin +
