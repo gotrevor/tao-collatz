@@ -1460,25 +1460,37 @@ theorem Gweight_factor {c1 t1 t2 x z y : ℝ} (hc1 : 0 < c1) (ht1 : 0 < t1)
     _ ≤ (A + C) * (B + D) := hABCD
     _ = Gweight t2 (c1 / 2 * x) * (B + D) := rfl
 
-/-- **The renewal `k`-sum envelope**: summing the per-`k` prefactor
-`(1+k)⁻¹ · W_k` (as produced by `Gweight_factor` applied to
-`hold_local_bound`) over the truncated range `k ≤ ⌊l/3⌋` costs only
-`C₅/√(1+l)`. Two regions (paper p.44 "routine calculation"): `k < ⌊l/32⌋` has
-height offset `z ≥ l/2`, so `W_k` is exponentially small in `l` and even
-`(1+l)` terms of it vanish against `√(1+l)`; `k ≥ ⌊l/32⌋` has
-`(1+k)⁻¹ ≤ 32/(1+l)` and the `z`-sums are arithmetic-progression sums handled
-by `sum_abs_AP_le` + `sum_range_exp_neg_sq_le` / `sum_range_geom_le`. -/
-theorem renewal_weight_sum_le {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
-    ∃ C5 > (0 : ℝ), ∀ (l : ℤ), 0 ≤ l →
+/-- The constant of `renewal_weight_sum_le`, symbolic (big-C campaign, step 2). -/
+noncomputable def C_renewalWeight (a b : ℝ) : ℝ :=
+  32 / min (a / 8) (b / 2) ^ 2 + (256 + 4 / b + 8 / Real.sqrt a)
+
+theorem C_renewalWeight_pos {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    0 < C_renewalWeight a b := by
+  unfold C_renewalWeight
+  have hε0 : 0 < min (a / 8) (b / 2) := lt_min (by positivity) (by positivity)
+  have hsa : 0 < Real.sqrt a := Real.sqrt_pos.mpr ha
+  positivity
+
+/-- **The renewal `k`-sum envelope** (`_explicitC` sibling at `C_renewalWeight a b`):
+summing the per-`k` prefactor `(1+k)⁻¹ · W_k` (as produced by `Gweight_factor` applied
+to `hold_local_bound`) over the truncated range `k ≤ ⌊l/3⌋` costs only `C₅/√(1+l)`.
+Two regions (paper p.44 "routine calculation"): `k < ⌊l/32⌋` has height offset
+`z ≥ l/2`, so `W_k` is exponentially small in `l` and even `(1+l)` terms of it vanish
+against `√(1+l)`; `k ≥ ⌊l/32⌋` has `(1+k)⁻¹ ≤ 32/(1+l)` and the `z`-sums are
+arithmetic-progression sums handled by `sum_abs_AP_le` + `sum_range_exp_neg_sq_le` /
+`sum_range_geom_le`. -/
+theorem renewal_weight_sum_le_explicitC {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    ∀ (l : ℤ), 0 ≤ l →
       ∑ k ∈ Finset.range (l.toNat / 3 + 1),
         1 / (1 + (k : ℝ))
           * (Real.exp (-a * |(l : ℝ) - 16 * k| ^ 2 / (1 + (k : ℝ)))
             + Real.exp (-b * |(l : ℝ) - 16 * k|))
-        ≤ C5 / Real.sqrt (1 + (l : ℝ)) := by
+        ≤ C_renewalWeight a b / Real.sqrt (1 + (l : ℝ)) := by
+  unfold C_renewalWeight
   set ε : ℝ := min (a / 8) (b / 2) with hε
   have hε0 : 0 < ε := lt_min (by positivity) (by positivity)
   have hsa : 0 < Real.sqrt a := Real.sqrt_pos.mpr ha
-  refine ⟨32 / ε ^ 2 + (256 + 4 / b + 8 / Real.sqrt a), by positivity, fun l hl => ?_⟩
+  intro l hl
   set t : ℕ := l.toNat with hts
   have hcast : ((t : ℕ) : ℝ) = (l : ℝ) := by
     have := Int.toNat_of_nonneg hl
@@ -1769,6 +1781,16 @@ theorem renewal_weight_sum_le {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
             + Real.exp (-b * |(l : ℝ) - 16 * k|))
       ≤ (32 / ε ^ 2) / s + (256 + 4 / b + 8 / Real.sqrt a) / s := add_le_add hedge hcen
     _ = (32 / ε ^ 2 + (256 + 4 / b + 8 / Real.sqrt a)) / s := (add_div _ _ _).symm
+
+/-- `renewal_weight_sum_le`, original `∃`-form: delegates to the `_explicitC` sibling. -/
+theorem renewal_weight_sum_le {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    ∃ C5 > (0 : ℝ), ∀ (l : ℤ), 0 ≤ l →
+      ∑ k ∈ Finset.range (l.toNat / 3 + 1),
+        1 / (1 + (k : ℝ))
+          * (Real.exp (-a * |(l : ℝ) - 16 * k| ^ 2 / (1 + (k : ℝ)))
+            + Real.exp (-b * |(l : ℝ) - 16 * k|))
+        ≤ C5 / Real.sqrt (1 + (l : ℝ)) :=
+  ⟨C_renewalWeight a b, C_renewalWeight_pos ha hb, renewal_weight_sum_le_explicitC ha hb⟩
 
 /-- **The renewal Gaussian bound** (paper p.44, first display of the Lemma 7.7
 proof): `∑_k P(v_{[1,k-1]} = (j', s')) ≪ (1+s')^{-1/2}·G_{1+s'}(c(j'-s'/4))`.
@@ -2107,15 +2129,34 @@ theorem conv_Gweight_exp {t c γ : ℝ} (ht : 0 < t) (hc : 0 < c) (hγ : 0 < γ)
         field_simp
         ring
 
-/-- **The single-overshoot-step bound**: one `hold` step has exponential decay
-in both drift-recentred coordinates (from `hold_local_bound` at `n = 1` via
-`Gweight_two_le`). -/
-theorem hold_step_bound :
-    ∃ γ > (0 : ℝ), ∃ C7 > (0 : ℝ), ∀ d : ℕ × ℤ,
+/-- The decay rate of `hold_step_bound`, symbolic (big-C campaign, step 2). -/
+noncomputable def gamma_holdStep : ℝ := c_holdLocal / 4
+
+/-- The constant of `hold_step_bound`, symbolic (big-C campaign, step 2). -/
+noncomputable def C_holdStep : ℝ := 2 * C_holdLocal
+
+theorem gamma_holdStep_pos : 0 < gamma_holdStep := by
+  unfold gamma_holdStep; linarith [c_holdLocal_pos]
+
+theorem C_holdStep_pos : 0 < C_holdStep := by
+  unfold C_holdStep; linarith [C_holdLocal_pos]
+
+/-- **The single-overshoot-step bound**, `_explicitC` sibling (from
+`hold_local_bound_explicitC` at `n = 1` via `Gweight_two_le`): one `hold` step has
+exponential decay in both drift-recentred coordinates, at the symbolic
+`gamma_holdStep`/`C_holdStep`. -/
+theorem hold_step_bound_explicitC :
+    ∀ d : ℕ × ℤ,
       (hold d).toReal
-        ≤ C7 * Real.exp (-γ * |(d.1 : ℝ) - 4|) * Real.exp (-γ * |(d.2 : ℝ) - 16|) := by
-  obtain ⟨c0, hc0, C0, hC0, hloc⟩ := hold_local_bound
-  refine ⟨c0 / 4, by positivity, 2 * C0, by positivity, fun d => ?_⟩
+        ≤ C_holdStep * Real.exp (-gamma_holdStep * |(d.1 : ℝ) - 4|)
+          * Real.exp (-gamma_holdStep * |(d.2 : ℝ) - 16|) := by
+  have hc0 := c_holdLocal_pos
+  have hC0 := C_holdLocal_pos
+  have hloc := hold_local_bound_explicitC
+  unfold C_holdStep gamma_holdStep
+  set c0 := c_holdLocal with hc0def
+  set C0 := C_holdLocal with hC0def
+  intro d
   have h1 := hloc 1 d.1 d.2
   rw [holdSum_eq_iidSum] at h1
   have hd : ((d.1, d.2) : ℕ × ℤ) = d := rfl
@@ -2156,14 +2197,28 @@ theorem hold_step_bound :
         * Real.exp (-(c0 / 4) * |(d.2 : ℝ) - 16|) := by
         rw [hAe, hBe]
 
-/-- The `l₁`-sum envelope for the Lemma 7.7 assembly: the exponential window
-at the budget line beats the `1/√(1+l₁)` renewal prefactor, at cost
-`1/√(1+s)`. -/
-theorem sum_sqrt_exp_le {γ : ℝ} (hγ : 0 < γ) :
-    ∃ K > (0 : ℝ), ∀ s : ℕ,
+/-- `hold_step_bound`, original `∃`-form: delegates to the `_explicitC` sibling. -/
+theorem hold_step_bound :
+    ∃ γ > (0 : ℝ), ∃ C7 > (0 : ℝ), ∀ d : ℕ × ℤ,
+      (hold d).toReal
+        ≤ C7 * Real.exp (-γ * |(d.1 : ℝ) - 4|) * Real.exp (-γ * |(d.2 : ℝ) - 16|) :=
+  ⟨gamma_holdStep, gamma_holdStep_pos, C_holdStep, C_holdStep_pos, hold_step_bound_explicitC⟩
+
+/-- The constant of `sum_sqrt_exp_le`, symbolic (big-C campaign, step 2). -/
+noncomputable def K_sqrtExp (γ : ℝ) : ℝ := 2 * (1 + 1 / γ) + 64 / γ ^ 2
+
+theorem K_sqrtExp_pos {γ : ℝ} (hγ : 0 < γ) : 0 < K_sqrtExp γ := by
+  unfold K_sqrtExp; positivity
+
+/-- The `l₁`-sum envelope for the Lemma 7.7 assembly, `_explicitC` sibling: the
+exponential window at the budget line beats the `1/√(1+l₁)` renewal prefactor, at
+cost `1/√(1+s)`, with constant `K_sqrtExp γ`. -/
+theorem sum_sqrt_exp_le_explicitC {γ : ℝ} (hγ : 0 < γ) :
+    ∀ s : ℕ,
       ∑ m ∈ Finset.range (s + 1), Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
-        ≤ K / Real.sqrt (1 + s) := by
-  refine ⟨2 * (1 + 1 / γ) + 64 / γ ^ 2, by positivity, fun s => ?_⟩
+        ≤ K_sqrtExp γ / Real.sqrt (1 + s) := by
+  unfold K_sqrtExp
+  intro s
   have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
   have hs0 : 0 < Real.sqrt (1 + (s : ℝ)) := Real.sqrt_pos.mpr h1s
   rw [← Finset.sum_filter_add_sum_filter_not (Finset.range (s + 1)) (fun m => s ≤ 2 * m)]
@@ -2277,6 +2332,13 @@ theorem sum_sqrt_exp_le {γ : ℝ} (hγ : 0 < γ) :
       ≤ (2 * (1 + 1 / γ)) / Real.sqrt (1 + s) + (64 / γ ^ 2) / Real.sqrt (1 + s) :=
         add_le_add hhigh hlow
     _ = (2 * (1 + 1 / γ) + 64 / γ ^ 2) / Real.sqrt (1 + s) := (add_div _ _ _).symm
+
+/-- `sum_sqrt_exp_le`, original `∃`-form: delegates to the `_explicitC` sibling. -/
+theorem sum_sqrt_exp_le {γ : ℝ} (hγ : 0 < γ) :
+    ∃ K > (0 : ℝ), ∀ s : ℕ,
+      ∑ m ∈ Finset.range (s + 1), Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+        ≤ K / Real.sqrt (1 + s) :=
+  ⟨K_sqrtExp γ, K_sqrtExp_pos hγ, sum_sqrt_exp_le_explicitC hγ⟩
 
 /-- **Lemma 7.7 (Distribution of first passage location), D6 statement** (paper
 p.43, (7.30)–(7.33)): the first-passage endpoint mass at `(j, l)` is

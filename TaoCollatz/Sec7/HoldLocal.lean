@@ -140,19 +140,25 @@ theorem holdSum_apply_le_chernoff {l1 l2 : ℝ}
     _ = 6553600000000 / (1 + (n : ℝ)) * Real.exp ((n : ℝ) * u - θ) := by
         rw [mul_assoc, ← Real.exp_add, sub_eq_add_neg]
 
-/-- **Lemma 2.2(i) for `Hold`** (paper p.42: "the conclusion of Lemma 2.2 holds for
-`Hold`", mean `(4, 16)`, `d = 2`): the 2-D local Gaussian-type bound
-`P(Hold_{[1,n]} = (j,l)) ≪ (n+1)^{-1} · G_n(c((j,l) − n(4,16)))`. Node S3, the hard
-kernel behind Lemma 7.7 (X6). D5 route: exponential tilting + `ZMod` circle method;
-witnesses `c = 1/400`, `C = (32·80000)² = 6553600000000`.
--- RATIFY-DRIFT (norm): `‖·‖` on `ℝ × ℝ` is the sup norm; the paper's Euclidean
--- `|x|` satisfies `|x|/√2 ≤ ‖x‖_∞ ≤ |x|`, so the two forms of the statement are
--- interchangeable after adjusting the constants `c, C`, which are existential. -/
-theorem hold_local_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n : ℕ) (j : ℕ) (l : ℤ),
+noncomputable def c_holdLocal : ℝ := 1 / 400
+
+noncomputable def C_holdLocal : ℝ := 6553600000000
+
+theorem c_holdLocal_pos : 0 < c_holdLocal := by unfold c_holdLocal; norm_num
+
+theorem C_holdLocal_pos : 0 < C_holdLocal := by unfold C_holdLocal; norm_num
+
+/-- Sibling of `hold_local_bound` with the witnesses pinned to the symbolic
+`c_holdLocal = 1/400`, `C_holdLocal = (32·80000)²` (big-C campaign, step 2);
+the original `∃`-form delegates. -/
+theorem hold_local_bound_explicitC :
+    ∀ (n : ℕ) (j : ℕ) (l : ℤ),
       ((holdSum n) (j, l)).toReal
-        ≤ C / (1 + n) * Gweight (1 + n) (c * ‖(((j : ℝ) - 4 * n, (l : ℝ) - 16 * n) : ℝ × ℝ)‖) := by
-  refine ⟨1 / 400, by norm_num, 6553600000000, by norm_num, fun n j l => ?_⟩
+        ≤ C_holdLocal / (1 + n)
+          * Gweight (1 + n)
+              (c_holdLocal * ‖(((j : ℝ) - 4 * n, (l : ℝ) - 16 * n) : ℝ × ℝ)‖) := by
+  unfold c_holdLocal C_holdLocal
+  intro n j l
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · -- n = 0: `holdSum 0` is the point mass at the origin
     rw [holdSum_eq_iidSum, iidSum_zero, PMF.pure_apply]
@@ -238,6 +244,21 @@ theorem hold_local_bound :
           mul_le_mul_of_nonneg_left hGw (by positivity)
       _ = 6553600000000 / (1 + (n : ℝ))
           * Gweight (1 + n) (1 / 400 * ‖((d1, d2) : ℝ × ℝ)‖) := by rw [hnorm]
+
+/-- **Lemma 2.2(i) for `Hold`** (paper p.42: "the conclusion of Lemma 2.2 holds for
+`Hold`", mean `(4, 16)`, `d = 2`): the 2-D local Gaussian-type bound
+`P(Hold_{[1,n]} = (j,l)) ≪ (n+1)^{-1} · G_n(c((j,l) − n(4,16)))`. Node S3, the hard
+kernel behind Lemma 7.7 (X6). D5 route: exponential tilting + `ZMod` circle method;
+witnesses `c = 1/400`, `C = (32·80000)² = 6553600000000` — now the symbolic
+`c_holdLocal`/`C_holdLocal`, via the `_explicitC` sibling (big-C campaign, step 2).
+-- RATIFY-DRIFT (norm): `‖·‖` on `ℝ × ℝ` is the sup norm; the paper's Euclidean
+-- `|x|` satisfies `|x|/√2 ≤ ‖x‖_∞ ≤ |x|`, so the two forms of the statement are
+-- interchangeable after adjusting the constants `c, C`, which are existential. -/
+theorem hold_local_bound :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (n : ℕ) (j : ℕ) (l : ℤ),
+      ((holdSum n) (j, l)).toReal
+        ≤ C / (1 + n) * Gweight (1 + n) (c * ‖(((j : ℝ) - 4 * n, (l : ℝ) - 16 * n) : ℝ × ℝ)‖) :=
+  ⟨c_holdLocal, c_holdLocal_pos, C_holdLocal, C_holdLocal_pos, hold_local_bound_explicitC⟩
 
 /-- **One-sided Chernoff/Markov bound for a `Hold` tail half-space**: if the tilt
 weight is at least `e^a` everywhere on the region `cond`, then the region's
