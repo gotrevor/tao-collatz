@@ -2939,18 +2939,23 @@ noncomputable def C_perNTermEval : ℝ := C_perNHarm + C_harmonicZ
 theorem C_perNTermEval_pos : 0 < C_perNTermEval :=
   add_pos C_perNHarm_pos C_harmonicZ_pos
 
+/-- The `perNTerm_eval` cutoff (X-chase): the witness max-tree copied verbatim from the
+`_atC` proof, with `xA := X_perNHarm`, `xB := X_harmonicZ`. -/
+noncomputable def X_perNTermEval : ℝ := max (max X_perNHarm X_harmonicZ) (Real.exp 1)
+
 /-- Sibling of `perNTerm_eval` with the `c`/`C` slots pinned at
-(`c_perNTermEval`, `C_perNTermEval`) — the `_atC` form (big-C campaign, step 2), cutoff
-existential (both legs' cutoffs are existential). -/
-theorem perNTerm_eval_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+(`c_perNTermEval`, `C_perNTermEval`) and the cutoff at `X_perNTermEval` (X-chase). -/
+theorem perNTerm_eval_atCX :
+    ∀ x : ℝ, X_perNTermEval ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |perNTerm x E y n - mainZ x E / ((alpha - 1) / 2 * Real.log y)|
             ≤ C_perNTermEval * (Real.log x) ^ (-c_perNTermEval)
               / ((alpha - 1) / 2 * Real.log y) := by
-  obtain ⟨xA, hA⟩ := perNTerm_harmonic_approx_atC
-  obtain ⟨xB, hB⟩ := harmonic_to_Z_atC
+  have hA := perNTerm_harmonic_approx_atCX
+  have hB := harmonic_to_Z_atCX
+  set xA : ℝ := X_perNHarm with hxAdef
+  set xB : ℝ := X_harmonicZ with hxBdef
   set CA : ℝ := C_perNHarm with hCAdef
   set CB : ℝ := C_harmonicZ with hCBdef
   have hCA : 0 < CA := C_perNHarm_pos
@@ -2960,7 +2965,8 @@ theorem perNTerm_eval_atC :
   have hcA : 0 < cA := c_perNHarm_pos
   have hcB : 0 < cB := c_harmonicZ_pos
   rw [show C_perNTermEval = CA + CB from rfl, show c_perNTermEval = min cA cB from rfl]
-  refine ⟨max (max xA xB) (Real.exp 1), fun x hx E hE y hy n hn => ?_⟩
+  rw [show X_perNTermEval = max (max xA xB) (Real.exp 1) from rfl]
+  intro x hx E hE y hy n hn
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hxA : xA ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxB : xB ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -3000,6 +3006,17 @@ theorem perNTerm_eval_atC :
         · exact div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hLcA hCA.le) hnormpos.le
         · exact div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hLcB hCB.le) hnormpos.le
     _ = (CA + CB) * L ^ (-c) / norm := by ring
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `perNTerm_eval_atCX` (X-chase: `x₀ := X_perNTermEval`). -/
+theorem perNTerm_eval_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNTerm x E y n - mainZ x E / ((alpha - 1) / 2 * Real.log y)|
+            ≤ C_perNTermEval * (Real.log x) ^ (-c_perNTermEval)
+              / ((alpha - 1) / 2 * Real.log y) :=
+  ⟨X_perNTermEval, perNTerm_eval_atCX⟩
 
 /-- Sibling of `perNTerm_eval` with the `c`-slot pinned to `c_perNTermEval`; the original
 delegates here.  Now delegates to `perNTerm_eval_atC` (big-C campaign, step 2:
