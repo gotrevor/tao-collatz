@@ -1,3 +1,30 @@
+# HANDOFF — big-C campaign, lap 18 — EXP-DEPTH DOOR REFUTED (check26); ROUTE MAP CLOSED; RECOMMEND CAMPAIGN CLOSE 🔚
+
+**Read `DIRECTION.md` RESOLVED banner FIRST.** State: build green (3327), 2 sorries (pin +
+`Q_black_edge_tight`), differ 35/35, checks **26/26**. Lap 18 self-adopted option (a)
+(lap-12 autonomy precedent) and ran the blueprint-mandated numeric trap before pinning the
+conjectured crux — **the trap fires, the conjecture is FALSE**:
+
+- **check26 (Monte-Carlo over the exact phase field):** entry-height tails are LINEAR
+  toward the max triangle size (ratios 0.40/0.32 where exp predicts 3e-7/6e-6). Triangles
+  are entered from the SIDE at uniform height ⟹ the depth tail inherits the SIZE
+  SPECTRUM; worst-case ξ plants a giant with one congruence condition. Exp-depth decay
+  uniform in ξ is false, not merely unprovable.
+- **Every branch of the route map is now closed, machine-checked:** check22 (union/
+  dilated floors ≥ 10^6033), check23 (flat-envelope contradiction, budget-independent),
+  check25 (point-mass ceiling = Lemma 7.10's C/u; expectation accounting off by >10⁹
+  orders), check26 (the last conditional door's hypothesis is false). The tight constant
+  appears NOT TRUE of the frozen architecture; the tower is the real price of (7.39).
+- **JUDGE-FLAG upgraded (PENDING_WORK Lap 18): recommend closing the campaign.** Judge
+  options: accept the disclosed pin sorry (headlines stay axiom-clean), re-pin at a tower
+  (out of scope), or a successor tighten-C campaign that must REDESIGN the encounter
+  accounting (constant surgery alone cannot evade check23).
+
+**NEXT:** nothing lap-executable remains in scope; the fork is judge-owned. This lap ends
+with `box stuck` (unanswered JUDGE-FLAG; two-strike will re-audit next lap).
+
+---
+
 # HANDOFF — big-C campaign, lap 17 — BOTH OPTION-(a) HALVES CLOSED; FLAG CONFIRMED; AWAITING RULING 🚩
 
 **Read `DIRECTION.md` RESOLVED banner FIRST.** State: build green (3327), 2 sorries (pin +
