@@ -2319,22 +2319,34 @@ noncomputable def c_harmonicZ : ℝ := min c_harmZfine c_mainZbridge
 theorem c_harmonicZ_pos : 0 < c_harmonicZ :=
   lt_min c_harmZfine_pos c_mainZbridge_pos
 
-/-- Sibling of `harmonic_to_Z` with the `c`-slot pinned to `c_harmonicZ`; the original
-delegates here. -/
-theorem harmonic_to_Z_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The explicit (5.20) `harmonic_to_Z` constant: triangle through `harmZfine` combining
+B1 (`C_harmZfine`) and B2 (`C_mainZbridge`) — big-C campaign, step 2. -/
+noncomputable def C_harmonicZ : ℝ := C_harmZfine + C_mainZbridge
+
+theorem C_harmonicZ_pos : 0 < C_harmonicZ :=
+  add_pos C_harmZfine_pos C_mainZbridge_pos
+
+/-- Sibling of `harmonic_to_Z` with the `c`/`C` slots pinned at
+(`c_harmonicZ`, `C_harmonicZ`) — the `_atC` form (big-C campaign, step 2), cutoff
+existential (B1's cutoff is existential). -/
+theorem harmonic_to_Z_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          |perNHarmonic x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c_harmonicZ) := by
-  obtain ⟨C1, x1, hC1, h1⟩ := perNHarmonic_eq_harmZfine_approx_explicit
-  obtain ⟨C2, x2, hC2, h2⟩ := harmZfine_to_mainZ_explicit
+          |perNHarmonic x E n - mainZ x E| ≤ C_harmonicZ * (Real.log x) ^ (-c_harmonicZ) := by
+  obtain ⟨x1, h1⟩ := perNHarmonic_eq_harmZfine_approx_atC
+  have h2 := harmZfine_to_mainZ_at
+  set C1 : ℝ := C_harmZfine with hC1def
+  set C2 : ℝ := C_mainZbridge with hC2def
+  set x2 : ℝ := X_mainZbridge with hx2def
+  have hC1 : 0 < C1 := C_harmZfine_pos
+  have hC2 : 0 < C2 := C_mainZbridge_pos
   set c1 : ℝ := c_harmZfine with hc1def
   set c2 : ℝ := c_mainZbridge with hc2def
   have hc1 : 0 < c1 := c_harmZfine_pos
   have hc2 : 0 < c2 := c_mainZbridge_pos
-  rw [show c_harmonicZ = min c1 c2 from rfl]
-  refine ⟨C1 + C2, max (max x1 x2) (Real.exp 1),
-    by positivity, fun x hx E hE y hy n hn => ?_⟩
+  rw [show C_harmonicZ = C1 + C2 from rfl, show c_harmonicZ = min c1 c2 from rfl]
+  refine ⟨max (max x1 x2) (Real.exp 1), fun x hx E hE y hy n hn => ?_⟩
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hx1 : x1 ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hx2 : x2 ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -2355,6 +2367,17 @@ theorem harmonic_to_Z_explicit :
         add_le_add (mul_le_mul_of_nonneg_left hLc1 hC1.le)
           (mul_le_mul_of_nonneg_left hLc2 hC2.le)
     _ = (C1 + C2) * L ^ (-(min c1 c2)) := by ring
+
+/-- Sibling of `harmonic_to_Z` with the `c`-slot pinned to `c_harmonicZ`; the original
+delegates here.  Now delegates to `harmonic_to_Z_atC` (big-C campaign, step 2:
+`C := C_harmonicZ`). -/
+theorem harmonic_to_Z_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNHarmonic x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c_harmonicZ) := by
+  obtain ⟨x₀, h⟩ := harmonic_to_Z_atC
+  exact ⟨C_harmonicZ, x₀, C_harmonicZ_pos, h⟩
 
 theorem harmonic_to_Z :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
