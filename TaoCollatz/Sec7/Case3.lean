@@ -456,16 +456,11 @@ theorem fpDist_walk_eq_fpDistPlus (s : ℕ) {T p : ℕ} (hp : p ≤ T) (g : ℕ 
   congr 1
   simpa only [] using iid_pathSum_law T p hp (fun d => g (e + d))
 
-/-- **The per-`p` big-triangle walk mass bound** (paper (7.54)–(7.55), one term of
-the E∗ union): the chance the `T`-step walk's position at time `p` (`p ≤ T`, started
-at `(j,l)` after the first passage `e`) lands in a size-`≥ s'` triangle is bounded by
-Lemma 7.10 (`triangle_encounter_le`, X10) at that `s'`, provided `s'` fits the X10
-regime `1 ≤ s' ≤ (n/2−j)^{0.4}`. Composes `fpDist_walk_eq_fpDistPlus` (walk →
-`fpDistPlus` marginal) with X10; the `ℝ≥0∞` walk sum is pushed to `ℝ` in one step via
-`PMF.toReal_tsum_mul_ofReal`. This is the summand of the X11a `estar_union_le` union
-bound. -/
-theorem bigTriangle_walk_le_rpow :
-    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+/-- **The per-`p` big-triangle walk mass bound**, `_explicitC` sibling at
+`C_encTri`/`c_encTri`, `A₀ = 5` (the X10 explicit threshold). Same body as the `∃`-form
+below, closing on `triangle_encounter_le_rpow_explicitC` instead of the obtained witness. -/
+theorem bigTriangle_walk_le_rpow_explicitC :
+    ∀ (A : ℝ), 5 ≤ A →
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
       ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
@@ -475,10 +470,8 @@ theorem bigTriangle_walk_le_rpow :
         (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
           Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
             (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal
-          ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
-            + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) := by
-  obtain ⟨C, hC, c, hc, A₀, hA₀, hX10⟩ := triangle_encounter_le_rpow
-  refine ⟨C, hC, c, hc, A₀, hA₀, ?_⟩
+          ≤ C_encTri * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+            + C_encTri * Real.exp (-c_encTri * A ^ 2 * (1 + (p : ℝ))) := by
   intro A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep T p s' hpT hs'1 hs'm
   have hind_eq : ∀ y : ℕ × ℤ,
       Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞) y
@@ -528,7 +521,31 @@ theorem bigTriangle_walk_le_rpow :
       (fun x => Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (((j : ℕ), (l : ℤ)) + x))
       (fun x => Set.indicator_nonneg (fun _ _ => zero_le_one) _)
   rw [heq]
-  exact hX10 A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep p s' hs'1 hs'm
+  exact triangle_encounter_le_rpow_explicitC A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep p s' hs'1 hs'm
+
+/-- **The per-`p` big-triangle walk mass bound** (paper (7.54)–(7.55), one term of
+the E∗ union): the chance the `T`-step walk's position at time `p` (`p ≤ T`, started
+at `(j,l)` after the first passage `e`) lands in a size-`≥ s'` triangle is bounded by
+Lemma 7.10 (`triangle_encounter_le`, X10) at that `s'`, provided `s'` fits the X10
+regime `1 ≤ s' ≤ (n/2−j)^{0.4}`. Composes `fpDist_walk_eq_fpDistPlus` (walk →
+`fpDistPlus` marginal) with X10; the `ℝ≥0∞` walk sum is pushed to `ℝ` in one step via
+`PMF.toReal_tsum_mul_ofReal`. This is the summand of the X11a `estar_union_le` union
+bound. -/
+theorem bigTriangle_walk_le_rpow :
+    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (T p s' : ℕ), p ≤ T → 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+        (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+          Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
+            (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal
+          ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+            + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) :=
+  ⟨C_encTri, C_encTri_pos, c_encTri, c_encTri_pos, 5, by norm_num,
+    bigTriangle_walk_le_rpow_explicitC⟩
 
 /-! ### The proved (7.56) ingredients -/
 
@@ -1148,19 +1165,45 @@ theorem sum_geom_pow_le (r : ℝ) (hr0 : 0 ≤ r) (hr : r ≤ 1 / 2) (T : ℕ) :
     _ ≤ r * 2 := by gcongr
     _ = 2 * r := by ring
 
+/-- **E∗ union constant** (X11a): `4·C_encTri`, from summing the per-`p` big-triangle
+mass (factor 4 = 2·2 from the `1/s'`-telescope and geometric-tail `≤ 2` bounds).
+Ladder-negligible (super-polynomial decay in `A`). -/
+noncomputable def C_estarUnion : ℝ := 4 * C_encTri
+
+theorem C_estarUnion_pos : 0 < C_estarUnion := by
+  have := C_encTri_pos; unfold C_estarUnion; linarith
+
+/-- **E∗ union rate**: inherits `c_encTri` (X10's exponential rate). -/
+noncomputable def c_estarUnion : ℝ := c_encTri
+
+theorem c_estarUnion_pos : 0 < c_estarUnion := c_encTri_pos
+
+/-- **E∗ union threshold**: `max 5 √(log2 / c_encTri)` — the X10 threshold `5` joined with
+the `r = exp(−c·A²) ≤ ½` regime `A ≥ √(log2/c)`. -/
+noncomputable def A0_estarUnion : ℝ := max 5 (Real.sqrt (Real.log 2 / c_encTri))
+
+theorem one_le_A0_estarUnion : 1 ≤ A0_estarUnion := by
+  unfold A0_estarUnion; exact le_trans (by norm_num) (le_max_left _ _)
+
 open scoped Classical in
-/-- **X11a: the E∗ union bound** (paper (7.54)–(7.56)): summing the per-`p`
-`bigTriangle_walk_le` mass over the horizon `p ∈ range(T+1)` at
-`s' = ⌊4^A(1+p)³⌋`, the total big-triangle (E∗) mass is
-`≤ C'·A²·4^{-A} + C'·exp(−c·A²)`. **FLOOR** (not ceil) so `s' ≤ 4^A(1+p)³ ≤ t.2.2`:
-this is what makes `bigTriangleSet F s'` CONTAIN the geometry-join E∗ event (whose
-threshold is the real `4^A(1+p)³`), see `deterministic_encounter_or_bigTriangle`. The
-`1/s'` first-passage terms telescope (`sum_inv_sq_le_two`, using `s' = ⌊4^A(1+p)³⌋ ≥
-½·4^A(1+p)³` so `A²(1+p)/s' ≤ 2·A²·4^{-A}(1+p)^{-2}`); the renewal-tail `exp(−c·A²(1+p))`
-terms sum geometrically (`sum_geom_pow_le`, `r = exp(−c·A²) ≤ 1/2` for `A ≥ A₀`). Both
-decay super-polynomially, so E∗ is negligible in the X11d damping assembly. -/
-theorem estar_union_le_rpow :
-    ∃ C' > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+/-- **X11a E∗ union bound `_core`**: the per-`p` `bigTriangle_walk` bound abstracted over
+its constant `C` and rate `c` (as `hX10`), yielding `4·C·A²·4^{−A} + 4·C·exp(−c·A²)` for
+`A ≥ max 5 √(log2/c)`. Body verbatim from the `∃`-form; `C`/`c` opaque so no def leaks into
+`nlinarith`. -/
+theorem estar_union_le_rpow_core (C c : ℝ) (hC : 0 < C) (hc : 0 < c)
+    (hX10 : ∀ (A : ℝ), 5 ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (T p s' : ℕ), p ≤ T → 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+        (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+          Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
+            (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal
+          ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+            + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ)))) :
+    ∀ (A : ℝ), max 5 (Real.sqrt (Real.log 2 / c)) ≤ A →
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
       ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
@@ -1172,13 +1215,10 @@ theorem estar_union_le_rpow :
           (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
             Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊) (1 : ℕ × ℤ → ℝ≥0∞)
               (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal)
-          ≤ C' * A ^ 2 * (4 : ℝ) ^ (-A) + C' * Real.exp (-c * A ^ 2) := by
-  obtain ⟨C, hC, c, hc, A₀0, hA₀0, hX10⟩ := bigTriangle_walk_le_rpow
-  refine ⟨4 * C, by positivity, c, hc, max A₀0 (Real.sqrt (Real.log 2 / c)),
-    le_max_of_le_left hA₀0, ?_⟩
+          ≤ 4 * C * A ^ 2 * (4 : ℝ) ^ (-A) + 4 * C * Real.exp (-c * A ^ 2) := by
   intro A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep T hreg
-  have hA0 : A₀0 ≤ A := le_trans (le_max_left _ _) hA
-  have hA1 : (1 : ℝ) ≤ A := le_trans hA₀0 hA0
+  have hA0 : (5 : ℝ) ≤ A := le_trans (le_max_left _ _) hA
+  have hA1 : (1 : ℝ) ≤ A := by linarith [hA0]
   have hAsqrt : Real.sqrt (Real.log 2 / c) ≤ A := le_trans (le_max_right _ _) hA
   -- r = exp(-c·A²) ≤ 1/2 for A ≥ sqrt(log 2 / c)
   have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
@@ -1284,6 +1324,57 @@ theorem estar_union_le_rpow :
           mul_le_mul_of_nonneg_left
             (sum_geom_pow_le (Real.exp (-c * A ^ 2)) (le_of_lt (Real.exp_pos _)) hr T) hC.le
       _ ≤ 4 * C * Real.exp (-c * A ^ 2) := by nlinarith [hC.le, Real.exp_pos (-c * A ^ 2)]
+
+open scoped Classical in
+/-- **X11a E∗ union bound**, `_explicitC` sibling at `C_estarUnion`/`c_estarUnion`,
+`A₀ = A0_estarUnion`. Delegates to `estar_union_le_rpow_core` at `C_encTri`/`c_encTri`
+over `bigTriangle_walk_le_rpow_explicitC`. -/
+theorem estar_union_le_rpow_explicitC :
+    ∀ (A : ℝ), A0_estarUnion ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (T : ℕ),
+        (∀ p, p ≤ T →
+          ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+        (Finset.range (T + 1)).sum (fun p =>
+          (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊) (1 : ℕ × ℤ → ℝ≥0∞)
+              (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal)
+          ≤ C_estarUnion * A ^ 2 * (4 : ℝ) ^ (-A) + C_estarUnion * Real.exp (-c_estarUnion * A ^ 2) := by
+  have h := estar_union_le_rpow_core C_encTri c_encTri C_encTri_pos c_encTri_pos
+    bigTriangle_walk_le_rpow_explicitC
+  unfold C_estarUnion c_estarUnion A0_estarUnion
+  exact h
+
+open scoped Classical in
+/-- **X11a: the E∗ union bound** (paper (7.54)–(7.56)): summing the per-`p`
+`bigTriangle_walk_le` mass over the horizon `p ∈ range(T+1)` at
+`s' = ⌊4^A(1+p)³⌋`, the total big-triangle (E∗) mass is
+`≤ C'·A²·4^{-A} + C'·exp(−c·A²)`. **FLOOR** (not ceil) so `s' ≤ 4^A(1+p)³ ≤ t.2.2`:
+this is what makes `bigTriangleSet F s'` CONTAIN the geometry-join E∗ event (whose
+threshold is the real `4^A(1+p)³`), see `deterministic_encounter_or_bigTriangle`. The
+`1/s'` first-passage terms telescope (`sum_inv_sq_le_two`, using `s' = ⌊4^A(1+p)³⌋ ≥
+½·4^A(1+p)³` so `A²(1+p)/s' ≤ 2·A²·4^{-A}(1+p)^{-2}`); the renewal-tail `exp(−c·A²(1+p))`
+terms sum geometrically (`sum_geom_pow_le`, `r = exp(−c·A²) ≤ 1/2` for `A ≥ A₀`). Both
+decay super-polynomially, so E∗ is negligible in the X11d damping assembly. -/
+theorem estar_union_le_rpow :
+    ∃ C' > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (T : ℕ),
+        (∀ p, p ≤ T →
+          ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+        (Finset.range (T + 1)).sum (fun p =>
+          (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊) (1 : ℕ × ℤ → ℝ≥0∞)
+              (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal)
+          ≤ C' * A ^ 2 * (4 : ℝ) ^ (-A) + C' * Real.exp (-c * A ^ 2) :=
+  ⟨C_estarUnion, C_estarUnion_pos, c_estarUnion, c_estarUnion_pos, A0_estarUnion,
+    one_le_A0_estarUnion, estar_union_le_rpow_explicitC⟩
 
 /-! ### X11c ingredients — the reaches-`R` / few-white → F∗ join -/
 

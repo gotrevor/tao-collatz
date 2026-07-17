@@ -271,3 +271,20 @@ check18 with the C0-arm assert. See HANDOFF.md.
 `estar_union_le_rpow` (Case3:~1162, over `triangle_encounter_le_rpow_explicitC`) →
 `few_white_estar_mass_le` (Case3:~1982) → `few_white_mass_le` → damping chain →
 `Q_black_edge_case3` (reifies `C2`) → wire into `prop_7_8_at`.
+
+### Lap 6b (2026-07-17) — `bigTriangle_walk_le_rpow` + `estar_union_le_rpow` explicit ✅
+
+- **`bigTriangle_walk_le_rpow_explicitC`** (Case3): `_explicitC` sibling at
+  `C_encTri`/`c_encTri`, `A₀ = 5`; body identical to the `∃`-form closing on
+  `triangle_encounter_le_rpow_explicitC` instead of the obtained witness. Original
+  `∃`-form delegates `⟨C_encTri, C_encTri_pos, c_encTri, c_encTri_pos, 5, by norm_num, …⟩`.
+- **`estar_union_le_rpow`** (Case3): new defs `C_estarUnion = 4·C_encTri`,
+  `c_estarUnion = c_encTri`, `A0_estarUnion = max 5 √(log2/c_encTri)` (+ `_pos`/`one_le_`
+  lemmas). Via the `_core` rail (`estar_union_le_rpow_core`, `C`/`c` ∀-abstracted so the
+  ~110-line body isn't double-transcribed); `_explicitC` = core @ `C_encTri`/`c_encTri`
+  over `bigTriangle_walk_le_rpow_explicitC` + `unfold`; `∃`-form delegates. Ladder-negligible
+  (super-poly `4^{−A}`/`exp(−cA²)` decay). Full build green, differ 35/35.
+
+**Next attack:** `few_white_estar_mass_le` (Case3:~2010, `obtain … := estar_union_le_rpow`)
+→ `few_white_mass_le` → damping chain → `Q_black_edge_case3` (reifies `C2`) → wire into
+`prop_7_8_at`.
