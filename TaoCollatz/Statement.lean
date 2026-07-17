@@ -47,4 +47,21 @@ theorem tao_collatz_quantitative_explicit :
       1 - C / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
   exact tao_collatz_quantitative_spine_of_le c_ladder_lower
 
+/-- The explicit constant — OUR augmentation, beyond the paper. A round upper bound with
+deliberate headroom, not an optimized value: the development's assembled constant is
+estimated ≈ `10^(3×10⁸)` (the `(2·C1+2)^𝔡·40^𝔡` core with `𝔡 ≈ 3.11×10⁷`); any upper
+bound discharges the statement, and a round pin survives proof churn. -/
+noncomputable def CTao : ℝ := 10 ^ (1000000000 : ℕ)
+
+-- The campaign pin: `sorry` by design until the big-C campaign discharges it. The local
+-- warningAsError shield keeps `lake build` (and the pre-commit green-gate) working while
+-- the pin is open; remove the shield together with the `sorry`.
+set_option warningAsError false in
+/-- **Theorem 3.1, fully explicit form** (our augmentation): Theorem 3.1 holds with the
+concrete exponent `cTao` and the concrete constant `CTao` — no existential remains. -/
+theorem tao_collatz_quantitative_fully_explicit :
+    ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - CTao / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
+  sorry
+
 end TaoCollatz

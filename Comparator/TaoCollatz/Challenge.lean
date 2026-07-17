@@ -107,4 +107,14 @@ theorem tao_collatz_quantitative_explicit :
     ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       1 - C / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := sorry
 
+/-- The explicit constant — OUR augmentation, beyond the paper. A round upper bound with
+deliberate headroom, not an optimized value. -/
+noncomputable def CTao : ℝ := 10 ^ (1000000000 : ℕ)
+
+/-- **Theorem 3.1, fully explicit form** (our augmentation): Theorem 3.1 holds with the
+concrete exponent `cTao` and the concrete constant `CTao` — no existential remains. -/
+theorem tao_collatz_quantitative_fully_explicit :
+    ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - CTao / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := sorry
+
 end TaoCollatz

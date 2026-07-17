@@ -70,6 +70,12 @@ PINNED_NAMES = [
     "syracZ_recursion", "syracZ_eq_rev_fnat", "syracZ_map_cast",
     # The trusted base — the two headline theorems
     "tao_collatz", "tao_collatz_quantitative",
+    # The explicit augmentation (PR #9, ratified + merged 2026-07-16) — the def pins guard
+    # the VALUES (see `statement`'s def branch). `CTao` + `fully_explicit` live only in
+    # Comparator/TaoCollatz/Challenge.lean until the big-C campaign discharges them; the
+    # challenge is judge-owned, so any drift there is a ratification revocation.
+    "cTao", "tao_collatz_quantitative_explicit",
+    "CTao", "tao_collatz_quantitative_fully_explicit",
 ]
 
 SEARCH_FILES = [
@@ -90,6 +96,9 @@ SEARCH_FILES = [
     "TaoCollatz/Basic/Collatz.lean",
     "TaoCollatz/Syracuse/SyracRV.lean",
     "TaoCollatz/Statement.lean",
+    # The judge-owned comparator surface — `CTao`/`fully_explicit` live ONLY here until
+    # discharged, and a campaign box is under exactly the pressure this differ exists for.
+    "Comparator/TaoCollatz/Challenge.lean",
 ]
 
 
@@ -117,6 +126,13 @@ def statement(src: str, name: str) -> str | None:
     if not m:
         return None
     tail = src[m.start():]
+    if "def" in m.group(0):
+        # For a pinned DEF the VALUE is the pin (`cTao := 1/(640000000·ln 2)` guards the
+        # number, not just `: ℝ`) — capture the whole definition, through the first blank
+        # line. A def whose signature-only were guarded could have its body quietly
+        # rewritten (e.g. CTao inflated until the ladder fits) with no rail firing.
+        e = re.search(r"\n\s*\n", tail)
+        return (tail[: e.start()] if e else tail).rstrip()
     # end of signature = the first `:= by` or `:=`
     e = re.search(r":=\s*by\b|:=", tail)
     if not e:
