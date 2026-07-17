@@ -1171,3 +1171,8 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_truncation := exp 1` + `truncation_error_bound_atCX`; `_atC` delegates. Audit 14/38,
   next `first_passage_truncation_reindex_atCX`.
+
+### Successor lap 12 (2026-07-17) — phase 2 entry 11/13
+
+- `X_truncReindex` + `first_passage_truncation_reindex_atCX`; `_atC` delegates.
+  Audit 15/38, next `first_passage_affine_reindex_atCX`.

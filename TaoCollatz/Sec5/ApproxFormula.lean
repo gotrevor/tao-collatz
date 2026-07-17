@@ -3846,16 +3846,21 @@ theorem truncation_error_bound :
   obtain ⟨C, x₀, hC, h⟩ := truncation_error_bound_explicit
   exact ⟨c_truncation, C, x₀, c_truncation_pos, hC, h⟩
 
-/-- Sibling of `first_passage_truncation_reindex` with the `c`-slot pinned to `c_truncation`
-(passthrough); the original delegates here. -/
-theorem first_passage_truncation_reindex_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `first_passage_truncation_reindex` cutoff (X-chase): witness copied verbatim from
+the `_atC` proof. -/
+noncomputable def X_truncReindex : ℝ := max X_truncation 1
+
+/-- Universal-cutoff form of `first_passage_truncation_reindex_atC` (X-chase). -/
+theorem first_passage_truncation_reindex_atCX :
+    ∀ x : ℝ, X_truncReindex ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |steppedMid x E y - approxMainTerm x E y|
             ≤ 1 * (Real.log x) ^ (-c_truncation) := by
-  obtain ⟨x₀, herr⟩ := truncation_error_bound_atC
-  refine ⟨max x₀ 1, fun x hx E hE y hy => ?_⟩
+  have herr := truncation_error_bound_atCX
+  set x₀ : ℝ := X_truncation with hx₀def
+  rw [show X_truncReindex = max x₀ 1 from rfl]
+  intro x hx E hE y hy
   have hx0 : x₀ ≤ x := le_trans (le_max_left _ _) hx
   have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   -- `1 ≤ b^z` from `1 ≤ b`, `0 ≤ z` (via `b^0 = 1 ≤ b^z`)
@@ -3871,6 +3876,15 @@ theorem first_passage_truncation_reindex_atC :
   have hdom := steppedMid_le_approxMainTerm x E y hy1
   rw [abs_sub_comm, abs_of_nonneg (by linarith)]
   exact herr x hx0 E hE y hy
+
+/-- ∃-form of `first_passage_truncation_reindex_atCX` (X-chase: `x₀ := X_truncReindex`). -/
+theorem first_passage_truncation_reindex_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |steppedMid x E y - approxMainTerm x E y|
+            ≤ 1 * (Real.log x) ^ (-c_truncation) :=
+  ⟨X_truncReindex, first_passage_truncation_reindex_atCX⟩
 
 /-- Sibling of `first_passage_truncation_reindex` with the `c`-slot pinned to `c_truncation`
 (passthrough); the original delegates here.  Now delegates to
