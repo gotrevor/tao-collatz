@@ -33,11 +33,16 @@ continues (next: `renewal_white_encounters` explicit, Fourier passthrough, Sec6)
   `osc_mainHigh_bound_at`. Rail note: when the original docstring precedes the spot
   where the new def goes, MOVE the def+its docstring ABOVE the original docstring
   (two adjacent docstrings = parse error).
-- **Next**: remaining Sec6 slots — MixingError.lean:1078/1194 (two `∃ C, ∃ n₀` osc
-  error bounds), MixingFromDecay.lean:12/30 (high-regime + telescope wrappers),
-  MixingRegime.lean:44/46 (`fine_scale_mixing` consumer), then `stabilization`
-  (Stabilization.lean:2118 consumer at A=1.7), then Sec5 (37), Sec3 (7).
-  STEP 3 remains STOPPED on the lap-8 JUDGE-FLAG.
+- **Sec6 COMPLETE (`e5f102c`, `fa489fb`)**: MixingError fully explicit (cutoffs
+  `N_logGe/N_rpowAbsorb/N_caThrNonneg/N_g1/N_g2/N_g3/N_probGlobalGood`, error constant
+  = numeral 6); `S_zeta2` + parameterized telescope `osc_syracZ_regime_telescope_at`
+  (MixingRegime); `C_oscHigh A = 2·max (C_oscMainHigh A) 6`, `N_oscHigh`,
+  `C_fineScale A = 2·(max 9 (N_oscHigh (A+2)))^A + C_oscHigh (A+2)·S_zeta2`;
+  watched `fine_scale_mixing` delegates. Rail reminder: adjacent docstrings = parse
+  error — put the new def+docstring ABOVE the original docstring, or merge into one.
+- **Next**: `stabilization` consumer chain (Stabilization.lean:~2118 consumes
+  `fine_scale_mixing 1.7` — give it the explicit `C_fineScale` path), then Sec5 (37
+  slots), Sec3 (7), Syracuse 1, Prob 1. STEP 3 remains STOPPED on the lap-8 JUDGE-FLAG.
 
 ---
 
