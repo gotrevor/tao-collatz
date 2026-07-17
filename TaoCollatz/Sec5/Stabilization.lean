@@ -1930,13 +1930,18 @@ noncomputable def C_goodWhp : ℝ := 2 * C_geomTail
 theorem C_goodWhp_pos : 0 < C_goodWhp := by
   unfold C_goodWhp; exact mul_pos (by norm_num) C_geomTail_pos
 
+/-- The `good_tuple_whp_iid` cutoff (X-chase): the witness max-tree copied verbatim from the
+`_atC` proof, with the obtained locals replaced by their explicit upstream names
+(`κ := K_Gweight c_geomTail`, `x₀A := X_logRpowExp 2 κ 0.2`, `x₀g := X_Gweight`). -/
+noncomputable def X_goodWhp : ℝ :=
+  max (X_logRpowExp 2 (K_Gweight c_geomTail) 0.2) (max (Real.exp 20) X_Gweight)
+
 open Classical in
-/-- `good_tuple_whp_iid` with the `C`-slot pinned to `C_goodWhp` (big-C campaign, step 2);
-the cutoff stays existential.  The ratified-shape `good_tuple_whp_iid` delegates here.  Body
-verbatim from the ∃-form: `set ct/Ct` re-bind the constant NAMES to `c_geomTail`/`C_geomTail`
-(via `geomHalf_tail_bound_atC`) so the union-bound body ports with zero edits. -/
-theorem good_tuple_whp_iid_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ k : ℕ, k ≤ nZero x →
+/-- Universal-cutoff form of `good_tuple_whp_iid_atC` (X-chase).  Body verbatim from the
+`_atC` form; the two `obtain`s are replaced by the `_atX` upstream lemmas at the explicit
+rate `κ = K_Gweight c_geomTail` and cutoffs `X_logRpowExp 2 κ 0.2` / `X_Gweight`. -/
+theorem good_tuple_whp_iid_atCX :
+    ∀ x : ℝ, X_goodWhp ≤ x → ∀ k : ℕ, k ≤ nZero x →
       (∑' ā : Fin k → ℕ,
           if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
         ≤ C_goodWhp * (Real.log x) ^ (-(1 : ℝ)) := by
@@ -1948,10 +1953,15 @@ theorem good_tuple_whp_iid_atC :
   have htail : ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
       (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0)
         ≤ Ct * Gweight (1 + n) (ct * lam) := geomHalf_tail_bound_atC
-  obtain ⟨κ, x₀g, hκ, hGdecay⟩ := Gweight_prefix_decay (d := ct) hct
-  obtain ⟨x₀A, hA⟩ := log_rpow_mul_exp_neg_le_one (p := 2) (κ := κ) (θ := 0.2)
+  have hκ : 0 < K_Gweight ct := K_Gweight_pos hct
+  have hGdecay := Gweight_prefix_decay_atX (d := ct) hct
+  have hA := log_rpow_mul_exp_neg_le_one_atX (p := 2) (κ := K_Gweight ct) (θ := 0.2)
     (by norm_num) hκ (by norm_num)
-  refine ⟨max x₀A (max (Real.exp 20) x₀g), fun x hx k hk => ?_⟩
+  set κ : ℝ := K_Gweight ct with hκdef
+  set x₀A : ℝ := X_logRpowExp 2 κ 0.2 with hx₀Adef
+  set x₀g : ℝ := X_Gweight with hx₀gdef
+  rw [show X_goodWhp = max x₀A (max (Real.exp 20) x₀g) from rfl]
+  intro x hx k hk
   show (∑' ā : Fin k → ℕ,
       if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
         ≤ 2 * Ct * (Real.log x) ^ (-(1 : ℝ))
@@ -2072,6 +2082,17 @@ theorem good_tuple_whp_iid_atC :
           (mul_le_mul_of_nonneg_right hn1L (Real.exp_pos _).le) (by positivity)
     _ ≤ 2 * Ct * (Real.log x) ^ (-(1 : ℝ)) :=
         mul_le_mul_of_nonneg_left shrink (by positivity)
+
+open Classical in
+/-- `good_tuple_whp_iid` with the `C`-slot pinned to `C_goodWhp` (big-C campaign, step 2);
+the cutoff stays existential.  The ratified-shape `good_tuple_whp_iid` delegates here.
+Delegates to `good_tuple_whp_iid_atCX` (X-chase: `x₀ := X_goodWhp`). -/
+theorem good_tuple_whp_iid_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ k : ℕ, k ≤ nZero x →
+      (∑' ā : Fin k → ℕ,
+          if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
+        ≤ C_goodWhp * (Real.log x) ^ (-(1 : ℝ)) :=
+  ⟨X_goodWhp, good_tuple_whp_iid_atCX⟩
 
 open Classical in
 /-- **iid good-tuple whp bound (Tao (5.11)/(5.12), iid form).**  Under the `geomHalf.iid k` law, a length-`k`

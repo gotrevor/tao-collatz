@@ -1193,3 +1193,9 @@ is odd, and the pin is branch-only so retiring is free).
 - `X_NstarWindow` (+ `Nstar_mem_logWindow_atX`) and `X_perNHarm` +
   `perNTerm_harmonic_approx_atCX` (heartbeat shields kept on the theorems, not the defs);
   delegates in place. Audit 18/38, next `good_tuple_whp_iid_atCX`.
+### Successor lap 16 (2026-07-17) — phase 3 entry 2/11
+
+- `X_goodWhp := max (X_logRpowExp 2 (K_Gweight c_geomTail) 0.2) (max (exp 20) X_Gweight)`
+  + `good_tuple_whp_iid_atCX`; the two `obtain`s replaced by `Gweight_prefix_decay_atX` /
+  `log_rpow_mul_exp_neg_le_one_atX`, body verbatim; `_atC` delegates. Audit 19/38, next
+  `syracZ_sub_perNGoodMass_bound_atCX`.
