@@ -1,3 +1,28 @@
+# HANDOFF — big-C campaign, lap 17 — BOTH OPTION-(a) HALVES CLOSED; FLAG CONFIRMED; AWAITING RULING 🚩
+
+**Read `DIRECTION.md` RESOLVED banner FIRST.** State: build green (3327), 2 sorries (pin +
+`Q_black_edge_tight`), differ 35/35, checks **25/25**. Lap 17 worked the option-(a)
+prerequisites named by lap 16 — both halves are now settled:
+
+- **17a (formalized, Triangles.lean):** `theta_deep_run_top_lower` (run-top bound at
+  arbitrary depth δ, exact ℚ) + `deep_column_spacing` (δ-deep points above a run top are
+  ≥ log₂((1−δ)/δ) apart — per-column spacing linear in depth).
+- **17b (closed, check25):** the point-mass half exists and is non-circular —
+  `tiltHold_apply_le_center` (HoldLocal (F4b)): `sup_v P(Hold_k=v) ≤ C₂/(1+k)`,
+  C₂=6.5536e12. But disjointness-counting × point-mass = per-step deep-entry rate ~C₂/u
+  — EXACTLY Lemma 7.10's rate, already dead (check22). Expectation accounting refuted:
+  tail index 1 ⟹ one giant crossing has prob ~C₂/W vs needed W^{−A}, A≈3.1e7 (>10⁹
+  orders off). **Exponential depth-decay is needed; linear is all the toolset gives.
+  Lap-16 JUDGE-FLAG CONFIRMED by an independent route.**
+
+**NEXT:** the fork is the operator's (PENDING_WORK Lap 16 flag: scope extension to new
+mathematics vs accept the disclosed pin sorry; 3 merged headlines remain axiom-clean
+either way). On-path unflagged Lean work is exhausted to present sight — remaining ideas
+all live inside the flagged new-math scope. If resumed without a ruling: re-audit for
+overlooked in-scope work, else the honest state is BLOCKED-ON-OPERATOR.
+
+---
+
 # HANDOFF — big-C campaign, lap 16 — MECHANISM ONE-LEVEL; DOOR FALSIFIED AS STATED; JUDGE-FLAG FIRED 🚩
 
 **Read `DIRECTION.md` RESOLVED banner FIRST.** State: build green (3327), 2 sorries (pin +
