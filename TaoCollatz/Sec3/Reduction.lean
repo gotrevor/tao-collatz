@@ -392,17 +392,22 @@ noncomputable def C_descLadder : ℝ := max C_valSumGeom C_descStep
 theorem C_descLadder_pos : 0 < C_descLadder :=
   lt_of_lt_of_le C_valSumGeom_pos (le_max_left _ _)
 
+/-- The `descentProb_ladder` cutoff (X-chase): the witness max-tree copied verbatim from
+the `_atC` proof, with `xb := X_descBase`, `xs := X_descStep`. -/
+noncomputable def X_descLadder : ℝ := max (max X_descBase X_descStep) (Real.exp 1)
+
 /-- Sibling of `descentProb_ladder` with the `c`/`C` slots pinned at
-(`c_ladder`, `C_descLadder`) — the `_atC` form (big-C campaign, step 2), cutoff
-existential. -/
-theorem descentProb_ladder_atC :
-    ∃ x₀ : ℝ, ∀ N₀ : ℕ, ∀ y : ℝ, x₀ ≤ y → y ≤ (N₀ : ℝ) → ∀ j : ℕ,
+(`c_ladder`, `C_descLadder`) and the cutoff at `X_descLadder` (X-chase). -/
+theorem descentProb_ladder_atCX :
+    ∀ N₀ : ℕ, ∀ y : ℝ, X_descLadder ≤ y → y ≤ (N₀ : ℝ) → ∀ j : ℕ,
       1 - C_descLadder * y ^ (-c_ladder)
         - C_descLadder * (Real.log y) ^ (-c_ladder)
             * ∑ i ∈ Finset.range j, (alpha ^ (-c_ladder)) ^ i
         ≤ descentProb ⌊y ^ (alpha ^ j)⌋₊ ((y ^ (alpha ^ j)) ^ alpha) N₀ := by
-  obtain ⟨xb, hbase⟩ := descentProb_base_atC
-  obtain ⟨xs, hstep⟩ := descentProb_step_atC
+  have hbase := descentProb_base_atCX
+  have hstep := descentProb_step_atCX
+  set xb : ℝ := X_descBase with hxbdef
+  set xs : ℝ := X_descStep with hxsdef
   set Cb : ℝ := C_valSumGeom with hCbdef
   set Cs : ℝ := C_descStep with hCsdef
   have hCb : 0 < Cb := C_valSumGeom_pos
@@ -416,7 +421,8 @@ theorem descentProb_ladder_atC :
   set C := max Cb Cs with hCdef
   have hC : 0 < C := lt_of_lt_of_le hCb (le_max_left _ _)
   rw [show c_ladder = c from rfl, show C_descLadder = C from rfl]
-  refine ⟨max (max xb xs) (Real.exp 1), fun N₀ y hy hyN j => ?_⟩
+  rw [show X_descLadder = max (max xb xs) (Real.exp 1) from rfl]
+  intro N₀ y hy hyN j
   have hyb : xb ≤ y := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hy
   have hys : xs ≤ y := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hy
   have hye : Real.exp 1 ≤ y := le_trans (le_max_right _ _) hy
@@ -490,6 +496,16 @@ theorem descentProb_ladder_atC :
     have hCL : C * Real.log y ^ (-c) * (alpha ^ (-c)) ^ j
         = C * ((alpha ^ (-c)) ^ j * Real.log y ^ (-c)) := by ring
     linarith [hs, ih]
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `descentProb_ladder_atCX` (X-chase: `x₀ := X_descLadder`). -/
+theorem descentProb_ladder_atC :
+    ∃ x₀ : ℝ, ∀ N₀ : ℕ, ∀ y : ℝ, x₀ ≤ y → y ≤ (N₀ : ℝ) → ∀ j : ℕ,
+      1 - C_descLadder * y ^ (-c_ladder)
+        - C_descLadder * (Real.log y) ^ (-c_ladder)
+            * ∑ i ∈ Finset.range j, (alpha ^ (-c_ladder)) ^ i
+        ≤ descentProb ⌊y ^ (alpha ^ j)⌋₊ ((y ^ (alpha ^ j)) ^ alpha) N₀ :=
+  ⟨X_descLadder, descentProb_ladder_atCX⟩
 
 /-- Explicit-`c` form of the ladder iteration: delegates to `descentProb_ladder_atC`
 (big-C campaign, step 2: `C := C_descLadder`). -/
