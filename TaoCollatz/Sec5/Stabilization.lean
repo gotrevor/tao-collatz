@@ -2116,6 +2116,10 @@ noncomputable def C_syracZsub : ℝ := C_goodWhp
 
 theorem C_syracZsub_pos : 0 < C_syracZsub := C_goodWhp_pos
 
+/-- The `syracZ_sub_perNGoodMass_bound` cutoff (X-chase): a pure passthrough of
+`good_tuple_whp_iid`'s cutoff, `X_syracZsub := X_goodWhp`. -/
+noncomputable def X_syracZsub : ℝ := X_goodWhp
+
 /-- **B1 rib 2 — the good-tuple whp residual.**  Dropping the `1_good` restriction from `perNGoodMass`
 only *adds* nonnegative mass, and the total added mass over all residues is exactly `ℙ(¬good)` under the
 `geomHalf.iid (n−m₀)` law, which is `≪ log^{-1} x` (mirror of `goodTuple_prefix_dev_sum`'s iid half — the
@@ -2123,10 +2127,10 @@ per-prefix `geomHalf_tail_bound` summed over the `≤ n₀` prefixes, no dTV tra
 law is already `geomHalf.iid`).  So `perNGoodMass x n X ≤ syracZ(n−m₀)(X).toReal` pointwise and
 `∑_X (syracZ(n−m₀)(X).toReal − perNGoodMass x n X) ≤ C·log^{-1}x`.
 **[C9 leaf B1 rib — pushforward decomposition + analytic whp; does NOT consume C10.]**
-`_atC` sibling (big-C campaign, step 2): `C := C_syracZsub`, cutoff existential; the ratified
-∃-form delegates. -/
-theorem syracZ_sub_perNGoodMass_bound_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+`_atCX` sibling (X-chase): cutoff a pure passthrough, `X_syracZsub := X_goodWhp`; the `_atC`
+and ratified ∃-forms delegate. -/
+theorem syracZ_sub_perNGoodMass_bound_atCX :
+    ∀ x : ℝ, X_syracZsub ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           (∀ X : ZMod (3 ^ (n - mZero x)),
@@ -2135,8 +2139,10 @@ theorem syracZ_sub_perNGoodMass_bound_atC :
                 (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X)
               ≤ C_syracZsub * (Real.log x) ^ (-(1 : ℝ)) := by
   classical
-  obtain ⟨x₀, hwhp⟩ := good_tuple_whp_iid_atC
-  refine ⟨x₀, fun x hx E hE y hy n hn => ?_⟩
+  have hwhp := good_tuple_whp_iid_atCX
+  set x₀ : ℝ := X_goodWhp with hx₀def
+  rw [show X_syracZsub = x₀ from rfl]
+  intro x hx E hE y hy n hn
   set k := n - mZero x with hk
   have hkn : k ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
   -- abbreviations for the two masked fiber families
@@ -2202,6 +2208,19 @@ theorem syracZ_sub_perNGoodMass_bound_atC :
       rw [hfull, hgood, if_pos hg, sub_zero]
   rw [hcollapse]
   exact hwhp x hx k hkn
+
+/-- `_atC` sibling (big-C campaign, step 2): `C := C_syracZsub`, cutoff existential.
+Delegates to `syracZ_sub_perNGoodMass_bound_atCX` (X-chase: `x₀ := X_syracZsub`). -/
+theorem syracZ_sub_perNGoodMass_bound_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          (∀ X : ZMod (3 ^ (n - mZero x)),
+              perNGoodMass x n X ≤ ((syracZ (n - mZero x)) X).toReal) ∧
+            ∑ X : ZMod (3 ^ (n - mZero x)),
+                (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X)
+              ≤ C_syracZsub * (Real.log x) ^ (-(1 : ℝ)) :=
+  ⟨X_syracZsub, syracZ_sub_perNGoodMass_bound_atCX⟩
 
 /-- **B1 rib 2**, ratified ∃-form: delegates to `syracZ_sub_perNGoodMass_bound_atC`
 (big-C campaign, step 2: `C := C_syracZsub`). -/

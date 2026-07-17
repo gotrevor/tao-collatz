@@ -1199,3 +1199,8 @@ is odd, and the pin is branch-only so retiring is free).
   + `good_tuple_whp_iid_atCX`; the two `obtain`s replaced by `Gweight_prefix_decay_atX` /
   `log_rpow_mul_exp_neg_le_one_atX`, body verbatim; `_atC` delegates. Audit 19/38, next
   `syracZ_sub_perNGoodMass_bound_atCX`.
+
+### Successor lap 17 (2026-07-17) — phase 3 entry 3/11
+
+- `X_syracZsub := X_goodWhp` (pure passthrough) + `syracZ_sub_perNGoodMass_bound_atCX`;
+  `_atC` delegates. Audit 20/38, next `perNHarmonic_eq_harmZfine_approx_atCX`.
