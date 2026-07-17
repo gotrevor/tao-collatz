@@ -825,13 +825,30 @@ theorem window_bad_sum :
   obtain ⟨C, x₀, hC, h⟩ := window_bad_sum_explicit
   exact ⟨c_ladder, C, x₀, c_ladder_pos, hC, h⟩
 
+/-- The Theorem-3.1 (Syracuse sum form) constant, **parameterized by the upstream cutoff
+`X`** (big-C campaign, step 2): at the spine top the pin has no `x₀`-threshold, so the
+window-covering argument absorbs the `window_bad_sum` cutoff into the constant via the
+small-`N₀` arm `4·max 1 ((log X)^c)`.  This is the seam where cutoffs become constant mass
+(the `n₀^B` head of the traced ladder). -/
+noncomputable def C_syrSum (X : ℝ) : ℝ :=
+  max (C_windowBad * alpha / (alpha - 1)) (4 * max 1 ((Real.log X) ^ c_ladder))
+
+theorem C_syrSum_pos (X : ℝ) : 0 < C_syrSum X :=
+  lt_of_lt_of_le
+    (div_pos (mul_pos C_windowBad_pos (by norm_num [alpha])) (by norm_num [alpha]))
+    (le_max_left _ _)
+
 /-- Sibling of the RATIFY-C6a `tao_syracuse_quantitative_sum` with the `c`-slot pinned to
-`c_ladder` (passthrough); the ratified original (byte-identical) delegates here. -/
-theorem tao_syracuse_quantitative_sum_explicit :
-    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+`c_ladder` and the `C`-slot pinned to `C_syrSum X` at an existentially-supplied cutoff `X`
+— the `_atC` form (big-C campaign, step 2).  The cutoff cannot be closed-form here (it
+chains through the Sec5 existential cutoffs), so the constant is cutoff-parameterized. -/
+theorem tao_syracuse_quantitative_sum_atC :
+    ∃ X : ℝ, ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       logSum {N | N₀ < syrMin N} (oddInterval x)
-        ≤ C * Real.log x / (Real.log N₀) ^ c_ladder := by
-  obtain ⟨Cw, xw, hCw, hwbs⟩ := window_bad_sum_explicit
+        ≤ C_syrSum X * Real.log x / (Real.log N₀) ^ c_ladder := by
+  obtain ⟨xw, hwbs⟩ := window_bad_sum_atC
+  set Cw : ℝ := C_windowBad with hCwdef
+  have hCw : 0 < Cw := C_windowBad_pos
   set c : ℝ := c_ladder with hcdef
   have hc : 0 < c := c_ladder_pos
   have halpha1 : (1 : ℝ) < alpha := by norm_num [alpha]
@@ -850,7 +867,9 @@ theorem tao_syracuse_quantitative_sum_explicit :
   have hC0 : (0 : ℝ) < C := by
     have h1 : (0 : ℝ) < Cw * alpha / (alpha - 1) := by positivity
     exact lt_of_lt_of_le h1 (le_max_left _ _)
-  refine ⟨C, hC0, fun N₀ x hN₀2 hx2 => ?_⟩
+  refine ⟨X, ?_⟩
+  rw [show C_syrSum X = C from rfl]
+  intro N₀ x hN₀2 hx2
   -- common size facts
   have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
   have hx0 : (0 : ℝ) < (x : ℝ) := by linarith
@@ -1134,6 +1153,16 @@ theorem log_le_eight_logSum_univ_oddInterval {x : ℕ} (hx2 : 2 ≤ x) :
       refine le_trans ?_ hkey
       nlinarith [hlog_ge, hlog4]
     linarith
+
+/-- Sibling of the RATIFY-C6a `tao_syracuse_quantitative_sum` with the `c`-slot pinned to
+`c_ladder`; delegates to `tao_syracuse_quantitative_sum_atC` (big-C campaign, step 2:
+`C := C_syrSum X` at the existentially-supplied cutoff `X`). -/
+theorem tao_syracuse_quantitative_sum_explicit :
+    ∃ C : ℝ, 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      logSum {N | N₀ < syrMin N} (oddInterval x)
+        ≤ C * Real.log x / (Real.log N₀) ^ c_ladder := by
+  obtain ⟨X, h⟩ := tao_syracuse_quantitative_sum_atC
+  exact ⟨C_syrSum X, C_syrSum_pos X, h⟩
 
 /-- **Theorem 3.1, Syracuse probability form** (Tao 2019 p.16, second display):
 `ℙ(Syrmin(Log(2ℕ+1 ∩ [1,x])) ≤ N₀) ≥ 1 − O(log^{-c} N₀)`. -/
