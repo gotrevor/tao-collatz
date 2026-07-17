@@ -394,10 +394,16 @@ uses machinery mathlib HAS). Route (see `PENDING_WORK` "C7 integral test — att
   `AntitoneOn.integral_le_sum` on `t ↦ 1/t` over the AP (step `M`) + `integral_inv` (`∫ 1/t = log`), and
   `D = ½·log(y^α/y) + O(1/y)` likewise (odds are half); AP counts via `Nat.Ioc_filter_modEq_card`;
 * summing the `M/2` odd classes and dividing by `D ≥ c·log y` gives `dTV ≤ C·M/y = C·2^{3n₀}/y`. -/
-/-- `nZero x = ⌊log x / (10 log 2)⌋ ≥ 1` once `x ≥ 2^{11}`, so `3 n₀ ≥ 1` and the modulus `2^{3n₀}`
-is nontrivial. -/
-theorem nZero_pos_of_large : ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → 0 < nZero x := by
-  refine ⟨2 ^ 11, by norm_num, fun x hx => ?_⟩
+/-- The `nZero_pos_of_large` cutoff (big-C campaign, X-chase: step-2 threshold half). -/
+noncomputable def X_nZeroPos : ℝ := 2 ^ 11
+
+theorem one_le_X_nZeroPos : 1 ≤ X_nZeroPos := by unfold X_nZeroPos; norm_num
+
+/-- `nZero x = ⌊log x / (10 log 2)⌋ ≥ 1` once `x ≥ 2^{11}` — cutoff-pinned ∀-form
+(big-C campaign, X-chase). -/
+theorem nZero_pos_atX : ∀ x : ℝ, X_nZeroPos ≤ x → 0 < nZero x := by
+  rw [show X_nZeroPos = 2 ^ 11 from rfl]
+  intro x hx
   have hx0 : (0 : ℝ) < x := lt_of_lt_of_le (by norm_num) hx
   have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
   unfold nZero
@@ -406,6 +412,16 @@ theorem nZero_pos_of_large : ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ �
   rw [Real.log_pow] at hmono
   push_cast at hmono
   nlinarith [hmono, hlog2]
+
+/-- `nZero x = ⌊log x / (10 log 2)⌋ ≥ 1` once `x ≥ 2^{11}`, so `3 n₀ ≥ 1` and the modulus `2^{3n₀}`
+is nontrivial.  Delegates to `nZero_pos_atX` (X-chase: `x₀ := X_nZeroPos`). -/
+theorem nZero_pos_of_large : ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → 0 < nZero x :=
+  ⟨X_nZeroPos, one_le_X_nZeroPos, nZero_pos_atX⟩
+
+/-- The shared cutoff of the four window-arithmetic nodes (`classMass_ap_form`,
+`intTest_D_lower`, `windowMass_estimate`, `logWindow_nonempty`) — their witnesses are
+the identical expression `max X_nZeroPos 2^2000` (big-C campaign, X-chase). -/
+noncomputable def X_windowBase : ℝ := max X_nZeroPos ((2 : ℝ) ^ (2000 : ℝ))
 
 /-- **Harmonic AP sum-vs-integral bound** (the reusable core of the integral test).  For an arithmetic
 progression `a, a+M, a+2M, …` of `n` positive terms, the sum `∑ 1/(a+Mi)` differs from the integral
@@ -518,8 +534,8 @@ Owed: the interval `[y, y^α]` has length `y^α − y ≫ M`, so every residue c
 `(logWindow …).filter (·≡r)` equals `(range count).image (a + M·)` with `a` the least class member
 `≥ y` — an `AP ↔ image` bijection (`Nat.Ioc_filter_modEq_card` counts it; the sum needs `sum_image`
 with injectivity of `i ↦ a + Mi`). -/
-theorem classMass_ap_form :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+theorem classMass_ap_form_atX :
+    ∀ x : ℝ, X_windowBase ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       ∀ r : ZMod (2 ^ (3 * nZero x)), r.val % 2 = 1 →
         ∃ a count : ℕ, 1 ≤ count ∧
           classMass y (y ^ alpha) (3 * nZero x) r
@@ -529,8 +545,10 @@ theorem classMass_ap_form :
           y ^ alpha < (a : ℝ) + ((2 ^ (3 * nZero x) : ℕ) : ℝ) * (count : ℝ) ∧
           (a : ℝ) + ((2 ^ (3 * nZero x) : ℕ) : ℝ) * (count : ℝ) ≤ y ^ alpha
             + ((2 ^ (3 * nZero x) : ℕ) : ℝ) := by
-  obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
-  refine ⟨max x₀z ((2:ℝ) ^ (2000:ℝ)), fun x hx y hy => ?_⟩
+  have hzpos := nZero_pos_atX
+  set x₀z : ℝ := X_nZeroPos with hx₀zdef
+  rw [show X_windowBase = max x₀z ((2:ℝ) ^ (2000:ℝ)) from rfl]
+  intro x hx y hy
   have hxz : x₀z ≤ x := le_trans (le_max_left _ _) hx
   have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hnz : 0 < nZero x := hzpos x hxz
@@ -681,12 +699,31 @@ theorem classMass_ap_form :
       rw [← hcast]; push_cast; exact_mod_cast hcount_lower
     linarith [hyhi_le]
 
-theorem intTest_class_dev_atC :
+/-- ∃-form of `classMass_ap_form_atX` (X-chase: `x₀ := X_windowBase`). -/
+theorem classMass_ap_form :
     ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      ∀ r : ZMod (2 ^ (3 * nZero x)), r.val % 2 = 1 →
+        ∃ a count : ℕ, 1 ≤ count ∧
+          classMass y (y ^ alpha) (3 * nZero x) r
+            = ∑ i ∈ Finset.range count,
+                ((a : ℝ) + ((2 ^ (3 * nZero x) : ℕ) : ℝ) * (i : ℝ))⁻¹ ∧
+          (y : ℝ) ≤ (a : ℝ) ∧ (a : ℝ) < y + ((2 ^ (3 * nZero x) : ℕ) : ℝ) ∧
+          y ^ alpha < (a : ℝ) + ((2 ^ (3 * nZero x) : ℕ) : ℝ) * (count : ℝ) ∧
+          (a : ℝ) + ((2 ^ (3 * nZero x) : ℕ) : ℝ) * (count : ℝ) ≤ y ^ alpha
+            + ((2 ^ (3 * nZero x) : ℕ) : ℝ) :=
+  ⟨X_windowBase, classMass_ap_form_atX⟩
+
+/-- The `intTest_class_dev` cutoff (X-chase). -/
+noncomputable def X_intTestDev : ℝ := max X_windowBase 1
+
+theorem intTest_class_dev_atCX :
+    ∀ x : ℝ, X_intTestDev ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       ∃ t : ℝ, ∀ r : ZMod (2 ^ (3 * nZero x)), r.val % 2 = 1 →
         |classMass y (y ^ alpha) (3 * nZero x) r - t| ≤ 2 / y := by
-  obtain ⟨x₀b, hbridge⟩ := classMass_ap_form
-  refine ⟨max x₀b 1, fun x hx y hy => ?_⟩
+  have hbridge := classMass_ap_form_atX
+  set x₀b : ℝ := X_windowBase with hx₀bdef
+  rw [show X_intTestDev = max x₀b 1 from rfl]
+  intro x hx y hy
   have hxb : x₀b ≤ x := le_trans (le_max_left _ _) hx
   have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   -- `y ≥ 1`, `y^α ≥ y`, positivity
@@ -755,6 +792,13 @@ theorem intTest_class_dev_atC :
     _ ≤ 1 / y + 1 / y := by linarith [hinv_a]
     _ = 2 / y := by ring
 
+/-- ∃-form of `intTest_class_dev_atCX` (X-chase: `x₀ := X_intTestDev`). -/
+theorem intTest_class_dev_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      ∃ t : ℝ, ∀ r : ZMod (2 ^ (3 * nZero x)), r.val % 2 = 1 →
+        |classMass y (y ^ alpha) (3 * nZero x) r - t| ≤ 2 / y :=
+  ⟨X_intTestDev, intTest_class_dev_atCX⟩
+
 /-- Original ∃-form of the per-class deviation: delegates to `intTest_class_dev_atC`
 (big-C campaign, step 2: `c := 2`, cutoff existential via `classMass_ap_form`). -/
 theorem intTest_class_dev :
@@ -767,11 +811,13 @@ theorem intTest_class_dev :
 large `x`.  (In fact `D ≍ (α−1)/2 · log y → ∞`; a constant `1/2` suffices for the reduction, since
 `dTV = (1/D)·O(2^{3n₀}/y)` and dividing by any positive constant preserves the decay.)  Owed:
 one-class `AntitoneOn.integral_le_sum` on the odds gives `D ≥ (1/2)∫ − O(1/y)`. -/
-theorem intTest_D_lower_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+theorem intTest_D_lower_atCX :
+    ∀ x : ℝ, X_windowBase ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       (1/8 : ℝ) ≤ windowMass y (y ^ alpha) := by
-  obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
-  refine ⟨max x₀z ((2:ℝ) ^ (2000:ℝ)), fun x hx y hy => ?_⟩
+  have hzpos := nZero_pos_atX
+  set x₀z : ℝ := X_nZeroPos with hx₀zdef
+  rw [show X_windowBase = max x₀z ((2:ℝ) ^ (2000:ℝ)) from rfl]
+  intro x hx y hy
   have hxz : x₀z ≤ x := le_trans (le_max_left _ _) hx
   have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hnz : 0 < nZero x := hzpos x hxz
@@ -894,6 +940,12 @@ theorem intTest_D_lower_atC :
   rw [← div_eq_mul_inv, le_div_iff₀ hyαpos]
   linarith only [hcountR, h2y, hy8]
 
+/-- ∃-form of `intTest_D_lower_atCX` (X-chase: `x₀ := X_windowBase`). -/
+theorem intTest_D_lower_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      (1/8 : ℝ) ≤ windowMass y (y ^ alpha) :=
+  ⟨X_windowBase, intTest_D_lower_atCX⟩
+
 /-- Original ∃-form of the window-normalizer lower bound: delegates to
 `intTest_D_lower_atC` (big-C campaign, step 2: `D₀ := 1/8`, cutoff existential). -/
 theorem intTest_D_lower :
@@ -907,11 +959,13 @@ denominator estimate the (5.19) single-value mass needs: `logUnifOdd(N*) = (1/N*
 is the AP `{a + 2i : i < count}` with `a ≈ y`, `a + 2·count ≈ y^α`; the integral test
 (`harmonic_ap_integral_bound` at step `M=2`) gives `D = (1/2)·log((a+2count)/a) + O(1/y)`, and the two
 log endpoints match `(1/2)(log y^α − log y) = (α−1)/2·log y` up to `O(1/y)`. -/
-theorem windowMass_estimate_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+theorem windowMass_estimate_atCX :
+    ∀ x : ℝ, X_windowBase ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       |windowMass y (y ^ alpha) - (alpha - 1) / 2 * Real.log y| ≤ 3 := by
-  obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
-  refine ⟨max x₀z ((2:ℝ) ^ (2000:ℝ)), fun x hx y hy => ?_⟩
+  have hzpos := nZero_pos_atX
+  set x₀z : ℝ := X_nZeroPos with hx₀zdef
+  rw [show X_windowBase = max x₀z ((2:ℝ) ^ (2000:ℝ)) from rfl]
+  intro x hx y hy
   have hxz : x₀z ≤ x := le_trans (le_max_left _ _) hx
   have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hyset : y = x ^ alpha ∨ y = x ^ alpha ^ 2 := by simpa [Set.mem_insert_iff] using hy
@@ -1042,9 +1096,13 @@ theorem windowMass_estimate_atC :
   obtain ⟨hh1, hh2⟩ := hharm
   constructor <;> nlinarith [hh1, hh2, hP_lo, hP_hi, hQ_lo, hQ_hi, hia, h2Y, h3y, hyαpos, hy0]
 
-/-- Original ∃-form of the window normalizer estimate: delegates to
-`windowMass_estimate_atC` (big-C campaign, step 2: `C := 3`, cutoff existential via
-`nZero_pos_of_large`). -/
+/-- ∃-form of `windowMass_estimate_atCX` (X-chase: `x₀ := X_windowBase`); the original
+`windowMass_estimate` ∃C-form below delegates through here (step 2: `C := 3`). -/
+theorem windowMass_estimate_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      |windowMass y (y ^ alpha) - (alpha - 1) / 2 * Real.log y| ≤ 3 :=
+  ⟨X_windowBase, windowMass_estimate_atCX⟩
+
 theorem windowMass_estimate :
     ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       |windowMass y (y ^ alpha) - (alpha - 1) / 2 * Real.log y| ≤ C := by
@@ -1052,12 +1110,15 @@ theorem windowMass_estimate :
   exact ⟨3, x₀, by norm_num, h⟩
 
 /-- **Window nonemptiness** — for large `x` there is an odd integer in `[y, y^α]` (the interval has
-length `y^α − y → ∞`).  Owed: an explicit odd point, e.g. `2⌊y/2⌋+1`. -/
-theorem logWindow_nonempty_of_large :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+length `y^α − y → ∞`).  Owed: an explicit odd point, e.g. `2⌊y/2⌋+1`.  Cutoff-pinned ∀-form
+(X-chase). -/
+theorem logWindow_nonempty_atX :
+    ∀ x : ℝ, X_windowBase ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       (logWindow y (y ^ alpha)).Nonempty := by
-  obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
-  refine ⟨max x₀z ((2:ℝ) ^ (2000:ℝ)), fun x hx y hy => ?_⟩
+  have hzpos := nZero_pos_atX
+  set x₀z : ℝ := X_nZeroPos with hx₀zdef
+  rw [show X_windowBase = max x₀z ((2:ℝ) ^ (2000:ℝ)) from rfl]
+  intro x hx y hy
   have hxz : x₀z ≤ x := le_trans (le_max_left _ _) hx
   have hx2000 : (2:ℝ) ^ (2000:ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hnz : 0 < nZero x := hzpos x hxz
@@ -1090,24 +1151,39 @@ theorem logWindow_nonempty_of_large :
   have h2 : ⌊y ^ alpha⌋₊ ≤ ⌈y ^ alpha⌉₊ := Nat.floor_le_ceil _
   omega
 
+/-- ∃-form of `logWindow_nonempty_atX` (X-chase: `x₀ := X_windowBase`). -/
+theorem logWindow_nonempty_of_large :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      (logWindow y (y ^ alpha)).Nonempty :=
+  ⟨X_windowBase, logWindow_nonempty_atX⟩
+
 /-- The integral-test dTV constant: `c/D₀` at `c = 2` (`intTest_class_dev_atC`),
 `D₀ = 1/8` (`intTest_D_lower_atC`) — big-C campaign, step 2. -/
 noncomputable def K_intTest : ℝ := 2 / (1 / 8)
 
 theorem K_intTest_pos : 0 < K_intTest := by unfold K_intTest; norm_num
 
-theorem intTest_error_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `intTest_error` cutoff (X-chase): the witness max-tree over the four inputs. -/
+noncomputable def X_intTestErr : ℝ :=
+  max (max X_intTestDev X_windowBase) (max X_windowBase (max X_nZeroPos 1))
+
+theorem intTest_error_atCX :
+    ∀ x : ℝ, X_intTestErr ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
                 (unifOddMod (3 * nZero x))
           ≤ K_intTest * ((2 : ℝ) ^ (3 * (nZero x : ℝ)) / y) := by
-  obtain ⟨x₀d, hdev⟩ := intTest_class_dev_atC
-  obtain ⟨x₀D, hDl⟩ := intTest_D_lower_atC
-  obtain ⟨x₀n, hnon⟩ := logWindow_nonempty_of_large
-  obtain ⟨x₀z, _, hzpos⟩ := nZero_pos_of_large
-  rw [show K_intTest = 2 / (1/8 : ℝ) from rfl]
-  refine ⟨max (max x₀d x₀D) (max x₀n (max x₀z 1)), fun x hx y hy => ?_⟩
+  have hdev := intTest_class_dev_atCX
+  have hDl := intTest_D_lower_atCX
+  have hnon := logWindow_nonempty_atX
+  have hzpos := nZero_pos_atX
+  set x₀d : ℝ := X_intTestDev with hx₀ddef
+  set x₀D : ℝ := X_windowBase with hx₀Ddef
+  set x₀n : ℝ := X_windowBase with hx₀ndef
+  set x₀z : ℝ := X_nZeroPos with hx₀zdef
+  rw [show K_intTest = 2 / (1/8 : ℝ) from rfl,
+    show X_intTestErr = max (max x₀d x₀D) (max x₀n (max x₀z 1)) from rfl]
+  intro x hx y hy
   have hxd : x₀d ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxD : x₀D ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
   have hxn : x₀n ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_right _ _)) hx
@@ -1145,6 +1221,15 @@ theorem intTest_error_atC :
       show 2 / (1/8 : ℝ) * (2 * B / y) = 2 * 2 * B / (y * (1/8)) by field_simp]
   apply div_le_div_of_nonneg_left (by positivity) (by positivity)
   exact mul_le_mul_of_nonneg_left hDge hypos.le
+
+/-- ∃-form of `intTest_error_atCX` (X-chase: `x₀ := X_intTestErr`). -/
+theorem intTest_error_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
+                (unifOddMod (3 * nZero x))
+          ≤ K_intTest * ((2 : ℝ) ^ (3 * (nZero x : ℝ)) / y) :=
+  ⟨X_intTestErr, intTest_error_atCX⟩
 
 /-- Original ∃-form of the integral-test error estimate: delegates to `intTest_error_atC`
 (big-C campaign, step 2: `K := K_intTest`). -/
