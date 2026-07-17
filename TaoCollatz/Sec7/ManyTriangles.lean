@@ -4903,23 +4903,31 @@ pinned bound. The paper gets this regime for free from its standing hypotheses
 consumer `triangle_encounter_le` carries exactly those hypotheses, so the fix
 is consumer-safe.
 OPEN (node X10, statement pinned lap 58, regime hypothesis added lap 59). -/
-theorem encounter_separated_sum :
-    ∃ C₃ > (0 : ℝ), ∃ S₀ : ℕ, ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+theorem encounter_separated_sum_core (cB C' K : ℝ)
+    (_hcB : 0 < cB) (hC' : 0 < C') (hK : 0 < K)
+    (hcol : ∀ (s j : ℕ),
+      ∑' l : ℤ, (fpDist s (j, l)).toReal
+        ≤ C' * (Gweight (1 + (s : ℝ)) (cB * ((j : ℝ) - (s : ℝ) / 4))
+                  / Real.sqrt (1 + (s : ℝ))))
+    (hband : ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D → ∀ W : ℝ, 1 ≤ W →
+      ∀ S : Set ℤ, (∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)|) →
+      ∑' x : {x : ℤ | ∃ σ ∈ S, |(x : ℝ) - (σ : ℝ)| ≤ W},
+          ENNReal.ofReal (Gweight t (cB * (((x : ℤ) : ℝ) - μ)))
+        ≤ ENNReal.ofReal ((2 * W + 1)
+            * (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ)))) :
+    ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
         (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
-      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S₀ ≤ s →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → 0 ≤ s →
       ∀ (p s' : ℕ) (W : ℝ), 1 ≤ W → 100 * W ≤ (s' : ℝ) →
       ((s' : ℝ)) ^ 2 ≤ 1 + (s : ℝ) →
       ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
           * Set.indicator {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
               ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
               ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} 1 (j + e.1, l + e.2)
-        ≤ C₃ * W / (s' : ℝ) := by
+        ≤ (12 * C' + 120 * C' * K) * W / (s' : ℝ) := by
   classical
-  obtain ⟨cB, hcB, C', hC', hcol⟩ := fpDist_col_le
-  obtain ⟨K, hK, hband⟩ := banded_Gweight_tsum_le hcB
-  refine ⟨12 * C' + 120 * C' * K, by positivity, 0,
-    fun n ξ hξ F t₀ ht₀ j l hmemt₀ s hs _ p s' W hW hWs hreg => ?_⟩
+  intro n ξ hξ F t₀ ht₀ j l hmemt₀ s hs _ p s' W hW hWs hreg
   set Event : Set (ℕ × ℤ) := {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
       ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
       ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} with hEvent
@@ -5241,6 +5249,54 @@ theorem encounter_separated_sum :
   rw [hLHS]
   refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
   exact hTle.trans (ENNReal.ofReal_le_ofReal hnum)
+
+/-- The constant of `encounter_separated_sum` (X10b), symbolic (big-C campaign,
+step 2): `12·C' + 120·C'·K` at `C' = C_fpCol`, `K = K_intG c_fpLocation`. -/
+noncomputable def C_encSep : ℝ :=
+  12 * C_fpCol + 120 * C_fpCol * K_intG c_fpLocation
+
+theorem C_encSep_pos : 0 < C_encSep := by
+  have h1 := C_fpCol_pos
+  have h2 := K_intG_pos c_fpLocation_pos
+  unfold C_encSep
+  nlinarith
+
+/-- `encounter_separated_sum`, `_explicitC` sibling: `encounter_separated_sum_core`
+at (`c_fpLocation`, `C_fpCol`, `K_intG c_fpLocation`), folded into `C_encSep`
+(the `s`-threshold is `0`). -/
+theorem encounter_separated_sum_explicitC :
+    ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → 0 ≤ s →
+      ∀ (p s' : ℕ) (W : ℝ), 1 ≤ W → 100 * W ≤ (s' : ℝ) →
+      ((s' : ℝ)) ^ 2 ≤ 1 + (s : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+              ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+              ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} 1 (j + e.1, l + e.2)
+        ≤ C_encSep * W / (s' : ℝ) := by
+  have h := encounter_separated_sum_core c_fpLocation C_fpCol (K_intG c_fpLocation)
+    c_fpLocation_pos C_fpCol_pos (K_intG_pos c_fpLocation_pos)
+    fpDist_col_le_explicitC (banded_Gweight_tsum_le_explicitC c_fpLocation_pos)
+  unfold C_encSep
+  exact h
+
+/-- **X10b — the Σ-separated sum** (paper p.54), original `∃`-form: delegates
+to the `_explicitC` sibling at `C_encSep`, `S₀ = 0`. -/
+theorem encounter_separated_sum :
+    ∃ C₃ > (0 : ℝ), ∃ S₀ : ℕ, ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S₀ ≤ s →
+      ∀ (p s' : ℕ) (W : ℝ), 1 ≤ W → 100 * W ≤ (s' : ℝ) →
+      ((s' : ℝ)) ^ 2 ≤ 1 + (s : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+              ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+              ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} 1 (j + e.1, l + e.2)
+        ≤ C₃ * W / (s' : ℝ) :=
+  ⟨C_encSep, C_encSep_pos, 0, encounter_separated_sum_explicitC⟩
 
 /-! ### Lemma 7.10 assembly: `triangle_encounter_le` (statement pinned above,
 relocated here below its ingredients) -/
