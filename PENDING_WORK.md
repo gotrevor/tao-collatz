@@ -12,8 +12,14 @@ history of this file.)*
       `log₁₀ C_ladder ≈ 9.39×10¹⁰ > 10⁹` ⟹ NO-GO, JUDGE-FLAGGED below; steps 2/3 halted
       per DIRECTION's never-inflate rule** — *resolved by the JUDGE RULING below
       (re-pin `10^(10¹¹)`); steps 2/3 LIVE against the new pin*
-- [ ] **Step 2 — de-existentialize the C-slots + feeding thresholds, bottom-up**
-      (Sec7 22 + thresholds → Sec6 8 → Sec5 37 → Sec3 7 → Syracuse 1 → Prob 1)
+- [x] **Step 2 — de-existentialize the C-slots + feeding thresholds, bottom-up**
+      (Sec7 22 + thresholds → Sec6 8 → Sec5 37 → Sec3 7 → Syracuse 1 → Prob 1) —
+      **DONE lap 11 (HEAD `6e7e627`)**: spine fully constant-explicit up to
+      `tao_collatz_quantitative_spine_atC`, cutoff-parameterized top
+      `C_spine X = 16·C_syrSum X` (the cutoff→constant absorption seam is `C_syrSum`);
+      name-sweep audit: every on-path ∃cC slot has an `_atC` sibling (`valuation_tail` is
+      off-path, no consumers). `#print axioms` on the spine forms = trust base only
+      (believed clean, judge to verify).
 - [ ] **Step 3 — `C_ladder ≤ CTao` discharge, Statement.lean sorry closed, axiom gate
       exact-3, self-stop**
 
@@ -435,3 +441,19 @@ cutoff existential** for these nodes.
   ineq) at cutoff `max`; then `perNTerm_eval` (combines A `perNTerm_harmonic_approx` + B
   `harmonic_to_Z`), then `stabilization`. Then FirstPassage (16) / ApproxFormula (23) / Sec3
   (7) / Syracuse (1) / Prob (1).
+
+## Lap 11 (2026-07-17, grind) — STEP 2 COMPLETE
+
+6 commits `85c4ce9..6e7e627`, all green, differ 35/35, checks 19/19 each. New constant
+defs (all `noncomputable def` + `_pos`): `C_mainZ`, `C_approxToZ`, `C_windowStable`,
+`C_stab` (Sec5 capstone), `C_descStep`, `C_descLadder`, `C_descWhp`, `C_windowBad`,
+`C_syrSum X` / `C_syrProb X` / `C_spine X` (cutoff-parameterized — the Sec3 top absorbs
+the Sec5 existential cutoffs into the constant; symbolic form of the `n₀^B` ladder head).
+
+**Open follow-ups (until the A/B operator ruling):**
+- Numeric-trap/mirror: reflect the lap-11 defs in `check_blueprint.py`'s symbolic ladder
+  (check18) so Lean defs and the Python trace can't drift.
+- Cutoff-chase transcription: derive `X` explicitly as a tower through the Sec5/Sec7
+  cutoffs (needed by BOTH options; pure transcription, not the banned Option-B re-proof).
+- STEP 3 remains STOPPED (`ROUTE-ESCALATION-2026-07-17.md`): do NOT edit the pin; do NOT
+  start `renewal_large_n_tight`.

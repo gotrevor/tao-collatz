@@ -1,3 +1,57 @@
+# HANDOFF — big-C campaign, lap 11 COMPLETE (STEP 2 TRANSCRIPTION COMPLETE, 2026-07-17)
+
+## State (branch `explicit-big-c`, all committed, build green)
+
+HEAD `6e7e627`. Full `lake build` green (3327 jobs) at every commit; differ
+`tools/tao_stmt_diff.py fabea6f HEAD` 35/35; `check_blueprint.py` 19/19. Still exactly
+1 real `sorry` (`Statement.lean:65`, the pin). Route status unchanged: STEP 3 STOPPED
+(operator ruling owed, `ROUTE-ESCALATION-2026-07-17.md`).
+
+## Lap 11 (6 commits) — **STEP-2 TRANSCRIPTION COMPLETE: spine fully constant-explicit**
+
+1. **`85c4ce9`** — (5.21) C9 chain: `C_mainZ := C_perNHarm + C_harmonicZ +
+   1000·(1+C_fpApprox)`; `C_approxToZ := (2/log(4/3)+6000)·C_perNTermEval + C_mainZ·6000`;
+   `C_windowStable := 2·C_approxToZ`. All three `_atC` + byte-identical delegates.
+2. **`c89cc1a`** — **Sec5 spine capstone**: `stabilization_atC`, `C_stab := C_valSumGeom +
+   4·C_fpApprox + 2·C_windowStable` (watched ∃-form delegates byte-identical).
+3. **`040fd20`** — Sec3 legs 1–3: `C_descStep := 2·C_stab`; base passthrough
+   `C_valSumGeom`; `C_descLadder := max C_valSumGeom C_descStep`.
+4. **`dad4885`** — Sec3 legs 4–5: `C_descWhp := C_descLadder·(1+(1−α^{−c_ladder})⁻¹)·α^c_ladder`;
+   `C_windowBad := 2·C_descWhp`.
+5. **`a6fd9f6`** — **the cutoff→constant absorption seam**: `C_syrSum (X : ℝ) :=
+   max (C_windowBad·α/(α−1)) (4·max 1 ((log X)^c_ladder))` — first CUTOFF-PARAMETERIZED
+   constant (the pin has no x₀, so the Sec3 top absorbs the Sec5 existential cutoffs into
+   the constant; this is the `n₀^B` head of the traced ladder, now symbolic).
+   `tao_syracuse_quantitative_sum_atC : ∃ X, ∀ N₀ x, … ≤ C_syrSum X · …`.
+6. **`6e7e627`** — spine top: `C_syrProb X := 8·C_syrSum X`, `C_spine X := 16·C_syrSum X`;
+   `tao_syracuse_quantitative_atC`, `tao_collatz_quantitative_spine_atC`.
+   `#print axioms` on both spine forms: `[propext, Classical.choice, Quot.sound]`
+   (believed clean, judge to verify).
+
+**Step-2 completion audit:** every ∃cC slot on the spine path has an `_atC` sibling
+(verified by name-sweep over FirstPassage/ApproxFormula/Stabilization/Sec3; Sec6/Sec7/
+Prob/Syracuse done laps 7–10). `valuation_tail` (Lemma 4.1) has NO consumers outside its
+file — off-path, left ∃-form. The Prob quarter/pascal bounds feed only LocalBound `_at`
+forms (done lap 7–8).
+
+**Discharge shape now:** exhibit the cutoff `X` (chases the existential cutoffs — top is
+`max xw (exp 1)` from `window_bad_sum_atC`) and prove `C_spine X ≤ CTao`. That is STEP 3,
+which remains **STOPPED** pending the operator ruling (Option A re-pin vs Option B
+`renewal_large_n_tight`). Both options consume exactly this symbolic surface.
+
+## Next (grind orders)
+
+- **Nothing left in step-2.** Until the operator rules on A/B: candidate useful work is
+  (i) numeric-trap extension: mirror the new lap-11 constant defs (`C_mainZ`…`C_spine`)
+  in `check_blueprint.py`'s symbolic ladder (check18) so the Lean defs and the Python
+  trace can't drift; (ii) tighten `STATUS.md`; (iii) if idle beyond that, pre-derive the
+  cutoff-chase (`X` as an explicit tower through the Sec5 cutoffs) — it is needed by BOTH
+  options and is pure transcription, not the banned Option-B re-proof.
+
+---
+
+# (lap 10 baton below)
+
 # HANDOFF — big-C campaign, lap 10 COMPLETE (C7 + C8 reified, 2026-07-17)
 
 ## State (branch `explicit-big-c`, all committed, build green)
