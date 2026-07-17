@@ -484,13 +484,30 @@ theorem descentProb_ladder :
   obtain ⟨C, x₀, hC, h⟩ := descentProb_ladder_explicit
   exact ⟨c_ladder, C, x₀, c_ladder_pos, hC, h⟩
 
-/-- Sibling of `descent_whp` with the `c`-slot pinned to `c_ladder` (passthrough); the
-original delegates here. -/
-theorem descent_whp_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+/-- The descent-whp constant: the ladder constant × the geometric-series closure
+`(1 + (1−α^{-c})⁻¹)` × the `log N₀ / α`-rescale `α^c` (big-C campaign, step 2). -/
+noncomputable def C_descWhp : ℝ :=
+  C_descLadder * (1 + (1 - alpha ^ (-c_ladder))⁻¹) * alpha ^ c_ladder
+
+theorem C_descWhp_pos : 0 < C_descWhp := by
+  have halpha1 : (1 : ℝ) < alpha := by norm_num [alpha]
+  have halpha0 : (0 : ℝ) < alpha := by linarith
+  have hr1 : alpha ^ (-c_ladder) < 1 :=
+    Real.rpow_lt_one_of_one_lt_of_neg halpha1 (neg_lt_zero.mpr c_ladder_pos)
+  exact mul_pos
+    (mul_pos C_descLadder_pos
+      (add_pos one_pos (inv_pos.mpr (by linarith))))
+    (Real.rpow_pos_of_pos halpha0 _)
+
+/-- Sibling of `descent_whp` with the `c`/`C` slots pinned at (`c_ladder`, `C_descWhp`)
+— the `_atC` form (big-C campaign, step 2), cutoff existential. -/
+theorem descent_whp_atC :
+    ∃ x₀ : ℝ, ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
       (N₀ : ℝ) ≤ x →
-      1 - C * (Real.log N₀) ^ (-c_ladder) ≤ descentProb ⌊x ^ (alpha⁻¹)⌋₊ x N₀ := by
-  obtain ⟨Cl, xl, hCl, hlad⟩ := descentProb_ladder_explicit
+      1 - C_descWhp * (Real.log N₀) ^ (-c_ladder) ≤ descentProb ⌊x ^ (alpha⁻¹)⌋₊ x N₀ := by
+  obtain ⟨xl, hlad⟩ := descentProb_ladder_atC
+  set Cl : ℝ := C_descLadder with hCldef
+  have hCl : 0 < Cl := C_descLadder_pos
   set c : ℝ := c_ladder with hcdef
   have hc : 0 < c := c_ladder_pos
   have halpha1 : (1 : ℝ) < alpha := by norm_num [alpha]
@@ -506,11 +523,8 @@ theorem descent_whp_explicit :
       _ ≤ Real.exp 1 := Real.exp_le_exp.mpr zero_le_one
       _ ≤ A := hAe
   have hA0 : (0 : ℝ) < A := lt_of_lt_of_le one_pos hA1
-  refine ⟨Cl * (1 + (1 - r)⁻¹) * alpha ^ c,
-    max (A ^ alpha) (Real.exp 1), ?_, fun N₀ x hx hN₀lb hN₀x => ?_⟩
-  · have h1r : (0 : ℝ) < (1 - r)⁻¹ := by positivity
-    have hac : (0 : ℝ) < alpha ^ c := Real.rpow_pos_of_pos halpha0 _
-    positivity
+  rw [show C_descWhp = Cl * (1 + (1 - r)⁻¹) * alpha ^ c from rfl]
+  refine ⟨max (A ^ alpha) (Real.exp 1), fun N₀ x hx hN₀lb hN₀x => ?_⟩
   -- basic sizes
   · have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
     have hx1 : (1 : ℝ) ≤ x := by
@@ -651,6 +665,15 @@ theorem descent_whp_explicit :
         _ = Cl * (1 + (1 - r)⁻¹) * alpha ^ c * Real.log N₀ ^ (-c) := by ring
     linarith [hlad']
 
+/-- Explicit-`c` form of descent-whp: delegates to `descent_whp_atC`
+(big-C campaign, step 2: `C := C_descWhp`). -/
+theorem descent_whp_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+      (N₀ : ℝ) ≤ x →
+      1 - C * (Real.log N₀) ^ (-c_ladder) ≤ descentProb ⌊x ^ (alpha⁻¹)⌋₊ x N₀ := by
+  obtain ⟨x₀, h⟩ := descent_whp_atC
+  exact ⟨C_descWhp, x₀, C_descWhp_pos, h⟩
+
 /-- **Window bad-mass** ((3.1), p.18): on any window `[x, x^α]` with `N₀ ≤ x`, the harmonic
 mass of `{Syrmin > N₀}` is `≪ log^{-c}N₀ · log x`. From `descent_whp` +
 `syrMin_le_of_descentEvent` + `logUnifOdd_expect_indicator` + `windowMass_le_half_log`. -/
@@ -661,15 +684,23 @@ theorem descent_whp :
   obtain ⟨C, x₀, hC, h⟩ := descent_whp_explicit
   exact ⟨c_ladder, C, x₀, c_ladder_pos, hC, h⟩
 
-/-- Sibling of `window_bad_sum` with the `c`-slot pinned to `c_ladder` (passthrough); the
-original delegates here. -/
-theorem window_bad_sum_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+/-- The window bad-mass constant: `2×` the descent-whp constant (one factor for the
+descent complement, one for the harmonic-mass comparison) (big-C campaign, step 2). -/
+noncomputable def C_windowBad : ℝ := 2 * C_descWhp
+
+theorem C_windowBad_pos : 0 < C_windowBad := mul_pos (by norm_num) C_descWhp_pos
+
+/-- Sibling of `window_bad_sum` with the `c`/`C` slots pinned at (`c_ladder`, `C_windowBad`)
+— the `_atC` form (big-C campaign, step 2), cutoff existential. -/
+theorem window_bad_sum_atC :
+    ∃ x₀ : ℝ, ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
       (N₀ : ℝ) ≤ x →
       ∑ N ∈ (logWindow x (x ^ alpha)).filter (· ∈ {N | N₀ < syrMin N}), (N : ℝ)⁻¹
-        ≤ C * (Real.log N₀) ^ (-c_ladder) * Real.log x := by
+        ≤ C_windowBad * (Real.log N₀) ^ (-c_ladder) * Real.log x := by
   classical
-  obtain ⟨C, x₀d, hC, hwhp⟩ := descent_whp_explicit
+  obtain ⟨x₀d, hwhp⟩ := descent_whp_atC
+  set C : ℝ := C_descWhp with hCdef
+  have hC : 0 < C := C_descWhp_pos
   set c : ℝ := c_ladder with hcdef
   have hc : 0 < c := c_ladder_pos
   obtain ⟨x₀z, hnonempty⟩ := logWindow_nonempty_of_large
@@ -678,7 +709,8 @@ theorem window_bad_sum_explicit :
   set M := max x₀z 1 with hMdef
   have hM1 : (1 : ℝ) ≤ M := le_max_right _ _
   have hM0 : (0 : ℝ) < M := lt_of_lt_of_le one_pos hM1
-  refine ⟨2 * C, max (max x₀d (M ^ alpha)) (Real.exp 1), by linarith,
+  rw [show C_windowBad = 2 * C from rfl]
+  refine ⟨max (max x₀d (M ^ alpha)) (Real.exp 1),
     fun N₀ x hx hN₀lb hN₀x => ?_⟩
   -- basic sizes
   have hxd : x₀d ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
@@ -772,6 +804,16 @@ theorem window_bad_sum_explicit :
         refine mul_le_mul_of_nonneg_left hmass_ub ?_
         positivity
     _ = 2 * C * (Real.log N₀) ^ (-c) * Real.log x := by ring
+
+/-- Explicit-`c` form of the window bad-mass: delegates to `window_bad_sum_atC`
+(big-C campaign, step 2: `C := C_windowBad`). -/
+theorem window_bad_sum_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+      (N₀ : ℝ) ≤ x →
+      ∑ N ∈ (logWindow x (x ^ alpha)).filter (· ∈ {N | N₀ < syrMin N}), (N : ℝ)⁻¹
+        ≤ C * (Real.log N₀) ^ (-c_ladder) * Real.log x := by
+  obtain ⟨x₀, h⟩ := window_bad_sum_atC
+  exact ⟨C_windowBad, x₀, C_windowBad_pos, h⟩
 
 /-- **Theorem 3.1, Syracuse sum form** (Tao 2019 p.16, first display):
 `∑_{N ∈ 2ℕ+1 ∩ [1,x], Syrmin(N) > N₀} 1/N ≪ log x / (log N₀)^c`. -/
