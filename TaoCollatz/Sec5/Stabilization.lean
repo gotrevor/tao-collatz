@@ -603,6 +603,9 @@ theorem cn_window_size {x : ℝ} (hx : Real.exp 1024 ≤ x) {k m : ℕ} (hk : k 
         _ ≤ Real.exp (2 * t) := Real.exp_le_exp.mpr hlog2
     rw [hhieq]; nlinarith [hlopos, hexp2]
 
+/-- The `cn_bound` cutoff, symbolic (big-C campaign, step 2); constant = numeral 4. -/
+noncomputable def X_cnBound : ℝ := Real.exp 1024
+
 /-- **Crude harmonic-weight bound** (`c_n(X) ≪ log^{0.7}x`) — the shared self-contained prerequisite of
 B1 and B2.  This is a *weakening* of Tao's Lemma 5.3 (`c_n ≪ 1`, which needs the delicate `c_{n,a}`
 split over `ℕ^{m₀}` with the extra CRT modulus `2^{a_{[1,m₀]}+1}`).  We only need the crude bound: the
@@ -613,13 +616,16 @@ This SUFFICES downstream because both consumers have adjustable/faster-decaying 
 **B1** pairs it with `approx_good_tuple_whp` (decay `log^{−1}x`, so `log^{0.7}·log^{−1} = log^{−0.3}`),
 **B2** pairs it with `fine_scale_mixing`'s `osc ≤ C·m₀^{−A}` for EVERY `A>0` (take `A>0.7`).
 **[Self-contained integral-test estimate; does NOT consume C10.  NOT Lemma 5.3 — a sufficient crude
-weakening.  Used as `sup_X c_n ≤ C·log^{0.7}x` by both B1 and B2.]** -/
-theorem cn_bound :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+weakening.  Used as `sup_X c_n ≤ C·log^{0.7}x` by both B1 and B2.]**
+
+`_at` sibling at (`4`, `X_cnBound := exp 1024`) (big-C campaign, step 2). -/
+theorem cn_bound_at :
+    ∀ x : ℝ, X_cnBound ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ C * (Real.log x) ^ (0.7 : ℝ) := by
-  refine ⟨4, Real.exp 1024, by norm_num, fun x hx E hE y hy n hn X => ?_⟩
+          ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ 4 * (Real.log x) ^ (0.7 : ℝ) := by
+  unfold X_cnBound
+  intro x hx E hE y hy n hn X
   classical
   have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos _) hx
   have hx1 : (1 : ℝ) < x := lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (1024 : ℝ)]) hx
@@ -720,12 +726,27 @@ theorem cn_bound :
 -- the `c_n` machinery (`cn_bound`, `cn_nonneg`, `harmZfine_eq_sum_cn`) it consumes.  See the
 -- `perNGoodMass` def + the two ribs `perNHarmonic_eq_sum_cn` / `syracZ_sub_perNGoodMass_bound`.
 
+/-- `cn_bound`, original `∃`-form: delegates to the `_at` sibling at
+(`4`, `X_cnBound`) (big-C campaign, step 2). -/
+theorem cn_bound :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ C * (Real.log x) ^ (0.7 : ℝ) :=
+  ⟨4, X_cnBound, by norm_num, cn_bound_at⟩
+
+/-- The `mZero_ge_lin` cutoff, symbolic (big-C campaign, step 2). -/
+noncomputable def X_mZeroLin : ℝ := Real.exp 200000
+
 /-- **Linear lower bound on `m₀`** — `m₀ = ⌊(α−1)/100·log x⌋ ≥ (1/200000)·log x` for `x ≥ exp(200000)`.
 Since `(α−1)/100 = 1/100000`, `m₀ > log x/100000 − 1 ≥ log x/200000` once `log x ≥ 200000`.  Used to
-turn `fine_scale_mixing`'s `m₀^{−A}` decay into `(log x)^{−A}` decay (B2's final log-arithmetic). -/
-theorem mZero_ge_lin :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → (1 / 200000 : ℝ) * Real.log x ≤ (mZero x : ℝ) := by
-  refine ⟨Real.exp 200000, Real.one_le_exp (by norm_num), fun x hx => ?_⟩
+turn `fine_scale_mixing`'s `m₀^{−A}` decay into `(log x)^{−A}` decay (B2's final log-arithmetic).
+
+`_at` sibling at `X_mZeroLin := exp 200000` (big-C campaign, step 2). -/
+theorem mZero_ge_lin_at :
+    ∀ x : ℝ, X_mZeroLin ≤ x → (1 / 200000 : ℝ) * Real.log x ≤ (mZero x : ℝ) := by
+  unfold X_mZeroLin
+  intro x hx
   have hL : (200000 : ℝ) ≤ Real.log x := by
     rw [← Real.log_exp 200000]; exact Real.log_le_log (Real.exp_pos _) hx
   have ha1 : (alpha - 1) / 100 = (1 : ℝ) / 100000 := by unfold alpha; norm_num
@@ -733,6 +754,12 @@ theorem mZero_ge_lin :
     unfold mZero; exact Nat.lt_floor_add_one _
   rw [ha1] at hlt
   linarith
+
+/-- `mZero_ge_lin`, original `∃`-form: delegates to the `_at` sibling at
+`X_mZeroLin` (big-C campaign, step 2). -/
+theorem mZero_ge_lin :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → (1 / 200000 : ℝ) * Real.log x ≤ (mZero x : ℝ) :=
+  ⟨X_mZeroLin, Real.one_le_exp (by norm_num), mZero_ge_lin_at⟩
 
 open Classical in
 /-- Each residue-class harmonic sum `∑_{M∈E', M≡X} 1/M` is summable: `E'` bounds `M` to the finite
@@ -2105,23 +2132,42 @@ noncomputable def c_mainZbridge : ℝ := 1
 
 theorem c_mainZbridge_pos : 0 < c_mainZbridge := by norm_num [c_mainZbridge]
 
-/-- Sibling of `harmZfine_to_mainZ` with the `c`-slot pinned to `c_mainZbridge`; the original
-delegates here. (Note: the `C` here consumes `fine_scale_mixing`, which stays existential —
-the `C`-side is out of scope for this campaign.) -/
-theorem harmZfine_to_mainZ_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The B2 bridge constant, symbolic (big-C campaign, step 2): `4·C_fineScale 1.7·
+(1/200000)^{-1.7}` (the `cn` arm, the C10 mixing constant at `A = 1.7`, and the
+`m₀ ≥ log x/200000` conversion). -/
+noncomputable def C_mainZbridge : ℝ :=
+  4 * C_fineScale 1.7 * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ))
+
+theorem C_mainZbridge_pos : 0 < C_mainZbridge := by
+  unfold C_mainZbridge
+  exact mul_pos (mul_pos (by norm_num) (C_fineScale_pos 1.7))
+    (Real.rpow_pos_of_pos (by norm_num) _)
+
+/-- The B2 bridge cutoff, symbolic (big-C campaign, step 2). -/
+noncomputable def X_mainZbridge : ℝ :=
+  max (Real.exp 200000) (max X_twoMZero (max X_mZeroLin X_cnBound))
+
+/-- Sibling of `harmZfine_to_mainZ` with the `c`-slot pinned to `c_mainZbridge` and the
+`C`/`x₀` slots at (`C_mainZbridge`, `X_mainZbridge`) — the `_at` form (big-C campaign, step 2). -/
+theorem harmZfine_to_mainZ_at :
+    ∀ x : ℝ, X_mainZbridge ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          |harmZfine x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c_mainZbridge) := by
-  obtain ⟨x1, _, htwo⟩ := two_mZero_le_of_mem_Iy
-  obtain ⟨x2, _, hmzlin⟩ := mZero_ge_lin
-  obtain ⟨Cfsm, hCfsm, hfsm⟩ := fine_scale_mixing 1.7 (by norm_num)
-  obtain ⟨Ccn, xcn, hCcnpos, hcnb⟩ := cn_bound
+          |harmZfine x E n - mainZ x E| ≤ C_mainZbridge * (Real.log x) ^ (-c_mainZbridge) := by
+  have htwo := two_mZero_le_of_mem_Iy_at
+  have hmzlin := mZero_ge_lin_at
+  have hCfsm : (0 : ℝ) < C_fineScale 1.7 := C_fineScale_pos 1.7
+  have hfsm := fine_scale_mixing_at 1.7 (by norm_num)
+  have hCcnpos : (0 : ℝ) < (4 : ℝ) := by norm_num
+  have hcnb := cn_bound_at
+  unfold C_mainZbridge X_mainZbridge
   rw [show c_mainZbridge = 1 from rfl]
-  refine ⟨Ccn * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ)),
-    max (Real.exp 200000) (max x1 (max x2 xcn)),
-    mul_pos (mul_pos hCcnpos hCfsm) (Real.rpow_pos_of_pos (by norm_num) _),
-    fun x hx E hE y hy n hn => ?_⟩
+  set Cfsm : ℝ := C_fineScale 1.7 with hCfsmdef
+  set Ccn : ℝ := (4 : ℝ) with hCcndef
+  set x1 : ℝ := X_twoMZero with hx1def
+  set x2 : ℝ := X_mZeroLin with hx2def
+  set xcn : ℝ := X_cnBound with hxcndef
+  intro x hx E hE y hy n hn
   have h200 : Real.exp 200000 ≤ x := le_trans (le_max_left _ _) hx
   have hrest : max x1 (max x2 xcn) ≤ x := le_trans (le_max_right _ _) hx
   have hxx1 : x1 ≤ x := le_trans (le_max_left _ _) hrest
@@ -2160,6 +2206,15 @@ theorem harmZfine_to_mainZ_explicit :
     _ = (Ccn * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ)))
           * (Real.log x ^ (0.7 : ℝ) * Real.log x ^ (-(1.7 : ℝ))) := by rw [hsplit]; ring
     _ = (Ccn * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ))) * Real.log x ^ (-(1 : ℝ)) := by rw [hcomb]
+
+/-- Sibling of `harmZfine_to_mainZ` with the `c`-slot pinned to `c_mainZbridge`,
+original `∃`-form: delegates to the `_at` sibling (big-C campaign, step 2). -/
+theorem harmZfine_to_mainZ_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |harmZfine x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c_mainZbridge) :=
+  ⟨C_mainZbridge, X_mainZbridge, C_mainZbridge_pos, harmZfine_to_mainZ_at⟩
 
 /-- **(5.20) harmonic → `Z` reduction** — sub-lemma B of `perNTerm_eval`, **the sole C10 consumer**.
 The window-free harmonic content agrees with Tao's `Z` (5.21) up to `O(log^{-c}x)`.  **PROVED** from the

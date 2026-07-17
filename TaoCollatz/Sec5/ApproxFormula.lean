@@ -2375,16 +2375,21 @@ theorem mZero_le_of_mem_Iy :
   have hnge : IyLo x y ≤ (n : ℝ) := (mem_Iy_bounds hn).1
   exact ⟨hm1, by exact_mod_cast le_trans hIyLo_ge hnge⟩
 
+/-- The `two_mZero_le_of_mem_Iy` cutoff, symbolic (big-C campaign, step 2). -/
+noncomputable def X_twoMZero : ℝ := Real.exp 100000
+
 /-- **Fine/coarse scale separation** — every `n ∈ I_y` satisfies `2·m₀ ≤ n`, hence `m₀ ≤ n − m₀`.
 This is exactly what lets `fine_scale_mixing` (Prop 1.14) be applied at the fine scale `n−m₀` with
 coarse scale `m₀ ≤ n−m₀` in the (5.20) `Z`-reduction: since `m₀ ≈ (α−1)/100·log x ≈ 10⁻⁵·log x` while
 `IyLo ≥ 3(α−1)·log x`, even `2m₀ ≤ IyLo ≤ n` with room to spare (`2·(α−1)/100 = (α−1)/50 ≤ 3(α−1)`).
-(Same pure interval idiom as `mZero_le_of_mem_Iy`, strengthened to the factor `2`.) -/
-theorem two_mZero_le_of_mem_Iy :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+(Same pure interval idiom as `mZero_le_of_mem_Iy`, strengthened to the factor `2`.)
+`_at` sibling at `X_twoMZero` (big-C campaign, step 2). -/
+theorem two_mZero_le_of_mem_Iy_at :
+    ∀ x : ℝ, X_twoMZero ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
         2 * mZero x ≤ n := by
-  refine ⟨Real.exp 100000, Real.one_le_exp (by norm_num), fun x hx y hy n hn => ?_⟩
+  unfold X_twoMZero
+  intro x hx y hy n hn
   have hxe : Real.exp 100000 ≤ x := hx
   have hx1 : (1 : ℝ) < x := lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (100000 : ℝ)]) hxe
   have hxpos : 0 < x := by linarith
@@ -2429,6 +2434,14 @@ theorem two_mZero_le_of_mem_Iy :
   exact_mod_cast le_trans hIyLo_ge hnge
 
 open Classical in
+/-- `two_mZero_le_of_mem_Iy`, original `∃`-form: delegates to the `_at` sibling at
+`X_twoMZero` (big-C campaign, step 2). -/
+theorem two_mZero_le_of_mem_Iy :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+        2 * mZero x ≤ n :=
+  ⟨X_twoMZero, Real.one_le_exp (by norm_num), two_mZero_le_of_mem_Iy_at⟩
+
 /-- Step-back pow split: `(3/4)^{n−m} = (4/3)^m · (3/4)^n` for `m ≤ n` (real, `(4/3)=(3/4)⁻¹`). -/
 theorem pow_stepback_eq {m n : ℕ} (h : m ≤ n) :
     (3 / 4 : ℝ) ^ (n - m) = (4 / 3) ^ m * (3 / 4) ^ n := by
