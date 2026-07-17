@@ -2572,19 +2572,25 @@ geometrically summable at rate `c/2` (`hasSum_int_shift_exp`); the column
 factor sums to `K·√(1+s)` by `sum_range_Gweight_le`, cancelling the envelope's
 `1/√(1+s)`. Stated in `ℝ≥0∞` so the `fpDistPlus` glue needs no summability
 side conditions. -/
-theorem fpDist_height_tail :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s : ℕ, ∀ y : ℝ, 0 ≤ y →
+theorem fpDist_height_tail_core (cL CL K : ℝ) (hcL : 0 < cL) (hCL : 0 < CL) (hK : 0 < K)
+    (hbd : ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+      (fpDist s (j, l)).toReal
+        ≤ CL * (Real.exp (-cL * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+            * Gweight (1 + s) (cL * ((j : ℝ) - s / 4)))
+    (hrow : ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ N : ℕ,
+      ∑ j ∈ Finset.range N, Gweight t (cL * ((j : ℝ) - μ)) ≤ K * Real.sqrt t) :
+    ∀ s : ℕ, ∀ y : ℝ, 0 ≤ y →
       ∑' e : ℕ × ℤ, (if (s : ℝ) + y ≤ (e.2 : ℝ) then fpDist s e else 0)
-        ≤ ENNReal.ofReal (C * Real.exp (-c * y)) := by
-  obtain ⟨cL, hcL, CL, hCL, hbd⟩ := fpDist_location_bound
-  obtain ⟨K, hK, hrow⟩ := sum_range_Gweight_le hcL
+        ≤ ENNReal.ofReal
+            (CL * K * (Real.exp (-(cL / 2)) / (1 - Real.exp (-(cL / 2))))
+              * Real.exp (-(cL / 2) * y)) := by
   have hc2 : (0 : ℝ) < cL / 2 := by positivity
   have he1 : Real.exp (-(cL / 2)) < 1 := by rw [Real.exp_lt_one_iff]; linarith
   have hgd : (0 : ℝ) < 1 - Real.exp (-(cL / 2)) := by
     linarith [Real.exp_pos (-(cL / 2))]
   set geo : ℝ := Real.exp (-(cL / 2)) / (1 - Real.exp (-(cL / 2))) with hgeo
   have hgeo0 : 0 < geo := div_pos (Real.exp_pos _) hgd
-  refine ⟨cL / 2, hc2, CL * K * geo, by positivity, fun s y hy => ?_⟩
+  intro s y hy
   have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
   have hsq : (0 : ℝ) < Real.sqrt (1 + (s : ℝ)) := Real.sqrt_pos.mpr h1s
   set A : ℕ → ℝ := fun j =>
@@ -2707,6 +2713,56 @@ theorem fpDist_height_tail :
         congr 1
         ring
 
+/-- The decay rate of `fpDist_height_tail`, symbolic (big-C campaign, step 2):
+`c_fpLocation / 2`. -/
+noncomputable def c_fpHeight : ℝ := c_fpLocation / 2
+
+/-- The constant of `fpDist_height_tail`, symbolic (big-C campaign, step 2):
+`CL·K·e^{−cL/2}/(1−e^{−cL/2})` at `cL = c_fpLocation`, `CL = C_fpLocation`,
+`K = K_rowG c_fpLocation`. -/
+noncomputable def C_fpHeight : ℝ :=
+  C_fpLocation * K_rowG c_fpLocation
+    * (Real.exp (-(c_fpLocation / 2)) / (1 - Real.exp (-(c_fpLocation / 2))))
+
+theorem c_fpHeight_pos : 0 < c_fpHeight := by
+  unfold c_fpHeight
+  exact div_pos c_fpLocation_pos two_pos
+
+theorem C_fpHeight_pos : 0 < C_fpHeight := by
+  have hc := c_fpLocation_pos
+  have he1 : Real.exp (-(c_fpLocation / 2)) < 1 := by
+    rw [Real.exp_lt_one_iff]; linarith
+  unfold C_fpHeight
+  exact mul_pos (mul_pos C_fpLocation_pos (K_rowG_pos hc))
+    (div_pos (Real.exp_pos _) (by linarith))
+
+/-- `fpDist_height_tail`, `_explicitC` sibling: `fpDist_height_tail_core` at
+(`c_fpLocation`, `C_fpLocation`, `K_rowG c_fpLocation`), folded into
+`c_fpHeight`/`C_fpHeight`. -/
+theorem fpDist_height_tail_explicitC :
+    ∀ s : ℕ, ∀ y : ℝ, 0 ≤ y →
+      ∑' e : ℕ × ℤ, (if (s : ℝ) + y ≤ (e.2 : ℝ) then fpDist s e else 0)
+        ≤ ENNReal.ofReal (C_fpHeight * Real.exp (-c_fpHeight * y)) := by
+  have h := fpDist_height_tail_core c_fpLocation C_fpLocation (K_rowG c_fpLocation)
+    c_fpLocation_pos C_fpLocation_pos (K_rowG_pos c_fpLocation_pos)
+    fpDist_location_bound_explicitC
+    (sum_range_Gweight_le_explicitC c_fpLocation_pos)
+  intro s y hy
+  have hs := h s y hy
+  unfold C_fpHeight c_fpHeight
+  exact hs
+
+/-- **First-passage height tail** (step (ii) of the (7.61) plan, ℝ≥0∞ form):
+`P(f.2 ≥ s + y) ≤ C·e^{−cy}` for the first-passage endpoint `f ~ fpDist s`,
+uniformly in `s`. See `fpDist_height_tail_core` for the proof narrative.
+Original `∃`-form: delegates to the `_explicitC` sibling at
+`c_fpHeight`/`C_fpHeight`. -/
+theorem fpDist_height_tail :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s : ℕ, ∀ y : ℝ, 0 ≤ y →
+      ∑' e : ℕ × ℤ, (if (s : ℝ) + y ≤ (e.2 : ℝ) then fpDist s e else 0)
+        ≤ ENNReal.ofReal (C * Real.exp (-c * y)) :=
+  ⟨c_fpHeight, c_fpHeight_pos, C_fpHeight, C_fpHeight_pos, fpDist_height_tail_explicitC⟩
+
 /-- The X6 height envelope supplies one absolute integer overshoot radius with
 failure mass at most `1/16`, uniformly in the first-passage budget.  Keeping
 the radius existential is faithful to (7.50): the paper chooses its `O(1)`
@@ -2787,17 +2843,19 @@ and the statement was false as first pinned). Glue: the tail event of the
 convolution is split pointwise, `1_{s+H ≤ f.2+w.2} ≤ 1_{s+H/2 ≤ f.2} + 1_{H/2 ≤ w.2}`,
 in `ℝ≥0∞` (no summability side conditions); the two pieces are
 `fpDist_height_tail` and `holdSum_height_tail` at `y = H/2`. -/
-theorem fpDistPlus_height_tail :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s p : ℕ, ∀ H : ℝ,
+theorem fpDistPlus_height_tail_core (cB CB : ℝ) (hcB : 0 < cB) (hCB : 0 < CB)
+    (hfp : ∀ s : ℕ, ∀ y : ℝ, 0 ≤ y →
+      ∑' e : ℕ × ℤ, (if (s : ℝ) + y ≤ (e.2 : ℝ) then fpDist s e else 0)
+        ≤ ENNReal.ofReal (CB * Real.exp (-cB * y))) :
+    ∀ s p : ℕ, ∀ H : ℝ,
       50 * (1 + (p : ℝ)) ≤ H →
       ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
           * Set.indicator {q : ℕ × ℤ | (s : ℝ) + H ≤ (q.2 : ℝ)} 1 e
-        ≤ C * Real.exp (-c * H) := by
+        ≤ (CB + 1) * Real.exp (-min (cB / 2) (1 / 6250) * H) := by
   classical
-  obtain ⟨cB, hcB, CB, hCB, hfp⟩ := fpDist_height_tail
   set cst : ℝ := min (cB / 2) (1 / 6250) with hcst
   have hcst0 : 0 < cst := lt_min (by positivity) (by norm_num)
-  refine ⟨cst, hcst0, CB + 1, by positivity, fun s p H hH => ?_⟩
+  intro s p H hH
   have hp0 : (0 : ℝ) ≤ (p : ℝ) := Nat.cast_nonneg p
   have hH0 : (0 : ℝ) < H := lt_of_lt_of_le (by positivity) hH
   set T : ℝ≥0∞ :=
@@ -2950,6 +3008,51 @@ theorem fpDistPlus_height_tail :
     _ ≤ ENNReal.ofReal ((CB + 1) * Real.exp (-cst * H)) := by
         rw [← ENNReal.ofReal_add (by positivity) (Real.exp_pos _).le]
         exact ENNReal.ofReal_le_ofReal hreal
+
+/-- The decay rate of `fpDistPlus_height_tail`, symbolic (big-C campaign, step 2):
+`min(c_fpHeight/2, 1/6250)`. -/
+noncomputable def c_fpHeightTail : ℝ := min (c_fpHeight / 2) (1 / 6250)
+
+/-- The constant of `fpDistPlus_height_tail`, symbolic (big-C campaign, step 2):
+`C_fpHeight + 1`. -/
+noncomputable def C_fpHeightTail : ℝ := C_fpHeight + 1
+
+theorem c_fpHeightTail_pos : 0 < c_fpHeightTail := by
+  unfold c_fpHeightTail
+  exact lt_min (div_pos c_fpHeight_pos two_pos) (by norm_num)
+
+theorem C_fpHeightTail_pos : 0 < C_fpHeightTail := by
+  unfold C_fpHeightTail
+  linarith [C_fpHeight_pos]
+
+/-- `fpDistPlus_height_tail`, `_explicitC` sibling: `fpDistPlus_height_tail_core`
+at (`c_fpHeight`, `C_fpHeight`), folded into `c_fpHeightTail`/`C_fpHeightTail`. -/
+theorem fpDistPlus_height_tail_explicitC :
+    ∀ s p : ℕ, ∀ H : ℝ,
+      50 * (1 + (p : ℝ)) ≤ H →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | (s : ℝ) + H ≤ (q.2 : ℝ)} 1 e
+        ≤ C_fpHeightTail * Real.exp (-c_fpHeightTail * H) := by
+  have h := fpDistPlus_height_tail_core c_fpHeight C_fpHeight
+    c_fpHeight_pos C_fpHeight_pos fpDist_height_tail_explicitC
+  intro s p H hH
+  have hs := h s p H hH
+  unfold C_fpHeightTail c_fpHeightTail
+  exact hs
+
+/-- **The (7.61) height tail of the `(k+p)`-step endpoint** (p.52, first two
+displays): `P(l + l_{[1,k+p]} ≥ l_Δ + H) ≪ exp(−cH)` once `H` clears the mean
+height drift of the walk. See `fpDistPlus_height_tail_core` for the proof
+narrative. Original `∃`-form: delegates to the `_explicitC` sibling at
+`c_fpHeightTail`/`C_fpHeightTail`. -/
+theorem fpDistPlus_height_tail :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s p : ℕ, ∀ H : ℝ,
+      50 * (1 + (p : ℝ)) ≤ H →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | (s : ℝ) + H ≤ (q.2 : ℝ)} 1 e
+        ≤ C * Real.exp (-c * H) :=
+  ⟨c_fpHeightTail, c_fpHeightTail_pos, C_fpHeightTail, C_fpHeightTail_pos,
+    fpDistPlus_height_tail_explicitC⟩
 
 /-- **First-passage column deviation** (the (7.61) column analogue of
 `fpDist_height_tail`, ℝ≥0∞ form): `P(|f.1 − s/4| ≥ D) ≤ C(e^{−cD²/(1+s)} + e^{−cD})`
