@@ -1181,3 +1181,9 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_affineReindex` + `first_passage_affine_reindex_atCX`; `_atC` delegates.
   Audit 16/38, next `first_passage_approx_atCX` (C8 capstone).
+
+### Successor lap 14 (2026-07-17) — PHASE 2 COMPLETE (13/13)
+
+- `X_fpApprox` + `first_passage_approx_atCX` — **C8 at its explicit cutoff**; `_atC`
+  delegates. The whole `ApproxFormula.lean` cutoff spine is now closed-form.
+  Audit 17/38, next `perNTerm_harmonic_approx_atCX` (phase 3, Stabilization.lean).
