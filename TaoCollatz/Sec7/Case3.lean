@@ -2514,20 +2514,107 @@ theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
         ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) :=
   ⟨T_colTail A P, col_tail_mass_le_at A hA P hP1⟩
 
-/-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first
-passage encounters at most `K := ⌈(A+3)·log10/ε³⌉` whites with probability `≤ 10^{−(A+2)}`.
-This is where the proved X11c machinery plugs in: `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
-(`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`), and
-`P(reach R ∧ Nw≤K) + P(E∗) ≤ 10^{−(A+2)}` via `reaches_fewWhite_mass_le_ten` +
-`estar_union_le ∘ bigTriangle_of_encounter`.
+/-- **(7.56) white-count threshold** `K = ⌈(A+3)·log10/epsBW³⌉₊` (big-C campaign, step 2). -/
+noncomputable def K_fewWhite (A : ℝ) : ℕ := ⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊
 
-**Route (PENDING decomp-3 finding): the base-4 lemmas are used at a SCALED `A' := κ·A`**
-(`4^{κA}=(4^κ)^A`, effective base `4^κ ≈ 10^6`) so `P(E∗) ≤ 10^{−(A+3)}`, and
-`reaches_fewWhite_mass_le_ten` is applied at `A+2` giving `10^{−(A+3)}`; no reproving. Shared
-gate `g` obtained from `reaches_fewWhite_mass_le_ten` and passed into the geometry lemma. -/
-theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
-    ∃ P : ℕ, 1 ≤ P ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
-      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+/-- **(7.56) reach horizon** `R = ⌈((K+1)+(A+5)·log10+2)/eps0_manyTri⌉₊`
+(big-C campaign, step 2). -/
+noncomputable def R_fewWhite (A : ℝ) : ℕ :=
+  ⌈(((K_fewWhite A : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / eps0_manyTri⌉₊
+
+/-- **(7.56) walk horizon** `P = encWindowIter (2A+A0_fewEstar) (K+1) R`
+(big-C campaign, step 2). -/
+noncomputable def P_fewWhite (A : ℝ) : ℕ :=
+  encWindowIter (2 * A + A0_fewEstar) (K_fewWhite A + 1) (R_fewWhite A)
+
+/-- **(7.56) big-triangle size envelope** `B = 4^{2A+A0_fewEstar}·(1+P)³`
+(big-C campaign, step 2). -/
+noncomputable def B_fewWhite (A : ℝ) : ℝ :=
+  (4 : ℝ) ^ (2 * A + A0_fewEstar) * (1 + (P_fewWhite A : ℝ)) ^ 3
+
+/-- **(7.56) combined threshold** (big-C campaign, step 2): the explicit witness of the
+`∃ Cthr` in `few_white_mass_le` — E∗ arm `10^30`, bad-column arm `T_colTail`, shared gate
+arm `10·g_manyTri`, E∗-regularity arm `⌈B^{2.5}⌉₊`, bad-column numeric arm
+`⌈10·500^{1/A}⌉₊`. -/
+noncomputable def Cthr_fewWhite (A : ℝ) : ℕ :=
+  max (max (10 ^ 30) (T_colTail A (P_fewWhite A)))
+    (max (10 * g_manyTri) (max ⌈B_fewWhite A ^ (2.5 : ℝ)⌉₊ ⌈10 * (500 : ℝ) ^ (1 / A)⌉₊))
+
+theorem one_le_R_fewWhite (A : ℝ) (hA : 0 < A) : 1 ≤ R_fewWhite A := by
+  have hlog10 : (0 : ℝ) < Real.log 10 := Real.log_pos (by norm_num)
+  have hnum : (0 : ℝ) < ((K_fewWhite A : ℝ) + 1) + (A + 5) * Real.log 10 + 2 := by
+    have h1 : (0 : ℝ) < (A + 5) * Real.log 10 := mul_pos (by linarith) hlog10
+    have hKnn : (0 : ℝ) ≤ (K_fewWhite A : ℝ) := Nat.cast_nonneg _
+    linarith
+  unfold R_fewWhite
+  exact Nat.ceil_pos.mpr (div_pos hnum eps0_manyTri_pos)
+
+theorem one_le_P_fewWhite (A : ℝ) (hA : 0 < A) : 1 ≤ P_fewWhite A := by
+  have h1 : (1 : ℕ) ≤ encWindowIter (2 * A + A0_fewEstar) (K_fewWhite A + 1) 1 := by
+    rw [encWindowIter_succ]
+    have h0 : encWindowIter (2 * A + A0_fewEstar) (K_fewWhite A + 1) 0 = 0 := rfl
+    omega
+  exact le_trans h1 (encWindowIter_mono (2 * A + A0_fewEstar) (K_fewWhite A + 1)
+    (one_le_R_fewWhite A hA))
+
+/-- The reach-`R` budget inequality at the explicit horizon `R_fewWhite`. -/
+theorem R_fewWhite_bound (A : ℝ) :
+    ((K_fewWhite A : ℝ) + 1) + (A + 5) * Real.log 10 + 2
+      ≤ eps0_manyTri * (R_fewWhite A : ℝ) := by
+  have hce : (((K_fewWhite A : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / eps0_manyTri
+      ≤ ((R_fewWhite A : ℕ) : ℝ) := by
+    unfold R_fewWhite
+    exact Nat.le_ceil _
+  rw [div_le_iff₀ eps0_manyTri_pos] at hce
+  linarith
+
+/-- `few_white_mass_le`, `_core` rail (big-C campaign, step 2): the (7.56) three-term
+assembly with the constants `A', ε₀, g, K, R, P, B` and the E∗/bad-column thresholds
+`Cthr_e, Cthr_c` ∀-bound, the three proved mass terms supplied as hypotheses, and the
+combined threshold explicit in the statement. Body verbatim from the original proof. -/
+theorem few_white_mass_le_core (A : ℝ) (hA : 0 < A)
+    (A' : ℝ) (hA'1 : 1 ≤ A') (ε₀ : ℝ) (_hε₀pos : 0 < ε₀) (g : ℕ) (Cthr_e : ℕ)
+    (hestar : ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_e ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      ∀ P : ℕ, (∀ p, p ≤ P →
+          ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          (∑ p ∈ Finset.range (P + 1),
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+              (1 : ℕ × ℤ → ℝ≥0∞)
+              (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)))
+    (hreach : ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ (m : ℕ) (l : ℤ) (R : ℕ), 1 ≤ R → ∀ (K P : ℕ),
+      ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ ε₀ * R → ∀ s : ℕ,
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
+                (encInit (n / 2 - m + e.1) (l + e.2))).count
+              ∧ ((List.ofFn v).foldl (encStep F R g)
+                (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)))
+    (K R : ℕ) (hR1 : 1 ≤ R)
+    (hRbound : ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ ε₀ * (R : ℝ))
+    (P : ℕ) (hP1 : 1 ≤ P) (hPeq : encWindowIter A' (K + 1) R ≤ P)
+    (Cthr_c : ℕ)
+    (hcol : ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_c ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2))
+    (B : ℝ) (hBdef : B = (4 : ℝ) ^ A' * (1 + (P : ℝ)) ^ 3) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, max (max Cthr_e Cthr_c) (max (10 * g) (max ⌈B ^ (2.5 : ℝ)⌉₊
+        ⌈10 * (500 : ℝ) ^ (1 / A)⌉₊)) ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
@@ -2536,37 +2623,11 @@ theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
           ENNReal.ofReal (if (∑ p ∈ Finset.range P,
                 Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
                   (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
-              ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+              ≤ ((K : ℕ) : ℝ)
             then (1 : ℝ) else 0))
         ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) := by
   classical
-  -- the three proved terms of the pointwise split (7.56): E∗, reach-R, bad-column.
-  obtain ⟨A', hA'1, Cthr_e, hestar⟩ := few_white_estar_mass_le A hA
-  obtain ⟨ε₀, hε₀pos, g, hreach⟩ := few_white_reach_mass_le A
-  have hlog10 : (0 : ℝ) < Real.log 10 := Real.log_pos (by norm_num)
-  -- the goal threshold `K`, the horizon `R`, `P`, all functions of `A` (chosen before `∀ n ξ`).
-  set K : ℕ := ⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ with hKdef
-  set R : ℕ := ⌈(((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / ε₀⌉₊ with hRdef
-  have hRnum_pos : (0 : ℝ) < ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 := by
-    have : (0 : ℝ) < (A + 5) * Real.log 10 := mul_pos (by linarith) hlog10
-    have hKnn : (0 : ℝ) ≤ (K : ℝ) := Nat.cast_nonneg K
-    linarith
-  have hR1 : 1 ≤ R := by
-    rw [hRdef]; exact Nat.ceil_pos.mpr (div_pos hRnum_pos hε₀pos)
-  set P : ℕ := encWindowIter A' (K + 1) R with hPdef
-  have hP1 : 1 ≤ P := by
-    rw [hPdef]
-    have h1 : (1 : ℕ) ≤ encWindowIter A' (K + 1) 1 := by
-      rw [encWindowIter_succ]
-      have : encWindowIter A' (K + 1) 0 = 0 := rfl
-      omega
-    exact le_trans h1 (encWindowIter_mono A' (K + 1) hR1)
-  have hPeq : encWindowIter A' (K + 1) R ≤ P := le_of_eq hPdef.symm
-  obtain ⟨Cthr_c, hcol⟩ := col_tail_mass_le A hA P hP1
-  set B : ℝ := (4 : ℝ) ^ A' * (1 + (P : ℝ)) ^ 3 with hBdef
   have hBnn : (0 : ℝ) ≤ B := by rw [hBdef]; positivity
-  refine ⟨P, hP1, max (max Cthr_e Cthr_c) (max (10 * g) (max ⌈B ^ (2.5 : ℝ)⌉₊
-    ⌈10 * (500 : ℝ) ^ (1 / A)⌉₊)), ?_⟩
   intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
   -- extract the five threshold facts from `Cthr ≤ m`.
   have hmCe : Cthr_e ≤ m := by omega
@@ -2579,11 +2640,6 @@ theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
     have : (10 * g : ℕ) ≤ (m : ℕ) := hm10g
     have hcast : (10 : ℝ) * (g : ℝ) ≤ (m : ℝ) := by exact_mod_cast this
     linarith
-  -- the reach-`R` R-bound hypothesis.
-  have hRbound : ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ ε₀ * (R : ℝ) := by
-    have hce : (((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / ε₀ ≤ (R : ℝ) := by
-      rw [hRdef]; exact Nat.le_ceil _
-    rw [div_le_iff₀ hε₀pos] at hce; linarith
   -- the E∗ regularity hyp `⌊4^{A'}(1+p)³⌋₊ ≤ (m+1)^0.4` for all `p ≤ P`.
   have hreg : ∀ p, p ≤ P →
       ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ) := by
@@ -2707,6 +2763,68 @@ theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
         rw [← ENNReal.ofReal_add (by positivity) (by positivity),
           ← ENNReal.ofReal_add (by positivity) (by positivity)]
     _ ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) := ENNReal.ofReal_le_ofReal hnum3
+
+/-- `few_white_mass_le`, `_at` sibling (big-C campaign, step 2): the core at the explicit
+constants — `A' = 2A + A0_fewEstar`, gate `eps0_manyTri`/`g_manyTri`, E∗ threshold `10^30`,
+horizons `K_fewWhite`/`R_fewWhite`/`P_fewWhite`, bad-column threshold
+`T_colTail A (P_fewWhite A)`, envelope `B_fewWhite`, combined threshold `Cthr_fewWhite A`. -/
+theorem few_white_mass_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_fewWhite A ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin (P_fewWhite A) → ℕ × ℤ,
+          hold.iid (P_fewWhite A) v *
+          ENNReal.ofReal (if (∑ p ∈ Finset.range (P_fewWhite A),
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+              ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) := by
+  have hA'1 : (1 : ℝ) ≤ 2 * A + A0_fewEstar := by
+    have h1 : (1 : ℝ) ≤ A0_fewEstar :=
+      (estar_scaled_numeric_at C_estarUnion c_estarUnion A0_estarUnion
+        C_estarUnion_pos c_estarUnion_pos one_le_A0_estarUnion).2.1
+    linarith [hA]
+  have h := few_white_mass_le_core A hA (2 * A + A0_fewEstar) hA'1
+    eps0_manyTri eps0_manyTri_pos g_manyTri
+    (10 ^ 30) (few_white_estar_mass_le_at A hA) (few_white_reach_mass_le_at A)
+    (K_fewWhite A) (R_fewWhite A) (one_le_R_fewWhite A hA) (R_fewWhite_bound A)
+    (P_fewWhite A) (one_le_P_fewWhite A hA) (le_of_eq rfl)
+    (T_colTail A (P_fewWhite A))
+    (col_tail_mass_le_at A hA (P_fewWhite A) (one_le_P_fewWhite A hA))
+    (B_fewWhite A) rfl
+  unfold Cthr_fewWhite
+  exact h
+
+/-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first
+passage encounters at most `K := ⌈(A+3)·log10/ε³⌉` whites with probability `≤ 10^{−(A+2)}`.
+This is where the proved X11c machinery plugs in: `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
+(`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`), and
+`P(reach R ∧ Nw≤K) + P(E∗) ≤ 10^{−(A+2)}` via `reaches_fewWhite_mass_le_ten` +
+`estar_union_le ∘ bigTriangle_of_encounter`.
+
+**Route (PENDING decomp-3 finding): the base-4 lemmas are used at a SCALED `A' := κ·A`**
+(`4^{κA}=(4^κ)^A`, effective base `4^κ ≈ 10^6`) so `P(E∗) ≤ 10^{−(A+3)}`, and
+`reaches_fewWhite_mass_le_ten` is applied at `A+2` giving `10^{−(A+3)}`; no reproving. Shared
+gate `g` obtained from `reaches_fewWhite_mass_le_ten` and passed into the geometry lemma. -/
+theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
+    ∃ P : ℕ, 1 ≤ P ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (∑ p ∈ Finset.range P,
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+              ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) :=
+  ⟨P_fewWhite A, one_le_P_fewWhite A hA, Cthr_fewWhite A, few_white_mass_le_at A hA⟩
 
 /-- **(7.55) — the pure damping expectation.** After the (7.54) column split it suffices to
 bound `E[exp(−ε³Nw)] ≤ 10^{−A−1}`. Proved here from `few_white_mass_le` (7.56) by the paper's
