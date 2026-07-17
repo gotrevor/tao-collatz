@@ -1226,3 +1226,8 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_perNTermEval := max (max X_perNHarm X_harmonicZ) (exp 1)` + `perNTerm_eval_atCX`;
   `_atC` delegates. Audit 24/38, next `Iy_count_ratio_atCX`.
+
+### Successor lap 22 (2026-07-17) — phase 3 entry 8/11
+
+- `X_IyRatio := max X_IyCard (exp(2000⁵))` + `Iy_count_ratio_atCX`; `_atC` delegates.
+  Audit 25/38, next `approxMainTerm_to_Z_atCX`.

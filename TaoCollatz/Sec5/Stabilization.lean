@@ -3046,16 +3046,21 @@ theorem c_IyRatio_pos : 0 < c_IyRatio := by norm_num [c_IyRatio]
 /-- **Interval count (5.9).**  `#I_y = (1+O(log^{-c}x))·(α−1)/log(4/3)·log y`, rendered as the ratio to
 the harmonic normaliser: `#I_y / (((α−1)/2)·log y) = 2/log(4/3) + O(log^{-c}x)`.  This is the pure
 lattice-point count `#{n∈[IyLo,IyHi]}` = interval length `+ O(1)` (via `IyHi−IyLo = (α−1)log y/log(4/3)
-− 2log^{0.8}x`), whose ratio telescopes the window into the **y-free** `2/log(4/3)`. -/
-theorem Iy_count_ratio_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+− 2log^{0.8}x`), whose ratio telescopes the window into the **y-free** `2/log(4/3)`.
+X-chase cutoff: the witness max-tree copied verbatim, `xB := X_IyCard`. -/
+noncomputable def X_IyRatio : ℝ := max X_IyCard (Real.exp ((2000 : ℝ) ^ (5 : ℕ)))
+
+/-- (5.9) count ratio at the explicit cutoff `X_IyRatio` (X-chase). -/
+theorem Iy_count_ratio_atCX :
+    ∀ x : ℝ, X_IyRatio ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         |((Iy x y).card : ℝ) / ((alpha - 1) / 2 * Real.log y) - 2 / Real.log (4 / 3)|
           ≤ 6000 * (Real.log x) ^ (-c_IyRatio) := by
-  obtain ⟨xB, hB⟩ := Iy_card_bracket
+  have hB := Iy_card_bracket_atX
+  set xB : ℝ := X_IyCard with hxBdef
   rw [show c_IyRatio = 0.2 from rfl]
-  refine ⟨max xB (Real.exp ((2000 : ℝ) ^ (5 : ℕ))),
-    fun x hx y hy => ?_⟩
+  rw [show X_IyRatio = max xB (Real.exp ((2000 : ℝ) ^ (5 : ℕ))) from rfl]
+  intro x hx y hy
   have hxB : xB ≤ x := le_trans (le_max_left _ _) hx
   have hxe : Real.exp ((2000 : ℝ) ^ (5 : ℕ)) ≤ x := le_trans (le_max_right _ _) hx
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hxe
@@ -3115,6 +3120,15 @@ theorem Iy_count_ratio_atC :
         have halpha : alpha - 1 = 0.001 := by norm_num [alpha]
         rw [halpha]
         nlinarith [hvL, hu1, hvpos.le, hLpos.le]
+
+/-- The `_atC` form, cutoff existential.
+Delegates to `Iy_count_ratio_atCX` (X-chase: `x₀ := X_IyRatio`). -/
+theorem Iy_count_ratio_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        |((Iy x y).card : ℝ) / ((alpha - 1) / 2 * Real.log y) - 2 / Real.log (4 / 3)|
+          ≤ 6000 * (Real.log x) ^ (-c_IyRatio) :=
+  ⟨X_IyRatio, Iy_count_ratio_atCX⟩
 
 /-- Original explicit-`c` form of the (5.9) count ratio: delegates to `Iy_count_ratio_atC`
 (big-C campaign, step 2: `C := 6000`, cutoff existential via `Iy_card_bracket`). -/
