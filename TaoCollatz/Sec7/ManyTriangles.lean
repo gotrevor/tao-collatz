@@ -2395,20 +2395,32 @@ theorem many_triangles_white :
 /-! ### The (7.61) endpoint tails (X10, p.52): the `tsum_Gweight_row` engine,
 the first-passage height tail, and the `p`-step Chernoff tail -/
 
-/-- **`Gweight` row-sum engine** (step (i) of the (7.61) tail plan, lap 57/58):
-the X6 envelope `Gweight t (c(j − μ))` summed along a row of natural columns is
+/-- The `Gweight` row-sum constant, symbolic (big-C campaign, step 2):
+`K_rowG c = 10 + 2/(1-e^{-c}) + 4/c`, the witness of `sum_range_Gweight_le`. -/
+noncomputable def K_rowG (c : ℝ) : ℝ := 10 + 2 / (1 - Real.exp (-c)) + 4 / c
+
+theorem K_rowG_pos {c : ℝ} (hc : 0 < c) : 0 < K_rowG c := by
+  have he1 : Real.exp (-c) < 1 := by rw [Real.exp_lt_one_iff]; linarith
+  have hd : (0 : ℝ) < 1 - Real.exp (-c) := by linarith [Real.exp_pos (-c)]
+  unfold K_rowG
+  positivity
+
+/-- **`Gweight` row-sum engine**, `_explicitC` sibling at `K_rowG c`
+(step (i) of the (7.61) tail plan, lap 57/58): the X6 envelope
+`Gweight t (c(j − μ))` summed along a row of natural columns is
 `≤ K·√t`, uniformly in the (real) centre `μ` and the row length `N`. Double
 cover: reduce the real centre to the integer `⌊μ⌋` at the cost of one unit
 shift (the `max (u−1) 0` inside the dominators), fold the two sides of the
 centre onto ℕ offsets (`sum_abs_int_le`), then `sum_range_exp_neg_sq_le`
 (Gaussian piece, `≍ √t/c` unit terms) + `sum_range_geom_le` (exponential
 piece). Uniformity in `N` is what turns into the `tsum` bound downstream. -/
-theorem sum_range_Gweight_le {c : ℝ} (hc : 0 < c) :
-    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ N : ℕ,
-      ∑ j ∈ Finset.range N, Gweight t (c * ((j : ℝ) - μ)) ≤ K * Real.sqrt t := by
+theorem sum_range_Gweight_le_explicitC {c : ℝ} (hc : 0 < c) :
+    ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ N : ℕ,
+      ∑ j ∈ Finset.range N, Gweight t (c * ((j : ℝ) - μ)) ≤ K_rowG c * Real.sqrt t := by
   have he1 : Real.exp (-c) < 1 := by rw [Real.exp_lt_one_iff]; linarith
   have hd : (0 : ℝ) < 1 - Real.exp (-c) := by linarith [Real.exp_pos (-c)]
-  refine ⟨10 + 2 / (1 - Real.exp (-c)) + 4 / c, by positivity, fun t ht μ N => ?_⟩
+  unfold K_rowG
+  intro t ht μ N
   have ht0 : (0 : ℝ) < t := lt_of_lt_of_le one_pos ht
   set β : ℝ := c ^ 2 / t with hβdef
   have hβ0 : 0 < β := by positivity
@@ -2544,6 +2556,13 @@ theorem sum_range_Gweight_le {c : ℝ} (hc : 0 < c) :
     nlinarith
   rw [ha]
   linarith
+
+/-- `sum_range_Gweight_le`, original `∃`-form: delegates to the `_explicitC`
+sibling at `K_rowG c`. -/
+theorem sum_range_Gweight_le {c : ℝ} (hc : 0 < c) :
+    ∃ K > (0 : ℝ), ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ N : ℕ,
+      ∑ j ∈ Finset.range N, Gweight t (c * ((j : ℝ) - μ)) ≤ K * Real.sqrt t :=
+  ⟨K_rowG c, K_rowG_pos hc, sum_range_Gweight_le_explicitC hc⟩
 
 /-- **First-passage height tail** (step (ii) of the (7.61) plan, ℝ≥0∞ form):
 `P(f.2 ≥ s + y) ≤ C·e^{−cy}` for the first-passage endpoint `f ~ fpDist s`,
@@ -2939,21 +2958,30 @@ for the first-passage endpoint `f ~ fpDist s`. The X6 envelope's column factor
 `e^{−x²/t} ≤ e^{−(cD)²/(2t)}·e^{−(x/2)²/t}` and `e^{−|x|} ≤ e^{−cD/2}·e^{−|x/2|}`
 on `|x| ≥ cD` — leaving a `Gweight` at rate `c/2` which the row engine sums to
 `K√(1+s)`; the height factor sums geometrically. Both RHS shapes (Gaussian in
-`D²/(1+s)` and exponential in `D`) come from the two `Gweight` pieces. -/
-theorem fpDist_col_dev :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s : ℕ, ∀ D : ℝ, 0 ≤ D →
+`D²/(1+s)` and exponential in `D`) come from the two `Gweight` pieces.
+**Core, constants abstracted** (big-C campaign, step 2): given the location
+bound at `(cL, CL)` and the row engine at `(cL/2, K)`, the deviation bound
+holds at rate `min(cL²/2, cL/2)` and constant `CL·K·e^{−cL}/(1−e^{−cL})`. -/
+theorem fpDist_col_dev_core (cL CL K : ℝ) (hcL : 0 < cL) (hCL : 0 < CL) (hK : 0 < K)
+    (hbd : ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+      (fpDist s (j, l)).toReal
+        ≤ CL * (Real.exp (-cL * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+            * Gweight (1 + s) (cL * ((j : ℝ) - s / 4)))
+    (hrow : ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ N : ℕ,
+      ∑ j ∈ Finset.range N, Gweight t (cL / 2 * ((j : ℝ) - μ)) ≤ K * Real.sqrt t) :
+    ∀ s : ℕ, ∀ D : ℝ, 0 ≤ D →
       ∑' e : ℕ × ℤ, (if D ≤ |(e.1 : ℝ) - (s : ℝ) / 4| then fpDist s e else 0)
         ≤ ENNReal.ofReal
-            (C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D))) := by
-  obtain ⟨cL, hcL, CL, hCL, hbd⟩ := fpDist_location_bound
-  obtain ⟨K, hK, hrow⟩ := sum_range_Gweight_le (by positivity : (0:ℝ) < cL / 2)
+            (CL * K * (Real.exp (-cL) / (1 - Real.exp (-cL)))
+              * (Real.exp (-min (cL ^ 2 / 2) (cL / 2) * D ^ 2 / (1 + (s : ℝ)))
+               + Real.exp (-min (cL ^ 2 / 2) (cL / 2) * D))) := by
   have he1 : Real.exp (-cL) < 1 := by rw [Real.exp_lt_one_iff]; linarith
   have hgd : (0 : ℝ) < 1 - Real.exp (-cL) := by linarith [Real.exp_pos (-cL)]
   set geo : ℝ := Real.exp (-cL) / (1 - Real.exp (-cL)) with hgeo
   have hgeo0 : 0 < geo := div_pos (Real.exp_pos _) hgd
   set cc : ℝ := min (cL ^ 2 / 2) (cL / 2) with hcc
   have hcc0 : 0 < cc := lt_min (by positivity) (by positivity)
-  refine ⟨cc, hcc0, CL * K * geo, by positivity, fun s D hD => ?_⟩
+  intro s D hD
   have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
   have hsq : (0 : ℝ) < Real.sqrt (1 + (s : ℝ)) := Real.sqrt_pos.mpr h1s
   set t : ℝ := 1 + (s : ℝ) with ht
@@ -3118,6 +3146,61 @@ theorem fpDist_col_dev :
         exact ENNReal.ofReal_le_ofReal
           (mul_le_mul_of_nonneg_left hprefle (by positivity))
 
+/-- The decay rate of `fpDist_col_dev`, symbolic (big-C campaign, step 2):
+`min(cL²/2, cL/2)` at `cL = c_fpLocation`. -/
+noncomputable def c_fpColDev : ℝ := min (c_fpLocation ^ 2 / 2) (c_fpLocation / 2)
+
+/-- The constant of `fpDist_col_dev`, symbolic (big-C campaign, step 2):
+`CL·K·e^{−cL}/(1−e^{−cL})` at `cL = c_fpLocation`, `CL = C_fpLocation`,
+`K = K_rowG (c_fpLocation/2)`. -/
+noncomputable def C_fpColDev : ℝ :=
+  C_fpLocation * K_rowG (c_fpLocation / 2)
+    * (Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation)))
+
+theorem c_fpColDev_pos : 0 < c_fpColDev := by
+  have hc := c_fpLocation_pos
+  unfold c_fpColDev
+  exact lt_min (by positivity) (by positivity)
+
+theorem C_fpColDev_pos : 0 < C_fpColDev := by
+  have hc := c_fpLocation_pos
+  have he1 : Real.exp (-c_fpLocation) < 1 := by rw [Real.exp_lt_one_iff]; linarith
+  have hK := K_rowG_pos (c := c_fpLocation / 2) (by positivity)
+  unfold C_fpColDev
+  exact mul_pos (mul_pos C_fpLocation_pos hK)
+    (div_pos (Real.exp_pos _) (by linarith))
+
+/-- `fpDist_col_dev`, `_explicitC` sibling: `fpDist_col_dev_core` at
+(`c_fpLocation`, `C_fpLocation`, `K_rowG (c_fpLocation/2)`), folded into
+`c_fpColDev`/`C_fpColDev`. -/
+theorem fpDist_col_dev_explicitC :
+    ∀ s : ℕ, ∀ D : ℝ, 0 ≤ D →
+      ∑' e : ℕ × ℤ, (if D ≤ |(e.1 : ℝ) - (s : ℝ) / 4| then fpDist s e else 0)
+        ≤ ENNReal.ofReal
+            (C_fpColDev * (Real.exp (-c_fpColDev * D ^ 2 / (1 + (s : ℝ)))
+               + Real.exp (-c_fpColDev * D))) := by
+  have h := fpDist_col_dev_core c_fpLocation C_fpLocation (K_rowG (c_fpLocation / 2))
+    c_fpLocation_pos C_fpLocation_pos
+    (K_rowG_pos (div_pos c_fpLocation_pos two_pos))
+    fpDist_location_bound_explicitC
+    (sum_range_Gweight_le_explicitC (div_pos c_fpLocation_pos two_pos))
+  intro s D hD
+  have hs := h s D hD
+  unfold C_fpColDev c_fpColDev
+  exact hs
+
+/-- **First-passage column deviation** (the (7.61) column analogue of
+`fpDist_height_tail`, ℝ≥0∞ form): `P(|f.1 − s/4| ≥ D) ≤ C(e^{−cD²/(1+s)} + e^{−cD})`
+for the first-passage endpoint `f ~ fpDist s`. See `fpDist_col_dev_core` for the
+proof narrative. Original `∃`-form: delegates to the `_explicitC` sibling at
+`c_fpColDev`/`C_fpColDev`. -/
+theorem fpDist_col_dev :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s : ℕ, ∀ D : ℝ, 0 ≤ D →
+      ∑' e : ℕ × ℤ, (if D ≤ |(e.1 : ℝ) - (s : ℝ) / 4| then fpDist s e else 0)
+        ≤ ENNReal.ofReal
+            (C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D))) :=
+  ⟨c_fpColDev, c_fpColDev_pos, C_fpColDev, C_fpColDev_pos, fpDist_col_dev_explicitC⟩
+
 /-- **`p`-step column tail**: the `Hold` walk's column sum exceeds `y` with
 probability `≤ e^{5p/1000 − y/1000}` — Markov under the tilt `(1/1000, 0)`
 (`holdSum_halfspace_le`), quadratic MGF budget `p·(4/1000 + 1000/10⁶) = 5p/1000`.
@@ -3147,18 +3230,25 @@ arithmetic at the (7.61) assembly site.
 
 PROVED (lap 58; statement pinned lap 57): glue as in `fpDistPlus_height_tail` —
 pointwise `1_{2D ≤ |f.1+w.1−s/4|} ≤ 1_{D ≤ |f.1−s/4|} + 1_{D ≤ w.1}` in ℝ≥0∞;
-the pieces are `fpDist_col_dev` and `holdSum_col_tail` at `y = D`. -/
-theorem fpDistPlus_col_tail :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s p : ℕ, ∀ D : ℝ,
+the pieces are `fpDist_col_dev` and `holdSum_col_tail` at `y = D`.
+**Core, constants abstracted** (big-C campaign, step 2): given the column
+deviation bound at `(cd, Cd)`, the tail holds at rate `min(cd, 1/2000)` and
+constant `Cd + 1`. -/
+theorem fpDistPlus_col_tail_core (cd Cd : ℝ) (hcd : 0 < cd) (hCd : 0 < Cd)
+    (hfp : ∀ s : ℕ, ∀ D : ℝ, 0 ≤ D →
+      ∑' e : ℕ × ℤ, (if D ≤ |(e.1 : ℝ) - (s : ℝ) / 4| then fpDist s e else 0)
+        ≤ ENNReal.ofReal
+            (Cd * (Real.exp (-cd * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cd * D)))) :
+    ∀ s p : ℕ, ∀ D : ℝ,
       10 * (1 + (p : ℝ)) ≤ D →
       ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
           * Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 e
-        ≤ C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D)) := by
+        ≤ (Cd + 1) * (Real.exp (-min cd (1 / 2000) * D ^ 2 / (1 + (s : ℝ)))
+            + Real.exp (-min cd (1 / 2000) * D)) := by
   classical
-  obtain ⟨cd, hcd, Cd, hCd, hfp⟩ := fpDist_col_dev
   set cst : ℝ := min cd (1 / 2000) with hcst
   have hcst0 : 0 < cst := lt_min hcd (by norm_num)
-  refine ⟨cst, hcst0, Cd + 1, by positivity, fun s p D hD => ?_⟩
+  intro s p D hD
   have hp0 : (0 : ℝ) ≤ (p : ℝ) := Nat.cast_nonneg p
   have hD0 : (0 : ℝ) < D := lt_of_lt_of_le (by positivity) hD
   set T : ℝ≥0∞ :=
@@ -3351,6 +3441,52 @@ theorem fpDistPlus_col_tail :
           * (Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cst * D))) := by
         rw [← ENNReal.ofReal_add (by positivity) (Real.exp_pos _).le]
         exact ENNReal.ofReal_le_ofReal hreal
+
+/-- The decay rate of `fpDistPlus_col_tail`, symbolic (big-C campaign, step 2):
+`min(c_fpColDev, 1/2000)`. -/
+noncomputable def c_fpColTail : ℝ := min c_fpColDev (1 / 2000)
+
+/-- The constant of `fpDistPlus_col_tail`, symbolic (big-C campaign, step 2):
+`C_fpColDev + 1`. -/
+noncomputable def C_fpColTail : ℝ := C_fpColDev + 1
+
+theorem c_fpColTail_pos : 0 < c_fpColTail := by
+  unfold c_fpColTail
+  exact lt_min c_fpColDev_pos (by norm_num)
+
+theorem C_fpColTail_pos : 0 < C_fpColTail := by
+  unfold C_fpColTail
+  linarith [C_fpColDev_pos]
+
+/-- `fpDistPlus_col_tail`, `_explicitC` sibling: `fpDistPlus_col_tail_core` at
+(`c_fpColDev`, `C_fpColDev`), folded into `c_fpColTail`/`C_fpColTail`. -/
+theorem fpDistPlus_col_tail_explicitC :
+    ∀ s p : ℕ, ∀ D : ℝ,
+      10 * (1 + (p : ℝ)) ≤ D →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 e
+        ≤ C_fpColTail * (Real.exp (-c_fpColTail * D ^ 2 / (1 + (s : ℝ)))
+            + Real.exp (-c_fpColTail * D)) := by
+  have h := fpDistPlus_col_tail_core c_fpColDev C_fpColDev
+    c_fpColDev_pos C_fpColDev_pos fpDist_col_dev_explicitC
+  intro s p D hD
+  have hs := h s p D hD
+  unfold C_fpColTail c_fpColTail
+  exact hs
+
+/-- **The (7.61) column tail of the `(k+p)`-step endpoint** (p.52, displays 5–7):
+`P(|j_{[1,k+p]} − s/4| ≥ 2D) ≪ exp(−cD²/(1+s)) + exp(−cD)` once `D` clears the
+`p`-step column drift. See `fpDistPlus_col_tail_core` for the proof narrative.
+Original `∃`-form: delegates to the `_explicitC` sibling at
+`c_fpColTail`/`C_fpColTail`. -/
+theorem fpDistPlus_col_tail :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ s p : ℕ, ∀ D : ℝ,
+      10 * (1 + (p : ℝ)) ≤ D →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 e
+        ≤ C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D)) :=
+  ⟨c_fpColTail, c_fpColTail_pos, C_fpColTail, C_fpColTail_pos,
+    fpDistPlus_col_tail_explicitC⟩
 
 
 /-! ### The X10 assembly decomposition (lap 58): confinement + separated sum
