@@ -2179,18 +2179,23 @@ noncomputable def C_windowReduce : ℝ := C_goodTupleDev + C_passtimeWindow
 theorem C_windowReduce_pos : 0 < C_windowReduce :=
   add_pos C_goodTupleDev_pos C_passtimeWindow_pos
 
-/-- Sibling of `first_passage_window_reduce` with the `c`/`C` slots pinned at
-(`c_windowReduce`, `C_windowReduce`) — the `_atC` form (big-C campaign, step 2),
-cutoff existential. -/
-theorem first_passage_window_reduce_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `first_passage_window_reduce` cutoff (X-chase): witness copied verbatim from the
+`_atC` proof at the explicit upstream names. -/
+noncomputable def X_windowReduce : ℝ :=
+  max (max X_goodTupleWhp X_passtimeWindow) (Real.exp 1)
+
+/-- Universal-cutoff form of `first_passage_window_reduce_atC` (X-chase). -/
+theorem first_passage_window_reduce_atCX :
+    ∀ x : ℝ, X_windowReduce ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
               - firstPassMid x E y|
             ≤ C_windowReduce * (Real.log x) ^ (-c_windowReduce) := by
-  obtain ⟨xg, hgood⟩ := approx_good_tuple_whp_atC
-  obtain ⟨xw, hwin⟩ := approx_passtime_window_atC
+  have hgood := approx_good_tuple_whp_atCX
+  have hwin := approx_passtime_window_atCX
+  set xg : ℝ := X_goodTupleWhp with hxgdef
+  set xw : ℝ := X_passtimeWindow with hxwdef
   set Cg : ℝ := C_goodTupleDev with hCgdef
   set Cw : ℝ := C_passtimeWindow with hCwdef
   have hCg : 0 < Cg := C_goodTupleDev_pos
@@ -2200,9 +2205,9 @@ theorem first_passage_window_reduce_atC :
   have hcg : 0 < cg := c_goodTupleDev_pos
   have hcw : 0 < cw := c_passtimeWindow_pos
   rw [show c_windowReduce = min cg cw from rfl,
-    show C_windowReduce = Cg + Cw from rfl]
-  refine ⟨max (max xg xw) (Real.exp 1),
-    fun x hx E hE y hy => ?_⟩
+    show C_windowReduce = Cg + Cw from rfl,
+    show X_windowReduce = max (max xg xw) (Real.exp 1) from rfl]
+  intro x hx E hE y hy
   have hxg : xg ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxw : xw ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
@@ -2320,6 +2325,16 @@ theorem first_passage_window_reduce_atC :
     _ ≤ Cg * (Real.log x) ^ (-(min cg cw)) + Cw * (Real.log x) ^ (-(min cg cw)) :=
         add_le_add (mul_le_mul_of_nonneg_left hA hCg.le) (mul_le_mul_of_nonneg_left hB hCw.le)
     _ = (Cg + Cw) * (Real.log x) ^ (-(min cg cw)) := by ring
+
+/-- ∃-form of `first_passage_window_reduce_atCX` (X-chase: `x₀ := X_windowReduce`). -/
+theorem first_passage_window_reduce_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |(logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | passLoc ⌊x⌋₊ N ∈ E} 1)
+              - firstPassMid x E y|
+            ≤ C_windowReduce * (Real.log x) ^ (-c_windowReduce) :=
+  ⟨X_windowReduce, first_passage_window_reduce_atCX⟩
 
 /-- Sibling of `first_passage_window_reduce` with the `c`-slot pinned to `c_windowReduce`;
 the original delegates here.  Now delegates to `first_passage_window_reduce_atC` (big-C

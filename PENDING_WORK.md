@@ -1143,3 +1143,8 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_passtimeWindow` + `approx_passtime_window_atCX`; `_atC` delegates. Audit 9/38,
   next `first_passage_window_reduce_atCX`.
+
+### Successor lap 7 (2026-07-17) — phase 2 entry 6/13
+
+- `X_windowReduce` + `first_passage_window_reduce_atCX`; `_atC` delegates. Audit 10/38,
+  next `reverse_early_return_whp_atCX`.
