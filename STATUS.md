@@ -1,6 +1,6 @@
 # STATUS — tao-collatz-explicit-big-c 📊
 
-**Big-C campaign: discharge the explicit-constant pin `tao_collatz_quantitative_fully_explicit`.** · **Build**: 🟢 green (3327 jobs) · **Updated**: lap 12 (deep reflection) · 2026-07-17 · `fe110e7` · **ROUTE RESOLVED → Option B (see DIRECTION)**
+**Big-C campaign: discharge the explicit-constant pin `tao_collatz_quantitative_fully_explicit`.** · **Build**: 🟢 green (3327 jobs) · **Updated**: lap 12 (deep reflection) · 2026-07-17 · `548dfc5` · **ROUTE RESOLVED → Option B; crux PINNED in src (see DIRECTION)**
 
 ## Where it stands
 
@@ -8,11 +8,12 @@ The **core destination is already reached**: the three merged headlines (`tao_co
 `tao_collatz_quantitative`, `tao_collatz_quantitative_explicit`) are proven and
 **axiom-clean** — `#print axioms` re-run this lap shows `[propext, Classical.choice,
 Quot.sound]` on all three. Tao 2019's theorem (qualitative Thm 1.3 + quantitative Thm 3.1
-with explicit exponent `cTao`) **is formalized.** The single open obligation in all of
-`TaoCollatz/` is the stretch-goal pin `tao_collatz_quantitative_fully_explicit`
-(`Statement.lean:65`, one real `sorry`; verified by term-grep — the other 12 "sorry" hits
-are docstring history) — Thm 3.1 with the multiplicative constant *also* pinned, at
-`CTao = 10^(10¹¹)`.
+with explicit exponent `cTao`) **is formalized.** The core stretch obligation is the pin
+`tao_collatz_quantitative_fully_explicit` (`Statement.lean:65`) — Thm 3.1 with the
+multiplicative constant *also* pinned, at `CTao = 10^(10¹¹)`. `src/` now carries **2 real
+`sorry`s**: the pin, and the Option-B crux `renewal_white_encounters_tight` (`Bridge.lean`,
+pinned this lap — the tight-renewal decomposition; this is PROGRESS, the crux is now a
+visible attackable hole). The 3 merged headlines remain axiom-clean.
 
 **Route history:** STEP-2 transcription (re-express every constant as an explicit `def`) is
 **complete** — the spine is constant-explicit up to `C_spine X = 16·C_syrSum X`. But the
@@ -41,8 +42,10 @@ one genuinely new brick is a `#white` lower-tail / decorrelation estimate beatin
   **resolved in-tree**. **Diagnosed a 3-lap spin** (laps 9→10→11 grinding X-chase transcription
   behind a fired-but-unresolved route trigger). **RESOLVED the escalation → Option B** and set
   it as the binding directive. Localized the tower to `Q_polynomial_decay`/`few_white_mass_le`
-  (decay is from `hold_weight_expect`; tower is vacuous slop). Crux re-decomposed as an
-  ADDITIVE `renewal_white_encounters_tight` (never touches the clean headlines).
+  (decay is from `hold_weight_expect`; tower is vacuous slop). Crux re-decomposed and **PINNED**
+  as an ADDITIVE `renewal_white_encounters_tight` (`Bridge.lean`, `548dfc5`): small-`n` arm
+  proved, large-`n` arm = the named crux `sorry`; clean headlines untouched (re-verified clean);
+  src `sorry` 1→2 (progress).
 - **2026-07-17 (lap 11)**: STEP-2 transcription COMPLETE — spine fully constant-explicit
   (`C_spine X = 16·C_syrSum X`); check20 added; X-chase (threshold half) begun (10 FirstPassage
   cutoffs pinned). All within the now-superseded "transcription-only" holding pattern.
@@ -58,11 +61,14 @@ one genuinely new brick is a `#white` lower-tail / decorrelation estimate beatin
 ## Outstanding
 
 ### Short-term (Option B, in scope now — ADDITIVE, never touch the clean headlines)
-- **Pin `renewal_white_encounters_tight`** (new lemma in `Sec7/Bridge.lean`): same statement
-  shape as `renewal_white_encounters_at` but constant `C_renewalWhite_tight A := n₀^A` (head
-  only). Prove the trivial/structural reductions (small-n arm, the split, the `n^{-A}` decay
-  from `hold_weight_expect`); isolate the ONE hard sub-`sorry` = the tight large-n `#white`
-  bound. This RAISES the src `sorry` count 1→2 and makes the crux visible (progress).
+- ✅ **DONE lap 12**: `renewal_white_encounters_tight` PINNED (`Bridge.lean`), head-only
+  constant `C_renewalWhite_tight A := n₀^A`, small-`n` arm proved, crux isolated as the
+  named `sorry` at the large-`n` branch. Clean headlines untouched (re-verified axiom-clean).
+- **NEXT — chip the crux `renewal_tail_tight`** (the `sorry` in the large-`n` branch of
+  `renewal_white_encounters_tight`, `Bridge.lean:~786`): the `#white` lower-tail estimate.
+  Smallest first probe: source-read `few_white_mass_le` (Case3) + `θq`/`black` (Setup) to test
+  whether "black is measure-~2ε rare ⟹ `#white` frequent from `n₀`" can be rigorized, or
+  where exactly it needs the tower horizon. That probe is the decisive route-test.
 - Do NOT re-prove the *existing* `renewal_white_encounters` (the clean headlines consume it —
   a sorry-backed witness there would poison their axiom base). Option B is a parallel, tight copy.
 

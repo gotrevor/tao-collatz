@@ -25,15 +25,18 @@ re-run lap 12: 3 merged headlines `[propext, Classical.choice, Quot.sound]`; pin
 
 ## Next actions (Option B — ADDITIVE, do NOT touch the clean headlines)
 
-1. **`Sec7/Bridge.lean`: add `renewal_white_encounters_tight`** — same shape as
-   `renewal_white_encounters_at`, constant `C_renewalWhite_tight A := ((2·C_hold A+2:ℕ):ℝ)^A`
-   (head arm only, no `max`-tower). Copy the small-n arm verbatim from the existing proof;
-   for the large-n arm, keep the two-bridge + `hold_weight_expect` skeleton and leave the
-   tower-elimination as a named sub-`sorry` `renewal_tail_tight`. This raises src `sorry` 1→2
-   (progress). Concrete statement + reduction in PENDING_WORK Reflection.
-2. **Never re-prove the existing `renewal_white_encounters`** (clean headlines depend on it).
-3. **Chip `renewal_tail_tight`** = the `#white` lower-tail estimate beating `few_white_mass_le`'s
-   tower horizon. Smallest probe first; the "white frequent" heuristic is UNVERIFIED — test it.
+1. ✅ **DONE this lap (`548dfc5`)**: `renewal_white_encounters_tight` PINNED in `Sec7/Bridge.lean`
+   with `C_renewalWhite_tight A := ((2·C_hold A+2:ℕ):ℝ)^A` (head arm, no tower). Small-`n` arm
+   PROVED; large-`n` arm is the named crux `sorry` (`Bridge.lean:~786`). Build green (3327),
+   headlines re-verified axiom-clean, src `sorry` 1→2, differ 35/35.
+2. **NEXT — chip the crux `sorry`** = `renewal_tail_tight`, the `#white` lower-tail estimate
+   beating `few_white_mass_le`'s (7.67) tower horizon. **Smallest first probe** (do this before
+   any proof code): source-read `few_white_mass_le` (Case3) + `θq`/`black`/`white` (Setup.lean:34,
+   100–103) and ask — can "black is measure-~2ε rare ⟹ `#white` frequent from `n₀`" be rigorized,
+   or where exactly does it force the tower horizon `P = encWindowIter…`? That answer is the
+   decisive route-test (it either confirms Option B feasible or exposes the true obstruction —
+   both are progress; record it in PENDING_WORK).
+3. **Never re-prove the existing `renewal_white_encounters`** (clean headlines depend on it).
 4. **Do NOT** continue the X-chase or any tower-ladder transcription (deprecated this lap).
 
 ---
