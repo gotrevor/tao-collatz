@@ -3788,16 +3788,18 @@ noncomputable def c_truncation : ℝ := 1
 
 theorem c_truncation_pos : 0 < c_truncation := by norm_num [c_truncation]
 
-/-- Sibling of `truncation_error_bound` with the `c`/`C` slots pinned at
-(`c_truncation`, `1`) — the `_atC` form (big-C campaign, step 2). -/
-theorem truncation_error_bound_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `truncation_error_bound` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_truncation : ℝ := Real.exp 1
+
+/-- Universal-cutoff form of `truncation_error_bound_atC` (X-chase). -/
+theorem truncation_error_bound_atCX :
+    ∀ x : ℝ, X_truncation ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           approxMainTerm x E y - steppedMid x E y
             ≤ 1 * (Real.log x) ^ (-c_truncation) := by
-  rw [show c_truncation = 1 from rfl]
-  refine ⟨Real.exp 1, fun x hx E hE y hy => ?_⟩
+  rw [show c_truncation = 1 from rfl, show X_truncation = Real.exp 1 from rfl]
+  intro x hx E hE y hy
   have hx1 : (1 : ℝ) ≤ x := le_trans (Real.one_le_exp_iff.mpr (by norm_num)) hx
   have hlog1 : (1 : ℝ) ≤ Real.log x := by
     rw [← Real.log_exp 1]; exact Real.log_le_log (Real.exp_pos 1) hx
@@ -3813,6 +3815,15 @@ theorem truncation_error_bound_atC :
     · exact hone _ alpha (hone x (alpha ^ 2) hx1 (by positivity)) haz
   rw [approxMainTerm_eq_steppedMid x E y hy1, sub_self, one_mul]
   exact Real.rpow_nonneg hlogpos.le _
+
+/-- ∃-form of `truncation_error_bound_atCX` (X-chase: `x₀ := X_truncation`). -/
+theorem truncation_error_bound_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          approxMainTerm x E y - steppedMid x E y
+            ≤ 1 * (Real.log x) ^ (-c_truncation) :=
+  ⟨X_truncation, truncation_error_bound_atCX⟩
 
 /-- Sibling of `truncation_error_bound` with the `c`-slot pinned to `c_truncation`; the
 original delegates here.  Now delegates to `truncation_error_bound_atC` (big-C campaign,

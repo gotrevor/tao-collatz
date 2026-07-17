@@ -1166,3 +1166,8 @@ is odd, and the pin is branch-only so retiring is free).
   `X_stepbackSize`, `X_fpmLeStepped` (+ `_atX` forms and delegates), then
   `X_stepbackReduce` + `first_passage_stepback_reduce_atCX`. Audit 13/38, next
   `truncation_error_bound_atCX`.
+
+### Successor lap 11 (2026-07-17) — phase 2 entry 10/13
+
+- `X_truncation := exp 1` + `truncation_error_bound_atCX`; `_atC` delegates. Audit 14/38,
+  next `first_passage_truncation_reindex_atCX`.
