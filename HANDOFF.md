@@ -8,9 +8,18 @@
   max-expr explicit in statement); `_at` instantiates at the explicit constants (delegation
   via defeq — `le_of_eq rfl`/`rfl` close `hPeq`/`hBdef` through the defs); watched ∃-form
   delegates. Differ 35/35, 18/18 checks, full build green.
-- **Next: damping passthrough** (handoff step 2 below): `damping_expectation_le` →
-  `damping_column_mass_le` → `damped_iter_expectation_le` → `Q_black_edge_case3` (reifies C2
-  = `Cthr_fewWhite`). Then step 3 wiring into `prop_7_8_at` + extend check18 C0-arm.
+- **Damping chain explicit (DONE, next commit)**: def `Cthr_dampingCol A =
+  max (max (Cthr_fewWhite A) (T_colTail A (P_fewWhite A))) 10` — **this is the reified C2**.
+  `_at` siblings for `damping_expectation_le`, `damping_column_mass_le`,
+  `damped_iter_expectation_le`, `Q_black_edge_case3` (watched; delegate byte-identical).
+  New rail: **revert+generalize** — `have h := <upstream_at>; revert h; generalize
+  P_fewWhite A = P; intro h ...` then original body verbatim (avoids set/motive issues in
+  `Fin P` positions; remember to also revert `one_le_P_fewWhite` when the body's omegas
+  need `1 ≤ P`; repo linter wants merged `intro` lists).
+- **Next: STEP-2 wiring of C2 into `prop_7_8_at`** (BlackEdgeQ.lean): threshold
+  `max (max (C_hold A) (Cthr_dampingCol A)) 1` → `Q_polynomial_decay` C0 symbolic → extend
+  check18 with the C0-arm assert. Then `renewal_white_encounters` (Bridge.lean) + Fourier,
+  Sec6/Sec5/Sec3, then STEP 3.
 
 ---
 
