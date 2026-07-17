@@ -857,3 +857,33 @@ Flag from lap 16 stands (operator to rule). On-path work any ruling keeps:
    yet exponential, in u; check whether the architecture (check23 sizing) can consume a
    polynomial depth-decay with the linear spacing (the check22 "dilated+linear" arm fit
    at 3019 with 34 orders margin — the analogous computation for depth is open).
+
+### Lap 17b (2026-07-17) — probe (ii) CLOSED: the point-mass half exists but adds nothing; JUDGE-FLAG CONFIRMED
+
+**Answered (check25).** The walk point-mass machinery is real and non-circular:
+`tiltHold_apply_le_center` (HoldLocal.lean, node S3 (F4b)) gives
+`sup_v P(Hold_k = v) ≤ C₂/(1+k)`, `C₂ = (32·80000)² = 6.5536e12`, by circle method on
+the hold atoms — independent of the encounter analysis (`charFn_decay`/
+`key_fourier_decay` are DOWNSTREAM of `renewal_white_encounters`; using them would be
+circular, this is not). Chaining it with the counting halves:
+
+- disjointness of triangles ⟹ Σ depth² ≤ area ⟹ depth-≥u candidates per effective
+  √k-window ≤ k/u; × C₂/k ⟹ per-step deep-entry rate ~ C₂/u — **exactly Lemma 7.10's
+  per-time C/s' rate** already in check22's map and already dead (union floors
+  15041/12033 ≫ 3053). The lap-17a per-column spacing (linear in u) is likewise a
+  linear-family bound. Nothing beyond Lemma 7.10 is reachable this way.
+- **Expectation accounting refuted:** paying big crossings in expectation instead of
+  union-excluding them fails (7.39): per-crossing tail index is 1 (P(cost ≥ u) ~ C₂W/u),
+  so ONE giant crossing of cost ~W/2 has probability ~C₂/W, while (7.39) needs W^{−A},
+  A ≈ 3.11e7 — off by > 10⁹ orders (check25, swept W = 10^3016…10^6-digit). Heavy-tail
+  sums with index 1 cannot beat any large polynomial: the exponential depth-decay is
+  genuinely NEEDED, and linear is all the unconditional toolset yields.
+
+**Conclusion: the lap-16 JUDGE-FLAG is CONFIRMED by an independent route.** Both halves
+of option (a)'s "visible line" (per-column spacing — formalized lap 17a; point-mass —
+located and quantified here) terminate at Lemma 7.10's rate. Any proof of
+`Q_black_edge_tight` requires exp-in-depth anti-concentration of θq at the walk
+position — new mathematics beyond arXiv:1909.03562. The operator ruling (scope
+extension vs accept-the-pin-sorry) is now the only fork; on-path unflagged Lean work is
+exhausted to my present sight (remaining ideas are all inside the flagged new-math
+scope).

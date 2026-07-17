@@ -1165,6 +1165,44 @@ def check24():
               % (n, xi, sizes[cbig], dmin, ratio))
 
 
+def check25():
+    # Big-C campaign lap 17b (2026-07-17): probe (ii) closed — the point-mass half
+    # EXISTS but reproduces only Lemma 7.10's rate; the lap-16 JUDGE-FLAG is CONFIRMED
+    # by an independent route.
+    #   (i) The local bound: `tiltHold_apply_le_center` (HoldLocal.lean:46, node S3
+    #       (F4b)) gives sup_v P(Hold walk_k = v) <= C2/(1+k), C2 = (32*80000)^2 =
+    #       6.5536e12 — circle method on the hold atoms, INDEPENDENT of the encounter
+    #       analysis (charFn_decay/key_fourier_decay are downstream of
+    #       renewal_white_encounters and would be circular; this is not).
+    #  (ii) The chain: triangle DISJOINTNESS gives sum(depth^2) <= area, so depth->=u
+    #       apexes in the effective sqrt(k)-window number <= k/u; times C2/k = per-step
+    #       deep-entry rate ~ C2/u — LINEAR in depth.  This is EXACTLY Lemma 7.10's
+    #       per-time C/s' rate (check22's map), already shown insufficient: union
+    #       floors 15041/12033 >> budget 3053.  Nothing new is gained.
+    # (iii) Expectation accounting (pay big crossings in expectation instead of
+    #       excluding them) FAILS (7.39): with per-crossing tail P(cost>=u) ~ C2*W/u
+    #       (tail index 1), a SINGLE giant crossing of cost ~W/2 has probability
+    #       ~ 2*C2 (vacuous) resp. ~C2/W per entry step — while (7.39) needs total
+    #       decay W^{-A} with A = mainDecayExponent(3.7) ~ 3.1e7.  C2/W >> W^{-A} by
+    #       thousands of orders at every relevant W.  Exponential depth-decay is
+    #       genuinely NEEDED and linear is all the unconditional toolset gives.
+    from math import log10
+    C2 = (32 * 80000) ** 2
+    assert C2 == 6553600000000
+    ln2 = log(2)
+    A = 3.7 + (1000 * (3.7 + 3)) ** 2 * ln2 + 3          # mainDecayExponent 3.7
+    for log10_W in (3016, 3100, 10 ** 4, 10 ** 6):        # applied windows m-j >= n0
+        # single-giant-crossing probability ~ C2/W  vs needed W^{-A}:
+        lhs = log10(C2) - log10_W                         # log10 P(giant crossing)
+        rhs = -A * log10_W                                # log10 of required bound
+        assert lhs - rhs > 10 ** 9, (log10_W, lhs, rhs)   # fails by >1e9 orders
+    print("25. point-mass half closed: HoldLocal (F4b) local bound C2/(1+k), C2=6.55e12,"
+          " is real and non-circular, but count(disjointness) x point-mass = C2/u"
+          " per-step deep-entry rate — exactly Lemma 7.10's rate (check22: dead);"
+          " expectation accounting fails (7.39) by >1e9 orders (giant crossing C2/W"
+          " vs W^-A, A~3.1e7).  Lap-16 JUDGE-FLAG CONFIRMED independently.")
+
+
 def check22():
     # Big-C campaign lap 14 (2026-07-17): OPTION-B FEASIBILITY MAP — machine-checked
     # record of the lap-13b/14 floor arithmetic for `Q_black_edge_tight` (the crux).
@@ -1230,4 +1268,5 @@ if __name__ == "__main__":
     check22()                                     # lap-14 Option-B feasibility map
     check23()                                     # lap-15 flat contradiction + exp-depth door
     check24()                                     # lap-16 shallow-tip witness (JUDGE-FLAG)
+    check25()                                     # lap-17b point-mass half (flag CONFIRMED)
     print("ALL CHECKS PASS ✅")
