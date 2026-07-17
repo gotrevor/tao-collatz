@@ -1,7 +1,7 @@
 # Handoff: prove an explicit TOWER CEILING on `C_tao_assembled` in Lean
 
 **Date**: 2026-07-17 13:28 EDT · **Branch**: `explicit-big-c` · **HEAD**: `f4fc186` (pushed) · **From**: judge session
-**Builds on**: `HANDOFF-2026-07-17-1314.md` (the closed-form trace — read it first, it has the def spine).
+**Builds on**: `ARCHITECT-BRIEF-closed-form-of-CTao.md` (the closed-form trace — read it first, it has the def spine).
 
 ## 🎯 The goal (Trevor's ask)
 
@@ -34,7 +34,7 @@ at every use site — NOT under a `log`). So Trevor's `10^(10^(10^3009.5))` is t
    it cannot be a Lean numeral, and `norm_num`/`decide`/`native_decide` will hang on it forever
    (standing repo gotcha). Write it as `(10:ℝ) ^ ((10:ℝ) ^ ((10:ℝ) ^ K))` with `Real.rpow`, and do
    ALL size reasoning in `Real.log`/log-space (as `check17`/`check19` do). Never materialize it.
-2. **The exponent `3009.5`/`3010` is NOT yet independently pinned.** The 1314 handoff flagged that
+2. **The exponent `3009.5`/`3010` is NOT yet independently pinned.** The closed-form brief flagged that
    which `max`-arm wins is unresolved. **Good news: this proof SETTLES that rigorously** — the
    induction yields the honest height as output. So do NOT hardcode `3010` and try to hit it; prove
    `C_tao_assembled ≤ 10^(10^(10^K))` for whatever `K` falls out, **rounded up generously**.
@@ -64,7 +64,7 @@ At `i = R ≈ 100·K_fewWhite ≈ 10^3010`, this gives `enc(R) ≤ B^(3^(10^3010
 
 ### The propagation (mechanical, ~15–30 lemmas) — walk the bound UP the tree
 Each node is a `max` / product / power / `⌈·⌉₊` / `log` / `exp` of tower-bounded things — all
-monotone. Chain (from 1314 handoff, verbatim spine):
+monotone. Chain (from the closed-form brief, verbatim spine):
 ```
 encWindowIter ≤ B^(3^R)
  → B_fewWhite = 4^{2A+A0}(1+P)³            (P = encWindowIter…, so P ≤ tower)
@@ -77,7 +77,7 @@ encWindowIter ≤ B^(3^R)
  → C_tao_assembled = max (C_spine X_spine) ((log 2)^cTao)
 ```
 Each step: `positivity` + `mul_le_mul`/`rpow_le_rpow`/`max_le` + the child's bound. Numerous but each
-is short. **Resolved max-arm** (settles a 1314 open question): in `C_syrSum X = max(C_windowBad·α/(α−1),
+is short. **Resolved max-arm** (settles a closed-form-brief open question): in `C_syrSum X = max(C_windowBad·α/(α−1),
 4·max(1,(log X)^c_ladder))`, the second arm is **negligible** — `X_spine` is a tower, `log(tower)` is
 one level down, and `^c_ladder` (c ≈ 2.25e−9) crushes it to ~1. So the `C_windowBad` arm wins, and
 `C_tao_assembled`'s height = `C_windowBad`'s height = the `C_renewalWhite` tower height. Prove this
@@ -122,7 +122,7 @@ stubs at repo root), so no `--forever`; keep `box stuck` alive as the escalate l
 ## 📁 Key files
 - `TaoCollatz/Sec7/Case3.lean` — `encWindowIter` (:1020), `encWindowIter_mono` (:1029), `B_fewWhite`, `Cthr_fewWhite`, `Cthr_prop78` (the tower; grep them).
 - `TaoCollatz/Sec7/Bridge.lean` — `C_renewalWhite`, `C_polyDecay`.
-- `TaoCollatz/Sec3/Reduction.lean`, `Sec5/{FirstPassage,Stabilization}.lean` — the spine (see 1314 handoff).
+- `TaoCollatz/Sec3/Reduction.lean`, `Sec5/{FirstPassage,Stabilization}.lean` — the spine (see the closed-form brief).
 - `TaoCollatz/ExplicitBigC.lean` — `C_tao_assembled`; where `C_tao_assembled_le` likely belongs.
 - `tools/check_blueprint.py` checks 17/19 — the log/log-log mirrors to extend for check28.
 - `ROUTE-ESCALATION-2026-07-17.md` — the box's tower sizing (the arithmetic to formalize).
