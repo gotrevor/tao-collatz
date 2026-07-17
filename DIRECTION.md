@@ -19,7 +19,91 @@ playbook; its DIRECTION lives in git history (`git log --follow DIRECTION.md`).*
 
 ---
 
-## 🏁 JUDGE RULING (2026-07-17 morning) — **CAMPAIGN CLOSED. The pin stays `sorry` as a documented open frontier.**
+## 🟢 JUDGE RULING II (2026-07-17, after the Codex plan) — **SUCCESSOR ACTIVATED: assembled explicit big-C. Launch-ready; Trevor fires.**
+
+**Ruling I (below) closed the route to the *pin* — that stands, unchanged. Ruling I's
+"no successor" call was TOO BROAD, and this ruling narrows it.** A peer agent (Codex) read
+Ruling I and proposed `BIG_C_EXPLICIT_BOUND_PLAN.md`, correctly separating two objectives
+this campaign had conflated:
+
+1. **prove the frozen numeral `CTao = 10^(10¹¹)` bounds the development's constant** —
+   obstructed (check19: the assembled constant is a tower; check23(i): architecture-level).
+2. **exhibit SOME closed Lean term for the constant and prove the quantitative theorem at
+   it**, making *no* smallness claim — **not obstructed by anything in Ruling I.**
+
+Ruling I only weighed **tighten-C** (make the constant *small*) and gated it on check23(i).
+That gate is right for tighten-C and **irrelevant to (2)**. Objective (2) is also **not** the
+old "Option A" — Option A *re-pinned `CTao`* to a tower (statement surgery on a judge-owned,
+comparator-pinned statement, gutting the challenge). This is **additive**: the pin stays
+frozen and `sorry`, and a *different* theorem is added at an honestly-assembled constant that
+says exactly what has been proved. **Peer review caught what a self-graded campaign could
+not — that is the mechanism working.**
+
+### Codex's load-bearing claims, VERIFIED host-side by the judge
+
+- ✅ **The tower route is axiom-clean.** `#print axioms` run this session:
+  `renewal_white_encounters_at`, `tao_collatz_quantitative_spine_atC`,
+  `tao_syracuse_quantitative_sum_atC`, `tao_collatz_quantitative` — **all exactly
+  `[propext, Classical.choice, Quot.sound]`**, no `sorryAx`. The route does **not** depend on
+  either live `sorry`. (Codex flagged this "believed clean, judge to verify" — correct hygiene.)
+- ✅ **No opaque rate-free leaf on the QUANTITATIVE path.** `Sec5/FirstPassage.lean`,
+  `ApproxFormula.lean`, `Stabilization.lean` contain **zero** `Tendsto`. Sec3's 11 `Tendsto`
+  all sit in `tao_syracuse` (:1266) and `tao_collatz_spine` (:1773) — the **qualitative**
+  theorems, which take an arbitrary `f → ∞` as a *hypothesis* and are correctly rate-free.
+  They feed the qualitative headline, **not** the quantitative spine. ⚠️ This is the exact
+  failure that killed the C route once before (PR #8: `hold_weight_expect` minting `K`/`T`
+  from rate-free limits) — it does **not** recur here.
+- ✅ **The witnesses are literally copyable.** `tao_syracuse_quantitative_sum_atC` (:857) sets
+  `X := max xw (Real.exp 1)` and `refine ⟨X, ?_⟩`; `tao_collatz_quantitative_spine_atC`
+  (:1580) obtains that `X` and passes it straight through. The plan's `X_syrSum := max
+  X_windowBad (Real.exp 1)` is a transcription of the source, not a guess.
+- ⚠️ **NOT verified — the honest limit of this ruling:** I checked the capstone and the
+  Tendsto-freedom of Sec5, **not** each of the ~35 nodes in phases 2–3. Zero `Tendsto` is
+  strong evidence every witness is copyable; it is not proof. **The cutoff audit (step 0) is
+  the mitigation and it must fail LOUD** on the first node that cannot be made explicit.
+  A stall partway is an acceptable outcome — every landed node is permanent value.
+
+### 🚨 Mandatory correction to the plan's step 0 (judge amendment, binding)
+
+**The audit must walk `C_tao_assembled`'s DEFINITIONAL CLOSURE (`Lean.collectAxioms`-style /
+`Environment` const traversal) — never grep files.** `Nat.sInf` legitimately appears in
+`syrMin` (:53) and `passTime` (:62) — those are the **objects being studied**, in the theorem
+*statement*, not in the constant's spine. A file-grep for `sInf` false-positives on them; and
+a closure walk **seeded wrong walks nothing and passes green**, which is strictly worse.
+📌 This bug is live right now in the public `lean-agent-skills` `comparator-probe`
+(seeds empty → "✅" compares zero definitions) — do not reproduce it here. The audit must
+**print the closure size it actually walked** and fail if that size is 0 or unchanged after
+adding a node.
+
+### The directive
+
+> **CURRENT DIRECTIVE — assembled explicit big-C.** Add an axiom-clean theorem
+> `tao_collatz_quantitative_assembled` at the closed constant `C_tao_assembled` specified in
+> `BIG_C_EXPLICIT_BOUND_PLAN.md`. Finish the X-chase in manifest order. Use the existing clean
+> tower route. **Do not edit the frozen `CTao` pin, do not touch comparator statements, do not
+> work on `Q_black_edge_tight`.** The next target is always the first missing entry printed by
+> `tools/big_c_cutoff_audit.py`. Done means the plan's complete gate is green and
+> `#print axioms tao_collatz_quantitative_assembled` shows only the trust base.
+> **The plan's per-commit gates, done condition, and explicitness contract are BINDING**, with
+> the step-0 amendment above. `blueprint_rules.md` still binds. **The pin's `sorry` and the
+> `Q_black_edge_tight` `sorry` stay isolated and untouched — they are not yours to discharge.**
+
+**Honesty clause (binding, applies to every docstring and report this campaign writes):**
+`C_tao_assembled` is a **tower** and is **useless as a number**. It is explicit in the formal
+sense only: a closed term with no existential. **Never** describe it as a bound anyone can
+evaluate, never compare it to `CTao`, and never imply smallness. The value on offer is
+**"effective in fact, kernel-certified"** replacing **"effective in principle"** — that, and
+nothing more, is the claim.
+
+**Relaunch gate:** the repo-root sorry census can never reach 0 (the 9 comparator
+`Challenge.lean` stubs are sorry-by-design forever), and this campaign *intentionally* leaves
+2 src sorries standing. So `--done-when` must key on the **audit**, not a sorry count:
+`--done-when 'cmd:python3 tools/big_c_cutoff_audit.py --complete'`. A `sorry-free:` gate is
+wrong for this campaign and will refuse to launch or never fire.
+
+---
+
+## 🏁 JUDGE RULING I (2026-07-17 morning) — **the PIN campaign is CLOSED. `CTao` stays `sorry` as a documented open frontier.** *(Stands. Narrowed only by Ruling II above: it closes route (1), not route (2).)*
 
 **The lap-18 campaign-close recommendation is UPHELD — with its evidence grade corrected.**
 Verified host-side this session, independently of the box: branch pushed (93 commits,
@@ -76,8 +160,10 @@ precisely the claim a stranger would check and find unsupported.
 
 ### What is now true, and what happens next
 
-- **The campaign is CLOSED. No lap-executable work remains. Do not launch a grind run on this
-  branch.** The branch is preserved (pushed) as the record.
+- **The PIN campaign is CLOSED. No lap-executable work remains *on the pin*.** The branch is
+  preserved (pushed) as the record. ⚠️ *Superseded in part by Ruling II:* a successor campaign
+  (**assembled** explicit big-C, additive, at a tower-valued closed constant) **is now active
+  and launch-ready** — it does not touch the pin. Read Ruling II first.
 - **The pin stays `sorry`.** It is a stretch goal that did not land. **The core destination
   was reached and is untouched:** the 3 headlines (`tao_collatz`, `_quantitative`,
   `_quantitative_explicit`) are merged, axiom-clean, and **public**. Tao's theorem IS formalized.
@@ -88,7 +174,9 @@ precisely the claim a stranger would check and find unsupported.
   **only on this unmerged branch**. Public main is green and stays green **by not merging**.
   (This corrects the 2026-07-17 handoff's framing, which assumed retiring the pin would touch
   public surfaces. It does not.)
-- **NO successor campaign is spec'd or launched.** The banked "tighten-C" follow-up is **not**
+- **No *tighten-C* successor is spec'd or launched.** *(Ruling II note: this paragraph is about
+  making the constant SMALL. It does not reach the **assembled** route, which makes no
+  smallness claim — see Ruling II.)* The banked "tighten-C" follow-up is **not**
   launch-ready and must not be fired as a fleet campaign. check23(i)'s flat-envelope
   contradiction (`4·c_hit·R ≤ 1`, false by ~300+ orders for every `c_hit ≥ 10⁻¹⁵`) is
   **architecture-level and budget-independent** — it survives constant surgery, so shrinking

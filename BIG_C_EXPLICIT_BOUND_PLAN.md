@@ -1,8 +1,29 @@
 # Explicit big-C restart plan — assembled tower route
 
-**Status:** launch-ready proposal, not a live directive. `DIRECTION.md` currently closes the
-old `CTao = 10^(10¹¹)` campaign and forbids further grind work. Only the operator/judge may
-activate this plan by replacing that directive. Until then, workers stop after reading it.
+**Status: ✅ ACTIVATED by the judge, 2026-07-17** (`DIRECTION.md` → "JUDGE RULING II"). This is
+now the live campaign spec. Two judge amendments are **BINDING** and override this document
+where they conflict — read them in `DIRECTION.md` before starting:
+
+1. **Step 0's audit must walk `C_tao_assembled`'s definitional closure, never grep files.**
+   `Nat.sInf` legitimately appears in `syrMin`/`passTime` (the objects being studied, in the
+   *statement*, not the constant's spine). A grep false-positives; a closure walk seeded wrong
+   **walks nothing and passes green**. The audit must print the closure size it walked and fail
+   if it is 0 or fails to grow.
+2. **Honesty clause.** `C_tao_assembled` is a tower and useless as a number. Never describe it
+   as an evaluable bound, never compare it to `CTao`, never imply smallness. The claim is
+   exactly "effective in fact, kernel-certified" replacing "effective in principle."
+
+Verified host-side before activation: the tower route is axiom-clean (`#print axioms` on
+`renewal_white_encounters_at`, `tao_collatz_quantitative_spine_atC`,
+`tao_syracuse_quantitative_sum_atC` → the standard three, no `sorryAx`); Sec5 has zero
+`Tendsto` and Sec3's are confined to the *qualitative* theorems, off the quantitative path; the
+capstone witness is literally `max xw (Real.exp 1)`. **Not** verified: each of the ~35 phase-2/3
+nodes — the step-0 audit is the mitigation, and a stall partway is an acceptable outcome.
+
+**Credit:** plan authored by Codex; scope correction accepted by the judge, whose Ruling I had
+ruled out this route too broadly by only weighing the *tighten-C* (small-constant) successor.
+
+*Original status note (superseded): launch-ready proposal, not a live directive.*
 
 ## Decision
 

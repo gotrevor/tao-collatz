@@ -1037,3 +1037,60 @@ isolated, and makes no claim that the assembled constant fits under the frozen `
 `DIRECTION.md` closes this branch and explicitly forbids the X-chase. Activate the successor
 only by an operator/judge directive adopting `BIG_C_EXPLICIT_BOUND_PLAN.md`. Until then, do
 not launch a treadmill or edit the frozen pin.**
+
+### JUDGE RULING II (2026-07-17, host-side) — successor **ACTIVATED**: assembled explicit big-C (peer plan, verified) 🟢
+
+A peer agent (**Codex**) read Ruling I and proposed `BIG_C_EXPLICIT_BOUND_PLAN.md`. **Ruling I's
+"no successor" call was too broad; Ruling II narrows it.** Full text: `DIRECTION.md` → "JUDGE
+RULING II".
+
+**What Codex saw that the campaign (and Ruling I) missed** — two objectives were conflated:
+1. prove the frozen numeral `CTao = 10^(10¹¹)` bounds the constant → **obstructed** (check19,
+   check23(i)). Ruling I is correct here and unchanged.
+2. exhibit **some** closed term and prove the theorem at it, with **no smallness claim** →
+   **not obstructed by anything in Ruling I**, which only ever weighed *tighten-C* (make it
+   small) and gated on check23(i). That gate is right for tighten-C and irrelevant to (2).
+Nor is (2) the old **Option A**: Option A *re-pinned `CTao`* (surgery on a judge-owned,
+comparator-pinned statement, gutting the challenge). (2) is **additive** — pin stays frozen and
+`sorry`; a *different* theorem lands at an honestly-assembled constant.
+📌 **Peer review caught what a self-graded campaign could not.** Ruling I corrected the box's
+*evidence grade*; Codex corrected the *judge's own scope*. Both directions of the same mechanism.
+
+**Codex's load-bearing claims — verified host-side this session:**
+- ✅ **Axiom-clean route.** `#print axioms`: `renewal_white_encounters_at`,
+  `tao_collatz_quantitative_spine_atC`, `tao_syracuse_quantitative_sum_atC`,
+  `tao_collatz_quantitative` → all exactly `[propext, Classical.choice, Quot.sound]`, no
+  `sorryAx`. Independent of both live sorries. (Codex marked it "judge to verify" — correct.)
+- ✅ **No rate-free leaf on the quantitative path.** Sec5 `FirstPassage`/`ApproxFormula`/
+  `Stabilization`: **zero** `Tendsto`. Sec3's 11 all sit in `tao_syracuse` (:1266) /
+  `tao_collatz_spine` (:1773) — the **qualitative** theorems, which take an arbitrary `f → ∞`
+  as a hypothesis and are *correctly* rate-free; off the quantitative path. ⚠️ This is the exact
+  failure that killed the C route once (PR #8: `hold_weight_expect` minting `K`/`T` from
+  rate-free limits). It does **not** recur.
+- ✅ **Witnesses are copyable, not conjectural.** `sum_atC` (:857) sets `X := max xw (Real.exp 1)`,
+  `refine ⟨X, ?_⟩`; `spine_atC` (:1580) obtains and passes it through. The plan's
+  `X_syrSum := max X_windowBad (Real.exp 1)` transcribes the source.
+- ⚠️ **NOT verified:** each of the ~35 nodes in phases 2–3 (I checked the capstone + Sec5's
+  Tendsto-freedom). Zero `Tendsto` is strong evidence, not proof. **The step-0 audit is the
+  mitigation and must fail LOUD.** A stall partway is acceptable — landed nodes are permanent.
+
+**🚨 Binding amendment to the plan's step 0:** the audit must walk `C_tao_assembled`'s
+**definitional closure**, never grep files. `Nat.sInf` legitimately appears in `syrMin` (:53) and
+`passTime` (:62) — the **objects being studied**, in the *statement*, not the constant's spine; a
+grep false-positives on them, and a closure walk **seeded wrong walks nothing and passes green**
+(strictly worse). That bug is live today in the public `lean-agent-skills` `comparator-probe`.
+The audit must **print the closure size it walked** and fail if it is 0 or fails to grow.
+
+**Honesty clause (binding on every docstring/report):** `C_tao_assembled` is a **tower**, useless
+as a number, explicit in the *formal* sense only. Never call it an evaluable bound, never compare
+it to `CTao`, never imply smallness. The claim on offer is exactly **"effective in fact,
+kernel-certified" replacing "effective in principle"** — the honest terminus of this campaign's
+own discovery (the constant *is* a tower; publishing the tower **is** the finding).
+
+**Relaunch gate:** key `--done-when` on the **audit**, not a sorry count — the repo-root census
+can never reach 0 (9 comparator stubs, sorry-by-design forever) and this campaign *intentionally*
+leaves 2 src sorries standing. Use `--done-when 'cmd:python3 tools/big_c_cutoff_audit.py --complete'`.
+
+**Status: launch-ready, NOT fired. Trevor fires.** Open for Trevor: whether to **retire the pin**
+once `assembled` lands (a permanent aspirational `sorry` sitting beside a *proved* tower theorem
+is odd, and the pin is branch-only so retiring is free).
