@@ -104,6 +104,29 @@ banked as a candidate follow-up "tighten-C" campaign for after discharge, which 
 symbolic-def scaffolding directly enables. The two optimization observations below stay
 open for that campaign.
 
+### Lap 2 (2026-07-17) — step 2 STARTED: `hold_weight_expect` de-existentialized ✅
+
+First (and dominant) carrier done, bottom of the Sec7 chain (`Sec7/Monotone.lean`):
+
+- **Defs planted**: `deltaBW` (= `exp(epsBW³/2) − 1`), `cHold`, `K_geom`, `T_powGeom`,
+  `K_hold`, `M1_hold` (the `1/δ ≈ 2×10³⁰⁰⁰` ladder-dominant term), `T_hold`,
+  `C_hold = K + M1 + 2T + 4`; `deltaBW_pos`/`one_lt_cHold`/`cHold_rpow`/`one_le_C_hold`.
+- The three private `∃`-threshold lemmas reworked to threshold-explicit `_at` forms
+  (witness formulas now named by `K_geom`/`T_powGeom`).
+- `hold_weight_expect_core` (cutoffs abstracted) + `hold_weight_expect_explicitC`
+  (at `C_hold A`); the ORIGINAL `hold_weight_expect` re-proved by pure delegation —
+  statement byte-identical, differ 35/35 green vs re-pin commit `fabea6f`.
+- **check18** added to `tools/check_blueprint.py`: recomputes the def bodies as written
+  (b/2 inside `K_geom`'s log, `(2/ε)²` shape in `T_powGeom`, …) and cross-asserts against
+  check17's simplified ladder — `log₁₀ C_hold ≈ 3016.15` confirmed.
+- Census: **Sec7 1 of 22 C-slots explicit** (+ thresholds `K/M1/T/Cthr` at this node).
+
+**Next attack (bottom-up per DIRECTION):** `Sec7/Bridge.lean:507`
+`renewal_white_encounters` — name `C1 := C_hold A` consumption, `n0 := 2·C1 + 2`, and the
+witness `max (n0^A) (C0·exp(ε³/2)·3^A)` as defs (`n0_renewal A`, `C_renewal A`), sibling
+`renewal_white_encounters_explicitC`, delegate. Then up the Fourier passthrough
+(`key_fourier_decay` → `charFn_decay`), which is pure `obtain⟨C⟩;refine⟨C,…⟩`.
+
 ## Optimization observations
 
 - `hold_weight_expect` (`Sec7/Monotone.lean:246`): the statement demands
