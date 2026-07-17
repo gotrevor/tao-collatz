@@ -2826,26 +2826,26 @@ theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
         ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) :=
   ⟨P_fewWhite A, one_le_P_fewWhite A hA, Cthr_fewWhite A, few_white_mass_le_at A hA⟩
 
-/-- **(7.55) — the pure damping expectation.** After the (7.54) column split it suffices to
-bound `E[exp(−ε³Nw)] ≤ 10^{−A−1}`. Proved here from `few_white_mass_le` (7.56) by the paper's
-count split `exp(−ε³Nw) ≤ 1_{Nw≤K} + 10^{−(A+3)}` (with `K=⌈(A+3)log10/ε³⌉`, so a white excess
-`Nw>K` damps below `10^{−(A+3)}`), then `PMF`-averaging the constant tail (`Σfpdist=Σhold=1`)
-and the numeric `10^{−(A+2)} + 10^{−(A+3)} ≤ 10^{−(A+1)}`. -/
-theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
-    ∃ P : ℕ, 1 ≤ P ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
-      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+/-- `damping_expectation_le`, `_at` sibling (big-C campaign, step 2): threshold passthrough
+at `P_fewWhite A`/`Cthr_fewWhite A`. Proof: generalize `P_fewWhite A` back to a variable,
+then the original body verbatim over `few_white_mass_le_at`. -/
+theorem damping_expectation_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_fewWhite A ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
       (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
-      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
-          ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin (P_fewWhite A) → ℕ × ℤ,
+          hold.iid (P_fewWhite A) v *
+          ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range (P_fewWhite A),
             Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
               (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))))
         ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) := by
-  obtain ⟨P, hP1, Cthr, hfew⟩ := few_white_mass_le A hA
-  refine ⟨P, hP1, Cthr, ?_⟩
-  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hfew := few_white_mass_le_at A hA
+  revert hfew
+  generalize P_fewWhite A = P
+  intro hfew n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
   have hεnn : (0 : ℝ) ≤ (epsBW : ℝ) := by
     have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
     exact_mod_cast h0
@@ -2954,43 +2954,56 @@ theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
         (ENNReal.ofReal_add (Real.rpow_nonneg (by norm_num) _) (Real.rpow_nonneg (by norm_num) _)).symm
     _ ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) := ENNReal.ofReal_le_ofReal hnum
 
-/-- **X11d crux (post-(7.54)) — the damping × column mass estimate.** Once the end
-value `Q(end)` has been peeled by (7.54) (`Q_le_Qm`: `Q(end) ≤ max(n/2−j_end,1)^{−A}·Q_{m−1}`)
-and the constant `Q_{m−1}` factored out, what remains is this pure first-passage ⊗ Hold-walk
-mass bound: the damping factor `exp(−ε³·Nw)` times the column weight `max(n/2−j_end,1)^{−A}`,
-integrated against `fpDist s ⊗ hold.iid P`, is `≤ m^{−A}`.
-
-The remaining obligation is the (7.55)–(7.67) numerical closure:
-- **damping split by white count** `K=⌈10A/ε³⌉`: on `{Nw>K}` the exp factor is `≤ e^{−10A}`;
-- **few-white geometry** `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
-  (`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`), the two
-  masses bounded by `reaches_fewWhite_mass_le_ten` and `estar_union_le ∘ bigTriangle_of_encounter`
-  (latter at the `j−1` phase shift), with `R=⌈(K+(A+3)log10+2)/ε⌉`;
-- the column weight `max(n/2−j_end,1)^{−A} ≤ 10^A` off the bad column `j_end ≥ 0.9m` whose
-  mass is `O(e^{−cm})` (`fpDistPlus_col_tail`, `budget_le_of_mem_triangle`).
-
-Horizon `P = deterministic_encounter_or_bigTriangle`'s `P₀`; `Cthr` large enough for the
-regime plumbing (⌊4^A(1+p)³⌋ ≤ m^{0.4} for p≤P, X10 deep hyp at `j−1`). -/
-theorem damping_column_mass_le (A : ℝ) (hA : 0 < A) :
-    ∃ Cthr : ℕ, ∃ P : ℕ, 1 ≤ P ∧ ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+/-- **(7.55) — the pure damping expectation.** After the (7.54) column split it suffices to
+bound `E[exp(−ε³Nw)] ≤ 10^{−A−1}`. Proved here from `few_white_mass_le` (7.56) by the paper's
+count split `exp(−ε³Nw) ≤ 1_{Nw≤K} + 10^{−(A+3)}` (with `K=⌈(A+3)log10/ε³⌉`, so a white excess
+`Nw>K` damps below `10^{−(A+3)}`), then `PMF`-averaging the constant tail (`Σfpdist=Σhold=1`)
+and the numeric `10^{−(A+2)} + 10^{−(A+3)} ≤ 10^{−(A+1)}`. -/
+theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
+    ∃ P : ℕ, 1 ≤ P ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
       ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
       (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
       (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+            Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+              (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) :=
+  ⟨P_fewWhite A, one_le_P_fewWhite A hA, Cthr_fewWhite A, damping_expectation_le_at A hA⟩
+
+/-- **Damping-column threshold** (big-C campaign, step 2): the explicit witness of the `∃ Cthr`
+in `damping_column_mass_le`, and — passed through unchanged by `damped_iter_expectation_le` and
+`Q_black_edge_case3` — **the reified C2** that `prop_7_8` combines with `C_hold`. -/
+noncomputable def Cthr_dampingCol (A : ℝ) : ℕ :=
+  max (max (Cthr_fewWhite A) (T_colTail A (P_fewWhite A))) 10
+
+/-- `damping_column_mass_le`, `_at` sibling (big-C campaign, step 2) at
+`Cthr_dampingCol A`/`P_fewWhite A`; original body verbatim over the `_at` inputs. -/
+theorem damping_column_mass_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_dampingCol A ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin (P_fewWhite A) → ℕ × ℤ,
+          hold.iid (P_fewWhite A) v *
           ENNReal.ofReal (
-            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range (P_fewWhite A),
               Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
                 (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
-            ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A)))
+            ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v (P_fewWhite A)).1)) 1 : ℕ) : ℝ) ^ (-A)))
         ≤ ENNReal.ofReal ((m : ℝ) ^ (-A)) := by
-  obtain ⟨P, hP1, Cdamp, hdamp⟩ := damping_expectation_le A hA
-  obtain ⟨Ctail, htail⟩ := col_tail_mass_le A hA P hP1
-  refine ⟨max (max Cdamp Ctail) 10, P, hP1, ?_⟩
-  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
-  have hmC : Cdamp ≤ m := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hm
-  have hmT : Ctail ≤ m := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hm
+  have hdamp := damping_expectation_le_at A hA
+  have htail := col_tail_mass_le_at A hA (P_fewWhite A) (one_le_P_fewWhite A hA)
+  unfold Cthr_dampingCol
+  revert hdamp htail
+  generalize P_fewWhite A = P
+  intro hdamp htail n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hmC : Cthr_fewWhite A ≤ m := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hm
+  have hmT : T_colTail A P ≤ m := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hm
   have hm10 : 10 ≤ m := le_trans (le_max_right _ _) hm
   have hmpos : 0 < m := by omega
   have hmR : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hmpos
@@ -3168,27 +3181,25 @@ theorem damping_column_mass_le (A : ℝ) (hA : 0 < A) :
         rw [← ENNReal.ofReal_add (by positivity) (by positivity)]
         exact ENNReal.ofReal_le_ofReal (by linarith [hm0R])
 
-/-- **X11d crux — the damped-walk expectation bound** (paper (7.54)–(7.67)).
-This is the pure integral estimate that remains once `Q_le_damped_iter` (7.53) has
-converted `Q` at the black edge into a first-passage ⊗ Hold-walk expectation. It states:
-for a suitable threshold `Cthr` and horizon `P` (both `A`-explicit, `n`-uniform), the
-damped walk expectation over the `P`-step Hold walk after first passage is
-`≤ m^{−A}·Q_{m−1}`.
+/-- **X11d crux (post-(7.54)) — the damping × column mass estimate.** Once the end
+value `Q(end)` has been peeled by (7.54) (`Q_le_Qm`: `Q(end) ≤ max(n/2−j_end,1)^{−A}·Q_{m−1}`)
+and the constant `Q_{m−1}` factored out, what remains is this pure first-passage ⊗ Hold-walk
+mass bound: the damping factor `exp(−ε³·Nw)` times the column weight `max(n/2−j_end,1)^{−A}`,
+integrated against `fpDist s ⊗ hold.iid P`, is `≤ m^{−A}`.
 
-The remaining obligation decomposes (next laps) into the three attack-path pieces:
-- **(7.54) column split** — the end value `Q(end)` weight `max(1−j_end/m,1/m)^{−A}` and the
-  `O(e^{−cm})` mass of the bad column `j_end ≥ 0.9m` (`fpDistPlus_col_tail`,
-  `budget_le_of_mem_triangle`);
-- **damping split by white count** `K=⌈10A/ε³⌉`: on `{Nw>K}` the integrand is `≤ e^{−10A}`;
+The remaining obligation is the (7.55)–(7.67) numerical closure:
+- **damping split by white count** `K=⌈10A/ε³⌉`: on `{Nw>K}` the exp factor is `≤ e^{−10A}`;
 - **few-white geometry** `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
-  (`deterministic_encounter_or_bigTriangle`, `encFold_cumWhite`), the two masses bounded by
-  `reaches_fewWhite_mass_le_ten` and `estar_union_le ∘ bigTriangle_of_encounter`
-  (the latter at the `j−1` phase shift), with `R=⌈(K+(A+3)log10+2)/ε⌉`.
+  (`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`), the two
+  masses bounded by `reaches_fewWhite_mass_le_ten` and `estar_union_le ∘ bigTriangle_of_encounter`
+  (latter at the `j−1` phase shift), with `R=⌈(K+(A+3)log10+2)/ε⌉`;
+- the column weight `max(n/2−j_end,1)^{−A} ≤ 10^A` off the bad column `j_end ≥ 0.9m` whose
+  mass is `O(e^{−cm})` (`fpDistPlus_col_tail`, `budget_le_of_mem_triangle`).
 
-Kept in `ENNReal.ofReal`/tsum form so it composes verbatim with the RHS of
-`Q_le_damped_iter` at `half = n/2`, `W = whiteSet n ξ`, `ε = epsBW`, `j = n/2−m`. -/
-theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
-    ∃ Cthr : ℕ, ∃ P : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+Horizon `P = deterministic_encounter_or_bigTriangle`'s `P₀`; `Cthr` large enough for the
+regime plumbing (⌊4^A(1+p)³⌋ ≤ m^{0.4} for p≤P, X10 deep hyp at `j−1`). -/
+theorem damping_column_mass_le (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∃ P : ℕ, 1 ≤ P ∧ ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
       ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
@@ -3199,12 +3210,35 @@ theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
             Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
               Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
                 (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A)))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A)) :=
+  ⟨Cthr_dampingCol A, P_fewWhite A, one_le_P_fewWhite A hA, damping_column_mass_le_at A hA⟩
+
+/-- `damped_iter_expectation_le`, `_at` sibling (big-C campaign, step 2): pure threshold
+passthrough at `Cthr_dampingCol A`/`P_fewWhite A`; original body verbatim over
+`damping_column_mass_le_at`. -/
+theorem damped_iter_expectation_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_dampingCol A ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin (P_fewWhite A) → ℕ × ℤ,
+          hold.iid (P_fewWhite A) v *
+          ENNReal.ofReal (
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range (P_fewWhite A),
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
             Q (n / 2) (whiteSet n ξ) (epsBW : ℝ)
-              (n / 2 - m + e.1 + (pathSum v P).1) (l + e.2 + (pathSum v P).2)))
+              (n / 2 - m + e.1 + (pathSum v (P_fewWhite A)).1)
+              (l + e.2 + (pathSum v (P_fewWhite A)).2)))
         ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) := by
-  obtain ⟨Cthr, P, hP1, hmass⟩ := damping_column_mass_le A hA
-  refine ⟨Cthr, P, ?_⟩
-  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hmass := damping_column_mass_le_at A hA
+  have hP1 := one_le_P_fewWhite A hA
+  revert hmass hP1
+  generalize P_fewWhite A = P
+  intro hmass hP1 n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
   have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
     have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
     exact_mod_cast h0
@@ -3312,6 +3346,70 @@ theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
     _ = ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) := by
         rw [← ENNReal.ofReal_mul hQM0]; congr 1; ring
 
+/-- **X11d crux — the damped-walk expectation bound** (paper (7.54)–(7.67)).
+This is the pure integral estimate that remains once `Q_le_damped_iter` (7.53) has
+converted `Q` at the black edge into a first-passage ⊗ Hold-walk expectation. It states:
+for a suitable threshold `Cthr` and horizon `P` (both `A`-explicit, `n`-uniform), the
+damped walk expectation over the `P`-step Hold walk after first passage is
+`≤ m^{−A}·Q_{m−1}`.
+
+The remaining obligation decomposes (next laps) into the three attack-path pieces:
+- **(7.54) column split** — the end value `Q(end)` weight `max(1−j_end/m,1/m)^{−A}` and the
+  `O(e^{−cm})` mass of the bad column `j_end ≥ 0.9m` (`fpDistPlus_col_tail`,
+  `budget_le_of_mem_triangle`);
+- **damping split by white count** `K=⌈10A/ε³⌉`: on `{Nw>K}` the integrand is `≤ e^{−10A}`;
+- **few-white geometry** `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
+  (`deterministic_encounter_or_bigTriangle`, `encFold_cumWhite`), the two masses bounded by
+  `reaches_fewWhite_mass_le_ten` and `estar_union_le ∘ bigTriangle_of_encounter`
+  (the latter at the `j−1` phase shift), with `R=⌈(K+(A+3)log10+2)/ε⌉`.
+
+Kept in `ENNReal.ofReal`/tsum form so it composes verbatim with the RHS of
+`Q_le_damped_iter` at `half = n/2`, `W = whiteSet n ξ`, `ε = epsBW`, `j = n/2−m`. -/
+theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∃ P : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            Q (n / 2) (whiteSet n ξ) (epsBW : ℝ)
+              (n / 2 - m + e.1 + (pathSum v P).1) (l + e.2 + (pathSum v P).2)))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :=
+  ⟨Cthr_dampingCol A, P_fewWhite A, damped_iter_expectation_le_at A hA⟩
+
+/-- `Q_black_edge_case3`, `_at` sibling (big-C campaign, step 2): **C2 reified** —
+the Case-3 threshold is `Cthr_dampingCol A`, passed through unchanged from
+`damping_column_mass_le`. Original body verbatim over `damped_iter_expectation_le_at`. -/
+theorem Q_black_edge_case3_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_dampingCol A ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  have hbound := damped_iter_expectation_le_at A hA
+  revert hbound
+  generalize P_fewWhite A = P
+  intro hbound n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  have hentry := Q_le_damped_iter (n / 2) (whiteSet n ξ) (epsBW : ℝ) hε0 s P (n / 2 - m) l
+  have hexp := hbound n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hchain : ENNReal.ofReal (Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l)
+      ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :=
+    le_trans hentry hexp
+  have hRHSnn : (0 : ℝ) ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
+    mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg m) _) (Qm_nonneg _ _ _ _ _ _)
+  exact (ENNReal.ofReal_le_ofReal_iff hRHSnn).mp hchain
+
 /-- **Case 3 of Proposition 7.8** ((7.53)–(7.67), paper pp.48–49 + Lemmas
 7.9/7.10 pp.50–54): deep triangle start, `m/log²m < s ≤ O(m)`.
 
@@ -3328,22 +3426,8 @@ theorem Q_black_edge_case3 (A : ℝ) (hA : 0 < A) :
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
       (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
-        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
-  -- (7.53) entry via `Q_le_damped_iter`, then the crux expectation bound, then strip `ofReal`.
-  obtain ⟨Cthr, P, hbound⟩ := damped_iter_expectation_le A hA
-  refine ⟨Cthr, ?_⟩
-  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
-  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
-    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
-    exact_mod_cast h0
-  have hentry := Q_le_damped_iter (n / 2) (whiteSet n ξ) (epsBW : ℝ) hε0 s P (n / 2 - m) l
-  have hexp := hbound n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
-  have hchain : ENNReal.ofReal (Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l)
-      ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :=
-    le_trans hentry hexp
-  have hRHSnn : (0 : ℝ) ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
-    mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg m) _) (Qm_nonneg _ _ _ _ _ _)
-  exact (ENNReal.ofReal_le_ofReal_iff hRHSnn).mp hchain
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
+  ⟨Cthr_dampingCol A, Q_black_edge_case3_at A hA⟩
 
 /-- The black-edge case split, now fed by the sole downstream X11 gate. -/
 theorem Q_black_edge (A : ℝ) (hA : 0 < A) :
