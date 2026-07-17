@@ -1094,3 +1094,21 @@ leaves 2 src sorries standing. Use `--done-when 'cmd:python3 tools/big_c_cutoff_
 **Status: launch-ready, NOT fired. Trevor fires.** Open for Trevor: whether to **retire the pin**
 once `assembled` lands (a permanent aspirational `sorry` sitting beside a *proved* tower theorem
 is odd, and the pin is branch-only so retiring is free).
+
+## Assembled-big-C successor campaign (Ruling II) — lap ledger
+
+### Successor lap 1 (2026-07-17)
+
+- **Step 0 DONE** (`1dac7bf`): `tools/big_c_cutoff_audit.py` (38-entry ordered manifest,
+  next-target printer, _atCX-must-not-call-_atC check) + `tools/ExplicitnessClosure.lean`
+  (definitional-closure walk per the binding Ruling II amendment — no grep; prints
+  CLOSURE_SIZE, fails loud on missing seed / trivial closure / choose-sInf-find leaves).
+  Smoke test: seeded at the existing `C_spine` it walks **147 project defs, clean** —
+  the constant surface built by step 2 of the pin campaign is already selector-free.
+- **Phase 1 DONE** (this commit): `Sec5/FirstPassage.lean` X-chase finished —
+  `X_rpowEps`/`rpow_le_eps_mul_of_lt_one_atX`, `X_descentPow`/`descent_pow_bounds_atX`,
+  `X_descentPasses`/`descent_passes_atX`, `X_firstPassNonescape`/
+  `first_passage_nonescape_atCX`; the ∃-forms (`rpow_le_eps_mul_of_lt_one`,
+  `descent_pow_bounds`, `descent_passes`, `first_passage_nonescape_atC`) all delegate.
+  Witnesses copy-not-compose from the frozen proof bodies. File green first pass;
+  differ 33/33; audit 4/38, next target `goodTuple_prefix_dev_sum_atCX` (phase 2).

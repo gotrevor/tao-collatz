@@ -1582,12 +1582,14 @@ theorem valSum_lower_tail :
   obtain ⟨C, x₀, hC, h⟩ := valSum_lower_tail_explicit
   exact ⟨c_valSumTail, C, x₀, c_valSumTail_pos, hC, h⟩
 
-/-- **Sub-linear powers are eventually dominated.**  For `0 ≤ θ < 1` and `ε > 0`, `x^θ ≤ ε·x` for
-all large `x`.  (Take `x₀ = max 1 ((1/ε)^{1/(1-θ)}`).)  The workhorse for the `O(x^{0.99}) ≤ x`
-closing of the descent. -/
-theorem rpow_le_eps_mul_of_lt_one {θ ε : ℝ} (hθ1 : θ < 1) (hε : 0 < ε) :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → x ^ θ ≤ ε * x := by
-  refine ⟨max 1 ((1 / ε) ^ (1 / (1 - θ))), le_max_left _ _, fun x hx => ?_⟩
+/-- The `rpow_le_eps_mul_of_lt_one` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_rpowEps (θ ε : ℝ) : ℝ := max 1 ((1 / ε) ^ (1 / (1 - θ)))
+
+/-- Universal-cutoff form of `rpow_le_eps_mul_of_lt_one` (X-chase). -/
+theorem rpow_le_eps_mul_of_lt_one_atX {θ ε : ℝ} (hθ1 : θ < 1) (hε : 0 < ε) :
+    1 ≤ X_rpowEps θ ε ∧ ∀ x : ℝ, X_rpowEps θ ε ≤ x → x ^ θ ≤ ε * x := by
+  rw [show X_rpowEps θ ε = max 1 ((1 / ε) ^ (1 / (1 - θ))) from rfl]
+  refine ⟨le_max_left _ _, fun x hx => ?_⟩
   have hx1 : 1 ≤ x := le_trans (le_max_left _ _) hx
   have hxpos : 0 < x := by linarith
   have h1θ : 0 < 1 - θ := by linarith
@@ -1606,14 +1608,24 @@ theorem rpow_le_eps_mul_of_lt_one {θ ε : ℝ} (hθ1 : θ < 1) (hε : 0 < ε) :
     _ = ε * (x ^ θ * x ^ (1 - θ)) := by ring
     _ = ε * x := by rw [hsplit]
 
-/-- **The two power bounds of the descent numeric** (`2^{n₀} ≍ x^{0.1}`, `n₀ = ⌊log x/(10 log 2)⌋`).
-For large `x`: `3^{n₀} ≤ x^{0.2}` and `3^{n₀}·x^{α³}/2^{1.9 n₀} ≤ x^{0.99}`.  The only transcendental
-input is `log 3 / log 2 ≤ 8/5`, which is the clean rational fact `3^5 = 243 ≤ 256 = 2^8`. -/
-theorem descent_pow_bounds :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- **Sub-linear powers are eventually dominated.**  For `0 ≤ θ < 1` and `ε > 0`, `x^θ ≤ ε·x` for
+all large `x`.  (Take `x₀ = max 1 ((1/ε)^{1/(1-θ)}`).)  The workhorse for the `O(x^{0.99}) ≤ x`
+closing of the descent.  Delegates to `rpow_le_eps_mul_of_lt_one_atX` (X-chase). -/
+theorem rpow_le_eps_mul_of_lt_one {θ ε : ℝ} (hθ1 : θ < 1) (hε : 0 < ε) :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → x ^ θ ≤ ε * x :=
+  ⟨X_rpowEps θ ε, (rpow_le_eps_mul_of_lt_one_atX hθ1 hε).1,
+    (rpow_le_eps_mul_of_lt_one_atX hθ1 hε).2⟩
+
+/-- The `descent_pow_bounds` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_descentPow : ℝ := (2 : ℝ) ^ (30 : ℕ)
+
+/-- Universal-cutoff form of `descent_pow_bounds` (X-chase). -/
+theorem descent_pow_bounds_atX :
+    1 ≤ X_descentPow ∧ ∀ x : ℝ, X_descentPow ≤ x →
       (3 : ℝ) ^ (nZero x) ≤ x ^ (0.2 : ℝ) ∧
       (3 : ℝ) ^ (nZero x) * x ^ (alpha ^ 3) / (2 : ℝ) ^ (1.9 * (nZero x : ℝ)) ≤ x ^ (0.99 : ℝ) := by
-  refine ⟨(2 : ℝ) ^ (30 : ℕ), by norm_num, fun x hx => ?_⟩
+  rw [show X_descentPow = (2 : ℝ) ^ (30 : ℕ) from rfl]
+  refine ⟨by norm_num, fun x hx => ?_⟩
   have hx1 : (1 : ℝ) ≤ x := le_trans (by norm_num) hx
   have hxpos : 0 < x := by linarith
   have hL0 : 0 ≤ Real.log x := Real.log_nonneg hx1
@@ -1656,20 +1668,41 @@ theorem descent_pow_bounds :
     apply Real.exp_le_exp.mpr
     nlinarith [hν_le', hν_ge', hprod2, hlog2, hL0, hlog30, hα3, hν0]
 
+/-- **The two power bounds of the descent numeric** (`2^{n₀} ≍ x^{0.1}`, `n₀ = ⌊log x/(10 log 2)⌋`).
+For large `x`: `3^{n₀} ≤ x^{0.2}` and `3^{n₀}·x^{α³}/2^{1.9 n₀} ≤ x^{0.99}`.  The only transcendental
+input is `log 3 / log 2 ≤ 8/5`, which is the clean rational fact `3^5 = 243 ≤ 256 = 2^8`.
+Delegates to `descent_pow_bounds_atX` (X-chase). -/
+theorem descent_pow_bounds :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x →
+      (3 : ℝ) ^ (nZero x) ≤ x ^ (0.2 : ℝ) ∧
+      (3 : ℝ) ^ (nZero x) * x ^ (alpha ^ 3) / (2 : ℝ) ^ (1.9 * (nZero x : ℝ)) ≤ x ^ (0.99 : ℝ) :=
+  ⟨X_descentPow, descent_pow_bounds_atX.1, descent_pow_bounds_atX.2⟩
+
+/-- The `descent_passes` cutoff (X-chase): the witness max-tree copied verbatim from its
+proof, with the obtained locals replaced by their explicit `X_*` names. -/
+noncomputable def X_descentPasses : ℝ :=
+  max (max (X_rpowEps (0.99 : ℝ) (1 / 4 : ℝ)) (X_rpowEps (0.2 : ℝ) (1 / 4 : ℝ)))
+    (max X_descentPow 2)
+
 /-- **The descent step** (Tao pp.21, over (1.5)/(1.7)).  For `x` large and `N` in the support of the
 log-uniform window (`N` odd, `y ≤ N ≤ y^α ≤ x^{α³}`), if the total valuation `valSum N n₀` exceeds
 `1.9 n₀`, then `Syr^{n₀}(N) ≤ 3^{n₀} 2^{-1.9 n₀} x^{α³} + O(3^{n₀}) = O(x^{0.99}) ≤ x`, so `N` passes.
-Uses `syr_descent_bound` (C2 core) + `descent_pow_bounds` (numeric) + `rpow_le_eps_mul_of_lt_one`. -/
-theorem descent_passes :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+Uses `syr_descent_bound` (C2 core) + `descent_pow_bounds` (numeric) + `rpow_le_eps_mul_of_lt_one`.
+Universal-cutoff form (X-chase). -/
+theorem descent_passes_atX :
+    ∀ x : ℝ, X_descentPasses ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       ∀ N ∈ (logUnifOdd y (y ^ alpha)).support,
         1.9 * (nZero x : ℝ) < (valSum N (nZero x) : ℝ) → passes ⌊x⌋₊ N := by
-  obtain ⟨xa, hxa1, hxa⟩ := rpow_le_eps_mul_of_lt_one (θ := (0.99 : ℝ)) (ε := (1 / 4 : ℝ))
+  obtain ⟨hxa1, hxa⟩ := rpow_le_eps_mul_of_lt_one_atX (θ := (0.99 : ℝ)) (ε := (1 / 4 : ℝ))
     (by norm_num) (by norm_num)
-  obtain ⟨xb, hxb1, hxb⟩ := rpow_le_eps_mul_of_lt_one (θ := (0.2 : ℝ)) (ε := (1 / 4 : ℝ))
+  obtain ⟨hxb1, hxb⟩ := rpow_le_eps_mul_of_lt_one_atX (θ := (0.2 : ℝ)) (ε := (1 / 4 : ℝ))
     (by norm_num) (by norm_num)
-  obtain ⟨xc, hxc1, hpow⟩ := descent_pow_bounds
-  refine ⟨max (max xa xb) (max xc 2), fun x hx y hy N hNsupp hval => ?_⟩
+  obtain ⟨hxc1, hpow⟩ := descent_pow_bounds_atX
+  set xa : ℝ := X_rpowEps (0.99 : ℝ) (1 / 4 : ℝ) with hxadef
+  set xb : ℝ := X_rpowEps (0.2 : ℝ) (1 / 4 : ℝ) with hxbdef
+  set xc : ℝ := X_descentPow with hxcdef
+  rw [show X_descentPasses = max (max xa xb) (max xc 2) from rfl]
+  refine fun x hx y hy N hNsupp hval => ?_
   have hxa' : xa ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxb' : xb ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
   have hxc' : xc ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_right _ _)) hx
@@ -1735,22 +1768,31 @@ theorem descent_passes :
   have hfloor : x - 1 < (⌊x⌋₊ : ℝ) := by have := Nat.lt_floor_add_one x; linarith
   exact_mod_cast (lt_of_le_of_lt hsyrR hfloor).le
 
+/-- ∃-form of `descent_passes_atX` (X-chase: `x₀ := X_descentPasses`). -/
+theorem descent_passes :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      ∀ N ∈ (logUnifOdd y (y ^ alpha)).support,
+        1.9 * (nZero x : ℝ) < (valSum N (nZero x) : ℝ) → passes ⌊x⌋₊ N :=
+  ⟨X_descentPasses, descent_passes_atX⟩
 
-/-- `first_passage_nonescape` with the `c`-slot pinned to `c_valSumTail`; `C` and the
-threshold stay existential. Sibling of the ratified `first_passage_nonescape` (which
-delegates here). This is the c7 branch of the stabilization min-tree. -/
-theorem first_passage_nonescape_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `first_passage_nonescape` cutoff (X-chase): witness copied verbatim from the proof
+of `first_passage_nonescape_atC` (`max x₀t x₀d` at the explicit upstream names). -/
+noncomputable def X_firstPassNonescape : ℝ := max X_valSumTail X_descentPasses
+
+/-- Universal-cutoff form of `first_passage_nonescape_atC` (X-chase).  This is the c7
+branch of the stabilization min-tree at its explicit cutoff. -/
+theorem first_passage_nonescape_atCX :
+    ∀ x : ℝ, X_firstPassNonescape ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
           ≤ C_valSumGeom * x ^ (-c_valSumTail) := by
-  -- Assembly of the C7 route: {¬passes} ⊆ {valSum ≤ 1.9 n₀} (descent, contrapositive), and the
-  -- latter has mass ≪ x^{-c} (the (5.5) lower tail).  Only the two named sub-lemmas carry content.
-  obtain ⟨x₀t, htail⟩ := valSum_lower_tail_atC
-  obtain ⟨x₀d, hdesc⟩ := descent_passes
+  have htail := valSum_lower_tail_atCX
+  have hdesc := descent_passes_atX
   set C : ℝ := C_valSumGeom with hCdef
   have hC : 0 < C := C_valSumGeom_pos
-  refine ⟨max x₀t x₀d, ?_⟩
+  set x₀t : ℝ := X_valSumTail with hx₀tdef
+  set x₀d : ℝ := X_descentPasses with hx₀ddef
+  rw [show X_firstPassNonescape = max x₀t x₀d from rfl]
   intro x hx y hy
   have hxt : x₀t ≤ x := le_trans (le_max_left _ _) hx
   have hxd : x₀d ≤ x := le_trans (le_max_right _ _) hx
@@ -1790,6 +1832,18 @@ theorem first_passage_nonescape_atC :
   · have h0 : (logUnifOdd y (y ^ alpha)) N = 0 := by
       rw [PMF.mem_support_iff] at hsupp; exact not_not.mp hsupp
     rw [h0]; simp
+
+/-- `first_passage_nonescape` with the `c`-slot pinned to `c_valSumTail`; `C` and the
+threshold stay existential. Sibling of the ratified `first_passage_nonescape` (which
+delegates here). This is the c7 branch of the stabilization min-tree. -/
+theorem first_passage_nonescape_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
+          ≤ C_valSumGeom * x ^ (-c_valSumTail) :=
+  -- Assembly of the C7 route lives in `first_passage_nonescape_atCX`; this is the ∃-form
+  -- (X-chase: `x₀ := X_firstPassNonescape`).
+  ⟨X_firstPassNonescape, first_passage_nonescape_atCX⟩
 
 /-- `first_passage_nonescape` with the `c`-slot pinned to `c_valSumTail`; `C` and the
 threshold stay existential. Sibling of the ratified `first_passage_nonescape` (which
