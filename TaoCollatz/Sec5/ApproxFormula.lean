@@ -870,21 +870,25 @@ theorem goodTuple_prefix_dev_sum :
   obtain ⟨C, x₀, hC, h⟩ := goodTuple_prefix_dev_sum_explicit
   exact ⟨c_goodTupleDev, C, x₀, c_goodTupleDev_pos, hC, h⟩
 
-/-- Sibling of `approx_good_tuple_whp` with the `c`/`C` slots pinned at
-(`c_goodTupleDev`, `C_goodTupleDev`) — the `_atC` form (big-C campaign, step 2),
-cutoff existential. -/
-theorem approx_good_tuple_whp_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `approx_good_tuple_whp` cutoff (X-chase): witness copied verbatim from the
+`_atC` proof (`max x₀ 1` at the explicit upstream). -/
+noncomputable def X_goodTupleWhp : ℝ := max X_goodTupleDev 1
+
+/-- Universal-cutoff form of `approx_good_tuple_whp_atC` (X-chase). -/
+theorem approx_good_tuple_whp_atCX :
+    ∀ x : ℝ, X_goodTupleWhp ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1)
           ≤ C_goodTupleDev * (Real.log x) ^ (-c_goodTupleDev) := by
-  obtain ⟨x₀, hsum⟩ := goodTuple_prefix_dev_sum_atC
+  have hsum := goodTuple_prefix_dev_sum_atCX
   set C : ℝ := C_goodTupleDev with hCdef
   have hC : 0 < C := C_goodTupleDev_pos
   set c : ℝ := c_goodTupleDev with hcdef
   have hc : 0 < c := c_goodTupleDev_pos
-  refine ⟨max x₀ 1, fun x hx y hy => ?_⟩
+  set x₀ : ℝ := X_goodTupleDev with hx₀def
+  rw [show X_goodTupleWhp = max x₀ 1 from rfl]
+  refine fun x hx y hy => ?_
   have hx0 : x₀ ≤ x := le_trans (le_max_left _ _) hx
   have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hyα1 : (1 : ℝ) ≤ y ^ alpha := by
@@ -952,6 +956,15 @@ theorem approx_good_tuple_whp_atC :
           P.expect (Set.indicator {N | Real.log x ^ (0.6 : ℝ) ≤ |(valSum N n : ℝ) - 2 * n|} 1) :=
         expect_le_sum_of_indicator_le _ _ _ _ hpw2
     _ ≤ C * (Real.log x) ^ (-c) := hsum x hx0 y hy
+
+/-- ∃-form of `approx_good_tuple_whp_atCX` (X-chase: `x₀ := X_goodTupleWhp`). -/
+theorem approx_good_tuple_whp_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} 1)
+          ≤ C_goodTupleDev * (Real.log x) ^ (-c_goodTupleDev) :=
+  ⟨X_goodTupleWhp, approx_good_tuple_whp_atCX⟩
 
 /-- Sibling of `approx_good_tuple_whp` with the `c`-slot pinned to `c_goodTupleDev`
 (passthrough); the original delegates here.  Now delegates to `approx_good_tuple_whp_atC`

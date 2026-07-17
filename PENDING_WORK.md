@@ -1121,3 +1121,8 @@ is odd, and the pin is branch-only so retiring is free).
   (the obtained rate `κ` was itself existential — now the closed `min (4d²) d`).
   `X_goodTupleDev` = the verbatim 6-arm max-tree at explicit locals. Audit 5/38, next
   `approx_good_tuple_whp_atCX`.
+
+### Successor lap 3 (2026-07-17) — phase 2 entry 2/13
+
+- `X_goodTupleWhp := max X_goodTupleDev 1` + `approx_good_tuple_whp_atCX`; `_atC`
+  delegates. Audit 6/38, next `passtime_edge_mass_atCX`.
