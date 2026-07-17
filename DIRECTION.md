@@ -1,4 +1,4 @@
-# DIRECTION — big-C campaign 🔢 — **CLOSED 2026-07-17**
+# DIRECTION — big-C campaign 🔢 — **pin campaign CLOSED; ASSEMBLED successor LIVE (2026-07-17)**
 
 *Grind laps READ and OBEY this file; it outranks any handoff. `blueprint_rules.md` remains
 BINDING. Predecessor campaign (pin `c`, PR #9, merged): its methods are this campaign's
@@ -38,6 +38,14 @@ comparator-pinned statement, gutting the challenge). This is **additive**: the p
 frozen and `sorry`, and a *different* theorem is added at an honestly-assembled constant that
 says exactly what has been proved. **Peer review caught what a self-graded campaign could
 not — that is the mechanism working.**
+
+**⚖️ UPDATE, same day (Trevor's call): the pin was RETIRED, not frozen.** `CTao` and
+`tao_collatz_quantitative_fully_explicit` are **deleted** from `Statement.lean` and from the
+comparator surface, and the orphaned Option-B island (incl. `Q_black_edge_tight`) is deleted
+from `Sec7/Bridge.lean`. **`TaoCollatz/` now has ZERO sorries.** So this campaign is purely
+additive onto a clean library: there is no pin to avoid and no crux to leave alone — **those
+declarations do not exist. Do not go looking for them.** `git log --follow` has the code;
+`PENDING_WORK.md` has the route map.
 
 ### Codex's load-bearing claims, VERIFIED host-side by the judge
 
@@ -79,14 +87,20 @@ adding a node.
 
 > **CURRENT DIRECTIVE — assembled explicit big-C.** Add an axiom-clean theorem
 > `tao_collatz_quantitative_assembled` at the closed constant `C_tao_assembled` specified in
-> `BIG_C_EXPLICIT_BOUND_PLAN.md`. Finish the X-chase in manifest order. Use the existing clean
-> tower route. **Do not edit the frozen `CTao` pin, do not touch comparator statements, do not
-> work on `Q_black_edge_tight`.** The next target is always the first missing entry printed by
+> `BIG_C_EXPLICIT_BOUND_PLAN.md`. Finish the X-chase in manifest order, using the existing
+> clean tower route. The next target is always the first missing entry printed by
 > `tools/big_c_cutoff_audit.py`. Done means the plan's complete gate is green and
 > `#print axioms tao_collatz_quantitative_assembled` shows only the trust base.
 > **The plan's per-commit gates, done condition, and explicitness contract are BINDING**, with
-> the step-0 amendment above. `blueprint_rules.md` still binds. **The pin's `sorry` and the
-> `Q_black_edge_tight` `sorry` stay isolated and untouched — they are not yours to discharge.**
+> the step-0 amendment above. `blueprint_rules.md` still binds.
+>
+> **`TaoCollatz/` is sorry-clean (0) and MUST STAY THAT WAY.** This campaign adds a theorem; it
+> never adds a `sorry`. If a node cannot be made explicit, that is a **`JUDGE-FLAG:` +
+> `box stuck`** — never a `sorry` placeholder, never a weakened statement.
+> **Do not touch the comparator statements** (judge-owned, public-facing) — adding
+> `tao_collatz_quantitative_assembled` to `theorem_names` is the **judge's** call at ratification.
+> The 33 differ-watched statements stay character-identical; `tao_stmt_diff.py fabea6f HEAD`
+> must print **33/33** on every commit.
 
 **Honesty clause (binding, applies to every docstring and report this campaign writes):**
 `C_tao_assembled` is a **tower** and is **useless as a number**. It is explicit in the formal
