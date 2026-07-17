@@ -1091,6 +1091,48 @@ def check21():
           % (log10_tight, log10_K_fw, log10_M1, log10_M1 - log10_K_fw))
 
 
+def check23():
+    # Big-C campaign lap 15 (2026-07-17): the FLAT-ENVELOPE CONTRADICTION and the
+    # exp-depth route sizing.  Supersedes check22(d): the caConst/Sec-6 lever does NOT
+    # rescue Option B — the contradiction below is budget-independent.
+    # (i) Unconditional-geometry variants (ANY budget): the envelope S has a dual role —
+    #     E*-rarity needs S >= 8*c_hit*P (per-time hit rate >= c_hit/S is the best that
+    #     spacing-only tools give; TriangleFamily.separated is CONSTANT ~230,
+    #     BlackEdge.lean:47), while the deterministic claim's barrier-crossing cost
+    #     needs R*S/2 <= P.  Together: 4*c_hit*R <= 1 — false by ~3000 orders for every
+    #     c_hit >= 1e-15 (R >= 100*K, K >= ln4/eps^3).  Growing envelopes escape only
+    #     geometrically (p_{i+1} >= p_i*(1+c*A^2)) => P >= (1+cA^2)^R: the TOWER is
+    #     intrinsic to the encounter architecture under unconditional geometry.
+    from math import log10
+    log10_R = log10(log(4)) + 3000 + 2
+    for log10_c in (-15, -10, -5, 0):
+        assert log10(4) + log10_c + log10_R > 300     # 4*c_hit*R >> 1: robust
+    # (ii) The exp-depth door: cornerTriple size = log(eps/|theta*|)
+    #      (Triangles.lean:1626), so size->=S apexes are eps*e^{-S}-deep BY
+    #      CONSTRUCTION.  IF the walk's deep-black hit mass decays exponentially in
+    #      depth (the ONE open equidistribution input), the chain fits the CURRENT
+    #      budget at A = mainDecayExponent 3.7:
+    ln2, ln10 = log(2), log(10)
+    A_high = 3.7
+    ca = 1000 * (A_high + 3)
+    B = A_high + ca ** 2 * ln2 + 3
+    budget = 0.95e11 / B                              # ~3053
+    log10_P0 = log10(log(4)) + 3000 + 2               # P ~ R (waits are global, lap 13b)
+    # required envelope: 2*eps*P*e^{-S} <= 1/8  =>  S ~ ln(16*eps*P) (natural-log units,
+    # matching the cornerTriple size scale; black measure is 2*eps, eps = 1e-1000):
+    S = (log10(16) + (-1000) + log10_P0) * ln10       # eps*P ~ 10^2002, S ~ 4.6e3
+    assert 4000 < S < 5000, S
+    log10_P = log10_R + log10(max(S, 2.0) / 2)        # P ~ R*(S+2)/2 + K: R*S dominates
+    log10_thresholds = log10(400) + log10_P           # T_colTail-shaped arm
+    assert log10_thresholds < budget - 40, (log10_thresholds, budget)
+    print("23. flat-envelope contradiction: 4*c_hit*R > 1 by >300 orders for all "
+          "c_hit >= 1e-15 (tower intrinsic to unconditional geometry, ANY budget — "
+          "supersedes 22(d)); exp-depth door: S ~ %.0f, log10 P ~ %.0f, thresholds "
+          "~10^%.0f < budget %.0f (fits at CURRENT A, conditional on exponential "
+          "depth-decay of deep-black hits — lap-16 reads many_triangles_white)"
+          % (S, log10_P, log10_thresholds, budget))
+
+
 def check22():
     # Big-C campaign lap 14 (2026-07-17): OPTION-B FEASIBILITY MAP — machine-checked
     # record of the lap-13b/14 floor arithmetic for `Q_black_edge_tight` (the crux).
@@ -1154,4 +1196,5 @@ if __name__ == "__main__":
     check20()                                     # lap-11 Sec5/Sec3 glue defs vs ladder
     check21()                                     # lap-13 tight resize (Option B pin)
     check22()                                     # lap-14 Option-B feasibility map
+    check23()                                     # lap-15 flat contradiction + exp-depth door
     print("ALL CHECKS PASS ✅")

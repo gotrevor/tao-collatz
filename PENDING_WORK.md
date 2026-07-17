@@ -737,3 +737,48 @@ in-triangle CROSSING TIME (barrier climbs are deterministic ≤ 0.48·size at �
 both coordinates monotone ⟹ no re-entry) instead of excluding big triangles hits a
 log-factor circularity (`Σ sizes ~ P·#scales`) — recorded as refuted-unless-the-phase-
 constraint-prunes-scales; the dilated route dominates it anyway.
+
+### Lap 15 (2026-07-17) — the lap-14 "one door" SHUT; the TRUE door found: exp-depth anti-concentration
+
+**Q1 settled (source-read of `encounter_separated_sum_core`, `TriangleFamily`,
+`cornerTriple`):** the √-cap `s'² ≤ 1+s` in X10b is bookkeeping (it absorbs the Gaussian
+peak term `4/√(1+s)` into `1/s'`), BUT the door it guarded is shut anyway, because of a
+deeper, budget-independent contradiction:
+
+**The flat-envelope contradiction (kills EVERY unconditional-geometry variant, at ANY
+budget, including the §6/caConst lever):** the envelope `S` plays a dual role —
+(i) E∗-rarity: with unconditional (spacing/pigeonhole) tools the per-time hit rate of
+size-≥S triangles is `≥ c/S` (`TriangleFamily.separated` gives only CONSTANT ~230
+set-separation; the s'/10 apex spacing in X10b is window-derived), so the horizon union
+needs `S ≥ 8cP`; (ii) the deterministic claim's barrier-crossing cost: each of the `R`
+encounters may need `~S/2` steps to clear its barrier, so `R·S/2 ≤ P`, i.e. `S ≤ 2P/R`.
+Combined: `4cR ≤ 1` — FALSE by 3000 orders (`R ~ 10^3002` forced by `K ≥ ln4/ε³`).
+Growing envelopes resolve it only geometrically (`p_{i+1} ≳ p_i(1+cA²)` ⟹ `P ≳ (1+cA²)^R`)
+— **the tower is intrinsic to the encounter architecture with unconditional geometry**.
+Tao's tower is not slop at architecture level; it is the price of avoiding equidistribution.
+(This SUPERSEDES check22(d): the caConst/§6 lever does NOT rescue Option B — the
+contradiction has no budget in it.)
+
+**The TRUE remaining door (fits at CURRENT A!):** `cornerTriple` size is definitionally
+`s* = log(ε/|θ*|)` (Triangles.lean:1626), so
+`t ∈ F.T, S ≤ t.2.2 ⟺ |θq(apex)| ≤ ε·e^{−S}` — big triangles ARE exp-deep black points,
+by construction. If the walk's deep-black hitting mass decays exponentially in depth —
+ANY bound of the shape `P(position ∈ size-≥S triangle) ≤ C·e^{−cS}` (equidistribution /
+anti-concentration of θq at the walk position at scale `ε·e^{−S}`) — then:
+`S ~ ln(16·2εP)/c ~ 2100/c`, horizon `P ~ R·(S+K)/2 ~ 10^3005`, thresholds
+(`T_colTail ~ 400P`, regime arms) `~10^3008` — ALL inside the budget 3053 at the current
+`A = 3.11e7`, no §6 surgery needed. **Option B reduces to ONE clean statement: exponential
+depth-decay of the walk's deep-black mass.**
+
+**Lap-16 probe (decisive, concrete):** read `many_triangles_white` (ManyTriangles.lean:2433
+core / 2554) — the mechanism that gives the UNCONDITIONAL `p₀ ≥ 51/100` white mass at the
+fp-endpoint (anti-concentration at depth 0). Determine: does the packing/counting mechanism
+give any exp-in-S generalization (`deep-black mass at depth S ≤ (1/2)·e^{−cS}` or even any
+`o(1)` in S beyond constant), or is it intrinsically one-level (51% via triangle-separation
+packing that a single giant deep cone defeats)? Also formalize meanwhile (true, cheap,
+needed by ANY route): `bigTriangle_apex_deep : t ∈ F.T → S ≤ t.2.2 →
+|θq n ξ t.1... (apex)| ≤ ε·exp(−S)` from `canonical` + `cornerTriple` (near-definitional).
+If the mechanism is one-level: **JUDGE-FLAG** (Option B's crux is equivalent to a new
+equidistribution theorem beyond the paper's toolset; evidence = check22/23 + this analysis;
+options: scope extension to attack it head-on as new mathematics, or accept the disclosed
+pin sorry).
