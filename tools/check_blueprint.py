@@ -819,6 +819,49 @@ def check17():
              log10_ladder / OLD_PIN_EXP, log10_floor))
 
 
+def check18():
+    # Big-C campaign step 2 (2026-07-17): the SYMBOLIC DEFS planted in
+    # TaoCollatz/Sec7/Monotone.lean — deltaBW, cHold, K_geom/K_hold, T_powGeom/T_hold,
+    # M1_hold, C_hold — recomputed here in log-space FROM THE DEF BODIES AS WRITTEN
+    # (with the b/2 inside K_geom's log, the (2/eps)^2 shape inside T_powGeom, etc.),
+    # then cross-asserted against check17's algebraically simplified forms.  This is
+    # the numeric trap for the defs: a mis-transcription (dropped /2, wrong base,
+    # k+1 vs k) breaks the agreement.
+    from math import log10
+    ln2, ln3, ln10, ln43 = log(2), log(3), log(10), log(4 / 3)
+    A_high = 3.7
+    ca = 1000 * (A_high + 3)
+    B = A_high + ca ** 2 * ln2 + 3               # the A at which the chain runs
+    # deltaBW = exp(epsBW^3/2) - 1 ≈ epsBW^3/2 = 0.5e-3000  (epsBW = 1e-1000)
+    log10_delta = log10(0.5) - 3000
+    ln_delta = log10_delta * ln10
+    # K_hold A = K_geom(deltaBW/3 * 2^-A) = ceil( ln((b/2)^-1) / ln(4/3) ),
+    #   b = deltaBW/3 * 2^-A  (Monotone.lean, def K_geom / def K_hold):
+    ln_b2 = ln_delta - log(3) - B * ln2 - log(2)          # ln(b/2)
+    K_def = -ln_b2 / ln43                                  # pre-ceil
+    K_17 = ((log(6) - ln_delta) + B * ln2) / ln43          # check17's simplified form
+    assert abs(K_def - K_17) < 1e-6 * K_17, (K_def, K_17)
+    # cHold A = (1+deltaBW/3)^(1/A):  ln(cHold) = ln(1+delta/3)/A ≈ delta/(3A);
+    # M1_hold = ceil(K*c/(c-1)) with c-1 ≈ delta/(3A)  =>  log10 M1 ≈ log10(K*3A/delta):
+    log10_M1_def = log10(K_def) + log10(3 * B) - log10_delta
+    log10_M1_17 = log10(K_17) + log10(3 * B) - log10_delta
+    assert abs(log10_M1_def - log10_M1_17) < 1e-6
+    assert abs(log10_M1_def - 3016.15) < 0.05, log10_M1_def
+    # T_hold A = T_powGeom ⌈A⌉ (deltaBW/3 * 3^-A)
+    #   = 1 + (ceil((2/(ln43/(2(k+1))))^2) + 1) + ceil(ln((b/2)^-1)/(ln43/2)):
+    kA = B + 1                                             # ⌈A⌉ up to rounding
+    T_def = 1 + ((2 * 2 * (kA + 1) / ln43) ** 2 + 1) \
+        + (-(ln_delta - log(3) - B * ln3 - log(2))) / (ln43 / 2) + 2
+    T_17 = (4 * (B + 1) / ln43) ** 2 + ((log(6) - ln_delta) + B * ln3) / (ln43 / 2)
+    assert abs(T_def - T_17) < 1e-3 * T_17 + 10, (T_def, T_17)
+    # C_hold = K + M1 + 2T + 4 is M1-dominated; its log10 must equal check17's Cthr:
+    log10_C_hold = log10_M1_def                            # K, T are ~1e8/1e17 vs 1e3016
+    assert abs(log10_C_hold - 3016.15) < 0.05
+    print("18. symbolic defs (Monotone.lean K_hold/M1_hold/T_hold/C_hold) agree with "
+          "the check17 ladder: K ≈ %.3e, log10 M1 ≈ %.2f, T ≈ %.3e, log10 C_hold ≈ %.2f"
+          % (K_def, log10_M1_def, T_def, log10_C_hold))
+
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
@@ -832,4 +875,5 @@ if __name__ == "__main__":
     check14(); check15()                          # C6 §3 pins (Thm 3.1 forms, (1.2) pullback)
     check16()                                     # cTao explicit-exponent min-tree
     check17()                                     # big-C ladder map (GO vs re-pinned 1e11)
+    check18()                                     # step-2 symbolic defs vs the ladder
     print("ALL CHECKS PASS ✅")
