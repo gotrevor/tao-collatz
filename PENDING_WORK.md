@@ -207,6 +207,25 @@ inputs now explicit (`fpDistPlus_height_tail`, `fpDistPlus_col_tail`,
 wire `C2` into `prop_7_8_at`. Then `renewal_white_encounters` + Fourier passthrough,
 then Sec6 (8 slots), Sec5 (37), Sec3 (7).
 
+### Lap 5 (2026-07-17) — `triangle_encounter_le_rpow` (X10 / Lemma 7.10) explicit ✅
+
+- `M_encTri = max(10²⁷, (S_apexProx+0+1)²) = 10²⁷`, `c_encTri = c_fpHeightTail`,
+  `C_encTri = 100·C_apexProx + e^{c_fpHeightTail·M_encTri} + C_fpHeightTail +
+  432·C_fpColTail/c_fpColTail³ + C_encSep·C_apexProx` — via a full-body core
+  (420-line proof, constants ∀-abstracted, 8 constant params + 4 bundle hyps).
+- **Ladder audit of the `e^{ch·Mth}` term** (log₁₀ ≈ 8.5×10²¹, ch = 1/51200):
+  traced consumption — (7.60) → few_white/Q_black_edge_case3 → prop_7_8 →
+  `Q_polynomial_decay` → `renewal_white_encounters` C0-arm. Every hop converts
+  the CONSTANT into a THRESHOLD via `T_expRpow`-style lemmas (`m ≥ ~ln(C)/ρ`),
+  a LOGARITHMIC collapse; thresholds re-enter as `threshold^A`, so the C0-arm's
+  log₁₀ lands ~10⁸–10⁹ ≪ 9.39×10¹⁰ (the n₀^B head). check17's GO stands. When
+  `Q_polynomial_decay`'s C0 is fully explicit, extend check18 with the C0-arm
+  numeric (assert C0-arm < head) — the map's max-domination claim becomes
+  machine-checked.
+
+**Next attack:** `triangle_encounter_le` assembly (the pinned (7.60) form below the
+rpow engine), then the Case3 few_white cluster (see lap-4 next-attack list).
+
 ## Optimization observations
 
 - `hold_weight_expect` (`Sec7/Monotone.lean:246`): the statement demands

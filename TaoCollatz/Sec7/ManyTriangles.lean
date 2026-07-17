@@ -5388,9 +5388,52 @@ top of this file; see the docstring there). Assembly: trivial branch
 absorbs everything below the regime threshold); main branch = pointwise
 indicator split `1_{big} ≤ 1_{heightEsc} + 1_{colEsc} + 1_{proximity}`, the
 two (7.61) tails at `H = 2A²(1+p)`, `D = s^{0.6}`, X10a for the third piece,
-and X10b at `W = C₂A²(1+p)` for the separated-Σ sum. -/
-theorem triangle_encounter_le_rpow :
-    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+and X10b at `W = C₂A²(1+p)` for the separated-Σ sum.
+**Core, constants abstracted** (big-C campaign, step 2): given the two (7.61)
+tails at `(ch, Ch)`/`(cc, Cc)`, X10a at `(C₂, S₀a)` and X10b at `(C₃, S₀b)`,
+the (7.60) bound holds at rate `ch`, `A₀ = 5`, and constant
+`100C₂ + e^{ch·Mth} + Ch + 432Cc/cc³ + C₃C₂`, `Mth = max(10²⁷, (S₀a+S₀b+1)²)`. -/
+theorem triangle_encounter_le_rpow_core
+    (ch Ch cc Cc C₂ C₃ : ℝ) (S₀a S₀b : ℕ)
+    (hch : 0 < ch) (hCh : 0 < Ch) (hcc : 0 < cc) (hCc : 0 < Cc)
+    (hC₂ : 1 ≤ C₂) (hC₃ : 0 < C₃)
+    (hheight : ∀ s p : ℕ, ∀ H : ℝ, 50 * (1 + (p : ℝ)) ≤ H →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | (s : ℝ) + H ≤ (q.2 : ℝ)} 1 e
+        ≤ Ch * Real.exp (-ch * H))
+    (hcolT : ∀ s p : ℕ, ∀ D : ℝ, 10 * (1 + (p : ℝ)) ≤ D →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 e
+        ≤ Cc * (Real.exp (-cc * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-cc * D)))
+    (hX10a : ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S₀a ≤ s →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (A : ℝ), 5 ≤ A → ∀ (p s' : ℕ),
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+        100 * A ^ 2 * (1 + (p : ℝ)) ≤ (s' : ℝ) →
+      ∀ e : ℕ × ℤ, (s : ℤ) < e.2 →
+        (e.2 : ℝ) ≤ (s : ℝ) + 2 * A ^ 2 * (1 + (p : ℝ)) →
+        |(e.1 : ℝ) - (s : ℝ) / 4| ≤ 2 * (s : ℝ) ^ (0.6 : ℝ) →
+      ∀ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2 →
+        ((j + e.1, l + e.2) : ℕ × ℤ) ∈ triangle t'.1 t'.2.1 t'.2.2 →
+      (t'.1 : ℝ) ≤ (j : ℝ) + e.1
+        ∧ (j : ℝ) + e.1 - t'.1 ≤ C₂ * A ^ 2 * (1 + (p : ℝ))
+        ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)|
+            ≤ C₂ * A ^ 2 * (1 + (p : ℝ)))
+    (hX10b : ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S₀b ≤ s →
+      ∀ (p s' : ℕ) (W : ℝ), 1 ≤ W → 100 * W ≤ (s' : ℝ) →
+      ((s' : ℝ)) ^ 2 ≤ 1 + (s : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+              ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+              ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} 1 (j + e.1, l + e.2)
+        ≤ C₃ * W / (s' : ℝ)) :
+    ∀ (A : ℝ), 5 ≤ A →
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
         (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
@@ -5400,21 +5443,17 @@ theorem triangle_encounter_le_rpow :
         (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
       ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
           * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
-        ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
-          + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) := by
+        ≤ (100 * C₂
+            + Real.exp (ch * ((max (10 ^ 27) ((S₀a + S₀b + 1) ^ 2) : ℕ) : ℝ)) + Ch
+            + 432 * Cc / cc ^ 3 + C₃ * C₂) * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+          + (100 * C₂
+            + Real.exp (ch * ((max (10 ^ 27) ((S₀a + S₀b + 1) ^ 2) : ℕ) : ℝ)) + Ch
+            + 432 * Cc / cc ^ 3 + C₃ * C₂)
+            * Real.exp (-ch * A ^ 2 * (1 + (p : ℝ))) := by
   classical
-  obtain ⟨ch, hch, Ch, hCh, hheight⟩ := fpDistPlus_height_tail
-  obtain ⟨cc, hcc, Cc, hCc, hcolT⟩ := fpDistPlus_col_tail
-  obtain ⟨C₂, hC₂, S₀a, hX10a⟩ := encounter_apex_proximity_rpow
-  obtain ⟨C₃, hC₃, S₀b, hX10b⟩ := encounter_separated_sum
   set Mth : ℕ := max (10 ^ 27) ((S₀a + S₀b + 1) ^ 2) with hMth
   set C : ℝ := 100 * C₂ + Real.exp (ch * (Mth : ℝ)) + Ch
       + 432 * Cc / cc ^ 3 + C₃ * C₂ with hC
-  have hC0 : (0 : ℝ) < C := by
-    have := Real.exp_pos (ch * (Mth : ℝ))
-    have h1 : (0 : ℝ) < 432 * Cc / cc ^ 3 := by positivity
-    nlinarith [mul_pos hC₃ (lt_of_lt_of_le one_pos hC₂)]
-  refine ⟨C, hC0, ch, hch, 5, by norm_num, ?_⟩
   intro A hA n ξ hξ F t₀ ht₀ j l hmemt₀ s hs hdeep p s' hs'1 hs'm
   -- shared numerics
   have hp0 : (0 : ℝ) ≤ (p : ℝ) := Nat.cast_nonneg p
@@ -5811,6 +5850,83 @@ theorem triangle_encounter_le_rpow :
           mul_le_mul_of_nonneg_right h1 hexp_pos.le
         linarith
 
+/-- The regime threshold of `triangle_encounter_le_rpow` (X10), symbolic (big-C
+campaign, step 2): `max(10²⁷, (S_apexProx + 0 + 1)²) = 10²⁷` (the `+ 0` is the
+X10b threshold `S₀b = 0`, kept verbatim from the core instantiation). -/
+def M_encTri : ℕ := max (10 ^ 27) ((S_apexProx + 0 + 1) ^ 2)
+
+/-- The decay rate of `triangle_encounter_le_rpow` (X10), symbolic:
+`c_fpHeightTail`. -/
+noncomputable def c_encTri : ℝ := c_fpHeightTail
+
+/-- The constant of `triangle_encounter_le_rpow` (X10), symbolic (big-C
+campaign, step 2): `100C₂ + e^{ch·Mth} + Ch + 432Cc/cc³ + C₃C₂` at the explicit
+(7.61)/X10a/X10b constants. NOTE the `e^{ch·Mth} ≈ e^{1.95×10²²}` term — huge,
+but it reaches the spine's final constant only through `T_expRpow`-style
+threshold conversions (logarithmic collapse), so the check17 ladder is
+unaffected at leading order; see PENDING_WORK.md lap-5. -/
+noncomputable def C_encTri : ℝ :=
+  100 * C_apexProx + Real.exp (c_fpHeightTail * (M_encTri : ℝ)) + C_fpHeightTail
+    + 432 * C_fpColTail / c_fpColTail ^ 3 + C_encSep * C_apexProx
+
+theorem c_encTri_pos : 0 < c_encTri := by
+  unfold c_encTri
+  exact c_fpHeightTail_pos
+
+theorem C_encTri_pos : 0 < C_encTri := by
+  have h1 := C_apexProx_ge_one
+  have h2 := Real.exp_pos (c_fpHeightTail * (M_encTri : ℝ))
+  have h3 := C_fpHeightTail_pos
+  have h4 : (0 : ℝ) < 432 * C_fpColTail / c_fpColTail ^ 3 := by
+    have hc := c_fpColTail_pos
+    have hC := C_fpColTail_pos
+    positivity
+  have h5 := C_encSep_pos
+  unfold C_encTri
+  nlinarith [mul_pos h5 (lt_of_lt_of_le one_pos h1)]
+
+/-- `triangle_encounter_le_rpow`, `_explicitC` sibling:
+`triangle_encounter_le_rpow_core` at the explicit (7.61)/X10a/X10b constants,
+folded into `c_encTri`/`C_encTri` (`A₀ = 5`). -/
+theorem triangle_encounter_le_rpow_explicitC :
+    ∀ (A : ℝ), 5 ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (p s' : ℕ), 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+        ≤ C_encTri * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+          + C_encTri * Real.exp (-c_encTri * A ^ 2 * (1 + (p : ℝ))) := by
+  have h := triangle_encounter_le_rpow_core c_fpHeightTail C_fpHeightTail
+    c_fpColTail C_fpColTail C_apexProx C_encSep S_apexProx 0
+    c_fpHeightTail_pos C_fpHeightTail_pos c_fpColTail_pos C_fpColTail_pos
+    C_apexProx_ge_one C_encSep_pos
+    fpDistPlus_height_tail_explicitC fpDistPlus_col_tail_explicitC
+    encounter_apex_proximity_rpow_at encounter_separated_sum_explicitC
+  unfold C_encTri c_encTri M_encTri
+  exact h
+
+/-- **Lemma 7.10 (X10), the (7.60) bound**, original `∃`-form: delegates to the
+`_explicitC` sibling at `C_encTri`/`c_encTri`, `A₀ = 5`. -/
+theorem triangle_encounter_le_rpow :
+    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (p s' : ℕ), 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+        ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+          + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) :=
+  ⟨C_encTri, C_encTri_pos, c_encTri, c_encTri_pos, 5, by norm_num,
+    triangle_encounter_le_rpow_explicitC⟩
 
 set_option maxHeartbeats 800000 in
 /-- **Lemma 7.10 (X10), the (7.60) bound** — the PINNED faithful form carrying the
