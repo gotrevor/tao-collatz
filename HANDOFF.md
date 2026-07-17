@@ -25,17 +25,19 @@ re-run lap 12: 3 merged headlines `[propext, Classical.choice, Quot.sound]`; pin
 
 ## Next actions (Option B — ADDITIVE, do NOT touch the clean headlines)
 
-1. ✅ **DONE this lap (`548dfc5`)**: `renewal_white_encounters_tight` PINNED in `Sec7/Bridge.lean`
-   with `C_renewalWhite_tight A := ((2·C_hold A+2:ℕ):ℝ)^A` (head arm, no tower). Small-`n` arm
-   PROVED; large-`n` arm is the named crux `sorry` (`Bridge.lean:~786`). Build green (3327),
-   headlines re-verified axiom-clean, src `sorry` 1→2, differ 35/35.
-2. **NEXT — chip the crux `sorry`** = `renewal_tail_tight`, the `#white` lower-tail estimate
-   beating `few_white_mass_le`'s (7.67) tower horizon. **Smallest first probe** (do this before
-   any proof code): source-read `few_white_mass_le` (Case3) + `θq`/`black`/`white` (Setup.lean:34,
-   100–103) and ask — can "black is measure-~2ε rare ⟹ `#white` frequent from `n₀`" be rigorized,
-   or where exactly does it force the tower horizon `P = encWindowIter…`? That answer is the
-   decisive route-test (it either confirms Option B feasible or exposes the true obstruction —
-   both are progress; record it in PENDING_WORK).
+1. ✅ **DONE this lap**: `renewal_white_encounters_tight` PINNED (`548dfc5`) then **PROVED
+   modulo one clean sorry** (`3a2ead9`). Added `C_Qtight` (head-sized), `C_Qtight_pos`,
+   `C_Qtight_glue` (proved), `Q_polynomial_decay_tight` (sorry); the large-`n` arm reuses the
+   `renewal_white_encounters_at` bridge assembly with `C_Qtight` in place of the tower, landing
+   at `n₀^A·n^{-A}`. The `renewal_tail_tight` plumbing is all proven — the crux is now the SINGLE
+   analytic target `Q_polynomial_decay_tight`. Build green (3327), headlines axiom-clean, differ 35/35.
+2. **NEXT — the frontier: prove `Q_polynomial_decay_tight`** (`Bridge.lean:~730`):
+   `Q (n/2) (whiteSet n ξ) ε j l ≤ C_Qtight A · (max(n/2−j) 1)^{-A}`, the poly-horizon `#white`
+   lower-tail estimate. This IS Tao §7 decorrelation done tighter (true threshold ~10³⁰⁰⁸ <
+   applied n₀ ~10³⁰¹⁶ — feasibility confirmed, deterministic shortcut refuted; PENDING_WORK
+   Lap-12 grind). **Smallest first probe**: source-read `few_white_mass_le` (Case3) + how its
+   horizon `P = encWindowIter…` is built — find where the tower is forced and whether the
+   applied `m−j ≥ n₀` regime admits a poly bound. A genuine multi-lap 🟡 frontier — chip it.
 3. **Never re-prove the existing `renewal_white_encounters`** (clean headlines depend on it).
 4. **Do NOT** continue the X-chase or any tower-ladder transcription (deprecated this lap).
 
