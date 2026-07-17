@@ -13,7 +13,7 @@ re-pinned at `10^(10¹¹)`, steps 2/3 LIVE. Lap-1's NO-GO state is history (see
   abstracted), `hold_weight_expect_explicitC`, original delegates. Statement
   byte-identical; differ 35/35 green vs re-pin `fabea6f`; check18 numeric trap green;
   full `lake build` green; committed (`da85d07` + this docs commit).
-- Census: **Sec7 1 of 22 C-slots explicit** (+ this node's thresholds); Sec6 0/8,
+- Census: **Sec7 3 of 22 C-slots explicit** (+ thresholds); Sec6 0/8,
   Sec5 0/37, Sec3 0/7.
 - `lean-sorry -c TaoCollatz` still 1 (the Statement.lean pin, by design); Comparator
   stubs judge-owned, untouched.

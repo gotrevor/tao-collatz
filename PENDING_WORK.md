@@ -127,6 +127,28 @@ witness `max (n0^A) (C0·exp(ε³/2)·3^A)` as defs (`n0_renewal A`, `C_renewal 
 `renewal_white_encounters_explicitC`, delegate. Then up the Fourier passthrough
 (`key_fourier_decay` → `charFn_decay`), which is pure `obtain⟨C⟩;refine⟨C,…⟩`.
 
+### Lap 2b (2026-07-17) — Q-decay spine explicit up to the Case3 gate ✅
+
+- `Q_white_case1_explicitC` (`Sec7/Monotone.lean`) at witness `C_hold A`; original
+  delegates.
+- `prop_7_8_at` and `Q_polynomial_decay_at` (`Sec7/BlackEdgeQ.lean`): the two
+  combinators now have threshold-explicit cores — `prop_7_8` threshold
+  `max (max (C_hold A) C2) 1` (C2 = black-edge threshold, still ∃ from Case3),
+  `Q_polynomial_decay` constant `(max C0 1)^A`. The `∃`-forms delegate; statements
+  byte-identical, differ 35/35 vs `fabea6f`.
+- Census: **Sec7 3 of 22** C-slots explicit (hold_weight_expect, Q_white_case1,
+  Q_polynomial_decay-as-combinator; prop_7_8's is a threshold).
+
+**Next attack:** the Case3/black-edge subtree that feeds `C2`:
+`Q_black_edge_case3` ← `damped_iter_expectation_le` (`Case3.lean:2789`) ←
+`damping_column_mass_le` (:2587, obtains `damping_expectation_le` + `col_tail_mass_le`)
+← `few_white_mass_le` (:2445) ← … down to leaves `triangle_encounter_le_rpow`,
+`many_triangles_white`, `fstar_markov`, `fpDistPlus_col_tail`, `estar_union_le_rpow`,
+plus BlackEdge.lean's `exp_neg_mul_le_of_large`/`log_le_eps_mul_of_large` (same
+pattern as Monotone's, already threshold-explicit shapes). Reify bottom-up, one green
+commit per node or small cluster. After Case3: wire `renewal_white_encounters`
+(`Bridge.lean:507`, defs `n0 := 2·C_hold+2`, witness max) and the Fourier passthrough.
+
 ## Optimization observations
 
 - `hold_weight_expect` (`Sec7/Monotone.lean:246`): the statement demands
