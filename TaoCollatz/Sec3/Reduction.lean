@@ -543,13 +543,19 @@ theorem C_descWhp_pos : 0 < C_descWhp := by
       (add_pos one_pos (inv_pos.mpr (by linarith))))
     (Real.rpow_pos_of_pos halpha0 _)
 
+/-- The `descent_whp` cutoff (X-chase): the witness copied verbatim from the `_atC` proof,
+with `xl := X_descLadder` (so `A = max X_descLadder e`, cutoff `max (A^α) e`). -/
+noncomputable def X_descWhp : ℝ :=
+  max ((max X_descLadder (Real.exp 1)) ^ (alpha : ℝ)) (Real.exp 1)
+
 /-- Sibling of `descent_whp` with the `c`/`C` slots pinned at (`c_ladder`, `C_descWhp`)
-— the `_atC` form (big-C campaign, step 2), cutoff existential. -/
-theorem descent_whp_atC :
-    ∃ x₀ : ℝ, ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+and the cutoff at `X_descWhp` (X-chase). -/
+theorem descent_whp_atCX :
+    ∀ N₀ : ℕ, ∀ x : ℝ, X_descWhp ≤ x → X_descWhp ≤ (N₀ : ℝ) →
       (N₀ : ℝ) ≤ x →
       1 - C_descWhp * (Real.log N₀) ^ (-c_ladder) ≤ descentProb ⌊x ^ (alpha⁻¹)⌋₊ x N₀ := by
-  obtain ⟨xl, hlad⟩ := descentProb_ladder_atC
+  have hlad := descentProb_ladder_atCX
+  set xl : ℝ := X_descLadder with hxldef
   set Cl : ℝ := C_descLadder with hCldef
   have hCl : 0 < Cl := C_descLadder_pos
   set c : ℝ := c_ladder with hcdef
@@ -568,7 +574,8 @@ theorem descent_whp_atC :
       _ ≤ A := hAe
   have hA0 : (0 : ℝ) < A := lt_of_lt_of_le one_pos hA1
   rw [show C_descWhp = Cl * (1 + (1 - r)⁻¹) * alpha ^ c from rfl]
-  refine ⟨max (A ^ alpha) (Real.exp 1), fun N₀ x hx hN₀lb hN₀x => ?_⟩
+  rw [show X_descWhp = max (A ^ alpha) (Real.exp 1) from rfl]
+  intro N₀ x hx hN₀lb hN₀x
   -- basic sizes
   · have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
     have hx1 : (1 : ℝ) ≤ x := by
@@ -708,6 +715,14 @@ theorem descent_whp_atC :
         _ ≤ Cl * (1 + (1 - r)⁻¹) * (alpha ^ c * Real.log N₀ ^ (-c)) := e4
         _ = Cl * (1 + (1 - r)⁻¹) * alpha ^ c * Real.log N₀ ^ (-c) := by ring
     linarith [hlad']
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `descent_whp_atCX` (X-chase: `x₀ := X_descWhp`). -/
+theorem descent_whp_atC :
+    ∃ x₀ : ℝ, ∀ N₀ : ℕ, ∀ x : ℝ, x₀ ≤ x → x₀ ≤ (N₀ : ℝ) →
+      (N₀ : ℝ) ≤ x →
+      1 - C_descWhp * (Real.log N₀) ^ (-c_ladder) ≤ descentProb ⌊x ^ (alpha⁻¹)⌋₊ x N₀ :=
+  ⟨X_descWhp, descent_whp_atCX⟩
 
 /-- Explicit-`c` form of descent-whp: delegates to `descent_whp_atC`
 (big-C campaign, step 2: `C := C_descWhp`). -/

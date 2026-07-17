@@ -1264,3 +1264,8 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_descLadder := max (max X_descBase X_descStep) (exp 1)` + `descentProb_ladder_atCX`;
   `_atC` delegates. Audit 31/38, next `X_descWhp` + `descent_whp_atCX`.
+
+### Successor lap 29 (2026-07-17) — phase 4 entry 4
+
+- `X_descWhp := max ((max X_descLadder e)^α) e` + `descent_whp_atCX`; `_atC` delegates.
+  Audit 32/38, next `X_windowBad` + `window_bad_sum_atCX`.
