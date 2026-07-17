@@ -2104,6 +2104,10 @@ theorem estar_scaled_numeric (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA�
         ≤ (10 : ℝ) ^ (-A - 3) :=
   ⟨A0_estarScaled C' c A₀e, estar_scaled_numeric_at C' c A₀e hC' hc hA₀e⟩
 
+/-- **E∗ scaled-exponent constant** (X11b): `A0_estarScaled` at the E∗-union constants —
+the additive `A₀` in the `few_white_estar_mass_le` exponent `A' = 2A + A0_fewEstar`. -/
+noncomputable def A0_fewEstar : ℝ := A0_estarScaled C_estarUnion c_estarUnion A0_estarUnion
+
 open scoped Classical in
 /-- **(7.56) E∗ mass term.** The first-passage⊗walk mass of the union-over-`p` big-triangle
 event (the middle term of `few_white_pointwise_split`) is `≤ 10^{−A−3}`. Wraps
@@ -2111,26 +2115,29 @@ event (the middle term of `few_white_pointwise_split`) is `≤ 10^{−A−3}`. W
 `ℝ≥0∞` tsum↔finite-sum swap (`Summable.tsum_finsetSum`) that turns the inner `Σ_p` into the
 outer union `estar_union_le` bounds. The deep hyp `(m+1)^0.8 < s` is bridged from the regime
 `m/log²m < s` via `(m+1)^0.8 ≤ 2m^0.8 ≤ m/log²m`. -/
-theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
-    ∃ A' : ℝ, 1 ≤ A' ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
-      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+theorem few_white_estar_mass_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, (10 : ℕ) ^ 30 ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
       ∀ P : ℕ, (∀ p, p ≤ P →
-          ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+          ((⌊(4 : ℝ) ^ (2 * A + A0_fewEstar) * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+            ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ)) →
       (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
           (∑ p ∈ Finset.range (P + 1),
-            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ (2 * A + A0_fewEstar) * (1 + (p : ℝ)) ^ 3⌋₊)
               (1 : ℕ × ℤ → ℝ≥0∞)
               (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
         ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
-  obtain ⟨C', hC', c, hc, A₀e, hA₀e, hestar⟩ := estar_union_le_rpow
-  obtain ⟨A₀, hA₀ge, hA₀1, hnum⟩ := estar_scaled_numeric C' c A₀e hC' hc hA₀e
-  set A' : ℝ := 2 * A + A₀ with hA'def
-  have hA'ge : A₀e ≤ A' := by rw [hA'def]; linarith
-  have hA'1 : (1 : ℝ) ≤ A' := by rw [hA'def]; linarith
-  refine ⟨A', hA'1, 10 ^ 30, ?_⟩
+  have hestar := estar_union_le_rpow_explicitC
+  have hA₀ge : A0_estarUnion ≤ A0_fewEstar :=
+    (estar_scaled_numeric_at C_estarUnion c_estarUnion A0_estarUnion
+      C_estarUnion_pos c_estarUnion_pos one_le_A0_estarUnion).1
+  have hnum := (estar_scaled_numeric_at C_estarUnion c_estarUnion A0_estarUnion
+    C_estarUnion_pos c_estarUnion_pos one_le_A0_estarUnion).2.2
+  set A' : ℝ := 2 * A + A0_fewEstar with hA'def
+  have hA'ge : A0_estarUnion ≤ A' := by rw [hA'def]; linarith [hA₀ge, hA]
   intro n ξ hξ F m hmCthr hmn l hpos t ht hmem s hs hreg_s P hreg
   -- the E∗ summand, per `p`, matching `estar_union_le`'s form at `j = n/2-m-1`, `T = P`.
   set G : ℕ → ℝ≥0∞ := fun p => ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ,
@@ -2268,6 +2275,29 @@ theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
     exact le_trans hest (hnum A hA)
   rw [ENNReal.le_ofReal_iff_toReal_le hSne (Real.rpow_nonneg (by norm_num) _)]
   exact hStoreal
+
+open scoped Classical in
+/-- **(7.56) E∗ mass term**, original `∃`-form: delegates to `few_white_estar_mass_le_at` at
+the named witness `A' = 2A + A0_fewEstar`, `Cthr = 10^30`. -/
+theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
+    ∃ A' : ℝ, 1 ≤ A' ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      ∀ P : ℕ, (∀ p, p ≤ P →
+          ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          (∑ p ∈ Finset.range (P + 1),
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+              (1 : ℕ × ℤ → ℝ≥0∞)
+              (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) :=
+  ⟨2 * A + A0_fewEstar, by
+    have h1 : (1 : ℝ) ≤ A0_fewEstar :=
+      (estar_scaled_numeric_at C_estarUnion c_estarUnion A0_estarUnion
+        C_estarUnion_pos c_estarUnion_pos one_le_A0_estarUnion).2.1
+    linarith [hA], 10 ^ 30, few_white_estar_mass_le_at A hA⟩
 
 /-! ### The sole X11 gate and the checked downstream assembly -/
 

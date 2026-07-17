@@ -314,3 +314,20 @@ A0_estarScaled C_estarUnion c_estarUnion A0_estarUnion`, `A' = 2A + A0_fewEstar`
 after the two obtains, `A'` fixed) delegating over `estar_union_le_rpow_explicitC` +
 `estar_scaled_numeric_at`. Then `few_white_mass_le` (the big `max`), then the damping
 passthrough chain → `Q_black_edge_case3` reifies C2 → wire into `prop_7_8_at`.
+
+### Lap 6d (2026-07-17) — `few_white_estar_mass_le` explicit ✅
+
+- **`few_white_estar_mass_le_at`** (Case3): new def `A0_fewEstar =
+  A0_estarScaled C_estarUnion c_estarUnion A0_estarUnion`; in-place restatement with
+  `A' = 2A + A0_fewEstar`, `Cthr = 10^30` inlined, body verbatim after swapping the two
+  obtains for `estar_union_le_rpow_explicitC` + `estar_scaled_numeric_at` (the `le_trans
+  hest (hnum A hA)` closes by defeq A' = 2A+A0_estarScaled…). Original `∃`-form delegates
+  `⟨2A+A0_fewEstar, (1 ≤ …), 10^30, few_white_estar_mass_le_at A hA⟩`. Build green, differ 35/35.
+
+**Next attack:** `few_white_mass_le` (Case3:~2505, WATCHED — keep ∃-form byte-identical) —
+name its combined threshold `Cthr_fewWhite A = max (max (10^30) (T_colTail A P_fewWhite))
+(max (10·g_manyTri) (max ⌈B^2.5⌉ ⌈10·500^(1/A)⌉))` and the horizon
+`P_fewWhite A = encWindowIter (2A+A0_fewEstar) (K+1) R`, `K/R` as defs; `_explicitC`
+sibling; ∃-form delegates. Then the damping passthrough chain
+(`damping_expectation_le` → `damping_column_mass_le` → `damped_iter_expectation_le` →
+`Q_black_edge_case3`, all carry `Cthr`/`P` unchanged) → reifies C2 → wire into `prop_7_8_at`.
