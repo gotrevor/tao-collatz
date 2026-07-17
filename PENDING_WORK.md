@@ -238,3 +238,16 @@ rpow engine), then the Case3 few_white cluster (see lap-4 next-attack list).
   ~`10⁻¹⁰`; its cube's reciprocal is the single largest number in the ladder (effect:
   `ε = 10⁻¹⁰` ⟹ ladder exponent ≈ 1.2×10⁹ — a 78× reduction, still marginally over the
   current pin).
+
+### Lap 5b (2026-07-17) — pinned 7.60 + X9 white-exit + Lemma 7.9/F* chain explicit ✅
+
+- `C_triEnc = max C_encTri 1e11` (pinned `triangle_encounter_le`); `T_gaussColTail`,
+  `T_outStrip`, `fpDist_any_triangle_le` at 0, `p_whiteExit = 3/4`,
+  `T_whiteExitDeep = max T_outStrip 0`; `eps0_manyTri = 1/100`,
+  `g_manyTri = T_whiteExitDeep` through `many_triangles_white` → `fstar_markov` →
+  `reaches_fewWhite_mass_le(_ten)` (all watched originals delegate byte-identically).
+
+**Next attack:** `few_white_reach_mass_le` → `bigTriangle_walk_le_rpow` +
+`estar_union_le_rpow` → `few_white_estar_mass_le` → `few_white_mass_le` → damping
+chain → `Q_black_edge_case3` (reifies `C2`) → wire into `prop_7_8_at` → extend
+check18 with the C0-arm assert. See HANDOFF.md.
