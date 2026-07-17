@@ -1693,6 +1693,58 @@ theorem few_white_pointwise_split {n ξ : ℕ} (F : TriangleFamily n ξ)
     exact zero_le
 
 open scoped Classical in
+/-- **(7.56) reach-`R` mass term**, `_at` sibling at `eps0_manyTri`/`g_manyTri`. Same body
+as the `∃`-form below, with the shared gate `ε₀ = eps0_manyTri` and `g = g_manyTri` supplied
+by `reaches_fewWhite_mass_le_ten_at`. -/
+theorem few_white_reach_mass_le_at (A : ℝ) :
+    ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ (m : ℕ) (l : ℤ) (R : ℕ), 1 ≤ R → ∀ (K P : ℕ),
+      ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ eps0_manyTri * R → ∀ s : ℕ,
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit (n / 2 - m + e.1) (l + e.2))).count
+              ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
+  intro n ξ hξ F m l R hR K P hRbound s
+  have hval : (0 : ℝ) ≤ (10 : ℝ) ^ (-A - 3) := Real.rpow_nonneg (by norm_num) _
+  have hexp : (10 : ℝ) ^ (-((A + 2) + 1)) = (10 : ℝ) ^ (-A - 3) := by
+    congr 1; ring
+  have hinner : ∀ e : ℕ × ℤ,
+      (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit (n / 2 - m + e.1) (l + e.2))).count
+              ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
+    intro e
+    set S : ℝ≥0∞ := ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+        ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+              (encInit (n / 2 - m + e.1) (l + e.2))).count
+            ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+              (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+          then (1 : ℝ) else 0) with hSdef
+    have hSle1 : S ≤ 1 := by
+      rw [hSdef]
+      exact PMF.tsum_mul_ofReal_le_one (hold.iid P) _ (fun v => by split_ifs <;> norm_num)
+    have hSne : S ≠ ⊤ := ne_top_of_le_ne_top ENNReal.one_ne_top hSle1
+    have hbridge : S.toReal = ∑' v : Fin P → ℕ × ℤ, (hold.iid P v).toReal *
+        (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+              (encInit (n / 2 - m + e.1) (l + e.2))).count
+            ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+              (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+          then (1 : ℝ) else 0) := by
+      rw [hSdef]; exact PMF.toReal_tsum_mul_ofReal (hold.iid P) _ (fun v => by split_ifs <;> norm_num)
+    have hr := reaches_fewWhite_mass_le_ten_at eps0_manyTri eps0_manyTri_pos le_rfl (A + 2) n ξ hξ F R hR P (n / 2 - m + e.1, l + e.2) (K + 1)
+      (by push_cast; nlinarith [hRbound])
+    rw [ENNReal.le_ofReal_iff_toReal_le hSne hval, hbridge, ← hexp]
+    exact hr
+  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_right (hinner e) _) ?_
+  rw [ENNReal.tsum_mul_right, (fpDist s).tsum_coe, one_mul]
+
+open scoped Classical in
 /-- **(7.56) reach-`R` mass term.** The first-passage⊗walk mass of the reach-`R`/few-white
 event `{R ≤ count ∧ cumWhite ≤ K+1}` is `≤ 10^{−A−3}`. Wraps `reaches_fewWhite_mass_le_ten`
 (applied per-`e` at reaches-exponent `A+2` ⟹ `10^{−(A+3)}`, `K'=K+1`) with the `ℝ≥0∞`→`ℝ`
@@ -1708,45 +1760,8 @@ theorem few_white_reach_mass_le (A : ℝ) :
               ∧ ((List.ofFn v).foldl (encStep F R g)
                 (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
             then (1 : ℝ) else 0))
-        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
-  obtain ⟨ε₀, hε₀pos, hε₀le, g, hreach⟩ := reaches_fewWhite_mass_le_ten
-  refine ⟨ε₀, hε₀pos, g, ?_⟩
-  intro n ξ hξ F m l R hR K P hRbound s
-  have hval : (0 : ℝ) ≤ (10 : ℝ) ^ (-A - 3) := Real.rpow_nonneg (by norm_num) _
-  have hexp : (10 : ℝ) ^ (-((A + 2) + 1)) = (10 : ℝ) ^ (-A - 3) := by
-    congr 1; ring
-  have hinner : ∀ e : ℕ × ℤ,
-      (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
-          ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
-                (encInit (n / 2 - m + e.1) (l + e.2))).count
-              ∧ ((List.ofFn v).foldl (encStep F R g)
-                (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
-            then (1 : ℝ) else 0))
-        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
-    intro e
-    set S : ℝ≥0∞ := ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
-        ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
-              (encInit (n / 2 - m + e.1) (l + e.2))).count
-            ∧ ((List.ofFn v).foldl (encStep F R g)
-              (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
-          then (1 : ℝ) else 0) with hSdef
-    have hSle1 : S ≤ 1 := by
-      rw [hSdef]
-      exact PMF.tsum_mul_ofReal_le_one (hold.iid P) _ (fun v => by split_ifs <;> norm_num)
-    have hSne : S ≠ ⊤ := ne_top_of_le_ne_top ENNReal.one_ne_top hSle1
-    have hbridge : S.toReal = ∑' v : Fin P → ℕ × ℤ, (hold.iid P v).toReal *
-        (if R ≤ ((List.ofFn v).foldl (encStep F R g)
-              (encInit (n / 2 - m + e.1) (l + e.2))).count
-            ∧ ((List.ofFn v).foldl (encStep F R g)
-              (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
-          then (1 : ℝ) else 0) := by
-      rw [hSdef]; exact PMF.toReal_tsum_mul_ofReal (hold.iid P) _ (fun v => by split_ifs <;> norm_num)
-    have hr := hreach ε₀ hε₀pos le_rfl (A + 2) n ξ hξ F R hR P (n / 2 - m + e.1, l + e.2) (K + 1)
-      (by push_cast; nlinarith [hRbound])
-    rw [ENNReal.le_ofReal_iff_toReal_le hSne hval, hbridge, ← hexp]
-    exact hr
-  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_right (hinner e) _) ?_
-  rw [ENNReal.tsum_mul_right, (fpDist s).tsum_coe, one_mul]
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) :=
+  ⟨eps0_manyTri, eps0_manyTri_pos, g_manyTri, few_white_reach_mass_le_at A⟩
 
 /-- Poly·geom domination: `x²·exp(−bx) ≤ 4/b²` for `x ≥ 0`, `b > 0` (from `exp(bx) ≥ (bx)²/4`). -/
 theorem sq_mul_exp_neg_le (b : ℝ) (hb : 0 < b) (x : ℝ) (hx : 0 ≤ x) :

@@ -251,3 +251,23 @@ rpow engine), then the Case3 few_white cluster (see lap-4 next-attack list).
 `estar_union_le_rpow` → `few_white_estar_mass_le` → `few_white_mass_le` → damping
 chain → `Q_black_edge_case3` (reifies `C2`) → wire into `prop_7_8_at` → extend
 check18 with the C0-arm assert. See HANDOFF.md.
+
+### Lap 6 (2026-07-17) — REVIEW lap + `few_white_reach_mass_le` explicit ✅
+
+- **Fresh-mind review**: confirmed exactly **1 real `sorry`** in `TaoCollatz/`
+  (`Statement.lean:68`, the big-C pin — all other "sorry" greps are docstring history);
+  three merged headlines (`tao_collatz`, `_quantitative`, `_quantitative_explicit`) are
+  `#print axioms`-clean (trust base only); differ 35/35; all 18 `check_blueprint` checks
+  pass; check17 GO (ladder `9.39×10¹⁰` < pin `10¹¹`, 6.1% headroom) — **no route-trigger
+  fired**. Direction VALIDATED (sound + current), operator-owned CURRENT DIRECTIVE left
+  untouched. Created durable `STATUS.md` (was absent).
+- **`few_white_reach_mass_le_at`** (`Case3.lean`): `_at` sibling at
+  `eps0_manyTri`/`g_manyTri`, body identical to the `∃`-form with `g → g_manyTri` and
+  `hreach → reaches_fewWhite_mass_le_ten_at`; original `∃`-form delegates
+  (`⟨eps0_manyTri, eps0_manyTri_pos, g_manyTri, few_white_reach_mass_le_at A⟩`).
+  Full build green, differ 35/35.
+
+**Next attack (unchanged):** `bigTriangle_walk_le_rpow` (Case3:467) +
+`estar_union_le_rpow` (Case3:~1162, over `triangle_encounter_le_rpow_explicitC`) →
+`few_white_estar_mass_le` (Case3:~1982) → `few_white_mass_le` → damping chain →
+`Q_black_edge_case3` (reifies `C2`) → wire into `prop_7_8_at`.
