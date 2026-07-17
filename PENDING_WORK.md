@@ -1215,3 +1215,9 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_harmonicZ := max (max X_harmZfine X_mainZbridge) (exp 1)` + `harmonic_to_Z_atCX`;
   `_atC` delegates. Audit 22/38, next `mainZ_bound_atCX`.
+
+### Successor lap 20 (2026-07-17) — phase 3 entry 6/11
+
+- `X_IyCard := exp(2000⁵)` + `Iy_card_bracket_atX` (∃-form delegates; heartbeat shield moved
+  onto the `_atX` theorem), then `X_mainZ` (4-leaf max-tree) + `mainZ_bound_atCX`; `_atC`
+  delegates. Audit 23/38, next `perNTerm_eval_atCX`.

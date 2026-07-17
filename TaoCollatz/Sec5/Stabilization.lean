@@ -2566,20 +2566,24 @@ theorem PMF.expect_indicator_le_one {α : Type*} (p : PMF α) (S : Set α) :
     _ ≤ ∑' a, (p a).toReal := hfs.tsum_le_tsum hterm hsum1
     _ = 1 := htot
 
--- HEARTBEAT: floor/ceiling lattice count over rpow window endpoints; many small linarith calls
--- over rpow atoms exhaust the default per-declaration budget cumulatively.
-set_option maxHeartbeats 800000 in
 /-- **`#I_y` lattice bracket** — the integer count of the (5.9) interval is its real length
 `(α−1)·log y/log(4/3) − 2·log^{0.8}x` up to `±1`.  Elementary floor/ceiling count once the window
 is wide (`≥ 0.002·log x`) and sits inside `[0, n₀]`.  Lower half feeds `mainZ_bound` (via the
-a-posteriori `Z ≪ 1`); both halves are the lattice core of `Iy_count_ratio` (5.9). -/
-theorem Iy_card_bracket :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+a-posteriori `Z ≪ 1`); both halves are the lattice core of `Iy_count_ratio` (5.9).
+`_atX` form (X-chase): the witness `exp(2000⁵)` was already explicit; named `X_IyCard`. -/
+noncomputable def X_IyCard : ℝ := Real.exp ((2000 : ℝ) ^ (5 : ℕ))
+
+-- HEARTBEAT: floor/ceiling lattice count over rpow window endpoints; many small linarith calls
+-- over rpow atoms exhaust the default per-declaration budget cumulatively.
+set_option maxHeartbeats 800000 in
+theorem Iy_card_bracket_atX :
+    ∀ x : ℝ, X_IyCard ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       (alpha - 1) * Real.log y / Real.log (4 / 3) - 2 * Real.log x ^ (0.8 : ℝ) - 1
           ≤ ((Iy x y).card : ℝ)
         ∧ ((Iy x y).card : ℝ)
           ≤ (alpha - 1) * Real.log y / Real.log (4 / 3) - 2 * Real.log x ^ (0.8 : ℝ) + 1 := by
-  refine ⟨Real.exp ((2000 : ℝ) ^ (5 : ℕ)), fun x hx y hy => ?_⟩
+  rw [show X_IyCard = Real.exp ((2000 : ℝ) ^ (5 : ℕ)) from rfl]
+  intro x hx y hy
   have hyval : y = x ^ alpha ∨ y = x ^ alpha ^ 2 := by simpa [Set.mem_insert_iff] using hy
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hx
   have hLT5 : (2000 : ℝ) ^ (5 : ℕ) ≤ Real.log x := by
@@ -2715,6 +2719,15 @@ theorem Iy_card_bracket :
   · rw [← hW]; linarith [hle1, hcardR, haR_lt, hbR_gt]
   · rw [← hW]; linarith [hle2, hcardR, haR_ge, hbR_le]
 
+/-- ∃-form of `Iy_card_bracket_atX` (X-chase: `x₀ := X_IyCard`). -/
+theorem Iy_card_bracket :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      (alpha - 1) * Real.log y / Real.log (4 / 3) - 2 * Real.log x ^ (0.8 : ℝ) - 1
+          ≤ ((Iy x y).card : ℝ)
+        ∧ ((Iy x y).card : ℝ)
+          ≤ (alpha - 1) * Real.log y / Real.log (4 / 3) - 2 * Real.log x ^ (0.8 : ℝ) + 1 :=
+  ⟨X_IyCard, Iy_card_bracket_atX⟩
+
 /-- **The `mainZ = O(1)` constant** (big-C campaign, step 2): (5.19) leaf + (5.20) leaf +
 the `0.001`-count inversion of `1 + C8`. -/
 noncomputable def C_mainZ : ℝ := C_perNHarm + C_harmonicZ + 1000 * (1 + C_fpApprox)
@@ -2723,25 +2736,36 @@ theorem C_mainZ_pos : 0 < C_mainZ :=
   add_pos (add_pos C_perNHarm_pos C_harmonicZ_pos)
     (by nlinarith [C_fpApprox_pos])
 
+/-- The `mainZ_bound` cutoff (X-chase): the witness max-tree copied verbatim from the
+`_atC` proof, with `xA := X_perNHarm`, `xB := X_harmonicZ`, `x8 := X_fpApprox`,
+`xI := X_IyCard`. -/
+noncomputable def X_mainZ : ℝ :=
+  max (max X_perNHarm X_harmonicZ)
+    (max X_fpApprox (max X_IyCard (Real.exp ((2000 : ℝ) ^ (5 : ℕ)))))
+
 -- HEARTBEAT: assembles four ∃-lemmas and a lattice count; the cumulative linarith/nlinarith
 -- budget exceeds the default.
 set_option maxHeartbeats 800000 in
-/-- Sibling of `mainZ_bound` with the `C`-slot pinned at `C_mainZ` — the `_atC` form
-(big-C campaign, step 2), cutoff existential.  **`mainZ` is `O(1)`** — via Tao's
+/-- Sibling of `mainZ_bound` with the `C`-slot pinned at `C_mainZ` and the cutoff at
+`X_mainZ` (X-chase).  **`mainZ` is `O(1)`** — via Tao's
 a-posteriori route (p.26): `Z ≍ (log(4/3)/2)·ℙ(Pass∈E) = O(1)`.
 Non-circular assembly from PROVED pieces: for every `n ∈ I_y` (at `y = x^α`),
 `perNTerm ≥ (mainZ − O(1))/norm` by the (5.19) reduction (`perNTerm_harmonic_approx`) and the
 (5.20) `Z`-reduction (`harmonic_to_Z`); summing over the `≥ 0.001·log x` values of `n`
 (`Iy_card_bracket`) gives `#I_y·(mainZ − O(1))/norm ≤ approxMainTerm ≤ 1 + O(log^{-c}x)` by
 Prop 5.2 (`first_passage_approx`, C8) and `ℙ ≤ 1`; since `#I_y/norm ≫ 1`, `mainZ ≪ 1`. -/
-theorem mainZ_bound_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+theorem mainZ_bound_atCX :
+    ∀ x : ℝ, X_mainZ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C_mainZ := by
   classical
-  obtain ⟨xA, hA⟩ := perNTerm_harmonic_approx_atC
-  obtain ⟨xB, hB⟩ := harmonic_to_Z_atC
-  obtain ⟨x8, h8⟩ := first_passage_approx_atC
-  obtain ⟨xI, hIcard⟩ := Iy_card_bracket
+  have hA := perNTerm_harmonic_approx_atCX
+  have hB := harmonic_to_Z_atCX
+  have h8 := first_passage_approx_atCX
+  have hIcard := Iy_card_bracket_atX
+  set xA : ℝ := X_perNHarm with hxAdef
+  set xB : ℝ := X_harmonicZ with hxBdef
+  set x8 : ℝ := X_fpApprox with hx8def
+  set xI : ℝ := X_IyCard with hxIdef
   set cA : ℝ := c_perNHarm with hcAdef
   set CA : ℝ := C_perNHarm with hCAdef
   set cB : ℝ := c_harmonicZ with hcBdef
@@ -2755,9 +2779,9 @@ theorem mainZ_bound_atC :
   have hc8 : 0 < c8 := c_fpApprox_pos
   have hC8 : 0 < C8 := C_fpApprox_pos
   rw [show C_mainZ = CA + CB + 1000 * (1 + C8) from rfl]
-  refine ⟨max (max xA xB)
-      (max x8 (max xI (Real.exp ((2000 : ℝ) ^ (5 : ℕ))))),
-    fun x hx E hE => ?_⟩
+  rw [show X_mainZ = max (max xA xB)
+      (max x8 (max xI (Real.exp ((2000 : ℝ) ^ (5 : ℕ))))) from rfl]
+  intro x hx E hE
   simp only [max_le_iff] at hx
   obtain ⟨⟨hxA, hxB⟩, hx8, hxI, hxT⟩ := hx
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hxT
@@ -2880,6 +2904,13 @@ theorem mainZ_bound_atC :
         linarith [hA1, hsum, hA2]
       nlinarith [hchain, hLpos, hpos]
     linarith
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `mainZ_bound_atCX` (X-chase: `x₀ := X_mainZ`). -/
+theorem mainZ_bound_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C_mainZ :=
+  ⟨X_mainZ, mainZ_bound_atCX⟩
 
 /-- **`mainZ` is `O(1)`** — the ∃-form.  Now delegates to `mainZ_bound_atC`
 (big-C campaign, step 2: `C := C_mainZ`). -/
