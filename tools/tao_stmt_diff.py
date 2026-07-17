@@ -109,6 +109,11 @@ SEARCH_FILES = [
     "TaoCollatz/Basic/Collatz.lean",
     "TaoCollatz/Syracuse/SyracRV.lean",
     "TaoCollatz/Statement.lean",
+    # The Ruling-II assembled deliverable (ratified 2026-07-17) — X_spine, C_tao_assembled,
+    # tao_collatz_quantitative_assembled live here. WITHOUT this line the three watched names
+    # are inert (found in no file → reported ✗ at both refs), the exact silent-guard failure
+    # this differ's header warns about.
+    "TaoCollatz/ExplicitBigC.lean",
     # The judge-owned comparator surface — a campaign box is under exactly the pressure
     # this differ exists for.  (`CTao`/`fully_explicit` were retired from here 2026-07-17.)
     "Comparator/TaoCollatz/Challenge.lean",
