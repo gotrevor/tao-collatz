@@ -1518,24 +1518,50 @@ noncomputable def c_perNHarm : ℝ := 0.3
 
 theorem c_perNHarm_pos : 0 < c_perNHarm := by norm_num [c_perNHarm]
 
+/-- The relative-error constant `Cε` of the (5.19) reduction, at the pinned leaf constants
+`Cw = 3` (`windowMass_estimate_atC`), `cD = 1/10000` (`windowMass_ge_clog_at`)
+— big-C campaign, step 2. -/
+noncomputable def C_epsPerNHarm : ℝ := 2 + 3 * ((3 : ℝ) / (1 / 10000)) + 2 * 3 / (alpha - 1)
+
+theorem C_epsPerNHarm_pos : 0 < C_epsPerNHarm := by
+  unfold C_epsPerNHarm alpha; norm_num
+
+/-- The (5.19) leaf-A constant: `Cε · CH` with `CH = 4` (`perNHarmonic_le_at`) —
+big-C campaign, step 2. -/
+noncomputable def C_perNHarm : ℝ := C_epsPerNHarm * 4
+
+theorem C_perNHarm_pos : 0 < C_perNHarm :=
+  mul_pos C_epsPerNHarm_pos (by norm_num)
+
 -- HEARTBEAT: one large analytic assembly (per-(ā,M) window/harmonic algebra with two nlinarith
 -- cores, plus nested-tsum summability plumbing); the many nlinarith/positivity calls exhaust the
 -- default per-declaration budget cumulatively (mirrors `Nstar_mem_logWindow`).
 set_option maxHeartbeats 1600000 in
 open Classical in
-/-- Sibling of `perNTerm_harmonic_approx` with the `c`-slot pinned to `c_perNHarm`; the
-original delegates here. -/
-theorem perNTerm_harmonic_approx_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- Sibling of `perNTerm_harmonic_approx` with the `c`/`C` slots pinned at
+(`c_perNHarm`, `C_perNHarm`) — the `_atC` form (big-C campaign, step 2), cutoff existential
+(`windowMass_estimate_atC` / `Nstar_mem_logWindow` cutoffs are existential). -/
+theorem perNTerm_harmonic_approx_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |perNTerm x E y n - perNHarmonic x E n / ((alpha - 1) / 2 * Real.log y)|
-            ≤ C * (Real.log x) ^ (-c_perNHarm) / ((alpha - 1) / 2 * Real.log y) := by
+            ≤ C_perNHarm * (Real.log x) ^ (-c_perNHarm) / ((alpha - 1) / 2 * Real.log y) := by
   rw [show c_perNHarm = 0.3 from rfl]
   classical
-  obtain ⟨Cw, xw, hCwpos, hw⟩ := windowMass_estimate
-  obtain ⟨cD, xD, hcDpos, hDlbAll⟩ := windowMass_ge_clog
-  obtain ⟨CH, xH, hCHpos, hHAll⟩ := perNHarmonic_le
+  obtain ⟨xw, hw⟩ := windowMass_estimate_atC
+  have hDlbAll := windowMass_ge_clog_at
+  have hHAll := perNHarmonic_le_at
+  -- (`set` the pinned constants FIRST, then obtain `Nstar_mem_logWindow` — its statement
+  -- carries `4/3` literals that `set Cw := 3`/`set CH := 4` must not abstract)
+  set Cw : ℝ := (3 : ℝ) with hCwdef
+  set cD : ℝ := (1 / 10000 : ℝ) with hcDdef
+  set CH : ℝ := (4 : ℝ) with hCHdef
+  set xD : ℝ := (2 : ℝ) ^ (2000 : ℝ) with hxDdef
+  set xH : ℝ := max X_cnBound (Real.exp 1024) with hxHdef
+  have hCwpos : (0 : ℝ) < Cw := by rw [hCwdef]; norm_num
+  have hcDpos : (0 : ℝ) < cD := by rw [hcDdef]; norm_num
+  have hCHpos : (0 : ℝ) < CH := by rw [hCHdef]; norm_num
   obtain ⟨xN, hNwin⟩ := Nstar_mem_logWindow
   have halpha1 : (0 : ℝ) < alpha - 1 := by norm_num [alpha]
   have hC1nn : (0 : ℝ) ≤ Cw / cD := (div_pos hCwpos hcDpos).le
@@ -1543,9 +1569,11 @@ theorem perNTerm_harmonic_approx_explicit :
     div_nonneg (by linarith [hCwpos]) halpha1.le
   set Cε : ℝ := 2 + 3 * (Cw / cD) + 2 * Cw / (alpha - 1) with hCεdef
   have hCεpos : 0 < Cε := by rw [hCεdef]; linarith
-  refine ⟨Cε * CH,
-    max (max xw xD) (max (max xH xN) (max (Real.exp 1024) (Real.exp Cε))),
-    mul_pos hCεpos hCHpos, fun x hx E hE y hy n hn => ?_⟩
+  have hCeq : C_perNHarm = Cε * CH := by
+    rw [hCεdef, hCwdef, hcDdef, hCHdef]; unfold C_perNHarm C_epsPerNHarm; norm_num
+  rw [hCeq]
+  refine ⟨max (max xw xD) (max (max xH xN) (max (Real.exp 1024) (Real.exp Cε))),
+    fun x hx E hE y hy n hn => ?_⟩
   simp only [max_le_iff] at hx
   obtain ⟨⟨hxw, hxD⟩, ⟨hxH, hxN⟩, hx1024, hxCε⟩ := hx
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hx1024
@@ -1833,6 +1861,18 @@ theorem perNTerm_harmonic_approx_explicit :
       field_simp
       ring
     linarith [hUP, hid, hkey]
+
+/-- Sibling of `perNTerm_harmonic_approx` with the `c`-slot pinned to `c_perNHarm`; the
+original delegates here.  Now delegates to `perNTerm_harmonic_approx_atC` (big-C campaign,
+step 2: `C := C_perNHarm`). -/
+theorem perNTerm_harmonic_approx_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNTerm x E y n - perNHarmonic x E n / ((alpha - 1) / 2 * Real.log y)|
+            ≤ C * (Real.log x) ^ (-c_perNHarm) / ((alpha - 1) / 2 * Real.log y) := by
+  obtain ⟨x₀, h⟩ := perNTerm_harmonic_approx_atC
+  exact ⟨C_perNHarm, x₀, C_perNHarm_pos, h⟩
 
 theorem perNTerm_harmonic_approx :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
@@ -2723,23 +2763,35 @@ noncomputable def c_perNTermEval : ℝ := min c_perNHarm c_harmonicZ
 theorem c_perNTermEval_pos : 0 < c_perNTermEval :=
   lt_min c_perNHarm_pos c_harmonicZ_pos
 
-/-- Sibling of `perNTerm_eval` with the `c`-slot pinned to `c_perNTermEval`; the original
-delegates here. -/
-theorem perNTerm_eval_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The per-`n` evaluation constant: leaf A + leaf B, triangle through `perNHarmonic`
+(big-C campaign, step 2). -/
+noncomputable def C_perNTermEval : ℝ := C_perNHarm + C_harmonicZ
+
+theorem C_perNTermEval_pos : 0 < C_perNTermEval :=
+  add_pos C_perNHarm_pos C_harmonicZ_pos
+
+/-- Sibling of `perNTerm_eval` with the `c`/`C` slots pinned at
+(`c_perNTermEval`, `C_perNTermEval`) — the `_atC` form (big-C campaign, step 2), cutoff
+existential (both legs' cutoffs are existential). -/
+theorem perNTerm_eval_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |perNTerm x E y n - mainZ x E / ((alpha - 1) / 2 * Real.log y)|
-            ≤ C * (Real.log x) ^ (-c_perNTermEval) / ((alpha - 1) / 2 * Real.log y) := by
-  obtain ⟨CA, xA, hCA, hA⟩ := perNTerm_harmonic_approx_explicit
-  obtain ⟨CB, xB, hCB, hB⟩ := harmonic_to_Z_explicit
+            ≤ C_perNTermEval * (Real.log x) ^ (-c_perNTermEval)
+              / ((alpha - 1) / 2 * Real.log y) := by
+  obtain ⟨xA, hA⟩ := perNTerm_harmonic_approx_atC
+  obtain ⟨xB, hB⟩ := harmonic_to_Z_atC
+  set CA : ℝ := C_perNHarm with hCAdef
+  set CB : ℝ := C_harmonicZ with hCBdef
+  have hCA : 0 < CA := C_perNHarm_pos
+  have hCB : 0 < CB := C_harmonicZ_pos
   set cA : ℝ := c_perNHarm with hcAdef
   set cB : ℝ := c_harmonicZ with hcBdef
   have hcA : 0 < cA := c_perNHarm_pos
   have hcB : 0 < cB := c_harmonicZ_pos
-  rw [show c_perNTermEval = min cA cB from rfl]
-  refine ⟨CA + CB, max (max xA xB) (Real.exp 1),
-    by positivity, fun x hx E hE y hy n hn => ?_⟩
+  rw [show C_perNTermEval = CA + CB from rfl, show c_perNTermEval = min cA cB from rfl]
+  refine ⟨max (max xA xB) (Real.exp 1), fun x hx E hE y hy n hn => ?_⟩
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hxA : xA ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxB : xB ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -2779,6 +2831,18 @@ theorem perNTerm_eval_explicit :
         · exact div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hLcA hCA.le) hnormpos.le
         · exact div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hLcB hCB.le) hnormpos.le
     _ = (CA + CB) * L ^ (-c) / norm := by ring
+
+/-- Sibling of `perNTerm_eval` with the `c`-slot pinned to `c_perNTermEval`; the original
+delegates here.  Now delegates to `perNTerm_eval_atC` (big-C campaign, step 2:
+`C := C_perNTermEval`). -/
+theorem perNTerm_eval_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNTerm x E y n - mainZ x E / ((alpha - 1) / 2 * Real.log y)|
+            ≤ C * (Real.log x) ^ (-c_perNTermEval) / ((alpha - 1) / 2 * Real.log y) := by
+  obtain ⟨x₀, h⟩ := perNTerm_eval_atC
+  exact ⟨C_perNTermEval, x₀, C_perNTermEval_pos, h⟩
 
 theorem perNTerm_eval :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
