@@ -129,9 +129,10 @@ SEARCH_FILES = [
     "TaoCollatz/Basic/ExplicitConstants.lean",
     "TaoCollatz/BigCTower.lean",
     # The judge-owned comparator surface — a campaign box is under exactly the pressure
-    # this differ exists for.  (`CTao`/`fully_explicit` were retired from here 2026-07-17,
-    # then RETURNED 2026-07-17 later the same day as *proved* statements in Statement.lean
-    # — the names above; the Challenge file itself still does not carry them.)
+    # this differ exists for.  `CTao`/`fully_explicit` were retired from here 2026-07-17,
+    # then RETURNED the same day as *proved* statements (Statement.lean + this challenge).
+    # The ∃-form `tao_collatz_quantitative_explicit` left the CHALLENGE then too — subsumed
+    # by the concrete witness — but stays pinned in Statement.lean, where the differ finds it.
     "Comparator/TaoCollatz/Challenge.lean",
 ]
 
