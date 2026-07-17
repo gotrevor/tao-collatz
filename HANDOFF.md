@@ -1,4 +1,22 @@
-# HANDOFF — big-C campaign, lap 7 (2026-07-17)
+# HANDOFF — big-C campaign, lap 8 in progress (2026-07-17)
+
+## Lap 8 progress so far
+
+- **`Q_black_edge_case2` → `Q_black_edge` → `prop_7_8` all explicit (`eae7e15`)**:
+  `fpDist_white_exit_at` wrapper (deep `_at`, budget hypothesis dropped); defs
+  `delta_case2 = (1-e^{-epsBW³})·p_whiteExit/2`, `Cthr_case2 A = max (max T_whiteExitDeep
+  (T_edgeWeight A delta_case2)) 2` (BlackEdgeQ.lean); `Cthr_blackEdge A = max (Cthr_case2 A)
+  (Cthr_dampingCol A)`, `Cthr_prop78 A = max (max (C_hold A) (Cthr_blackEdge A)) 1`
+  (Case3.lean). `Q_black_edge_at` inlines the `Q_black_edge_of_case3` combinator body;
+  `prop_7_8_explicitC` = `prop_7_8_at` @ explicit args + unfold. ∃-forms delegate.
+  Differ 35/35, checks 18/18, full build green.
+- **Next**: lap-7 step 3 remainder — `Q_polynomial_decay` C0-arm fully symbolic
+  (`Q_polynomial_decay_of_prop_7_8`, Monotone.lean consumer) + extend check18 with the
+  C0-arm assert; then step 4 (renewal/Fourier/Sec6/Sec5/Sec3, STEP 3 discharge).
+
+---
+
+# (lap 7 baton below)
 
 ## State at lap end (branch `explicit-big-c`, all committed, build green)
 
