@@ -237,15 +237,17 @@ theorem highFreq_cast_ne_zero (m n j : ℕ) (hj : n - m ≤ j) (hjn : j ≤ n)
 /-- Uniform head decay once the head length `j` exceeds the high-frequency cutoff `n-m` by a
 residual margin `q₀`.  The exact `3`-valuation of `ξ` is peeled off; multiplication by `2⁻ˡ` is a
 unit and therefore preserves the coprime cofactor. -/
-theorem head_uniform_highFreq_of_margin (B : ℝ) (hB : 0 < B) :
-    ∃ C > 0, ∀ (j p m l q₀ : ℕ), 1 ≤ q₀ → m ≤ j + p →
+theorem head_uniform_highFreq_of_margin_at (B : ℝ) (hB : 0 < B) :
+    ∀ (j p m l q₀ : ℕ), 1 ≤ q₀ → m ≤ j + p →
       (j + p - m) + q₀ ≤ j → ∀ ξ ∈ highFreq m (j + p),
       ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
           (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
             * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
             * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))‖
-        ≤ C * (q₀ : ℝ) ^ (-B) := by
-  obtain ⟨C, hC, hdecay⟩ := head_factor_norm_le_charFn B hB
+        ≤ C_renewalWhite B * (q₀ : ℝ) ^ (-B) := by
+  have hdecay := head_factor_norm_le_charFn_at B hB
+  have hC : (0 : ℝ) < C_renewalWhite B := C_renewalWhite_pos B
+  set C : ℝ := C_renewalWhite B with hCdef
   have htransport {j' q j p l : ℕ} (hjq : j' + q = j) (hq : 1 ≤ q)
       (ξ : ZMod (3 ^ (j + p))) (η : ZMod (3 ^ j))
       (hfreq : (2 : ZMod (3 ^ j))⁻¹ ^ l
@@ -260,7 +262,7 @@ theorem head_uniform_highFreq_of_margin (B : ℝ) (hB : 0 < B) :
         ≤ C * (q : ℝ) ^ (-B) := by
     subst j
     exact hdecay j' q p l hq ξ η hfreq hη3
-  refine ⟨C, hC, fun j p m l q₀ hq₀ hmn hmargin ξ hξ => ?_⟩
+  intro j p m l q₀ hq₀ hmn hmargin ξ hξ
   rw [highFreq, Finset.mem_filter] at hξ
   have hnotdvd : ¬3 ^ (j + p - m) ∣ ξ.val := hξ.2
   have hξval : ξ.val ≠ 0 := by
@@ -337,6 +339,18 @@ theorem head_uniform_highFreq_of_margin (B : ℝ) (hB : 0 < B) :
     · exact_mod_cast hq₀q
     · linarith
   exact mul_le_mul_of_nonneg_left hpow hC.le
+
+/-- `head_uniform_highFreq_of_margin`, original `∃`-form: delegates to the `_at`
+sibling at `C_renewalWhite B` (big-C campaign, step 2). -/
+theorem head_uniform_highFreq_of_margin (B : ℝ) (hB : 0 < B) :
+    ∃ C > 0, ∀ (j p m l q₀ : ℕ), 1 ≤ q₀ → m ≤ j + p →
+      (j + p - m) + q₀ ≤ j → ∀ ξ ∈ highFreq m (j + p),
+      ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
+          (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))‖
+        ≤ C * (q₀ : ℝ) ^ (-B) :=
+  ⟨C_renewalWhite B, C_renewalWhite_pos B, head_uniform_highFreq_of_margin_at B hB⟩
 
 /-- For large `n`, the conditioning window has no support at cuts with `p = k+1 > 0.8n`.
 The strict numerical gap is `8/5 - log 3 / log 2 > 0`, equivalently `3^5 < 2^8`.

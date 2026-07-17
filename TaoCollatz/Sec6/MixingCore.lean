@@ -938,16 +938,26 @@ theorem tail_factor_eq_charFn {j p : ℕ} (ζ : ZMod (3 ^ (j + p))) :
 `p`-coordinate block decays polynomially, `≤ Cₐ·p⁻ᴬ`, for every high frequency `ξ = 3ʲ·ζ` with
 `3∤(ζ mod 3^p).val`. Immediate from `tail_factor_eq_charFn` + `charFn_decay` (Prop 1.17). This is
 the high-entropy factor whose decay drives Prop 1.14. -/
+theorem tail_factor_norm_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ (j p : ℕ), 1 ≤ p → ∀ (ζ : ZMod (3 ^ (j + p))),
+      ¬ (3 ∣ (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) ζ).val) →
+      ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
+          * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ((3 : ZMod (3 ^ (j + p))) ^ j * ζ))))‖
+        ≤ C_renewalWhite A * (p : ℝ) ^ (-A) := by
+  have hC := charFn_decay_at A hA
+  intro j p hp ζ hζ
+  rw [tail_factor_eq_charFn]
+  exact hC p hp _ hζ
+
+/-- `tail_factor_norm_le`, original `∃`-form: delegates to the `_at` sibling at
+`C_renewalWhite A` (big-C campaign, step 2). -/
 theorem tail_factor_norm_le (A : ℝ) (hA : 0 < A) :
     ∃ C > 0, ∀ (j p : ℕ), 1 ≤ p → ∀ (ζ : ZMod (3 ^ (j + p))),
       ¬ (3 ∣ (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) ζ).val) →
       ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
           * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ((3 : ZMod (3 ^ (j + p))) ^ j * ζ))))‖
-        ≤ C * (p : ℝ) ^ (-A) := by
-  obtain ⟨C, hC0, hC⟩ := charFn_decay A hA
-  refine ⟨C, hC0, fun j p hp ζ hζ => ?_⟩
-  rw [tail_factor_eq_charFn]
-  exact hC p hp _ hζ
+        ≤ C * (p : ℝ) ^ (-A) :=
+  ⟨C_renewalWhite A, C_renewalWhite_pos A, tail_factor_norm_le_at A hA⟩
 
 /-- **The Syracuse consistency descent** (C10 head-block novelty, Tao's (1.22) applied to a
 character sum at a `3`-divisible frequency). For a level-`(j'+q)` Syracuse character sum at the
@@ -1073,6 +1083,25 @@ theorem head_factor_eq_charFn {j' q p : ℕ} (l : ℕ) (ξ : ZMod (3 ^ ((j' + q)
 `≤ Cₐ·q⁻ᴬ` whenever the reduced-frequency cofactor `η` (valuation `j'`) is `3`-coprime after the
 final descent. Immediate from `head_factor_eq_charFn` + `charFn_decay` (Prop 1.17). Together with the
 tail factor's `≤ 1` bound, this is the per-frequency decay of `‖𝓕(densC condDens) ξ‖`. -/
+theorem head_factor_norm_le_charFn_at (A : ℝ) (hA : 0 < A) :
+    ∀ (j' q p l : ℕ), 1 ≤ q → ∀ (ξ : ZMod (3 ^ ((j' + q) + p)))
+      (η : ZMod (3 ^ (j' + q))),
+      (2 : ZMod (3 ^ (j' + q)))⁻¹ ^ l
+          * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right (j' + q) p)) (ZMod (3 ^ (j' + q))) ξ
+        = (3 : ZMod (3 ^ (j' + q))) ^ j' * η →
+      ¬ (3 ∣ (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) η).val) →
+      ‖(geomHalf.iid (j' + q)).cexpect (fun vh => ZMod.stdAddChar
+          (-((3 ^ p * ((fnat (j' + q) vh : ZMod (3 ^ ((j' + q) + p)))
+            * (2 : ZMod (3 ^ ((j' + q) + p)))⁻¹ ^ pre vh (j' + q))
+            * (2 : ZMod (3 ^ ((j' + q) + p)))⁻¹ ^ l) * ξ)))‖
+        ≤ C_renewalWhite A * (q : ℝ) ^ (-A) := by
+  have hC := charFn_decay_at A hA
+  intro j' q p l hq ξ η hfreq hη
+  rw [head_factor_eq_charFn l ξ η hfreq]
+  exact hC q hq _ hη
+
+/-- `head_factor_norm_le_charFn`, original `∃`-form: delegates to the `_at` sibling at
+`C_renewalWhite A` (big-C campaign, step 2). -/
 theorem head_factor_norm_le_charFn (A : ℝ) (hA : 0 < A) :
     ∃ C > 0, ∀ (j' q p l : ℕ), 1 ≤ q → ∀ (ξ : ZMod (3 ^ ((j' + q) + p)))
       (η : ZMod (3 ^ (j' + q))),
@@ -1084,11 +1113,8 @@ theorem head_factor_norm_le_charFn (A : ℝ) (hA : 0 < A) :
           (-((3 ^ p * ((fnat (j' + q) vh : ZMod (3 ^ ((j' + q) + p)))
             * (2 : ZMod (3 ^ ((j' + q) + p)))⁻¹ ^ pre vh (j' + q))
             * (2 : ZMod (3 ^ ((j' + q) + p)))⁻¹ ^ l) * ξ)))‖
-        ≤ C * (q : ℝ) ^ (-A) := by
-  obtain ⟨C, hC0, hC⟩ := charFn_decay A hA
-  refine ⟨C, hC0, fun j' q p l hq ξ η hfreq hη => ?_⟩
-  rw [head_factor_eq_charFn l ξ η hfreq]
-  exact hC q hq _ hη
+        ≤ C * (q : ℝ) ^ (-A) :=
+  ⟨C_renewalWhite A, C_renewalWhite_pos A, head_factor_norm_le_charFn_at A hA⟩
 
 
 
@@ -1845,16 +1871,18 @@ frequency `ξ` (level `(j'+q)+p`) whose reduced frequency factors as `3ʲ'·η` 
 `dft_condDens_eq_cond_char` + `cond_char_factor` split it into the decaying head factor
 (`head_factor_norm_le_charFn`, the DECAY block) and the `≤1` tail/indicator factor
 (`tail_indicator_factor_norm_le`, the Rényi block). It is the per-`ξ` input to the `ℓ²`-mass count. -/
-theorem dft_condDens_norm_le (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∀ (j' q p l : ℕ), 1 ≤ q → ∀ (ξ : ZMod (3 ^ ((j' + q) + p)))
+theorem dft_condDens_norm_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ (j' q p l : ℕ), 1 ≤ q → ∀ (ξ : ZMod (3 ^ ((j' + q) + p)))
       (η : ZMod (3 ^ (j' + q))),
       (2 : ZMod (3 ^ (j' + q)))⁻¹ ^ l
           * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right (j' + q) p)) (ZMod (3 ^ (j' + q))) ξ
         = (3 : ZMod (3 ^ (j' + q))) ^ j' * η →
       ¬ (3 ∣ (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) η).val) →
-      ‖ZMod.dft (densC ((j' + q) + p) (condDens (j' + q) p l)) ξ‖ ≤ C * (q : ℝ) ^ (-A) := by
-  obtain ⟨C, hC0, hC⟩ := head_factor_norm_le_charFn A hA
-  refine ⟨C, hC0, fun j' q p l hq ξ η hfreq hη => ?_⟩
+      ‖ZMod.dft (densC ((j' + q) + p) (condDens (j' + q) p l)) ξ‖ ≤ C_renewalWhite A * (q : ℝ) ^ (-A) := by
+  have hC := head_factor_norm_le_charFn_at A hA
+  have hC0 : (0 : ℝ) < C_renewalWhite A := C_renewalWhite_pos A
+  set C : ℝ := C_renewalWhite A with hCdef
+  intro j' q p l hq ξ η hfreq hη
   rw [dft_condDens_eq_cond_char, cond_char_factor, norm_mul]
   have hCq : (0 : ℝ) ≤ C * (q : ℝ) ^ (-A) :=
     mul_nonneg hC0.le (Real.rpow_nonneg (Nat.cast_nonneg _) _)
@@ -1870,6 +1898,18 @@ theorem dft_condDens_norm_le (A : ℝ) (hA : 0 < A) :
         mul_le_mul (hC j' q p l hq ξ η hfreq hη) (tail_indicator_factor_norm_le ξ l)
           (norm_nonneg _) hCq
     _ = C * (q : ℝ) ^ (-A) := mul_one _
+
+/-- `dft_condDens_norm_le`, original `∃`-form: delegates to the `_at` sibling at
+`C_renewalWhite A` (big-C campaign, step 2). -/
+theorem dft_condDens_norm_le (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∀ (j' q p l : ℕ), 1 ≤ q → ∀ (ξ : ZMod (3 ^ ((j' + q) + p)))
+      (η : ZMod (3 ^ (j' + q))),
+      (2 : ZMod (3 ^ (j' + q)))⁻¹ ^ l
+          * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right (j' + q) p)) (ZMod (3 ^ (j' + q))) ξ
+        = (3 : ZMod (3 ^ (j' + q))) ^ j' * η →
+      ¬ (3 ∣ (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) η).val) →
+      ‖ZMod.dft (densC ((j' + q) + p) (condDens (j' + q) p l)) ξ‖ ≤ C * (q : ℝ) ^ (-A) :=
+  ⟨C_renewalWhite A, C_renewalWhite_pos A, dft_condDens_norm_le_at A hA⟩
 
 /-- **Brick (b), the sharp `ℓ²`-mass refinement** (C10, (6.10)–(6.11)). Given a **uniform** head-factor
 decay bound `D` over all high frequencies (`hunif` — the valuation bookkeeping: each high `ξ` has
