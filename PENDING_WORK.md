@@ -1154,3 +1154,8 @@ is odd, and the pin is branch-only so retiring is free).
 - `X_mZeroIy`, `X_earlyReturnSize` (θ-witness closed) + `_atX` forms;
   `X_earlyReturn` + `reverse_early_return_whp_atCX`; all delegates in place. Audit 11/38,
   next `steppedMid_le_firstPassMid_add_atCX`.
+
+### Successor lap 9 (2026-07-17) — phase 2 entry 8/13
+
+- `X_steppedMid` + `steppedMid_le_firstPassMid_add_atCX`; `_atC` delegates. Audit 12/38,
+  next `first_passage_stepback_reduce_atCX`.

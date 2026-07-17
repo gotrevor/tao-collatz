@@ -3462,18 +3462,24 @@ noncomputable def C_steppedMid : ℝ := C_goodTupleDev + 1
 theorem C_steppedMid_pos : 0 < C_steppedMid :=
   add_pos C_goodTupleDev_pos one_pos
 
-/-- Sibling of `steppedMid_le_firstPassMid_add` with the `c`/`C` slots pinned at
-(`c_steppedMid`, `C_steppedMid`) — the `_atC` form (big-C campaign, step 2), cutoff
-existential. -/
-theorem steppedMid_le_firstPassMid_add_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `steppedMid_le_firstPassMid_add` cutoff (X-chase): witness copied verbatim from
+the `_atC` proof at the explicit upstream names. -/
+noncomputable def X_steppedMid : ℝ :=
+  max (max X_goodTupleWhp X_earlyReturn) (max X_mZeroIy (Real.exp 1))
+
+/-- Universal-cutoff form of `steppedMid_le_firstPassMid_add_atC` (X-chase). -/
+theorem steppedMid_le_firstPassMid_add_atCX :
+    ∀ x : ℝ, X_steppedMid ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           steppedMid x E y
             ≤ firstPassMid x E y + C_steppedMid * (Real.log x) ^ (-c_steppedMid) := by
-  obtain ⟨xg, hgood⟩ := approx_good_tuple_whp_atC
-  obtain ⟨xe, hearly⟩ := reverse_early_return_whp_atC
-  obtain ⟨xi, _hxi1, hint⟩ := mZero_le_of_mem_Iy
+  have hgood := approx_good_tuple_whp_atCX
+  have hearly := reverse_early_return_whp_atCX
+  have hint := mZero_le_of_mem_Iy_atX.2
+  set xg : ℝ := X_goodTupleWhp with hxgdef
+  set xe : ℝ := X_earlyReturn with hxedef
+  set xi : ℝ := X_mZeroIy with hxidef
   set Cg : ℝ := C_goodTupleDev with hCgdef
   have hCg : 0 < Cg := C_goodTupleDev_pos
   set Ce : ℝ := (1 : ℝ) with hCedef
@@ -3482,9 +3488,9 @@ theorem steppedMid_le_firstPassMid_add_atC :
   set ce : ℝ := c_earlyReturn with hcedef
   have hcg : 0 < cg := c_goodTupleDev_pos
   have hce : 0 < ce := c_earlyReturn_pos
-  rw [show c_steppedMid = min cg ce from rfl, show C_steppedMid = Cg + Ce from rfl]
-  refine ⟨max (max xg xe) (max xi (Real.exp 1)),
-    fun x hx E hE y hy => ?_⟩
+  rw [show c_steppedMid = min cg ce from rfl, show C_steppedMid = Cg + Ce from rfl,
+    show X_steppedMid = max (max xg xe) (max xi (Real.exp 1)) from rfl]
+  intro x hx E hE y hy
   have hxg : xg ≤ x := (le_max_left xg xe).trans ((le_max_left _ _).trans hx)
   have hxe : xe ≤ x := (le_max_right xg xe).trans ((le_max_left _ _).trans hx)
   have hxi : xi ≤ x := (le_max_left xi (Real.exp 1)).trans ((le_max_right _ _).trans hx)
@@ -3624,6 +3630,15 @@ theorem steppedMid_le_firstPassMid_add_atC :
         have hB : (Real.log x) ^ (-ce) ≤ (Real.log x) ^ (-(min cg ce)) :=
           Real.rpow_le_rpow_of_exponent_le hlog1 (neg_le_neg (min_le_right cg ce))
         nlinarith [mul_le_mul_of_nonneg_left hA hCg.le, mul_le_mul_of_nonneg_left hB hCe.le]
+
+/-- ∃-form of `steppedMid_le_firstPassMid_add_atCX` (X-chase: `x₀ := X_steppedMid`). -/
+theorem steppedMid_le_firstPassMid_add_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          steppedMid x E y
+            ≤ firstPassMid x E y + C_steppedMid * (Real.log x) ^ (-c_steppedMid) :=
+  ⟨X_steppedMid, steppedMid_le_firstPassMid_add_atCX⟩
 
 /-- Sibling of `steppedMid_le_firstPassMid_add` with the `c`-slot pinned to `c_steppedMid`;
 the original delegates here.  Now delegates to `steppedMid_le_firstPassMid_add_atC`
