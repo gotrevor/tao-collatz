@@ -2608,26 +2608,49 @@ theorem Iy_card_bracket :
   · rw [← hW]; linarith [hle1, hcardR, haR_lt, hbR_gt]
   · rw [← hW]; linarith [hle2, hcardR, haR_ge, hbR_le]
 
+/-- **The `mainZ = O(1)` constant** (big-C campaign, step 2): (5.19) leaf + (5.20) leaf +
+the `0.001`-count inversion of `1 + C8`. -/
+noncomputable def C_mainZ : ℝ := C_perNHarm + C_harmonicZ + 1000 * (1 + C_fpApprox)
+
+theorem C_mainZ_pos : 0 < C_mainZ :=
+  add_pos (add_pos C_perNHarm_pos C_harmonicZ_pos)
+    (by nlinarith [C_fpApprox_pos])
+
 -- HEARTBEAT: assembles four ∃-lemmas and a lattice count; the cumulative linarith/nlinarith
 -- budget exceeds the default.
 set_option maxHeartbeats 800000 in
-/-- **`mainZ` is `O(1)`** — via Tao's a-posteriori route (p.26): `Z ≍ (log(4/3)/2)·ℙ(Pass∈E) = O(1)`.
+/-- Sibling of `mainZ_bound` with the `C`-slot pinned at `C_mainZ` — the `_atC` form
+(big-C campaign, step 2), cutoff existential.  **`mainZ` is `O(1)`** — via Tao's
+a-posteriori route (p.26): `Z ≍ (log(4/3)/2)·ℙ(Pass∈E) = O(1)`.
 Non-circular assembly from PROVED pieces: for every `n ∈ I_y` (at `y = x^α`),
 `perNTerm ≥ (mainZ − O(1))/norm` by the (5.19) reduction (`perNTerm_harmonic_approx`) and the
 (5.20) `Z`-reduction (`harmonic_to_Z`); summing over the `≥ 0.001·log x` values of `n`
 (`Iy_card_bracket`) gives `#I_y·(mainZ − O(1))/norm ≤ approxMainTerm ≤ 1 + O(log^{-c}x)` by
 Prop 5.2 (`first_passage_approx`, C8) and `ℙ ≤ 1`; since `#I_y/norm ≫ 1`, `mainZ ≪ 1`. -/
-theorem mainZ_bound :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
-      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C := by
+theorem mainZ_bound_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C_mainZ := by
   classical
-  obtain ⟨cA, CA, xA, hcA, hCA, hA⟩ := perNTerm_harmonic_approx
-  obtain ⟨cB, CB, xB, hcB, hCB, hB⟩ := harmonic_to_Z
-  obtain ⟨c8, C8, x8, hc8, hC8, h8⟩ := first_passage_approx
+  obtain ⟨xA, hA⟩ := perNTerm_harmonic_approx_atC
+  obtain ⟨xB, hB⟩ := harmonic_to_Z_atC
+  obtain ⟨x8, h8⟩ := first_passage_approx_atC
   obtain ⟨xI, hIcard⟩ := Iy_card_bracket
-  refine ⟨CA + CB + 1000 * (1 + C8), max (max xA xB)
+  set cA : ℝ := c_perNHarm with hcAdef
+  set CA : ℝ := C_perNHarm with hCAdef
+  set cB : ℝ := c_harmonicZ with hcBdef
+  set CB : ℝ := C_harmonicZ with hCBdef
+  set c8 : ℝ := c_fpApprox with hc8def
+  set C8 : ℝ := C_fpApprox with hC8def
+  have hcA : 0 < cA := c_perNHarm_pos
+  have hCA : 0 < CA := C_perNHarm_pos
+  have hcB : 0 < cB := c_harmonicZ_pos
+  have hCB : 0 < CB := C_harmonicZ_pos
+  have hc8 : 0 < c8 := c_fpApprox_pos
+  have hC8 : 0 < C8 := C_fpApprox_pos
+  rw [show C_mainZ = CA + CB + 1000 * (1 + C8) from rfl]
+  refine ⟨max (max xA xB)
       (max x8 (max xI (Real.exp ((2000 : ℝ) ^ (5 : ℕ))))),
-    by positivity, fun x hx E hE => ?_⟩
+    fun x hx E hE => ?_⟩
   simp only [max_le_iff] at hx
   obtain ⟨⟨hxA, hxB⟩, hx8, hxI, hxT⟩ := hx
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hxT
@@ -2750,6 +2773,14 @@ theorem mainZ_bound :
         linarith [hA1, hsum, hA2]
       nlinarith [hchain, hLpos, hpos]
     linarith
+
+/-- **`mainZ` is `O(1)`** — the ∃-form.  Now delegates to `mainZ_bound_atC`
+(big-C campaign, step 2: `C := C_mainZ`). -/
+theorem mainZ_bound :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C := by
+  obtain ⟨x₀, h⟩ := mainZ_bound_atC
+  exact ⟨C_mainZ, x₀, C_mainZ_pos, h⟩
 
 /-- **Per-`n` evaluation (5.19)+(5.20).**  For each `n ∈ I_y`, the per-`n` term equals the
 window-independent `mainZ x E` divided by the harmonic normaliser `((α−1)/2)·log y`, up to a *relative*
@@ -2955,7 +2986,20 @@ noncomputable def c_approxToZ : ℝ := min c_IyRatio c_perNTermEval
 theorem c_approxToZ_pos : 0 < c_approxToZ :=
   lt_min c_IyRatio_pos c_perNTermEval_pos
 
-/-- (5.21) main-term evaluation, explicit-`c` sibling of `approxMainTerm_to_Z`:
+/-- The (5.21) main-term evaluation constant (big-C campaign, step 2): count-ratio
+(`6000`) × per-`n` evaluation, plus `mainZ`-bound × count-ratio. -/
+noncomputable def C_approxToZ : ℝ :=
+  (2 / Real.log (4 / 3) + 6000) * C_perNTermEval + C_mainZ * 6000
+
+theorem C_approxToZ_pos : 0 < C_approxToZ :=
+  add_pos
+    (mul_pos (add_pos (by positivity : (0 : ℝ) < 2 / Real.log (4 / 3)) (by norm_num))
+      C_perNTermEval_pos)
+    (mul_pos C_mainZ_pos (by norm_num))
+
+/-- Sibling of `approxMainTerm_to_Z` with the `c`/`C` slots pinned at
+(`c_approxToZ`, `C_approxToZ`) — the `_atC` form (big-C campaign, step 2), cutoff
+existential.  (5.21) main-term evaluation:
 `approxMainTerm x E y = (2 / log(4/3))·mainZ x E + O(log^{-c} x)`.  This subsumes Tao's pp.25–27
 chain: the single-value mass formula (5.19)
 `ℙ(Aff_ā(N_y)=M) = (1+O(x^{-c}))·2^{-|ā|}·3^{n−m₀} / (((α−1)/2)·log y · M)`; the harmonic-sum reduction
@@ -2966,15 +3010,21 @@ and the interval count `#I_y` (5.9) `= (1+O(log^{-c}x))·(α−1)/log(4/3)·log 
 **[C9 CRUX — the sole remaining C9 hole; this is where C10 enters.]**  Target is `y`-independent (`Z`),
 which is the faithful rendering of the paper's cancellation; `approxMainTerm_window_stable` below is a
 one-line triangle over this. -/
-theorem approxMainTerm_to_Z_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+theorem approxMainTerm_to_Z_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |approxMainTerm x E y - 2 / Real.log (4 / 3) * mainZ x E|
-            ≤ C * (Real.log x) ^ (-c_approxToZ) := by
-  obtain ⟨C1, x1, hC1, h9⟩ := Iy_count_ratio_explicit
-  obtain ⟨Cz, xz, hCz, hZb⟩ := mainZ_bound
-  obtain ⟨C2, x2, hC2, hp⟩ := perNTerm_eval_explicit
+            ≤ C_approxToZ * (Real.log x) ^ (-c_approxToZ) := by
+  obtain ⟨x1, h9⟩ := Iy_count_ratio_atC
+  obtain ⟨xz, hZb⟩ := mainZ_bound_atC
+  obtain ⟨x2, hp⟩ := perNTerm_eval_atC
+  set C1 : ℝ := (6000 : ℝ) with hC1def
+  set Cz : ℝ := C_mainZ with hCzdef
+  set C2 : ℝ := C_perNTermEval with hC2def
+  have hC1 : (0 : ℝ) < C1 := by rw [hC1def]; norm_num
+  have hCz : 0 < Cz := C_mainZ_pos
+  have hC2 : 0 < C2 := C_perNTermEval_pos
   set c1 : ℝ := c_IyRatio with hc1def
   set c2 : ℝ := c_perNTermEval with hc2def
   have hc1 : 0 < c1 := c_IyRatio_pos
@@ -2983,10 +3033,9 @@ theorem approxMainTerm_to_Z_explicit :
   have halpha0 : 0 < alpha := by norm_num [alpha]
   have halpha1 : 0 < alpha - 1 := by norm_num [alpha]
   have hb2 : (0 : ℝ) < 2 / Real.log (4 / 3) := by positivity
-  rw [show c_approxToZ = min c1 c2 from rfl]
-  refine ⟨(2 / Real.log (4 / 3) + C1) * C2 + Cz * C1,
-    max (max (max x1 xz) x2) (Real.exp 1), by nlinarith [hC1, hC2, hCz, hb2],
-    fun x hx E hE y hy => ?_⟩
+  rw [show c_approxToZ = min c1 c2 from rfl,
+    show C_approxToZ = (2 / Real.log (4 / 3) + C1) * C2 + Cz * C1 from rfl]
+  refine ⟨max (max (max x1 xz) x2) (Real.exp 1), fun x hx E hE y hy => ?_⟩
   -- thresholds
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hx1 : x1 ≤ x :=
@@ -3071,6 +3120,17 @@ theorem approxMainTerm_to_Z_explicit :
         add_le_add hStepA hStepB
     _ = ((2 / Real.log (4 / 3) + C1) * C2 + Cz * C1) * L ^ (-c) := by ring
 
+/-- Original explicit-`c` form of the (5.21) evaluation: delegates to
+`approxMainTerm_to_Z_atC` (big-C campaign, step 2: `C := C_approxToZ`). -/
+theorem approxMainTerm_to_Z_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |approxMainTerm x E y - 2 / Real.log (4 / 3) * mainZ x E|
+            ≤ C * (Real.log x) ^ (-c_approxToZ) := by
+  obtain ⟨x₀, h⟩ := approxMainTerm_to_Z_atC
+  exact ⟨C_approxToZ, x₀, C_approxToZ_pos, h⟩
+
 theorem approxMainTerm_to_Z :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
@@ -3080,20 +3140,32 @@ theorem approxMainTerm_to_Z :
   obtain ⟨C, x₀, hC, h⟩ := approxMainTerm_to_Z_explicit
   exact ⟨c_approxToZ, C, x₀, c_approxToZ_pos, hC, h⟩
 
-/-- **Lemma 5.3 + (5.18)–(5.21)** — window-stability of the affine main term.  `approxMainTerm x E y`
-agrees across the two nested windows `y = x^α` and `y = x^{α²}` up to `O(log^{-c} x)`.  PROVED from
-`approxMainTerm_to_Z` by the triangle inequality through the window-independent `mainZ x E`: both
-windows evaluate to `(2/log(4/3))·mainZ x E + O(log^{-c} x)` with the **same** `mainZ`, so their
-difference is `O(log^{-c} x)`. -/
-theorem approxMainTerm_window_stable_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The window-stability constant: two triangle legs through `mainZ`
+(big-C campaign, step 2). -/
+noncomputable def C_windowStable : ℝ := 2 * C_approxToZ
+
+theorem C_windowStable_pos : 0 < C_windowStable :=
+  mul_pos (by norm_num) C_approxToZ_pos
+
+/-- Sibling of `approxMainTerm_window_stable` with the `c`/`C` slots pinned at
+(`c_approxToZ`, `C_windowStable`) — the `_atC` form (big-C campaign, step 2), cutoff
+existential.  **Lemma 5.3 + (5.18)–(5.21)** — window-stability of the affine main term.
+`approxMainTerm x E y` agrees across the two nested windows `y = x^α` and `y = x^{α²}` up to
+`O(log^{-c} x)`.  PROVED from `approxMainTerm_to_Z` by the triangle inequality through the
+window-independent `mainZ x E`: both windows evaluate to `(2/log(4/3))·mainZ x E + O(log^{-c} x)`
+with the **same** `mainZ`, so their difference is `O(log^{-c} x)`. -/
+theorem approxMainTerm_window_stable_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         |approxMainTerm x E (x ^ alpha) - approxMainTerm x E (x ^ alpha ^ 2)|
-          ≤ C * (Real.log x) ^ (-c_approxToZ) := by
-  obtain ⟨C, x₀, hC, hZ⟩ := approxMainTerm_to_Z_explicit
+          ≤ C_windowStable * (Real.log x) ^ (-c_approxToZ) := by
+  obtain ⟨x₀, hZ⟩ := approxMainTerm_to_Z_atC
+  set C : ℝ := C_approxToZ with hCdef
+  have hC : 0 < C := C_approxToZ_pos
   set c : ℝ := c_approxToZ with hcdef
   have hc : 0 < c := c_approxToZ_pos
-  refine ⟨2 * C, x₀, by positivity, fun x hx E hE => ?_⟩
+  rw [show C_windowStable = 2 * C from rfl]
+  refine ⟨x₀, fun x hx E hE => ?_⟩
   have hmem1 : (x ^ alpha) ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ) := Set.mem_insert _ _
   have hmem2 : (x ^ alpha ^ 2) ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ) :=
     Set.mem_insert_of_mem _ rfl
@@ -3106,6 +3178,16 @@ theorem approxMainTerm_window_stable_explicit :
     _ ≤ C * (Real.log x) ^ (-c) + C * (Real.log x) ^ (-c) := by
         rw [abs_sub_comm (2 / Real.log (4 / 3) * mainZ x E)]; exact add_le_add h1 h2
     _ = 2 * C * (Real.log x) ^ (-c) := by ring
+
+/-- Original explicit-`c` form of the window stability: delegates to
+`approxMainTerm_window_stable_atC` (big-C campaign, step 2: `C := C_windowStable`). -/
+theorem approxMainTerm_window_stable_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        |approxMainTerm x E (x ^ alpha) - approxMainTerm x E (x ^ alpha ^ 2)|
+          ≤ C * (Real.log x) ^ (-c_approxToZ) := by
+  obtain ⟨x₀, h⟩ := approxMainTerm_window_stable_atC
+  exact ⟨C_windowStable, x₀, C_windowStable_pos, h⟩
 
 theorem approxMainTerm_window_stable :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
