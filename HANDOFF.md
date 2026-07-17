@@ -1,3 +1,27 @@
+# HANDOFF — big-C campaign, lap 14 — FEASIBILITY MAP EXACT (check22): ONE DOOR REMAINS 🚪
+
+**Read `DIRECTION.md` RESOLVED banner FIRST.** State: build green (3327), 2 sorries (pin +
+`Q_black_edge_tight`), differ 35/35, checks **22/22**. Laps 13/13b/14 (same day): pin
+resized to the machinery floor (lap 13, `e21a7a7`); Case-3 architecture floor found
+(lap 13b, `8348028`); X10 read + exact feasibility map (lap 14, `499a6ab`).
+
+**The map (check22, machine-checked):** budget `log₁₀ Cthr ≤ 3053`; floors — union
+15041/12033, dilated single-hit 7542/6033 (all dead under X10b's √-spacing cap
+`s'² ≤ 1+s`); **dilated + LINEAR spacing fits at 3019 (34 orders margin)**. Hold steps
+have `d.1 ≥ 1` AND `d.2 ≥ 3` (both coordinates strictly monotone) — that is what makes
+the dilated single-hit replace Tao's P-fold union (sweep `4P ≪ s`).
+
+**NEXT (lap 15, decisive):** read `many_triangles_white` + the X10b proof chain
+(`fpDist_any_triangle_le`) + paper Lemma 7.10/(7.11) (PDF in `papers/`): is the
+√-spacing cap intrinsic triangle geometry, or is phase-matched size-`s'` triangle
+spacing linear (`s' ≲ s/polylog` valid)? If LINEAR → build the dilated-hit lemma
+(monotone coordinates; phase window dilates only linearly per `hX10a`) and Option B
+proceeds at current `A`. If INTRINSIC → Option B at current `A` is dead; fire the
+conditional JUDGE-FLAG (PENDING_WORK Lap 14: the `caConst` lever conflicts with the
+judge's out-of-scope ruling; evidence = check22). Details: PENDING_WORK Laps 13b/14.
+
+---
+
 # HANDOFF — big-C campaign, lap 13 — TIGHT PIN RESIZED TO MACHINERY FLOOR; CRUX = `Q_black_edge_tight` 🎯
 
 **Read `DIRECTION.md` RESOLVED banner FIRST** (Option B is the live route; the note there
