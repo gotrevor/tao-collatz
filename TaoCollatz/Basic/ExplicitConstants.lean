@@ -1,6 +1,8 @@
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Analysis.SpecialFunctions.Log.Basic
-import Mathlib.Analysis.Complex.ExponentialBounds
+-- Full Mathlib, not slices: `Challenge.lean` re-declares `cTao`/`tenTower`/`CTao` under
+-- `import Mathlib`, and comparator demands *identical* elaborations, not defeq ones — a
+-- narrower import set here can pick a different instance path and fail the harness with
+-- "Const does not match" (see the comparator-harness recipe's №1 gotcha).
+import Mathlib
 
 /-!
 # Explicit constants: the exponent `cTao` and the `tenTower` vocabulary
