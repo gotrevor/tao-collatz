@@ -913,15 +913,20 @@ theorem C_syrSum_pos (X : ℝ) : 0 < C_syrSum X :=
     (div_pos (mul_pos C_windowBad_pos (by norm_num [alpha])) (by norm_num [alpha]))
     (le_max_left _ _)
 
+/-- The `tao_syracuse_quantitative_sum` cutoff-parameter (X-chase): the witness copied
+verbatim from the `_atC` proof, with `xw := X_windowBad`.  Note this `X` enters the
+CONSTANT `C_syrSum X_syrSum` (small-`N₀` arm), not a hypothesis — the sum-form statement
+is cutoff-free. -/
+noncomputable def X_syrSum : ℝ := max X_windowBad (Real.exp 1)
+
 /-- Sibling of the RATIFY-C6a `tao_syracuse_quantitative_sum` with the `c`-slot pinned to
-`c_ladder` and the `C`-slot pinned to `C_syrSum X` at an existentially-supplied cutoff `X`
-— the `_atC` form (big-C campaign, step 2).  The cutoff cannot be closed-form here (it
-chains through the Sec5 existential cutoffs), so the constant is cutoff-parameterized. -/
-theorem tao_syracuse_quantitative_sum_atC :
-    ∃ X : ℝ, ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+`c_ladder` and the `C`-slot pinned to the closed `C_syrSum X_syrSum` (X-chase). -/
+theorem tao_syracuse_quantitative_sum_atCX :
+    ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       logSum {N | N₀ < syrMin N} (oddInterval x)
-        ≤ C_syrSum X * Real.log x / (Real.log N₀) ^ c_ladder := by
-  obtain ⟨xw, hwbs⟩ := window_bad_sum_atC
+        ≤ C_syrSum X_syrSum * Real.log x / (Real.log N₀) ^ c_ladder := by
+  have hwbs := window_bad_sum_atCX
+  set xw : ℝ := X_windowBad with hxwdef
   set Cw : ℝ := C_windowBad with hCwdef
   have hCw : 0 < Cw := C_windowBad_pos
   set c : ℝ := c_ladder with hcdef
@@ -942,8 +947,7 @@ theorem tao_syracuse_quantitative_sum_atC :
   have hC0 : (0 : ℝ) < C := by
     have h1 : (0 : ℝ) < Cw * alpha / (alpha - 1) := by positivity
     exact lt_of_lt_of_le h1 (le_max_left _ _)
-  refine ⟨X, ?_⟩
-  rw [show C_syrSum X = C from rfl]
+  rw [show X_syrSum = X from rfl, show C_syrSum X = C from rfl]
   intro N₀ x hN₀2 hx2
   -- common size facts
   have hx2R : (2 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx2
@@ -1228,6 +1232,14 @@ theorem log_le_eight_logSum_univ_oddInterval {x : ℕ} (hx2 : 2 ≤ x) :
       refine le_trans ?_ hkey
       nlinarith [hlog_ge, hlog4]
     linarith
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff-parameter existential.
+Delegates to `tao_syracuse_quantitative_sum_atCX` (X-chase: `X := X_syrSum`). -/
+theorem tao_syracuse_quantitative_sum_atC :
+    ∃ X : ℝ, ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      logSum {N | N₀ < syrMin N} (oddInterval x)
+        ≤ C_syrSum X * Real.log x / (Real.log N₀) ^ c_ladder :=
+  ⟨X_syrSum, tao_syracuse_quantitative_sum_atCX⟩
 
 /-- Sibling of the RATIFY-C6a `tao_syracuse_quantitative_sum` with the `c`-slot pinned to
 `c_ladder`; delegates to `tao_syracuse_quantitative_sum_atC` (big-C campaign, step 2:

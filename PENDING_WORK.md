@@ -1274,3 +1274,9 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_windowBad := max (max X_descWhp ((max X_windowBase 1)^α)) e` + `window_bad_sum_atCX`;
   `_atC` delegates. Audit 33/38, next `X_syrSum` + `tao_syracuse_quantitative_sum_atCX`.
+
+### Successor lap 31 (2026-07-17) — phase 4 entry 6
+
+- `X_syrSum := max X_windowBad (exp 1)` + `tao_syracuse_quantitative_sum_atCX` — the C6a
+  sum form with the fully closed constant `C_syrSum X_syrSum`; `_atC` delegates.
+  Audit 34/38, next `tao_collatz_quantitative_spine_atCX`.
