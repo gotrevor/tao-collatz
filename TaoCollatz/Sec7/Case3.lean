@@ -2080,15 +2080,22 @@ theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
 
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
+/-- Explicit threshold past which `exp(−ρm) ≤ δ·m^{−A}` (witness of
+`exp_neg_mul_le_rpow_neg`, reified — big-C campaign step 2). -/
+noncomputable def T_expRpow (A ρ δ : ℝ) : ℕ := 1 + T_logLin (ρ / (2 * A)) + T_expNeg (ρ / 2) δ
+
 /-- **Super-exponential beats polynomial** (explicit-threshold form): `exp(−ρm) ≤ δ·m^{−A}`
-for `m ≥ N`. Extracted from `hold_fst_tail_le`'s `hclose`; combines `log_le_eps_mul_of_large`
-(`log m ≤ (ρ/2A)m`) with `exp_neg_mul_le_of_large` (final tail). -/
-theorem exp_neg_mul_le_rpow_neg (A : ℝ) (hA : 0 < A) (ρ : ℝ) (hρ : 0 < ρ)
-    (δ : ℝ) (hδ : 0 < δ) : ∃ N : ℕ, ∀ m : ℕ, N ≤ m →
+for `m ≥ T_expRpow A ρ δ`. Extracted from `hold_fst_tail_le`'s `hclose`; combines
+`log_le_eps_mul_at` (`log m ≤ (ρ/2A)m`) with `exp_neg_mul_le_at` (final tail). -/
+theorem exp_neg_mul_le_rpow_neg_at (A : ℝ) (hA : 0 < A) (ρ : ℝ) (hρ : 0 < ρ)
+    (δ : ℝ) (hδ : 0 < δ) : ∀ m : ℕ, T_expRpow A ρ δ ≤ m →
       Real.exp (-ρ * (m : ℝ)) ≤ δ * (m : ℝ) ^ (-A) := by
-  obtain ⟨Nlog, hNlog⟩ := log_le_eps_mul_of_large (ρ / (2 * A)) (by positivity)
-  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_of_large (ρ / 2) (by positivity) δ hδ
-  refine ⟨1 + Nlog + Nexp, fun m hm => ?_⟩
+  have hNlog := log_le_eps_mul_at (ρ / (2 * A)) (by positivity)
+  have hNexp := exp_neg_mul_le_at (ρ / 2) (by positivity) δ hδ
+  intro m hm
+  unfold T_expRpow at hm
+  set Nlog := T_logLin (ρ / (2 * A)) with hNlogdef
+  set Nexp := T_expNeg (ρ / 2) δ with hNexpdef
   have hmpos : (0 : ℝ) < m := by exact_mod_cast (by omega : 0 < m)
   rw [Real.rpow_neg hmpos.le, ← div_eq_mul_inv, le_div_iff₀ (Real.rpow_pos_of_pos hmpos A),
     Real.rpow_def_of_pos hmpos A, ← Real.exp_add]
@@ -2099,6 +2106,12 @@ theorem exp_neg_mul_le_rpow_neg (A : ℝ) (hA : 0 < A) (ρ : ℝ) (hρ : 0 < ρ)
     linarith [h2, h3.le, h3.ge]
   have hexparg : -ρ * (m : ℝ) + Real.log m * A ≤ -(ρ / 2) * m := by nlinarith [hAlog]
   exact le_trans (Real.exp_le_exp.mpr hexparg) (hNexp m (by omega))
+
+/-- `exp_neg_mul_le_rpow_neg`, original `∃`-form: delegates to the `_at` sibling. -/
+theorem exp_neg_mul_le_rpow_neg (A : ℝ) (hA : 0 < A) (ρ : ℝ) (hρ : 0 < ρ)
+    (δ : ℝ) (hδ : 0 < δ) : ∃ N : ℕ, ∀ m : ℕ, N ≤ m →
+      Real.exp (-ρ * (m : ℝ)) ≤ δ * (m : ℝ) ^ (-A) :=
+  ⟨T_expRpow A ρ δ, exp_neg_mul_le_rpow_neg_at A hA ρ hρ δ hδ⟩
 
 /-- **(7.54) bad-column tail** (paper: the `j_end ≥ 0.9m` contribution). The mass that the
 `P`-step walk after first passage advances past `0.9m` is `O(e^{−cm})` (Lemma 7.7 + Lemma 2.2:
