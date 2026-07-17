@@ -40,9 +40,16 @@ continues (next: `renewal_white_encounters` explicit, Fourier passthrough, Sec6)
   `C_fineScale A = 2·(max 9 (N_oscHigh (A+2)))^A + C_oscHigh (A+2)·S_zeta2`;
   watched `fine_scale_mixing` delegates. Rail reminder: adjacent docstrings = parse
   error — put the new def+docstring ABOVE the original docstring, or merge into one.
-- **Next**: `stabilization` consumer chain (Stabilization.lean:~2118 consumes
-  `fine_scale_mixing 1.7` — give it the explicit `C_fineScale` path), then Sec5 (37
-  slots), Sec3 (7), Syracuse 1, Prob 1. STEP 3 remains STOPPED on the lap-8 JUDGE-FLAG.
+- **Sec5 C10 seam explicit (`0fbaa14`)**: leaves `X_twoMZero = e^100000`
+  (ApproxFormula), `X_mZeroLin = e^200000`, `X_cnBound = e^1024` (const 4);
+  `C_mainZbridge = 4·C_fineScale 1.7·(1/200000)^{-1.7}`, `X_mainZbridge`;
+  `harmZfine_to_mainZ_at`; the c-campaign `_explicit` ∃-form delegates. Sec5 slot
+  census: ApproxFormula 23, FirstPassage 16, Stabilization 17 (mostly `∃ C x₀` pairs).
+- **Next (Sec5 continuation, bottom-up)**: `perNHarmonic_eq_harmZfine_approx_explicit`
+  (B1) and its inputs, then `harmonic_to_Z_explicit` (combines B1+B2, Stabilization
+  ~2200), up through `perNTerm_eval` → `stabilization`. Then FirstPassage,
+  ApproxFormula leaves, Sec3 (7), Syracuse 1, Prob 1.
+  STEP 3 remains STOPPED on the lap-8 JUDGE-FLAG.
 
 ---
 
