@@ -1091,6 +1091,51 @@ def check21():
           % (log10_tight, log10_K_fw, log10_M1, log10_M1 - log10_K_fw))
 
 
+def check22():
+    # Big-C campaign lap 14 (2026-07-17): OPTION-B FEASIBILITY MAP — machine-checked
+    # record of the lap-13b/14 floor arithmetic for `Q_black_edge_tight` (the crux).
+    # All shapes read from the Lean source, not the paper:
+    #   per-time E* mass  = Lemma 7.10 (`triangle_encounter_le_rpow_core`,
+    #     ManyTriangles.lean:5564):  C*A^2*(1+p)/s' + C*exp(-c*A^2*(1+p)),
+    #     with hX10b anti-concentration C3*W/s' valid ONLY under s'^2 <= 1+s
+    #     (the sqrt spacing cap) and the Case-3 regime s > m^0.8 (0.4 cap on s').
+    #   forced chain (any proof through the (7.54)-(7.56) mass split):
+    #     K >= ln4/eps^3   (the >K-white damping arm must beat a CONSTANT even with
+    #                       the sharp end-weight bracketing of lap 13b),
+    #     P >= K           (cannot see K+1 white visits in fewer than K+1 steps).
+    # Floors on log10(Cthr) for each architecture variant, vs the pin budget
+    # log10(C2) <= 0.95e11/B (final constant is C2^B in the ladder):
+    from math import log10
+    ln2, ln10 = log(2), log(10)
+    A_high = 3.7
+    ca = 1000 * (A_high + 3)
+    B = A_high + ca ** 2 * ln2 + 3
+    budget = 0.95e11 / B
+    assert abs(budget - 3053.15) < 0.5, budget
+    log10_P = log10(log(4)) + 3000                     # P >= K >= ln4/eps^3
+    # (a) union over p<=P (Tao's structure, tower flattened): m^cap >= A^2*P^2
+    union_04 = (2 * log10_P + 2 * log10(B) + 1) / 0.4  # as-written 0.4 cap
+    union_05 = (2 * log10_P + 2 * log10(B) + 1) / 0.5  # best-case sqrt(s), s ~ m
+    # (b) dilated single-hit (monotone columns, sweep 4P << s): s' >= ~40*P*A^2
+    dil_04 = (log10_P + log10(40) + 2 * log10(B)) / 0.4
+    dil_05 = (log10_P + log10(40) + 2 * log10(B)) / 0.5
+    # (c) the ONE variant that fits: dilated single-hit + LINEAR spacing cap
+    #     (X10b's s'^2 <= 1+s improved to s' <~ s/polylog):  m ~ s'*log^2
+    lin = log10_P + log10(40) + 2 * log10(B) + 2
+    assert union_04 > budget and union_05 > budget, (union_04, union_05)
+    assert dil_04 > budget and dil_05 > budget, (dil_04, dil_05)
+    assert lin < budget - 30, lin                      # fits with >30 orders margin
+    # (d) the out-of-scope lever, for the record: budget scales as 1/B ~ 1/caConst^2;
+    #     caConst/100 would give budget ~3e5 >> every floor above:
+    B_small = A_high + (ca / 100) ** 2 * ln2 + 3
+    assert 0.95e11 / B_small > 2 * union_04
+    print("22. Option-B feasibility map: budget log10 Cthr <= %.0f; floors — union "
+          "%.0f/%.0f (0.4/0.5 cap), dilated %.0f/%.0f; ONLY dilated+linear-spacing "
+          "fits at %.0f (margin %.0f orders). Decisive open geometry: X10b spacing "
+          "s'^2<=1+s -> s'<~s/polylog?, plus the monotone-column dilation lemma."
+          % (budget, union_04, union_05, dil_04, dil_05, lin, budget - lin))
+
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
@@ -1108,4 +1153,5 @@ if __name__ == "__main__":
     check19()                                     # lap-8 C0-arm NO-GO trace (JUDGE-FLAG)
     check20()                                     # lap-11 Sec5/Sec3 glue defs vs ladder
     check21()                                     # lap-13 tight resize (Option B pin)
+    check22()                                     # lap-14 Option-B feasibility map
     print("ALL CHECKS PASS ✅")

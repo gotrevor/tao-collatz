@@ -691,3 +691,49 @@ architecturally DEAD and the finding must go back to the route level (candidates
 re-escalate the pin as unreachable-by-B with the machine-checked floor as evidence).
 Numeric mirror of this floor arithmetic: add to check_blueprint as check22 WITH the
 lap-14 X10 reading (don't trap numbers that are still moving).
+
+### Lap 14 (2026-07-17) — X10 READ COMPLETE: the feasibility map is now exact (check22)
+
+**X10's anatomy** (`triangle_encounter_le_rpow_core`, ManyTriangles.lean:5564): the `(1+p)`
+in Lemma 7.10 is the walk's HEIGHT-DRIFT window (after `p` steps the good-box height window
+has width `~2A²(1+p)`, `hX10a`), which feeds the anti-concentration `hX10b`:
+`mass{within column-dist W of a size-≥s' triangle with phase |t'.2.1−t'.2.2/log2−t₀.2.1|≤W}
+≤ C₃·W/s'`, valid ONLY under `s'² ≤ 1+s` (the √-spacing cap). Case 2 (`Cthr_case2`,
+BlackEdgeQ.lean:127) is poly (`~10^3013`-scale: `T_whiteExitDeep`, `T_edgeWeight A
+delta_case2`, `δ ~ ε³·p_whiteExit/2`) — no second wall.
+
+**The exact feasibility map (machine-checked, check22).** Budget `log₁₀ Cthr ≤ 3053`
+(= 0.95e11/B). Forced chain: `K ≥ ln4/ε³`, `P ≥ K` → `log₁₀ P ≥ 3000.1`. Floors:
+- union over `p ≤ P` (Tao's structure, tower flattened): **15041** (0.4 cap) / **12033**
+  (best-case 0.5 cap, `s ~ m`) — DEAD;
+- dilated single-hit (NEW; monotone columns — hold steps have `d.1 ≥ 1` AND `d.2 ≥ 3`, so
+  BOTH coordinates strictly increase and the horizon sweep is `~4P ≪ s`): **7542** / **6033**
+  — DEAD under the √-spacing cap;
+- **dilated single-hit + LINEAR spacing (`s' ≲ s/polylog`): 3019 — FITS, 34 orders margin.**
+
+**So Option B at the current `A = mainDecayExponent 3.7 ≈ 3.11e7` is alive through exactly
+one door**, and lap 15's decisive questions are:
+1. **(Q1, the crux of the crux)** Is `hX10b`'s `s'² ≤ 1+s` intrinsic — i.e. do size-`s'`
+   phase-matched triangles really have column spacing only `~s'` per `√s`-window — or is the
+   true spacing linear in `s'` relative to the full spread `s` (giving `W/s'` with cap
+   `s' ≲ s/polylog`)? Read `many_triangles_white` + the X10b proof
+   (`fpDist_any_triangle_le` chain) + paper (7.11)/Lemma 7.10 (PDF in `papers/`), and
+   extract the true triangle-density-per-phase-window geometry.
+2. **(Q2)** The dilated-hit lemma: formalizable as
+   `P(∃p ≤ P: X_p ∈ bigSet) ≤ P(entry ∈ (4P-column ∪ drift-height)-dilated bigSet) + col-tail(P)`
+   using monotone coordinates; needs the dilated set to still be `hX10b`-shaped (a
+   W' = W + 40P window — CHECK whether the phase window also dilates only linearly, per
+   `hX10a`'s `C₂A²(1+p)` phase drift: it does, `≤ C₂A²(1+P)`).
+3. If Q1 answers "intrinsic √" → Option B at current `A` is architecturally DEAD; the
+   remaining lever is `caConst` (§6, budget scales as `1/B ~ 1/caConst²`; caConst/100 →
+   budget 3e5 ≫ all floors) — that lever was ruled out-of-scope by the judge's 2026-07-16
+   ruling ("lowering caConst — out of scope, banked as tighten-C follow-up").
+   **JUDGE-FLAG (conditional):** if Q1 = intrinsic, Option B as scoped conflicts with the
+   out-of-scope ruling; the machine-checked evidence is check22. Do not act on the flag
+   until Q1 is settled by the source read.
+
+**Also noted (time-accounting alternative, weaker):** restructuring (7.67) to bound
+in-triangle CROSSING TIME (barrier climbs are deterministic ≤ 0.48·size at ≥3 height/step,
+both coordinates monotone ⟹ no re-entry) instead of excluding big triangles hits a
+log-factor circularity (`Σ sizes ~ P·#scales`) — recorded as refuted-unless-the-phase-
+constraint-prunes-scales; the dilated route dominates it anyway.
