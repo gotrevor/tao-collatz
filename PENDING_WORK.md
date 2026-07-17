@@ -424,11 +424,14 @@ cutoff existential** for these nodes.
 - **DONE (lap 9, `LocalInstances.lean`):** `C_geomTail := 2`, `geomHalf_tail_bound_atC`
   (pins both c=1/400 and C=2); `_cExplicit` + ratified `geomHalf_tail_bound` delegate.
 - **DONE (lap 9, `Stabilization.lean`):** `C_goodWhp := 2·C_geomTail` (=4),
-  `good_tuple_whp_iid_atC` (C-pinned, cutoff ∃). Rail: `set ct/Ct := c_geomTail/C_geomTail`
-  + `htail := geomHalf_tail_bound_atC` re-bind the constant NAMES → 120-line union-bound body
-  ports verbatim after a `show … ≤ 2*Ct*log⁻¹`; ratified `good_tuple_whp_iid` delegates.
-- **NEXT:** `syracZ_sub_perNGoodMass_bound` big-C sibling — `C_syracZsub := C_goodWhp` (its
-  witness is exactly the good_tuple constant, obtained at Stabilization:1987); body copies the
-  ∃-form but obtains from `good_tuple_whp_iid_atC`. Then the `perNHarmonic` big-C sibling
-  `C_harmZfine := 4·C_goodWhp` (=16, `4 = Ccn` from `cn_bound_at`) that `harmonic_to_Z`
-  consumes; then up `harmonic_to_Z` → `perNTerm_eval` → `stabilization`.
+  `good_tuple_whp_iid_atC` (C-pinned, cutoff ∃, `set ct/Ct` rail); `C_syracZsub := C_goodWhp`
+  (=4), `syracZ_sub_perNGoodMass_bound_atC` (pure passthrough); `C_harmZfine := 4·C_syracZsub`
+  (=16), `perNHarmonic_eq_harmZfine_approx_atC` (`set Ccn/Cw` rail, Ccn=4 from `cn_bound_at`,
+  Cw=C_syracZsub). All ratified ∃-forms + the c-form `_explicit` delegate. **B1 rib fully
+  big-C.** (B2 `harmZfine_to_mainZ_at` = `C_mainZbridge` was done lap 8.)
+- **NEXT:** `harmonic_to_Z` big-C sibling — combines B1 (`C_harmZfine`) + B2 (`C_mainZbridge`)
+  via the triangle through `harmZfine` (see `harmonic_to_Z_explicit` at ~Stab:2247, currently
+  c-form combining the two `_explicit`s). Constant = `C_harmZfine + C_mainZbridge` (triangle
+  ineq) at cutoff `max`; then `perNTerm_eval` (combines A `perNTerm_harmonic_approx` + B
+  `harmonic_to_Z`), then `stabilization`. Then FirstPassage (16) / ApproxFormula (23) / Sec3
+  (7) / Syracuse (1) / Prob (1).

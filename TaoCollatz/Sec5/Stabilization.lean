@@ -1999,25 +1999,33 @@ theorem good_tuple_whp_iid :
   obtain ⟨x₀, h⟩ := good_tuple_whp_iid_atC
   exact ⟨C_goodWhp, x₀, C_goodWhp_pos, h⟩
 
+/-- The `C`-witness of `syracZ_sub_perNGoodMass_bound` (big-C campaign, step 2): a pure
+passthrough of `good_tuple_whp_iid`'s constant, `C_syracZsub := C_goodWhp` (=4). -/
+noncomputable def C_syracZsub : ℝ := C_goodWhp
+
+theorem C_syracZsub_pos : 0 < C_syracZsub := C_goodWhp_pos
+
 /-- **B1 rib 2 — the good-tuple whp residual.**  Dropping the `1_good` restriction from `perNGoodMass`
 only *adds* nonnegative mass, and the total added mass over all residues is exactly `ℙ(¬good)` under the
 `geomHalf.iid (n−m₀)` law, which is `≪ log^{-1} x` (mirror of `goodTuple_prefix_dev_sum`'s iid half — the
 per-prefix `geomHalf_tail_bound` summed over the `≤ n₀` prefixes, no dTV transfer needed since the base
 law is already `geomHalf.iid`).  So `perNGoodMass x n X ≤ syracZ(n−m₀)(X).toReal` pointwise and
 `∑_X (syracZ(n−m₀)(X).toReal − perNGoodMass x n X) ≤ C·log^{-1}x`.
-**[C9 leaf B1 rib — pushforward decomposition + analytic whp; does NOT consume C10.]** -/
-theorem syracZ_sub_perNGoodMass_bound :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+**[C9 leaf B1 rib — pushforward decomposition + analytic whp; does NOT consume C10.]**
+`_atC` sibling (big-C campaign, step 2): `C := C_syracZsub`, cutoff existential; the ratified
+∃-form delegates. -/
+theorem syracZ_sub_perNGoodMass_bound_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           (∀ X : ZMod (3 ^ (n - mZero x)),
               perNGoodMass x n X ≤ ((syracZ (n - mZero x)) X).toReal) ∧
             ∑ X : ZMod (3 ^ (n - mZero x)),
                 (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X)
-              ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
+              ≤ C_syracZsub * (Real.log x) ^ (-(1 : ℝ)) := by
   classical
-  obtain ⟨C, x₀, hC, hwhp⟩ := good_tuple_whp_iid
-  refine ⟨C, x₀, hC, fun x hx E hE y hy n hn => ?_⟩
+  obtain ⟨x₀, hwhp⟩ := good_tuple_whp_iid_atC
+  refine ⟨x₀, fun x hx E hE y hy n hn => ?_⟩
   set k := n - mZero x with hk
   have hkn : k ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
   -- abbreviations for the two masked fiber families
@@ -2084,6 +2092,20 @@ theorem syracZ_sub_perNGoodMass_bound :
   rw [hcollapse]
   exact hwhp x hx k hkn
 
+/-- **B1 rib 2**, ratified ∃-form: delegates to `syracZ_sub_perNGoodMass_bound_atC`
+(big-C campaign, step 2: `C := C_syracZsub`). -/
+theorem syracZ_sub_perNGoodMass_bound :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          (∀ X : ZMod (3 ^ (n - mZero x)),
+              perNGoodMass x n X ≤ ((syracZ (n - mZero x)) X).toReal) ∧
+            ∑ X : ZMod (3 ^ (n - mZero x)),
+                (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X)
+              ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
+  obtain ⟨x₀, h⟩ := syracZ_sub_perNGoodMass_bound_atC
+  exact ⟨C_syracZsub, x₀, C_syracZsub_pos, h⟩
+
 /-- **(5.20) sub-lemma B1 — geomHalf → `syracZ` reindex** (assembled from the two ribs above).
 `perNHarmonic` (inner weight the `2^{−pre ā}` iid-geomHalf mass over *good, affine-solvable* tuples)
 agrees with `harmZfine` (the exact `Syrac(ℤ/3^{n−m₀}ℤ)` mass) up to `O(log^{-c}x)`.  Both reindex to
@@ -2096,18 +2118,30 @@ noncomputable def c_harmZfine : ℝ := 0.3
 
 theorem c_harmZfine_pos : 0 < c_harmZfine := by norm_num [c_harmZfine]
 
-/-- Sibling of `perNHarmonic_eq_harmZfine_approx` with the `c`-slot pinned to `c_harmZfine`;
-the original delegates here. -/
-theorem perNHarmonic_eq_harmZfine_approx_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The `C`-witness of `perNHarmonic_eq_harmZfine_approx` (big-C campaign, step 2):
+`C_harmZfine := 4·C_syracZsub` (=16) — the `cn` sup constant `Ccn = 4` (`cn_bound_at`) times
+the whp-residual constant `C_syracZsub`, from the L¹×L∞ Hölder step. -/
+noncomputable def C_harmZfine : ℝ := 4 * C_syracZsub
+
+theorem C_harmZfine_pos : 0 < C_harmZfine := by
+  unfold C_harmZfine; exact mul_pos (by norm_num) C_syracZsub_pos
+
+/-- Sibling of `perNHarmonic_eq_harmZfine_approx` with BOTH slots pinned (`c := c_harmZfine`,
+`C := C_harmZfine`); the `_at` form (big-C campaign, step 2), cutoff existential.  Uses
+`cn_bound_at` (Ccn=4) + `syracZ_sub_perNGoodMass_bound_atC` (Cw=C_syracZsub); `set Ccn/Cw`
+re-bind the constant names so the Hölder body ports verbatim. -/
+theorem perNHarmonic_eq_harmZfine_approx_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          |perNHarmonic x E n - harmZfine x E n| ≤ C * (Real.log x) ^ (-c_harmZfine) := by
-  obtain ⟨Ccn, x₀cn, hCcn, hcn⟩ := cn_bound
-  obtain ⟨Cw, x₀w, hCw, hwhp⟩ := syracZ_sub_perNGoodMass_bound
+          |perNHarmonic x E n - harmZfine x E n| ≤ C_harmZfine * (Real.log x) ^ (-c_harmZfine) := by
+  obtain ⟨x₀w, hwhp⟩ := syracZ_sub_perNGoodMass_bound_atC
+  have hcn := cn_bound_at
   rw [show c_harmZfine = 0.3 from rfl]
-  refine ⟨Ccn * Cw, max (max x₀cn x₀w) (Real.exp 1024), by positivity,
-    fun x hx E hE y hy n hn => ?_⟩
+  refine ⟨max (max X_cnBound x₀w) (Real.exp 1024), fun x hx E hE y hy n hn => ?_⟩
+  show |perNHarmonic x E n - harmZfine x E n| ≤ 4 * C_syracZsub * Real.log x ^ (-(0.3 : ℝ))
+  set Ccn : ℝ := (4 : ℝ) with hCcndef
+  set Cw : ℝ := C_syracZsub with hCwdef
   simp only [max_le_iff] at hx
   obtain ⟨⟨hxcn, hxw⟩, hxe1024⟩ := hx
   have hLpos : (0 : ℝ) < Real.log x := by
@@ -2146,6 +2180,17 @@ theorem perNHarmonic_eq_harmZfine_approx_explicit :
     _ ≤ (Cw * Real.log x ^ (-(1 : ℝ))) * (Ccn * Real.log x ^ (0.7 : ℝ)) :=
         mul_le_mul_of_nonneg_right hsum (by positivity)
     _ = Ccn * Cw * Real.log x ^ (-(0.3 : ℝ)) := by rw [← hmul]; ring
+
+/-- Sibling of `perNHarmonic_eq_harmZfine_approx` with the `c`-slot pinned to `c_harmZfine`;
+the original delegates here.  Now delegates to `perNHarmonic_eq_harmZfine_approx_atC`
+(big-C campaign, step 2: `C := C_harmZfine`). -/
+theorem perNHarmonic_eq_harmZfine_approx_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNHarmonic x E n - harmZfine x E n| ≤ C * (Real.log x) ^ (-c_harmZfine) := by
+  obtain ⟨x₀, h⟩ := perNHarmonic_eq_harmZfine_approx_atC
+  exact ⟨C_harmZfine, x₀, C_harmZfine_pos, h⟩
 
 /-- **(5.20) sub-lemma B2 — the `fine_scale_mixing` scale bridge (THE C10 SEAM).**  The fine-scale
 harmonic content `harmZfine = ∑_X syracZ(n−m₀)(X)·c_n(X)` agrees with `mainZ = ∑_{X'} syracZ(m₀)(X')·
