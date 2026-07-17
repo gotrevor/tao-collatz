@@ -1266,17 +1266,29 @@ theorem c_valSumGeom_pos : 0 < c_valSumGeom :=
     (div_pos (finalDecay_pos (mul_pos c_geomTail_pos (by norm_num)))
       (Real.log_pos one_lt_two))
 
-/-- `valSum_lower_geom` with the `c`-slot pinned to `c_valSumGeom`; `C` and the threshold
-stay existential. Sibling of the ratified `valSum_lower_geom`, which delegates here. -/
-theorem valSum_lower_geom_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The (5.5) geometric-tail constant: `Cd + 2·Ct` at `Cd = C_valuationDistC K_intTest`,
+`Ct = C_geomTail` (big-C campaign, step 2). -/
+noncomputable def C_valSumGeom : ℝ := C_valuationDistC K_intTest + 2 * C_geomTail
+
+theorem C_valSumGeom_pos : 0 < C_valSumGeom := by
+  unfold C_valSumGeom
+  nlinarith [C_valuationDistC_pos K_intTest_pos, C_geomTail_pos]
+
+theorem valSum_lower_geom_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
-          ≤ C * (2 : ℝ) ^ (-c_valSumGeom * (nZero x : ℝ)) := by
-  obtain ⟨K, hK, x₀e, herr⟩ := integral_test_logUnif
-  obtain ⟨Cd, hCd, hdist⟩ := valuation_dist_explicit 1 K (by norm_num) hK
-  obtain ⟨Ct, hCt, htail⟩ := geomHalf_tail_bound_cExplicit
+          ≤ C_valSumGeom * (2 : ℝ) ^ (-c_valSumGeom * (nZero x : ℝ)) := by
+  obtain ⟨x₀e, herr⟩ := integral_test_logUnif_atC
+  have hdist := valuation_dist_atC 1 K_intTest (by norm_num) K_intTest_pos
+  have htail := geomHalf_tail_bound_atC
+  set Cd : ℝ := C_valuationDistC K_intTest with hCddef
+  have hCd : 0 < Cd := C_valuationDistC_pos K_intTest_pos
+  set K : ℝ := K_intTest with hKdef
+  have hK : 0 < K := K_intTest_pos
+  set Ct : ℝ := C_geomTail with hCtdef
+  have hCt : 0 < Ct := C_geomTail_pos
   set cd : ℝ := c_valuationDist 1 with hcddef
   have hcd : 0 < cd := c_valuationDist_pos one_pos
   set d : ℝ := c_geomTail * 0.1 with hddef
@@ -1286,8 +1298,8 @@ theorem valSum_lower_geom_explicit :
   set c : ℝ := min cd cg with hcdef
   have hc : 0 < c := lt_min hcd hcg
   have hceq : c_valSumGeom = c := rfl
-  rw [hceq]
-  refine ⟨Cd + 2 * Ct, max x₀e 1, by positivity, fun x hx y hy => ?_⟩
+  rw [hceq, show C_valSumGeom = Cd + 2 * Ct from rfl]
+  refine ⟨max x₀e 1, fun x hx y hy => ?_⟩
   have hxe : x₀e ≤ x := le_trans (le_max_left _ _) hx
   have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hy1 : (1 : ℝ) ≤ y := by
@@ -1356,6 +1368,17 @@ theorem valSum_lower_geom_explicit :
         gcongr
     _ = (Cd + 2 * Ct) * (2 : ℝ) ^ (-c * (nZero x : ℝ)) := by ring
 
+/-- Original explicit-`c` form: delegates to `valSum_lower_geom_atC` (big-C campaign,
+step 2: `C := C_valSumGeom`). -/
+theorem valSum_lower_geom_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
+          ≤ C * (2 : ℝ) ^ (-c_valSumGeom * (nZero x : ℝ)) := by
+  obtain ⟨x₀, h⟩ := valSum_lower_geom_atC
+  exact ⟨C_valSumGeom, x₀, C_valSumGeom_pos, h⟩
+
 /-- **Paper (5.5)** in `2^{-c n₀}` form — the probabilistic lower tail.  Feed `integral_test_logUnif`
 into `valuation_dist` (5.4), then bound `ℙ(∑ valVec ≤ 1.9 n₀) = ℙ(deviation ≥ 0.1 n₀)` on the
 `Geom(2)^{n₀}` side by `geomHalf_underflow_le_Gweight`, and control the difference by the dTV. -/
@@ -1378,18 +1401,31 @@ theorem c_valSumTail_pos : 0 < c_valSumTail :=
 
 /-- `valSum_lower_tail` with the `c`-slot pinned to `c_valSumTail`; `C` and the threshold
 stay existential. Sibling of the ratified `valSum_lower_tail`, which delegates here. -/
+theorem valSum_lower_tail_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
+          ≤ C_valSumGeom * x ^ (-c_valSumTail) := by
+  obtain ⟨x₀g, hgeom⟩ := valSum_lower_geom_atC
+  obtain ⟨x₀c, hconv⟩ := two_rpow_neg_nZero_le_explicit c_valSumGeom_pos
+  refine ⟨max x₀g x₀c, fun x hx y hy => ?_⟩
+  have hxg : x₀g ≤ x := le_trans (le_max_left _ _) hx
+  have hxc : x₀c ≤ x := le_trans (le_max_right _ _) hx
+  exact le_trans (hgeom x hxg y hy)
+    (mul_le_mul_of_nonneg_left (hconv x hxc) C_valSumGeom_pos.le)
+
+/-- `valSum_lower_tail` with the `c`-slot pinned to `c_valSumTail`; `C` and the threshold
+stay existential. Sibling of the ratified `valSum_lower_tail`, which delegates here.
+Now delegates to `valSum_lower_tail_atC` (big-C campaign, step 2: `C := C_valSumGeom`). -/
 theorem valSum_lower_tail_explicit :
     ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
           ≤ C * x ^ (-c_valSumTail) := by
-  obtain ⟨C, x₀g, hC, hgeom⟩ := valSum_lower_geom_explicit
-  obtain ⟨x₀c, hconv⟩ := two_rpow_neg_nZero_le_explicit c_valSumGeom_pos
-  refine ⟨C, max x₀g x₀c, hC, fun x hx y hy => ?_⟩
-  have hxg : x₀g ≤ x := le_trans (le_max_left _ _) hx
-  have hxc : x₀c ≤ x := le_trans (le_max_right _ _) hx
-  exact le_trans (hgeom x hxg y hy) (mul_le_mul_of_nonneg_left (hconv x hxc) hC.le)
+  obtain ⟨x₀, h⟩ := valSum_lower_tail_atC
+  exact ⟨C_valSumGeom, x₀, C_valSumGeom_pos, h⟩
 
 /-- **Paper (5.5)** — the lower-tail bound: the total valuation `|ā^{(n₀)}(N_y)| = valSum N_y n₀`
 falls at or below `1.9 n₀` with probability `≪ x^{-c}`.  Assembled from `valSum_lower_geom`
@@ -1560,16 +1596,18 @@ theorem descent_passes :
 /-- `first_passage_nonescape` with the `c`-slot pinned to `c_valSumTail`; `C` and the
 threshold stay existential. Sibling of the ratified `first_passage_nonescape` (which
 delegates here). This is the c7 branch of the stabilization min-tree. -/
-theorem first_passage_nonescape_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+theorem first_passage_nonescape_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
-          ≤ C * x ^ (-c_valSumTail) := by
+          ≤ C_valSumGeom * x ^ (-c_valSumTail) := by
   -- Assembly of the C7 route: {¬passes} ⊆ {valSum ≤ 1.9 n₀} (descent, contrapositive), and the
   -- latter has mass ≪ x^{-c} (the (5.5) lower tail).  Only the two named sub-lemmas carry content.
-  obtain ⟨C, x₀t, hC, htail⟩ := valSum_lower_tail_explicit
+  obtain ⟨x₀t, htail⟩ := valSum_lower_tail_atC
   obtain ⟨x₀d, hdesc⟩ := descent_passes
-  refine ⟨C, max x₀t x₀d, hC, ?_⟩
+  set C : ℝ := C_valSumGeom with hCdef
+  have hC : 0 < C := C_valSumGeom_pos
+  refine ⟨max x₀t x₀d, ?_⟩
   intro x hx y hy
   have hxt : x₀t ≤ x := le_trans (le_max_left _ _) hx
   have hxd : x₀d ≤ x := le_trans (le_max_right _ _) hx
@@ -1609,6 +1647,19 @@ theorem first_passage_nonescape_explicit :
   · have h0 : (logUnifOdd y (y ^ alpha)) N = 0 := by
       rw [PMF.mem_support_iff] at hsupp; exact not_not.mp hsupp
     rw [h0]; simp
+
+/-- `first_passage_nonescape` with the `c`-slot pinned to `c_valSumTail`; `C` and the
+threshold stay existential. Sibling of the ratified `first_passage_nonescape` (which
+delegates here). This is the c7 branch of the stabilization min-tree.
+Now delegates to `first_passage_nonescape_atC` (big-C campaign, step 2:
+`C := C_valSumGeom` — **this reifies C7**). -/
+theorem first_passage_nonescape_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
+          ≤ C * x ^ (-c_valSumTail) := by
+  obtain ⟨x₀, h⟩ := first_passage_nonescape_atC
+  exact ⟨C_valSumGeom, x₀, C_valSumGeom_pos, h⟩
 
 -- RATIFY-C7: paper (1.19), §5 pp.20–21. Stated character-identically to the FIRST CONJUNCT of
 -- `stabilization` below, which is where this content had been absorbed. Judge against p.20.

@@ -1002,16 +1002,26 @@ noncomputable def c_valuationDist (c₀ : ℝ) : ℝ :=
 theorem c_valuationDist_pos {c₀ : ℝ} (hc₀ : 0 < c₀) : 0 < c_valuationDist c₀ :=
   div_pos (finalDecay_pos (mul_pos c_geomTail_pos hc₀)) (Real.log_pos one_lt_two)
 
-/-- `valuation_dist` with the `c`-slot pinned to `c_valuationDist c₀`; only `C` stays
-existential. Sibling of the ratified `valuation_dist`, which delegates here. -/
-theorem valuation_dist_explicit (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
-    ∃ C : ℝ, 0 < C ∧ ∀ (n n' : ℕ) (X : PMF ℕ),
+/-- The `valuation_dist` constant at dTV-input constant `K`: `2K + 4·C_geomTail`
+(big-C campaign, step 2). -/
+noncomputable def C_valuationDistC (K : ℝ) : ℝ := 2 * K + 4 * C_geomTail
+
+theorem C_valuationDistC_pos {K : ℝ} (hK : 0 < K) : 0 < C_valuationDistC K := by
+  unfold C_valuationDistC; nlinarith [C_geomTail_pos]
+
+/-- `valuation_dist` with BOTH slots pinned (`c := c_valuationDist c₀`,
+`C := C_valuationDistC K`) — the `_atC` form (big-C campaign, step 2);
+`valuation_dist_explicit` delegates here. -/
+theorem valuation_dist_atC (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
+    ∀ (n n' : ℕ) (X : PMF ℕ),
       (2 + c₀) * n ≤ (n' : ℝ) →
       (∀ N ∈ X.support, N % 2 = 1) →
       PMF.dTV (X.map fun N => (N : ZMod (2 ^ n'))) (unifOddMod n') ≤ K * (2 : ℝ) ^ (-(n' : ℝ)) →
       PMF.dTV (X.map fun N => valVec N n) (PMF.iid geomHalf n)
-        ≤ C * (2 : ℝ) ^ (-(c_valuationDist c₀) * (n : ℝ)) := by
-  obtain ⟨Ct, hCt, htail⟩ := geomHalf_tail_bound_cExplicit
+        ≤ C_valuationDistC K * (2 : ℝ) ^ (-(c_valuationDist c₀) * (n : ℝ)) := by
+  have htail := geomHalf_tail_bound_atC
+  set Ct : ℝ := C_geomTail with hCtdef
+  have hCt : 0 < Ct := C_geomTail_pos
   have hc : 0 < c_geomTail := c_geomTail_pos
   set c : ℝ := c_geomTail with hcdef
   let d := c * c₀
@@ -1021,8 +1031,7 @@ theorem valuation_dist_explicit (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
   have hd : 0 < d := mul_pos hc hc₀
   have hc₁ : 0 < c₁ := div_pos (finalDecay_pos hd) (Real.log_pos one_lt_two)
   have hC : 0 < C := by dsimp only [C]; positivity
-  rw [← hc₁eq]
-  refine ⟨C, hC, ?_⟩
+  rw [← hc₁eq, show C_valuationDistC K = C from rfl]
   intro n n' X hsize hodd hmod
   let P := X.map fun N => valVec N n
   let Q := geomHalf.iid n
@@ -1066,6 +1075,18 @@ theorem valuation_dist_explicit (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
           (mul_nonneg (by norm_num : (0 : ℝ) ≤ 4) hCt.le)
         convert hm using 1; ring
     _ = C * (2 : ℝ) ^ (-c₁ * (n : ℝ)) := by dsimp only [C]; ring
+
+/-- `valuation_dist` with the `c`-slot pinned to `c_valuationDist c₀`; only `C` stays
+existential. Sibling of the ratified `valuation_dist`, which delegates here.
+Now delegates to the fully-pinned `valuation_dist_atC`. -/
+theorem valuation_dist_explicit (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (n n' : ℕ) (X : PMF ℕ),
+      (2 + c₀) * n ≤ (n' : ℝ) →
+      (∀ N ∈ X.support, N % 2 = 1) →
+      PMF.dTV (X.map fun N => (N : ZMod (2 ^ n'))) (unifOddMod n') ≤ K * (2 : ℝ) ^ (-(n' : ℝ)) →
+      PMF.dTV (X.map fun N => valVec N n) (PMF.iid geomHalf n)
+        ≤ C * (2 : ℝ) ^ (-(c_valuationDist c₀) * (n : ℝ)) :=
+  ⟨C_valuationDistC K, C_valuationDistC_pos hK, valuation_dist_atC c₀ K hc₀ hK⟩
 
 /-- **Proposition 1.9.** The valuation vector of an odd distribution whose reduction
 modulo `2ⁿ'` is close to uniform is exponentially close to `Geom(2)ⁿ`. -/
