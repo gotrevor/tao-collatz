@@ -183,10 +183,10 @@ theorem logUnifOdd_map_even_zero {lo hi : ℝ} (hhi : 1 ≤ hi) {n' : ℕ} (hn' 
 integral-test error `O(2^{n'}/y)` is `≤ 2^{-n'}`, with room to spare (`2^{6n₀} ≤ x^{0.6} ≤ x^{1.001} ≤ y`).
 Mirrors `descent_pow_bounds`; the only transcendental input is `6 n₀ log 2 ≤ 0.6 log x` from
 `n₀ · 10 log 2 ≤ log x`. -/
-theorem intTest_numeric :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+theorem intTest_numeric_atX :
+    ∀ x : ℝ, (1 : ℝ) ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       (2 : ℝ) ^ (3 * (nZero x : ℝ)) / y ≤ (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) := by
-  refine ⟨1, le_refl _, fun x hx1 y hy => ?_⟩
+  intro x hx1 y hy
   have hxpos : (0 : ℝ) < x := by linarith
   have hL0 : 0 ≤ Real.log x := Real.log_nonneg hx1
   have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
@@ -212,6 +212,12 @@ theorem intTest_numeric :
       = (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) * (2 : ℝ) ^ (6 * (nZero x : ℝ)) := hsplit.symm
     _ ≤ (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) * y :=
         mul_le_mul_of_nonneg_left h6y (Real.rpow_nonneg (by norm_num) _)
+
+/-- ∃-form of `intTest_numeric_atX` (X-chase: `x₀ := 1`). -/
+theorem intTest_numeric :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      (2 : ℝ) ^ (3 * (nZero x : ℝ)) / y ≤ (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) :=
+  ⟨1, le_refl _, intTest_numeric_atX⟩
 
 /-- **L¹ normalization / telescope lemma** — the pure real-analysis core of the integral-test dTV
 reduction.  Let `O` be a finite index set (the odd residues mod `M`), `s r ≥ 0` the raw class masses
@@ -1248,22 +1254,38 @@ of the uniform law on odd residues.  This is precisely the hypothesis consumed b
 
 Proof idea (owed): the count of odd `N ∈ [y,y^α]` in a fixed residue class mod `2^{3n₀}` is
 `(1 + O(2^{3n₀}/y))` times the average, by comparing `∑_{N ≡ r} 1/N` to `∫ dt/t` over the window
-(the "integral test" / summation-by-parts); with `2^{3n₀} ≍ x^{0.3} ≪ y ≍ x`, the error is `≪ 2^{-3n₀}`. -/
-theorem integral_test_logUnif_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+(the "integral test" / summation-by-parts); with `2^{3n₀} ≍ x^{0.3} ≪ y ≍ x`, the error is `≪ 2^{-3n₀}`.
+
+The `integral_test_logUnif` cutoff (X-chase). -/
+noncomputable def X_intTestLogUnif : ℝ := max X_intTestErr 1
+
+theorem integral_test_logUnif_atCX :
+    ∀ x : ℝ, X_intTestLogUnif ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
                 (unifOddMod (3 * nZero x))
           ≤ K_intTest * (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) := by
   -- Assembled from the analytic error estimate `intTest_error` (dTV ≤ K·2^{3n₀}/y) and the numeric
   -- closure `intTest_numeric` (2^{3n₀}/y ≤ 2^{-3n₀}).  Only `intTest_error` carries owed content.
-  obtain ⟨x₀e, herr⟩ := intTest_error_atC
-  obtain ⟨x₀n, _, hnum⟩ := intTest_numeric
-  refine ⟨max x₀e x₀n, fun x hx y hy => ?_⟩
+  have herr := intTest_error_atCX
+  have hnum := intTest_numeric_atX
+  set x₀e : ℝ := X_intTestErr with hx₀edef
+  set x₀n : ℝ := (1 : ℝ) with hx₀ndef
+  rw [show X_intTestLogUnif = max x₀e x₀n from rfl]
+  intro x hx y hy
   have hxe : x₀e ≤ x := le_trans (le_max_left _ _) hx
   have hxn : x₀n ≤ x := le_trans (le_max_right _ _) hx
   exact le_trans (herr x hxe y hy)
     (mul_le_mul_of_nonneg_left (hnum x hxn y hy) K_intTest_pos.le)
+
+/-- ∃-form of `integral_test_logUnif_atCX` (X-chase: `x₀ := X_intTestLogUnif`). -/
+theorem integral_test_logUnif_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        PMF.dTV ((logUnifOdd y (y ^ alpha)).map fun N => (N : ZMod (2 ^ (3 * nZero x))))
+                (unifOddMod (3 * nZero x))
+          ≤ K_intTest * (2 : ℝ) ^ (-(3 * (nZero x : ℝ))) :=
+  ⟨X_intTestLogUnif, integral_test_logUnif_atCX⟩
 
 /-- Original ∃-form of the integral test: delegates to `integral_test_logUnif_atC`
 (big-C campaign, step 2: `K := K_intTest`). -/
@@ -1313,12 +1335,14 @@ theorem geomHalf_underflow_le_Gweight (c C : ℝ)
   exact le_trans ((Summable.of_nonneg_of_le (fun L => by split <;> positivity) hdom hsum).tsum_le_tsum
     hdom hsum) (htail n lam hlam)
 
-/-- **(5.1) conversion**: geometric decay `2^{-c·n₀}` (with `n₀ = nZero x ≍ log x/(10 log 2)`) is
-`≤ x^{-c/20}` for `x ≥ 2^20`.  Turns a `2^{-c n₀}` bound into an `x^{-c'}` bound. -/
-theorem two_rpow_neg_nZero_le_explicit {c : ℝ} (hc : 0 < c) :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `two_rpow_neg_nZero_le` cutoff (X-chase) — independent of the exponent slack `c`. -/
+noncomputable def X_rpowNZero : ℝ := (2 : ℝ) ^ (20 : ℕ)
+
+theorem two_rpow_neg_nZero_le_atX {c : ℝ} (hc : 0 < c) :
+    ∀ x : ℝ, X_rpowNZero ≤ x →
       (2 : ℝ) ^ (-c * (nZero x : ℝ)) ≤ x ^ (-(c / 20)) := by
-  refine ⟨(2 : ℝ) ^ (20 : ℕ), fun x hx => ?_⟩
+  rw [show X_rpowNZero = (2 : ℝ) ^ (20 : ℕ) from rfl]
+  intro x hx
   have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
   have hx0 : (0 : ℝ) < x := lt_of_lt_of_le (by positivity) hx
   have hxlog : (20 : ℝ) * Real.log 2 ≤ Real.log x := by
@@ -1331,6 +1355,13 @@ theorem two_rpow_neg_nZero_le_explicit {c : ℝ} (hc : 0 < c) :
   rw [Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 2), Real.rpow_def_of_pos hx0]
   apply Real.exp_le_exp.mpr
   nlinarith [hν, hxlog, hc, hlog2, mul_pos hc hlog2]
+
+/-- **(5.1) conversion** with the cutoff existential: ∃-form of `two_rpow_neg_nZero_le_atX`
+(X-chase: `x₀ := X_rpowNZero`). -/
+theorem two_rpow_neg_nZero_le_explicit {c : ℝ} (hc : 0 < c) :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      (2 : ℝ) ^ (-c * (nZero x : ℝ)) ≤ x ^ (-(c / 20)) :=
+  ⟨X_rpowNZero, two_rpow_neg_nZero_le_atX hc⟩
 
 /-- **(5.1) conversion**: geometric decay `2^{-c·n₀}` (with `n₀ = nZero x ≍ log x/(10 log 2)`) is
 `≤ x^{-c/20}` for `x ≥ 2^20`.  Turns a `2^{-c n₀}` bound into an `x^{-c'}` bound. -/
@@ -1359,13 +1390,17 @@ theorem C_valSumGeom_pos : 0 < C_valSumGeom := by
   unfold C_valSumGeom
   nlinarith [C_valuationDistC_pos K_intTest_pos, C_geomTail_pos]
 
-theorem valSum_lower_geom_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+/-- The `valSum_lower_geom` cutoff (X-chase). -/
+noncomputable def X_valSumGeom : ℝ := max X_intTestLogUnif 1
+
+theorem valSum_lower_geom_atCX :
+    ∀ x : ℝ, X_valSumGeom ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
           ≤ C_valSumGeom * (2 : ℝ) ^ (-c_valSumGeom * (nZero x : ℝ)) := by
-  obtain ⟨x₀e, herr⟩ := integral_test_logUnif_atC
+  have herr := integral_test_logUnif_atCX
+  set x₀e : ℝ := X_intTestLogUnif with hx₀edef
   have hdist := valuation_dist_atC 1 K_intTest (by norm_num) K_intTest_pos
   have htail := geomHalf_tail_bound_atC
   set Cd : ℝ := C_valuationDistC K_intTest with hCddef
@@ -1383,8 +1418,9 @@ theorem valSum_lower_geom_atC :
   set c : ℝ := min cd cg with hcdef
   have hc : 0 < c := lt_min hcd hcg
   have hceq : c_valSumGeom = c := rfl
-  rw [hceq, show C_valSumGeom = Cd + 2 * Ct from rfl]
-  refine ⟨max x₀e 1, fun x hx y hy => ?_⟩
+  rw [hceq, show C_valSumGeom = Cd + 2 * Ct from rfl,
+    show X_valSumGeom = max x₀e 1 from rfl]
+  intro x hx y hy
   have hxe : x₀e ≤ x := le_trans (le_max_left _ _) hx
   have hx1 : (1 : ℝ) ≤ x := le_trans (le_max_right _ _) hx
   have hy1 : (1 : ℝ) ≤ y := by
@@ -1453,6 +1489,15 @@ theorem valSum_lower_geom_atC :
         gcongr
     _ = (Cd + 2 * Ct) * (2 : ℝ) ^ (-c * (nZero x : ℝ)) := by ring
 
+/-- ∃-form of `valSum_lower_geom_atCX` (X-chase: `x₀ := X_valSumGeom`). -/
+theorem valSum_lower_geom_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
+          ≤ C_valSumGeom * (2 : ℝ) ^ (-c_valSumGeom * (nZero x : ℝ)) :=
+  ⟨X_valSumGeom, valSum_lower_geom_atCX⟩
+
 /-- Original explicit-`c` form: delegates to `valSum_lower_geom_atC` (big-C campaign,
 step 2: `C := C_valSumGeom`). -/
 theorem valSum_lower_geom_explicit :
@@ -1484,21 +1529,34 @@ noncomputable def c_valSumTail : ℝ := c_valSumGeom / 20
 theorem c_valSumTail_pos : 0 < c_valSumTail :=
   div_pos c_valSumGeom_pos (by norm_num)
 
-/-- `valSum_lower_tail` with the `c`-slot pinned to `c_valSumTail`; `C` and the threshold
-stay existential. Sibling of the ratified `valSum_lower_tail`, which delegates here. -/
+/-- The `valSum_lower_tail` cutoff (X-chase). -/
+noncomputable def X_valSumTail : ℝ := max X_valSumGeom X_rpowNZero
+
+theorem valSum_lower_tail_atCX :
+    ∀ x : ℝ, X_valSumTail ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect
+            (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
+          ≤ C_valSumGeom * x ^ (-c_valSumTail) := by
+  have hgeom := valSum_lower_geom_atCX
+  have hconv := two_rpow_neg_nZero_le_atX c_valSumGeom_pos
+  set x₀g : ℝ := X_valSumGeom with hx₀gdef
+  set x₀c : ℝ := X_rpowNZero with hx₀cdef
+  rw [show X_valSumTail = max x₀g x₀c from rfl]
+  intro x hx y hy
+  have hxg : x₀g ≤ x := le_trans (le_max_left _ _) hx
+  have hxc : x₀c ≤ x := le_trans (le_max_right _ _) hx
+  exact le_trans (hgeom x hxg y hy)
+    (mul_le_mul_of_nonneg_left (hconv x hxc) C_valSumGeom_pos.le)
+
+/-- ∃-form of `valSum_lower_tail_atCX` (X-chase: `x₀ := X_valSumTail`). -/
 theorem valSum_lower_tail_atC :
     ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect
             (Set.indicator {N | (valSum N (nZero x) : ℝ) ≤ 1.9 * (nZero x : ℝ)} 1)
-          ≤ C_valSumGeom * x ^ (-c_valSumTail) := by
-  obtain ⟨x₀g, hgeom⟩ := valSum_lower_geom_atC
-  obtain ⟨x₀c, hconv⟩ := two_rpow_neg_nZero_le_explicit c_valSumGeom_pos
-  refine ⟨max x₀g x₀c, fun x hx y hy => ?_⟩
-  have hxg : x₀g ≤ x := le_trans (le_max_left _ _) hx
-  have hxc : x₀c ≤ x := le_trans (le_max_right _ _) hx
-  exact le_trans (hgeom x hxg y hy)
-    (mul_le_mul_of_nonneg_left (hconv x hxc) C_valSumGeom_pos.le)
+          ≤ C_valSumGeom * x ^ (-c_valSumTail) :=
+  ⟨X_valSumTail, valSum_lower_tail_atCX⟩
 
 /-- `valSum_lower_tail` with the `c`-slot pinned to `c_valSumTail`; `C` and the threshold
 stay existential. Sibling of the ratified `valSum_lower_tail`, which delegates here.
