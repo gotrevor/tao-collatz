@@ -36,6 +36,7 @@ import TaoCollatz.Sec7.HoldBasics
 import TaoCollatz.Sec7.Decay
 import TaoCollatz.Sec3.Reduction
 import TaoCollatz.Statement
+import TaoCollatz.ExplicitBigC
 
 /-!
 # TaoCollatz

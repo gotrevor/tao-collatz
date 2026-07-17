@@ -1286,3 +1286,10 @@ is odd, and the pin is branch-only so retiring is free).
 - `tao_collatz_quantitative_spine_atCX` — the Colmin spine at the fully closed
   `C_spine X_syrSum` (cutoff-free statement); `_atC` delegates. Audit 35/38, next phase 5:
   `TaoCollatz/ExplicitBigC.lean` (`X_spine`, `tao_collatz_quantitative_spine_atCX_of_le`).
+
+### Successor lap 33 (2026-07-17) — phase 5 entry 1/3
+
+- Created `TaoCollatz/ExplicitBigC.lean` (imported from the root after `Statement`):
+  `X_spine := X_syrSum` + `tao_collatz_quantitative_spine_atCX_of_le` (the ∃-form
+  `spine_of_le` body verbatim at the closed `C_spine X_spine`). Audit 36/38, next
+  `C_tao_assembled` + `C_tao_assembled_pos`.
