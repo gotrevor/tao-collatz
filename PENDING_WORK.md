@@ -1242,3 +1242,10 @@ is odd, and the pin is branch-only so retiring is free).
 
 - `X_windowStable := X_approxToZ` (pure passthrough) + `approxMainTerm_window_stable_atCX`;
   `_atC` delegates. Audit 27/38, next `X_stab` + `stabilization_atCX` (phase-3 capstone).
+
+### Successor lap 25 (2026-07-17) — PHASE 3 COMPLETE (11/11)
+
+- `X_stab := max (max (max X_firstPassNonescape X_fpApprox) X_windowStable) (exp 1)` +
+  `stabilization_atCX` — **Prop 1.11 at its explicit cutoff; the Sec5 spine is fully
+  X-chased.** `_atC` delegates. Audit 28/38, next phase 4: `X_descStep` +
+  `descentProb_step_atCX` (Sec3/Reduction.lean).

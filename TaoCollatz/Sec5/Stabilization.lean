@@ -3415,21 +3415,30 @@ theorem C_stab_pos : 0 < C_stab :=
   add_pos (add_pos C_valSumGeom_pos (mul_pos (by norm_num) C_fpApprox_pos))
     (mul_pos (by norm_num) C_windowStable_pos)
 
+/-- **The reified stabilization cutoff** (X-chase, phase-3 capstone): the witness max-tree
+copied verbatim from the `_atC` proof, with `x7 := X_firstPassNonescape`,
+`x8 := X_fpApprox`, `xs := X_windowStable`. -/
+noncomputable def X_stab : ℝ :=
+  max (max (max X_firstPassNonescape X_fpApprox) X_windowStable) (Real.exp 1)
+
 /-- Sibling of the WATCHED `stabilization` with the `c`/`C` slots pinned at
-(`c_stab`, `C_stab`) — the `_atC` form (big-C campaign, step 2), cutoff existential.
+(`c_stab`, `C_stab`) and the cutoff at `X_stab` (X-chase).
 **This completes the Sec5 spine.**  Prop 1.11: the passage-location law is stable across
 the two nearby log-windows, and non-passage is rare. -/
-theorem stabilization_atC :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+theorem stabilization_atCX :
+    ∀ x : ℝ, X_stab ≤ x →
       (∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
           ≤ C_stab * x ^ (-c_stab)) ∧
       PMF.dTV ((logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).map (passLoc ⌊x⌋₊))
               ((logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).map (passLoc ⌊x⌋₊))
         ≤ C_stab * (Real.log x) ^ (-c_stab) := by
-  obtain ⟨x7, h7⟩ := first_passage_nonescape_atC
-  obtain ⟨x8, h8⟩ := first_passage_approx_atC
-  obtain ⟨xs, hstab⟩ := approxMainTerm_window_stable_atC
+  have h7 := first_passage_nonescape_atCX
+  have h8 := first_passage_approx_atCX
+  have hstab := approxMainTerm_window_stable_atCX
+  set x7 : ℝ := X_firstPassNonescape with hx7def
+  set x8 : ℝ := X_fpApprox with hx8def
+  set xs : ℝ := X_windowStable with hxsdef
   set C7 : ℝ := C_valSumGeom with hC7def
   set C8 : ℝ := C_fpApprox with hC8def
   set Cs : ℝ := C_windowStable with hCsdef
@@ -3444,7 +3453,7 @@ theorem stabilization_atC :
   have hcs : 0 < cs := c_approxToZ_pos
   rw [show c_stab = min (min c7 c8) cs from rfl,
     show C_stab = C7 + 4 * C8 + 2 * Cs from rfl]
-  refine ⟨max (max (max x7 x8) xs) (Real.exp 1), ?_⟩
+  rw [show X_stab = max (max (max x7 x8) xs) (Real.exp 1) from rfl]
   intro x hx
   -- thresholds
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
@@ -3534,6 +3543,18 @@ theorem stabilization_atC :
       _ = (4 * C8 + 2 * Cs) * (Real.log x) ^ (-c) := by ring
       _ ≤ (C7 + 4 * C8 + 2 * Cs) * (Real.log x) ^ (-c) := by
           apply mul_le_mul_of_nonneg_right _ hLnn; linarith
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `stabilization_atCX` (X-chase: `x₀ := X_stab`). -/
+theorem stabilization_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      (∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
+          ≤ C_stab * x ^ (-c_stab)) ∧
+      PMF.dTV ((logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).map (passLoc ⌊x⌋₊))
+              ((logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).map (passLoc ⌊x⌋₊))
+        ≤ C_stab * (Real.log x) ^ (-c_stab) :=
+  ⟨X_stab, stabilization_atCX⟩
 
 -- RATIFY-3: window endpoints spelled per the spec's guidance as `[x^α, x^{α²}]` and
 -- `[x^{α²}, x^{α³}]` (using `alpha^2`, `alpha^3`), which the SKELETON-SPEC flagged as the
