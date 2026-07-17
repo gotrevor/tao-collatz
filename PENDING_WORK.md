@@ -149,6 +149,32 @@ pattern as Monotone's, already threshold-explicit shapes). Reify bottom-up, one 
 commit per node or small cluster. After Case3: wire `renewal_white_encounters`
 (`Bridge.lean:507`, defs `n0 := 2·C_hold+2`, witness max) and the Fourier passthrough.
 
+### Lap 3 (2026-07-17) — X6 (Lemma 7.7) chain fully explicit; threshold leaves done ✅
+
+- Threshold leaves: `T_logSq`/`T_expNeg`/`T_logLin` (`BlackEdge.lean`), `T_expRpow`
+  (`Case3.lean`) — `_at` siblings, ∃-forms delegate.
+- X6 constants bottom-up: `c_holdLocal = 1/400`, `C_holdLocal = 6.5536e12`
+  (Lemma 2.2(i), `HoldLocal.lean`); `gamma_holdStep`/`C_holdStep`, `K_sqrtExp`,
+  `C_renewalWeight`, `c_renewalMass`/`C_renewalMass`, `c_fpLocation`/`C_fpLocation`
+  (Lemma 7.7, `FpLocation.lean`).
+- **Pattern lesson (cost rail)**: for big proof bodies, `set x := def + clear_value`
+  still leaks def-bodies into `linarith`/`whnf` and TIMES OUT; the robust shape is a
+  `_core` lemma with the constants as ∀-bound variables + hypothesis bundle (the
+  original body elaborates in an opaque context), then `_explicitC := core @ defs;
+  unfold; exact`. Used for `fpDist_location_bound_core`; reuse it for every node with
+  a >100-line body.
+- Census: Sec7 ≈ 11 of 22+thresholds explicit (hold_weight_expect, Q_white_case1,
+  prop_7_8/Q_polynomial_decay combinators, 4 threshold leaves, hold_local,
+  hold_step, sum_sqrt_exp, renewal_weight, renewalMass, fpDist_location).
+
+**Next attack:** continue X6 upward — `fpDist_col_le` (FpLocation.lean, witness
+`c, C·e^{-c}/(1-e^{-c})`), then ManyTriangles (`fpDist_col_dev`, `holdSum_col_tail`,
+`fpDistPlus_col_tail`), then Case3's `col_tail_mass_le` (witness `400(P+1)+32+T_expRpow …`)
+and on up `few_white_mass_le` → `damping_column_mass_le` → `damped_iter_expectation_le`
+→ `Q_black_edge_case3` → wire `C2` into `prop_7_8_at`. Separately still owed: the
+Fourier passthrough + `renewal_white_encounters` wiring, and the estar/markov/
+many_triangles leaves.
+
 ## Optimization observations
 
 - `hold_weight_expect` (`Sec7/Monotone.lean:246`): the statement demands
