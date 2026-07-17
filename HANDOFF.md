@@ -1,3 +1,30 @@
+# HANDOFF — big-C campaign, lap 15 — TOWER IS INTRINSIC (any budget); TRUE DOOR = EXP-DEPTH DECAY 🎯
+
+**Read `DIRECTION.md` RESOLVED banner FIRST.** State: build green (3327), 2 sorries (pin +
+`Q_black_edge_tight`), differ 35/35, checks **23/23**. Lap 15 (`7bfa0be`) settled lap-14's
+"one door": SHUT — and found the real one.
+
+- **Flat-envelope contradiction (check23, budget-independent):** the envelope's dual role
+  (E∗-rarity `S ≥ 8cP` under unconditional geometry vs deterministic crossing cost
+  `S ≤ 2P/R`) contradicts by ~3000 orders; growing envelopes are geometric ⟹ tower.
+  The tower is INTRINSIC to the encounter architecture without equidistribution input.
+  This also kills the §6/caConst lever (supersedes check22(d)).
+- **The true door (fits at CURRENT A):** `cornerTriple` size `= log(ε/|θ*|)` by
+  construction (Triangles.lean:1626) ⟹ size-≥S apexes are `ε·e^{−S}`-deep. ONE
+  equidistribution input — `P(walk position in size-≥S triangle) ≤ C·e^{−cS}` — gives
+  `S ~ 4613`, `P ~ 10^3006`, thresholds `~10^3008` < budget 3053. **Option B reduces to
+  exponential depth-decay of deep-black hits.**
+
+**NEXT (lap 16):** (1) read `many_triangles_white` core (ManyTriangles.lean:2433) — the
+mechanism behind the unconditional `p₀ ≥ 51/100` white mass (depth-0 anti-concentration):
+does it extend exp-in-depth, or is it intrinsically one-level? If one-level → JUDGE-FLAG
+(crux ≡ new equidistribution theorem beyond the paper's toolset; evidence check22/23).
+(2) Formalize `bigTriangle_apex_deep` (`t ∈ F.T → S ≤ t.2.2 → |θq(apex)| ≤ ε·e^{−S}`,
+near-definitional from `canonical` + `cornerTriple`) — cheap, true, needed by any route.
+Full analysis: PENDING_WORK Laps 13b/14/15.
+
+---
+
 # HANDOFF — big-C campaign, lap 14 — FEASIBILITY MAP EXACT (check22): ONE DOOR REMAINS 🚪
 
 **Read `DIRECTION.md` RESOLVED banner FIRST.** State: build green (3327), 2 sorries (pin +
