@@ -862,6 +862,71 @@ def check18():
           % (K_def, log10_M1_def, T_def, log10_C_hold))
 
 
+def check19():
+    # Big-C campaign lap 8 (2026-07-17) — JUDGE-FLAG TRACE: the C0-ARM of
+    # renewal_white_encounters' witness (Bridge.lean:518: max(n0^A, C0*exp(eps^3/2)*3^A))
+    # is now FULLY REIFIED (C0 = C_polyDecay A = (max (Cthr_prop78 A) 1)^A, Case3.lean),
+    # and it EXCEEDS the live pin CTao = 10^(10^11) — the check17 GO covered only the
+    # n0^B HEAD arm.  The lap-5 audit's "logarithmic collapse" claim (C_encTri's huge
+    # e^{ch*M_encTri} reaches the spine only through threshold conversions ~ log) is
+    # REFUTED by the def bodies as written:
+    #   (a) A0_estarScaled (Case3.lean:1910) is LINEAR in C' = 4*C_encTri
+    #       (Kthr_estarScaled = 3456000*C'/((2ln4-ln10)^2 ln4^3) + 216000*C'/ln4^3),
+    #       so log10(A0_fewEstar) ~ log10(C_encTri) ~ 8.5e21 — the CONSTANT becomes
+    #       an EXPONENT, not a log;
+    #   (b) it re-enters EXPONENTIALLY: B_fewWhite = 4^{2A+A0}*(1+P)^3, and
+    #       encWindowIter cubes per step for R_fewWhite ~ 100*K_fewWhite ~ 1e3010
+    #       steps (K_fewWhite = ceil((A+3)ln10/epsBW^3), the 1/eps^3 = 1e3000 factor);
+    #   (c) the threshold re-enters as Cthr^A in the C0-arm (Q_polynomial_decay_at
+    #       constant (max C0 1)^A) at A = B ~ 3.11e7.
+    # Every hop below is a LOWER bound; floats hold log10- or log10(log10)-space.
+    from math import log10
+    ln2 = log(2)
+    A_high = 3.7
+    ca = 1000 * (A_high + 3)
+    B = A_high + ca ** 2 * ln2 + 3                        # ~3.11e7 (as check17)
+    PIN_EXP = 1e11
+
+    # --- central trace (documented ch = c_fpHeightTail = 1/51200, M_encTri = 1e27) ---
+    ch = 1 / 51200
+    log10_CencTri = ch * 1e27 / log(10)                   # e^{ch*M} term ~ 10^(8.48e21)
+    assert abs(log10_CencTri - 8.48e21) < 1e20, log10_CencTri
+    # A0_fewEstar >= Kthr_estarScaled(4*C_encTri) >= 216000*4*C_encTri/ln4^3:
+    log10_A0 = log10(216000 * 4 / log(4) ** 3) + log10_CencTri   # log10(A0) ~ 8.48e21
+    # Cthr_fewWhite >= ceil(B_fewWhite^2.5) >= (4^{A0})^2.5 (already ignoring P!), so
+    # log10(Cthr) >= 2.5*log10(4)*A0; A0 = 10^(8.48e21) OVERFLOWS a float, so assert
+    # the C0-arm in log-log space (C0-arm >= Cthr^B):
+    loglog_C0arm = log10(B * 2.5 * log10(4)) + log10_A0   # log10(log10(C0-arm)) approx
+    assert loglog_C0arm > 21, loglog_C0arm                # log10(C0) > 10^21 >> 1e11
+    # --- the fully-iterated P (record): encWindowIter cubes per step over R steps ---
+    log10_delta3 = -3000                                  # epsBW^3 = 1e-3000
+    log10_K = log10((B + 3) * log(10)) - log10_delta3     # K_fewWhite ~ 10^3007.9
+    log10_R = log10_K + 2                                 # eps0_manyTri = 1/100
+    # log10(log10 P) ~ R*log10(3) ~ 4.8e3009 itself overflows a float; hold one more
+    # log level: logloglog_P = log10( log10(log10 P) ) = log10(R) + log10(log10 3):
+    logloglog_P = log10_R + log10(log10(3))
+    assert 3009 < logloglog_P < 3010, logloglog_P
+    # --- ROBUSTNESS: independent of every unresolved bottom constant ---
+    # For ANY decay rate c = c_encTri > 0: A0_estarScaled >= max(Kthr, sqrt(Warg)) with
+    #   Kthr >= 216000*4*e^{c*1e27}/ln4^3 >= 3.2e5*e^{c*1e27}   and
+    #   sqrt(Warg) >= ln10/(4c)                (Warg >= ln10^2/(16c^2)),
+    # minimized over c at worst A0 >= 9.6e24 (c <= 6e-26 gives ln10/(4c) >= 9.6e24;
+    # c >= 6e-26 gives Kthr >= 3.2e5*e^60 >= 3.6e31):
+    A0_robust = min(3.2e5 * 2.7182818 ** 60, log(10) / (4 * 6e-26))
+    assert A0_robust > 9.5e24, A0_robust
+    log10_C0arm_robust = B * 2.5 * log10(4) * A0_robust   # >= 4.5e32
+    assert log10_C0arm_robust > 100 * PIN_EXP, log10_C0arm_robust
+    # THE NO-GO: the C0-arm alone forces log10(C_ladder) >= 4.5e32 >> 0.95e11 = the
+    # check17 GO line; with the traced ch it is 10^(8.5e21), with the iterated P it is
+    # 10^(4.8e3009).  The step-3 inequality C_ladder <= CTao is NOT provable over the
+    # frozen tower with the current witnesses.  JUDGE-FLAG: see PENDING_WORK.md lap 8.
+    print("19. C0-arm NO-GO (JUDGE-FLAG lap 8): log10(C0-arm) >= %.1e ROBUST "
+          "(any c); central trace log10(log10) ≈ %.2e (ch=1/51200); with iterated "
+          "P: log10(log10) ≈ 10^%.1f — all >> live pin exponent 1e11 (check17's GO "
+          "covered the n0^B head arm only)"
+          % (log10_C0arm_robust, loglog_C0arm, logloglog_P))
+
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
@@ -876,4 +941,5 @@ if __name__ == "__main__":
     check16()                                     # cTao explicit-exponent min-tree
     check17()                                     # big-C ladder map (GO vs re-pinned 1e11)
     check18()                                     # step-2 symbolic defs vs the ladder
+    check19()                                     # lap-8 C0-arm NO-GO trace (JUDGE-FLAG)
     print("ALL CHECKS PASS ✅")

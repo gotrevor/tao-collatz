@@ -3505,11 +3505,33 @@ theorem prop_7_8 (A : ℝ) (hA : 0 < A) :
       Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
   ⟨Cthr_prop78 A, prop_7_8_explicitC A hA⟩
 
-/-- Paper (7.37), assembled from Proposition 7.8. -/
+/-- **The (7.37) decay constant**, symbolic (big-C campaign, step 2): the
+`Q_polynomial_decay_at` constant `(max C0 1)^A` at `C0 = Cthr_prop78 A` —
+this is the fully reified C0-arm of the ladder. -/
+noncomputable def C_polyDecay (A : ℝ) : ℝ :=
+  ((max (Cthr_prop78 A) 1 : ℕ) : ℝ) ^ A
+
+theorem C_polyDecay_pos (A : ℝ) : 0 < C_polyDecay A := by
+  unfold C_polyDecay
+  refine Real.rpow_pos_of_pos ?_ A
+  exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one (le_max_right _ _)
+
+/-- Paper (7.37), `_at` sibling (big-C campaign, step 2):
+`Q_polynomial_decay_at` instantiated at the explicit Prop-7.8 threshold. -/
+theorem Q_polynomial_decay_explicitC (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l
+        ≤ C_polyDecay A * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
+  have h := Q_polynomial_decay_at A hA (Cthr_prop78 A) (prop_7_8_explicitC A hA)
+  unfold C_polyDecay
+  exact h
+
+/-- Paper (7.37), original `∃`-form: delegates to the `_at` sibling at
+`C_polyDecay A = (max (Cthr_prop78 A) 1)^A`. -/
 theorem Q_polynomial_decay (A : ℝ) (hA : 0 < A) :
     ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l
         ≤ C * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) :=
-  Q_polynomial_decay_of_prop_7_8 A hA (prop_7_8 A hA)
+  ⟨C_polyDecay A, C_polyDecay_pos A, Q_polynomial_decay_explicitC A hA⟩
 
 end TaoCollatz

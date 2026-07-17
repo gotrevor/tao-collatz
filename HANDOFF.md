@@ -1,5 +1,15 @@
 # HANDOFF — big-C campaign, lap 8 in progress (2026-07-17)
 
+## 🚨 JUDGE-FLAG (lap 8): C0-arm NO-GO — read PENDING_WORK.md lap-8 entry
+
+The now-reified C0-arm (`C_polyDecay A = (max (Cthr_prop78 A) 1)^A` →
+`renewal_white_encounters`' witness) EXCEEDS the live pin `10^(10¹¹)` robustly
+(`log₁₀ ≥ 4.5×10³²` independent of unresolved constants; honest trace far larger).
+check19 is the machine-checked trace; check17's GO covered only the head arm.
+STEP 3 is unprovable over the current tower. Per the never-inflate/STOP rule the
+discharge thread is STOPPED pending an operator ruling; step-2 transcription
+continues (next: `renewal_white_encounters` explicit, Fourier passthrough, Sec6).
+
 ## Lap 8 progress so far
 
 - **`Q_black_edge_case2` → `Q_black_edge` → `prop_7_8` all explicit (`eae7e15`)**:

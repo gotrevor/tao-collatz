@@ -331,3 +331,39 @@ name its combined threshold `Cthr_fewWhite A = max (max (10^30) (T_colTail A P_f
 sibling; ∃-form delegates. Then the damping passthrough chain
 (`damping_expectation_le` → `damping_column_mass_le` → `damped_iter_expectation_le` →
 `Q_black_edge_case3`, all carry `Cthr`/`P` unchanged) → reifies C2 → wire into `prop_7_8_at`.
+
+### Lap 8 (2026-07-17) — case2/blackEdge/prop_7_8/Q_polynomial_decay explicit + C0-ARM NO-GO 🚨
+
+- **Explicit chain completed** (`eae7e15` + follow-up): `fpDist_white_exit_at`,
+  `delta_case2`, `Cthr_case2 A` (BlackEdgeQ.lean); `Cthr_blackEdge A`, `Cthr_prop78 A =
+  max (max (C_hold A) (Cthr_blackEdge A)) 1`, `C_polyDecay A = (max (Cthr_prop78 A) 1)^A`
+  (Case3.lean). All watched ∃-forms delegate byte-identically; differ 35/35.
+- **The C0-arm is now fully reified — and it is a NO-GO against the re-pinned
+  `CTao = 10^(10¹¹)`.** check19 (`tools/check_blueprint.py`) is the machine-checked trace.
+
+JUDGE-FLAG: (lap 8) the C0-arm of `renewal_white_encounters`' witness
+(`Bridge.lean:518`, `C0·exp(ε³/2)·3^A` with `C0 = C_polyDecay A`) exceeds the live pin
+`CTao = 10^(10¹¹)` — robustly, by ≥ 21 orders of magnitude in the EXPONENT
+(`log₁₀ C0-arm ≥ 4.5×10³²` independent of every unresolved bottom constant; central
+trace `log₁₀ log₁₀ ≈ 8.5×10²¹`; with the honest `encWindowIter` horizon
+`log₁₀ log₁₀ ≈ 10^3009.5`). check17's GO covered only the `n₀^B` HEAD arm of the
+renewal max; the lap-5 audit's "logarithmic collapse" claim for `C_encTri`'s
+`e^{ch·M_encTri}` term is REFUTED by the def bodies: (a) `A0_estarScaled`
+(Case3.lean:1910) is LINEAR in `C' = 4·C_encTri` (`Kthr_estarScaled ∝ C'`), turning the
+constant into the exponent `A0_fewEstar ≈ 10^(8.5×10²¹)`; (b) it re-enters EXPONENTIALLY
+via `B_fewWhite = 4^{2A+A0}(1+P)³` and `encWindowIter` (cubes per step, `R ≈ 10^3010`
+steps — `K_fewWhite = ⌈(A+3)ln10/epsBW³⌉` carries the `1/ε³ = 10^3000` factor);
+(c) the threshold re-enters as `Cthr^A` in `Q_polynomial_decay_at`'s constant at
+`A = B ≈ 3.11×10⁷`. Forcedness (mirror of the lap-1 floor argument): the `1/ε³` in `K`
+is forced by the frozen `few_white_mass_le` damping shape (`e^{-ε³}` per white point vs
+an `m^{-A}` target), and `A0 ≳ √Warg ≥ ln10/(4c)` + `Kthr ∝ e^{c·10²⁷}` force
+`A0 ≥ ~10²⁵` for EVERY decay rate `c` — so no witness re-choice over the frozen
+statements evades the C0-arm blow-up; the miss is structural (the (7.56)/(7.60)
+statement shapes at frozen `epsBW`/`M_encTri`), not sloppy witnesses. STEP 3 as
+directed (prove `C_ladder ≤ CTao`) is NOT provable over the current tower. Per the
+never-inflate/STOP rule: this thread is STOPPED; step-2 transcription (valuable for any
+follow-up "tighten-C" campaign per the 2026-07-16 ruling) continues bottom-up
+(renewal_white_encounters, Fourier passthrough, Sec6/Sec5/Sec3). Operator options
+mirror the ruling's own list: re-pin (would need a tower-form `CTao`), or the banked
+"tighten-C" statement surgery (`epsBW`, `A0_estarScaled`'s linear shape,
+`hold_weight_expect`).
