@@ -699,6 +699,36 @@ noncomputable def C_renewalWhite_tight (A : ℝ) : ℝ := ((2 * C_hold A + 2 : �
 theorem C_renewalWhite_tight_pos (A : ℝ) : 0 < C_renewalWhite_tight A :=
   Real.rpow_pos_of_pos (by positivity) A
 
+/-- The tight-`Q` constant (Option B): head-sized, chosen so the large-`n` renewal assembly
+lands exactly at `C_renewalWhite_tight A = n₀^A`.  Precisely `C_Qtight·exp(ε³/2)·3^A = n₀^A`
+(`C_Qtight_glue`). -/
+noncomputable def C_Qtight (A : ℝ) : ℝ :=
+  ((2 * C_hold A + 2 : ℕ) : ℝ) ^ A / (Real.exp ((epsBW : ℝ) ^ 3 / 2) * (3 : ℝ) ^ A)
+
+theorem C_Qtight_pos (A : ℝ) : 0 < C_Qtight A := by
+  unfold C_Qtight
+  exact div_pos (Real.rpow_pos_of_pos (by positivity) A) (by positivity)
+
+theorem C_Qtight_glue (A : ℝ) :
+    C_Qtight A * Real.exp ((epsBW : ℝ) ^ 3 / 2) * (3 : ℝ) ^ A
+      = ((2 * C_hold A + 2 : ℕ) : ℝ) ^ A := by
+  have hne : Real.exp ((epsBW : ℝ) ^ 3 / 2) * (3 : ℝ) ^ A ≠ 0 := by positivity
+  rw [C_Qtight, mul_assoc, div_mul_cancel₀ _ hne]
+
+set_option warningAsError false in
+open Classical in
+/-- **Tight `Q` polynomial decay** (Option B analytic sub-target): the SAME statement as
+`Q_polynomial_decay` (Case3) but with the head-sized `C_Qtight A` in place of the
+`C_polyDecay` tower.  TRUE because at the applied scale `n/2 ≥ n₀ ≈ 10³⁰¹⁶` the walk hits
+≈ `p·(n/2)` white points (true white-frequency threshold `~10³⁰⁰⁸ < n₀`; `few_white_mass_le`'s
+tower horizon is slop).  This is THE campaign frontier — a `#white` lower-tail estimate with a
+poly(1/ε) horizon.  See PENDING_WORK Lap-12 grind. -/
+theorem Q_polynomial_decay_tight (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l
+        ≤ C_Qtight A * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
+  sorry
+
 set_option warningAsError false in
 open Classical in
 /-- **Proposition 7.3, TIGHT form** (Option B, lap 12 — ADDITIVE; the clean-headline
@@ -779,10 +809,95 @@ theorem renewal_white_encounters_tight (A : ℝ) (hA : 0 < A) :
             (Real.rpow_le_rpow hn0R.le h1 hA.le) (Real.rpow_nonneg hn0R.le _)
       _ = C_renewalWhite_tight A * (n : ℝ) ^ (-A) := by
           unfold C_renewalWhite_tight; rw [hn0, hC1def]
-  · -- large n (n ≥ n₀): THE CRUX — `renewal_tail_tight`, the Option-B decorrelation frontier.
-    -- The two bridges + `hold_weight_expect` give ≤ C0·exp(ε³/2)·3^A·n^{-A} with C0 = tower;
-    -- the tight bound replaces C0 by a small constant via a #white lower-tail estimate beating
-    -- `few_white_mass_le`'s tower horizon.  See PENDING_WORK Reflection 2026-07-17 lap 12.
-    sorry
+  · -- large n (n ≥ n₀): bridge + TIGHT polynomial decay + Geom(4) tail.  Same assembly as
+    -- `renewal_white_encounters_at`, but the pointwise `Q` bound uses `Q_polynomial_decay_tight`
+    -- (constant `C_Qtight A`) instead of the tower `C_polyDecay`, landing at `n₀^A·n^{-A}` via
+    -- `C_Qtight_glue` — no `max`.  The only residual obligation is `Q_polynomial_decay_tight`.
+    have hC00 : (0 : ℝ) < C_Qtight A := C_Qtight_pos A
+    have hC0 := Q_polynomial_decay_tight A hA
+    have hC11 : 1 ≤ C_hold A := one_le_C_hold A
+    have hC1 := hold_weight_expect_explicitC A hA
+    have hhalf1 : C1 ≤ n / 2 := by omega
+    have hhalfpos : (0 : ℝ) < ((n / 2 : ℕ) : ℝ) := by
+      have h : 1 ≤ n / 2 := le_trans hC11 hhalf1
+      exact_mod_cast h
+    rw [bridge_vector n ξ, bridge_renewal (n / 2) (whiteSet n ξ) (epsBW : ℝ) hε0 0 0]
+    have hpt : ∀ d : ℕ × ℤ,
+        (hold d).toReal * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (0 + d.1) (0 + d.2)
+          ≤ (hold d).toReal * (C_Qtight A * ((max (n / 2 - d.1) 1 : ℕ) : ℝ) ^ (-A)) := by
+      intro d
+      rcases Nat.eq_zero_or_pos d.1 with h0 | hpos
+      · rw [hold_zero_of_fst_zero h0, ENNReal.toReal_zero, zero_mul, zero_mul]
+      · apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+        have h := hC0 n ξ hξ (0 + d.1) (0 + d.2) (by omega)
+        simpa using h
+    have hnn : ∀ d : ℕ × ℤ,
+        0 ≤ (hold d).toReal * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (0 + d.1) (0 + d.2) :=
+      fun d => mul_nonneg ENNReal.toReal_nonneg (Q_nonneg _ _ _ _ _)
+    have hwle : ∀ d : ℕ × ℤ, ((max (n / 2 - d.1) 1 : ℕ) : ℝ) ^ (-A) ≤ 1 := fun d =>
+      Real.rpow_le_one_of_one_le_of_nonpos
+        (by exact_mod_cast Nat.le_max_right (n / 2 - d.1) 1) (by linarith)
+    have hsumw : Summable fun d : ℕ × ℤ =>
+        (hold d).toReal * ((max (n / 2 - d.1) 1 : ℕ) : ℝ) ^ (-A) :=
+      Summable.of_nonneg_of_le
+        (fun d => mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _))
+        (fun d => by
+          calc (hold d).toReal * ((max (n / 2 - d.1) 1 : ℕ) : ℝ) ^ (-A)
+              ≤ (hold d).toReal * 1 :=
+                mul_le_mul_of_nonneg_left (hwle d) ENNReal.toReal_nonneg
+            _ = (hold d).toReal := mul_one _)
+        hold_summable_toReal
+    have hsumCw : Summable fun d : ℕ × ℤ =>
+        (hold d).toReal * (C_Qtight A * ((max (n / 2 - d.1) 1 : ℕ) : ℝ) ^ (-A)) :=
+      (hsumw.mul_left (C_Qtight A)).congr fun d => by ring
+    have hsumQ : Summable fun d : ℕ × ℤ =>
+        (hold d).toReal * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (0 + d.1) (0 + d.2) :=
+      Summable.of_nonneg_of_le hnn
+        (fun d => by
+          calc (hold d).toReal * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (0 + d.1) (0 + d.2)
+              ≤ (hold d).toReal * 1 :=
+                mul_le_mul_of_nonneg_left (Q_le_one _ _ _ hε0 _ _) ENNReal.toReal_nonneg
+            _ = (hold d).toReal := mul_one _)
+        hold_summable_toReal
+    have htail := hC1 (n / 2) hhalf1
+    calc ∑' d : ℕ × ℤ,
+          (hold d).toReal * Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (0 + d.1) (0 + d.2)
+        ≤ ∑' d : ℕ × ℤ,
+            (hold d).toReal * (C_Qtight A * ((max (n / 2 - d.1) 1 : ℕ) : ℝ) ^ (-A)) :=
+          hsumQ.tsum_le_tsum hpt hsumCw
+      _ = C_Qtight A * ∑' d : ℕ × ℤ,
+            (hold d).toReal * ((max (n / 2 - d.1) 1 : ℕ) : ℝ) ^ (-A) := by
+          rw [← tsum_mul_left]
+          exact tsum_congr fun d => by ring
+      _ ≤ C_Qtight A * (Real.exp ((epsBW : ℝ) ^ 3 / 2) * ((n / 2 : ℕ) : ℝ) ^ (-A)) :=
+          mul_le_mul_of_nonneg_left htail hC00.le
+      _ ≤ C_Qtight A * Real.exp ((epsBW : ℝ) ^ 3 / 2) * (3 : ℝ) ^ A * (n : ℝ) ^ (-A) := by
+          have h3 : (n : ℝ) ≤ 3 * ((n / 2 : ℕ) : ℝ) := by
+            have h : n ≤ 3 * (n / 2) := by omega
+            exact_mod_cast h
+          have hstep : ((n / 2 : ℕ) : ℝ) ^ (-A) ≤ (3 : ℝ) ^ A * (n : ℝ) ^ (-A) := by
+            have h1 : (n : ℝ) ^ (-A) ≥ (3 * ((n / 2 : ℕ) : ℝ)) ^ (-A) :=
+              Real.rpow_le_rpow_of_nonpos hn0R h3 (by linarith)
+            have h2 : (3 * ((n / 2 : ℕ) : ℝ)) ^ (-A)
+                = (3 : ℝ) ^ (-A) * ((n / 2 : ℕ) : ℝ) ^ (-A) :=
+              Real.mul_rpow (by norm_num) hhalfpos.le
+            have h4 : ((n / 2 : ℕ) : ℝ) ^ (-A)
+                = (3 : ℝ) ^ A * ((3 : ℝ) ^ (-A) * ((n / 2 : ℕ) : ℝ) ^ (-A)) := by
+              rw [← mul_assoc, ← Real.rpow_add (by norm_num : (0:ℝ) < 3),
+                add_neg_cancel, Real.rpow_zero, one_mul]
+            rw [h4]
+            calc (3 : ℝ) ^ A * ((3 : ℝ) ^ (-A) * ((n / 2 : ℕ) : ℝ) ^ (-A))
+                = (3 : ℝ) ^ A * (3 * ((n / 2 : ℕ) : ℝ)) ^ (-A) := by rw [h2]
+              _ ≤ (3 : ℝ) ^ A * (n : ℝ) ^ (-A) :=
+                  mul_le_mul_of_nonneg_left h1 (Real.rpow_nonneg (by norm_num) _)
+          calc C_Qtight A * (Real.exp ((epsBW : ℝ) ^ 3 / 2) * ((n / 2 : ℕ) : ℝ) ^ (-A))
+              = C_Qtight A * Real.exp ((epsBW : ℝ) ^ 3 / 2) * ((n / 2 : ℕ) : ℝ) ^ (-A) := by
+                ring
+            _ ≤ C_Qtight A * Real.exp ((epsBW : ℝ) ^ 3 / 2) * ((3 : ℝ) ^ A * (n : ℝ) ^ (-A)) :=
+                mul_le_mul_of_nonneg_left hstep (by positivity)
+            _ = C_Qtight A * Real.exp ((epsBW : ℝ) ^ 3 / 2) * (3 : ℝ) ^ A * (n : ℝ) ^ (-A) := by
+                ring
+      _ = C_renewalWhite_tight A * (n : ℝ) ^ (-A) := by
+          rw [C_renewalWhite_tight, ← C_Qtight_glue A]
 
 end TaoCollatz
