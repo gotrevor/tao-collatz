@@ -15,7 +15,8 @@ concrete exponent `cTao` and the concrete constant `CTao`, plus its `∃`-form
 proves `∃ c C` and Remark 1.4 gives only a shape, never a value.  The MEANING of every
 statement here rests only on the elementary leaf files `Basic.Collatz` +
 `Basic.LogDensity` (`col`, `colMin`, log density via Finset sums and `Tendsto`) and
-`Basic.ExplicitConstants` (`cTao`, the three-line `tenTower` recursion); the remaining
+`Basic.ExplicitConstants` (`cTao`; `CTao`'s own vocabulary is Mathlib's
+`hyperoperation` — native tetration); the remaining
 imports bring only proofs, and the mathlib `Pow.Real` import supplies just the `rpow`
 notation used in Theorem 3.1's error term.
 
@@ -38,15 +39,17 @@ theorem tao_collatz_quantitative :
       1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
   exact tao_collatz_quantitative_spine
 
-/-- The concrete constant — `tenTower 62`, i.e. `10↑↑63`, a right-associated tower of
-exactly 63 tens (`tenTower 0 = 10`, `tenTower (h + 1) = 10 ^ tenTower h`; the three-line
-recursion is in `Basic/ExplicitConstants.lean`).  Deliberately non-small: the deliverable
-is a closed value, never smallness — `BigCTower.lean` proves the development's assembled
-constant fits under it.  (The exponent `cTao = 1/(640000000 log 2)` is defined in the
-same leaf file.) -/
-noncomputable def CTao : ℝ := tenTower 62
+/-- The concrete constant — Mathlib's native tetration: `hyperoperation 4 10 63` is
+`10↑↑63`, a right-associated tower of exactly 63 tens.  Deliberately non-small: the
+deliverable is a closed value, never smallness — `BigCTower.lean` proves the
+development's assembled constant fits under it (via the engine vocabulary `tenTower`;
+bridge: `tenTower_sixty_two_eq_hyperoperation`). -/
+noncomputable def CTao : ℝ := (hyperoperation 4 10 63 : ℝ)
 
-theorem CTao_pos : 0 < CTao := tenTower_pos 62
+theorem CTao_pos : 0 < CTao := by
+  rw [show CTao = ((hyperoperation 4 10 63 : ℕ) : ℝ) from rfl,
+    ← tenTower_sixty_two_eq_hyperoperation]
+  exact tenTower_pos 62
 
 /-- **Theorem 3.1, fully-explicit form** (our augmentation): Theorem 3.1 holds with BOTH
 parameters concrete — one may take `c = cTao = 1/(640000000 log 2)` and
@@ -55,7 +58,8 @@ parameters concrete — one may take `c = cTao = 1/(640000000 log 2)` and
 theorem tao_collatz_quantitative_fully_explicit :
     ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       1 - CTao / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
-  rw [show CTao = tenTower 62 from rfl]
+  rw [show CTao = ((hyperoperation 4 10 63 : ℕ) : ℝ) from rfl,
+    ← tenTower_sixty_two_eq_hyperoperation]
   exact tao_collatz_quantitative_tower_of_sixty_three_tens
 
 /-- **Theorem 3.1, explicit-exponent form** (our augmentation): Theorem 3.1 holds with the

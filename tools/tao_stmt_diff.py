@@ -90,8 +90,9 @@ PINNED_NAMES = [
     # forward — that is the ref a future run passes for the full 36-name set.
     "X_spine", "C_tao_assembled", "tao_collatz_quantitative_assembled",
     # ✅ RATIFIED 2026-07-17 (Trevor's direction, host-verified #print axioms = the standard
-    # three): the readable tower headline on the trusted surface. `CTao := tenTower 62`
-    # (= 10↑↑63) + `tao_collatz_quantitative_fully_explicit` live in Statement.lean;
+    # three): the readable tower headline on the trusted surface. `CTao :=
+    # (hyperoperation 4 10 63 : ℝ)` (Mathlib-native tetration, = 10↑↑63 = tenTower 62)
+    # + `tao_collatz_quantitative_fully_explicit` live in Statement.lean;
     # `tenTower` (the def VALUE is the pin — the recursion itself) lives in
     # Basic/ExplicitConstants.lean, as does `cTao` (relocated from Statement.lean in the
     # same pass, text verbatim — a pin may move files; SEARCH_FILES covers relocation).

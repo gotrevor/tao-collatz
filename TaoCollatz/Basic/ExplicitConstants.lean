@@ -159,4 +159,23 @@ theorem ten_pow_le_tenTower_succ {e : ℕ} (h : ℕ) (he : (e : ℝ) ≤ tenTowe
   rw [← Real.rpow_natCast]
   exact ten_rpow_le_tenTower_succ h he
 
+/-- The bridge to Mathlib's native tetration: `tenTower h` is `10↑↑(h+1)`,
+i.e. `hyperoperation 4 10 (h+1)`. -/
+theorem tenTower_eq_hyperoperation (h : ℕ) :
+    tenTower h = ((hyperoperation 4 10 (h + 1) : ℕ) : ℝ) := by
+  induction h with
+  | zero => simp [tenTower, hyperoperation_ge_two_eq_self]
+  | succ h ih =>
+      have hrec : hyperoperation 4 10 (h + 1 + 1) = 10 ^ hyperoperation 4 10 (h + 1) := by
+        rw [hyperoperation_recursion, hyperoperation_three]
+      rw [tenTower_succ, ih, hrec]
+      push_cast
+      rw [Real.rpow_natCast]
+
+/-- The instance the trusted surface uses: `tenTower 62` is `10↑↑63`, a right-associated
+tower of exactly 63 tens. -/
+theorem tenTower_sixty_two_eq_hyperoperation :
+    tenTower 62 = ((hyperoperation 4 10 63 : ℕ) : ℝ) := by
+  simpa using tenTower_eq_hyperoperation 62
+
 end TaoCollatz

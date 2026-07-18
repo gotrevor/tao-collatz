@@ -101,14 +101,10 @@ theorem tao_collatz_quantitative :
 /-- The explicit exponent — OUR augmentation, beyond the paper. -/
 noncomputable def cTao : ℝ := 1 / (640000000 * Real.log 2)
 
-/-- `tenTower h`: a right-associated tower of `h + 1` tens, via real powers. -/
-noncomputable def tenTower : ℕ → ℝ
-  | 0 => 10
-  | h + 1 => (10 : ℝ) ^ tenTower h
-
-/-- The concrete constant — `tenTower 62`, i.e. `10↑↑63`, a tower of exactly 63 tens.
-Deliberately non-small: a closed value, never a smallness claim. -/
-noncomputable def CTao : ℝ := tenTower 62
+/-- The concrete constant — Mathlib's native tetration: `hyperoperation 4 10 63` is
+`10↑↑63`, a right-associated tower of exactly 63 tens.  Deliberately non-small: a closed
+value, never a smallness claim. -/
+noncomputable def CTao : ℝ := (hyperoperation 4 10 63 : ℝ)
 
 /-- **Theorem 3.1, fully-explicit form** (our augmentation): Theorem 3.1 holds with BOTH
 parameters concrete — one may take `c = cTao = 1/(640000000 log 2)` and
