@@ -1746,11 +1746,21 @@ theorem lattice_sq_dist_ge_one {q q' : ℕ × ℤ} (h : q ≠ q') :
 -- Numerically validated (exact ℚ arithmetic, l*/j* construction): check_blueprint
 -- check 8 at (n,ξ,ε) = (30,7,9e-3), (26,101,1/101), (30,1,1e-4) — incl. giant
 -- triangles of size ≈ n·log 3 from tiny |θ| corners.
+-- Hypothesis provenance: `hn` and `hξ` are §7's STANDING CONTEXT (p.33), one sentence —
+-- "Let n ≥ 1, let ξ ∈ ℤ/3ⁿℤ be not divisible by 3, and let A > 0 be fixed." Lemma 7.4's
+-- numbered display states neither; a §7 pin renders the display *plus* that context, which
+-- is why `hξ` is here too (the statement is false without it). `hn` is not consumed by the
+-- proof — for n = 0 the strip [n/2] is empty, so the lemma is vacuously true — and that is
+-- expected: the proof never dictates the statement. Dropped by PR #1 as an unused-variable
+-- cleanup and restored here; the linter is silenced rather than the statement trimmed, per
+-- mathlib's own pattern for a deliberately-retained hypothesis (`Mathlib/Algebra/Lie/Sl2.lean`).
+-- Want the n-free version? Add it beside this pin, not instead of it.
+set_option linter.unusedVariables false in
 /-- **Lemma 7.4.** For `ξ` not divisible by 3, the black set (within the strip
 `j+1 ≤ n/2`) is a union of corner triangles whose point sets are pairwise
 Euclidean-separated by `≥ (1/10)·log(1/ε)` and confined to
 `j+1 ≤ n/2 - (1/10)·log(1/ε)`. -/
-theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) :
+theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (hn : 1 ≤ n) :
     ∃ T : Set (ℕ × ℤ × ℝ),
       (∀ t ∈ T, 0 ≤ t.2.2) ∧
       (∀ t ∈ T, ∃ p : ℕ × ℤ, p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2 ∧
