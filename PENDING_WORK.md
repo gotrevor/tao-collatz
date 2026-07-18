@@ -1498,3 +1498,25 @@ deltaBW, then T_fstMgf/T_fstTail/T_holdTail/T_edgeWeight — mirror the tT17-24 
 with ten-pow budgets; expect ~10^3010-ish level-1), then lap 10: dampingCol/blackEdge/
 prop78 level-3 max passthrough, `C_polyDecay ≤ 10^(10^(10^3051))`, `C_renewalWhite ≤
 10^(10^(10^3052))`, Sec3 spine, ceiling, `check28`, discharge LAST.
+
+### Lap 9 (2026-07-18) — Cthr_case2 chain honest (level-1 kit + level-2 fstMgf) ✅
+
+- 9a: generic level-1 combinators (`T_logLin ≤ 10^(2a+4)`, `T_expNeg ≤ 10^(2a+1)`,
+  `T_logSq` small, `geomDenInv ≤ 10^(a+1)`); `delta_case2⁻¹ ≤ 10^3001`;
+  `T_fstTail ≤ 10^6191`, `T_holdTail ≤ 10^6006`.
+- 9b: **`T_fstMgf` is the case-2 chain's only level-2 arm** — `T_logSq B` with
+  `B ≈ A/log(1+δ/16) ≈ 10^3014` is `exp(√B)`, a genuine double exponential:
+  `T_fstMgf ≤ 10^(10^3020)`; `T_edgeWeight ≤ 10^(10^3021)`;
+  `Cthr_case2 ≤ 10^(10^3021)`. New lifts: `T_logSq_cast_le_ten_rpow` (level-2),
+  `ten_pow_le_ten_rpow_level2` (needs σ ≥ 30 — as σ ≥ 2 it is FALSE, caught by build).
+- Gotchas: linarith/ring/norm_num on `(10:ℝ)^(3016:ℕ)` npow atoms hits the
+  `exponentiation.threshold 256` wall (ring evaluates!); use pure lemma chains
+  (`add_le_ten_pow (le_refl _) …`) or `generalize`-to-opaque + `linarith only [h]`.
+  Right-associate ℕ sums with `simp only [add_assoc]` (safe; ring is not).
+
+**Next (lap 10):** `Cthr_dampingCol/blackEdge/prop78` level-3 max passthrough
+(case2 level-2 lifts into L3(3050) for free), `C_polyDecay = (max Cthr_prop78 1)^A ≤
+10^(10^(10^3051))` (rpow_le_ten_rpow ×A = +8 on middle exponent), `C_renewalWhite ≤
+10^(10^(10^3052))` (arm1 `(2·C_hold+2)^A ≤ 10^(6021·10^8)` level-1-large; arm2
+poly·e^{ε³/2}·3^A exponent-adds). Then Sec3 spine, ceiling `C_tao_assembled ≤
+tenTower 4`, bridge to `tenTower 9 = CTao`, `check28`, discharge LAST.
