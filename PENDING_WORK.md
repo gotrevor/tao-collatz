@@ -1536,3 +1536,22 @@ L3(3052)), then the ceiling `C_tao_assembled ≤ tenTower 4` (final lift
 `ten_rpow_rpow_ten_pow_le_tenTower_four`, σ=3052+Δ ≤ 10^10 ✓), bridge
 `tenTower 4 ≤ tenTower 9 = CTao`, `check28` in tools/check_blueprint.py, discharge
 the pin LAST (sorry + warningAsError shield in one commit).
+
+## Tier-1 laps 11–12 + discharge (2026-07-18, this box)
+
+- **Lap 11a** (`e4ad90b`): honest level-1 `N_*` mixing-cutoff bounds (all ≤ 10^32;
+  old tT9 was level slop); C-chain `C_oscMainHigh → C_windowBad` in exponent-slack
+  form on `E52 = 10^(10^3052)` (+10^9 budget/node); `slack_le_ten3_3053`.
+  Gotcha: pin every intermediate exponent with an explicit `have` — an
+  `add_le_ten_rpow` fed by inline `.trans (ten_rpow_mono …)` leaves the common
+  exponent as an unsolvable metavariable.  `nlinarith` fails on `10^7`-npow
+  goals: rewrite the numeral first (`show (10:ℝ)^(7:ℕ) = 10000000`).
+- **Lap 11b** (`36e36c7`): honest X-tree: `XB = 10^(10^700)` uniform interior
+  bound (`X_logRpowExp` seats peak at `exp(10^200)`), two `^α` bumps →
+  `X_spine ≤ 10^(10^701) = XB'`; `log X_spine ≤ 10^702`; assembled
+  `C_tao_assembled ≤ 10^(E52+1.5e10) ≤ 10^(10^(10^3053)) ≤ tenTower 4 ≤ tT9`.
+  Gotcha: `rw [pow_succ]` on a goal with several `10^k` numerals rewrites the
+  wrong occurrence — use `_ = 10^(k+1:ℕ) := (pow_succ 10 k).symm` calc steps.
+- **Lap 12** (`355d600`): check28 height ledger (see tool docstring).
+- **DISCHARGE** (`dfb464a`): pin proved, shield removed, axioms clean on all
+  headlines.  Campaign complete; judge ratification owed (see HANDOFF.md).
