@@ -1,42 +1,57 @@
-# HANDOFF — Tier-1 tower tightening, lap 1 done (2026-07-18) 🗼
+# HANDOFF — Tier-1 tower tightening, laps 1–6 done (2026-07-18) 🗼
 
-**Lap 1 (7198777): Design B calculus bank landed + POC GATE GREEN — `C_fpLocation ≤ tenTower 2`**
-(was 8; old bound kept as corollary, downstream untouched). Bank: `prod/sum/rpow_le_tenTower_succ`
-(one level per batch; plan §2's literal signature was off-by-a-level — see PENDING_WORK lap-1 note)
-+ `mul_le_ten_pow`/`exp_le_ten_pow` leaf accounting. Differ 39/39, census 1, build green.
-**Next: convert bottom-up (plan §3): Sec5/first-passage cluster (`C_fpCol` etc.), then the cubic
-node `+6 → +2`, then Sec6/Sec3, `check28`, discharge LAST.**
+**Read `DIRECTION.md` first (unchanged, still governs); `TIER1-TOWER-TIGHTENING-PLAN.md`
+is the spec; `PENDING_WORK.md` has the per-lap ledger (laps 1–6, incl. all gotchas).**
 
+Branch `tier1-tower-tightening`, HEAD `f83ca6c`, build GREEN, differ **39/39** vs plant
+`b7825fc` at every commit, `TaoCollatz/` census = **1** (the planted pin, untouched).
+No uncommitted edits.
 
-**Fresh campaign.  Read `DIRECTION.md` (the directive) + `TIER1-TOWER-TIGHTENING-PLAN.md`
-(the spec) before doing anything.**  The previous campaign (assembled big-C) is ratified,
-merged (PR #10), and closed; its handoffs live in `archive/handoff/` and its DIRECTION in
-git history.  Nothing from it is live work.
+## Done (laps 1–6)
 
-## State at prep
+1. **Calculus bank** (`Basic/ExplicitConstants.lean`): batched tenTower lemmas
+   (`prod/sum/rpow_le_tenTower_succ`), ten-pow leaf kit (`mul/add_le_ten_pow`,
+   `ten_pow_mono`, `natCeil_le_ten_pow_succ`, `exp_le_ten_pow`), rpow kit
+   (`mul/add_le_ten_rpow`, `rpow_le_ten_rpow`, `ten_rpow_mono`), lifts
+   (`ten_pow_le_tenTower_two/three`, `ten_rpow_ten_pow_le_tenTower_three`,
+   `ten_rpow_rpow_ten_pow_le_tenTower_four` — cash any σ ≤ 10¹⁰), and
+   `two_le_log_ten`/`exp_le_ten_rpow`/`self_le_ten_rpow`.
+2. **POC gate GREEN**: `C_fpLocation ≤ tenTower 2` (was 8).
+3. **First-passage cluster** at honest ten-pow budgets (`10^74…10^89`, all ≤ tT2);
+   `C_encTri`/`C_estarUnion`/`A0_fewEstar ≤ 10^(10^27+22-ish)` (≤ tT3, real height).
+4. **Cubic node `+6 → +2`** (`encWindowIter_le_tenTower_add_two`) and its exact rpow
+   form `encWindowIter_le_ten_rpow : enc+1 ≤ 10^((A+K+6)·10^((i+1)/2))`.
+5. **fewWhite core exact**: `mainDecay ≤ 10^8`, `K ≤ 10^3011` (epsBW⁻³ seat),
+   `R ≤ 10^3045`, `P+1 ≤ 10^(10^(10^3047))`, `B ≤ 10^(10^(10^3049))` (level-3 form).
+   All old `_le_tenTower_N` names kept as corollaries — downstream never edited.
 
-- Branch `tier1-tower-tightening`, off merged main `4dde699`.  The campaign runs in the
-  worktree `~/src/tao-collatz-tier1` (host-side note; in the box the repo mount is the
-  same as always).  Everything merges via PR — main is protected.
-- **The pin is PLANTED** (judge, 2026-07-18): `Statement.lean` has
-  `CTao := hyperoperation 4 10 10` + `tao_collatz_quantitative_fully_explicit := sorry`
-  (shielded); `Challenge.lean` matches in lockstep.  Comparator CI is RED until discharge
-  — by design.  `TaoCollatz/` sorry census = **1** (the pin; was 0 post-#10).
-  `tenTower_nine_eq_hyperoperation` (the `10↑↑10` bridge) is already proved in
-  `Basic/ExplicitConstants.lean`.
-- Build green (8600 jobs, planted-sorry warning is shielded).  Differ baseline = the plant
-  commit ("plant the Tier-1 campaign pin"); expect 39/39 from there on.
-- `BigCTower.lean` (3256 lines) carries the 242-step `_succ` climb to `tenTower 62` —
-  all slop except the cubic `encWindowIter` recurrence (2 real levels).  Honest height 3:
-  check19's `log₁₀log₁₀ C_renewalWhite ≈ 10^3009.5` + plan §1.
-- **Nothing started on the calculus.**  Lap 1 = the Design B lemma bank + the POC gate
-  (`C_fpLocation` cluster, `8 → ≤ 3`).  Do not touch downstream clusters before the POC
-  is green.
+**Established (ledger lap 5): honest ceiling is `tenTower 4`** (= 10↑↑5; DIRECTION
+allows "3 if it falls out" — it does NOT, C > tT3 since log₁₀³C ≈ 3050 > 10).
 
-## Next
+## Next (in order; plan §3)
 
-1. Calculus bank (4 batched lemmas) — plan §2 Design B.
-2. POC: `C_fpLocation ≤ tenTower 2` (or `3`).  Green → convert bottom-up (plan §3).
-   Fights → `JUDGE-FLAG:` + `box stuck`.
-3. Ceiling at the honest height + `check28`; **discharge the pin LAST** (removes the
-   run's `--done-when` gate condition — see DIRECTION Stop discipline).
+1. `Cthr_fewWhite` chain: `T_expRpow/T_colTail/T_outStrip` + the `⌈B^2.5⌉₊` arm (rides
+   B's level-3 form; ×2.5 exponent → σ 3049→3050), `Cthr_case2/dampingCol/blackEdge/
+   prop78` → `C_polyDecay` → **`C_renewalWhite ≤ 10^(10^(10^~3055))`**.
+2. Sec3 spine (`C_mainZ…C_windowBad`, `X_*`, `X_spine`) in the same level-3/rpow
+   budgets (X_* are small — mostly ≤ tT9 already; only the C-chain is tall).
+3. Ceiling: `C_tao_assembled ≤ tenTower 4` (new theorem alongside the frozen
+   `…_le_tenTower_sixty_two`), bridge `tenTower 4 ≤ tenTower 9 = CTao` via
+   `tenTower_nine_eq_hyperoperation`.
+4. `check28` in `tools/check_blueprint.py` (log/log-log mirror, mutation-trapped,
+   resolve max arms in log-space; extend check19).
+5. **Discharge the pin LAST**: `Statement.lean` sorry + its `warningAsError` shield
+   removed in one commit → host `--done-when sorry-free:TaoCollatz` ends the run.
+   Record base-free `log log log C ≲ 3050` + epsBW⁻³ provenance in ceiling docstrings.
+
+## Hard-won gotchas (details in PENDING_WORK.md)
+
+- NEVER let linarith/nlinarith/norm_num see a `(10:ℝ)^(huge:ℕ)` atom — kernel panic
+  ("Nat.pow exponent is too big") or silent failure. `generalize` it or use pure lemma
+  application (`ten_pow_mono` + small-ℕ norm_num).
+- `let A := …` in proofs breaks linarith atom-matching vs lemmas stated with the
+  unfolded term — cross the let boundary only with exact/calc.
+- `rw [Real.rpow_add]` grabs wrong occurrences (any `x^(y+z)`); use `rpow_add_one`
+  after a shaping `show`-rw. `rw [Real.rpow_natCast]` BEFORE `push_cast`.
+- One-step `calc` with a multiline `by` block + `change … ≤ _` broke the parser once —
+  use plain tactic blocks and explicit change targets.
