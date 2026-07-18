@@ -1404,3 +1404,20 @@ node `encWindowIter_le_tenTower_add_six` `+6 → +2`, then the Sec6/Sec3 climb (
 **Next (lap 4):** the cubic node `encWindowIter_le_tenTower_add_six` `+6 → +2`, then the
 Sec6/Sec3 climb (`mainDecayExponent`, `hold_weight_expect` chain, `C_renewalWhite` …
 `C_tao_assembled`), `check28`, discharge LAST.
+
+### Lap 4 (2026-07-18) — cubic node retightened +6 → +2 ✅
+
+- New `encWindowIter_le_tenTower_add_two`: `enc+1 ≤ B^{3^{i+1}}`, `B ≤ 10^{A+K+6}`
+  (via `self_le_ten_rpow`), `3^{i+1} ≤ 10^{(i+1)/2}` (3 ≤ √10), and
+  `(2T+6)·10^{(T+1)/2} ≤ 10^T` for `T = tenTower h ≥ 10` (via `(T+1)²/4 ≤ e^{T-1} ≤
+  10^{(T-1)/2}`, needs `log 10 ≥ 2`). Bank: `two_le_log_ten`, `exp_le_ten_rpow`,
+  `self_le_ten_rpow`. Old `add_six` now a corollary.
+- Gotchas: `Real.rpow_add` rw pattern `?x^(?y+?z)` grabs the WRONG occurrence when the
+  goal has several rpow sums (use `rpow_add_one` after a shaping `show`-rw);
+  `rw [Real.rpow_natCast]` BEFORE `push_cast` or the cast shape is destroyed.
+
+**Next (lap 5):** the Sec6/Sec3 climb (currently 19 → 62, lines ~880+ in
+BigCTower.lean): `mainDecayExponent`, `hold_weight_expect` chain (`K/M1/T` witnesses,
+the `1/δ ≈ 10^3000` factor — this is where the REAL `10^3010` top exponent lives),
+`C_renewalWhite`, Sec6 oscillation constants, Sec3/Syracuse spine, then
+`C_tao_assembled_le` at the proved height; `check28`; discharge LAST.

@@ -90,49 +90,121 @@ theorem encWindowIter_cast_add_one_le (A : ℝ) (K i : ℕ) :
           have hp : 1 ≤ (3 : ℕ) ^ (i + 1) := one_le_pow₀ (by omega)
           omega
 
-/-- Once its coefficient, additive parameter, and iteration count fit below one tower
-level, the entire cubic recurrence fits six levels higher.  The height increase is
-independent of the (possibly astronomical) number of iterations. -/
+/-- The retightened cubic node (Tier-1): the recurrence costs TWO tower levels, not six.
+`enc + 1 ≤ B^{3^{i+1}}` with `B ≤ 10^{A+K+6}` and `3^{i+1} ≤ 10^{(i+1)/2}`, so the
+total decimal exponent is `(A+K+6)·10^{(i+1)/2} ≤ (2T+6)·10^{(T+1)/2} ≤ 10^T` for
+`T = tenTower h ≥ 10` — one level for the exponent, one for the power.  The height
+increase stays independent of the (possibly astronomical) iteration count. -/
+theorem encWindowIter_le_tenTower_add_two {A : ℝ} {K i : ℕ} (h : ℕ)
+    (hA : 0 ≤ A) (hAT : A ≤ tenTower h)
+    (hKT : (K : ℝ) ≤ tenTower h) (hiT : (i : ℝ) ≤ tenTower h) :
+    ((encWindowIter A K i : ℕ) : ℝ) + 1 ≤ tenTower (h + 2) := by
+  have hT10 : (10 : ℝ) ≤ tenTower h := ten_le_tenTower h
+  have hT0 : (0 : ℝ) < tenTower h := tenTower_pos h
+  set T := tenTower h with hTdef
+  have hK0 : (0 : ℝ) ≤ (K : ℝ) := by positivity
+  have hs0 : (0 : ℝ) ≤ A + (K : ℝ) + 6 := by linarith
+  have hB : encWindowBase A K ≤ (10 : ℝ) ^ (A + (K : ℝ) + 6) := by
+    have h4 : (4 : ℝ) ^ A ≤ (10 : ℝ) ^ A :=
+      Real.rpow_le_rpow (by norm_num) (by norm_num) hA
+    have h10A : (10 : ℝ) ^ A ≤ (10 : ℝ) ^ (A + (K : ℝ) + 5) :=
+      Real.rpow_le_rpow_of_exponent_le (by norm_num) (by linarith)
+    have hK5 : (K : ℝ) + 5 ≤ (10 : ℝ) ^ (A + (K : ℝ) + 5) :=
+      (self_le_ten_rpow (by linarith)).trans
+        (Real.rpow_le_rpow_of_exponent_le (by norm_num) (by linarith))
+    have hy0 : (0 : ℝ) < (10 : ℝ) ^ (A + (K : ℝ) + 5) :=
+      Real.rpow_pos_of_pos (by norm_num) _
+    have hsum : encWindowBase A K ≤ 2 * (10 : ℝ) ^ (A + (K : ℝ) + 5) := by
+      unfold encWindowBase
+      have := h4.trans h10A
+      linarith
+    calc
+      encWindowBase A K ≤ 2 * (10 : ℝ) ^ (A + (K : ℝ) + 5) := hsum
+      _ ≤ 10 * (10 : ℝ) ^ (A + (K : ℝ) + 5) := by nlinarith
+      _ = (10 : ℝ) ^ (A + (K : ℝ) + 6) := by
+          rw [show A + (K : ℝ) + 6 = (A + (K : ℝ) + 5) + 1 by ring,
+            Real.rpow_add_one (by norm_num : (10 : ℝ) ≠ 0)]
+          ring
+  have hE : (((3 : ℕ) ^ (i + 1) - 1 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (((i : ℝ) + 1) / 2) := by
+    have hsqrt3 : (3 : ℝ) ≤ (10 : ℝ) ^ ((1 : ℝ) / 2) := by
+      rw [← Real.sqrt_eq_rpow]
+      nlinarith [Real.sq_sqrt (show (0 : ℝ) ≤ 10 by norm_num), Real.sqrt_nonneg 10]
+    calc
+      (((3 : ℕ) ^ (i + 1) - 1 : ℕ) : ℝ)
+          ≤ (((3 : ℕ) ^ (i + 1) : ℕ) : ℝ) := by
+            exact_mod_cast Nat.sub_le ((3 : ℕ) ^ (i + 1)) 1
+      _ = (3 : ℝ) ^ ((i + 1 : ℕ) : ℝ) := by
+          rw [Real.rpow_natCast]
+          push_cast
+          ring
+      _ ≤ ((10 : ℝ) ^ ((1 : ℝ) / 2)) ^ ((i + 1 : ℕ) : ℝ) :=
+          Real.rpow_le_rpow (by norm_num) hsqrt3 (by positivity)
+      _ = (10 : ℝ) ^ (((i : ℝ) + 1) / 2) := by
+          rw [← Real.rpow_mul (by norm_num)]
+          congr 1
+          push_cast
+          ring
+  have hBE : ((encWindowIter A K i : ℕ) : ℝ) + 1
+      ≤ (10 : ℝ) ^ ((A + (K : ℝ) + 6) * (10 : ℝ) ^ (((i : ℝ) + 1) / 2)) := by
+    refine (encWindowIter_cast_add_one_le A K i).trans ?_
+    have hB0 : (0 : ℝ) ≤ encWindowBase A K :=
+      (encWindowBase_one_le A K).trans' zero_le_one
+    calc
+      encWindowBase A K ^ ((3 : ℕ) ^ (i + 1) - 1)
+          ≤ ((10 : ℝ) ^ (A + (K : ℝ) + 6)) ^ ((3 : ℕ) ^ (i + 1) - 1) :=
+            pow_le_pow_left₀ hB0 hB _
+      _ = (10 : ℝ) ^ ((A + (K : ℝ) + 6) * (((3 : ℕ) ^ (i + 1) - 1 : ℕ) : ℝ)) := by
+          rw [← Real.rpow_natCast ((10 : ℝ) ^ (A + (K : ℝ) + 6)) _,
+            ← Real.rpow_mul (by norm_num)]
+      _ ≤ (10 : ℝ) ^ ((A + (K : ℝ) + 6) * (10 : ℝ) ^ (((i : ℝ) + 1) / 2)) :=
+          Real.rpow_le_rpow_of_exponent_le (by norm_num)
+            (mul_le_mul_of_nonneg_left hE hs0)
+  have hfinal : (A + (K : ℝ) + 6) * (10 : ℝ) ^ (((i : ℝ) + 1) / 2)
+      ≤ tenTower (h + 1) := by
+    have h1 : A + (K : ℝ) + 6 ≤ 2 * T + 6 := by linarith
+    have h2 : (10 : ℝ) ^ (((i : ℝ) + 1) / 2) ≤ (10 : ℝ) ^ ((T + 1) / 2) :=
+      Real.rpow_le_rpow_of_exponent_le (by norm_num) (by linarith)
+    have h3 : 2 * T + 6 ≤ (10 : ℝ) ^ ((T - 1) / 2) := by
+      have hexp : (T + 1) / 2 ≤ Real.exp ((T - 1) / 2) := by
+        have := Real.add_one_le_exp ((T - 1) / 2)
+        linarith
+      have hsq : ((T + 1) / 2) ^ (2 : ℕ) ≤ Real.exp ((T - 1) / 2) ^ (2 : ℕ) :=
+        pow_le_pow_left₀ (by linarith) hexp 2
+      have hexp2 : Real.exp ((T - 1) / 2) ^ (2 : ℕ) = Real.exp (T - 1) := by
+        rw [← Real.exp_nat_mul]
+        congr 1
+        push_cast
+        ring
+      rw [hexp2] at hsq
+      have hten : Real.exp (T - 1) ≤ (10 : ℝ) ^ ((T - 1) / 2) := by
+        rw [Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 10)]
+        exact Real.exp_le_exp.mpr (by nlinarith [two_le_log_ten])
+      nlinarith [mul_nonneg (show (0 : ℝ) ≤ T - 10 by linarith)
+        (show (0 : ℝ) ≤ T by linarith)]
+    calc
+      (A + (K : ℝ) + 6) * (10 : ℝ) ^ (((i : ℝ) + 1) / 2)
+          ≤ (2 * T + 6) * (10 : ℝ) ^ ((T + 1) / 2) :=
+            mul_le_mul h1 h2 (by positivity) (by linarith)
+      _ ≤ (10 : ℝ) ^ ((T - 1) / 2) * (10 : ℝ) ^ ((T + 1) / 2) :=
+            mul_le_mul_of_nonneg_right h3 (by positivity)
+      _ = (10 : ℝ) ^ T := by
+          rw [← Real.rpow_add (by norm_num)]
+          ring_nf
+      _ = tenTower (h + 1) := (tenTower_succ h).symm
+  refine hBE.trans ?_
+  calc
+    (10 : ℝ) ^ ((A + (K : ℝ) + 6) * (10 : ℝ) ^ (((i : ℝ) + 1) / 2))
+        ≤ (10 : ℝ) ^ tenTower (h + 1) :=
+          Real.rpow_le_rpow_of_exponent_le (by norm_num) hfinal
+    _ = tenTower (h + 2) := (tenTower_succ (h + 1)).symm
+
+/-- The pre-tightening interface (`+6`), now a corollary of the honest `+2`. -/
 theorem encWindowIter_le_tenTower_add_six {A : ℝ} {K i : ℕ} (h : ℕ)
     (hA : 0 ≤ A) (hAT : A ≤ tenTower h)
     (hKT : (K : ℝ) ≤ tenTower h) (hiT : (i : ℝ) ≤ tenTower h) :
-    ((encWindowIter A K i : ℕ) : ℝ) + 1 ≤ tenTower (h + 6) := by
-  have h4T : (4 : ℝ) ≤ tenTower h :=
-    (show (4 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower h)
-  have hq : (4 : ℝ) ^ A ≤ tenTower (h + 2) :=
-    rpow_le_tenTower_add_two h (by norm_num) hA h4T hAT
-  have hK2 : (K : ℝ) ≤ tenTower (h + 2) :=
-    hKT.trans (tenTower_mono (by omega))
-  have h52 : (5 : ℝ) ≤ tenTower (h + 2) :=
-    (show (5 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower (h + 2))
-  have hqK : (4 : ℝ) ^ A + K ≤ tenTower ((h + 2) + 1) :=
-    tenTower_add_le_succ (h + 2) (Real.rpow_nonneg (by norm_num) _) (by positivity) hq hK2
-  have hB : encWindowBase A K ≤ tenTower (h + 4) := by
-    unfold encWindowBase
-    exact tenTower_add_le_succ (h + 3) (by positivity) (by norm_num)
-      (hqK.trans (tenTower_mono (by omega)))
-      (h52.trans (tenTower_mono (by omega)))
-  have hi1 : ((i + 1 : ℕ) : ℝ) ≤ tenTower (h + 1) := by
-    push_cast
-    exact tenTower_add_le_succ h (by positivity) (by norm_num) hiT (tenTower_one_le h)
-  have h3 : (3 : ℝ) ≤ tenTower (h + 1) :=
-    (show (3 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower (h + 1))
-  have h3pow : ((3 : ℝ) ^ (i + 1 : ℕ)) ≤ tenTower (h + 3) := by
-    rw [← Real.rpow_natCast]
-    exact rpow_le_tenTower_add_two (h + 1) (by norm_num) (by positivity) h3 hi1
-  have hE : (((3 : ℕ) ^ (i + 1) - 1 : ℕ) : ℝ) ≤ tenTower (h + 3) := by
-    calc
-      (((3 : ℕ) ^ (i + 1) - 1 : ℕ) : ℝ) ≤ (((3 : ℕ) ^ (i + 1) : ℕ) : ℝ) := by
-        exact_mod_cast Nat.sub_le ((3 : ℕ) ^ (i + 1)) 1
-      _ = (3 : ℝ) ^ (i + 1 : ℕ) := by norm_num
-      _ ≤ tenTower (h + 3) := h3pow
-  have hBE : encWindowBase A K ^ ((3 : ℕ) ^ (i + 1) - 1)
-      ≤ tenTower (h + 6) := by
-    rw [← Real.rpow_natCast]
-    exact rpow_le_tenTower_add_two (h + 4)
-      ((encWindowBase_one_le A K).trans' zero_le_one) (by positivity) hB
-      (hE.trans (tenTower_mono (by omega)))
-  exact (encWindowIter_cast_add_one_le A K i).trans hBE
+    ((encWindowIter A K i : ℕ) : ℝ) + 1 ≤ tenTower (h + 6) :=
+  (encWindowIter_le_tenTower_add_two h hA hAT hKT hiT).trans
+    (tenTower_mono (by omega))
 
 /-! ## Exact rates on the §7 constant spine -/
 

@@ -226,6 +226,23 @@ theorem rpow_le_tenTower_succ {x t : ℝ} (h : ℕ)
           mul_le_mul_of_nonneg_left htT (tenTower_pos h).le
         _ ≤ tenTower (h + 1) := tenTower_sq_le_succ h
 
+/-! ### Real-exponent ten-power facts (for the cubic-recurrence node) -/
+
+theorem two_le_log_ten : (2 : ℝ) ≤ Real.log 10 := by
+  rw [Real.le_log_iff_exp_le (by norm_num : (0 : ℝ) < 10)]
+  have h1 : Real.exp 1 < 2.7182818286 := Real.exp_one_lt_d9
+  have h2 : Real.exp 2 = Real.exp 1 * Real.exp 1 := by
+    rw [← Real.exp_add]
+    norm_num
+  nlinarith [Real.exp_pos 1]
+
+theorem exp_le_ten_rpow {x : ℝ} (hx : 0 ≤ x) : Real.exp x ≤ (10 : ℝ) ^ x := by
+  rw [Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 10)]
+  exact Real.exp_le_exp.mpr (by nlinarith [two_le_log_ten])
+
+theorem self_le_ten_rpow {x : ℝ} (hx : 0 ≤ x) : x ≤ (10 : ℝ) ^ x :=
+  le_trans (by linarith [Real.add_one_le_exp x]) (exp_le_ten_rpow hx)
+
 /-! ### Ten-power leaf accounting -/
 
 /-- Multiply two explicit ten-power budgets: exponents add, no tower level spent. -/
