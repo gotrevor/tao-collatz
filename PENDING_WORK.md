@@ -1371,3 +1371,23 @@ executed; (2) Zulip follow-up "C landed, as a tower" (Ren drafts / Trevor posts)
 (`C_fpCol` 9→3ish, `C_fpHeight*`, `C_encSep`, `C_encTri`, `C_estarUnion`, `A0_fewEstar`)
 via the same ten-power accounting; then the cubic node `encWindowIter_le_tenTower_add_six`
 `+6 → +2`; then the Sec6/Sec3 climb; `check28`; discharge LAST.
+
+### Lap 2 (2026-07-18) — first-passage cluster converted ✅ (commit a26079c)
+
+- Bank additions: `add_le_ten_pow`, `ten_pow_mono`, `natCast_le_tenTower_one/two`,
+  `ten_pow_le_tenTower_two/three` (cash a `10^a` budget at tT2 for `a ≤ 10^10`, tT3 for
+  `a ≤ 10^30`).
+- Honest heights landed: `C_fpLocation ≤ 10^74`, `C_fpCol 10^79`, `C_fpHeight 10^84`,
+  `C_fpColDev 10^85`, `C_fpHeightTail 10^85`, `C_fpColTail 10^86`, `C_encSep 10^89`
+  — all `≤ tenTower 2`; `C_encTri ≤ 10^(10^27+4)`, `C_estarUnion ≤ 10^(10^27+5)`
+  — `≤ tenTower 3` (the `exp(c_fpHeightTail·M_encTri) ≈ exp(2×10²²)` term is REAL
+  height; tT2 is impossible for these two). Old `_le_tenTower_N` names kept as
+  corollaries → zero downstream edits.
+- **Gotcha (recorded in code comment)**: any linarith/norm_num over a
+  `(10:ℝ)^(10^27:ℕ)` atom panics the kernel ("Nat.pow exponent is too big") trying to
+  evaluate the numeral. `generalize hB : (10:ℝ)^(10^27:ℕ) = B` first, then linarith.
+
+**Next (lap 3):** `A0_fewEstar` sub-chain (`A0_estarUnion`, `Kthr_estarScaled`,
+`Warg_estarScaled` → `A0_fewEstar`, currently 17-19 → should be tT3-ish), then the cubic
+node `encWindowIter_le_tenTower_add_six` `+6 → +2`, then the Sec6/Sec3 climb (lines
+~740+), `check28`, discharge LAST.
