@@ -7,12 +7,12 @@ import Mathlib
 /-!
 # Explicit constants: the exponent `cTao` and the `tenTower` vocabulary
 
-A Mathlib-only leaf (no TaoCollatz imports): the two ingredients needed to *state* the
-fully-explicit Theorem 3.1 — the concrete exponent `cTao` and the tower-of-tens
-vocabulary behind the concrete constant `CTao := tenTower 62` (defined in
-`Statement.lean`, the trusted surface).  This file sits below the whole development so
-the trusted surface and the proof engine (`ExplicitBigC.lean`, `BigCTower.lean`) share
-one definition.
+A Mathlib-only leaf (no TaoCollatz imports): the concrete exponent `cTao` and the
+tower-of-tens vocabulary behind the concrete constant `CTao` (defined in
+`Statement.lean`, the trusted surface, as Mathlib's `hyperoperation 4 10 63`; the
+`tenTower` calculus here feeds the ceiling proof in `BigCTower.lean` and connects via
+`tenTower_sixty_two_eq_hyperoperation`).  This file sits below the whole development so
+the trusted surface and the proof engine share one definition.
 
 The tower uses real powers, so even very large heights remain symbolic: Lean never
 expands an astronomical natural numeral.
@@ -23,7 +23,7 @@ namespace TaoCollatz
 /-- The explicit exponent — OUR augmentation, beyond the paper: the collapse of the
 development's witness min-tree, mirrored in exact arithmetic by `tools/check_blueprint.py`
 (check 16). -/
-noncomputable def cTao : ℝ := 1 / (640000000 * Real.log 2)
+noncomputable def cTao : ℝ := 1 / (640_000_000 * Real.log 2)
 
 /-- `tenTower h` is a tower of `h + 1` tens, evaluated with `Real.rpow`.
 

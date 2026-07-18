@@ -51,7 +51,7 @@ theorem CTao_pos : 0 < CTao := by
   exact tenTower_pos 62
 
 /-- **Theorem 3.1, fully-explicit form** (our augmentation): Theorem 3.1 holds with BOTH
-parameters concrete — one may take `c = cTao = 1/(640000000 log 2)` and
+parameters concrete — one may take `c = cTao = 1/(640_000_000 log 2)` and
 `C = CTao = 10↑↑63` — the explicit values asked for by
 [MO 341570](https://mathoverflow.net/questions/341570). -/
 theorem tao_collatz_quantitative_fully_explicit :
