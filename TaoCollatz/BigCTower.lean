@@ -2191,6 +2191,113 @@ private theorem geomDenInv_le_tenTower_succ {r : ℝ} (h : ℕ)
   exact hraw.trans (tenTower_add_le_succ h (by norm_num) (inv_nonneg.2 hr.le)
     (tenTower_one_le h) hrinv)
 
+/-! ### Level-1 threshold kit: the generic `T_*` combinators with decimal budgets.
+Mirrors the `_le_tenTower_add_*` combinators above, but exponent-additive — no tower
+level is ever spent, so the honest decimal heights survive the composition. -/
+
+private theorem T_logLin_cast_le_ten_pow {ε : ℝ} {a : ℕ}
+    (hε : 0 < ε) (hεinv : ε⁻¹ ≤ (10 : ℝ) ^ a) :
+    ((T_logLin ε : ℕ) : ℝ) ≤ (10 : ℝ) ^ (2 * a + 4) := by
+  have hbaseEq : 2 / ε = 2 * ε⁻¹ := by ring
+  have hbase : 2 / ε ≤ (10 : ℝ) ^ (a + 1) := by
+    rw [hbaseEq]
+    exact (mul_le_ten_pow (inv_nonneg.2 hε.le)
+      (by norm_num : (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) hεinv).trans
+      (ten_pow_mono (by omega))
+  have hbase0 : 0 ≤ 2 / ε := div_nonneg (by norm_num) hε.le
+  have hsq : (2 / ε) ^ (2 : ℕ) ≤ (10 : ℝ) ^ (2 * a + 2) := by
+    rw [pow_two]
+    exact (mul_le_ten_pow hbase0 hbase hbase).trans (ten_pow_mono (by omega))
+  have hceil : ((⌈(2 / ε) ^ (2 : ℕ)⌉₊ : ℕ) : ℝ) ≤ (10 : ℝ) ^ (2 * a + 3) :=
+    (natCeil_le_ten_pow_succ hsq).trans (ten_pow_mono (by omega))
+  unfold T_logLin
+  push_cast
+  exact (add_le_ten_pow hceil (one_le_pow₀ (by norm_num))).trans
+    (ten_pow_mono (by omega))
+
+private theorem T_expNeg_cast_le_ten_pow {ρ b : ℝ} {a : ℕ}
+    (hρ : 0 < ρ) (hb : 0 < b)
+    (hρinv : ρ⁻¹ ≤ (10 : ℝ) ^ a) (hbinv : b⁻¹ ≤ (10 : ℝ) ^ a) :
+    ((T_expNeg ρ b : ℕ) : ℝ) ≤ (10 : ℝ) ^ (2 * a + 1) := by
+  have hlog : Real.log b⁻¹ ≤ (10 : ℝ) ^ a :=
+    (Real.log_le_self (inv_nonneg.2 hb.le)).trans hbinv
+  have hquot : Real.log b⁻¹ / ρ ≤ (10 : ℝ) ^ (2 * a) := by
+    rw [div_eq_mul_inv]
+    exact (mul_le_ten_pow (inv_nonneg.2 hρ.le) hlog hρinv).trans
+      (ten_pow_mono (by omega))
+  unfold T_expNeg
+  exact (natCeil_le_ten_pow_succ hquot).trans (ten_pow_mono (by omega))
+
+/-- Small-argument `T_logSq`: for `b ≤ a` with `a` a small numeral,
+`⌈exp(√(max b 0))⌉₊ ≤ 10^(a+2)` stays level-1. -/
+private theorem T_logSq_cast_le_ten_pow_small {b : ℝ} {a : ℕ}
+    (hb : b ≤ (a : ℝ)) : ((T_logSq b : ℕ) : ℝ) ≤ (10 : ℝ) ^ (a + 2) := by
+  have hm0 : 0 ≤ max b 0 := le_max_right _ _
+  have hm : max b 0 ≤ (a : ℝ) := max_le hb (by positivity)
+  have hs : Real.sqrt (max b 0) ≤ ((a + 1 : ℕ) : ℝ) := by
+    push_cast
+    calc
+      Real.sqrt (max b 0) ≤ max b 0 + 1 := sqrt_le_add_one hm0
+      _ ≤ (a : ℝ) + 1 := by linarith
+  have he : Real.exp (Real.sqrt (max b 0)) ≤ (10 : ℝ) ^ (a + 1) :=
+    exp_le_ten_pow hs
+  unfold T_logSq
+  exact (natCeil_le_ten_pow_succ he).trans (ten_pow_mono (by omega))
+
+private theorem geomDenInv_le_ten_pow {r : ℝ} {a : ℕ}
+    (hr : 0 < r) (hrinv : r⁻¹ ≤ (10 : ℝ) ^ a) :
+    (1 - Real.exp (-r))⁻¹ ≤ (10 : ℝ) ^ (a + 1) := by
+  have hraw : (1 - Real.exp (-r))⁻¹ ≤ 1 + r⁻¹ := by
+    simpa [one_div] using one_div_one_sub_exp_neg_le hr
+  exact hraw.trans ((add_le_ten_pow (one_le_pow₀ (by norm_num)) hrinv).trans
+    (ten_pow_mono (by omega)))
+
+/-- `delta_case2⁻¹` in honest level-1 form: `≤ 10^3001` (the same `epsBW⁻³` seat as
+`deltaBW`). -/
+private theorem delta_case2_inv_le_ten_pow :
+    delta_case2⁻¹ ≤ (10 : ℝ) ^ (3001 : ℕ) := by
+  let x : ℝ := (epsBW : ℝ) ^ (3 : ℕ)
+  have hx0 : 0 < x := by dsimp [x]; norm_num [epsBW]
+  have heps0 : 0 ≤ (epsBW : ℝ) := by norm_num [epsBW]
+  have heps1 : (epsBW : ℝ) ≤ 1 := by
+    have hepsEq : (epsBW : ℝ) = ((10 : ℝ) ^ (1000 : ℕ))⁻¹ := by
+      norm_num [epsBW]
+    rw [hepsEq]
+    exact (inv_le_one₀ (by positivity)).2 (one_le_pow₀ (by norm_num))
+  have hx1 : x ≤ 1 := by dsimp [x]; exact pow_le_one₀ heps0 heps1
+  have hexp : 1 + x ≤ Real.exp x := by simpa [add_comm] using Real.add_one_le_exp x
+  have hinvExp : Real.exp (-x) ≤ 1 / (1 + x) := by
+    rw [Real.exp_neg]
+    simpa [one_div] using one_div_le_one_div_of_le (by linarith : 0 < 1 + x) hexp
+  have hfrac : x / 2 ≤ x / (1 + x) := by
+    rw [div_le_div_iff₀ (by norm_num : (0 : ℝ) < 2) (by linarith : 0 < 1 + x)]
+    nlinarith
+  have hident : x / (1 + x) = 1 - 1 / (1 + x) := by
+    have hne : 1 + x ≠ 0 := ne_of_gt (by linarith : 0 < 1 + x)
+    field_simp [hne]
+    ring
+  have hone : x / 2 ≤ 1 - Real.exp (-x) := by
+    rw [hident] at hfrac
+    linarith
+  have hδ : 3 * x / 16 ≤ delta_case2 := by
+    dsimp [x] at hone ⊢
+    unfold delta_case2 p_whiteExit
+    nlinarith
+  have hsmall0 : 0 < 3 * x / 16 := by positivity
+  have hinv : delta_case2⁻¹ ≤ (3 * x / 16)⁻¹ := by
+    simpa [one_div] using one_div_le_one_div_of_le hsmall0 hδ
+  have heq : (3 * x / 16)⁻¹ = (16 / 3) * x⁻¹ := by
+    field_simp [ne_of_gt hx0]
+  have hraw : (3 * x / 16)⁻¹ ≤ 6 * x⁻¹ := by
+    rw [heq]
+    have hi0 : 0 ≤ x⁻¹ := inv_nonneg.2 hx0.le
+    nlinarith
+  apply hinv.trans (hraw.trans ?_)
+  dsimp [x]
+  exact (mul_le_ten_pow (inv_nonneg.2 (pow_nonneg heps0 3))
+    (by norm_num : (6 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) epsBW_cube_inv_le_ten_pow).trans
+    (ten_pow_mono (by norm_num))
+
 private theorem log_one_add_half_inv_le_four_mul_inv {d : ℝ}
     (hd : 0 < d) (hd2 : d ≤ 2) :
     (Real.log (1 + d / 2))⁻¹ ≤ 4 * d⁻¹ := by
@@ -2635,6 +2742,207 @@ private theorem T_holdTail_main_case2_cast_le_tenTower_eleven :
     exact tenTower_add_le_succ 10 (by positivity) (by positivity)
       (hs1.trans (tenTower_mono (by omega)))
       (hExp.trans (tenTower_mono (by omega)))
+  unfold T_holdTail
+  simpa [A, d, ρ, ε] using hfinal
+
+/-- `T_fstTail` at the case-2 arguments in honest level-1 form: `≤ 10^6191`.
+The `T_expNeg` arm dominates via `b⁻¹ = den·d⁻¹ ≤ 10^92·10^3002`. -/
+private theorem T_fstTail_main_case2_cast_le_ten_pow :
+    ((T_fstTail (mainDecayExponent 3.7) (delta_case2 / 4) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (6191 : ℕ) := by
+  let A : ℝ := mainDecayExponent 3.7
+  let c : ℝ := c_fpLocation
+  let C : ℝ := C_fpCol
+  let g : ℝ := min c (c ^ (2 : ℕ) / 20)
+  let d : ℝ := delta_case2 / 4
+  let ε : ℝ := g / 2 / (16 * A)
+  let ρ : ℝ := g / 2 / 16
+  let s₁ : ℝ := c ^ (2 : ℕ) / 20 - g / 2
+  let s₂ : ℝ := c - g / 2
+  have hA0 : 0 < A := by dsimp [A]; exact mainDecayExponent_pos 3.7 (by norm_num)
+  have hA : A ≤ (10 : ℝ) ^ (8 : ℕ) := mainDecayExponent_37_le_ten_pow
+  have hc0 : 0 < c := by dsimp [c]; exact c_fpLocation_pos
+  have hgEq : g = (1 : ℝ) / 3276800000 := by
+    dsimp [g, c]
+    norm_num [c_fpLocation_eq, min_def]
+  have hg0 : 0 < g := by rw [hgEq]; norm_num
+  have hgInv : g⁻¹ ≤ (10 : ℝ) ^ (10 : ℕ) := by
+    rw [hgEq]
+    norm_num
+  have hε0 : 0 < ε := by dsimp [ε]; positivity
+  have hεInvEq : ε⁻¹ = 32 * A * g⁻¹ := by
+    dsimp [ε]
+    field_simp [ne_of_gt hg0, ne_of_gt hA0]
+    ring
+  have h32A : 32 * A ≤ (10 : ℝ) ^ (10 : ℕ) :=
+    (mul_le_ten_pow hA0.le
+      (by norm_num : (32 : ℝ) ≤ (10 : ℝ) ^ (2 : ℕ)) hA).trans
+      (ten_pow_mono (by norm_num))
+  have hεInv : ε⁻¹ ≤ (10 : ℝ) ^ (20 : ℕ) := by
+    rw [hεInvEq]
+    exact (mul_le_ten_pow (inv_nonneg.2 hg0.le) h32A hgInv).trans
+      (ten_pow_mono (by norm_num))
+  have hLogLin : ((T_logLin ε : ℕ) : ℝ) ≤ (10 : ℝ) ^ (44 : ℕ) :=
+    T_logLin_cast_le_ten_pow hε0 hεInv
+  have hρ0 : 0 < ρ := by dsimp [ρ]; positivity
+  have hρInvEq : ρ⁻¹ = 32 * g⁻¹ := by
+    dsimp [ρ]
+    field_simp [ne_of_gt hg0]
+    norm_num
+  have hρInv : ρ⁻¹ ≤ (10 : ℝ) ^ (12 : ℕ) := by
+    rw [hρInvEq]
+    exact (mul_le_ten_pow (inv_nonneg.2 hg0.le)
+      (by norm_num : (32 : ℝ) ≤ (10 : ℝ) ^ (2 : ℕ)) hgInv).trans
+      (ten_pow_mono (by norm_num))
+  have hs₁Eq : s₁ = (1 : ℝ) / 6553600000 := by
+    dsimp [s₁, g, c]
+    norm_num [c_fpLocation_eq, min_def]
+  have hs₂Eq : s₂ = (511999 : ℝ) / 6553600000 := by
+    dsimp [s₂, g, c]
+    norm_num [c_fpLocation_eq, min_def]
+  have hs₁0 : 0 < s₁ := by rw [hs₁Eq]; norm_num
+  have hs₂0 : 0 < s₂ := by rw [hs₂Eq]; norm_num
+  have hs₁Inv : s₁⁻¹ ≤ (10 : ℝ) ^ (10 : ℕ) := by
+    rw [hs₁Eq]
+    norm_num
+  have hs₂Inv : s₂⁻¹ ≤ (10 : ℝ) ^ (10 : ℕ) := by
+    rw [hs₂Eq]
+    norm_num
+  have hgeom1 : (1 - Real.exp (-s₁))⁻¹ ≤ (10 : ℝ) ^ (11 : ℕ) :=
+    geomDenInv_le_ten_pow hs₁0 hs₁Inv
+  have hgeom2 : (1 - Real.exp (-s₂))⁻¹ ≤ (10 : ℝ) ^ (11 : ℕ) :=
+    geomDenInv_le_ten_pow hs₂0 hs₂Inv
+  have hgeom10 : 0 ≤ (1 - Real.exp (-s₁))⁻¹ := by
+    have h : 0 < 1 - Real.exp (-s₁) := by
+      rw [sub_pos, Real.exp_lt_one_iff]
+      linarith
+    positivity
+  have hgeom20 : 0 ≤ (1 - Real.exp (-s₂))⁻¹ := by
+    have h : 0 < 1 - Real.exp (-s₂) := by
+      rw [sub_pos, Real.exp_lt_one_iff]
+      linarith
+    positivity
+  have hgeom : (1 - Real.exp (-s₁))⁻¹ + (1 - Real.exp (-s₂))⁻¹
+      ≤ (10 : ℝ) ^ (12 : ℕ) :=
+    (add_le_ten_pow hgeom1 hgeom2).trans (ten_pow_mono (by norm_num))
+  have hCgeom : C * ((1 - Real.exp (-s₁))⁻¹ + (1 - Real.exp (-s₂))⁻¹)
+      ≤ (10 : ℝ) ^ (91 : ℕ) :=
+    (mul_le_ten_pow (add_nonneg hgeom10 hgeom20)
+      (by dsimp [C]; exact C_fpCol_le_ten_pow) hgeom).trans
+      (ten_pow_mono (by norm_num))
+  let den : ℝ := 1 + C * ((1 - Real.exp (-s₁))⁻¹ + (1 - Real.exp (-s₂))⁻¹)
+  have hden0 : 0 < den := by
+    have hp : 0 ≤ C * ((1 - Real.exp (-s₁))⁻¹ + (1 - Real.exp (-s₂))⁻¹) :=
+      mul_nonneg (by dsimp [C]; exact C_fpCol_pos.le) (add_nonneg hgeom10 hgeom20)
+    dsimp [den]
+    linarith
+  have hden : den ≤ (10 : ℝ) ^ (92 : ℕ) := by
+    dsimp [den]
+    exact (add_le_ten_pow (one_le_pow₀ (by norm_num)) hCgeom).trans
+      (ten_pow_mono (by norm_num))
+  have hd0 : 0 < d := by dsimp [d]; positivity [delta_case2_pos]
+  have hdInvEq : d⁻¹ = 4 * delta_case2⁻¹ := by
+    dsimp [d]
+    field_simp [ne_of_gt delta_case2_pos]
+  have hdInv : d⁻¹ ≤ (10 : ℝ) ^ (3002 : ℕ) := by
+    rw [hdInvEq]
+    exact (mul_le_ten_pow (inv_nonneg.2 delta_case2_pos.le)
+      (by norm_num : (4 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) delta_case2_inv_le_ten_pow).trans
+      (ten_pow_mono (by norm_num))
+  let b : ℝ := d / den
+  have hb0 : 0 < b := by dsimp [b]; positivity
+  have hbInvEq : b⁻¹ = den * d⁻¹ := by
+    dsimp [b]
+    field_simp [ne_of_gt hd0, ne_of_gt hden0]
+  have hbInv : b⁻¹ ≤ (10 : ℝ) ^ (3094 : ℕ) := by
+    rw [hbInvEq]
+    exact (mul_le_ten_pow (inv_nonneg.2 hd0.le) hden hdInv).trans
+      (ten_pow_mono (by norm_num))
+  have hExp : ((T_expNeg ρ b : ℕ) : ℝ) ≤ (10 : ℝ) ^ (6189 : ℕ) :=
+    (T_expNeg_cast_le_ten_pow hρ0 hb0
+      (hρInv.trans (ten_pow_mono (by norm_num : (12 : ℕ) ≤ 3094)))
+      hbInv).trans (ten_pow_mono (by norm_num))
+  have hLogSq : ((T_logSq 16 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (18 : ℕ) :=
+    T_logSq_cast_le_ten_pow_small (by norm_num : (16 : ℝ) ≤ ((16 : ℕ) : ℝ))
+  have hsA : (400 : ℝ) + T_logLin ε ≤ (10 : ℝ) ^ (45 : ℕ) :=
+    (add_le_ten_pow
+      ((show (400 : ℝ) ≤ (10 : ℝ) ^ (3 : ℕ) by norm_num).trans
+        (ten_pow_mono (by norm_num))) hLogLin).trans (ten_pow_mono (by norm_num))
+  have hsB : (400 : ℝ) + T_logLin ε + T_expNeg ρ b ≤ (10 : ℝ) ^ (6190 : ℕ) :=
+    (add_le_ten_pow (hsA.trans (ten_pow_mono (by norm_num))) hExp).trans
+      (ten_pow_mono (by norm_num))
+  have hfinal : ((400 + T_logLin ε + T_expNeg ρ b + T_logSq 16 : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (6191 : ℕ) := by
+    push_cast
+    exact (add_le_ten_pow hsB
+      (hLogSq.trans (ten_pow_mono (by norm_num)))).trans
+      (ten_pow_mono (by norm_num))
+  unfold T_fstTail
+  simpa [A, c, C, g, d, ε, ρ, s₁, s₂, den, b, one_div] using hfinal
+
+/-- `T_holdTail` at the case-2 arguments in honest level-1 form: `≤ 10^6006`. -/
+private theorem T_holdTail_main_case2_cast_le_ten_pow :
+    ((T_holdTail (mainDecayExponent 3.7) (delta_case2 / 4) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (6006 : ℕ) := by
+  let A : ℝ := mainDecayExponent 3.7
+  let d : ℝ := delta_case2 / 4
+  let ρ : ℝ := Real.log (4 / 3) / 8
+  let ε : ℝ := ρ / (2 * A)
+  have hA0 : 0 < A := by dsimp [A]; exact mainDecayExponent_pos 3.7 (by norm_num)
+  have hA : A ≤ (10 : ℝ) ^ (8 : ℕ) := mainDecayExponent_37_le_ten_pow
+  have hρ0 : 0 < ρ := by
+    dsimp [ρ]
+    positivity [Real.log_pos (by norm_num : (1 : ℝ) < 4 / 3)]
+  have hρInvEq : ρ⁻¹ = 8 * (Real.log (4 / 3))⁻¹ := by
+    dsimp [ρ]
+    field_simp [ne_of_gt (Real.log_pos (by norm_num : (1 : ℝ) < 4 / 3))]
+  have hρInv : ρ⁻¹ ≤ (10 : ℝ) ^ (2 : ℕ) := by
+    rw [hρInvEq]
+    have h32 : (8 : ℝ) * (Real.log (4 / 3))⁻¹ ≤ 32 := by
+      nlinarith [log_four_thirds_inv_le_four]
+    exact h32.trans (by norm_num)
+  have hε0 : 0 < ε := by dsimp [ε]; positivity
+  have hεInvEq : ε⁻¹ = 2 * A * ρ⁻¹ := by
+    dsimp [ε]
+    field_simp [ne_of_gt hρ0, ne_of_gt hA0]
+  have h2A : 2 * A ≤ (10 : ℝ) ^ (9 : ℕ) :=
+    (mul_le_ten_pow hA0.le
+      (by norm_num : (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) hA).trans
+      (ten_pow_mono (by norm_num))
+  have hεInv : ε⁻¹ ≤ (10 : ℝ) ^ (11 : ℕ) := by
+    rw [hεInvEq]
+    exact (mul_le_ten_pow (inv_nonneg.2 hρ0.le) h2A hρInv).trans
+      (ten_pow_mono (by norm_num))
+  have hLog : ((T_logLin ε : ℕ) : ℝ) ≤ (10 : ℝ) ^ (26 : ℕ) :=
+    T_logLin_cast_le_ten_pow hε0 hεInv
+  have hd0 : 0 < d := by dsimp [d]; positivity [delta_case2_pos]
+  have hdInvEq : d⁻¹ = 4 * delta_case2⁻¹ := by
+    dsimp [d]
+    field_simp [ne_of_gt delta_case2_pos]
+  have hdInv : d⁻¹ ≤ (10 : ℝ) ^ (3002 : ℕ) := by
+    rw [hdInvEq]
+    exact (mul_le_ten_pow (inv_nonneg.2 delta_case2_pos.le)
+      (by norm_num : (4 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) delta_case2_inv_le_ten_pow).trans
+      (ten_pow_mono (by norm_num))
+  have hExp : ((T_expNeg (ρ / 2) d : ℕ) : ℝ) ≤ (10 : ℝ) ^ (6005 : ℕ) := by
+    have hr2 : 0 < ρ / 2 := div_pos hρ0 two_pos
+    have hr2InvEq : (ρ / 2)⁻¹ = 2 * ρ⁻¹ := by field_simp [ne_of_gt hρ0]
+    have hr2Inv : (ρ / 2)⁻¹ ≤ (10 : ℝ) ^ (3 : ℕ) := by
+      rw [hr2InvEq]
+      exact (mul_le_ten_pow (inv_nonneg.2 hρ0.le)
+        (by norm_num : (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) hρInv).trans
+        (ten_pow_mono (by norm_num))
+    exact T_expNeg_cast_le_ten_pow hr2 hd0
+      (hr2Inv.trans (ten_pow_mono (by norm_num : (3 : ℕ) ≤ 3002))) hdInv
+  have hs1 : (400 : ℝ) + T_logLin ε ≤ (10 : ℝ) ^ (27 : ℕ) :=
+    (add_le_ten_pow
+      ((show (400 : ℝ) ≤ (10 : ℝ) ^ (3 : ℕ) by norm_num).trans
+        (ten_pow_mono (by norm_num))) hLog).trans (ten_pow_mono (by norm_num))
+  have hfinal : ((400 + T_logLin ε + T_expNeg (ρ / 2) d : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (6006 : ℕ) := by
+    push_cast
+    exact (add_le_ten_pow (hs1.trans (ten_pow_mono (by norm_num))) hExp).trans
+      (ten_pow_mono (by norm_num))
   unfold T_holdTail
   simpa [A, d, ρ, ε] using hfinal
 
