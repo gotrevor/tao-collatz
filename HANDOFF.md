@@ -1,4 +1,12 @@
-# HANDOFF — Tier-1 tower tightening, lap 0 (operator prep, 2026-07-18) 🗼
+# HANDOFF — Tier-1 tower tightening, lap 1 done (2026-07-18) 🗼
+
+**Lap 1 (7198777): Design B calculus bank landed + POC GATE GREEN — `C_fpLocation ≤ tenTower 2`**
+(was 8; old bound kept as corollary, downstream untouched). Bank: `prod/sum/rpow_le_tenTower_succ`
+(one level per batch; plan §2's literal signature was off-by-a-level — see PENDING_WORK lap-1 note)
++ `mul_le_ten_pow`/`exp_le_ten_pow` leaf accounting. Differ 39/39, census 1, build green.
+**Next: convert bottom-up (plan §3): Sec5/first-passage cluster (`C_fpCol` etc.), then the cubic
+node `+6 → +2`, then Sec6/Sec3, `check28`, discharge LAST.**
+
 
 **Fresh campaign.  Read `DIRECTION.md` (the directive) + `TIER1-TOWER-TIGHTENING-PLAN.md`
 (the spec) before doing anything.**  The previous campaign (assembled big-C) is ratified,
