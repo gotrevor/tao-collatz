@@ -241,68 +241,54 @@ private theorem K_sqrtExp_spine_le_tenTower_two :
       norm_num [K_sqrtExp, gamma_holdStep_eq]
     _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
 
-theorem C_fpLocation_le_tenTower_eight : C_fpLocation ≤ tenTower 8 := by
-  have harg1 : 16 * gamma_holdStep ≤ tenTower 2 := by
-    calc
-      16 * gamma_holdStep ≤ (10 : ℝ) ^ (30 : ℕ) := by
-        norm_num [gamma_holdStep_eq]
-      _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
-  have hexp1 : Real.exp (16 * gamma_holdStep) ≤ tenTower 3 :=
-    exp_le_tenTower_succ 2 harg1
-  have hfactor : 4 + 8 / gamma_holdStep ≤ tenTower 2 := by
-    calc
-      4 + 8 / gamma_holdStep ≤ (10 : ℝ) ^ (30 : ℕ) := by
-        norm_num [gamma_holdStep_eq]
-      _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
-  have harg2 : 4 * min (c_renewalMass / 2) (gamma_holdStep / 4) ≤ tenTower 2 := by
-    calc
-      4 * min (c_renewalMass / 2) (gamma_holdStep / 4)
-          ≤ (10 : ℝ) ^ (30 : ℕ) := by
-        norm_num [c_renewalMass_eq, gamma_holdStep_eq, min_def]
-      _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
-  have hexp2 : Real.exp (4 * min (c_renewalMass / 2) (gamma_holdStep / 4))
-      ≤ tenTower 3 := exp_le_tenTower_succ 2 harg2
-  have htwo : (2 : ℝ) ≤ tenTower 3 :=
-    (show (2 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 3)
-  have htwoExp : 2 * Real.exp (4 * min (c_renewalMass / 2) (gamma_holdStep / 4))
-      ≤ tenTower 4 := tenTower_mul_le_succ 3 (by norm_num) (by positivity)
-        htwo hexp2
-  have hp1 : C_renewalMass * C_holdStep ≤ tenTower 4 :=
-    tenTower_mul_le_succ 3 C_renewalMass_pos.le C_holdStep_pos.le
-      C_renewalMass_le_tenTower_three C_holdStep_le_tenTower_three
-  have hp1nonneg : 0 ≤ C_renewalMass * C_holdStep :=
-    mul_nonneg C_renewalMass_pos.le C_holdStep_pos.le
-  have hp2 : C_renewalMass * C_holdStep * Real.exp (16 * gamma_holdStep)
-      ≤ tenTower 5 :=
-    tenTower_mul_le_succ 4 hp1nonneg (Real.exp_pos _).le
-      hp1 (hexp1.trans (tenTower_mono (by omega)))
-  have hp2nonneg : 0 ≤ C_renewalMass * C_holdStep * Real.exp (16 * gamma_holdStep) :=
-    mul_nonneg hp1nonneg (Real.exp_pos _).le
-  have hfactor0 : 0 ≤ 4 + 8 / gamma_holdStep := by
+/-- POC of the Design B batched calculus: the honest height of `C_fpLocation` is 2,
+not the 8 the per-operation `_succ` climb charged.  Every factor carries an explicit
+`10 ^ a` budget, the exponents add (`mul_le_ten_pow`), and one
+`ten_pow_le_tenTower_succ` lands the whole product under `tenTower 2`. -/
+theorem C_fpLocation_le_tenTower_two : C_fpLocation ≤ tenTower 2 := by
+  have ha : 0 < (c_holdLocal / 2) ^ 2 / 2 := by
+    have := c_holdLocal_pos
+    positivity
+  have hb : 0 < c_holdLocal / 2 / 2 := by
+    have := c_holdLocal_pos
+    positivity
+  have h1 : C_renewalMass ≤ (10 : ℝ) ^ (13 + 30 : ℕ) := by
+    unfold C_renewalMass
+    exact mul_le_ten_pow (C_renewalWeight_pos ha hb).le
+      (by norm_num [C_holdLocal]) C_renewalWeight_spine_le_ten_pow_thirty
+  have h2 : C_holdStep ≤ (10 : ℝ) ^ (14 : ℕ) := by
+    norm_num [C_holdStep, C_holdLocal]
+  have h3 : Real.exp (16 * gamma_holdStep) ≤ (10 : ℝ) ^ (1 : ℕ) :=
+    exp_le_ten_pow (by norm_num [gamma_holdStep_eq])
+  have h4 : 4 + 8 / gamma_holdStep ≤ (10 : ℝ) ^ (5 : ℕ) := by
+    norm_num [gamma_holdStep_eq]
+  have h4pos : (0 : ℝ) ≤ 4 + 8 / gamma_holdStep := by
     have := gamma_holdStep_pos
     positivity
-  have hp3 : C_renewalMass * C_holdStep * Real.exp (16 * gamma_holdStep)
-      * (4 + 8 / gamma_holdStep) ≤ tenTower 6 :=
-    tenTower_mul_le_succ 5 hp2nonneg hfactor0
-      hp2 (hfactor.trans (tenTower_mono (by omega)))
-  have hp3nonneg : 0 ≤ C_renewalMass * C_holdStep * Real.exp (16 * gamma_holdStep)
-      * (4 + 8 / gamma_holdStep) := mul_nonneg hp2nonneg hfactor0
-  have htwoExp0 : 0 ≤ 2 * Real.exp
-      (4 * min (c_renewalMass / 2) (gamma_holdStep / 4)) := by positivity
-  have hp4 : C_renewalMass * C_holdStep * Real.exp (16 * gamma_holdStep)
-      * (4 + 8 / gamma_holdStep)
-      * (2 * Real.exp (4 * min (c_renewalMass / 2) (gamma_holdStep / 4)))
-      ≤ tenTower 7 :=
-    tenTower_mul_le_succ 6 hp3nonneg htwoExp0
-      hp3 (htwoExp.trans (tenTower_mono (by omega)))
-  have hp4nonneg : 0 ≤ C_renewalMass * C_holdStep * Real.exp (16 * gamma_holdStep)
-      * (4 + 8 / gamma_holdStep)
-      * (2 * Real.exp (4 * min (c_renewalMass / 2) (gamma_holdStep / 4))) :=
-    mul_nonneg hp3nonneg htwoExp0
+  have h5 : 2 * Real.exp (4 * min (c_renewalMass / 2) (gamma_holdStep / 4))
+      ≤ (10 : ℝ) ^ (1 + 1 : ℕ) :=
+    mul_le_ten_pow (Real.exp_pos _).le (by norm_num)
+      (exp_le_ten_pow (by norm_num [c_renewalMass_eq, gamma_holdStep_eq, min_def]))
+  have h5pos : (0 : ℝ)
+      ≤ 2 * Real.exp (4 * min (c_renewalMass / 2) (gamma_holdStep / 4)) := by
+    positivity
+  have h6 : K_sqrtExp (gamma_holdStep / 2) ≤ (10 : ℝ) ^ (9 : ℕ) := by
+    norm_num [K_sqrtExp, gamma_holdStep_eq]
   have hgamma2 : 0 < gamma_holdStep / 2 := div_pos gamma_holdStep_pos two_pos
-  unfold C_fpLocation
-  exact tenTower_mul_le_succ 7 hp4nonneg (K_sqrtExp_pos hgamma2).le
-    hp4 (K_sqrtExp_spine_le_tenTower_two.trans (tenTower_mono (by omega)))
+  have hprod : C_fpLocation ≤ (10 : ℝ) ^ (13 + 30 + 14 + 1 + 5 + (1 + 1) + 9 : ℕ) := by
+    unfold C_fpLocation
+    exact mul_le_ten_pow (K_sqrtExp_pos hgamma2).le
+      (mul_le_ten_pow h5pos
+        (mul_le_ten_pow h4pos
+          (mul_le_ten_pow (Real.exp_pos _).le
+            (mul_le_ten_pow C_holdStep_pos.le h1 h2) h3) h4) h5) h6
+  refine hprod.trans (ten_pow_le_tenTower_succ 1 ?_)
+  norm_num [tenTower, Real.rpow_natCast]
+
+/-- The pre-tightening bound, kept as the interface the downstream climb still
+consumes; now a corollary of the honest `tenTower 2` height. -/
+theorem C_fpLocation_le_tenTower_eight : C_fpLocation ≤ tenTower 8 :=
+  C_fpLocation_le_tenTower_two.trans (tenTower_mono (by omega))
 
 theorem C_fpCol_le_tenTower_nine : C_fpCol ≤ tenTower 9 := by
   have hratio : Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation))

@@ -159,6 +159,91 @@ theorem ten_pow_le_tenTower_succ {e : ℕ} (h : ℕ) (he : (e : ℝ) ≤ tenTowe
   rw [← Real.rpow_natCast]
   exact ten_rpow_le_tenTower_succ h he
 
+/-! ## The batched level-budget calculus (Design B, Tier-1 tower tightening)
+
+One tower level pays for an arbitrary polynomial *batch*, not one operation: a product
+or sum of up to `tenTower h` operands each `≤ tenTower (h + 1)` lands at
+`tenTower (h + 2)`, and a real power `x ^ t` with base `≤ tenTower (h + 1)` and
+exponent `≤ tenTower h` likewise.  So the *nesting depth* of the constant DAG — never
+its edge count — is what costs levels.  The per-operation `_succ` lemmas above remain
+for singleton uses; the climb in `BigCTower.lean` should batch through these.
+
+For leaf-level accounting (everything under `tenTower 2`), the `ten_pow` helpers below
+track explicit `10 ^ (a : ℕ)` budgets, so a whole cluster of numeric constants is one
+exponent sum away from `ten_pow_le_tenTower_succ`. -/
+
+/-- Batched product: `k ≤ tenTower h` factors, each `≤ tenTower (h + 1)`, cost ONE
+level, independent of `k`.  (`∏ ≤ (10 ^ tenTower h) ^ k = 10 ^ (tenTower h · k)` and
+`tenTower h · k ≤ tenTower h ^ 2 ≤ tenTower (h + 1)`.) -/
+theorem prod_le_tenTower_succ {ι : Type*} {s : Finset ι} {f : ι → ℝ} (h : ℕ)
+    (hf0 : ∀ i ∈ s, 0 ≤ f i) (hfT : ∀ i ∈ s, f i ≤ tenTower (h + 1))
+    (hcard : (s.card : ℝ) ≤ tenTower h) :
+    ∏ i ∈ s, f i ≤ tenTower (h + 2) := by
+  have hpow : ∏ i ∈ s, f i ≤ tenTower (h + 1) ^ s.card := by
+    calc
+      ∏ i ∈ s, f i ≤ ∏ _i ∈ s, tenTower (h + 1) := Finset.prod_le_prod hf0 hfT
+      _ = tenTower (h + 1) ^ s.card := Finset.prod_const _
+  refine hpow.trans ?_
+  have heq : tenTower (h + 1) ^ s.card = (10 : ℝ) ^ (tenTower h * (s.card : ℝ)) := by
+    rw [tenTower_succ, ← Real.rpow_natCast ((10 : ℝ) ^ tenTower h) s.card,
+      ← Real.rpow_mul (by norm_num)]
+  rw [heq]
+  refine ten_rpow_le_tenTower_succ (h + 1) ?_
+  calc
+    tenTower h * (s.card : ℝ) ≤ tenTower h * tenTower h :=
+      mul_le_mul_of_nonneg_left hcard (tenTower_pos h).le
+    _ ≤ tenTower (h + 1) := tenTower_sq_le_succ h
+
+/-- Batched sum: the additive twin of `prod_le_tenTower_succ`. -/
+theorem sum_le_tenTower_succ {ι : Type*} {s : Finset ι} {f : ι → ℝ} (h : ℕ)
+    (hfT : ∀ i ∈ s, f i ≤ tenTower (h + 1))
+    (hcard : (s.card : ℝ) ≤ tenTower h) :
+    ∑ i ∈ s, f i ≤ tenTower (h + 2) := by
+  have hsum : ∑ i ∈ s, f i ≤ (s.card : ℝ) * tenTower (h + 1) := by
+    simpa [nsmul_eq_mul] using Finset.sum_le_card_nsmul s f (tenTower (h + 1)) hfT
+  refine hsum.trans ?_
+  calc
+    (s.card : ℝ) * tenTower (h + 1)
+        ≤ tenTower h * tenTower (h + 1) :=
+      mul_le_mul_of_nonneg_right hcard (tenTower_pos (h + 1)).le
+    _ ≤ tenTower (h + 1) * tenTower (h + 1) :=
+      mul_le_mul_of_nonneg_right (tenTower_le_succ h) (tenTower_pos (h + 1)).le
+    _ ≤ tenTower (h + 2) := tenTower_sq_le_succ (h + 1)
+
+/-- Batched real power: base `≤ tenTower (h + 1)`, exponent `≤ tenTower h` — one level,
+not the two of `rpow_le_tenTower_add_two`. -/
+theorem rpow_le_tenTower_succ {x t : ℝ} (h : ℕ)
+    (hx : 0 ≤ x) (ht : 0 ≤ t) (hxT : x ≤ tenTower (h + 1)) (htT : t ≤ tenTower h) :
+    x ^ t ≤ tenTower (h + 2) := by
+  calc
+    x ^ t ≤ tenTower (h + 1) ^ t := Real.rpow_le_rpow hx hxT ht
+    _ = (10 : ℝ) ^ (tenTower h * t) := by
+      rw [tenTower_succ, ← Real.rpow_mul (by norm_num)]
+    _ ≤ tenTower (h + 2) := by
+      refine ten_rpow_le_tenTower_succ (h + 1) ?_
+      calc
+        tenTower h * t ≤ tenTower h * tenTower h :=
+          mul_le_mul_of_nonneg_left htT (tenTower_pos h).le
+        _ ≤ tenTower (h + 1) := tenTower_sq_le_succ h
+
+/-! ### Ten-power leaf accounting -/
+
+/-- Multiply two explicit ten-power budgets: exponents add, no tower level spent. -/
+theorem mul_le_ten_pow {x y : ℝ} {a b : ℕ} (hy : 0 ≤ y) (hxa : x ≤ (10 : ℝ) ^ a)
+    (hyb : y ≤ (10 : ℝ) ^ b) : x * y ≤ (10 : ℝ) ^ (a + b) := by
+  rw [pow_add]
+  exact mul_le_mul hxa hyb hy (by positivity)
+
+/-- `exp` of an argument `≤ a` fits in the ten-power budget `10 ^ a`. -/
+theorem exp_le_ten_pow {x : ℝ} {a : ℕ} (hxa : x ≤ (a : ℝ)) :
+    Real.exp x ≤ (10 : ℝ) ^ a := by
+  calc
+    Real.exp x ≤ Real.exp a := Real.exp_le_exp.mpr hxa
+    _ = Real.exp 1 ^ a := (Real.exp_one_pow a).symm
+    _ ≤ (10 : ℝ) ^ a :=
+      pow_le_pow_left₀ (Real.exp_pos 1).le
+        (Real.exp_one_lt_d9.le.trans (by norm_num)) a
+
 /-- The bridge to Mathlib's native tetration: `tenTower h` is `10↑↑(h+1)`,
 i.e. `hyperoperation 4 10 (h+1)`. -/
 theorem tenTower_eq_hyperoperation (h : ℕ) :
