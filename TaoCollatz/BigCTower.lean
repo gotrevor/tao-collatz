@@ -1056,6 +1056,86 @@ private theorem T_expRpow_main_colTail_cast_le_tenTower_fifteen :
   exact tenTower_add_le_succ 14 (by positivity) (by positivity)
     (hhead.trans (tenTower_mono (by omega))) hTexp
 
+/-- `T_expRpow` at the (7.56) arguments in honest level-1 form: `≤ 10^120`.
+The `T_expNeg` arm dominates — `log δ⁻¹ ≤ δ⁻¹ = 4·C_fpColTail ≤ 10^87` against
+`(ρ/2)⁻¹ ≤ 10^31`. -/
+private theorem T_expRpow_main_colTail_cast_le_ten_pow :
+    ((T_expRpow (mainDecayExponent 3.7) (c_fpColTail / 16960)
+      (1 / (4 * C_fpColTail)) : ℕ) : ℝ) ≤ (10 : ℝ) ^ (120 : ℕ) := by
+  let A : ℝ := mainDecayExponent 3.7
+  let ρ : ℝ := c_fpColTail / 16960
+  let δ : ℝ := 1 / (4 * C_fpColTail)
+  have hA0 : 0 < A := mainDecayExponent_pos 3.7 (by norm_num)
+  have hA : A ≤ (10 : ℝ) ^ (8 : ℕ) := mainDecayExponent_37_le_ten_pow
+  have hρ0 : 0 < ρ := by dsimp [ρ]; positivity [c_fpColTail_pos]
+  have hρinv : ρ⁻¹ ≤ (10 : ℝ) ^ (30 : ℕ) := by
+    dsimp [ρ]
+    norm_num [c_fpColTail_eq]
+  have hε0 : 0 < ρ / (2 * A) := div_pos hρ0 (mul_pos two_pos hA0)
+  have hbaseEq : 2 / (ρ / (2 * A)) = 4 * A * ρ⁻¹ := by
+    field_simp [ne_of_gt hρ0, ne_of_gt hA0]
+    ring
+  have h4A : 4 * A ≤ (10 : ℝ) ^ (9 : ℕ) := by
+    have h : 4 * A ≤ 4 * (10 : ℝ) ^ (8 : ℕ) := by linarith
+    refine h.trans ?_
+    norm_num
+  have hbase : 2 / (ρ / (2 * A)) ≤ (10 : ℝ) ^ (39 : ℕ) := by
+    rw [hbaseEq]
+    exact (mul_le_ten_pow (inv_nonneg.2 hρ0.le) h4A hρinv).trans
+      (ten_pow_mono (by norm_num))
+  have hbase0 : 0 ≤ 2 / (ρ / (2 * A)) := div_nonneg (by norm_num) hε0.le
+  have hbaseSq : (2 / (ρ / (2 * A))) ^ (2 : ℕ) ≤ (10 : ℝ) ^ (78 : ℕ) := by
+    rw [pow_two]
+    exact (mul_le_ten_pow hbase0 hbase hbase).trans (ten_pow_mono (by norm_num))
+  have hlogLinCeil : ((⌈(2 / (ρ / (2 * A))) ^ (2 : ℕ)⌉₊ : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (79 : ℕ) :=
+    (natCeil_le_ten_pow_succ hbaseSq).trans (ten_pow_mono (by norm_num))
+  have hTlog : ((T_logLin (ρ / (2 * A)) : ℕ) : ℝ) ≤ (10 : ℝ) ^ (80 : ℕ) := by
+    unfold T_logLin
+    push_cast
+    exact (add_le_ten_pow hlogLinCeil (one_le_pow₀ (by norm_num))).trans
+      (ten_pow_mono (by norm_num))
+  have hδ0 : 0 < δ := by dsimp [δ]; positivity [C_fpColTail_pos]
+  have hδinv : δ⁻¹ = 4 * C_fpColTail := by
+    dsimp [δ]
+    field_simp [ne_of_gt C_fpColTail_pos]
+  have hδinv1 : (1 : ℝ) ≤ δ⁻¹ := by
+    rw [hδinv]
+    unfold C_fpColTail
+    nlinarith [C_fpColDev_pos]
+  have hδinvP : δ⁻¹ ≤ (10 : ℝ) ^ (87 : ℕ) := by
+    rw [hδinv]
+    exact (mul_le_ten_pow C_fpColTail_pos.le
+      (by norm_num : (4 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) C_fpColTail_le_ten_pow).trans
+      (ten_pow_mono (by norm_num))
+  have hlogδ0 : 0 ≤ Real.log δ⁻¹ := Real.log_nonneg hδinv1
+  have hlogδ : Real.log δ⁻¹ ≤ (10 : ℝ) ^ (87 : ℕ) :=
+    (Real.log_le_self (inv_nonneg.2 hδ0.le)).trans hδinvP
+  have hρ2invEq : (ρ / 2)⁻¹ = 2 * ρ⁻¹ := by
+    field_simp [ne_of_gt hρ0]
+  have hρ2inv : (ρ / 2)⁻¹ ≤ (10 : ℝ) ^ (31 : ℕ) := by
+    rw [hρ2invEq]
+    exact (mul_le_ten_pow (inv_nonneg.2 hρ0.le)
+      (by norm_num : (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) hρinv).trans
+      (ten_pow_mono (by norm_num))
+  have hExpArg : Real.log δ⁻¹ / (ρ / 2) ≤ (10 : ℝ) ^ (118 : ℕ) := by
+    rw [div_eq_mul_inv]
+    exact (mul_le_ten_pow (inv_nonneg.2 (div_nonneg hρ0.le (by norm_num)))
+      hlogδ hρ2inv).trans (ten_pow_mono (by norm_num))
+  have hTexp : ((T_expNeg (ρ / 2) δ : ℕ) : ℝ) ≤ (10 : ℝ) ^ (119 : ℕ) := by
+    unfold T_expNeg
+    exact (natCeil_le_ten_pow_succ hExpArg).trans (ten_pow_mono (by norm_num))
+  unfold T_expRpow
+  change ((1 + T_logLin (ρ / (2 * A)) + T_expNeg (ρ / 2) δ : ℕ) : ℝ)
+    ≤ (10 : ℝ) ^ (120 : ℕ)
+  push_cast
+  have h1le : (1 : ℝ) ≤ (10 : ℝ) ^ (80 : ℕ) := one_le_pow₀ (by norm_num)
+  have hhead : (1 : ℝ) + ((T_logLin (ρ / (2 * A)) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (81 : ℕ) :=
+    (add_le_ten_pow h1le hTlog).trans (ten_pow_mono (by norm_num))
+  exact (add_le_ten_pow (hhead.trans (ten_pow_mono (by norm_num))) hTexp).trans
+    (ten_pow_mono (by norm_num))
+
 private theorem T_colTail_main_cast_le_tenTower_thirty_four :
     ((T_colTail (mainDecayExponent 3.7) (P_fewWhite (mainDecayExponent 3.7)) : ℕ) : ℝ)
       ≤ tenTower 34 := by
@@ -1078,6 +1158,64 @@ private theorem T_colTail_main_cast_le_tenTower_thirty_four :
   push_cast
   exact tenTower_add_le_succ 33 (by positivity) (by positivity) hp32
     (T_expRpow_main_colTail_cast_le_tenTower_fifteen.trans (tenTower_mono (by omega)))
+
+/-- `T_colTail` at the fewWhite horizon in canonical level-3 form:
+`≤ 10^(10^(10^3048))`.  The `400·(P+1)` arm rides the level-3 horizon
+`P + 1 ≤ 10^(10^(10^3047))`; everything else is decimal noise. -/
+private theorem T_colTail_main_le_ten3 :
+    ((T_colTail (mainDecayExponent 3.7) (P_fewWhite (mainDecayExponent 3.7)) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3048 : ℕ))) := by
+  let A : ℝ := mainDecayExponent 3.7
+  let P : ℕ := P_fewWhite A
+  have hP1 : ((P : ℕ) : ℝ) + 1
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ))) :=
+    P_fewWhite_main_add_one_le_ten3
+  -- the level-2 exponent atom `E = 10^(10^3047)` and its coarse bounds
+  have hE0 : (0 : ℝ) ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) :=
+    (Real.rpow_pos_of_pos (by norm_num) _).le
+  have hInner3 : (3 : ℝ) ≤ (10 : ℝ) ^ (3047 : ℕ) :=
+    (show (3 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ) by norm_num).trans (ten_pow_mono (by norm_num))
+  have hE116 : (116 : ℝ) ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) := by
+    calc
+      (116 : ℝ) ≤ (10 : ℝ) ^ (3 : ℕ) := by norm_num
+      _ = (10 : ℝ) ^ ((3 : ℕ) : ℝ) := ten_pow_eq_ten_rpow 3
+      _ ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) := ten_rpow_mono (by exact_mod_cast hInner3)
+  have h400 : (400 : ℝ) ≤ (10 : ℝ) ^ ((3 : ℕ) : ℝ) := by
+    rw [← ten_pow_eq_ten_rpow]
+    norm_num
+  have hp : 400 * (((P : ℕ) : ℝ) + 1)
+      ≤ (10 : ℝ) ^ (((3 : ℕ) : ℝ) + (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ))) :=
+    mul_le_ten_rpow (by positivity) h400 hP1
+  have h32 : (32 : ℝ)
+      ≤ (10 : ℝ) ^ (((3 : ℕ) : ℝ) + (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ))) := by
+    calc
+      (32 : ℝ) ≤ (10 : ℝ) ^ ((3 : ℕ) : ℝ) := h400.trans' (by norm_num)
+      _ ≤ _ := ten_rpow_mono (by push_cast; linarith)
+  have hsum1 : 400 * (((P : ℕ) : ℝ) + 1) + 32
+      ≤ (10 : ℝ) ^ (((3 : ℕ) : ℝ) + (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) + 1) :=
+    add_le_ten_rpow hp h32
+  have hT : ((T_expRpow A (c_fpColTail / 16960) (1 / (4 * C_fpColTail)) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (((3 : ℕ) : ℝ) + (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) + 1) := by
+    refine T_expRpow_main_colTail_cast_le_ten_pow.trans ?_
+    rw [ten_pow_eq_ten_rpow]
+    exact ten_rpow_mono (by push_cast; linarith)
+  unfold T_colTail
+  change ((400 * (P + 1) + 32 + T_expRpow A (c_fpColTail / 16960)
+    (1 / (4 * C_fpColTail)) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3048 : ℕ)))
+  push_cast
+  refine (add_le_ten_rpow hsum1 hT).trans (ten_rpow_mono ?_)
+  -- `3 + E + 1 + 1 ≤ E + 5 ≤ 10·E = 10^(10^3047 + 1) ≤ 10^(10^3048)`
+  have h10E : (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) * 10
+      = (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ) + 1) := by
+    rw [Real.rpow_add_one (by norm_num : (10 : ℝ) ≠ 0)]
+  calc
+    ((3 : ℕ) : ℝ) + (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) + 1 + 1
+        ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) * 10 := by push_cast; linarith [hE116]
+    _ = (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ) + 1) := h10E
+    _ ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3048 : ℕ)) :=
+        ten_rpow_mono ((add_le_ten_pow (le_refl _) (one_le_pow₀ (by norm_num))).trans
+          (ten_pow_mono (by norm_num)))
 
 /-! ## The remaining §7 thresholds -/
 
@@ -1176,6 +1314,102 @@ private theorem T_outStrip_cast_le_tenTower_seventeen :
         ≤ 2 * tenTower 16 := by linarith [tenTower_one_le 16]
     exact hadd.trans (tenTower_two_mul_le_succ 16)
 
+/-- `T_outStrip` in honest level-1 form: `≤ 10^126`.  Mirrors the tower climb
+above with decimal budgets — `D ≤ 10^111`, `log(8D) ≤ 8D ≤ 10^112`,
+`γ⁻¹ = 3276800000 ≤ 10^10`. -/
+private theorem T_outStrip_cast_le_ten_pow :
+    ((T_outStrip : ℕ) : ℝ) ≤ (10 : ℝ) ^ (126 : ℕ) := by
+  let c : ℝ := c_fpLocation
+  let a : ℝ := c ^ (2 : ℕ) / 20
+  let D : ℝ := C_fpCol * ((1 - Real.exp (-a))⁻¹ + (1 - Real.exp (-c))⁻¹) + 1
+  have hc0 : 0 < c := by dsimp [c]; exact c_fpLocation_pos
+  have ha0 : 0 < a := by dsimp [a]; positivity
+  have hia : (1 - Real.exp (-a))⁻¹ ≤ (10 : ℝ) ^ (30 : ℕ) := by
+    calc
+      (1 - Real.exp (-a))⁻¹ ≤ 1 + 1 / a := by
+        simpa [one_div] using one_div_one_sub_exp_neg_le ha0
+      _ ≤ (10 : ℝ) ^ (30 : ℕ) := by
+        dsimp [a, c]
+        norm_num [c_fpLocation_eq]
+  have hic : (1 - Real.exp (-c))⁻¹ ≤ (10 : ℝ) ^ (30 : ℕ) := by
+    calc
+      (1 - Real.exp (-c))⁻¹ ≤ 1 + 1 / c := by
+        simpa [one_div] using one_div_one_sub_exp_neg_le hc0
+      _ ≤ (10 : ℝ) ^ (30 : ℕ) := by
+        dsimp [c]
+        norm_num [c_fpLocation_eq]
+  have hia0 : 0 ≤ (1 - Real.exp (-a))⁻¹ := by
+    have h : 0 < 1 - Real.exp (-a) := by
+      rw [sub_pos, Real.exp_lt_one_iff]
+      linarith
+    positivity
+  have hic0 : 0 ≤ (1 - Real.exp (-c))⁻¹ := by
+    have h : 0 < 1 - Real.exp (-c) := by
+      rw [sub_pos, Real.exp_lt_one_iff]
+      linarith
+    positivity
+  have hisum : (1 - Real.exp (-a))⁻¹ + (1 - Real.exp (-c))⁻¹
+      ≤ (10 : ℝ) ^ (31 : ℕ) :=
+    (add_le_ten_pow hia hic).trans (ten_pow_mono (by norm_num))
+  have hprod : C_fpCol * ((1 - Real.exp (-a))⁻¹ + (1 - Real.exp (-c))⁻¹)
+      ≤ (10 : ℝ) ^ (110 : ℕ) :=
+    (mul_le_ten_pow (add_nonneg hia0 hic0) C_fpCol_le_ten_pow hisum).trans
+      (ten_pow_mono (by norm_num))
+  have hD : D ≤ (10 : ℝ) ^ (111 : ℕ) := by
+    dsimp [D]
+    exact (add_le_ten_pow hprod (one_le_pow₀ (by norm_num))).trans
+      (ten_pow_mono (by norm_num))
+  have hD1 : 1 ≤ D := by
+    dsimp [D]
+    have hp : 0 ≤ C_fpCol *
+        ((1 - Real.exp (-a))⁻¹ + (1 - Real.exp (-c))⁻¹) :=
+      mul_nonneg C_fpCol_pos.le (add_nonneg hia0 hic0)
+    linarith
+  have h8D0 : 0 ≤ 8 * D := mul_nonneg (by norm_num) (le_trans zero_le_one hD1)
+  have h8D1 : 1 ≤ 8 * D := by nlinarith
+  have h8D : 8 * D ≤ (10 : ℝ) ^ (112 : ℕ) :=
+    (mul_le_ten_pow (le_trans zero_le_one hD1)
+      (by norm_num : (8 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) hD).trans
+      (ten_pow_mono (by norm_num))
+  have hlog0 : 0 ≤ Real.log (8 * D) := Real.log_nonneg h8D1
+  have hlog : Real.log (8 * D) ≤ (10 : ℝ) ^ (112 : ℕ) :=
+    (Real.log_le_self h8D0).trans h8D
+  have hnum : 5 * Real.log (8 * D) ≤ (10 : ℝ) ^ (113 : ℕ) :=
+    (mul_le_ten_pow hlog0
+      (by norm_num : (5 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) hlog).trans
+      (ten_pow_mono (by norm_num))
+  have hgamma : min c (c ^ (2 : ℕ) / 20) = (1 : ℝ) / 3276800000 := by
+    dsimp [c]
+    norm_num [c_fpLocation_eq, min_def]
+  have hgamma0 : 0 < min c (c ^ (2 : ℕ) / 20) := by rw [hgamma]; norm_num
+  have hgammaInv : (min c (c ^ (2 : ℕ) / 20))⁻¹ ≤ (10 : ℝ) ^ (10 : ℕ) := by
+    rw [hgamma]
+    norm_num
+  have hquot : 5 * Real.log (8 * D) / min c (c ^ (2 : ℕ) / 20)
+      ≤ (10 : ℝ) ^ (123 : ℕ) := by
+    rw [div_eq_mul_inv]
+    exact (mul_le_ten_pow (inv_nonneg.2 hgamma0.le) hnum hgammaInv).trans
+      (ten_pow_mono (by norm_num))
+  have harg : 5 * Real.log (8 * D) / min c (c ^ (2 : ℕ) / 20) + 3
+      ≤ (10 : ℝ) ^ (124 : ℕ) :=
+    (add_le_ten_pow hquot
+      ((show (3 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ) by norm_num).trans
+        (ten_pow_mono (by norm_num)))).trans (ten_pow_mono (by norm_num))
+  have hceil : ((Nat.ceil
+      (5 * Real.log (8 * D) / min c (c ^ (2 : ℕ) / 20) + 3) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (125 : ℕ) :=
+    (natCeil_le_ten_pow_succ harg).trans (ten_pow_mono (by norm_num))
+  unfold T_outStrip T_gaussColTail
+  change ((max 25 (Nat.ceil
+      (5 * Real.log (8 * D) / min c (c ^ (2 : ℕ) / 20) + 3) + 1) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (126 : ℕ)
+  push_cast
+  apply max_le
+  · exact (show (25 : ℝ) ≤ (10 : ℝ) ^ (2 : ℕ) by norm_num).trans
+      (ten_pow_mono (by norm_num))
+  · exact (add_le_ten_pow hceil (one_le_pow₀ (by norm_num))).trans
+      (ten_pow_mono (by norm_num))
+
 private theorem Cthr_fewWhite_main_cast_le_tenTower_thirty_eight :
     ((Cthr_fewWhite (mainDecayExponent 3.7) : ℕ) : ℝ) ≤ tenTower 38 := by
   let A : ℝ := mainDecayExponent 3.7
@@ -1233,6 +1467,100 @@ private theorem Cthr_fewWhite_main_cast_le_tenTower_thirty_eight :
   exact max_le (max_le hten30 hcol)
     (max_le (h10g.trans (tenTower_mono (show (18 : ℕ) ≤ 38 by norm_num)))
       (max_le hBceil (hlast.trans (tenTower_mono (by omega)))))
+
+/-- **(7.56) threshold** in canonical level-3 form: `Cthr_fewWhite ≤ 10^(10^(10^3050))`.
+The `⌈B^{2.5}⌉₊` arm dominates, riding `B_fewWhite ≤ 10^(10^(10^3049))` (the ×2.5 on
+the level-2 exponent costs one decimal digit at the top: σ 3049 → 3050). -/
+private theorem Cthr_fewWhite_main_le_ten3 :
+    ((Cthr_fewWhite (mainDecayExponent 3.7) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) := by
+  let A : ℝ := mainDecayExponent 3.7
+  have hA0 : 0 < A := by dsimp [A]; exact mainDecayExponent_pos 3.7 (by norm_num)
+  have hA1 : 1 ≤ A := by
+    dsimp [A]
+    unfold mainDecayExponent
+    have hlog : 0 ≤ Real.log 2 := Real.log_nonneg (by norm_num)
+    have hterm : 0 ≤ caConst 3.7 ^ 2 * Real.log 2 :=
+      mul_nonneg (sq_nonneg _) hlog
+    norm_num
+    linarith
+  -- E∗ arm: 10^30
+  have hten30 : ((10 ^ 30 : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) := by
+    have hcast : ((10 ^ 30 : ℕ) : ℝ) = (10 : ℝ) ^ (30 : ℕ) := by norm_num
+    rw [hcast]
+    exact ten_pow_le_ten3 (by norm_num) (by norm_num)
+  -- bad-column arm: T_colTail (level-3, σ = 3048)
+  have hcol : ((T_colTail A (P_fewWhite A) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) :=
+    T_colTail_main_le_ten3.trans (ten3_mono (by norm_num))
+  -- shared-gate arm: 10 · g_manyTri ≤ 10^127
+  have hg : ((g_manyTri : ℕ) : ℝ) ≤ (10 : ℝ) ^ (126 : ℕ) := by
+    simpa [g_manyTri, T_whiteExitDeep] using T_outStrip_cast_le_ten_pow
+  have h10g' : (10 : ℝ) * ((g_manyTri : ℕ) : ℝ) ≤ (10 : ℝ) ^ (127 : ℕ) :=
+    (mul_le_ten_pow (by positivity)
+      (by norm_num : (10 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) hg).trans
+      (ten_pow_mono (by norm_num))
+  have h10g : (10 : ℝ) * ((g_manyTri : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) :=
+    h10g'.trans (ten_pow_le_ten3 (by norm_num) (by norm_num))
+  -- E∗-regularity arm: ⌈B^2.5⌉₊, the tall one
+  have hB0 : 0 ≤ B_fewWhite A := by unfold B_fewWhite; positivity
+  have hBpow : B_fewWhite A ^ (2.5 : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3049 : ℕ)) * (2.5 : ℝ)) :=
+    rpow_le_ten_rpow hB0 (by norm_num) B_fewWhite_main_le_ten3
+  have hM1 : (1 : ℝ) ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3049 : ℕ)) := by
+    calc
+      (1 : ℝ) = (10 : ℝ) ^ (0 : ℝ) := (Real.rpow_zero 10).symm
+      _ ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3049 : ℕ)) := ten_rpow_mono (by positivity)
+  have h1F : (1 : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3049 : ℕ)) * (2.5 : ℝ)) := by
+    calc
+      (1 : ℝ) = (10 : ℝ) ^ (0 : ℝ) := (Real.rpow_zero 10).symm
+      _ ≤ _ := ten_rpow_mono (by positivity)
+  have hceilB : ((⌈B_fewWhite A ^ (2.5 : ℝ)⌉₊ : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3049 : ℕ)) * (2.5 : ℝ) + 1) :=
+    ((Nat.ceil_lt_add_one (Real.rpow_nonneg hB0 _)).le).trans
+      (add_le_ten_rpow hBpow h1F)
+  have hFexp : (10 : ℝ) ^ ((10 : ℝ) ^ (3049 : ℕ)) * (2.5 : ℝ) + 1
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ)) := by
+    calc
+      (10 : ℝ) ^ ((10 : ℝ) ^ (3049 : ℕ)) * (2.5 : ℝ) + 1
+          ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3049 : ℕ)) * 10 := by linarith [hM1]
+      _ = (10 : ℝ) ^ ((10 : ℝ) ^ (3049 : ℕ) + 1) := by
+          rw [Real.rpow_add_one (by norm_num : (10 : ℝ) ≠ 0)]
+      _ ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ)) :=
+          ten_rpow_mono ((add_le_ten_pow (le_refl _) (one_le_pow₀ (by norm_num))).trans
+            (ten_pow_mono (by norm_num)))
+  have hBceil : ((⌈B_fewWhite A ^ (2.5 : ℝ)⌉₊ : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) :=
+    hceilB.trans (ten_rpow_mono hFexp)
+  -- bad-column numeric arm: ⌈10·500^(1/A)⌉₊ ≤ 10^5
+  have h500 : (500 : ℝ) ^ (1 / A) ≤ (500 : ℝ) := by
+    have h1A : 1 / A ≤ 1 := by
+      rw [div_le_one hA0]
+      exact hA1
+    calc
+      (500 : ℝ) ^ (1 / A) ≤ (500 : ℝ) ^ (1 : ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le (by norm_num) h1A
+      _ = 500 := Real.rpow_one 500
+  have h10pow : 10 * (500 : ℝ) ^ (1 / A) ≤ (10 : ℝ) ^ (4 : ℕ) := by
+    have h := mul_le_mul_of_nonneg_left h500 (show (0 : ℝ) ≤ 10 by norm_num)
+    calc
+      10 * (500 : ℝ) ^ (1 / A) ≤ 10 * 500 := h
+      _ ≤ (10 : ℝ) ^ (4 : ℕ) := by norm_num
+  have hlast' : ((⌈10 * (500 : ℝ) ^ (1 / A)⌉₊ : ℕ) : ℝ) ≤ (10 : ℝ) ^ (5 : ℕ) :=
+    (natCeil_le_ten_pow_succ h10pow).trans (ten_pow_mono (by norm_num))
+  have hlast : ((⌈10 * (500 : ℝ) ^ (1 / A)⌉₊ : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) :=
+    hlast'.trans (ten_pow_le_ten3 (by norm_num) (by norm_num))
+  unfold Cthr_fewWhite
+  change ((max (max (10 ^ 30) (T_colTail A (P_fewWhite A)))
+    (max (10 * g_manyTri)
+      (max ⌈B_fewWhite A ^ (2.5 : ℝ)⌉₊ ⌈10 * (500 : ℝ) ^ (1 / A)⌉₊)) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ)))
+  push_cast
+  exact max_le (max_le hten30 hcol) (max_le h10g (max_le hBceil hlast))
 
 private theorem quarter_le_log_four_thirds : (1 : ℝ) / 4 ≤ Real.log (4 / 3) := by
   have h := Real.le_log_one_add_of_nonneg (show (0 : ℝ) ≤ 1 / 3 by norm_num)

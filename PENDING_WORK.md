@@ -1461,3 +1461,23 @@ chain in rpow budgets, ceiling `C_tao_assembled ≤ tenTower 4` (pin: tenTower 9
 B_fewWhite's level-3), then Cthr_case2/dampingCol/blackEdge/prop78 → C_polyDecay →
 C_renewalWhite (level-3, σ≈3055). Then the Sec3 spine (C_mainZ…C_windowBad, X_spine),
 ceiling `C_tao_assembled ≤ tenTower 4`, restate ceiling theorem, `check28`, discharge.
+
+### Lap 7 (2026-07-18) — Cthr_fewWhite chain head at level-3 ✅
+
+- Bank: `ten3_mono` (level-3 mono in top σ), `ten_pow_le_ten3` (decimal → level-3 lift,
+  any a ≤ 10³⁰, σ ≥ 2) — how short `max` arms join a tall level-3 arm for free.
+- Honest level-1: `T_expRpow(§7.56 args) ≤ 10^120` (T_expNeg arm dominates: log δ⁻¹ ≤
+  δ⁻¹ = 4·C_fpColTail ≤ 10^87, (ρ/2)⁻¹ ≤ 10^31), `T_outStrip ≤ 10^126` (D ≤ 10^111,
+  γ⁻¹ ≤ 10^10).
+- Level-3: `T_colTail_main_le_ten3 ≤ 10^(10^(10^3048))` (rides P+1 at 3047),
+  `Cthr_fewWhite_main_le_ten3 ≤ 10^(10^(10^3050))` (⌈B^2.5⌉ arm: ×2.5 on the level-2
+  exponent = one decimal digit at top, 3049 → 3050).
+- Gotcha: a `(X.trans (ten_pow_mono _)).trans (ten_pow_le_ten3 _ _)` chain leaves the
+  intermediate exponent as an unresolvable metavariable — name the intermediate `have`
+  with an explicit `10^k` type, then `.trans`.
+
+**Next (lap 8):** honest level-1 for `C_hold` (K_geom/M1/T_powGeom at deltaBW·2^{-A},
+~10^12-ish) and `Cthr_case2` (T_edgeWeight chain), then `Cthr_dampingCol/blackEdge/
+prop78` level-3 (max passthrough at 3050), `C_polyDecay = (max Cthr 1)^A ≤
+10^(10^(10^3051))`, `C_renewalWhite ≤ 10^(10^(10^3052))`. Then Sec3 spine, ceiling
+`C_tao_assembled ≤ tenTower 4`, `check28`, discharge LAST.

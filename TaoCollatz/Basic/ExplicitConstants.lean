@@ -356,6 +356,30 @@ theorem ten_rpow_rpow_ten_pow_le_tenTower_four {σ : ℕ} (hσ : σ ≤ 10 ^ 10)
       ten_rpow_mono (ten_rpow_ten_pow_le_tenTower_three hσ)
     _ = tenTower 4 := (tenTower_succ 3).symm
 
+/-- Level-3 canonical budgets `10^(10^(10^σ))` are monotone in the top decimal
+exponent `σ`. -/
+theorem ten3_mono {σ τ : ℕ} (h : σ ≤ τ) :
+    (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (σ : ℕ)))
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (τ : ℕ))) :=
+  ten_rpow_mono (ten_rpow_mono (ten_pow_mono h))
+
+/-- Lift a plain decimal budget `10^a` (any `a ≤ 10³⁰`) into a level-3 canonical
+form `10^(10^(10^σ))`, for any `σ ≥ 2`.  This is how the short arms of a `max`
+join the tall level-3 arm without spending anything. -/
+theorem ten_pow_le_ten3 {a σ : ℕ} (ha : a ≤ 10 ^ 30) (hσ : 2 ≤ σ) :
+    (10 : ℝ) ^ a ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (σ : ℕ))) := by
+  rw [ten_pow_eq_ten_rpow]
+  refine ten_rpow_mono ?_
+  calc
+    (a : ℝ) ≤ ((10 ^ 30 : ℕ) : ℝ) := Nat.cast_le.mpr ha
+    _ = (10 : ℝ) ^ (30 : ℕ) := by push_cast; norm_num
+    _ = (10 : ℝ) ^ ((30 : ℕ) : ℝ) := ten_pow_eq_ten_rpow 30
+    _ ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (σ : ℕ)) := by
+        refine ten_rpow_mono ?_
+        calc
+          ((30 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (2 : ℕ) := by norm_num
+          _ ≤ (10 : ℝ) ^ (σ : ℕ) := ten_pow_mono hσ
+
 /-- Ceiling a `⌈·⌉₊` over a ten-power budget: one decimal digit. -/
 theorem natCeil_le_ten_pow_succ {x : ℝ} {a : ℕ} (hxa : x ≤ (10 : ℝ) ^ a) :
     ((⌈x⌉₊ : ℕ) : ℝ) ≤ (10 : ℝ) ^ (a + 1) := by
