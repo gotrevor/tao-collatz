@@ -603,6 +603,9 @@ theorem cn_window_size {x : ℝ} (hx : Real.exp 1024 ≤ x) {k m : ℕ} (hk : k 
         _ ≤ Real.exp (2 * t) := Real.exp_le_exp.mpr hlog2
     rw [hhieq]; nlinarith [hlopos, hexp2]
 
+/-- The `cn_bound` cutoff, symbolic (big-C campaign, step 2); constant = numeral 4. -/
+noncomputable def X_cnBound : ℝ := Real.exp 1024
+
 /-- **Crude harmonic-weight bound** (`c_n(X) ≪ log^{0.7}x`) — the shared self-contained prerequisite of
 B1 and B2.  This is a *weakening* of Tao's Lemma 5.3 (`c_n ≪ 1`, which needs the delicate `c_{n,a}`
 split over `ℕ^{m₀}` with the extra CRT modulus `2^{a_{[1,m₀]}+1}`).  We only need the crude bound: the
@@ -613,13 +616,16 @@ This SUFFICES downstream because both consumers have adjustable/faster-decaying 
 **B1** pairs it with `approx_good_tuple_whp` (decay `log^{−1}x`, so `log^{0.7}·log^{−1} = log^{−0.3}`),
 **B2** pairs it with `fine_scale_mixing`'s `osc ≤ C·m₀^{−A}` for EVERY `A>0` (take `A>0.7`).
 **[Self-contained integral-test estimate; does NOT consume C10.  NOT Lemma 5.3 — a sufficient crude
-weakening.  Used as `sup_X c_n ≤ C·log^{0.7}x` by both B1 and B2.]** -/
-theorem cn_bound :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+weakening.  Used as `sup_X c_n ≤ C·log^{0.7}x` by both B1 and B2.]**
+
+`_at` sibling at (`4`, `X_cnBound := exp 1024`) (big-C campaign, step 2). -/
+theorem cn_bound_at :
+    ∀ x : ℝ, X_cnBound ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ C * (Real.log x) ^ (0.7 : ℝ) := by
-  refine ⟨4, Real.exp 1024, by norm_num, fun x hx E hE y hy n hn X => ?_⟩
+          ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ 4 * (Real.log x) ^ (0.7 : ℝ) := by
+  unfold X_cnBound
+  intro x hx E hE y hy n hn X
   classical
   have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos _) hx
   have hx1 : (1 : ℝ) < x := lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (1024 : ℝ)]) hx
@@ -720,12 +726,27 @@ theorem cn_bound :
 -- the `c_n` machinery (`cn_bound`, `cn_nonneg`, `harmZfine_eq_sum_cn`) it consumes.  See the
 -- `perNGoodMass` def + the two ribs `perNHarmonic_eq_sum_cn` / `syracZ_sub_perNGoodMass_bound`.
 
+/-- `cn_bound`, original `∃`-form: delegates to the `_at` sibling at
+(`4`, `X_cnBound`) (big-C campaign, step 2). -/
+theorem cn_bound :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          ∀ X : ZMod (3 ^ (n - mZero x)), cn x E n X ≤ C * (Real.log x) ^ (0.7 : ℝ) :=
+  ⟨4, X_cnBound, by norm_num, cn_bound_at⟩
+
+/-- The `mZero_ge_lin` cutoff, symbolic (big-C campaign, step 2). -/
+noncomputable def X_mZeroLin : ℝ := Real.exp 200000
+
 /-- **Linear lower bound on `m₀`** — `m₀ = ⌊(α−1)/100·log x⌋ ≥ (1/200000)·log x` for `x ≥ exp(200000)`.
 Since `(α−1)/100 = 1/100000`, `m₀ > log x/100000 − 1 ≥ log x/200000` once `log x ≥ 200000`.  Used to
-turn `fine_scale_mixing`'s `m₀^{−A}` decay into `(log x)^{−A}` decay (B2's final log-arithmetic). -/
-theorem mZero_ge_lin :
-    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → (1 / 200000 : ℝ) * Real.log x ≤ (mZero x : ℝ) := by
-  refine ⟨Real.exp 200000, Real.one_le_exp (by norm_num), fun x hx => ?_⟩
+turn `fine_scale_mixing`'s `m₀^{−A}` decay into `(log x)^{−A}` decay (B2's final log-arithmetic).
+
+`_at` sibling at `X_mZeroLin := exp 200000` (big-C campaign, step 2). -/
+theorem mZero_ge_lin_at :
+    ∀ x : ℝ, X_mZeroLin ≤ x → (1 / 200000 : ℝ) * Real.log x ≤ (mZero x : ℝ) := by
+  unfold X_mZeroLin
+  intro x hx
   have hL : (200000 : ℝ) ≤ Real.log x := by
     rw [← Real.log_exp 200000]; exact Real.log_le_log (Real.exp_pos _) hx
   have ha1 : (alpha - 1) / 100 = (1 : ℝ) / 100000 := by unfold alpha; norm_num
@@ -733,6 +754,12 @@ theorem mZero_ge_lin :
     unfold mZero; exact Nat.lt_floor_add_one _
   rw [ha1] at hlt
   linarith
+
+/-- `mZero_ge_lin`, original `∃`-form: delegates to the `_at` sibling at
+`X_mZeroLin` (big-C campaign, step 2). -/
+theorem mZero_ge_lin :
+    ∃ x₀ : ℝ, 1 ≤ x₀ ∧ ∀ x : ℝ, x₀ ≤ x → (1 / 200000 : ℝ) * Real.log x ≤ (mZero x : ℝ) :=
+  ⟨X_mZeroLin, Real.one_le_exp (by norm_num), mZero_ge_lin_at⟩
 
 open Classical in
 /-- Each residue-class harmonic sum `∑_{M∈E', M≡X} 1/M` is summable: `E'` bounds `M` to the finite
@@ -1146,6 +1173,9 @@ theorem Nstar_odd {k : ℕ} (ā : Fin k → ℕ) (hpos : ∀ i, 1 ≤ ā i) {M :
       (by have := pre_pos hk1 ā hpos (m := k) hk1; omega : pre ā k ≠ 0)).mul_left M
     omega
 
+/-- The `Nstar_mem_logWindow` cutoff (X-chase): witness copied verbatim from its proof. -/
+noncomputable def X_NstarWindow : ℝ := max (Real.exp 1073741824) X_twoMZero
+
 -- HEARTBEAT: one large log-arithmetic assembly (window bounds × margin rpow algebra × casts); the
 -- many linarith/nlinarith/positivity calls exhaust the default per-declaration budget cumulatively.
 set_option maxHeartbeats 1600000 in
@@ -1157,8 +1187,8 @@ Log-arithmetic: `3^{n−m₀}·N* = M·2^{pre ā}·(1 − fnat/(M·2^{pre}))` wi
 = O(x^{-2/5})`, so `log N* = log M + pre·log 2 − (n−m₀)·log 3 + O(x^{-c}) = log x + n·log(4/3) ±
 (log^{0.7} + log 2·log^{0.6} + o(1))·x`, and the `±log^{0.8}x` margins built into `IyLo`/`IyHi` (5.9)
 dominate the slack.  **[C9 leaf A sub-lemma — pure log-arithmetic; does NOT consume C10.]** -/
-theorem Nstar_mem_logWindow :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+theorem Nstar_mem_logWindow_atX :
+    ∀ x : ℝ, X_NstarWindow ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
         ∀ ā : Fin (n - mZero x) → ℕ, goodTuple x (n - mZero x) ā →
           ∀ M : ℕ, M % 2 = 1 →
@@ -1169,8 +1199,10 @@ theorem Nstar_mem_logWindow :
             ((M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā) / 3 ^ (n - mZero x))
               ∈ logWindow y (y ^ alpha) := by
   classical
-  obtain ⟨x₁, _, htwo⟩ := two_mZero_le_of_mem_Iy
-  refine ⟨max (Real.exp 1073741824) x₁, fun x hx y hy n hn ā hg M hModd hMlo hMhi hdvd hle => ?_⟩
+  have htwo := two_mZero_le_of_mem_Iy_at
+  set x₁ : ℝ := X_twoMZero with hx₁def
+  rw [show X_NstarWindow = max (Real.exp 1073741824) x₁ from rfl]
+  intro x hx y hy n hn ā hg M hModd hMlo hMhi hdvd hle
   have hxbig : Real.exp 1073741824 ≤ x := le_trans (le_max_left _ _) hx
   have hxx1 : x₁ ≤ x := le_trans (le_max_right _ _) hx
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hxbig
@@ -1348,6 +1380,20 @@ theorem Nstar_mem_logWindow :
     have hfnn : (0 : ℝ) ≤ (fnat (n - mZero x) ā : ℝ) := Nat.cast_nonneg _
     linarith [hQhi, hfnn]
 
+/-- ∃-form of `Nstar_mem_logWindow_atX` (X-chase: `x₀ := X_NstarWindow`). -/
+theorem Nstar_mem_logWindow :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+        ∀ ā : Fin (n - mZero x) → ℕ, goodTuple x (n - mZero x) ā →
+          ∀ M : ℕ, M % 2 = 1 →
+            Real.exp (-Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x ≤ (M : ℝ) →
+            (M : ℝ) ≤ Real.exp (Real.log x ^ (0.7 : ℝ)) * (4 / 3) ^ mZero x * x →
+            3 ^ (n - mZero x) ∣ (M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā) →
+            fnat (n - mZero x) ā ≤ M * 2 ^ pre ā (n - mZero x) →
+            ((M * 2 ^ pre ā (n - mZero x) - fnat (n - mZero x) ā) / 3 ^ (n - mZero x))
+              ∈ logWindow y (y ^ alpha) :=
+  ⟨X_NstarWindow, Nstar_mem_logWindow_atX⟩
+
 /-- **`N*` cast to ℝ** — the exact-division value `(M·2^{pre ā} − fnat)/3^k` as a real quotient
 (the division is exact by the affine divisibility). -/
 theorem Nstar_cast {k : ℕ} (ā : Fin k → ℕ) {M : ℕ}
@@ -1428,14 +1474,17 @@ theorem tsum_tsum_le_tsum_tsum {α β : Type*} {f g : α → β → ℝ}
 identity (rib 1, `perNHarmonic_eq_sum_cn`): `perNHarmonic = ∑_X perNGoodMass·c_n ≤ (sup c_n)·∑_X
 syracZ = sup c_n ≤ C·log^{0.7}x` (`cn_bound`; `perNGoodMass ≤ syracZ` pointwise, total `syracZ` mass
 `1`).  Turns the relative errors of the (5.19) reduction into absolute `O(log^{-c})` errors. -/
-theorem perNHarmonic_le :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+theorem perNHarmonic_le_at :
+    ∀ x : ℝ, max X_cnBound (Real.exp 1024) ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          perNHarmonic x E n ≤ C * (Real.log x) ^ (0.7 : ℝ) := by
+          perNHarmonic x E n ≤ 4 * (Real.log x) ^ (0.7 : ℝ) := by
   classical
-  obtain ⟨Ccn, xcn, hCcn, hcn⟩ := cn_bound
-  refine ⟨Ccn, max xcn (Real.exp 1024), hCcn, fun x hx E hE y hy n hn => ?_⟩
+  have hcn := cn_bound_at
+  set Ccn : ℝ := (4 : ℝ) with hCcndef
+  set xcn : ℝ := X_cnBound with hxcndef
+  have hCcn : (0 : ℝ) < Ccn := by norm_num
+  intro x hx E hE y hy n hn
   have hxcn : xcn ≤ x := le_trans (le_max_left _ _) hx
   have hx1024 : Real.exp 1024 ≤ x := le_trans (le_max_right _ _) hx
   have hkn : n - mZero x ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
@@ -1467,6 +1516,15 @@ theorem perNHarmonic_le :
           (cn_nonneg x E n X) ENNReal.toReal_nonneg
     _ = Ccn * Real.log x ^ (0.7 : ℝ) := by rw [← Finset.sum_mul, hmass1, one_mul]
 
+/-- Original ∃-form of the crude `perNHarmonic` size bound: delegates to
+`perNHarmonic_le_at` (big-C campaign, step 2: `C := 4`, cutoff `max X_cnBound (exp 1024)`). -/
+theorem perNHarmonic_le :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          perNHarmonic x E n ≤ C * (Real.log x) ^ (0.7 : ℝ) :=
+  ⟨4, max X_cnBound (Real.exp 1024), by norm_num, perNHarmonic_le_at⟩
+
 /-- **(5.19) harmonic reduction of `perNTerm`** — sub-lemma A of `perNTerm_eval`.  Each per-`n` term
 equals its harmonic content divided by the harmonic normaliser `norm = ((α−1)/2)·log y`, up to a
 *relative* `O(log^{-c}x)/norm` error.  Combines `perNTerm_pointmass` (affine → single point),
@@ -1479,34 +1537,72 @@ noncomputable def c_perNHarm : ℝ := 0.3
 
 theorem c_perNHarm_pos : 0 < c_perNHarm := by norm_num [c_perNHarm]
 
+/-- The relative-error constant `Cε` of the (5.19) reduction, at the pinned leaf constants
+`Cw = 3` (`windowMass_estimate_atC`), `cD = 1/10000` (`windowMass_ge_clog_at`)
+— big-C campaign, step 2. -/
+noncomputable def C_epsPerNHarm : ℝ := 2 + 3 * ((3 : ℝ) / (1 / 10000)) + 2 * 3 / (alpha - 1)
+
+theorem C_epsPerNHarm_pos : 0 < C_epsPerNHarm := by
+  unfold C_epsPerNHarm alpha; norm_num
+
+/-- The (5.19) leaf-A constant: `Cε · CH` with `CH = 4` (`perNHarmonic_le_at`) —
+big-C campaign, step 2. -/
+noncomputable def C_perNHarm : ℝ := C_epsPerNHarm * 4
+
+theorem C_perNHarm_pos : 0 < C_perNHarm :=
+  mul_pos C_epsPerNHarm_pos (by norm_num)
+
+/-- The `perNTerm_harmonic_approx` cutoff (X-chase): witness copied verbatim from the
+`_atC` proof at the explicit upstream names (last arm: `exp Cε`,
+`Cε = 2 + 3·(Cw/cD) + 2·Cw/(α−1)` at `Cw = 3`, `cD = 1/10000`). -/
+noncomputable def X_perNHarm : ℝ :=
+  max (max X_windowBase ((2 : ℝ) ^ (2000 : ℝ)))
+    (max (max (max X_cnBound (Real.exp 1024)) X_NstarWindow)
+      (max (Real.exp 1024)
+        (Real.exp (2 + 3 * ((3 : ℝ) / (1 / 10000)) + 2 * 3 / (alpha - 1)))))
+
 -- HEARTBEAT: one large analytic assembly (per-(ā,M) window/harmonic algebra with two nlinarith
 -- cores, plus nested-tsum summability plumbing); the many nlinarith/positivity calls exhaust the
 -- default per-declaration budget cumulatively (mirrors `Nstar_mem_logWindow`).
 set_option maxHeartbeats 1600000 in
 open Classical in
-/-- Sibling of `perNTerm_harmonic_approx` with the `c`-slot pinned to `c_perNHarm`; the
-original delegates here. -/
-theorem perNTerm_harmonic_approx_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- Universal-cutoff form of `perNTerm_harmonic_approx_atC` (X-chase). -/
+theorem perNTerm_harmonic_approx_atCX :
+    ∀ x : ℝ, X_perNHarm ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |perNTerm x E y n - perNHarmonic x E n / ((alpha - 1) / 2 * Real.log y)|
-            ≤ C * (Real.log x) ^ (-c_perNHarm) / ((alpha - 1) / 2 * Real.log y) := by
+            ≤ C_perNHarm * (Real.log x) ^ (-c_perNHarm) / ((alpha - 1) / 2 * Real.log y) := by
   rw [show c_perNHarm = 0.3 from rfl]
   classical
-  obtain ⟨Cw, xw, hCwpos, hw⟩ := windowMass_estimate
-  obtain ⟨cD, xD, hcDpos, hDlbAll⟩ := windowMass_ge_clog
-  obtain ⟨CH, xH, hCHpos, hHAll⟩ := perNHarmonic_le
-  obtain ⟨xN, hNwin⟩ := Nstar_mem_logWindow
+  have hw := windowMass_estimate_atCX
+  set xw : ℝ := X_windowBase with hxwdef
+  have hDlbAll := windowMass_ge_clog_at
+  have hHAll := perNHarmonic_le_at
+  -- (`set` the pinned constants FIRST, then obtain `Nstar_mem_logWindow` — its statement
+  -- carries `4/3` literals that `set Cw := 3`/`set CH := 4` must not abstract)
+  set Cw : ℝ := (3 : ℝ) with hCwdef
+  set cD : ℝ := (1 / 10000 : ℝ) with hcDdef
+  set CH : ℝ := (4 : ℝ) with hCHdef
+  set xD : ℝ := (2 : ℝ) ^ (2000 : ℝ) with hxDdef
+  set xH : ℝ := max X_cnBound (Real.exp 1024) with hxHdef
+  have hCwpos : (0 : ℝ) < Cw := by rw [hCwdef]; norm_num
+  have hcDpos : (0 : ℝ) < cD := by rw [hcDdef]; norm_num
+  have hCHpos : (0 : ℝ) < CH := by rw [hCHdef]; norm_num
+  have hNwin := Nstar_mem_logWindow_atX
+  set xN : ℝ := X_NstarWindow with hxNdef
   have halpha1 : (0 : ℝ) < alpha - 1 := by norm_num [alpha]
   have hC1nn : (0 : ℝ) ≤ Cw / cD := (div_pos hCwpos hcDpos).le
   have hC2nn : (0 : ℝ) ≤ 2 * Cw / (alpha - 1) :=
     div_nonneg (by linarith [hCwpos]) halpha1.le
   set Cε : ℝ := 2 + 3 * (Cw / cD) + 2 * Cw / (alpha - 1) with hCεdef
   have hCεpos : 0 < Cε := by rw [hCεdef]; linarith
-  refine ⟨Cε * CH,
-    max (max xw xD) (max (max xH xN) (max (Real.exp 1024) (Real.exp Cε))),
-    mul_pos hCεpos hCHpos, fun x hx E hE y hy n hn => ?_⟩
+  have hCeq : C_perNHarm = Cε * CH := by
+    rw [hCεdef, hCwdef, hcDdef, hCHdef]; unfold C_perNHarm C_epsPerNHarm; norm_num
+  rw [hCeq]
+  rw [show X_perNHarm = max (max xw xD) (max (max xH xN) (max (Real.exp 1024) (Real.exp Cε)))
+    from rfl]
+  intro x hx E hE y hy n hn
   simp only [max_le_iff] at hx
   obtain ⟨⟨hxw, hxD⟩, ⟨hxH, hxN⟩, hx1024, hxCε⟩ := hx
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hx1024
@@ -1795,6 +1891,27 @@ theorem perNTerm_harmonic_approx_explicit :
       ring
     linarith [hUP, hid, hkey]
 
+/-- ∃-form of `perNTerm_harmonic_approx_atCX` (X-chase: `x₀ := X_perNHarm`). -/
+theorem perNTerm_harmonic_approx_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNTerm x E y n - perNHarmonic x E n / ((alpha - 1) / 2 * Real.log y)|
+            ≤ C_perNHarm * (Real.log x) ^ (-c_perNHarm) / ((alpha - 1) / 2 * Real.log y) :=
+  ⟨X_perNHarm, perNTerm_harmonic_approx_atCX⟩
+
+/-- Sibling of `perNTerm_harmonic_approx` with the `c`-slot pinned to `c_perNHarm`; the
+original delegates here.  Now delegates to `perNTerm_harmonic_approx_atC` (big-C campaign,
+step 2: `C := C_perNHarm`). -/
+theorem perNTerm_harmonic_approx_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNTerm x E y n - perNHarmonic x E n / ((alpha - 1) / 2 * Real.log y)|
+            ≤ C * (Real.log x) ^ (-c_perNHarm) / ((alpha - 1) / 2 * Real.log y) := by
+  obtain ⟨x₀, h⟩ := perNTerm_harmonic_approx_atC
+  exact ⟨C_perNHarm, x₀, C_perNHarm_pos, h⟩
+
 theorem perNTerm_harmonic_approx :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
@@ -1804,24 +1921,50 @@ theorem perNTerm_harmonic_approx :
   obtain ⟨C, x₀, hC, h⟩ := perNTerm_harmonic_approx_explicit
   exact ⟨c_perNHarm, C, x₀, c_perNHarm_pos, hC, h⟩
 
+/-- The `C`-witness of `good_tuple_whp_iid` (big-C campaign, step 2): `2·C_geomTail = 4`
+(the `Z` + prefix-deviation union bound doubles the `geomHalf` tail constant).  The cutoff is
+kept existential — it feeds the `x₀`-threshold (via `log_rpow_mul_exp_neg_le_one` /
+`Gweight_prefix_decay`), NOT `CTao`. -/
+noncomputable def C_goodWhp : ℝ := 2 * C_geomTail
+
+theorem C_goodWhp_pos : 0 < C_goodWhp := by
+  unfold C_goodWhp; exact mul_pos (by norm_num) C_geomTail_pos
+
+/-- The `good_tuple_whp_iid` cutoff (X-chase): the witness max-tree copied verbatim from the
+`_atC` proof, with the obtained locals replaced by their explicit upstream names
+(`κ := K_Gweight c_geomTail`, `x₀A := X_logRpowExp 2 κ 0.2`, `x₀g := X_Gweight`). -/
+noncomputable def X_goodWhp : ℝ :=
+  max (X_logRpowExp 2 (K_Gweight c_geomTail) 0.2) (max (Real.exp 20) X_Gweight)
+
 open Classical in
-/-- **iid good-tuple whp bound (Tao (5.11)/(5.12), iid form).**  Under the `geomHalf.iid k` law, a length-`k`
-tuple fails to be good with probability `≪ log^{-1}x` (for `k ≤ n₀`).  This is the iid half of
-`goodTuple_prefix_dev_sum` — `¬good` means a coord is `0` (mass `0`, since `geomHalf` has no atom at `0`)
-or some prefix `pre a m` deviates from `2m` by `≥ log^{0.6}x` (each `≪ exp(−c·log^{0.2}x)` via
-`geomHalf_tail_bound`; sum over the `≤ k+1 ≤ log x` prefixes, then the `log x·exp(−c log^{0.2}) ≤ log^{-1}`
-shrink).  No dTV transfer is needed because the base law is already `geomHalf.iid`. -/
-theorem good_tuple_whp_iid :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ k : ℕ, k ≤ nZero x →
+/-- Universal-cutoff form of `good_tuple_whp_iid_atC` (X-chase).  Body verbatim from the
+`_atC` form; the two `obtain`s are replaced by the `_atX` upstream lemmas at the explicit
+rate `κ = K_Gweight c_geomTail` and cutoffs `X_logRpowExp 2 κ 0.2` / `X_Gweight`. -/
+theorem good_tuple_whp_iid_atCX :
+    ∀ x : ℝ, X_goodWhp ≤ x → ∀ k : ℕ, k ≤ nZero x →
       (∑' ā : Fin k → ℕ,
           if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
-        ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
+        ≤ C_goodWhp * (Real.log x) ^ (-(1 : ℝ)) := by
   classical
-  obtain ⟨ct, hct, Ct, hCt, htail⟩ := geomHalf_tail_bound
-  obtain ⟨κ, x₀g, hκ, hGdecay⟩ := Gweight_prefix_decay (d := ct) hct
-  obtain ⟨x₀A, hA⟩ := log_rpow_mul_exp_neg_le_one (p := 2) (κ := κ) (θ := 0.2)
+  set ct : ℝ := c_geomTail
+  set Ct : ℝ := C_geomTail
+  have hct : (0 : ℝ) < ct := c_geomTail_pos
+  have hCt : (0 : ℝ) < Ct := C_geomTail_pos
+  have htail : ∀ (n : ℕ) (lam : ℝ), 0 ≤ lam →
+      (∑' L : ℕ, if lam ≤ |(L : ℝ) - 2 * n| then ((iidSum geomHalf n) L).toReal else 0)
+        ≤ Ct * Gweight (1 + n) (ct * lam) := geomHalf_tail_bound_atC
+  have hκ : 0 < K_Gweight ct := K_Gweight_pos hct
+  have hGdecay := Gweight_prefix_decay_atX (d := ct) hct
+  have hA := log_rpow_mul_exp_neg_le_one_atX (p := 2) (κ := K_Gweight ct) (θ := 0.2)
     (by norm_num) hκ (by norm_num)
-  refine ⟨2 * Ct, max x₀A (max (Real.exp 20) x₀g), by positivity, fun x hx k hk => ?_⟩
+  set κ : ℝ := K_Gweight ct with hκdef
+  set x₀A : ℝ := X_logRpowExp 2 κ 0.2 with hx₀Adef
+  set x₀g : ℝ := X_Gweight with hx₀gdef
+  rw [show X_goodWhp = max x₀A (max (Real.exp 20) x₀g) from rfl]
+  intro x hx k hk
+  show (∑' ā : Fin k → ℕ,
+      if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
+        ≤ 2 * Ct * (Real.log x) ^ (-(1 : ℝ))
   simp only [max_le_iff] at hx
   obtain ⟨hxA, hx20, hxg⟩ := hx
   have hxpos : 0 < x := lt_of_lt_of_le (Real.exp_pos 20) hx20
@@ -1940,25 +2083,66 @@ theorem good_tuple_whp_iid :
     _ ≤ 2 * Ct * (Real.log x) ^ (-(1 : ℝ)) :=
         mul_le_mul_of_nonneg_left shrink (by positivity)
 
+open Classical in
+/-- `good_tuple_whp_iid` with the `C`-slot pinned to `C_goodWhp` (big-C campaign, step 2);
+the cutoff stays existential.  The ratified-shape `good_tuple_whp_iid` delegates here.
+Delegates to `good_tuple_whp_iid_atCX` (X-chase: `x₀ := X_goodWhp`). -/
+theorem good_tuple_whp_iid_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ k : ℕ, k ≤ nZero x →
+      (∑' ā : Fin k → ℕ,
+          if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
+        ≤ C_goodWhp * (Real.log x) ^ (-(1 : ℝ)) :=
+  ⟨X_goodWhp, good_tuple_whp_iid_atCX⟩
+
+open Classical in
+/-- **iid good-tuple whp bound (Tao (5.11)/(5.12), iid form).**  Under the `geomHalf.iid k` law, a length-`k`
+tuple fails to be good with probability `≪ log^{-1}x` (for `k ≤ n₀`).  This is the iid half of
+`goodTuple_prefix_dev_sum` — `¬good` means a coord is `0` (mass `0`, since `geomHalf` has no atom at `0`)
+or some prefix `pre a m` deviates from `2m` by `≥ log^{0.6}x` (each `≪ exp(−c·log^{0.2}x)` via
+`geomHalf_tail_bound`; sum over the `≤ k+1 ≤ log x` prefixes, then the `log x·exp(−c log^{0.2}) ≤ log^{-1}`
+shrink).  No dTV transfer is needed because the base law is already `geomHalf.iid`.
+Delegates to `good_tuple_whp_iid_atC` (big-C campaign, step 2: `C := C_goodWhp`). -/
+theorem good_tuple_whp_iid :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x → ∀ k : ℕ, k ≤ nZero x →
+      (∑' ā : Fin k → ℕ,
+          if ¬ goodTuple x k ā then ((geomHalf.iid k) ā).toReal else 0)
+        ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
+  obtain ⟨x₀, h⟩ := good_tuple_whp_iid_atC
+  exact ⟨C_goodWhp, x₀, C_goodWhp_pos, h⟩
+
+/-- The `C`-witness of `syracZ_sub_perNGoodMass_bound` (big-C campaign, step 2): a pure
+passthrough of `good_tuple_whp_iid`'s constant, `C_syracZsub := C_goodWhp` (=4). -/
+noncomputable def C_syracZsub : ℝ := C_goodWhp
+
+theorem C_syracZsub_pos : 0 < C_syracZsub := C_goodWhp_pos
+
+/-- The `syracZ_sub_perNGoodMass_bound` cutoff (X-chase): a pure passthrough of
+`good_tuple_whp_iid`'s cutoff, `X_syracZsub := X_goodWhp`. -/
+noncomputable def X_syracZsub : ℝ := X_goodWhp
+
 /-- **B1 rib 2 — the good-tuple whp residual.**  Dropping the `1_good` restriction from `perNGoodMass`
 only *adds* nonnegative mass, and the total added mass over all residues is exactly `ℙ(¬good)` under the
 `geomHalf.iid (n−m₀)` law, which is `≪ log^{-1} x` (mirror of `goodTuple_prefix_dev_sum`'s iid half — the
 per-prefix `geomHalf_tail_bound` summed over the `≤ n₀` prefixes, no dTV transfer needed since the base
 law is already `geomHalf.iid`).  So `perNGoodMass x n X ≤ syracZ(n−m₀)(X).toReal` pointwise and
 `∑_X (syracZ(n−m₀)(X).toReal − perNGoodMass x n X) ≤ C·log^{-1}x`.
-**[C9 leaf B1 rib — pushforward decomposition + analytic whp; does NOT consume C10.]** -/
-theorem syracZ_sub_perNGoodMass_bound :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+**[C9 leaf B1 rib — pushforward decomposition + analytic whp; does NOT consume C10.]**
+`_atCX` sibling (X-chase): cutoff a pure passthrough, `X_syracZsub := X_goodWhp`; the `_atC`
+and ratified ∃-forms delegate. -/
+theorem syracZ_sub_perNGoodMass_bound_atCX :
+    ∀ x : ℝ, X_syracZsub ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           (∀ X : ZMod (3 ^ (n - mZero x)),
               perNGoodMass x n X ≤ ((syracZ (n - mZero x)) X).toReal) ∧
             ∑ X : ZMod (3 ^ (n - mZero x)),
                 (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X)
-              ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
+              ≤ C_syracZsub * (Real.log x) ^ (-(1 : ℝ)) := by
   classical
-  obtain ⟨C, x₀, hC, hwhp⟩ := good_tuple_whp_iid
-  refine ⟨C, x₀, hC, fun x hx E hE y hy n hn => ?_⟩
+  have hwhp := good_tuple_whp_iid_atCX
+  set x₀ : ℝ := X_goodWhp with hx₀def
+  rw [show X_syracZsub = x₀ from rfl]
+  intro x hx E hE y hy n hn
   set k := n - mZero x with hk
   have hkn : k ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
   -- abbreviations for the two masked fiber families
@@ -2025,6 +2209,33 @@ theorem syracZ_sub_perNGoodMass_bound :
   rw [hcollapse]
   exact hwhp x hx k hkn
 
+/-- `_atC` sibling (big-C campaign, step 2): `C := C_syracZsub`, cutoff existential.
+Delegates to `syracZ_sub_perNGoodMass_bound_atCX` (X-chase: `x₀ := X_syracZsub`). -/
+theorem syracZ_sub_perNGoodMass_bound_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          (∀ X : ZMod (3 ^ (n - mZero x)),
+              perNGoodMass x n X ≤ ((syracZ (n - mZero x)) X).toReal) ∧
+            ∑ X : ZMod (3 ^ (n - mZero x)),
+                (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X)
+              ≤ C_syracZsub * (Real.log x) ^ (-(1 : ℝ)) :=
+  ⟨X_syracZsub, syracZ_sub_perNGoodMass_bound_atCX⟩
+
+/-- **B1 rib 2**, ratified ∃-form: delegates to `syracZ_sub_perNGoodMass_bound_atC`
+(big-C campaign, step 2: `C := C_syracZsub`). -/
+theorem syracZ_sub_perNGoodMass_bound :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          (∀ X : ZMod (3 ^ (n - mZero x)),
+              perNGoodMass x n X ≤ ((syracZ (n - mZero x)) X).toReal) ∧
+            ∑ X : ZMod (3 ^ (n - mZero x)),
+                (((syracZ (n - mZero x)) X).toReal - perNGoodMass x n X)
+              ≤ C * (Real.log x) ^ (-(1 : ℝ)) := by
+  obtain ⟨x₀, h⟩ := syracZ_sub_perNGoodMass_bound_atC
+  exact ⟨C_syracZsub, x₀, C_syracZsub_pos, h⟩
+
 /-- **(5.20) sub-lemma B1 — geomHalf → `syracZ` reindex** (assembled from the two ribs above).
 `perNHarmonic` (inner weight the `2^{−pre ā}` iid-geomHalf mass over *good, affine-solvable* tuples)
 agrees with `harmZfine` (the exact `Syrac(ℤ/3^{n−m₀}ℤ)` mass) up to `O(log^{-c}x)`.  Both reindex to
@@ -2037,18 +2248,36 @@ noncomputable def c_harmZfine : ℝ := 0.3
 
 theorem c_harmZfine_pos : 0 < c_harmZfine := by norm_num [c_harmZfine]
 
-/-- Sibling of `perNHarmonic_eq_harmZfine_approx` with the `c`-slot pinned to `c_harmZfine`;
-the original delegates here. -/
-theorem perNHarmonic_eq_harmZfine_approx_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The `C`-witness of `perNHarmonic_eq_harmZfine_approx` (big-C campaign, step 2):
+`C_harmZfine := 4·C_syracZsub` (=16) — the `cn` sup constant `Ccn = 4` (`cn_bound_at`) times
+the whp-residual constant `C_syracZsub`, from the L¹×L∞ Hölder step. -/
+noncomputable def C_harmZfine : ℝ := 4 * C_syracZsub
+
+theorem C_harmZfine_pos : 0 < C_harmZfine := by
+  unfold C_harmZfine; exact mul_pos (by norm_num) C_syracZsub_pos
+
+/-- The `perNHarmonic_eq_harmZfine_approx` cutoff (X-chase): the witness max-tree copied
+verbatim from the `_atC` proof, with `x₀w := X_syracZsub`. -/
+noncomputable def X_harmZfine : ℝ := max (max X_cnBound X_syracZsub) (Real.exp 1024)
+
+/-- Sibling of `perNHarmonic_eq_harmZfine_approx` with BOTH slots pinned (`c := c_harmZfine`,
+`C := C_harmZfine`) at the explicit cutoff `X_harmZfine` (X-chase).  Uses
+`cn_bound_at` (Ccn=4) + `syracZ_sub_perNGoodMass_bound_atCX` (Cw=C_syracZsub); `set Ccn/Cw`
+re-bind the constant names so the Hölder body ports verbatim. -/
+theorem perNHarmonic_eq_harmZfine_approx_atCX :
+    ∀ x : ℝ, X_harmZfine ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          |perNHarmonic x E n - harmZfine x E n| ≤ C * (Real.log x) ^ (-c_harmZfine) := by
-  obtain ⟨Ccn, x₀cn, hCcn, hcn⟩ := cn_bound
-  obtain ⟨Cw, x₀w, hCw, hwhp⟩ := syracZ_sub_perNGoodMass_bound
+          |perNHarmonic x E n - harmZfine x E n| ≤ C_harmZfine * (Real.log x) ^ (-c_harmZfine) := by
+  have hwhp := syracZ_sub_perNGoodMass_bound_atCX
+  set x₀w : ℝ := X_syracZsub with hx₀wdef
+  have hcn := cn_bound_at
   rw [show c_harmZfine = 0.3 from rfl]
-  refine ⟨Ccn * Cw, max (max x₀cn x₀w) (Real.exp 1024), by positivity,
-    fun x hx E hE y hy n hn => ?_⟩
+  rw [show X_harmZfine = max (max X_cnBound x₀w) (Real.exp 1024) from rfl]
+  intro x hx E hE y hy n hn
+  show |perNHarmonic x E n - harmZfine x E n| ≤ 4 * C_syracZsub * Real.log x ^ (-(0.3 : ℝ))
+  set Ccn : ℝ := (4 : ℝ) with hCcndef
+  set Cw : ℝ := C_syracZsub with hCwdef
   simp only [max_le_iff] at hx
   obtain ⟨⟨hxcn, hxw⟩, hxe1024⟩ := hx
   have hLpos : (0 : ℝ) < Real.log x := by
@@ -2088,6 +2317,26 @@ theorem perNHarmonic_eq_harmZfine_approx_explicit :
         mul_le_mul_of_nonneg_right hsum (by positivity)
     _ = Ccn * Cw * Real.log x ^ (-(0.3 : ℝ)) := by rw [← hmul]; ring
 
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `perNHarmonic_eq_harmZfine_approx_atCX` (X-chase: `x₀ := X_harmZfine`). -/
+theorem perNHarmonic_eq_harmZfine_approx_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNHarmonic x E n - harmZfine x E n| ≤ C_harmZfine * (Real.log x) ^ (-c_harmZfine) :=
+  ⟨X_harmZfine, perNHarmonic_eq_harmZfine_approx_atCX⟩
+
+/-- Sibling of `perNHarmonic_eq_harmZfine_approx` with the `c`-slot pinned to `c_harmZfine`;
+the original delegates here.  Now delegates to `perNHarmonic_eq_harmZfine_approx_atC`
+(big-C campaign, step 2: `C := C_harmZfine`). -/
+theorem perNHarmonic_eq_harmZfine_approx_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNHarmonic x E n - harmZfine x E n| ≤ C * (Real.log x) ^ (-c_harmZfine) := by
+  obtain ⟨x₀, h⟩ := perNHarmonic_eq_harmZfine_approx_atC
+  exact ⟨C_harmZfine, x₀, C_harmZfine_pos, h⟩
+
 /-- **(5.20) sub-lemma B2 — the `fine_scale_mixing` scale bridge (THE C10 SEAM).**  The fine-scale
 harmonic content `harmZfine = ∑_X syracZ(n−m₀)(X)·c_n(X)` agrees with `mainZ = ∑_{X'} syracZ(m₀)(X')·
 c_n^{coarse}(X')` up to `O(log^{-c}x)`.  Route (Tao p.26, verified against PDF 2026-07-15): the coarse
@@ -2105,23 +2354,42 @@ noncomputable def c_mainZbridge : ℝ := 1
 
 theorem c_mainZbridge_pos : 0 < c_mainZbridge := by norm_num [c_mainZbridge]
 
-/-- Sibling of `harmZfine_to_mainZ` with the `c`-slot pinned to `c_mainZbridge`; the original
-delegates here. (Note: the `C` here consumes `fine_scale_mixing`, which stays existential —
-the `C`-side is out of scope for this campaign.) -/
-theorem harmZfine_to_mainZ_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The B2 bridge constant, symbolic (big-C campaign, step 2): `4·C_fineScale 1.7·
+(1/200000)^{-1.7}` (the `cn` arm, the C10 mixing constant at `A = 1.7`, and the
+`m₀ ≥ log x/200000` conversion). -/
+noncomputable def C_mainZbridge : ℝ :=
+  4 * C_fineScale 1.7 * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ))
+
+theorem C_mainZbridge_pos : 0 < C_mainZbridge := by
+  unfold C_mainZbridge
+  exact mul_pos (mul_pos (by norm_num) (C_fineScale_pos 1.7))
+    (Real.rpow_pos_of_pos (by norm_num) _)
+
+/-- The B2 bridge cutoff, symbolic (big-C campaign, step 2). -/
+noncomputable def X_mainZbridge : ℝ :=
+  max (Real.exp 200000) (max X_twoMZero (max X_mZeroLin X_cnBound))
+
+/-- Sibling of `harmZfine_to_mainZ` with the `c`-slot pinned to `c_mainZbridge` and the
+`C`/`x₀` slots at (`C_mainZbridge`, `X_mainZbridge`) — the `_at` form (big-C campaign, step 2). -/
+theorem harmZfine_to_mainZ_at :
+    ∀ x : ℝ, X_mainZbridge ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          |harmZfine x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c_mainZbridge) := by
-  obtain ⟨x1, _, htwo⟩ := two_mZero_le_of_mem_Iy
-  obtain ⟨x2, _, hmzlin⟩ := mZero_ge_lin
-  obtain ⟨Cfsm, hCfsm, hfsm⟩ := fine_scale_mixing 1.7 (by norm_num)
-  obtain ⟨Ccn, xcn, hCcnpos, hcnb⟩ := cn_bound
+          |harmZfine x E n - mainZ x E| ≤ C_mainZbridge * (Real.log x) ^ (-c_mainZbridge) := by
+  have htwo := two_mZero_le_of_mem_Iy_at
+  have hmzlin := mZero_ge_lin_at
+  have hCfsm : (0 : ℝ) < C_fineScale 1.7 := C_fineScale_pos 1.7
+  have hfsm := fine_scale_mixing_at 1.7 (by norm_num)
+  have hCcnpos : (0 : ℝ) < (4 : ℝ) := by norm_num
+  have hcnb := cn_bound_at
+  unfold C_mainZbridge X_mainZbridge
   rw [show c_mainZbridge = 1 from rfl]
-  refine ⟨Ccn * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ)),
-    max (Real.exp 200000) (max x1 (max x2 xcn)),
-    mul_pos (mul_pos hCcnpos hCfsm) (Real.rpow_pos_of_pos (by norm_num) _),
-    fun x hx E hE y hy n hn => ?_⟩
+  set Cfsm : ℝ := C_fineScale 1.7 with hCfsmdef
+  set Ccn : ℝ := (4 : ℝ) with hCcndef
+  set x1 : ℝ := X_twoMZero with hx1def
+  set x2 : ℝ := X_mZeroLin with hx2def
+  set xcn : ℝ := X_cnBound with hxcndef
+  intro x hx E hE y hy n hn
   have h200 : Real.exp 200000 ≤ x := le_trans (le_max_left _ _) hx
   have hrest : max x1 (max x2 xcn) ≤ x := le_trans (le_max_right _ _) hx
   have hxx1 : x1 ≤ x := le_trans (le_max_left _ _) hrest
@@ -2161,6 +2429,15 @@ theorem harmZfine_to_mainZ_explicit :
           * (Real.log x ^ (0.7 : ℝ) * Real.log x ^ (-(1.7 : ℝ))) := by rw [hsplit]; ring
     _ = (Ccn * Cfsm * (1 / 200000 : ℝ) ^ (-(1.7 : ℝ))) * Real.log x ^ (-(1 : ℝ)) := by rw [hcomb]
 
+/-- Sibling of `harmZfine_to_mainZ` with the `c`-slot pinned to `c_mainZbridge`,
+original `∃`-form: delegates to the `_at` sibling (big-C campaign, step 2). -/
+theorem harmZfine_to_mainZ_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |harmZfine x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c_mainZbridge) :=
+  ⟨C_mainZbridge, X_mainZbridge, C_mainZbridge_pos, harmZfine_to_mainZ_at⟩
+
 /-- **(5.20) harmonic → `Z` reduction** — sub-lemma B of `perNTerm_eval`, **the sole C10 consumer**.
 The window-free harmonic content agrees with Tao's `Z` (5.21) up to `O(log^{-c}x)`.  **PROVED** from the
 geomHalf→`syracZ` reindex `perNHarmonic_eq_harmZfine_approx` (B1) and the `fine_scale_mixing` scale
@@ -2187,22 +2464,39 @@ noncomputable def c_harmonicZ : ℝ := min c_harmZfine c_mainZbridge
 theorem c_harmonicZ_pos : 0 < c_harmonicZ :=
   lt_min c_harmZfine_pos c_mainZbridge_pos
 
-/-- Sibling of `harmonic_to_Z` with the `c`-slot pinned to `c_harmonicZ`; the original
-delegates here. -/
-theorem harmonic_to_Z_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The explicit (5.20) `harmonic_to_Z` constant: triangle through `harmZfine` combining
+B1 (`C_harmZfine`) and B2 (`C_mainZbridge`) — big-C campaign, step 2. -/
+noncomputable def C_harmonicZ : ℝ := C_harmZfine + C_mainZbridge
+
+theorem C_harmonicZ_pos : 0 < C_harmonicZ :=
+  add_pos C_harmZfine_pos C_mainZbridge_pos
+
+/-- The `harmonic_to_Z` cutoff (X-chase): the witness max-tree copied verbatim from the
+`_atC` proof, with `x1 := X_harmZfine`, `x2 := X_mainZbridge`. -/
+noncomputable def X_harmonicZ : ℝ := max (max X_harmZfine X_mainZbridge) (Real.exp 1)
+
+/-- Sibling of `harmonic_to_Z` with the `c`/`C` slots pinned at
+(`c_harmonicZ`, `C_harmonicZ`) and the cutoff at `X_harmonicZ` (X-chase). -/
+theorem harmonic_to_Z_atCX :
+    ∀ x : ℝ, X_harmonicZ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
-          |perNHarmonic x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c_harmonicZ) := by
-  obtain ⟨C1, x1, hC1, h1⟩ := perNHarmonic_eq_harmZfine_approx_explicit
-  obtain ⟨C2, x2, hC2, h2⟩ := harmZfine_to_mainZ_explicit
+          |perNHarmonic x E n - mainZ x E| ≤ C_harmonicZ * (Real.log x) ^ (-c_harmonicZ) := by
+  have h1 := perNHarmonic_eq_harmZfine_approx_atCX
+  set x1 : ℝ := X_harmZfine with hx1def
+  have h2 := harmZfine_to_mainZ_at
+  set C1 : ℝ := C_harmZfine with hC1def
+  set C2 : ℝ := C_mainZbridge with hC2def
+  set x2 : ℝ := X_mainZbridge with hx2def
+  have hC1 : 0 < C1 := C_harmZfine_pos
+  have hC2 : 0 < C2 := C_mainZbridge_pos
   set c1 : ℝ := c_harmZfine with hc1def
   set c2 : ℝ := c_mainZbridge with hc2def
   have hc1 : 0 < c1 := c_harmZfine_pos
   have hc2 : 0 < c2 := c_mainZbridge_pos
-  rw [show c_harmonicZ = min c1 c2 from rfl]
-  refine ⟨C1 + C2, max (max x1 x2) (Real.exp 1),
-    by positivity, fun x hx E hE y hy n hn => ?_⟩
+  rw [show C_harmonicZ = C1 + C2 from rfl, show c_harmonicZ = min c1 c2 from rfl]
+  rw [show X_harmonicZ = max (max x1 x2) (Real.exp 1) from rfl]
+  intro x hx E hE y hy n hn
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hx1 : x1 ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hx2 : x2 ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -2223,6 +2517,26 @@ theorem harmonic_to_Z_explicit :
         add_le_add (mul_le_mul_of_nonneg_left hLc1 hC1.le)
           (mul_le_mul_of_nonneg_left hLc2 hC2.le)
     _ = (C1 + C2) * L ^ (-(min c1 c2)) := by ring
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `harmonic_to_Z_atCX` (X-chase: `x₀ := X_harmonicZ`). -/
+theorem harmonic_to_Z_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNHarmonic x E n - mainZ x E| ≤ C_harmonicZ * (Real.log x) ^ (-c_harmonicZ) :=
+  ⟨X_harmonicZ, harmonic_to_Z_atCX⟩
+
+/-- Sibling of `harmonic_to_Z` with the `c`-slot pinned to `c_harmonicZ`; the original
+delegates here.  Now delegates to `harmonic_to_Z_atC` (big-C campaign, step 2:
+`C := C_harmonicZ`). -/
+theorem harmonic_to_Z_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNHarmonic x E n - mainZ x E| ≤ C * (Real.log x) ^ (-c_harmonicZ) := by
+  obtain ⟨x₀, h⟩ := harmonic_to_Z_atC
+  exact ⟨C_harmonicZ, x₀, C_harmonicZ_pos, h⟩
 
 theorem harmonic_to_Z :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
@@ -2252,20 +2566,24 @@ theorem PMF.expect_indicator_le_one {α : Type*} (p : PMF α) (S : Set α) :
     _ ≤ ∑' a, (p a).toReal := hfs.tsum_le_tsum hterm hsum1
     _ = 1 := htot
 
--- HEARTBEAT: floor/ceiling lattice count over rpow window endpoints; many small linarith calls
--- over rpow atoms exhaust the default per-declaration budget cumulatively.
-set_option maxHeartbeats 800000 in
 /-- **`#I_y` lattice bracket** — the integer count of the (5.9) interval is its real length
 `(α−1)·log y/log(4/3) − 2·log^{0.8}x` up to `±1`.  Elementary floor/ceiling count once the window
 is wide (`≥ 0.002·log x`) and sits inside `[0, n₀]`.  Lower half feeds `mainZ_bound` (via the
-a-posteriori `Z ≪ 1`); both halves are the lattice core of `Iy_count_ratio` (5.9). -/
-theorem Iy_card_bracket :
-    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+a-posteriori `Z ≪ 1`); both halves are the lattice core of `Iy_count_ratio` (5.9).
+`_atX` form (X-chase): the witness `exp(2000⁵)` was already explicit; named `X_IyCard`. -/
+noncomputable def X_IyCard : ℝ := Real.exp ((2000 : ℝ) ^ (5 : ℕ))
+
+-- HEARTBEAT: floor/ceiling lattice count over rpow window endpoints; many small linarith calls
+-- over rpow atoms exhaust the default per-declaration budget cumulatively.
+set_option maxHeartbeats 800000 in
+theorem Iy_card_bracket_atX :
+    ∀ x : ℝ, X_IyCard ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
       (alpha - 1) * Real.log y / Real.log (4 / 3) - 2 * Real.log x ^ (0.8 : ℝ) - 1
           ≤ ((Iy x y).card : ℝ)
         ∧ ((Iy x y).card : ℝ)
           ≤ (alpha - 1) * Real.log y / Real.log (4 / 3) - 2 * Real.log x ^ (0.8 : ℝ) + 1 := by
-  refine ⟨Real.exp ((2000 : ℝ) ^ (5 : ℕ)), fun x hx y hy => ?_⟩
+  rw [show X_IyCard = Real.exp ((2000 : ℝ) ^ (5 : ℕ)) from rfl]
+  intro x hx y hy
   have hyval : y = x ^ alpha ∨ y = x ^ alpha ^ 2 := by simpa [Set.mem_insert_iff] using hy
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hx
   have hLT5 : (2000 : ℝ) ^ (5 : ℕ) ≤ Real.log x := by
@@ -2401,26 +2719,69 @@ theorem Iy_card_bracket :
   · rw [← hW]; linarith [hle1, hcardR, haR_lt, hbR_gt]
   · rw [← hW]; linarith [hle2, hcardR, haR_ge, hbR_le]
 
+/-- ∃-form of `Iy_card_bracket_atX` (X-chase: `x₀ := X_IyCard`). -/
+theorem Iy_card_bracket :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x → ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+      (alpha - 1) * Real.log y / Real.log (4 / 3) - 2 * Real.log x ^ (0.8 : ℝ) - 1
+          ≤ ((Iy x y).card : ℝ)
+        ∧ ((Iy x y).card : ℝ)
+          ≤ (alpha - 1) * Real.log y / Real.log (4 / 3) - 2 * Real.log x ^ (0.8 : ℝ) + 1 :=
+  ⟨X_IyCard, Iy_card_bracket_atX⟩
+
+/-- **The `mainZ = O(1)` constant** (big-C campaign, step 2): (5.19) leaf + (5.20) leaf +
+the `0.001`-count inversion of `1 + C8`. -/
+noncomputable def C_mainZ : ℝ := C_perNHarm + C_harmonicZ + 1000 * (1 + C_fpApprox)
+
+theorem C_mainZ_pos : 0 < C_mainZ :=
+  add_pos (add_pos C_perNHarm_pos C_harmonicZ_pos)
+    (by nlinarith [C_fpApprox_pos])
+
+/-- The `mainZ_bound` cutoff (X-chase): the witness max-tree copied verbatim from the
+`_atC` proof, with `xA := X_perNHarm`, `xB := X_harmonicZ`, `x8 := X_fpApprox`,
+`xI := X_IyCard`. -/
+noncomputable def X_mainZ : ℝ :=
+  max (max X_perNHarm X_harmonicZ)
+    (max X_fpApprox (max X_IyCard (Real.exp ((2000 : ℝ) ^ (5 : ℕ)))))
+
 -- HEARTBEAT: assembles four ∃-lemmas and a lattice count; the cumulative linarith/nlinarith
 -- budget exceeds the default.
 set_option maxHeartbeats 800000 in
-/-- **`mainZ` is `O(1)`** — via Tao's a-posteriori route (p.26): `Z ≍ (log(4/3)/2)·ℙ(Pass∈E) = O(1)`.
+/-- Sibling of `mainZ_bound` with the `C`-slot pinned at `C_mainZ` and the cutoff at
+`X_mainZ` (X-chase).  **`mainZ` is `O(1)`** — via Tao's
+a-posteriori route (p.26): `Z ≍ (log(4/3)/2)·ℙ(Pass∈E) = O(1)`.
 Non-circular assembly from PROVED pieces: for every `n ∈ I_y` (at `y = x^α`),
 `perNTerm ≥ (mainZ − O(1))/norm` by the (5.19) reduction (`perNTerm_harmonic_approx`) and the
 (5.20) `Z`-reduction (`harmonic_to_Z`); summing over the `≥ 0.001·log x` values of `n`
 (`Iy_card_bracket`) gives `#I_y·(mainZ − O(1))/norm ≤ approxMainTerm ≤ 1 + O(log^{-c}x)` by
 Prop 5.2 (`first_passage_approx`, C8) and `ℙ ≤ 1`; since `#I_y/norm ≫ 1`, `mainZ ≪ 1`. -/
-theorem mainZ_bound :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
-      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C := by
+theorem mainZ_bound_atCX :
+    ∀ x : ℝ, X_mainZ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C_mainZ := by
   classical
-  obtain ⟨cA, CA, xA, hcA, hCA, hA⟩ := perNTerm_harmonic_approx
-  obtain ⟨cB, CB, xB, hcB, hCB, hB⟩ := harmonic_to_Z
-  obtain ⟨c8, C8, x8, hc8, hC8, h8⟩ := first_passage_approx
-  obtain ⟨xI, hIcard⟩ := Iy_card_bracket
-  refine ⟨CA + CB + 1000 * (1 + C8), max (max xA xB)
-      (max x8 (max xI (Real.exp ((2000 : ℝ) ^ (5 : ℕ))))),
-    by positivity, fun x hx E hE => ?_⟩
+  have hA := perNTerm_harmonic_approx_atCX
+  have hB := harmonic_to_Z_atCX
+  have h8 := first_passage_approx_atCX
+  have hIcard := Iy_card_bracket_atX
+  set xA : ℝ := X_perNHarm with hxAdef
+  set xB : ℝ := X_harmonicZ with hxBdef
+  set x8 : ℝ := X_fpApprox with hx8def
+  set xI : ℝ := X_IyCard with hxIdef
+  set cA : ℝ := c_perNHarm with hcAdef
+  set CA : ℝ := C_perNHarm with hCAdef
+  set cB : ℝ := c_harmonicZ with hcBdef
+  set CB : ℝ := C_harmonicZ with hCBdef
+  set c8 : ℝ := c_fpApprox with hc8def
+  set C8 : ℝ := C_fpApprox with hC8def
+  have hcA : 0 < cA := c_perNHarm_pos
+  have hCA : 0 < CA := C_perNHarm_pos
+  have hcB : 0 < cB := c_harmonicZ_pos
+  have hCB : 0 < CB := C_harmonicZ_pos
+  have hc8 : 0 < c8 := c_fpApprox_pos
+  have hC8 : 0 < C8 := C_fpApprox_pos
+  rw [show C_mainZ = CA + CB + 1000 * (1 + C8) from rfl]
+  rw [show X_mainZ = max (max xA xB)
+      (max x8 (max xI (Real.exp ((2000 : ℝ) ^ (5 : ℕ))))) from rfl]
+  intro x hx E hE
   simp only [max_le_iff] at hx
   obtain ⟨⟨hxA, hxB⟩, hx8, hxI, hxT⟩ := hx
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hxT
@@ -2544,6 +2905,21 @@ theorem mainZ_bound :
       nlinarith [hchain, hLpos, hpos]
     linarith
 
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `mainZ_bound_atCX` (X-chase: `x₀ := X_mainZ`). -/
+theorem mainZ_bound_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C_mainZ :=
+  ⟨X_mainZ, mainZ_bound_atCX⟩
+
+/-- **`mainZ` is `O(1)`** — the ∃-form.  Now delegates to `mainZ_bound_atC`
+(big-C campaign, step 2: `C := C_mainZ`). -/
+theorem mainZ_bound :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) → |mainZ x E| ≤ C := by
+  obtain ⟨x₀, h⟩ := mainZ_bound_atC
+  exact ⟨C_mainZ, x₀, C_mainZ_pos, h⟩
+
 /-- **Per-`n` evaluation (5.19)+(5.20).**  For each `n ∈ I_y`, the per-`n` term equals the
 window-independent `mainZ x E` divided by the harmonic normaliser `((α−1)/2)·log y`, up to a *relative*
 `O(log^{-c} x)` error.  **PROVED** from the (5.19) harmonic reduction `perNTerm_harmonic_approx` (leaf A),
@@ -2556,23 +2932,41 @@ noncomputable def c_perNTermEval : ℝ := min c_perNHarm c_harmonicZ
 theorem c_perNTermEval_pos : 0 < c_perNTermEval :=
   lt_min c_perNHarm_pos c_harmonicZ_pos
 
-/-- Sibling of `perNTerm_eval` with the `c`-slot pinned to `c_perNTermEval`; the original
-delegates here. -/
-theorem perNTerm_eval_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The per-`n` evaluation constant: leaf A + leaf B, triangle through `perNHarmonic`
+(big-C campaign, step 2). -/
+noncomputable def C_perNTermEval : ℝ := C_perNHarm + C_harmonicZ
+
+theorem C_perNTermEval_pos : 0 < C_perNTermEval :=
+  add_pos C_perNHarm_pos C_harmonicZ_pos
+
+/-- The `perNTerm_eval` cutoff (X-chase): the witness max-tree copied verbatim from the
+`_atC` proof, with `xA := X_perNHarm`, `xB := X_harmonicZ`. -/
+noncomputable def X_perNTermEval : ℝ := max (max X_perNHarm X_harmonicZ) (Real.exp 1)
+
+/-- Sibling of `perNTerm_eval` with the `c`/`C` slots pinned at
+(`c_perNTermEval`, `C_perNTermEval`) and the cutoff at `X_perNTermEval` (X-chase). -/
+theorem perNTerm_eval_atCX :
+    ∀ x : ℝ, X_perNTermEval ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
           |perNTerm x E y n - mainZ x E / ((alpha - 1) / 2 * Real.log y)|
-            ≤ C * (Real.log x) ^ (-c_perNTermEval) / ((alpha - 1) / 2 * Real.log y) := by
-  obtain ⟨CA, xA, hCA, hA⟩ := perNTerm_harmonic_approx_explicit
-  obtain ⟨CB, xB, hCB, hB⟩ := harmonic_to_Z_explicit
+            ≤ C_perNTermEval * (Real.log x) ^ (-c_perNTermEval)
+              / ((alpha - 1) / 2 * Real.log y) := by
+  have hA := perNTerm_harmonic_approx_atCX
+  have hB := harmonic_to_Z_atCX
+  set xA : ℝ := X_perNHarm with hxAdef
+  set xB : ℝ := X_harmonicZ with hxBdef
+  set CA : ℝ := C_perNHarm with hCAdef
+  set CB : ℝ := C_harmonicZ with hCBdef
+  have hCA : 0 < CA := C_perNHarm_pos
+  have hCB : 0 < CB := C_harmonicZ_pos
   set cA : ℝ := c_perNHarm with hcAdef
   set cB : ℝ := c_harmonicZ with hcBdef
   have hcA : 0 < cA := c_perNHarm_pos
   have hcB : 0 < cB := c_harmonicZ_pos
-  rw [show c_perNTermEval = min cA cB from rfl]
-  refine ⟨CA + CB, max (max xA xB) (Real.exp 1),
-    by positivity, fun x hx E hE y hy n hn => ?_⟩
+  rw [show C_perNTermEval = CA + CB from rfl, show c_perNTermEval = min cA cB from rfl]
+  rw [show X_perNTermEval = max (max xA xB) (Real.exp 1) from rfl]
+  intro x hx E hE y hy n hn
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hxA : xA ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
   have hxB : xB ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
@@ -2613,6 +3007,29 @@ theorem perNTerm_eval_explicit :
         · exact div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hLcB hCB.le) hnormpos.le
     _ = (CA + CB) * L ^ (-c) / norm := by ring
 
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `perNTerm_eval_atCX` (X-chase: `x₀ := X_perNTermEval`). -/
+theorem perNTerm_eval_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNTerm x E y n - mainZ x E / ((alpha - 1) / 2 * Real.log y)|
+            ≤ C_perNTermEval * (Real.log x) ^ (-c_perNTermEval)
+              / ((alpha - 1) / 2 * Real.log y) :=
+  ⟨X_perNTermEval, perNTerm_eval_atCX⟩
+
+/-- Sibling of `perNTerm_eval` with the `c`-slot pinned to `c_perNTermEval`; the original
+delegates here.  Now delegates to `perNTerm_eval_atC` (big-C campaign, step 2:
+`C := C_perNTermEval`). -/
+theorem perNTerm_eval_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ), ∀ n ∈ Iy x y,
+          |perNTerm x E y n - mainZ x E / ((alpha - 1) / 2 * Real.log y)|
+            ≤ C * (Real.log x) ^ (-c_perNTermEval) / ((alpha - 1) / 2 * Real.log y) := by
+  obtain ⟨x₀, h⟩ := perNTerm_eval_atC
+  exact ⟨C_perNTermEval, x₀, C_perNTermEval_pos, h⟩
+
 theorem perNTerm_eval :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
@@ -2629,16 +3046,21 @@ theorem c_IyRatio_pos : 0 < c_IyRatio := by norm_num [c_IyRatio]
 /-- **Interval count (5.9).**  `#I_y = (1+O(log^{-c}x))·(α−1)/log(4/3)·log y`, rendered as the ratio to
 the harmonic normaliser: `#I_y / (((α−1)/2)·log y) = 2/log(4/3) + O(log^{-c}x)`.  This is the pure
 lattice-point count `#{n∈[IyLo,IyHi]}` = interval length `+ O(1)` (via `IyHi−IyLo = (α−1)log y/log(4/3)
-− 2log^{0.8}x`), whose ratio telescopes the window into the **y-free** `2/log(4/3)`. -/
-theorem Iy_count_ratio_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+− 2log^{0.8}x`), whose ratio telescopes the window into the **y-free** `2/log(4/3)`.
+X-chase cutoff: the witness max-tree copied verbatim, `xB := X_IyCard`. -/
+noncomputable def X_IyRatio : ℝ := max X_IyCard (Real.exp ((2000 : ℝ) ^ (5 : ℕ)))
+
+/-- (5.9) count ratio at the explicit cutoff `X_IyRatio` (X-chase). -/
+theorem Iy_count_ratio_atCX :
+    ∀ x : ℝ, X_IyRatio ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         |((Iy x y).card : ℝ) / ((alpha - 1) / 2 * Real.log y) - 2 / Real.log (4 / 3)|
-          ≤ C * (Real.log x) ^ (-c_IyRatio) := by
-  obtain ⟨xB, hB⟩ := Iy_card_bracket
+          ≤ 6000 * (Real.log x) ^ (-c_IyRatio) := by
+  have hB := Iy_card_bracket_atX
+  set xB : ℝ := X_IyCard with hxBdef
   rw [show c_IyRatio = 0.2 from rfl]
-  refine ⟨6000, max xB (Real.exp ((2000 : ℝ) ^ (5 : ℕ))), by norm_num,
-    fun x hx y hy => ?_⟩
+  rw [show X_IyRatio = max xB (Real.exp ((2000 : ℝ) ^ (5 : ℕ))) from rfl]
+  intro x hx y hy
   have hxB : xB ≤ x := le_trans (le_max_left _ _) hx
   have hxe : Real.exp ((2000 : ℝ) ^ (5 : ℕ)) ≤ x := le_trans (le_max_right _ _) hx
   have hxpos : (0 : ℝ) < x := lt_of_lt_of_le (Real.exp_pos _) hxe
@@ -2699,6 +3121,25 @@ theorem Iy_count_ratio_explicit :
         rw [halpha]
         nlinarith [hvL, hu1, hvpos.le, hLpos.le]
 
+/-- The `_atC` form, cutoff existential.
+Delegates to `Iy_count_ratio_atCX` (X-chase: `x₀ := X_IyRatio`). -/
+theorem Iy_count_ratio_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        |((Iy x y).card : ℝ) / ((alpha - 1) / 2 * Real.log y) - 2 / Real.log (4 / 3)|
+          ≤ 6000 * (Real.log x) ^ (-c_IyRatio) :=
+  ⟨X_IyRatio, Iy_count_ratio_atCX⟩
+
+/-- Original explicit-`c` form of the (5.9) count ratio: delegates to `Iy_count_ratio_atC`
+(big-C campaign, step 2: `C := 6000`, cutoff existential via `Iy_card_bracket`). -/
+theorem Iy_count_ratio_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        |((Iy x y).card : ℝ) / ((alpha - 1) / 2 * Real.log y) - 2 / Real.log (4 / 3)|
+          ≤ C * (Real.log x) ^ (-c_IyRatio) := by
+  obtain ⟨x₀, h⟩ := Iy_count_ratio_atC
+  exact ⟨6000, x₀, by norm_num, h⟩
+
 theorem Iy_count_ratio :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
@@ -2714,7 +3155,25 @@ noncomputable def c_approxToZ : ℝ := min c_IyRatio c_perNTermEval
 theorem c_approxToZ_pos : 0 < c_approxToZ :=
   lt_min c_IyRatio_pos c_perNTermEval_pos
 
-/-- (5.21) main-term evaluation, explicit-`c` sibling of `approxMainTerm_to_Z`:
+/-- The (5.21) main-term evaluation constant (big-C campaign, step 2): count-ratio
+(`6000`) × per-`n` evaluation, plus `mainZ`-bound × count-ratio. -/
+noncomputable def C_approxToZ : ℝ :=
+  (2 / Real.log (4 / 3) + 6000) * C_perNTermEval + C_mainZ * 6000
+
+theorem C_approxToZ_pos : 0 < C_approxToZ :=
+  add_pos
+    (mul_pos (add_pos (by positivity : (0 : ℝ) < 2 / Real.log (4 / 3)) (by norm_num))
+      C_perNTermEval_pos)
+    (mul_pos C_mainZ_pos (by norm_num))
+
+/-- The `approxMainTerm_to_Z` cutoff (X-chase): the witness max-tree copied verbatim from
+the `_atC` proof, with `x1 := X_IyRatio`, `xz := X_mainZ`, `x2 := X_perNTermEval`. -/
+noncomputable def X_approxToZ : ℝ :=
+  max (max (max X_IyRatio X_mainZ) X_perNTermEval) (Real.exp 1)
+
+/-- Sibling of `approxMainTerm_to_Z` with the `c`/`C` slots pinned at
+(`c_approxToZ`, `C_approxToZ`) and the cutoff at `X_approxToZ` (X-chase).
+(5.21) main-term evaluation:
 `approxMainTerm x E y = (2 / log(4/3))·mainZ x E + O(log^{-c} x)`.  This subsumes Tao's pp.25–27
 chain: the single-value mass formula (5.19)
 `ℙ(Aff_ā(N_y)=M) = (1+O(x^{-c}))·2^{-|ā|}·3^{n−m₀} / (((α−1)/2)·log y · M)`; the harmonic-sum reduction
@@ -2725,15 +3184,24 @@ and the interval count `#I_y` (5.9) `= (1+O(log^{-c}x))·(α−1)/log(4/3)·log 
 **[C9 CRUX — the sole remaining C9 hole; this is where C10 enters.]**  Target is `y`-independent (`Z`),
 which is the faithful rendering of the paper's cancellation; `approxMainTerm_window_stable` below is a
 one-line triangle over this. -/
-theorem approxMainTerm_to_Z_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+theorem approxMainTerm_to_Z_atCX :
+    ∀ x : ℝ, X_approxToZ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
           |approxMainTerm x E y - 2 / Real.log (4 / 3) * mainZ x E|
-            ≤ C * (Real.log x) ^ (-c_approxToZ) := by
-  obtain ⟨C1, x1, hC1, h9⟩ := Iy_count_ratio_explicit
-  obtain ⟨Cz, xz, hCz, hZb⟩ := mainZ_bound
-  obtain ⟨C2, x2, hC2, hp⟩ := perNTerm_eval_explicit
+            ≤ C_approxToZ * (Real.log x) ^ (-c_approxToZ) := by
+  have h9 := Iy_count_ratio_atCX
+  have hZb := mainZ_bound_atCX
+  have hp := perNTerm_eval_atCX
+  set x1 : ℝ := X_IyRatio with hx1def
+  set xz : ℝ := X_mainZ with hxzdef
+  set x2 : ℝ := X_perNTermEval with hx2def
+  set C1 : ℝ := (6000 : ℝ) with hC1def
+  set Cz : ℝ := C_mainZ with hCzdef
+  set C2 : ℝ := C_perNTermEval with hC2def
+  have hC1 : (0 : ℝ) < C1 := by rw [hC1def]; norm_num
+  have hCz : 0 < Cz := C_mainZ_pos
+  have hC2 : 0 < C2 := C_perNTermEval_pos
   set c1 : ℝ := c_IyRatio with hc1def
   set c2 : ℝ := c_perNTermEval with hc2def
   have hc1 : 0 < c1 := c_IyRatio_pos
@@ -2742,10 +3210,10 @@ theorem approxMainTerm_to_Z_explicit :
   have halpha0 : 0 < alpha := by norm_num [alpha]
   have halpha1 : 0 < alpha - 1 := by norm_num [alpha]
   have hb2 : (0 : ℝ) < 2 / Real.log (4 / 3) := by positivity
-  rw [show c_approxToZ = min c1 c2 from rfl]
-  refine ⟨(2 / Real.log (4 / 3) + C1) * C2 + Cz * C1,
-    max (max (max x1 xz) x2) (Real.exp 1), by nlinarith [hC1, hC2, hCz, hb2],
-    fun x hx E hE y hy => ?_⟩
+  rw [show c_approxToZ = min c1 c2 from rfl,
+    show C_approxToZ = (2 / Real.log (4 / 3) + C1) * C2 + Cz * C1 from rfl]
+  rw [show X_approxToZ = max (max (max x1 xz) x2) (Real.exp 1) from rfl]
+  intro x hx E hE y hy
   -- thresholds
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
   have hx1 : x1 ≤ x :=
@@ -2830,6 +3298,27 @@ theorem approxMainTerm_to_Z_explicit :
         add_le_add hStepA hStepB
     _ = ((2 / Real.log (4 / 3) + C1) * C2 + Cz * C1) * L ^ (-c) := by ring
 
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `approxMainTerm_to_Z_atCX` (X-chase: `x₀ := X_approxToZ`). -/
+theorem approxMainTerm_to_Z_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |approxMainTerm x E y - 2 / Real.log (4 / 3) * mainZ x E|
+            ≤ C_approxToZ * (Real.log x) ^ (-c_approxToZ) :=
+  ⟨X_approxToZ, approxMainTerm_to_Z_atCX⟩
+
+/-- Original explicit-`c` form of the (5.21) evaluation: delegates to
+`approxMainTerm_to_Z_atC` (big-C campaign, step 2: `C := C_approxToZ`). -/
+theorem approxMainTerm_to_Z_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        ∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+          |approxMainTerm x E y - 2 / Real.log (4 / 3) * mainZ x E|
+            ≤ C * (Real.log x) ^ (-c_approxToZ) := by
+  obtain ⟨x₀, h⟩ := approxMainTerm_to_Z_atC
+  exact ⟨C_approxToZ, x₀, C_approxToZ_pos, h⟩
+
 theorem approxMainTerm_to_Z :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
@@ -2839,20 +3328,37 @@ theorem approxMainTerm_to_Z :
   obtain ⟨C, x₀, hC, h⟩ := approxMainTerm_to_Z_explicit
   exact ⟨c_approxToZ, C, x₀, c_approxToZ_pos, hC, h⟩
 
-/-- **Lemma 5.3 + (5.18)–(5.21)** — window-stability of the affine main term.  `approxMainTerm x E y`
-agrees across the two nested windows `y = x^α` and `y = x^{α²}` up to `O(log^{-c} x)`.  PROVED from
-`approxMainTerm_to_Z` by the triangle inequality through the window-independent `mainZ x E`: both
-windows evaluate to `(2/log(4/3))·mainZ x E + O(log^{-c} x)` with the **same** `mainZ`, so their
-difference is `O(log^{-c} x)`. -/
-theorem approxMainTerm_window_stable_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- The window-stability constant: two triangle legs through `mainZ`
+(big-C campaign, step 2). -/
+noncomputable def C_windowStable : ℝ := 2 * C_approxToZ
+
+theorem C_windowStable_pos : 0 < C_windowStable :=
+  mul_pos (by norm_num) C_approxToZ_pos
+
+/-- Sibling of `approxMainTerm_window_stable` with the `c`/`C` slots pinned at
+(`c_approxToZ`, `C_windowStable`) — the `_atC` form (big-C campaign, step 2), cutoff
+existential.  **Lemma 5.3 + (5.18)–(5.21)** — window-stability of the affine main term.
+`approxMainTerm x E y` agrees across the two nested windows `y = x^α` and `y = x^{α²}` up to
+`O(log^{-c} x)`.  PROVED from `approxMainTerm_to_Z` by the triangle inequality through the
+window-independent `mainZ x E`: both windows evaluate to `(2/log(4/3))·mainZ x E + O(log^{-c} x)`
+with the **same** `mainZ`, so their difference is `O(log^{-c} x)`.
+X-chase cutoff: a pure passthrough, `X_windowStable := X_approxToZ`. -/
+noncomputable def X_windowStable : ℝ := X_approxToZ
+
+theorem approxMainTerm_window_stable_atCX :
+    ∀ x : ℝ, X_windowStable ≤ x →
       ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
         |approxMainTerm x E (x ^ alpha) - approxMainTerm x E (x ^ alpha ^ 2)|
-          ≤ C * (Real.log x) ^ (-c_approxToZ) := by
-  obtain ⟨C, x₀, hC, hZ⟩ := approxMainTerm_to_Z_explicit
+          ≤ C_windowStable * (Real.log x) ^ (-c_approxToZ) := by
+  have hZ := approxMainTerm_to_Z_atCX
+  set x₀ : ℝ := X_approxToZ with hx₀def
+  set C : ℝ := C_approxToZ with hCdef
+  have hC : 0 < C := C_approxToZ_pos
   set c : ℝ := c_approxToZ with hcdef
   have hc : 0 < c := c_approxToZ_pos
-  refine ⟨2 * C, x₀, by positivity, fun x hx E hE => ?_⟩
+  rw [show C_windowStable = 2 * C from rfl]
+  rw [show X_windowStable = x₀ from rfl]
+  intro x hx E hE
   have hmem1 : (x ^ alpha) ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ) := Set.mem_insert _ _
   have hmem2 : (x ^ alpha ^ 2) ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ) :=
     Set.mem_insert_of_mem _ rfl
@@ -2865,6 +3371,25 @@ theorem approxMainTerm_window_stable_explicit :
     _ ≤ C * (Real.log x) ^ (-c) + C * (Real.log x) ^ (-c) := by
         rw [abs_sub_comm (2 / Real.log (4 / 3) * mainZ x E)]; exact add_le_add h1 h2
     _ = 2 * C * (Real.log x) ^ (-c) := by ring
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `approxMainTerm_window_stable_atCX` (X-chase: `x₀ := X_windowStable`). -/
+theorem approxMainTerm_window_stable_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        |approxMainTerm x E (x ^ alpha) - approxMainTerm x E (x ^ alpha ^ 2)|
+          ≤ C_windowStable * (Real.log x) ^ (-c_approxToZ) :=
+  ⟨X_windowStable, approxMainTerm_window_stable_atCX⟩
+
+/-- Original explicit-`c` form of the window stability: delegates to
+`approxMainTerm_window_stable_atC` (big-C campaign, step 2: `C := C_windowStable`). -/
+theorem approxMainTerm_window_stable_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      ∀ E : Set ℕ, (∀ M ∈ E, M % 2 = 1 ∧ 1 ≤ M ∧ (M : ℝ) ≤ x) →
+        |approxMainTerm x E (x ^ alpha) - approxMainTerm x E (x ^ alpha ^ 2)|
+          ≤ C * (Real.log x) ^ (-c_approxToZ) := by
+  obtain ⟨x₀, h⟩ := approxMainTerm_window_stable_atC
+  exact ⟨C_windowStable, x₀, C_windowStable_pos, h⟩
 
 theorem approxMainTerm_window_stable :
     ∃ c C x₀ : ℝ, 0 < c ∧ 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
@@ -2882,34 +3407,53 @@ noncomputable def c_stab : ℝ := min (min c_valSumTail c_fpApprox) c_approxToZ
 theorem c_stab_pos : 0 < c_stab :=
   lt_min (lt_min c_valSumTail_pos c_fpApprox_pos) c_approxToZ_pos
 
--- RATIFY-3: window endpoints spelled per the spec's guidance as `[x^α, x^{α²}]` and
--- `[x^{α²}, x^{α³}]` (using `alpha^2`, `alpha^3`), which the SKELETON-SPEC flagged as the
--- intended reading of its nested-pow shorthand. Judge against §5 pp.25–28.
--- RELOCATED (2026-07-15) from `Sec5/FirstPassage.lean` VERBATIM (byte-identical statement) so the
--- assembly can consume C8 (`first_passage_approx`) + C10 (`fine_scale_mixing`) without an import cycle.
-/-- **Proposition 1.11** (stabilization): the passage-location law is stable across the
-two nearby log-windows, and non-passage is rare. The spine's key input. -/
-theorem stabilization_explicit :
-    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+/-- **The reified stabilization constant** (Prop 1.11, the Sec5 spine capstone): C7 leg +
+4× the C8 leg + 2× the window-stability leg (big-C campaign, step 2). -/
+noncomputable def C_stab : ℝ := C_valSumGeom + 4 * C_fpApprox + 2 * C_windowStable
+
+theorem C_stab_pos : 0 < C_stab :=
+  add_pos (add_pos C_valSumGeom_pos (mul_pos (by norm_num) C_fpApprox_pos))
+    (mul_pos (by norm_num) C_windowStable_pos)
+
+/-- **The reified stabilization cutoff** (X-chase, phase-3 capstone): the witness max-tree
+copied verbatim from the `_atC` proof, with `x7 := X_firstPassNonescape`,
+`x8 := X_fpApprox`, `xs := X_windowStable`. -/
+noncomputable def X_stab : ℝ :=
+  max (max (max X_firstPassNonescape X_fpApprox) X_windowStable) (Real.exp 1)
+
+/-- Sibling of the WATCHED `stabilization` with the `c`/`C` slots pinned at
+(`c_stab`, `C_stab`) and the cutoff at `X_stab` (X-chase).
+**This completes the Sec5 spine.**  Prop 1.11: the passage-location law is stable across
+the two nearby log-windows, and non-passage is rare. -/
+theorem stabilization_atCX :
+    ∀ x : ℝ, X_stab ≤ x →
       (∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
         (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
-          ≤ C * x ^ (-c_stab)) ∧
+          ≤ C_stab * x ^ (-c_stab)) ∧
       PMF.dTV ((logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).map (passLoc ⌊x⌋₊))
               ((logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).map (passLoc ⌊x⌋₊))
-        ≤ C * (Real.log x) ^ (-c_stab) := by
-  obtain ⟨C7, x7, hC7, h7⟩ := first_passage_nonescape_explicit
-  obtain ⟨C8, x8, hC8, h8⟩ := first_passage_approx_explicit
-  obtain ⟨Cs, xs, hCs, hstab⟩ := approxMainTerm_window_stable_explicit
+        ≤ C_stab * (Real.log x) ^ (-c_stab) := by
+  have h7 := first_passage_nonescape_atCX
+  have h8 := first_passage_approx_atCX
+  have hstab := approxMainTerm_window_stable_atCX
+  set x7 : ℝ := X_firstPassNonescape with hx7def
+  set x8 : ℝ := X_fpApprox with hx8def
+  set xs : ℝ := X_windowStable with hxsdef
+  set C7 : ℝ := C_valSumGeom with hC7def
+  set C8 : ℝ := C_fpApprox with hC8def
+  set Cs : ℝ := C_windowStable with hCsdef
+  have hC7 : 0 < C7 := C_valSumGeom_pos
+  have hC8 : 0 < C8 := C_fpApprox_pos
+  have hCs : 0 < Cs := C_windowStable_pos
   set c7 : ℝ := c_valSumTail with hc7def
   set c8 : ℝ := c_fpApprox with hc8def
   set cs : ℝ := c_approxToZ with hcsdef
   have hc7 : 0 < c7 := c_valSumTail_pos
   have hc8 : 0 < c8 := c_fpApprox_pos
   have hcs : 0 < cs := c_approxToZ_pos
-  rw [show c_stab = min (min c7 c8) cs from rfl]
-  refine ⟨C7 + 4 * C8 + 2 * Cs,
-    max (max (max x7 x8) xs) (Real.exp 1),
-    by positivity, ?_⟩
+  rw [show c_stab = min (min c7 c8) cs from rfl,
+    show C_stab = C7 + 4 * C8 + 2 * Cs from rfl]
+  rw [show X_stab = max (max (max x7 x8) xs) (Real.exp 1) from rfl]
   intro x hx
   -- thresholds
   have hxe : Real.exp 1 ≤ x := le_trans (le_max_right _ _) hx
@@ -2999,6 +3543,37 @@ theorem stabilization_explicit :
       _ = (4 * C8 + 2 * Cs) * (Real.log x) ^ (-c) := by ring
       _ ≤ (C7 + 4 * C8 + 2 * Cs) * (Real.log x) ^ (-c) := by
           apply mul_le_mul_of_nonneg_right _ hLnn; linarith
+
+/-- The `_atC` form (big-C campaign, step 2), cutoff existential.
+Delegates to `stabilization_atCX` (X-chase: `x₀ := X_stab`). -/
+theorem stabilization_atC :
+    ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      (∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
+          ≤ C_stab * x ^ (-c_stab)) ∧
+      PMF.dTV ((logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).map (passLoc ⌊x⌋₊))
+              ((logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).map (passLoc ⌊x⌋₊))
+        ≤ C_stab * (Real.log x) ^ (-c_stab) :=
+  ⟨X_stab, stabilization_atCX⟩
+
+-- RATIFY-3: window endpoints spelled per the spec's guidance as `[x^α, x^{α²}]` and
+-- `[x^{α²}, x^{α³}]` (using `alpha^2`, `alpha^3`), which the SKELETON-SPEC flagged as the
+-- intended reading of its nested-pow shorthand. Judge against §5 pp.25–28.
+-- RELOCATED (2026-07-15) from `Sec5/FirstPassage.lean` VERBATIM (byte-identical statement) so the
+-- assembly can consume C8 (`first_passage_approx`) + C10 (`fine_scale_mixing`) without an import cycle.
+/-- **Proposition 1.11** (stabilization): the passage-location law is stable across the
+two nearby log-windows, and non-passage is rare. The spine's key input.  Now delegates to
+`stabilization_atC` (big-C campaign, step 2: `C := C_stab`). -/
+theorem stabilization_explicit :
+    ∃ C x₀ : ℝ, 0 < C ∧ ∀ x : ℝ, x₀ ≤ x →
+      (∀ y ∈ ({x ^ alpha, x ^ alpha ^ 2} : Set ℝ),
+        (logUnifOdd y (y ^ alpha)).expect (Set.indicator {N | ¬ passes ⌊x⌋₊ N} 1)
+          ≤ C * x ^ (-c_stab)) ∧
+      PMF.dTV ((logUnifOdd (x ^ alpha) (x ^ alpha ^ 2)).map (passLoc ⌊x⌋₊))
+              ((logUnifOdd (x ^ alpha ^ 2) (x ^ alpha ^ 3)).map (passLoc ⌊x⌋₊))
+        ≤ C * (Real.log x) ^ (-c_stab) := by
+  obtain ⟨x₀, h⟩ := stabilization_atC
+  exact ⟨C_stab, x₀, C_stab_pos, h⟩
 
 -- RATIFY-3 (see above): statement byte-identical to the ratified pin; the proof body lives in
 -- `stabilization_explicit` (effective-constants campaign, sibling + delegate).

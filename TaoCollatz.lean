@@ -2,6 +2,7 @@ import TaoCollatz.Basic.Collatz
 import TaoCollatz.Basic.LogDensity
 import TaoCollatz.Basic.Anchors
 import TaoCollatz.Basic.Valuation
+import TaoCollatz.Basic.ExplicitConstants
 import TaoCollatz.Prob.Basic
 import TaoCollatz.Prob.Geometric
 import TaoCollatz.Prob.LocalBound
@@ -36,6 +37,8 @@ import TaoCollatz.Sec7.HoldBasics
 import TaoCollatz.Sec7.Decay
 import TaoCollatz.Sec3.Reduction
 import TaoCollatz.Statement
+import TaoCollatz.ExplicitBigC
+import TaoCollatz.BigCTower
 
 /-!
 # TaoCollatz

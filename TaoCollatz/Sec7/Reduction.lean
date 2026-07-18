@@ -927,15 +927,15 @@ character sum over the raw valuation vector `a ~ Geom(2)ⁿ` decays polynomially
 uniformly in `ξ` coprime to 3. PROVED (moved from `Holding.lean`, 2026-07-12) from
 the pairing bound (7.5) + Lemma 7.2 damping + Proposition 7.3
 (`renewal_white_encounters`). -/
-theorem key_fourier_decay (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∀ n : ℕ, 1 ≤ n → ∀ ξ : ZMod (3 ^ n), ¬ (3 ∣ ξ.val) →
+theorem key_fourier_decay_at (A : ℝ) (hA : 0 < A) :
+    ∀ n : ℕ, 1 ≤ n → ∀ ξ : ZMod (3 ^ n), ¬ (3 ∣ ξ.val) →
       ‖(PMF.iid geomHalf n).cexpect fun a =>
           eC (-(ξ.val * ((∑ j ∈ Finset.range n,
             (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre a (j + 1)).val) : ℚ)
             / 3 ^ n)‖
-        ≤ C * (n : ℝ) ^ (-A) := by
-  obtain ⟨C, hC0, hC⟩ := renewal_white_encounters A hA
-  refine ⟨C, hC0, fun n hn ξ hξ => ?_⟩
+        ≤ C_renewalWhite A * (n : ℝ) ^ (-A) := by
+  have hC := renewal_white_encounters_at A hA
+  intro n hn ξ hξ
   refine le_trans (cexpect_pairing n ξ.val) (le_trans ?_ (hC n ξ.val hξ hn))
   refine expect_mono_le _ _ _
     (fun b => Finset.prod_nonneg fun j _ => norm_nonneg _)
@@ -946,5 +946,17 @@ theorem key_fourier_decay (A : ℝ) (hA : 0 < A) :
     have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
     exact_mod_cast h0
   exact mul_nonneg (pow_nonneg hε0 3) (Nat.cast_nonneg _)
+
+open Classical in
+/-- **Proposition 7.1**, original `∃`-form: delegates to the `_at` sibling at
+`C_renewalWhite A` (big-C campaign, step 2). -/
+theorem key_fourier_decay (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∀ n : ℕ, 1 ≤ n → ∀ ξ : ZMod (3 ^ n), ¬ (3 ∣ ξ.val) →
+      ‖(PMF.iid geomHalf n).cexpect fun a =>
+          eC (-(ξ.val * ((∑ j ∈ Finset.range n,
+            (3 : ZMod (3 ^ n)) ^ j * (2 : ZMod (3 ^ n))⁻¹ ^ pre a (j + 1)).val) : ℚ)
+            / 3 ^ n)‖
+        ≤ C * (n : ℝ) ^ (-A) :=
+  ⟨C_renewalWhite A, C_renewalWhite_pos A, key_fourier_decay_at A hA⟩
 
 end TaoCollatz

@@ -69,6 +69,43 @@ theorem exists_triangleFamily (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) :
   obtain ⟨T, h0, hcanonical, h1, h2, h3⟩ := black_structure n ξ hξ
   exact ⟨⟨T, h0, hcanonical, h1, h2, h3⟩⟩
 
+/-- **Big triangles have exponentially deep apexes** (lap 16, Option B probe;
+true for ANY route): a family triangle of size `≥ S` has apex phase
+`|θq(apex)| ≤ ε·e^{−S}`. Near-definitional: by `canonical` every member is a
+`cornerTriple`, whose size is `log(ε/|θ*|)` by construction, so size `≥ S`
+inverts to exactly this depth bound. -/
+theorem bigTriangle_apex_deep {n ξ : ℕ} (hξ : ¬ 3 ∣ ξ) (F : TriangleFamily n ξ)
+    {t : ℕ × ℤ × ℝ} (ht : t ∈ F.T) {S : ℝ} (hS : S ≤ t.2.2) :
+    |(θq n ξ t.1 t.2.1 : ℝ)| ≤ (epsBW : ℝ) * Real.exp (-S) := by
+  obtain ⟨p, hps, hpb, rfl⟩ := F.canonical t ht
+  have h2j : 2 * p.1 + 1 ≤ n := by
+    have := (Nat.le_div_iff_mul_le (by norm_num : 0 < 2)).mp hps
+    omega
+  have hθpos : (0:ℝ) < |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)| := by
+    exact_mod_cast corner_phase_pos hξ h2j
+  have hε : (0:ℝ) < (epsBW : ℝ) := by
+    have h : (0:ℚ) < epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h
+  simp only [cornerTriple] at hS ⊢
+  have hexp : Real.exp S ≤ (epsBW : ℝ)
+      / |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)| := by
+    have h := Real.exp_le_exp.mpr hS
+    rwa [Real.exp_log (by positivity)] at h
+  have h1 : |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)| * Real.exp S
+      ≤ (epsBW : ℝ) := by
+    calc |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)| * Real.exp S
+        ≤ |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)|
+            * ((epsBW : ℝ)
+              / |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)|) :=
+          mul_le_mul_of_nonneg_left hexp hθpos.le
+      _ = (epsBW : ℝ) := mul_div_cancel₀ _ (ne_of_gt hθpos)
+  calc |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)|
+      = |(θq n ξ (jstar n ξ p.1 p.2) (lstar n ξ p.1 p.2) : ℝ)|
+        * Real.exp S * Real.exp (-S) := by
+        rw [mul_assoc, ← Real.exp_add]; simp
+    _ ≤ (epsBW : ℝ) * Real.exp (-S) :=
+        mul_le_mul_of_nonneg_right h1 (Real.exp_pos _).le
+
 /-- The white points of the strip `j ≤ ⌊n/2⌋` (renewal coordinates). Case 2's
 white-exit gain ((7.47)) only counts endpoints that are white AND still inside
 the strip: beyond the strip edge `Q ≡ 1` and no damping is available. -/
@@ -283,10 +320,14 @@ theorem edgeWeight_summand_le {A : ℝ} (hA : 0 ≤ A) {m : ℕ} (hm : 2 ≤ m)
     have := mul_le_mul_of_nonneg_left hconc (Real.rpow_nonneg hmpos.le (-A))
     linarith
 
-/-- `log² m` exceeds any bound for `m` large (turns the `s ≤ m/log²m` budget into an
-explicit threshold). -/
-theorem log_sq_ge_of_large (b : ℝ) : ∃ N : ℕ, ∀ m : ℕ, N ≤ m → b ≤ Real.log m ^ 2 := by
-  refine ⟨⌈Real.exp (Real.sqrt (max b 0))⌉₊, fun m hm => ?_⟩
+/-- Explicit threshold past which `log² m ≥ b` (witness of `log_sq_ge_of_large`,
+reified — big-C campaign step 2). -/
+noncomputable def T_logSq (b : ℝ) : ℕ := ⌈Real.exp (Real.sqrt (max b 0))⌉₊
+
+/-- `log² m` exceeds `b` for all `m ≥ T_logSq b`, threshold-explicit form. -/
+theorem log_sq_ge_at (b : ℝ) : ∀ m : ℕ, T_logSq b ≤ m → b ≤ Real.log m ^ 2 := by
+  intro m hm
+  unfold T_logSq at hm
   set r : ℝ := Real.sqrt (max b 0) with hr
   have hr0 : 0 ≤ r := Real.sqrt_nonneg _
   have hexp_pos : 0 < Real.exp r := Real.exp_pos _
@@ -297,11 +338,19 @@ theorem log_sq_ge_of_large (b : ℝ) : ∃ N : ℕ, ∀ m : ℕ, N ≤ m → b �
     _ = r ^ 2 := (Real.sq_sqrt (le_max_right _ _)).symm
     _ ≤ Real.log m ^ 2 := pow_le_pow_left₀ hr0 hlogm 2
 
-/-- `exp (-ρ m)` drops below any positive bound for `m` large (the super-exponential
-tail decay, made into an explicit threshold). -/
-theorem exp_neg_mul_le_of_large (ρ : ℝ) (hρ : 0 < ρ) (b : ℝ) (hb : 0 < b) :
-    ∃ N : ℕ, ∀ m : ℕ, N ≤ m → Real.exp (-ρ * m) ≤ b := by
-  refine ⟨⌈Real.log b⁻¹ / ρ⌉₊, fun m hm => ?_⟩
+/-- `log_sq_ge_of_large`, original `∃`-form: delegates to `log_sq_ge_at` at `T_logSq b`. -/
+theorem log_sq_ge_of_large (b : ℝ) : ∃ N : ℕ, ∀ m : ℕ, N ≤ m → b ≤ Real.log m ^ 2 :=
+  ⟨T_logSq b, log_sq_ge_at b⟩
+
+/-- Explicit threshold past which `exp(−ρm) ≤ b` (witness of `exp_neg_mul_le_of_large`,
+reified — big-C campaign step 2). -/
+noncomputable def T_expNeg (ρ b : ℝ) : ℕ := ⌈Real.log b⁻¹ / ρ⌉₊
+
+/-- `exp (-ρ m)` drops below `b` for all `m ≥ T_expNeg ρ b`, threshold-explicit form. -/
+theorem exp_neg_mul_le_at (ρ : ℝ) (hρ : 0 < ρ) (b : ℝ) (hb : 0 < b) :
+    ∀ m : ℕ, T_expNeg ρ b ≤ m → Real.exp (-ρ * m) ≤ b := by
+  intro m hm
+  unfold T_expNeg at hm
   have hx : Real.log b⁻¹ / ρ ≤ (m : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hm)
   have hρm : Real.log b⁻¹ ≤ (m : ℝ) * ρ := by
     have h := mul_le_mul_of_nonneg_right hx hρ.le
@@ -310,12 +359,21 @@ theorem exp_neg_mul_le_of_large (ρ : ℝ) (hρ : 0 < ρ) (b : ℝ) (hb : 0 < b)
   calc Real.exp (-ρ * (m : ℝ)) ≤ Real.exp (Real.log b) := Real.exp_le_exp.mpr hfin
     _ = b := Real.exp_log hb
 
-/-- `log m ≤ ε·m` for `m` large (`log` is sublinear).  Turns a polynomial factor
-`m^A` into an explicit threshold when it is fighting super-exponential decay:
-`exp(-ρm)·m^A → 0`.  Proof via `log m ≤ 2√m` and `√m ≥ 2/ε`. -/
-theorem log_le_eps_mul_of_large (ε : ℝ) (hε : 0 < ε) :
-    ∃ N : ℕ, ∀ m : ℕ, N ≤ m → Real.log m ≤ ε * m := by
-  refine ⟨⌈(2 / ε) ^ 2⌉₊ + 1, fun m hm => ?_⟩
+/-- `exp_neg_mul_le_of_large`, original `∃`-form: delegates to `exp_neg_mul_le_at`. -/
+theorem exp_neg_mul_le_of_large (ρ : ℝ) (hρ : 0 < ρ) (b : ℝ) (hb : 0 < b) :
+    ∃ N : ℕ, ∀ m : ℕ, N ≤ m → Real.exp (-ρ * m) ≤ b :=
+  ⟨T_expNeg ρ b, exp_neg_mul_le_at ρ hρ b hb⟩
+
+/-- Explicit threshold past which `log m ≤ ε·m` (witness of `log_le_eps_mul_of_large`,
+reified — big-C campaign step 2). -/
+noncomputable def T_logLin (ε : ℝ) : ℕ := ⌈(2 / ε) ^ 2⌉₊ + 1
+
+/-- `log m ≤ ε·m` for all `m ≥ T_logLin ε`, threshold-explicit form (`log` is sublinear;
+proof via `log m ≤ 2√m` and `√m ≥ 2/ε`). -/
+theorem log_le_eps_mul_at (ε : ℝ) (hε : 0 < ε) :
+    ∀ m : ℕ, T_logLin ε ≤ m → Real.log m ≤ ε * m := by
+  intro m hm
+  unfold T_logLin at hm
   have hm1 : 1 ≤ m := by omega
   have hmpos : (0 : ℝ) < m := by exact_mod_cast hm1
   have hsqrt_pos : 0 < Real.sqrt m := Real.sqrt_pos.mpr hmpos
@@ -344,8 +402,23 @@ theorem log_le_eps_mul_of_large (ε : ℝ) (hε : 0 < ε) :
       _ = ε * m := by rw [hsq]
   linarith
 
+/-- `log_le_eps_mul_of_large`, original `∃`-form: delegates to `log_le_eps_mul_at`. -/
+theorem log_le_eps_mul_of_large (ε : ℝ) (hε : 0 < ε) :
+    ∃ N : ℕ, ∀ m : ℕ, N ≤ m → Real.log m ≤ ε * m :=
+  ⟨T_logLin ε, log_le_eps_mul_at ε hε⟩
+
+/-- **`fpDist_fst_mgf_le` threshold**, symbolic (big-C campaign, step 2):
+`25 + N₁ + N₃ + N₈₅ + N₄` of `fpDist_fst_mgf_numeric` at (`A, δ, c, C'`). -/
+noncomputable def T_mgfNumeric (A δ c C' : ℝ) : ℕ :=
+  25 + ⌈2 * A / (min c (c ^ 2 / 20) / 2)⌉₊ + ⌈50 * A / Real.log (1 + δ / 2)⌉₊
+    + T_logSq (max (max (2 * A * Real.log 2 / (Real.log (1 + δ / 2) * Real.log 9))
+        (A / Real.log (1 + δ / 2))) 1)
+    + T_expNeg (min (c ^ 2 / 40) (c / 2) * Real.log (1 + δ / 2) / (4 * A))
+        (δ / (2 * (C' * Real.exp (A / 2)
+          * (1 / (1 - Real.exp (-(c ^ 2 / 40))) + 1 / (1 - Real.exp (-(c / 2)))))))
+
 set_option maxHeartbeats 4000000 in
-/-- **Numeric core of `fpDist_fst_mgf_le`** — the explicit threshold `Cthr` and the
+/-- Numeric core of `fpDist_fst_mgf_le`, `_at` sibling at the explicit threshold `T_mgfNumeric` (big-C campaign, step 2) — the explicit threshold `Cthr` and the
 per-`(m,s)` split point `K` bundling all the constant-juggling estimates that the
 mechanical Fubini/split assembly consumes.  With `θ = 2A/m` and
 `K = ⌊m·log(1+δ/2)/(2A)⌋` this asserts: (a) the tilt lands in `gaussExp_col_tail`'s
@@ -357,9 +430,9 @@ range `θ ≤ ½·min(c, c²/20)`; (b) the `gaussExp` cutoff budget `s·log2 ≤
 PROVED (axiom-clean) via `log_sq_ge_of_large` (budget + `x₀` bound) and
 `exp_neg_mul_le_of_large` (the final tail decay); rates `a₂ = c²/20-θ ≥ c²/40`,
 `a₁ = c-θ ≥ c/2` bound the geometric denominators; `Cthr = 25+N₁+N₃+N₈₅+N₄`. -/
-theorem fpDist_fst_mgf_numeric {A δ c C' : ℝ} (hA : 0 < A) (hδ : 0 < δ)
+theorem fpDist_fst_mgf_numeric_at {A δ c C' : ℝ} (hA : 0 < A) (hδ : 0 < δ)
     (hc : 0 < c) (hC' : 0 < C') :
-    ∃ Cthr : ℕ, 25 ≤ Cthr ∧ ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
+    25 ≤ T_mgfNumeric A δ c C' ∧ ∀ m : ℕ, T_mgfNumeric A δ c C' ≤ m → ∀ s : ℕ,
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
       ∃ K : ℕ, 25 ≤ K ∧
         2 * A / (m : ℝ) ≤ min c (c ^ 2 / 20) / 2 ∧
@@ -370,6 +443,7 @@ theorem fpDist_fst_mgf_numeric {A δ c C' : ℝ} (hA : 0 < A) (hδ : 0 < δ)
                 / (1 - Real.exp (-(c ^ 2 / 20 - 2 * A / (m : ℝ))))
              + Real.exp (-(c - 2 * A / (m : ℝ)) * (((K : ℝ) + 1) - (s : ℝ) / 4))
                 / (1 - Real.exp (-(c - 2 * A / (m : ℝ))))) ≤ δ / 2 := by
+  unfold T_mgfNumeric
   -- absolute constants
   set μ : ℝ := min c (c ^ 2 / 20) / 2 with hμdef
   have hμ : 0 < μ := by rw [hμdef]; have : 0 < min c (c ^ 2 / 20) := lt_min hc (by positivity); linarith
@@ -396,12 +470,14 @@ theorem fpDist_fst_mgf_numeric {A δ c C' : ℝ} (hA : 0 < A) (hδ : 0 < δ)
   set Q : ℝ := C' * Real.exp (A / 2) * (1 / d₂ + 1 / d₁) with hQdef
   have hQ : 0 < Q := by rw [hQdef]; positivity
   -- thresholds
-  obtain ⟨N85, hN85⟩ :=
-    log_sq_ge_of_large (max (max (2 * A * Real.log 2 / (L * Real.log 9)) (A / L)) 1)
-  obtain ⟨N4, hN4⟩ := exp_neg_mul_le_of_large ρ hρ (δ / (2 * Q)) (by positivity)
+  set N85 : ℕ := T_logSq (max (max (2 * A * Real.log 2 / (L * Real.log 9)) (A / L)) 1)
+    with hN85def
+  have hN85 := log_sq_ge_at (max (max (2 * A * Real.log 2 / (L * Real.log 9)) (A / L)) 1)
+  set N4 : ℕ := T_expNeg ρ (δ / (2 * Q)) with hN4def
+  have hN4 := exp_neg_mul_le_at ρ hρ (δ / (2 * Q)) (by positivity)
   set N1 : ℕ := ⌈2 * A / μ⌉₊ with hN1def
   set N3 : ℕ := ⌈50 * A / L⌉₊ with hN3def
-  refine ⟨25 + N1 + N3 + N85 + N4, by omega, fun m hm s hs => ?_⟩
+  refine ⟨by omega, fun m hm s hs => ?_⟩
   -- unpack the threshold
   have hm25 : 25 ≤ m := by omega
   have hmN1 : N1 ≤ m := by omega
@@ -582,6 +658,33 @@ theorem fpDist_fst_mgf_numeric {A δ c C' : ℝ} (hA : 0 < A) (hδ : 0 < δ)
         _ = δ / 2 := by field_simp
     exact le_trans hfinal hlast
 
+/-- **Numeric core of `fpDist_fst_mgf_le`** — the explicit threshold `Cthr` and the
+per-`(m,s)` split point `K` bundling all the constant-juggling estimates that the
+mechanical Fubini/split assembly consumes.  With `θ = 2A/m` and
+`K = ⌊m·log(1+δ/2)/(2A)⌋` this asserts: (a) the tilt lands in `gaussExp_col_tail`'s
+range `θ ≤ ½·min(c, c²/20)`; (b) the `gaussExp` cutoff budget `s·log2 ≤ (K+2)·log9`
+(from `s ≤ m/log²m`, `K = Θ(m)`); (c) the bulk factor `exp(θK) ≤ 1+δ/2` (floor of
+`K`); (d) the `gaussExp` tail RHS at cutoff `K` is `≤ δ/2` (super-exponential decay
+`x₀ = K+1-s/4 = Θ(m)` beats the bounded prefactor `exp(θs/4) ≤ exp(A/2)`).
+
+PROVED (axiom-clean) via `log_sq_ge_of_large` (budget + `x₀` bound) and
+`exp_neg_mul_le_of_large` (the final tail decay); rates `a₂ = c²/20-θ ≥ c²/40`,
+`a₁ = c-θ ≥ c/2` bound the geometric denominators; `Cthr = 25+N₁+N₃+N₈₅+N₄`. -/
+theorem fpDist_fst_mgf_numeric {A δ c C' : ℝ} (hA : 0 < A) (hδ : 0 < δ)
+    (hc : 0 < c) (hC' : 0 < C') :
+    ∃ Cthr : ℕ, 25 ≤ Cthr ∧ ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      ∃ K : ℕ, 25 ≤ K ∧
+        2 * A / (m : ℝ) ≤ min c (c ^ 2 / 20) / 2 ∧
+        (s : ℝ) * Real.log 2 ≤ ((K : ℝ) + 2) * Real.log 9 ∧
+        Real.exp (2 * A / (m : ℝ) * (K : ℝ)) ≤ 1 + δ / 2 ∧
+        C' * Real.exp (2 * A / (m : ℝ) * ((s : ℝ) / 4))
+          * (Real.exp (-(c ^ 2 / 20 - 2 * A / (m : ℝ)) * (((K : ℝ) + 1) - (s : ℝ) / 4))
+                / (1 - Real.exp (-(c ^ 2 / 20 - 2 * A / (m : ℝ))))
+             + Real.exp (-(c - 2 * A / (m : ℝ)) * (((K : ℝ) + 1) - (s : ℝ) / 4))
+                / (1 - Real.exp (-(c - 2 * A / (m : ℝ))))) ≤ δ / 2 :=
+  ⟨T_mgfNumeric A δ c C', fpDist_fst_mgf_numeric_at hA hδ hc hC'⟩
+
 /-- **Reusable first-coordinate `fpDist` MGF envelope** — the Fubini + `gaussExp`
 envelope core shared by `fpDist_fst_mgf_le` (vanishing tilt `θ = 2A/m`) and
 `fpDist_fst_tail_le` (fixed tilt `θ₀ = Θ(1)`).  For ANY admissible tilt
@@ -699,6 +802,37 @@ theorem fpDist_fst_mgf_general {c C' : ℝ} (hc : 0 < c) (hC' : 0 < C')
               mul_le_mul_of_nonneg_left hstep (Real.exp_pos _).le
           _ = Real.exp (θ * (K : ℝ)) := mul_one _
 
+/-- **`fpDist` first-coordinate MGF threshold**, symbolic (big-C campaign, step 2):
+`T_mgfNumeric` at the column-marginal constants (`c_fpLocation`, `C_fpCol`). -/
+noncomputable def T_fstMgf (A δ : ℝ) : ℕ := T_mgfNumeric A δ c_fpLocation C_fpCol
+
+/-- `fpDist_fst_mgf_le`, `_at` sibling at `T_fstMgf A δ` (big-C campaign, step 2);
+original body verbatim over `fpDist_col_le_explicitC` + `fpDist_fst_mgf_numeric_at`. -/
+theorem fpDist_fst_mgf_le_at (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∀ m : ℕ, T_fstMgf A δ ≤ m → ∀ s : ℕ,
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      ∑' e : ℕ × ℤ, (fpDist s e).toReal * Real.exp (2 * A * (e.1 : ℝ) / (m : ℝ))
+        ≤ 1 + δ := by
+  have hc := c_fpLocation_pos
+  have hC'pos := C_fpCol_pos
+  have hcol := fpDist_col_le_explicitC
+  have hCthr25 := (fpDist_fst_mgf_numeric_at hA hδ hc hC'pos).1
+  have hnum := (fpDist_fst_mgf_numeric_at hA hδ hc hC'pos).2
+  unfold T_fstMgf
+  intro m hm s hs
+  obtain ⟨K, hK25, hθle, hbud, hbulk, htail⟩ := hnum m hm s hs
+  have hmpos : (0 : ℝ) < m := by
+    have h25 : (25 : ℕ) ≤ m := le_trans hCthr25 hm
+    exact_mod_cast lt_of_lt_of_le (by norm_num) h25
+  have hθ0 : (0 : ℝ) ≤ 2 * A / (m : ℝ) := by positivity
+  -- rewrite the exponent `2A·e.1/m` as `θ·e.1`, then invoke the reusable envelope
+  have hexp : ∀ e : ℕ × ℤ,
+      2 * A * (e.1 : ℝ) / (m : ℝ) = 2 * A / (m : ℝ) * (e.1 : ℝ) := fun e => by ring
+  simp_rw [hexp]
+  -- bulk `exp(θK) ≤ 1+δ/2` and gaussExp tail `≤ δ/2` are exactly `hbulk`, `htail`
+  exact le_trans (fpDist_fst_mgf_general hc hC'pos hcol hθ0 hθle s K hK25 hbud).2
+    (le_trans (add_le_add hbulk htail) (le_of_eq (by ring)))
+
 /-- **First-coordinate `fpDist` MGF bound** (node X8 sub-goal — the genuinely-new
 analytic input on which both the main term and the tail of `fpDist_edgeWeight_le`
 depend).  At the vanishing tilt `θ = 2A/m`, under the (7.52) budget
@@ -725,27 +859,14 @@ route that supersedes the earlier renewal plan).  Write
   summation toolbox (`sum_sqrt_exp_le`, `sum_range_exp_neg_sq_le`, `conv_Gweight_exp`)
   plus the `l`-geometric `∑_{l>s} e^{−c(l−s)}`.
 The whole point: the SHARP `≤ 1+δ` comes from `fpDist` being a probability measure
-on the bulk; the envelope is used only where it is exponentially slack. -/
+on the bulk; the envelope is used only where it is exponentially slack.
+Original `∃`-form: delegates to the `_at` sibling at `T_fstMgf`. -/
 theorem fpDist_fst_mgf_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
     ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
       ∑' e : ℕ × ℤ, (fpDist s e).toReal * Real.exp (2 * A * (e.1 : ℝ) / (m : ℝ))
-        ≤ 1 + δ := by
-  obtain ⟨c, hc, C', hC'pos, hcol⟩ := fpDist_col_le
-  obtain ⟨Cthr, hCthr25, hnum⟩ := fpDist_fst_mgf_numeric hA hδ hc hC'pos
-  refine ⟨Cthr, fun m hm s hs => ?_⟩
-  obtain ⟨K, hK25, hθle, hbud, hbulk, htail⟩ := hnum m hm s hs
-  have hmpos : (0 : ℝ) < m := by
-    have h25 : (25 : ℕ) ≤ m := le_trans hCthr25 hm
-    exact_mod_cast lt_of_lt_of_le (by norm_num) h25
-  have hθ0 : (0 : ℝ) ≤ 2 * A / (m : ℝ) := by positivity
-  -- rewrite the exponent `2A·e.1/m` as `θ·e.1`, then invoke the reusable envelope
-  have hexp : ∀ e : ℕ × ℤ,
-      2 * A * (e.1 : ℝ) / (m : ℝ) = 2 * A / (m : ℝ) * (e.1 : ℝ) := fun e => by ring
-  simp_rw [hexp]
-  -- bulk `exp(θK) ≤ 1+δ/2` and gaussExp tail `≤ δ/2` are exactly `hbulk`, `htail`
-  exact le_trans (fpDist_fst_mgf_general hc hC'pos hcol hθ0 hθle s K hK25 hbud).2
-    (le_trans (add_le_add hbulk htail) (le_of_eq (by ring)))
+        ≤ 1 + δ :=
+  ⟨T_fstMgf A δ, fpDist_fst_mgf_le_at A hA δ hδ⟩
 
 /-- ℝ-valued first-coordinate `Hold` MGF bound (bridge from the `ℝ≥0∞` `tiltZ`):
 `∑_d hold(d)·exp(θ·d₁) ≤ 1 + 4θ + 32θ²` for `|θ| ≤ 1/100`.  This is the `Z_hold`
@@ -768,6 +889,17 @@ theorem hold_fst_mgf_le_real {θ : ℝ} (hlo : -(1 / 100) ≤ θ) (hhi : θ ≤ 
         ENNReal.toReal_mono ENNReal.ofReal_ne_top (tiltZ_hold_fst_le hlo hhi)
     _ = 1 + 4 * θ + 32 * θ ^ 2 := ENNReal.toReal_ofReal (by nlinarith [sq_nonneg θ])
 
+/-- **`fpDist` fixed-tilt tail threshold**, symbolic (big-C campaign, step 2):
+`400 + Nlog + Nexp + N16` of `fpDist_fst_tail_le` at (`c_fpLocation`, `C_fpCol`). -/
+noncomputable def T_fstTail (A δ : ℝ) : ℕ :=
+  400 + T_logLin (min c_fpLocation (c_fpLocation ^ 2 / 20) / 2 / (16 * A))
+    + T_expNeg (min c_fpLocation (c_fpLocation ^ 2 / 20) / 2 / 16)
+        (δ / (1 + C_fpCol * (1 / (1 - Real.exp (-(c_fpLocation ^ 2 / 20
+              - min c_fpLocation (c_fpLocation ^ 2 / 20) / 2)))
+           + 1 / (1 - Real.exp (-(c_fpLocation
+              - min c_fpLocation (c_fpLocation ^ 2 / 20) / 2))))))
+    + T_logSq 16
+
 -- HEARTBEAT: the fixed-tilt Chernoff assembles the reusable MGF envelope, a
 -- pointwise Chernoff, and a polynomial-vs-exponential closeout in one declaration;
 -- the nested `Real.exp` atoms make `isDefEq`/`nlinarith` costly. 2M covers it.
@@ -779,13 +911,19 @@ FIXED constant (`θ₀ = ½·min(c, c²/20)` from `fpDist_col_le`), NOT `2A/m`: 
 `θ = 2A/m` the factor is the non-decaying `e^{−A/2}`).  Route: Fubini + `fpDist_col_le`
 + `gaussExp_col_tail` at cutoff `K' = Θ(s)` (budget `s·log2 ≤ (K'+2)log9`), giving
 `Z_fp(θ₀) ≤ exp(O(m/log²m))`, so `e^{−θ₀m/4}·Z_fp(θ₀) = exp(−θ₀m/4 + o(m)) ≪ m^{−A}`.
-OPEN (node X8 — the genuinely-new tail input; ~150 lines reusing the MGF machinery). -/
-theorem fpDist_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
-    ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
+`_at` sibling at `T_fstTail A δ` (big-C campaign, step 2); original body verbatim over
+`fpDist_col_le_explicitC` and the explicit thresholds. -/
+theorem fpDist_fst_tail_le_at (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∀ m : ℕ, T_fstTail A δ ≤ m → ∀ s : ℕ,
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
       ∑' e : ℕ × ℤ, (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
         ≤ δ * (m : ℝ) ^ (-A) := by
-  obtain ⟨c, hc, C', hC'pos, hcol⟩ := fpDist_col_le
+  have hcol := fpDist_col_le_explicitC
+  unfold T_fstTail
+  set c : ℝ := c_fpLocation with hcdef
+  set C' : ℝ := C_fpCol with hC'def
+  have hc : 0 < c := c_fpLocation_pos
+  have hC'pos : 0 < C' := C_fpCol_pos
   -- FIXED tilt `θ₀ = ½·min(c, c²/20)` (Θ(1); NOT `2A/m`)
   set θ₀ : ℝ := min c (c ^ 2 / 20) / 2 with hθ₀def
   have hθ₀pos : 0 < θ₀ := by
@@ -814,10 +952,13 @@ theorem fpDist_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
     rw [hBdef]; have : 0 < C' * (1 / d₂ + 1 / d₁) := by positivity
     linarith
   -- thresholds
-  obtain ⟨Nlog, hNlog⟩ := log_le_eps_mul_of_large (θ₀ / (16 * A)) (by positivity)
-  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_of_large (θ₀ / 16) (by positivity) (δ / B) (by positivity)
-  obtain ⟨N16, hN16⟩ := log_sq_ge_of_large 16
-  refine ⟨400 + Nlog + Nexp + N16, fun m hm s hs => ?_⟩
+  set Nlog : ℕ := T_logLin (θ₀ / (16 * A)) with hNlogdef
+  have hNlog := log_le_eps_mul_at (θ₀ / (16 * A)) (by positivity)
+  set Nexp : ℕ := T_expNeg (θ₀ / 16) (δ / B) with hNexpdef
+  have hNexp := exp_neg_mul_le_at (θ₀ / 16) (by positivity) (δ / B) (by positivity)
+  set N16 : ℕ := T_logSq 16 with hN16def
+  have hN16 := log_sq_ge_at 16
+  intro m hm s hs
   have hm400 : 400 ≤ m := by omega
   have hmNlog : Nlog ≤ m := by omega
   have hmNexp : Nexp ≤ m := by omega
@@ -966,24 +1107,40 @@ theorem fpDist_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
         nlinarith [mul_le_mul_of_nonneg_left hKm4 hθ₀nn]
     _ ≤ δ * (m : ℝ) ^ (-A) := hfin
 
+
+/-- `fpDist_fst_tail_le`, original `∃`-form: delegates to the `_at` sibling at `T_fstTail`. -/
+theorem fpDist_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      ∑' e : ℕ × ℤ, (fpDist s e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+        ≤ δ * (m : ℝ) ^ (-A) :=
+  ⟨T_fstTail A δ, fpDist_fst_tail_le_at A hA δ hδ⟩
+
+/-- **`Hold` first-coordinate tail threshold**, symbolic (big-C campaign, step 2):
+`400 + Nlog + Nexp` of `hold_fst_tail_le` at `ρ = log(4/3)/8`. -/
+noncomputable def T_holdTail (A δ : ℝ) : ℕ :=
+  400 + T_logLin (Real.log (4 / 3) / 8 / (2 * A)) + T_expNeg (Real.log (4 / 3) / 8 / 2) δ
+
 /-- **`Hold` first-coordinate right tail** (the hold half of `fpDist_edgeWeight_le`'s
 tail): `P_hold(d₁ > m/4) ≤ δ·m^{−A}`.  `hold`'s first marginal is EXACTLY the geometric
 `geomQuarter` (`hold_map_fst`), so this reduces via `hold_tsum_fst` to the closed-form
 geometric tail `geomQuarter_tail`: `∑_{k>m/4} geomQuarter(k) = (3/4)^{⌊m/4⌋}`.  Then
 `(3/4)^{⌊m/4⌋} = exp(−log(4/3)·⌊m/4⌋) ≤ exp(−(log(4/3)/8)·m) ≤ δ·m^{−A}` for `m` large
-(`⌊m/4⌋ ≥ m/8`; polynomial `m^A` beaten by `exp(−ρm)` via `log_le_eps_mul_of_large`
-+ `exp_neg_mul_le_of_large`).  No Fubini / MGF needed — the geometric marginal is closed
-form.  PROVED, axiom-clean. -/
-theorem hold_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
-    ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m →
+(`⌊m/4⌋ ≥ m/8`; polynomial `m^A` beaten by `exp(−ρm)`).  `_at` sibling at
+`T_holdTail A δ` (big-C campaign, step 2); original body verbatim. -/
+theorem hold_fst_tail_le_at (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∀ m : ℕ, T_holdTail A δ ≤ m →
       ∑' d : ℕ × ℤ, (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)
         ≤ δ * (m : ℝ) ^ (-A) := by
+  unfold T_holdTail
   set ρ : ℝ := Real.log (4 / 3) / 8 with hρdef
   have hlog43pos : 0 < Real.log (4 / 3) := Real.log_pos (by norm_num)
   have hρpos : 0 < ρ := by rw [hρdef]; positivity
-  obtain ⟨Nlog, hNlog⟩ := log_le_eps_mul_of_large (ρ / (2 * A)) (by positivity)
-  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_of_large (ρ / 2) (by positivity) δ hδ
-  refine ⟨400 + Nlog + Nexp, fun m hm => ?_⟩
+  set Nlog : ℕ := T_logLin (ρ / (2 * A)) with hNlogdef
+  have hNlog := log_le_eps_mul_at (ρ / (2 * A)) (by positivity)
+  set Nexp : ℕ := T_expNeg (ρ / 2) δ with hNexpdef
+  have hNexp := exp_neg_mul_le_at (ρ / 2) (by positivity) δ hδ
+  intro m hm
   have hm400 : 400 ≤ m := by omega
   have hmNlog : Nlog ≤ m := by omega
   have hmNexp : Nexp ≤ m := by omega
@@ -1031,6 +1188,14 @@ theorem hold_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
   calc (3 / 4 : ℝ) ^ (m / 4) = Real.exp (Real.log (3 / 4) * ((m / 4 : ℕ) : ℝ)) := h34
     _ ≤ Real.exp (-ρ * m) := Real.exp_le_exp.mpr hexp_le
     _ ≤ δ * (m : ℝ) ^ (-A) := hclose
+
+
+/-- `hold_fst_tail_le`, original `∃`-form: delegates to the `_at` sibling at `T_holdTail`. -/
+theorem hold_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m →
+      ∑' d : ℕ × ℤ, (hold d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)
+        ≤ δ * (m : ℝ) ^ (-A) :=
+  ⟨T_holdTail A δ, hold_fst_tail_le_at A hA δ hδ⟩
 
 /-- **Fubini split of the (7.48) double sum** — the mechanical heart of
 `fpDist_edgeWeight_le`.  Summing the pointwise `edgeWeight_summand_le` over the hold
@@ -1203,6 +1368,14 @@ theorem fpDist_edgeWeight_split {A : ℝ} (hA : 0 ≤ A) {m : ℕ} (hm : 2 ≤ m
         rw [(hFF1.add hFF2).tsum_add hFF3, hFF1.tsum_add hFF2, hgsub1, hgsub3, ← hTfdef]
     _ = mA * Zf * Zh + Tf + Th := by ring
 
+/-- **`fpDist_edgeWeight_le` threshold**, symbolic (big-C campaign, step 2):
+the (7.48)/(7.49) Case-2 weight-degradation threshold at `ε = min(δ/8, 2)` and the
+column-marginal constants. -/
+noncomputable def T_edgeWeight (A δ : ℝ) : ℕ :=
+  T_fstMgf A (min (δ / 8) 2) + T_fstTail A (δ / 4) + T_holdTail A (δ / 4)
+    + ⌈200 * A⌉₊ + ⌈10 * A / min (δ / 8) 2⌉₊
+    + ⌈4 * A / min c_fpLocation (c_fpLocation ^ 2 / 20)⌉₊ + 2
+
 set_option maxHeartbeats 1000000 in
 /-- **The (7.48)/(7.49) weight degradation, Case 2** (paper p.47). With budget
 `s ≤ m/log²m`, the first-passage endpoint's `j`-coordinate concentrates near
@@ -1225,22 +1398,29 @@ inputs `fpDist_fst_mgf_le` (Z_fp ≤ 1+ε), `hold_fst_mgf_le_real` (Z_hold ≤ 1
 ≤ 1+ε), `fpDist_fst_tail_le` (T_fp ≤ (δ/4)m^{−A}), `hold_fst_tail_le` (T_hold ≤
 (δ/4)m^{−A}), all axiom-clean.  With `ε = min(δ/8, 2)`: MGF term `≤ m^{−A}(1+ε)² ≤
 (1+δ/2)m^{−A}`, tail `≤ (δ/2)m^{−A}`, sum `= (1+δ)m^{−A}`. -/
-theorem fpDist_edgeWeight_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
-    ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
+theorem fpDist_edgeWeight_le_at (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∀ m : ℕ, T_edgeWeight A δ ≤ m → ∀ s : ℕ,
       (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
       ∑' e : ℕ × ℤ, (fpDist s e).toReal * edgeWeight A m e
         ≤ (1 + δ) * (m : ℝ) ^ (-A) := by
-  obtain ⟨c, hc, C', hC'pos, hcol⟩ := fpDist_col_le
+  have hcol := fpDist_col_le_explicitC
+  unfold T_edgeWeight
+  set c : ℝ := c_fpLocation with hcdef
+  set C' : ℝ := C_fpCol with hC'def2
+  have hc : 0 < c := c_fpLocation_pos
+  have hC'pos : 0 < C' := C_fpCol_pos
   set ε : ℝ := min (δ / 8) 2 with hεdef
   have hεpos : 0 < ε := by rw [hεdef]; exact lt_min (by positivity) (by norm_num)
   have hεle2 : ε ≤ 2 := min_le_right _ _
   have hε8 : ε ≤ δ / 8 := min_le_left _ _
   have hminpos : 0 < min c (c ^ 2 / 20) := lt_min hc (by positivity)
-  obtain ⟨Cf, hCf⟩ := fpDist_fst_mgf_le A hA ε hεpos
-  obtain ⟨Ctf, hCtf⟩ := fpDist_fst_tail_le A hA (δ / 4) (by positivity)
-  obtain ⟨Cth, hCth⟩ := hold_fst_tail_le A hA (δ / 4) (by positivity)
-  refine ⟨Cf + Ctf + Cth + ⌈200 * A⌉₊ + ⌈10 * A / ε⌉₊
-      + ⌈4 * A / min c (c ^ 2 / 20)⌉₊ + 2, fun m hm s hs => ?_⟩
+  set Cf : ℕ := T_fstMgf A ε with hCfdef
+  have hCf := fpDist_fst_mgf_le_at A hA ε hεpos
+  set Ctf : ℕ := T_fstTail A (δ / 4) with hCtfdef
+  have hCtf := fpDist_fst_tail_le_at A hA (δ / 4) (by positivity)
+  set Cth : ℕ := T_holdTail A (δ / 4) with hCthdef
+  have hCth := hold_fst_tail_le_at A hA (δ / 4) (by positivity)
+  intro m hm s hs
   have hmCf : Cf ≤ m := by omega
   have hmCtf : Ctf ≤ m := by omega
   have hmCth : Cth ≤ m := by omega
@@ -1337,6 +1517,16 @@ theorem fpDist_edgeWeight_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
         add_le_add (add_le_add hMGF hTfb) hThb
     _ = (1 + δ) * mA := by ring
 
+
+
+/-- `fpDist_edgeWeight_le`, original `∃`-form: delegates to the `_at` sibling at
+`T_edgeWeight A δ`. -/
+theorem fpDist_edgeWeight_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∃ Cthr : ℕ, ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      ∑' e : ℕ × ℤ, (fpDist s e).toReal * edgeWeight A m e
+        ≤ (1 + δ) * (m : ℝ) ^ (-A) :=
+  ⟨T_edgeWeight A δ, fpDist_edgeWeight_le_at A hA δ hδ⟩
 
 /-- **The (7.52) budget bound** (paper p.48): a triangle point at depth `≤ m+1`
 from the far edge has height budget `s = l_Δ - l ≤ (log 9/log 2)·(m+2)` (the

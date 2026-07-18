@@ -9,7 +9,7 @@
     "TaoCollatz.logProb_odd_window_two",
     "TaoCollatz.tao_collatz",
     "TaoCollatz.tao_collatz_quantitative",
-    "TaoCollatz.tao_collatz_quantitative_explicit"
+    "TaoCollatz.tao_collatz_quantitative_fully_explicit"
   ],
   "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
   "enable_nanoda": true

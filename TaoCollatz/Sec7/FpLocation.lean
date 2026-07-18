@@ -1460,25 +1460,37 @@ theorem Gweight_factor {c1 t1 t2 x z y : ℝ} (hc1 : 0 < c1) (ht1 : 0 < t1)
     _ ≤ (A + C) * (B + D) := hABCD
     _ = Gweight t2 (c1 / 2 * x) * (B + D) := rfl
 
-/-- **The renewal `k`-sum envelope**: summing the per-`k` prefactor
-`(1+k)⁻¹ · W_k` (as produced by `Gweight_factor` applied to
-`hold_local_bound`) over the truncated range `k ≤ ⌊l/3⌋` costs only
-`C₅/√(1+l)`. Two regions (paper p.44 "routine calculation"): `k < ⌊l/32⌋` has
-height offset `z ≥ l/2`, so `W_k` is exponentially small in `l` and even
-`(1+l)` terms of it vanish against `√(1+l)`; `k ≥ ⌊l/32⌋` has
-`(1+k)⁻¹ ≤ 32/(1+l)` and the `z`-sums are arithmetic-progression sums handled
-by `sum_abs_AP_le` + `sum_range_exp_neg_sq_le` / `sum_range_geom_le`. -/
-theorem renewal_weight_sum_le {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
-    ∃ C5 > (0 : ℝ), ∀ (l : ℤ), 0 ≤ l →
+/-- The constant of `renewal_weight_sum_le`, symbolic (big-C campaign, step 2). -/
+noncomputable def C_renewalWeight (a b : ℝ) : ℝ :=
+  32 / min (a / 8) (b / 2) ^ 2 + (256 + 4 / b + 8 / Real.sqrt a)
+
+theorem C_renewalWeight_pos {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    0 < C_renewalWeight a b := by
+  unfold C_renewalWeight
+  have hε0 : 0 < min (a / 8) (b / 2) := lt_min (by positivity) (by positivity)
+  have hsa : 0 < Real.sqrt a := Real.sqrt_pos.mpr ha
+  positivity
+
+/-- **The renewal `k`-sum envelope** (`_explicitC` sibling at `C_renewalWeight a b`):
+summing the per-`k` prefactor `(1+k)⁻¹ · W_k` (as produced by `Gweight_factor` applied
+to `hold_local_bound`) over the truncated range `k ≤ ⌊l/3⌋` costs only `C₅/√(1+l)`.
+Two regions (paper p.44 "routine calculation"): `k < ⌊l/32⌋` has height offset
+`z ≥ l/2`, so `W_k` is exponentially small in `l` and even `(1+l)` terms of it vanish
+against `√(1+l)`; `k ≥ ⌊l/32⌋` has `(1+k)⁻¹ ≤ 32/(1+l)` and the `z`-sums are
+arithmetic-progression sums handled by `sum_abs_AP_le` + `sum_range_exp_neg_sq_le` /
+`sum_range_geom_le`. -/
+theorem renewal_weight_sum_le_explicitC {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    ∀ (l : ℤ), 0 ≤ l →
       ∑ k ∈ Finset.range (l.toNat / 3 + 1),
         1 / (1 + (k : ℝ))
           * (Real.exp (-a * |(l : ℝ) - 16 * k| ^ 2 / (1 + (k : ℝ)))
             + Real.exp (-b * |(l : ℝ) - 16 * k|))
-        ≤ C5 / Real.sqrt (1 + (l : ℝ)) := by
+        ≤ C_renewalWeight a b / Real.sqrt (1 + (l : ℝ)) := by
+  unfold C_renewalWeight
   set ε : ℝ := min (a / 8) (b / 2) with hε
   have hε0 : 0 < ε := lt_min (by positivity) (by positivity)
   have hsa : 0 < Real.sqrt a := Real.sqrt_pos.mpr ha
-  refine ⟨32 / ε ^ 2 + (256 + 4 / b + 8 / Real.sqrt a), by positivity, fun l hl => ?_⟩
+  intro l hl
   set t : ℕ := l.toNat with hts
   have hcast : ((t : ℕ) : ℝ) = (l : ℝ) := by
     have := Int.toNat_of_nonneg hl
@@ -1770,28 +1782,55 @@ theorem renewal_weight_sum_le {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
       ≤ (32 / ε ^ 2) / s + (256 + 4 / b + 8 / Real.sqrt a) / s := add_le_add hedge hcen
     _ = (32 / ε ^ 2 + (256 + 4 / b + 8 / Real.sqrt a)) / s := (add_div _ _ _).symm
 
-/-- **The renewal Gaussian bound** (paper p.44, first display of the Lemma 7.7
-proof): `∑_k P(v_{[1,k-1]} = (j', s')) ≪ (1+s')^{-1/2}·G_{1+s'}(c(j'-s'/4))`.
+/-- `renewal_weight_sum_le`, original `∃`-form: delegates to the `_explicitC` sibling. -/
+theorem renewal_weight_sum_le {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    ∃ C5 > (0 : ℝ), ∀ (l : ℤ), 0 ≤ l →
+      ∑ k ∈ Finset.range (l.toNat / 3 + 1),
+        1 / (1 + (k : ℝ))
+          * (Real.exp (-a * |(l : ℝ) - 16 * k| ^ 2 / (1 + (k : ℝ)))
+            + Real.exp (-b * |(l : ℝ) - 16 * k|))
+        ≤ C5 / Real.sqrt (1 + (l : ℝ)) :=
+  ⟨C_renewalWeight a b, C_renewalWeight_pos ha hb, renewal_weight_sum_le_explicitC ha hb⟩
 
-OPEN (X6, step 2): insert `hold_local_bound` (Lemma 2.2(i), PROVED) per `k` and
-sum, splitting into the regions `16(k-1) ∈ [s'/2, 2s']` (≍ √s' terms, each
-`≪ 1/s'` with the Gaussian in `j' - s'/4` surviving), `16(k-1) < s'/2` and
-`> 2s'` (the height offset `|s' - 16(k-1)| ≳ s'` makes `G_k` exponentially
-small). PROVED: truncate at `k ≤ ⌊l/3⌋` (`iidSum_hold_snd_zero`), insert
-`hold_local_bound` per `k`, peel the height weight with `Gweight_factor`
-(constants `c₁ = c₀/2`, target decay `c = c₀/4`), and close the `k`-sum with
-`renewal_weight_sum_le`. -/
-theorem renewalMass_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (j : ℕ) (l : ℤ), 0 ≤ l →
+/-- The decay rate of `renewalMass_bound`, symbolic: `c₀/2/2` with `c₀ = c_holdLocal`
+(big-C campaign, step 2). -/
+noncomputable def c_renewalMass : ℝ := c_holdLocal / 2 / 2
+
+/-- The constant of `renewalMass_bound`, symbolic: `C₀·C₅` at the
+`renewal_weight_sum_le` parameters `a = (c₀/2)²/2`, `b = c₀/2/2`. -/
+noncomputable def C_renewalMass : ℝ :=
+  C_holdLocal * C_renewalWeight ((c_holdLocal / 2) ^ 2 / 2) (c_holdLocal / 2 / 2)
+
+theorem c_renewalMass_pos : 0 < c_renewalMass := by
+  unfold c_renewalMass; linarith [c_holdLocal_pos]
+
+theorem C_renewalMass_pos : 0 < C_renewalMass := by
+  have hc0 := c_holdLocal_pos
+  have h5 := C_renewalWeight_pos (a := (c_holdLocal / 2) ^ 2 / 2) (b := c_holdLocal / 2 / 2)
+    (by positivity) (by positivity)
+  unfold C_renewalMass
+  exact mul_pos C_holdLocal_pos h5
+
+/-- `renewalMass_bound`, `_explicitC` sibling at `c_renewalMass`/`C_renewalMass`. -/
+theorem renewalMass_bound_explicitC :
+    ∀ (j : ℕ) (l : ℤ), 0 ≤ l →
       (renewalMass (j, l)).toReal
-        ≤ C / Real.sqrt (1 + (l : ℝ))
-            * Gweight (1 + (l : ℝ)) (c * ((j : ℝ) - (l : ℝ) / 4)) := by
-  obtain ⟨c0, hc0, C0, hC0, hloc⟩ := hold_local_bound
+        ≤ C_renewalMass / Real.sqrt (1 + (l : ℝ))
+            * Gweight (1 + (l : ℝ)) (c_renewalMass * ((j : ℝ) - (l : ℝ) / 4)) := by
+  have hc0 := c_holdLocal_pos
+  have hC0 := C_holdLocal_pos
+  have hloc := hold_local_bound_explicitC
+  unfold C_renewalMass c_renewalMass
+  set c0 := c_holdLocal with hc0def
+  set C0 := C_holdLocal with hC0def
   set c1 : ℝ := c0 / 2 with hc1def
   have hc1 : 0 < c1 := by rw [hc1def]; positivity
-  obtain ⟨C5, hC5, hsum⟩ := renewal_weight_sum_le
-    (a := c1 ^ 2 / 2) (b := c1 / 2) (by positivity) (by positivity)
-  refine ⟨c1 / 2, by positivity, C0 * C5, by positivity, fun j l hl => ?_⟩
+  have hC5 := C_renewalWeight_pos (a := c1 ^ 2 / 2) (b := c1 / 2)
+    (by positivity) (by positivity)
+  have hsum := renewal_weight_sum_le_explicitC (a := c1 ^ 2 / 2) (b := c1 / 2)
+    (by positivity) (by positivity)
+  set C5 := C_renewalWeight (c1 ^ 2 / 2) (c1 / 2) with hC5def
+  intro j l hl
   have hl0 : (0 : ℝ) ≤ (l : ℝ) := by exact_mod_cast hl
   have h1l : (0 : ℝ) < 1 + (l : ℝ) := by linarith
   set G : ℝ := Gweight (1 + (l : ℝ)) (c1 / 2 * ((j : ℝ) - (l : ℝ) / 4)) with hGdef
@@ -1860,6 +1899,26 @@ theorem renewalMass_bound :
     _ ≤ C0 * G * (C5 / Real.sqrt (1 + (l : ℝ))) := by
         apply mul_le_mul_of_nonneg_left (hsum l hl) (by positivity)
     _ = C0 * C5 / Real.sqrt (1 + (l : ℝ)) * G := by ring
+
+/-- **The renewal Gaussian bound** (paper p.44, first display of the Lemma 7.7
+proof): `∑_k P(v_{[1,k-1]} = (j', s')) ≪ (1+s')^{-1/2}·G_{1+s'}(c(j'-s'/4))`.
+
+OPEN (X6, step 2): insert `hold_local_bound` (Lemma 2.2(i), PROVED) per `k` and
+sum, splitting into the regions `16(k-1) ∈ [s'/2, 2s']` (≍ √s' terms, each
+`≪ 1/s'` with the Gaussian in `j' - s'/4` surviving), `16(k-1) < s'/2` and
+`> 2s'` (the height offset `|s' - 16(k-1)| ≳ s'` makes `G_k` exponentially
+small). PROVED: truncate at `k ≤ ⌊l/3⌋` (`iidSum_hold_snd_zero`), insert
+`hold_local_bound` per `k`, peel the height weight with `Gweight_factor`
+(constants `c₁ = c₀/2`, target decay `c = c₀/4`), and close the `k`-sum with
+`renewal_weight_sum_le`.
+Original `∃`-form: delegates to the `_explicitC` sibling. -/
+theorem renewalMass_bound :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (j : ℕ) (l : ℤ), 0 ≤ l →
+      (renewalMass (j, l)).toReal
+        ≤ C / Real.sqrt (1 + (l : ℝ))
+            * Gweight (1 + (l : ℝ)) (c * ((j : ℝ) - (l : ℝ) / 4)) :=
+  ⟨c_renewalMass, c_renewalMass_pos, C_renewalMass, C_renewalMass_pos,
+    renewalMass_bound_explicitC⟩
 
 /-! ### Gweight algebra for the last-step convolution (Lemma 7.7 assembly)
 
@@ -2107,15 +2166,34 @@ theorem conv_Gweight_exp {t c γ : ℝ} (ht : 0 < t) (hc : 0 < c) (hγ : 0 < γ)
         field_simp
         ring
 
-/-- **The single-overshoot-step bound**: one `hold` step has exponential decay
-in both drift-recentred coordinates (from `hold_local_bound` at `n = 1` via
-`Gweight_two_le`). -/
-theorem hold_step_bound :
-    ∃ γ > (0 : ℝ), ∃ C7 > (0 : ℝ), ∀ d : ℕ × ℤ,
+/-- The decay rate of `hold_step_bound`, symbolic (big-C campaign, step 2). -/
+noncomputable def gamma_holdStep : ℝ := c_holdLocal / 4
+
+/-- The constant of `hold_step_bound`, symbolic (big-C campaign, step 2). -/
+noncomputable def C_holdStep : ℝ := 2 * C_holdLocal
+
+theorem gamma_holdStep_pos : 0 < gamma_holdStep := by
+  unfold gamma_holdStep; linarith [c_holdLocal_pos]
+
+theorem C_holdStep_pos : 0 < C_holdStep := by
+  unfold C_holdStep; linarith [C_holdLocal_pos]
+
+/-- **The single-overshoot-step bound**, `_explicitC` sibling (from
+`hold_local_bound_explicitC` at `n = 1` via `Gweight_two_le`): one `hold` step has
+exponential decay in both drift-recentred coordinates, at the symbolic
+`gamma_holdStep`/`C_holdStep`. -/
+theorem hold_step_bound_explicitC :
+    ∀ d : ℕ × ℤ,
       (hold d).toReal
-        ≤ C7 * Real.exp (-γ * |(d.1 : ℝ) - 4|) * Real.exp (-γ * |(d.2 : ℝ) - 16|) := by
-  obtain ⟨c0, hc0, C0, hC0, hloc⟩ := hold_local_bound
-  refine ⟨c0 / 4, by positivity, 2 * C0, by positivity, fun d => ?_⟩
+        ≤ C_holdStep * Real.exp (-gamma_holdStep * |(d.1 : ℝ) - 4|)
+          * Real.exp (-gamma_holdStep * |(d.2 : ℝ) - 16|) := by
+  have hc0 := c_holdLocal_pos
+  have hC0 := C_holdLocal_pos
+  have hloc := hold_local_bound_explicitC
+  unfold C_holdStep gamma_holdStep
+  set c0 := c_holdLocal with hc0def
+  set C0 := C_holdLocal with hC0def
+  intro d
   have h1 := hloc 1 d.1 d.2
   rw [holdSum_eq_iidSum] at h1
   have hd : ((d.1, d.2) : ℕ × ℤ) = d := rfl
@@ -2156,14 +2234,28 @@ theorem hold_step_bound :
         * Real.exp (-(c0 / 4) * |(d.2 : ℝ) - 16|) := by
         rw [hAe, hBe]
 
-/-- The `l₁`-sum envelope for the Lemma 7.7 assembly: the exponential window
-at the budget line beats the `1/√(1+l₁)` renewal prefactor, at cost
-`1/√(1+s)`. -/
-theorem sum_sqrt_exp_le {γ : ℝ} (hγ : 0 < γ) :
-    ∃ K > (0 : ℝ), ∀ s : ℕ,
+/-- `hold_step_bound`, original `∃`-form: delegates to the `_explicitC` sibling. -/
+theorem hold_step_bound :
+    ∃ γ > (0 : ℝ), ∃ C7 > (0 : ℝ), ∀ d : ℕ × ℤ,
+      (hold d).toReal
+        ≤ C7 * Real.exp (-γ * |(d.1 : ℝ) - 4|) * Real.exp (-γ * |(d.2 : ℝ) - 16|) :=
+  ⟨gamma_holdStep, gamma_holdStep_pos, C_holdStep, C_holdStep_pos, hold_step_bound_explicitC⟩
+
+/-- The constant of `sum_sqrt_exp_le`, symbolic (big-C campaign, step 2). -/
+noncomputable def K_sqrtExp (γ : ℝ) : ℝ := 2 * (1 + 1 / γ) + 64 / γ ^ 2
+
+theorem K_sqrtExp_pos {γ : ℝ} (hγ : 0 < γ) : 0 < K_sqrtExp γ := by
+  unfold K_sqrtExp; positivity
+
+/-- The `l₁`-sum envelope for the Lemma 7.7 assembly, `_explicitC` sibling: the
+exponential window at the budget line beats the `1/√(1+l₁)` renewal prefactor, at
+cost `1/√(1+s)`, with constant `K_sqrtExp γ`. -/
+theorem sum_sqrt_exp_le_explicitC {γ : ℝ} (hγ : 0 < γ) :
+    ∀ s : ℕ,
       ∑ m ∈ Finset.range (s + 1), Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
-        ≤ K / Real.sqrt (1 + s) := by
-  refine ⟨2 * (1 + 1 / γ) + 64 / γ ^ 2, by positivity, fun s => ?_⟩
+        ≤ K_sqrtExp γ / Real.sqrt (1 + s) := by
+  unfold K_sqrtExp
+  intro s
   have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
   have hs0 : 0 < Real.sqrt (1 + (s : ℝ)) := Real.sqrt_pos.mpr h1s
   rw [← Finset.sum_filter_add_sum_filter_not (Finset.range (s + 1)) (fun m => s ≤ 2 * m)]
@@ -2278,34 +2370,71 @@ theorem sum_sqrt_exp_le {γ : ℝ} (hγ : 0 < γ) :
         add_le_add hhigh hlow
     _ = (2 * (1 + 1 / γ) + 64 / γ ^ 2) / Real.sqrt (1 + s) := (add_div _ _ _).symm
 
-/-- **Lemma 7.7 (Distribution of first passage location), D6 statement** (paper
-p.43, (7.30)–(7.33)): the first-passage endpoint mass at `(j, l)` is
-Gaussian-concentrated — `j` near `s/4` at scale `(1+s)^{1/2}`, `l` within
-`O(1)` of `s`. For `l ≤ s` the left side vanishes (`fpDist_support_snd_gt`),
-so the statement is unconditional.
+/-- `sum_sqrt_exp_le`, original `∃`-form: delegates to the `_explicitC` sibling. -/
+theorem sum_sqrt_exp_le {γ : ℝ} (hγ : 0 < γ) :
+    ∃ K > (0 : ℝ), ∀ s : ℕ,
+      ∑ m ∈ Finset.range (s + 1), Real.exp (-γ * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+        ≤ K / Real.sqrt (1 + s) :=
+  ⟨K_sqrtExp γ, K_sqrtExp_pos hγ, sum_sqrt_exp_le_explicitC hγ⟩
 
-OPEN (X6, step 3 — assembly): `fpDist_le_renewal_conv` + `renewalMass_bound`
-at the pre-passage point `(j₁, l₁)`, `l₁ ≤ s`, + the single-step bounds
-(`hold_local_bound`/`hold_tail_bound` at `n = 1`) for the overshoot step
-`(j - j₁, l - l₁)`, `l - l₁ > s - l₁`; sum over the split `l₁ ≤ s/2` vs
-`l₁ > s/2` (paper p.44 closing paragraph). -/
-theorem fpDist_location_bound :
-    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+/-- The decay rate of `fpDist_location_bound` (Lemma 7.7), symbolic:
+`cF = min (c9/2) γ`, `c9 = min (c6/2) (γ/4)` (big-C campaign, step 2). -/
+noncomputable def c_fpLocation : ℝ :=
+  min (min (c_renewalMass / 2) (gamma_holdStep / 4) / 2) gamma_holdStep
+
+/-- The constant of `fpDist_location_bound` (Lemma 7.7), symbolic: `D·K` with
+`D = C₆·C₇·e^{16γ}·(4+8/γ)·2e^{4c₉}` and `K = K_sqrtExp (γ/2)`. -/
+noncomputable def C_fpLocation : ℝ :=
+  C_renewalMass * C_holdStep * Real.exp (16 * gamma_holdStep) * (4 + 8 / gamma_holdStep)
+    * (2 * Real.exp (4 * min (c_renewalMass / 2) (gamma_holdStep / 4)))
+    * K_sqrtExp (gamma_holdStep / 2)
+
+theorem c_fpLocation_pos : 0 < c_fpLocation := by
+  have hc6 := c_renewalMass_pos
+  have hγ := gamma_holdStep_pos
+  unfold c_fpLocation
+  exact lt_min (by positivity) hγ
+
+theorem C_fpLocation_pos : 0 < C_fpLocation := by
+  have hγ := gamma_holdStep_pos
+  have hK := K_sqrtExp_pos (γ := gamma_holdStep / 2) (by linarith)
+  unfold C_fpLocation
+  exact mul_pos (mul_pos (mul_pos (mul_pos (mul_pos C_renewalMass_pos C_holdStep_pos)
+    (Real.exp_pos _)) (add_pos four_pos (div_pos (by norm_num) hγ)))
+    (mul_pos two_pos (Real.exp_pos _))) hK
+
+/-- **Core of Lemma 7.7's assembly, constants abstracted** (big-C campaign, step 2):
+given the renewal Gaussian bound at `(c6, C6)`, the single-step bound at `(γ, C7)`,
+and the `l₁`-sum envelope at `K`, the first-passage location bound holds with the
+composed rate `cF = min (min (c6/2) (γ/4) / 2) γ` and constant `D·K`. -/
+theorem fpDist_location_bound_core (c6 C6 γ C7 K : ℝ)
+    (hc6 : 0 < c6) (hC6 : 0 < C6) (hγ : 0 < γ) (hC7 : 0 < C7) (hK : 0 < K)
+    (hU : ∀ (j : ℕ) (l : ℤ), 0 ≤ l →
+      (renewalMass (j, l)).toReal
+        ≤ C6 / Real.sqrt (1 + (l : ℝ))
+            * Gweight (1 + (l : ℝ)) (c6 * ((j : ℝ) - (l : ℝ) / 4)))
+    (hstep : ∀ d : ℕ × ℤ,
+      (hold d).toReal
+        ≤ C7 * Real.exp (-γ * |(d.1 : ℝ) - 4|) * Real.exp (-γ * |(d.2 : ℝ) - 16|))
+    (hKs : ∀ s : ℕ,
+      ∑ m ∈ Finset.range (s + 1), Real.exp (-(γ / 2) * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+        ≤ K / Real.sqrt (1 + s)) :
+    ∀ (s : ℕ) (j : ℕ) (l : ℤ),
       (fpDist s (j, l)).toReal
-        ≤ C * (Real.exp (-c * ((l : ℝ) - s)) / Real.sqrt (1 + s))
-            * Gweight (1 + s) (c * ((j : ℝ) - s / 4)) := by
-  obtain ⟨c6, hc6, C6, hC6, hU⟩ := renewalMass_bound
-  obtain ⟨γ, hγ, C7, hC7, hstep⟩ := hold_step_bound
+        ≤ C6 * C7 * Real.exp (16 * γ) * (4 + 8 / γ)
+              * (2 * Real.exp (4 * min (c6 / 2) (γ / 4))) * K
+            * (Real.exp (-(min (min (c6 / 2) (γ / 4) / 2) γ) * ((l : ℝ) - s))
+                / Real.sqrt (1 + s))
+            * Gweight (1 + s) (min (min (c6 / 2) (γ / 4) / 2) γ * ((j : ℝ) - s / 4)) := by
   set c9 : ℝ := min (c6 / 2) (γ / 4) with hc9def
   have hc9 : 0 < c9 := lt_min (by positivity) (by positivity)
   have hc9γ : c9 ≤ γ / 4 := min_le_right _ _
-  obtain ⟨K, hK, hKs⟩ := sum_sqrt_exp_le (γ := γ / 2) (by positivity)
   set cF : ℝ := min (c9 / 2) γ with hcFdef
   have hcF : 0 < cF := lt_min (by positivity) hγ
   set D : ℝ := C6 * C7 * Real.exp (16 * γ) * (4 + 8 / γ) * (2 * Real.exp (4 * c9))
     with hDdef
   have hD : 0 < D := by rw [hDdef]; positivity
-  refine ⟨cF, hcF, D * K, by positivity, fun s j l => ?_⟩
+  intro s j l
   have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
   have hsq : 0 < Real.sqrt (1 + (s : ℝ)) := Real.sqrt_pos.mpr h1s
   set X : ℝ := (j : ℝ) - s / 4 with hXdef
@@ -2590,6 +2719,48 @@ theorem fpDist_location_bound :
             _ = D * K * (Real.exp (-cF * ((l : ℝ) - s)) / Real.sqrt (1 + s))
                 * Gweight (1 + (s : ℝ)) (cF * X) := by ring
 
+/-- `fpDist_location_bound`, `_explicitC` sibling: `fpDist_location_bound_core` at
+the symbolic constants (`c_renewalMass`, `C_renewalMass`, `gamma_holdStep`,
+`C_holdStep`, `K_sqrtExp (γ/2)`), with the composed rate/constant folded into
+`c_fpLocation`/`C_fpLocation`. -/
+theorem fpDist_location_bound_explicitC :
+    ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+      (fpDist s (j, l)).toReal
+        ≤ C_fpLocation * (Real.exp (-c_fpLocation * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+            * Gweight (1 + s) (c_fpLocation * ((j : ℝ) - s / 4)) := by
+  have hγ := gamma_holdStep_pos
+  have h := fpDist_location_bound_core c_renewalMass C_renewalMass gamma_holdStep
+    C_holdStep (K_sqrtExp (gamma_holdStep / 2))
+    c_renewalMass_pos C_renewalMass_pos gamma_holdStep_pos C_holdStep_pos
+    (K_sqrtExp_pos (by linarith))
+    renewalMass_bound_explicitC hold_step_bound_explicitC
+    (sum_sqrt_exp_le_explicitC (by linarith))
+  intro s j l
+  have hs := h s j l
+  unfold C_fpLocation c_fpLocation
+  exact hs
+
+/-- **Lemma 7.7 (Distribution of first passage location), D6 statement** (paper
+p.43, (7.30)–(7.33)): the first-passage endpoint mass at `(j, l)` is
+Gaussian-concentrated — `j` near `s/4` at scale `(1+s)^{1/2}`, `l` within
+`O(1)` of `s`. For `l ≤ s` the left side vanishes (`fpDist_support_snd_gt`),
+so the statement is unconditional.
+
+OPEN (X6, step 3 — assembly): `fpDist_le_renewal_conv` + `renewalMass_bound`
+at the pre-passage point `(j₁, l₁)`, `l₁ ≤ s`, + the single-step bounds
+(`hold_local_bound`/`hold_tail_bound` at `n = 1`) for the overshoot step
+`(j - j₁, l - l₁)`, `l - l₁ > s - l₁`; sum over the split `l₁ ≤ s/2` vs
+`l₁ > s/2` (paper p.44 closing paragraph).
+Original `∃`-form: delegates to the `_explicitC` sibling at
+`c_fpLocation`/`C_fpLocation`. -/
+theorem fpDist_location_bound :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ), ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+      (fpDist s (j, l)).toReal
+        ≤ C * (Real.exp (-c * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+            * Gweight (1 + s) (c * ((j : ℝ) - s / 4)) :=
+  ⟨c_fpLocation, c_fpLocation_pos, C_fpLocation, C_fpLocation_pos,
+    fpDist_location_bound_explicitC⟩
+
 /-- A support-shifted exponential over `ℤ` sums geometrically: the mass at or
 below `s` vanishes and the positive tail is `∑_{k≥1} e^{-ck} = e^{-c}/(1-e^{-c})`.
 Reusable building block for the white-exit Gaussian tails (`fpDist_col_le`). -/
@@ -2624,23 +2795,23 @@ theorem hasSum_int_shift_exp {c : ℝ} (hc : 0 < c) (s : ℕ) :
     simpa [hfront] using h2
   simpa using hnat.of_nat_of_neg_add_one hneg
 
-/-- **First-passage column marginal** (the `l`-collapse of Lemma 7.7): summing the
-`fpDist_location_bound` (X6) Gaussian envelope over the height coordinate `l`
-(mass lives only on `l > s`, so the `e^{-c(l-s)}` factor collapses geometrically)
-gives a per-column bound `≤ C'·Gweight(1+s, c(j-s/4))/√(1+s)`. This is the shared
-prerequisite of both white-exit tails: `fpDist_out_of_strip_le` sums it over the
-columns `j > m`, and the separation argument reads column-wise Gaussian decay. -/
-theorem fpDist_col_le :
-    ∃ c > (0 : ℝ), ∃ C' > (0 : ℝ), ∀ (s j : ℕ),
+/-- **Core of the first-passage column marginal, constants abstracted** (big-C
+campaign, step 2): given the Lemma 7.7 location bound at `(c, C)`, the height
+coordinate `l` sums geometrically (mass lives only on `l > s`), giving the
+per-column bound with constant `C·e^{-c}/(1-e^{-c})`. -/
+theorem fpDist_col_le_core (c C : ℝ) (hc : 0 < c) (hC : 0 < C)
+    (hbound : ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+      (fpDist s (j, l)).toReal
+        ≤ C * (Real.exp (-c * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+            * Gweight (1 + s) (c * ((j : ℝ) - s / 4))) :
+    ∀ (s j : ℕ),
       ∑' l : ℤ, (fpDist s (j, l)).toReal
-        ≤ C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
+        ≤ C * (Real.exp (-c) / (1 - Real.exp (-c)))
+            * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
                   / Real.sqrt (1 + (s : ℝ))) := by
-  obtain ⟨c, hc, C, hC, hbound⟩ := fpDist_location_bound
   have he1 : Real.exp (-c) < 1 := by rw [Real.exp_lt_one_iff]; linarith
   have he0 : (0 : ℝ) < Real.exp (-c) := Real.exp_pos _
   have hpos : (0 : ℝ) < 1 - Real.exp (-c) := by linarith
-  refine ⟨c, hc, C * (Real.exp (-c) / (1 - Real.exp (-c))),
-    mul_pos hC (div_pos he0 hpos), ?_⟩
   intro s j
   set G : ℝ := Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4)) with hG
   have hGnn : 0 ≤ G := Gweight_nonneg _ _
@@ -2675,6 +2846,46 @@ theorem fpDist_col_le :
     _ = A * (Real.exp (-c) / (1 - Real.exp (-c))) := hdom.tsum_eq
     _ = C * (Real.exp (-c) / (1 - Real.exp (-c))) * (G / Real.sqrt (1 + (s : ℝ))) := by
         rw [hA]; ring
+
+/-- The constant of the first-passage column marginal, symbolic (big-C campaign,
+step 2): `C_fpCol = C_fpLocation · e^{-c}/(1-e^{-c})` at `c = c_fpLocation`. -/
+noncomputable def C_fpCol : ℝ :=
+  C_fpLocation * (Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation)))
+
+theorem C_fpCol_pos : 0 < C_fpCol := by
+  have hc := c_fpLocation_pos
+  have he1 : Real.exp (-c_fpLocation) < 1 := by rw [Real.exp_lt_one_iff]; linarith
+  unfold C_fpCol
+  exact mul_pos C_fpLocation_pos (div_pos (Real.exp_pos _) (by linarith))
+
+/-- The first-passage column marginal, `_explicitC` sibling: `fpDist_col_le_core`
+at (`c_fpLocation`, `C_fpLocation`), constant folded into `C_fpCol`. -/
+theorem fpDist_col_le_explicitC :
+    ∀ (s j : ℕ),
+      ∑' l : ℤ, (fpDist s (j, l)).toReal
+        ≤ C_fpCol * (Gweight (1 + (s : ℝ)) (c_fpLocation * ((j : ℝ) - (s : ℝ) / 4))
+                  / Real.sqrt (1 + (s : ℝ))) := by
+  have h := fpDist_col_le_core c_fpLocation C_fpLocation c_fpLocation_pos
+    C_fpLocation_pos fpDist_location_bound_explicitC
+  intro s j
+  have hs := h s j
+  unfold C_fpCol
+  exact hs
+
+/-- **First-passage column marginal** (the `l`-collapse of Lemma 7.7): summing the
+`fpDist_location_bound` (X6) Gaussian envelope over the height coordinate `l`
+(mass lives only on `l > s`, so the `e^{-c(l-s)}` factor collapses geometrically)
+gives a per-column bound `≤ C'·Gweight(1+s, c(j-s/4))/√(1+s)`. This is the shared
+prerequisite of both white-exit tails: `fpDist_out_of_strip_le` sums it over the
+columns `j > m`, and the separation argument reads column-wise Gaussian decay.
+Original `∃`-form: delegates to the `_explicitC` sibling at
+`c_fpLocation`/`C_fpCol`. -/
+theorem fpDist_col_le :
+    ∃ c > (0 : ℝ), ∃ C' > (0 : ℝ), ∀ (s j : ℕ),
+      ∑' l : ℤ, (fpDist s (j, l)).toReal
+        ≤ C' * (Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - (s : ℝ) / 4))
+                  / Real.sqrt (1 + (s : ℝ))) :=
+  ⟨c_fpLocation, c_fpLocation_pos, C_fpCol, C_fpCol_pos, fpDist_col_le_explicitC⟩
 
 /-- **ℕ-tail shifted geometric** (companion of `hasSum_int_shift_exp`): the
 exponential `e^{-γ(j-a)}` restricted to the tail `j > m` sums to

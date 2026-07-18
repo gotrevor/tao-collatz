@@ -456,16 +456,11 @@ theorem fpDist_walk_eq_fpDistPlus (s : ℕ) {T p : ℕ} (hp : p ≤ T) (g : ℕ 
   congr 1
   simpa only [] using iid_pathSum_law T p hp (fun d => g (e + d))
 
-/-- **The per-`p` big-triangle walk mass bound** (paper (7.54)–(7.55), one term of
-the E∗ union): the chance the `T`-step walk's position at time `p` (`p ≤ T`, started
-at `(j,l)` after the first passage `e`) lands in a size-`≥ s'` triangle is bounded by
-Lemma 7.10 (`triangle_encounter_le`, X10) at that `s'`, provided `s'` fits the X10
-regime `1 ≤ s' ≤ (n/2−j)^{0.4}`. Composes `fpDist_walk_eq_fpDistPlus` (walk →
-`fpDistPlus` marginal) with X10; the `ℝ≥0∞` walk sum is pushed to `ℝ` in one step via
-`PMF.toReal_tsum_mul_ofReal`. This is the summand of the X11a `estar_union_le` union
-bound. -/
-theorem bigTriangle_walk_le_rpow :
-    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+/-- **The per-`p` big-triangle walk mass bound**, `_explicitC` sibling at
+`C_encTri`/`c_encTri`, `A₀ = 5` (the X10 explicit threshold). Same body as the `∃`-form
+below, closing on `triangle_encounter_le_rpow_explicitC` instead of the obtained witness. -/
+theorem bigTriangle_walk_le_rpow_explicitC :
+    ∀ (A : ℝ), 5 ≤ A →
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
       ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
@@ -475,10 +470,8 @@ theorem bigTriangle_walk_le_rpow :
         (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
           Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
             (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal
-          ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
-            + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) := by
-  obtain ⟨C, hC, c, hc, A₀, hA₀, hX10⟩ := triangle_encounter_le_rpow
-  refine ⟨C, hC, c, hc, A₀, hA₀, ?_⟩
+          ≤ C_encTri * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+            + C_encTri * Real.exp (-c_encTri * A ^ 2 * (1 + (p : ℝ))) := by
   intro A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep T p s' hpT hs'1 hs'm
   have hind_eq : ∀ y : ℕ × ℤ,
       Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞) y
@@ -528,7 +521,31 @@ theorem bigTriangle_walk_le_rpow :
       (fun x => Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ) (((j : ℕ), (l : ℤ)) + x))
       (fun x => Set.indicator_nonneg (fun _ _ => zero_le_one) _)
   rw [heq]
-  exact hX10 A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep p s' hs'1 hs'm
+  exact triangle_encounter_le_rpow_explicitC A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep p s' hs'1 hs'm
+
+/-- **The per-`p` big-triangle walk mass bound** (paper (7.54)–(7.55), one term of
+the E∗ union): the chance the `T`-step walk's position at time `p` (`p ≤ T`, started
+at `(j,l)` after the first passage `e`) lands in a size-`≥ s'` triangle is bounded by
+Lemma 7.10 (`triangle_encounter_le`, X10) at that `s'`, provided `s'` fits the X10
+regime `1 ≤ s' ≤ (n/2−j)^{0.4}`. Composes `fpDist_walk_eq_fpDistPlus` (walk →
+`fpDistPlus` marginal) with X10; the `ℝ≥0∞` walk sum is pushed to `ℝ` in one step via
+`PMF.toReal_tsum_mul_ofReal`. This is the summand of the X11a `estar_union_le` union
+bound. -/
+theorem bigTriangle_walk_le_rpow :
+    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (T p s' : ℕ), p ≤ T → 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+        (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+          Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
+            (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal
+          ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+            + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ))) :=
+  ⟨C_encTri, C_encTri_pos, c_encTri, c_encTri_pos, 5, by norm_num,
+    bigTriangle_walk_le_rpow_explicitC⟩
 
 /-! ### The proved (7.56) ingredients -/
 
@@ -594,7 +611,22 @@ theorem (`many_triangles_white`). Composing them fixes the encoding gate `g` (fr
 probabilistic input to the Case-3 assembly: for any tilt `ε ≤ ε₀`, encounter
 budget `R ≥ 1`, horizon `T` and start `q₀`, the walk-mass on which the (7.57)
 integrand `encVal` reaches `lam` is `≤ e^{2ε}/lam`. This is the (7.56) half of the
-`Q_black_edge_case3` join (the deterministic (7.67) claim supplies the other). -/
+`Q_black_edge_case3` join (the deterministic (7.67) claim supplies the other).
+`_at` sibling at `eps0_manyTri`/`g_manyTri` (big-C campaign, step 2). -/
+theorem fstar_markov_at :
+    ∀ ε : ℝ, 0 < ε → ε ≤ eps0_manyTri →
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (lam : ℝ), 0 < lam →
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if lam ≤ encVal ε R
+              ((List.ofFn v).foldl (encStep F R g_manyTri) (encInit q₀.1 q₀.2))
+            then (1 : ℝ) else 0)
+        ≤ Real.exp (2 * ε) / lam := by
+  intro ε hε hεε₀ n ξ hξ F R hR T q₀ lam hlam
+  exact fstar_markov_le F R g_manyTri ε hε.le T q₀
+    (many_triangles_white_at ε hε hεε₀ n ξ hξ F R hR T q₀.1 q₀.2) lam hlam
+
+/-- `fstar_markov`, original `∃`-form: delegates to the `_at` sibling. -/
 theorem fstar_markov :
     ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
       ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
@@ -603,12 +635,8 @@ theorem fstar_markov :
         ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
           (if lam ≤ encVal ε R ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2))
             then (1 : ℝ) else 0)
-        ≤ Real.exp (2 * ε) / lam := by
-  obtain ⟨ε₀, hε₀pos, hε₀100, g, hmany⟩ := many_triangles_white
-  refine ⟨ε₀, hε₀pos, hε₀100, g, ?_⟩
-  intro ε hε hεε₀ n ξ hξ F R hR T q₀ lam hlam
-  exact fstar_markov_le F R g ε hε.le T q₀
-    (hmany ε hε hεε₀ n ξ hξ F R hR T q₀.1 q₀.2) lam hlam
+        ≤ Real.exp (2 * ε) / lam :=
+  ⟨eps0_manyTri, eps0_manyTri_pos, eps0_manyTri_le, g_manyTri, fstar_markov_at⟩
 
 /-! ### Machinery for the deterministic claim (7.67) -/
 
@@ -1137,19 +1165,45 @@ theorem sum_geom_pow_le (r : ℝ) (hr0 : 0 ≤ r) (hr : r ≤ 1 / 2) (T : ℕ) :
     _ ≤ r * 2 := by gcongr
     _ = 2 * r := by ring
 
+/-- **E∗ union constant** (X11a): `4·C_encTri`, from summing the per-`p` big-triangle
+mass (factor 4 = 2·2 from the `1/s'`-telescope and geometric-tail `≤ 2` bounds).
+Ladder-negligible (super-polynomial decay in `A`). -/
+noncomputable def C_estarUnion : ℝ := 4 * C_encTri
+
+theorem C_estarUnion_pos : 0 < C_estarUnion := by
+  have := C_encTri_pos; unfold C_estarUnion; linarith
+
+/-- **E∗ union rate**: inherits `c_encTri` (X10's exponential rate). -/
+noncomputable def c_estarUnion : ℝ := c_encTri
+
+theorem c_estarUnion_pos : 0 < c_estarUnion := c_encTri_pos
+
+/-- **E∗ union threshold**: `max 5 √(log2 / c_encTri)` — the X10 threshold `5` joined with
+the `r = exp(−c·A²) ≤ ½` regime `A ≥ √(log2/c)`. -/
+noncomputable def A0_estarUnion : ℝ := max 5 (Real.sqrt (Real.log 2 / c_encTri))
+
+theorem one_le_A0_estarUnion : 1 ≤ A0_estarUnion := by
+  unfold A0_estarUnion; exact le_trans (by norm_num) (le_max_left _ _)
+
 open scoped Classical in
-/-- **X11a: the E∗ union bound** (paper (7.54)–(7.56)): summing the per-`p`
-`bigTriangle_walk_le` mass over the horizon `p ∈ range(T+1)` at
-`s' = ⌊4^A(1+p)³⌋`, the total big-triangle (E∗) mass is
-`≤ C'·A²·4^{-A} + C'·exp(−c·A²)`. **FLOOR** (not ceil) so `s' ≤ 4^A(1+p)³ ≤ t.2.2`:
-this is what makes `bigTriangleSet F s'` CONTAIN the geometry-join E∗ event (whose
-threshold is the real `4^A(1+p)³`), see `deterministic_encounter_or_bigTriangle`. The
-`1/s'` first-passage terms telescope (`sum_inv_sq_le_two`, using `s' = ⌊4^A(1+p)³⌋ ≥
-½·4^A(1+p)³` so `A²(1+p)/s' ≤ 2·A²·4^{-A}(1+p)^{-2}`); the renewal-tail `exp(−c·A²(1+p))`
-terms sum geometrically (`sum_geom_pow_le`, `r = exp(−c·A²) ≤ 1/2` for `A ≥ A₀`). Both
-decay super-polynomially, so E∗ is negligible in the X11d damping assembly. -/
-theorem estar_union_le_rpow :
-    ∃ C' > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+/-- **X11a E∗ union bound `_core`**: the per-`p` `bigTriangle_walk` bound abstracted over
+its constant `C` and rate `c` (as `hX10`), yielding `4·C·A²·4^{−A} + 4·C·exp(−c·A²)` for
+`A ≥ max 5 √(log2/c)`. Body verbatim from the `∃`-form; `C`/`c` opaque so no def leaks into
+`nlinarith`. -/
+theorem estar_union_le_rpow_core (C c : ℝ) (hC : 0 < C) (hc : 0 < c)
+    (hX10 : ∀ (A : ℝ), 5 ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (T p s' : ℕ), p ≤ T → 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+        (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+          Set.indicator (bigTriangleSet F s') (1 : ℕ × ℤ → ℝ≥0∞)
+            (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal
+          ≤ C * A ^ 2 * (1 + (p : ℝ)) / (s' : ℝ)
+            + C * Real.exp (-c * A ^ 2 * (1 + (p : ℝ)))) :
+    ∀ (A : ℝ), max 5 (Real.sqrt (Real.log 2 / c)) ≤ A →
       ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
       ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
       ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
@@ -1161,13 +1215,10 @@ theorem estar_union_le_rpow :
           (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
             Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊) (1 : ℕ × ℤ → ℝ≥0∞)
               (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal)
-          ≤ C' * A ^ 2 * (4 : ℝ) ^ (-A) + C' * Real.exp (-c * A ^ 2) := by
-  obtain ⟨C, hC, c, hc, A₀0, hA₀0, hX10⟩ := bigTriangle_walk_le_rpow
-  refine ⟨4 * C, by positivity, c, hc, max A₀0 (Real.sqrt (Real.log 2 / c)),
-    le_max_of_le_left hA₀0, ?_⟩
+          ≤ 4 * C * A ^ 2 * (4 : ℝ) ^ (-A) + 4 * C * Real.exp (-c * A ^ 2) := by
   intro A hA n ξ hξ F t₀ ht₀ j l hmem s hs hdeep T hreg
-  have hA0 : A₀0 ≤ A := le_trans (le_max_left _ _) hA
-  have hA1 : (1 : ℝ) ≤ A := le_trans hA₀0 hA0
+  have hA0 : (5 : ℝ) ≤ A := le_trans (le_max_left _ _) hA
+  have hA1 : (1 : ℝ) ≤ A := by linarith [hA0]
   have hAsqrt : Real.sqrt (Real.log 2 / c) ≤ A := le_trans (le_max_right _ _) hA
   -- r = exp(-c·A²) ≤ 1/2 for A ≥ sqrt(log 2 / c)
   have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
@@ -1274,6 +1325,57 @@ theorem estar_union_le_rpow :
             (sum_geom_pow_le (Real.exp (-c * A ^ 2)) (le_of_lt (Real.exp_pos _)) hr T) hC.le
       _ ≤ 4 * C * Real.exp (-c * A ^ 2) := by nlinarith [hC.le, Real.exp_pos (-c * A ^ 2)]
 
+open scoped Classical in
+/-- **X11a E∗ union bound**, `_explicitC` sibling at `C_estarUnion`/`c_estarUnion`,
+`A₀ = A0_estarUnion`. Delegates to `estar_union_le_rpow_core` at `C_encTri`/`c_encTri`
+over `bigTriangle_walk_le_rpow_explicitC`. -/
+theorem estar_union_le_rpow_explicitC :
+    ∀ (A : ℝ), A0_estarUnion ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (T : ℕ),
+        (∀ p, p ≤ T →
+          ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+        (Finset.range (T + 1)).sum (fun p =>
+          (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊) (1 : ℕ × ℤ → ℝ≥0∞)
+              (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal)
+          ≤ C_estarUnion * A ^ 2 * (4 : ℝ) ^ (-A) + C_estarUnion * Real.exp (-c_estarUnion * A ^ 2) := by
+  have h := estar_union_le_rpow_core C_encTri c_encTri C_encTri_pos c_encTri_pos
+    bigTriangle_walk_le_rpow_explicitC
+  unfold C_estarUnion c_estarUnion A0_estarUnion
+  exact h
+
+open scoped Classical in
+/-- **X11a: the E∗ union bound** (paper (7.54)–(7.56)): summing the per-`p`
+`bigTriangle_walk_le` mass over the horizon `p ∈ range(T+1)` at
+`s' = ⌊4^A(1+p)³⌋`, the total big-triangle (E∗) mass is
+`≤ C'·A²·4^{-A} + C'·exp(−c·A²)`. **FLOOR** (not ceil) so `s' ≤ 4^A(1+p)³ ≤ t.2.2`:
+this is what makes `bigTriangleSet F s'` CONTAIN the geometry-join E∗ event (whose
+threshold is the real `4^A(1+p)³`), see `deterministic_encounter_or_bigTriangle`. The
+`1/s'` first-passage terms telescope (`sum_inv_sq_le_two`, using `s' = ⌊4^A(1+p)³⌋ ≥
+½·4^A(1+p)³` so `A²(1+p)/s' ≤ 2·A²·4^{-A}(1+p)^{-2}`); the renewal-tail `exp(−c·A²(1+p))`
+terms sum geometrically (`sum_geom_pow_le`, `r = exp(−c·A²) ≤ 1/2` for `A ≥ A₀`). Both
+decay super-polynomially, so E∗ is negligible in the X11d damping assembly. -/
+theorem estar_union_le_rpow :
+    ∃ C' > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧ ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (T : ℕ),
+        (∀ p, p ≤ T →
+          ((⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+        (Finset.range (T + 1)).sum (fun p =>
+          (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin T → ℕ × ℤ, hold.iid T v *
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A * (1 + (p : ℝ)) ^ 3⌋₊) (1 : ℕ × ℤ → ℝ≥0∞)
+              (j + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)).toReal)
+          ≤ C' * A ^ 2 * (4 : ℝ) ^ (-A) + C' * Real.exp (-c * A ^ 2) :=
+  ⟨C_estarUnion, C_estarUnion_pos, c_estarUnion, c_estarUnion_pos, A0_estarUnion,
+    one_le_A0_estarUnion, estar_union_le_rpow_explicitC⟩
+
 /-! ### X11c ingredients — the reaches-`R` / few-white → F∗ join -/
 
 /-- **The `encVal` lower bound on the reaches-`R` few-white event** (paper (7.57)):
@@ -1304,9 +1406,15 @@ the joint-walk mass of the event {fold reaches `R` encounters ∧ ≤ `K` whites
 `≤ e^{2ε}/e^{−K+εR}`. Since that event is contained in `F∗ = {encVal ≥ e^{−K+εR}}`
 (`encVal_ge_of_reaches`), the bound is `fstar_markov` at `lam = e^{−K+εR}`. The X11d
 choice `R := ⌈(K+(A+3)log10+2)/ε⌉` makes the RHS `≤ 10^{−A−1}`. -/
-theorem reaches_fewWhite_mass_le :
-    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
-      ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+theorem reaches_fewWhite_mass_le_core (ε₀ : ℝ) (g : ℕ)
+    (hmark : ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (lam : ℝ), 0 < lam →
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if lam ≤ encVal ε R ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2))
+            then (1 : ℝ) else 0)
+        ≤ Real.exp (2 * ε) / lam) :
+    ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
       ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
       ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
         ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
@@ -1314,8 +1422,6 @@ theorem reaches_fewWhite_mass_le :
               ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K
             then (1 : ℝ) else 0)
           ≤ Real.exp (2 * ε) / Real.exp (-(K : ℝ) + ε * R) := by
-  obtain ⟨ε₀, hε₀pos, hε₀le, g, hmark⟩ := fstar_markov
-  refine ⟨ε₀, hε₀pos, hε₀le, g, ?_⟩
   intro ε hεpos hεle n ξ hξ F R hR T q₀ K
   have hlam : (0 : ℝ) < Real.exp (-(K : ℝ) + ε * R) := Real.exp_pos _
   have hsum : Summable (fun v : Fin T → ℕ × ℤ => (hold.iid T v).toReal) :=
@@ -1369,6 +1475,35 @@ theorem reaches_fewWhite_mass_le :
   exact le_trans (Summable.tsum_le_tsum hle hsumL hsumR)
     (hmark ε hεpos hεle n ξ hξ F R hR T q₀ (Real.exp (-(K : ℝ) + ε * R)) hlam)
 
+/-- `reaches_fewWhite_mass_le`, `_at` sibling at `eps0_manyTri`/`g_manyTri`. -/
+theorem reaches_fewWhite_mass_le_at :
+    ∀ ε : ℝ, 0 < ε → ε ≤ eps0_manyTri →
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit q₀.1 q₀.2)).count
+              ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit q₀.1 q₀.2)).cumWhite ≤ K
+            then (1 : ℝ) else 0)
+          ≤ Real.exp (2 * ε) / Real.exp (-(K : ℝ) + ε * R) :=
+  reaches_fewWhite_mass_le_core eps0_manyTri g_manyTri fstar_markov_at
+
+/-- `reaches_fewWhite_mass_le`, original `∃`-form: delegates to the `_at`
+sibling. -/
+theorem reaches_fewWhite_mass_le :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
+      ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
+              ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K
+            then (1 : ℝ) else 0)
+          ≤ Real.exp (2 * ε) / Real.exp (-(K : ℝ) + ε * R) :=
+  ⟨eps0_manyTri, eps0_manyTri_pos, eps0_manyTri_le, g_manyTri,
+    reaches_fewWhite_mass_le_at⟩
+
 /-- **The (7.56) numerical closure**: with the X11d block count
 `R := ⌈(K+(A+3)log10+2)/ε⌉` (encoded as the hypothesis `εR ≥ K+(A+3)log10+2`), the
 Markov ratio `e^{2ε}/e^{−K+εR} ≤ 10^{−(A+1)}`. Uses `e^a/e^b = e^{a−b}` and
@@ -1393,6 +1528,24 @@ open scoped Classical in
 is `≤ 10^{−(A+1)}`. Composes `reaches_fewWhite_mass_le` (the Markov join) with
 `fewWhite_num_closure` (the numerical `R`-choice). This is the F∗ term X11d subtracts
 from the (7.56) white-count split. -/
+theorem reaches_fewWhite_mass_le_ten_at :
+    ∀ ε : ℝ, 0 < ε → ε ≤ eps0_manyTri → ∀ A : ℝ,
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
+        (K : ℝ) + (A + 3) * Real.log 10 + 2 ≤ ε * R →
+        ∑' v : Fin T → ℕ × ℤ, (hold.iid T v).toReal *
+          (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit q₀.1 q₀.2)).count
+              ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit q₀.1 q₀.2)).cumWhite ≤ K
+            then (1 : ℝ) else 0)
+          ≤ (10 : ℝ) ^ (-(A + 1)) := by
+  intro ε hεpos hεle A n ξ hξ F R hR T q₀ K hRbound
+  exact le_trans (reaches_fewWhite_mass_le_at ε hεpos hεle n ξ hξ F R hR T q₀ K)
+    (fewWhite_num_closure A ε (by linarith [hεle, eps0_manyTri_le]) K R hRbound)
+
+/-- `reaches_fewWhite_mass_le_ten`, original `∃`-form: delegates to the `_at`
+sibling. -/
 theorem reaches_fewWhite_mass_le_ten :
     ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
       ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ → ∀ A : ℝ,
@@ -1403,12 +1556,9 @@ theorem reaches_fewWhite_mass_le_ten :
           (if R ≤ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).count
               ∧ ((List.ofFn v).foldl (encStep F R g) (encInit q₀.1 q₀.2)).cumWhite ≤ K
             then (1 : ℝ) else 0)
-          ≤ (10 : ℝ) ^ (-(A + 1)) := by
-  obtain ⟨ε₀, hε₀pos, hε₀le, g, hmass⟩ := reaches_fewWhite_mass_le
-  refine ⟨ε₀, hε₀pos, hε₀le, g, ?_⟩
-  intro ε hεpos hεle A n ξ hξ F R hR T q₀ K hRbound
-  exact le_trans (hmass ε hεpos hεle n ξ hξ F R hR T q₀ K)
-    (fewWhite_num_closure A ε (by linarith [hεle, hε₀le]) K R hRbound)
+          ≤ (10 : ℝ) ^ (-(A + 1)) :=
+  ⟨eps0_manyTri, eps0_manyTri_pos, eps0_manyTri_le, g_manyTri,
+    reaches_fewWhite_mass_le_ten_at⟩
 
 open scoped Classical in
 /-- **The X11c geometry join** (contrapositive of `deterministic_encounter_claim`):
@@ -1634,6 +1784,58 @@ theorem few_white_pointwise_split {n ξ : ℕ} (F : TriangleFamily n ξ)
     exact zero_le
 
 open scoped Classical in
+/-- **(7.56) reach-`R` mass term**, `_at` sibling at `eps0_manyTri`/`g_manyTri`. Same body
+as the `∃`-form below, with the shared gate `ε₀ = eps0_manyTri` and `g = g_manyTri` supplied
+by `reaches_fewWhite_mass_le_ten_at`. -/
+theorem few_white_reach_mass_le_at (A : ℝ) :
+    ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ (m : ℕ) (l : ℤ) (R : ℕ), 1 ≤ R → ∀ (K P : ℕ),
+      ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ eps0_manyTri * R → ∀ s : ℕ,
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit (n / 2 - m + e.1) (l + e.2))).count
+              ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
+  intro n ξ hξ F m l R hR K P hRbound s
+  have hval : (0 : ℝ) ≤ (10 : ℝ) ^ (-A - 3) := Real.rpow_nonneg (by norm_num) _
+  have hexp : (10 : ℝ) ^ (-((A + 2) + 1)) = (10 : ℝ) ^ (-A - 3) := by
+    congr 1; ring
+  have hinner : ∀ e : ℕ × ℤ,
+      (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit (n / 2 - m + e.1) (l + e.2))).count
+              ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+                (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
+    intro e
+    set S : ℝ≥0∞ := ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+        ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+              (encInit (n / 2 - m + e.1) (l + e.2))).count
+            ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+              (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+          then (1 : ℝ) else 0) with hSdef
+    have hSle1 : S ≤ 1 := by
+      rw [hSdef]
+      exact PMF.tsum_mul_ofReal_le_one (hold.iid P) _ (fun v => by split_ifs <;> norm_num)
+    have hSne : S ≠ ⊤ := ne_top_of_le_ne_top ENNReal.one_ne_top hSle1
+    have hbridge : S.toReal = ∑' v : Fin P → ℕ × ℤ, (hold.iid P v).toReal *
+        (if R ≤ ((List.ofFn v).foldl (encStep F R g_manyTri)
+              (encInit (n / 2 - m + e.1) (l + e.2))).count
+            ∧ ((List.ofFn v).foldl (encStep F R g_manyTri)
+              (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+          then (1 : ℝ) else 0) := by
+      rw [hSdef]; exact PMF.toReal_tsum_mul_ofReal (hold.iid P) _ (fun v => by split_ifs <;> norm_num)
+    have hr := reaches_fewWhite_mass_le_ten_at eps0_manyTri eps0_manyTri_pos le_rfl (A + 2) n ξ hξ F R hR P (n / 2 - m + e.1, l + e.2) (K + 1)
+      (by push_cast; nlinarith [hRbound])
+    rw [ENNReal.le_ofReal_iff_toReal_le hSne hval, hbridge, ← hexp]
+    exact hr
+  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_right (hinner e) _) ?_
+  rw [ENNReal.tsum_mul_right, (fpDist s).tsum_coe, one_mul]
+
+open scoped Classical in
 /-- **(7.56) reach-`R` mass term.** The first-passage⊗walk mass of the reach-`R`/few-white
 event `{R ≤ count ∧ cumWhite ≤ K+1}` is `≤ 10^{−A−3}`. Wraps `reaches_fewWhite_mass_le_ten`
 (applied per-`e` at reaches-exponent `A+2` ⟹ `10^{−(A+3)}`, `K'=K+1`) with the `ℝ≥0∞`→`ℝ`
@@ -1649,45 +1851,8 @@ theorem few_white_reach_mass_le (A : ℝ) :
               ∧ ((List.ofFn v).foldl (encStep F R g)
                 (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
             then (1 : ℝ) else 0))
-        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
-  obtain ⟨ε₀, hε₀pos, hε₀le, g, hreach⟩ := reaches_fewWhite_mass_le_ten
-  refine ⟨ε₀, hε₀pos, g, ?_⟩
-  intro n ξ hξ F m l R hR K P hRbound s
-  have hval : (0 : ℝ) ≤ (10 : ℝ) ^ (-A - 3) := Real.rpow_nonneg (by norm_num) _
-  have hexp : (10 : ℝ) ^ (-((A + 2) + 1)) = (10 : ℝ) ^ (-A - 3) := by
-    congr 1; ring
-  have hinner : ∀ e : ℕ × ℤ,
-      (∑' v : Fin P → ℕ × ℤ, hold.iid P v *
-          ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
-                (encInit (n / 2 - m + e.1) (l + e.2))).count
-              ∧ ((List.ofFn v).foldl (encStep F R g)
-                (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
-            then (1 : ℝ) else 0))
-        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
-    intro e
-    set S : ℝ≥0∞ := ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
-        ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
-              (encInit (n / 2 - m + e.1) (l + e.2))).count
-            ∧ ((List.ofFn v).foldl (encStep F R g)
-              (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
-          then (1 : ℝ) else 0) with hSdef
-    have hSle1 : S ≤ 1 := by
-      rw [hSdef]
-      exact PMF.tsum_mul_ofReal_le_one (hold.iid P) _ (fun v => by split_ifs <;> norm_num)
-    have hSne : S ≠ ⊤ := ne_top_of_le_ne_top ENNReal.one_ne_top hSle1
-    have hbridge : S.toReal = ∑' v : Fin P → ℕ × ℤ, (hold.iid P v).toReal *
-        (if R ≤ ((List.ofFn v).foldl (encStep F R g)
-              (encInit (n / 2 - m + e.1) (l + e.2))).count
-            ∧ ((List.ofFn v).foldl (encStep F R g)
-              (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
-          then (1 : ℝ) else 0) := by
-      rw [hSdef]; exact PMF.toReal_tsum_mul_ofReal (hold.iid P) _ (fun v => by split_ifs <;> norm_num)
-    have hr := hreach ε₀ hε₀pos le_rfl (A + 2) n ξ hξ F R hR P (n / 2 - m + e.1, l + e.2) (K + 1)
-      (by push_cast; nlinarith [hRbound])
-    rw [ENNReal.le_ofReal_iff_toReal_le hSne hval, hbridge, ← hexp]
-    exact hr
-  refine le_trans (ENNReal.tsum_le_tsum fun e => mul_le_mul_right (hinner e) _) ?_
-  rw [ENNReal.tsum_mul_right, (fpDist s).tsum_coe, one_mul]
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) :=
+  ⟨eps0_manyTri, eps0_manyTri_pos, g_manyTri, few_white_reach_mass_le_at A⟩
 
 /-- Poly·geom domination: `x²·exp(−bx) ≤ 4/b²` for `x ≥ 0`, `b > 0` (from `exp(bx) ≥ (bx)²/4`). -/
 theorem sq_mul_exp_neg_le (b : ℝ) (hb : 0 < b) (x : ℝ) (hx : 0 ≤ x) :
@@ -1729,6 +1894,22 @@ theorem sq_mul_exp_neg_le_inv (b : ℝ) (hb : 0 < b) (x : ℝ) (hx : 0 < x) :
   rw [hexpneg, mul_one_div, div_le_div_iff₀ hexppos (by positivity : (0:ℝ) < b ^ 3 * x)]
   nlinarith [hcube, hexppos, hx, hb]
 
+/-- **E∗-scaled cleared-denominator threshold** (X11b): the `A₀ ≥ Kthr` requirement that makes
+both linear-in-`A₀` term-1 bounds fit `1/4000`. -/
+noncomputable def Kthr_estarScaled (C' : ℝ) : ℝ :=
+  3456000 * C' / ((2 * Real.log 4 - Real.log 10) ^ 2 * (Real.log 4) ^ 3)
+    + 216000 * C' / (Real.log 4) ^ 3
+
+/-- **E∗-scaled complete-the-square argument** (X11b): the `A₀² ≥ Warg` requirement for term 2. -/
+noncomputable def Warg_estarScaled (C' c : ℝ) : ℝ :=
+  (16 * c * Real.log (2000 * C') + (Real.log 10) ^ 2) / (16 * c ^ 2)
+
+/-- **E∗-scaled threshold** `A₀` (X11b): `max A₀e (max 1 (max Kthr √(max 0 Warg)))` — the
+`estar_scaled_numeric` witness, joining the E∗ threshold `A₀e`, the floor `1`, the term-1
+cleared-denominator bound `Kthr`, and the term-2 completing-the-square bound `√Warg`. -/
+noncomputable def A0_estarScaled (C' c A₀e : ℝ) : ℝ :=
+  max A₀e (max 1 (max (Kthr_estarScaled C') (Real.sqrt (max 0 (Warg_estarScaled C' c)))))
+
 -- HEARTBEAT: large single-shot constant-chase (two poly·geom dominations + complete-the-square
 -- over the base-16-vs-10 comparison); the `Real.log 4`/`Real.log 10` denominators make the calc
 -- defeq checks heavy. Pure real inequality, no `native_decide`.
@@ -1740,11 +1921,12 @@ scaling `2A` makes the effective base `4² = 16 > 10`, so `4^{−A'} = 4^{−A�
 `10^{−A}`; the leftover poly·geom `(2A+A₀)²·(10/16)^A` is dominated (`x²·r^x ≤ 4/log(1/r)²`)
 and the `exp(−c·A'²)` term closed by completing the square. `A₀` is chosen `≥ A₀e` (the E∗
 threshold) and `≥ 1`. -/
-theorem estar_scaled_numeric (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA₀e : 1 ≤ A₀e) :
-    ∃ A₀ : ℝ, A₀e ≤ A₀ ∧ 1 ≤ A₀ ∧ ∀ A : ℝ, 0 < A →
-      C' * (2 * A + A₀) ^ 2 * (4 : ℝ) ^ (-(2 * A + A₀))
-        + C' * Real.exp (-c * (2 * A + A₀) ^ 2)
+theorem estar_scaled_numeric_at (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA₀e : 1 ≤ A₀e) :
+    A₀e ≤ A0_estarScaled C' c A₀e ∧ 1 ≤ A0_estarScaled C' c A₀e ∧ ∀ A : ℝ, 0 < A →
+      C' * (2 * A + A0_estarScaled C' c A₀e) ^ 2 * (4 : ℝ) ^ (-(2 * A + A0_estarScaled C' c A₀e))
+        + C' * Real.exp (-c * (2 * A + A0_estarScaled C' c A₀e) ^ 2)
         ≤ (10 : ℝ) ^ (-A - 3) := by
+  unfold A0_estarScaled Kthr_estarScaled Warg_estarScaled
   have hL4 : (0 : ℝ) < Real.log 4 := Real.log_pos (by norm_num)
   have hL10 : (0 : ℝ) < Real.log 10 := Real.log_pos (by norm_num)
   have hL85 : (0 : ℝ) < 2 * Real.log 4 - Real.log 10 := by
@@ -1766,7 +1948,7 @@ theorem estar_scaled_numeric (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA�
     le_trans (le_max_left _ _) (le_trans (le_max_right _ _) (le_max_right _ _))
   have hA₀sqrt : Real.sqrt X2 ≤ A₀ :=
     le_trans (le_max_right _ _) (le_trans (le_max_right _ _) (le_max_right _ _))
-  refine ⟨A₀, hA₀e_le, hA₀1, ?_⟩
+  refine ⟨hA₀e_le, hA₀1, ?_⟩
   intro A hA
   -- rpow → exp conversions
   have h4y : (4 : ℝ) ^ (-(2 * A + A₀))
@@ -1913,6 +2095,19 @@ theorem estar_scaled_numeric (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA�
       ≤ (1 / 2) * (10 : ℝ) ^ (-A - 3) + (1 / 2) * (10 : ℝ) ^ (-A - 3) := add_le_add hterm1 hterm2
     _ = (10 : ℝ) ^ (-A - 3) := by ring
 
+/-- **Numeric closure for the E∗ term**, original `∃`-form: delegates to
+`estar_scaled_numeric_at` at the named witness `A0_estarScaled C' c A₀e`. -/
+theorem estar_scaled_numeric (C' c A₀e : ℝ) (hC' : 0 < C') (hc : 0 < c) (hA₀e : 1 ≤ A₀e) :
+    ∃ A₀ : ℝ, A₀e ≤ A₀ ∧ 1 ≤ A₀ ∧ ∀ A : ℝ, 0 < A →
+      C' * (2 * A + A₀) ^ 2 * (4 : ℝ) ^ (-(2 * A + A₀))
+        + C' * Real.exp (-c * (2 * A + A₀) ^ 2)
+        ≤ (10 : ℝ) ^ (-A - 3) :=
+  ⟨A0_estarScaled C' c A₀e, estar_scaled_numeric_at C' c A₀e hC' hc hA₀e⟩
+
+/-- **E∗ scaled-exponent constant** (X11b): `A0_estarScaled` at the E∗-union constants —
+the additive `A₀` in the `few_white_estar_mass_le` exponent `A' = 2A + A0_fewEstar`. -/
+noncomputable def A0_fewEstar : ℝ := A0_estarScaled C_estarUnion c_estarUnion A0_estarUnion
+
 open scoped Classical in
 /-- **(7.56) E∗ mass term.** The first-passage⊗walk mass of the union-over-`p` big-triangle
 event (the middle term of `few_white_pointwise_split`) is `≤ 10^{−A−3}`. Wraps
@@ -1920,26 +2115,29 @@ event (the middle term of `few_white_pointwise_split`) is `≤ 10^{−A−3}`. W
 `ℝ≥0∞` tsum↔finite-sum swap (`Summable.tsum_finsetSum`) that turns the inner `Σ_p` into the
 outer union `estar_union_le` bounds. The deep hyp `(m+1)^0.8 < s` is bridged from the regime
 `m/log²m < s` via `(m+1)^0.8 ≤ 2m^0.8 ≤ m/log²m`. -/
-theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
-    ∃ A' : ℝ, 1 ≤ A' ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
-      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+theorem few_white_estar_mass_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, (10 : ℕ) ^ 30 ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
       ∀ P : ℕ, (∀ p, p ≤ P →
-          ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+          ((⌊(4 : ℝ) ^ (2 * A + A0_fewEstar) * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+            ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ)) →
       (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
           (∑ p ∈ Finset.range (P + 1),
-            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ (2 * A + A0_fewEstar) * (1 + (p : ℝ)) ^ 3⌋₊)
               (1 : ℕ × ℤ → ℝ≥0∞)
               (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
         ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) := by
-  obtain ⟨C', hC', c, hc, A₀e, hA₀e, hestar⟩ := estar_union_le_rpow
-  obtain ⟨A₀, hA₀ge, hA₀1, hnum⟩ := estar_scaled_numeric C' c A₀e hC' hc hA₀e
-  set A' : ℝ := 2 * A + A₀ with hA'def
-  have hA'ge : A₀e ≤ A' := by rw [hA'def]; linarith
-  have hA'1 : (1 : ℝ) ≤ A' := by rw [hA'def]; linarith
-  refine ⟨A', hA'1, 10 ^ 30, ?_⟩
+  have hestar := estar_union_le_rpow_explicitC
+  have hA₀ge : A0_estarUnion ≤ A0_fewEstar :=
+    (estar_scaled_numeric_at C_estarUnion c_estarUnion A0_estarUnion
+      C_estarUnion_pos c_estarUnion_pos one_le_A0_estarUnion).1
+  have hnum := (estar_scaled_numeric_at C_estarUnion c_estarUnion A0_estarUnion
+    C_estarUnion_pos c_estarUnion_pos one_le_A0_estarUnion).2.2
+  set A' : ℝ := 2 * A + A0_fewEstar with hA'def
+  have hA'ge : A0_estarUnion ≤ A' := by rw [hA'def]; linarith [hA₀ge, hA]
   intro n ξ hξ F m hmCthr hmn l hpos t ht hmem s hs hreg_s P hreg
   -- the E∗ summand, per `p`, matching `estar_union_le`'s form at `j = n/2-m-1`, `T = P`.
   set G : ℕ → ℝ≥0∞ := fun p => ∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ,
@@ -2078,17 +2276,47 @@ theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
   rw [ENNReal.le_ofReal_iff_toReal_le hSne (Real.rpow_nonneg (by norm_num) _)]
   exact hStoreal
 
+open scoped Classical in
+/-- **(7.56) E∗ mass term**, original `∃`-form: delegates to `few_white_estar_mass_le_at` at
+the named witness `A' = 2A + A0_fewEstar`, `Cthr = 10^30`. -/
+theorem few_white_estar_mass_le (A : ℝ) (hA : 0 < A) :
+    ∃ A' : ℝ, 1 ≤ A' ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      ∀ P : ℕ, (∀ p, p ≤ P →
+          ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          (∑ p ∈ Finset.range (P + 1),
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+              (1 : ℕ × ℤ → ℝ≥0∞)
+              (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)) :=
+  ⟨2 * A + A0_fewEstar, by
+    have h1 : (1 : ℝ) ≤ A0_fewEstar :=
+      (estar_scaled_numeric_at C_estarUnion c_estarUnion A0_estarUnion
+        C_estarUnion_pos c_estarUnion_pos one_le_A0_estarUnion).2.1
+    linarith [hA], 10 ^ 30, few_white_estar_mass_le_at A hA⟩
+
 /-! ### The sole X11 gate and the checked downstream assembly -/
 
+/-- Explicit threshold past which `exp(−ρm) ≤ δ·m^{−A}` (witness of
+`exp_neg_mul_le_rpow_neg`, reified — big-C campaign step 2). -/
+noncomputable def T_expRpow (A ρ δ : ℝ) : ℕ := 1 + T_logLin (ρ / (2 * A)) + T_expNeg (ρ / 2) δ
+
 /-- **Super-exponential beats polynomial** (explicit-threshold form): `exp(−ρm) ≤ δ·m^{−A}`
-for `m ≥ N`. Extracted from `hold_fst_tail_le`'s `hclose`; combines `log_le_eps_mul_of_large`
-(`log m ≤ (ρ/2A)m`) with `exp_neg_mul_le_of_large` (final tail). -/
-theorem exp_neg_mul_le_rpow_neg (A : ℝ) (hA : 0 < A) (ρ : ℝ) (hρ : 0 < ρ)
-    (δ : ℝ) (hδ : 0 < δ) : ∃ N : ℕ, ∀ m : ℕ, N ≤ m →
+for `m ≥ T_expRpow A ρ δ`. Extracted from `hold_fst_tail_le`'s `hclose`; combines
+`log_le_eps_mul_at` (`log m ≤ (ρ/2A)m`) with `exp_neg_mul_le_at` (final tail). -/
+theorem exp_neg_mul_le_rpow_neg_at (A : ℝ) (hA : 0 < A) (ρ : ℝ) (hρ : 0 < ρ)
+    (δ : ℝ) (hδ : 0 < δ) : ∀ m : ℕ, T_expRpow A ρ δ ≤ m →
       Real.exp (-ρ * (m : ℝ)) ≤ δ * (m : ℝ) ^ (-A) := by
-  obtain ⟨Nlog, hNlog⟩ := log_le_eps_mul_of_large (ρ / (2 * A)) (by positivity)
-  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_of_large (ρ / 2) (by positivity) δ hδ
-  refine ⟨1 + Nlog + Nexp, fun m hm => ?_⟩
+  have hNlog := log_le_eps_mul_at (ρ / (2 * A)) (by positivity)
+  have hNexp := exp_neg_mul_le_at (ρ / 2) (by positivity) δ hδ
+  intro m hm
+  unfold T_expRpow at hm
+  set Nlog := T_logLin (ρ / (2 * A)) with hNlogdef
+  set Nexp := T_expNeg (ρ / 2) δ with hNexpdef
   have hmpos : (0 : ℝ) < m := by exact_mod_cast (by omega : 0 < m)
   rw [Real.rpow_neg hmpos.le, ← div_eq_mul_inv, le_div_iff₀ (Real.rpow_pos_of_pos hmpos A),
     Real.rpow_def_of_pos hmpos A, ← Real.exp_add]
@@ -2100,16 +2328,33 @@ theorem exp_neg_mul_le_rpow_neg (A : ℝ) (hA : 0 < A) (ρ : ℝ) (hρ : 0 < ρ)
   have hexparg : -ρ * (m : ℝ) + Real.log m * A ≤ -(ρ / 2) * m := by nlinarith [hAlog]
   exact le_trans (Real.exp_le_exp.mpr hexparg) (hNexp m (by omega))
 
+/-- `exp_neg_mul_le_rpow_neg`, original `∃`-form: delegates to the `_at` sibling. -/
+theorem exp_neg_mul_le_rpow_neg (A : ℝ) (hA : 0 < A) (ρ : ℝ) (hρ : 0 < ρ)
+    (δ : ℝ) (hδ : 0 < δ) : ∃ N : ℕ, ∀ m : ℕ, N ≤ m →
+      Real.exp (-ρ * (m : ℝ)) ≤ δ * (m : ℝ) ^ (-A) :=
+  ⟨T_expRpow A ρ δ, exp_neg_mul_le_rpow_neg_at A hA ρ hρ δ hδ⟩
+
 /-- **(7.54) bad-column tail** (paper: the `j_end ≥ 0.9m` contribution). The mass that the
 `P`-step walk after first passage advances past `0.9m` is `O(e^{−cm})` (Lemma 7.7 + Lemma 2.2:
 first passage `≥ 0.8m` and the extra `P` Geom(4) steps `≥ 0.1m` each have mass `e^{−cm}`),
 absorbed here into `≤ m^{−A}/2` for `m ≥ Cthr`. Bridged to `fpDistPlus_col_tail` via
 `fpDist_walk_eq_fpDistPlus`; the deviation scale uses `budget_le_of_mem_triangle`
 (`s·log2 ≤ (m+2)log9`). Stated for any horizon `P ≥ 1` (`Cthr` absorbs the `P`-dependence).
-Placed above `few_white_mass_le` so the (7.56) assembly can consume its bad-column term. -/
-theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
-    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
-      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+Placed above `few_white_mass_le` so the (7.56) assembly can consume its bad-column term.
+**Core, constants abstracted** (big-C campaign, step 2): given the column tail at
+`(c, C)` and an exponential-vs-rpow threshold `Nexp` at rate `c/16960` and target
+`1/(4C)`, the bound holds past the threshold `400(P+1) + 32 + Nexp`. -/
+theorem col_tail_mass_le_core (A : ℝ) (_hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P)
+    (c C : ℝ) (hc : 0 < c) (hC : 0 < C)
+    (htail : ∀ s p : ℕ, ∀ D : ℝ, 10 * (1 + (p : ℝ)) ≤ D →
+      ∑' e : ℕ × ℤ, (fpDistPlus s p e).toReal
+          * Set.indicator {q : ℕ × ℤ | 2 * D ≤ |(q.1 : ℝ) - (s : ℝ) / 4|} 1 e
+        ≤ C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D)))
+    (Nexp : ℕ)
+    (hNexp : ∀ m : ℕ, Nexp ≤ m →
+      Real.exp (-(c / 16960) * (m : ℝ)) ≤ 1 / (4 * C) * (m : ℝ) ^ (-A)) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, 400 * (P + 1) + 32 + Nexp ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
@@ -2119,11 +2364,6 @@ theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
             then (1 : ℝ) else 0))
         ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) := by
   classical
-  obtain ⟨c, hc, C, hC, htail⟩ := fpDistPlus_col_tail
-  -- final tail threshold: `2C·exp(−(c/16960)m) ≤ m^{−A}/2`, i.e. `exp ≤ (1/4C)·m^{−A}`.
-  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_rpow_neg A hA (c / 16960) (by positivity)
-    (1 / (4 * C)) (by positivity)
-  refine ⟨400 * (P + 1) + 32 + Nexp, ?_⟩
   intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
   have hmpos : (0 : ℝ) < (m : ℝ) := by exact_mod_cast (by omega : 0 < m)
   set D : ℝ := (m : ℝ) / 40 with hDdef
@@ -2231,20 +2471,150 @@ theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
     _ ≤ C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) + Real.exp (-c * D)) := htail s P D hDbound
     _ ≤ (m : ℝ) ^ (-A) / 2 := hfinal
 
-/-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first
-passage encounters at most `K := ⌈(A+3)·log10/ε³⌉` whites with probability `≤ 10^{−(A+2)}`.
-This is where the proved X11c machinery plugs in: `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
-(`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`), and
-`P(reach R ∧ Nw≤K) + P(E∗) ≤ 10^{−(A+2)}` via `reaches_fewWhite_mass_le_ten` +
-`estar_union_le ∘ bigTriangle_of_encounter`.
+/-- The threshold of `col_tail_mass_le`, symbolic (big-C campaign, step 2):
+`400(P+1) + 32 + T_expRpow A (c_fpColTail/16960) (1/(4·C_fpColTail))`. -/
+noncomputable def T_colTail (A : ℝ) (P : ℕ) : ℕ :=
+  400 * (P + 1) + 32 + T_expRpow A (c_fpColTail / 16960) (1 / (4 * C_fpColTail))
 
-**Route (PENDING decomp-3 finding): the base-4 lemmas are used at a SCALED `A' := κ·A`**
-(`4^{κA}=(4^κ)^A`, effective base `4^κ ≈ 10^6`) so `P(E∗) ≤ 10^{−(A+3)}`, and
-`reaches_fewWhite_mass_le_ten` is applied at `A+2` giving `10^{−(A+3)}`; no reproving. Shared
-gate `g` obtained from `reaches_fewWhite_mass_le_ten` and passed into the geometry lemma. -/
-theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
-    ∃ P : ℕ, 1 ≤ P ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+/-- `col_tail_mass_le`, `_at` sibling: `col_tail_mass_le_core` at
+(`c_fpColTail`, `C_fpColTail`) and the `T_expRpow` threshold, folded into
+`T_colTail A P`. -/
+theorem col_tail_mass_le_at (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, T_colTail A P ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) := by
+  have h := col_tail_mass_le_core A hA P hP1 c_fpColTail C_fpColTail
+    c_fpColTail_pos C_fpColTail_pos fpDistPlus_col_tail_explicitC
+    (T_expRpow A (c_fpColTail / 16960) (1 / (4 * C_fpColTail)))
+    (exp_neg_mul_le_rpow_neg_at A hA (c_fpColTail / 16960)
+      (div_pos c_fpColTail_pos (by norm_num)) (1 / (4 * C_fpColTail))
+      (one_div_pos.mpr (mul_pos four_pos C_fpColTail_pos)))
+  unfold T_colTail
+  exact h
+
+/-- `col_tail_mass_le`, original `∃`-form: delegates to the `_at` sibling at
+`T_colTail A P`. -/
+theorem col_tail_mass_le (A : ℝ) (hA : 0 < A) (P : ℕ) (hP1 : 1 ≤ P) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
       ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2) :=
+  ⟨T_colTail A P, col_tail_mass_le_at A hA P hP1⟩
+
+/-- **(7.56) white-count threshold** `K = ⌈(A+3)·log10/epsBW³⌉₊` (big-C campaign, step 2). -/
+noncomputable def K_fewWhite (A : ℝ) : ℕ := ⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊
+
+/-- **(7.56) reach horizon** `R = ⌈((K+1)+(A+5)·log10+2)/eps0_manyTri⌉₊`
+(big-C campaign, step 2). -/
+noncomputable def R_fewWhite (A : ℝ) : ℕ :=
+  ⌈(((K_fewWhite A : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / eps0_manyTri⌉₊
+
+/-- **(7.56) walk horizon** `P = encWindowIter (2A+A0_fewEstar) (K+1) R`
+(big-C campaign, step 2). -/
+noncomputable def P_fewWhite (A : ℝ) : ℕ :=
+  encWindowIter (2 * A + A0_fewEstar) (K_fewWhite A + 1) (R_fewWhite A)
+
+/-- **(7.56) big-triangle size envelope** `B = 4^{2A+A0_fewEstar}·(1+P)³`
+(big-C campaign, step 2). -/
+noncomputable def B_fewWhite (A : ℝ) : ℝ :=
+  (4 : ℝ) ^ (2 * A + A0_fewEstar) * (1 + (P_fewWhite A : ℝ)) ^ 3
+
+/-- **(7.56) combined threshold** (big-C campaign, step 2): the explicit witness of the
+`∃ Cthr` in `few_white_mass_le` — E∗ arm `10^30`, bad-column arm `T_colTail`, shared gate
+arm `10·g_manyTri`, E∗-regularity arm `⌈B^{2.5}⌉₊`, bad-column numeric arm
+`⌈10·500^{1/A}⌉₊`. -/
+noncomputable def Cthr_fewWhite (A : ℝ) : ℕ :=
+  max (max (10 ^ 30) (T_colTail A (P_fewWhite A)))
+    (max (10 * g_manyTri) (max ⌈B_fewWhite A ^ (2.5 : ℝ)⌉₊ ⌈10 * (500 : ℝ) ^ (1 / A)⌉₊))
+
+theorem one_le_R_fewWhite (A : ℝ) (hA : 0 < A) : 1 ≤ R_fewWhite A := by
+  have hlog10 : (0 : ℝ) < Real.log 10 := Real.log_pos (by norm_num)
+  have hnum : (0 : ℝ) < ((K_fewWhite A : ℝ) + 1) + (A + 5) * Real.log 10 + 2 := by
+    have h1 : (0 : ℝ) < (A + 5) * Real.log 10 := mul_pos (by linarith) hlog10
+    have hKnn : (0 : ℝ) ≤ (K_fewWhite A : ℝ) := Nat.cast_nonneg _
+    linarith
+  unfold R_fewWhite
+  exact Nat.ceil_pos.mpr (div_pos hnum eps0_manyTri_pos)
+
+theorem one_le_P_fewWhite (A : ℝ) (hA : 0 < A) : 1 ≤ P_fewWhite A := by
+  have h1 : (1 : ℕ) ≤ encWindowIter (2 * A + A0_fewEstar) (K_fewWhite A + 1) 1 := by
+    rw [encWindowIter_succ]
+    have h0 : encWindowIter (2 * A + A0_fewEstar) (K_fewWhite A + 1) 0 = 0 := rfl
+    omega
+  exact le_trans h1 (encWindowIter_mono (2 * A + A0_fewEstar) (K_fewWhite A + 1)
+    (one_le_R_fewWhite A hA))
+
+/-- The reach-`R` budget inequality at the explicit horizon `R_fewWhite`. -/
+theorem R_fewWhite_bound (A : ℝ) :
+    ((K_fewWhite A : ℝ) + 1) + (A + 5) * Real.log 10 + 2
+      ≤ eps0_manyTri * (R_fewWhite A : ℝ) := by
+  have hce : (((K_fewWhite A : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / eps0_manyTri
+      ≤ ((R_fewWhite A : ℕ) : ℝ) := by
+    unfold R_fewWhite
+    exact Nat.le_ceil _
+  rw [div_le_iff₀ eps0_manyTri_pos] at hce
+  linarith
+
+/-- `few_white_mass_le`, `_core` rail (big-C campaign, step 2): the (7.56) three-term
+assembly with the constants `A', ε₀, g, K, R, P, B` and the E∗/bad-column thresholds
+`Cthr_e, Cthr_c` ∀-bound, the three proved mass terms supplied as hypotheses, and the
+combined threshold explicit in the statement. Body verbatim from the original proof. -/
+theorem few_white_mass_le_core (A : ℝ) (hA : 0 < A)
+    (A' : ℝ) (hA'1 : 1 ≤ A') (ε₀ : ℝ) (_hε₀pos : 0 < ε₀) (g : ℕ) (Cthr_e : ℕ)
+    (hestar : ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_e ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      ∀ P : ℕ, (∀ p, p ≤ P →
+          ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          (∑ p ∈ Finset.range (P + 1),
+            Set.indicator (bigTriangleSet F ⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊)
+              (1 : ℕ × ℤ → ℝ≥0∞)
+              (n / 2 - m - 1 + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)))
+    (hreach : ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamily n ξ),
+      ∀ (m : ℕ) (l : ℤ) (R : ℕ), 1 ≤ R → ∀ (K P : ℕ),
+      ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ ε₀ * R → ∀ s : ℕ,
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStep F R g)
+                (encInit (n / 2 - m + e.1) (l + e.2))).count
+              ∧ ((List.ofFn v).foldl (encStep F R g)
+                (encInit (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 3)))
+    (K R : ℕ) (hR1 : 1 ≤ R)
+    (hRbound : ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ ε₀ * (R : ℝ))
+    (P : ℕ) (hP1 : 1 ≤ P) (hPeq : encWindowIter A' (K + 1) R ≤ P)
+    (Cthr_c : ℕ)
+    (hcol : ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_c ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (if (0.9 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) / 2))
+    (B : ℝ) (hBdef : B = (4 : ℝ) ^ A' * (1 + (P : ℝ)) ^ 3) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, max (max Cthr_e Cthr_c) (max (10 * g) (max ⌈B ^ (2.5 : ℝ)⌉₊
+        ⌈10 * (500 : ℝ) ^ (1 / A)⌉₊)) ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
@@ -2253,37 +2623,11 @@ theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
           ENNReal.ofReal (if (∑ p ∈ Finset.range P,
                 Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
                   (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
-              ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+              ≤ ((K : ℕ) : ℝ)
             then (1 : ℝ) else 0))
         ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) := by
   classical
-  -- the three proved terms of the pointwise split (7.56): E∗, reach-R, bad-column.
-  obtain ⟨A', hA'1, Cthr_e, hestar⟩ := few_white_estar_mass_le A hA
-  obtain ⟨ε₀, hε₀pos, g, hreach⟩ := few_white_reach_mass_le A
-  have hlog10 : (0 : ℝ) < Real.log 10 := Real.log_pos (by norm_num)
-  -- the goal threshold `K`, the horizon `R`, `P`, all functions of `A` (chosen before `∀ n ξ`).
-  set K : ℕ := ⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ with hKdef
-  set R : ℕ := ⌈(((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / ε₀⌉₊ with hRdef
-  have hRnum_pos : (0 : ℝ) < ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 := by
-    have : (0 : ℝ) < (A + 5) * Real.log 10 := mul_pos (by linarith) hlog10
-    have hKnn : (0 : ℝ) ≤ (K : ℝ) := Nat.cast_nonneg K
-    linarith
-  have hR1 : 1 ≤ R := by
-    rw [hRdef]; exact Nat.ceil_pos.mpr (div_pos hRnum_pos hε₀pos)
-  set P : ℕ := encWindowIter A' (K + 1) R with hPdef
-  have hP1 : 1 ≤ P := by
-    rw [hPdef]
-    have h1 : (1 : ℕ) ≤ encWindowIter A' (K + 1) 1 := by
-      rw [encWindowIter_succ]
-      have : encWindowIter A' (K + 1) 0 = 0 := rfl
-      omega
-    exact le_trans h1 (encWindowIter_mono A' (K + 1) hR1)
-  have hPeq : encWindowIter A' (K + 1) R ≤ P := le_of_eq hPdef.symm
-  obtain ⟨Cthr_c, hcol⟩ := col_tail_mass_le A hA P hP1
-  set B : ℝ := (4 : ℝ) ^ A' * (1 + (P : ℝ)) ^ 3 with hBdef
   have hBnn : (0 : ℝ) ≤ B := by rw [hBdef]; positivity
-  refine ⟨P, hP1, max (max Cthr_e Cthr_c) (max (10 * g) (max ⌈B ^ (2.5 : ℝ)⌉₊
-    ⌈10 * (500 : ℝ) ^ (1 / A)⌉₊)), ?_⟩
   intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
   -- extract the five threshold facts from `Cthr ≤ m`.
   have hmCe : Cthr_e ≤ m := by omega
@@ -2296,11 +2640,6 @@ theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
     have : (10 * g : ℕ) ≤ (m : ℕ) := hm10g
     have hcast : (10 : ℝ) * (g : ℝ) ≤ (m : ℝ) := by exact_mod_cast this
     linarith
-  -- the reach-`R` R-bound hypothesis.
-  have hRbound : ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ ε₀ * (R : ℝ) := by
-    have hce : (((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / ε₀ ≤ (R : ℝ) := by
-      rw [hRdef]; exact Nat.le_ceil _
-    rw [div_le_iff₀ hε₀pos] at hce; linarith
   -- the E∗ regularity hyp `⌊4^{A'}(1+p)³⌋₊ ≤ (m+1)^0.4` for all `p ≤ P`.
   have hreg : ∀ p, p ≤ P →
       ((⌊(4 : ℝ) ^ A' * (1 + (p : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((m + 1 : ℕ) : ℝ) ^ (0.4 : ℝ) := by
@@ -2425,12 +2764,53 @@ theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
           ← ENNReal.ofReal_add (by positivity) (by positivity)]
     _ ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) := ENNReal.ofReal_le_ofReal hnum3
 
-/-- **(7.55) — the pure damping expectation.** After the (7.54) column split it suffices to
-bound `E[exp(−ε³Nw)] ≤ 10^{−A−1}`. Proved here from `few_white_mass_le` (7.56) by the paper's
-count split `exp(−ε³Nw) ≤ 1_{Nw≤K} + 10^{−(A+3)}` (with `K=⌈(A+3)log10/ε³⌉`, so a white excess
-`Nw>K` damps below `10^{−(A+3)}`), then `PMF`-averaging the constant tail (`Σfpdist=Σhold=1`)
-and the numeric `10^{−(A+2)} + 10^{−(A+3)} ≤ 10^{−(A+1)}`. -/
-theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
+/-- `few_white_mass_le`, `_at` sibling (big-C campaign, step 2): the core at the explicit
+constants — `A' = 2A + A0_fewEstar`, gate `eps0_manyTri`/`g_manyTri`, E∗ threshold `10^30`,
+horizons `K_fewWhite`/`R_fewWhite`/`P_fewWhite`, bad-column threshold
+`T_colTail A (P_fewWhite A)`, envelope `B_fewWhite`, combined threshold `Cthr_fewWhite A`. -/
+theorem few_white_mass_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_fewWhite A ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin (P_fewWhite A) → ℕ × ℤ,
+          hold.iid (P_fewWhite A) v *
+          ENNReal.ofReal (if (∑ p ∈ Finset.range (P_fewWhite A),
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+              ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) := by
+  have hA'1 : (1 : ℝ) ≤ 2 * A + A0_fewEstar := by
+    have h1 : (1 : ℝ) ≤ A0_fewEstar :=
+      (estar_scaled_numeric_at C_estarUnion c_estarUnion A0_estarUnion
+        C_estarUnion_pos c_estarUnion_pos one_le_A0_estarUnion).2.1
+    linarith [hA]
+  have h := few_white_mass_le_core A hA (2 * A + A0_fewEstar) hA'1
+    eps0_manyTri eps0_manyTri_pos g_manyTri
+    (10 ^ 30) (few_white_estar_mass_le_at A hA) (few_white_reach_mass_le_at A)
+    (K_fewWhite A) (R_fewWhite A) (one_le_R_fewWhite A hA) (R_fewWhite_bound A)
+    (P_fewWhite A) (one_le_P_fewWhite A hA) (le_of_eq rfl)
+    (T_colTail A (P_fewWhite A))
+    (col_tail_mass_le_at A hA (P_fewWhite A) (one_le_P_fewWhite A hA))
+    (B_fewWhite A) rfl
+  unfold Cthr_fewWhite
+  exact h
+
+/-- **(7.56) — the few-white mass bound (THE deep leaf).** The renewal walk after first
+passage encounters at most `K := ⌈(A+3)·log10/ε³⌉` whites with probability `≤ 10^{−(A+2)}`.
+This is where the proved X11c machinery plugs in: `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
+(`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`), and
+`P(reach R ∧ Nw≤K) + P(E∗) ≤ 10^{−(A+2)}` via `reaches_fewWhite_mass_le_ten` +
+`estar_union_le ∘ bigTriangle_of_encounter`.
+
+**Route (PENDING decomp-3 finding): the base-4 lemmas are used at a SCALED `A' := κ·A`**
+(`4^{κA}=(4^κ)^A`, effective base `4^κ ≈ 10^6`) so `P(E∗) ≤ 10^{−(A+3)}`, and
+`reaches_fewWhite_mass_le_ten` is applied at `A+2` giving `10^{−(A+3)}`; no reproving. Shared
+gate `g` obtained from `reaches_fewWhite_mass_le_ten` and passed into the geometry lemma. -/
+theorem few_white_mass_le (A : ℝ) (hA : 0 < A) :
     ∃ P : ℕ, 1 ≤ P ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
       ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
@@ -2438,13 +2818,34 @@ theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
       (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
       (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
-          ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+          ENNReal.ofReal (if (∑ p ∈ Finset.range P,
+                Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                  (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))
+              ≤ ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+            then (1 : ℝ) else 0))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 2)) :=
+  ⟨P_fewWhite A, one_le_P_fewWhite A hA, Cthr_fewWhite A, few_white_mass_le_at A hA⟩
+
+/-- `damping_expectation_le`, `_at` sibling (big-C campaign, step 2): threshold passthrough
+at `P_fewWhite A`/`Cthr_fewWhite A`. Proof: generalize `P_fewWhite A` back to a variable,
+then the original body verbatim over `few_white_mass_le_at`. -/
+theorem damping_expectation_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_fewWhite A ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin (P_fewWhite A) → ℕ × ℤ,
+          hold.iid (P_fewWhite A) v *
+          ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range (P_fewWhite A),
             Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
               (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))))
         ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) := by
-  obtain ⟨P, hP1, Cthr, hfew⟩ := few_white_mass_le A hA
-  refine ⟨P, hP1, Cthr, ?_⟩
-  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hfew := few_white_mass_le_at A hA
+  revert hfew
+  generalize P_fewWhite A = P
+  intro hfew n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
   have hεnn : (0 : ℝ) ≤ (epsBW : ℝ) := by
     have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
     exact_mod_cast h0
@@ -2553,43 +2954,56 @@ theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
         (ENNReal.ofReal_add (Real.rpow_nonneg (by norm_num) _) (Real.rpow_nonneg (by norm_num) _)).symm
     _ ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) := ENNReal.ofReal_le_ofReal hnum
 
-/-- **X11d crux (post-(7.54)) — the damping × column mass estimate.** Once the end
-value `Q(end)` has been peeled by (7.54) (`Q_le_Qm`: `Q(end) ≤ max(n/2−j_end,1)^{−A}·Q_{m−1}`)
-and the constant `Q_{m−1}` factored out, what remains is this pure first-passage ⊗ Hold-walk
-mass bound: the damping factor `exp(−ε³·Nw)` times the column weight `max(n/2−j_end,1)^{−A}`,
-integrated against `fpDist s ⊗ hold.iid P`, is `≤ m^{−A}`.
-
-The remaining obligation is the (7.55)–(7.67) numerical closure:
-- **damping split by white count** `K=⌈10A/ε³⌉`: on `{Nw>K}` the exp factor is `≤ e^{−10A}`;
-- **few-white geometry** `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
-  (`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`), the two
-  masses bounded by `reaches_fewWhite_mass_le_ten` and `estar_union_le ∘ bigTriangle_of_encounter`
-  (latter at the `j−1` phase shift), with `R=⌈(K+(A+3)log10+2)/ε⌉`;
-- the column weight `max(n/2−j_end,1)^{−A} ≤ 10^A` off the bad column `j_end ≥ 0.9m` whose
-  mass is `O(e^{−cm})` (`fpDistPlus_col_tail`, `budget_le_of_mem_triangle`).
-
-Horizon `P = deterministic_encounter_or_bigTriangle`'s `P₀`; `Cthr` large enough for the
-regime plumbing (⌊4^A(1+p)³⌋ ≤ m^{0.4} for p≤P, X10 deep hyp at `j−1`). -/
-theorem damping_column_mass_le (A : ℝ) (hA : 0 < A) :
-    ∃ Cthr : ℕ, ∃ P : ℕ, 1 ≤ P ∧ ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+/-- **(7.55) — the pure damping expectation.** After the (7.54) column split it suffices to
+bound `E[exp(−ε³Nw)] ≤ 10^{−A−1}`. Proved here from `few_white_mass_le` (7.56) by the paper's
+count split `exp(−ε³Nw) ≤ 1_{Nw≤K} + 10^{−(A+3)}` (with `K=⌈(A+3)log10/ε³⌉`, so a white excess
+`Nw>K` damps below `10^{−(A+3)}`), then `PMF`-averaging the constant tail (`Σfpdist=Σhold=1`)
+and the numeric `10^{−(A+2)} + 10^{−(A+3)} ≤ 10^{−(A+1)}`. -/
+theorem damping_expectation_le (A : ℝ) (hA : 0 < A) :
+    ∃ P : ℕ, 1 ≤ P ∧ ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
       ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
       (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
       (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+            Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+              (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2))))
+        ≤ ENNReal.ofReal ((10 : ℝ) ^ (-A - 1)) :=
+  ⟨P_fewWhite A, one_le_P_fewWhite A hA, Cthr_fewWhite A, damping_expectation_le_at A hA⟩
+
+/-- **Damping-column threshold** (big-C campaign, step 2): the explicit witness of the `∃ Cthr`
+in `damping_column_mass_le`, and — passed through unchanged by `damped_iter_expectation_le` and
+`Q_black_edge_case3` — **the reified C2** that `prop_7_8` combines with `C_hold`. -/
+noncomputable def Cthr_dampingCol (A : ℝ) : ℕ :=
+  max (max (Cthr_fewWhite A) (T_colTail A (P_fewWhite A))) 10
+
+/-- `damping_column_mass_le`, `_at` sibling (big-C campaign, step 2) at
+`Cthr_dampingCol A`/`P_fewWhite A`; original body verbatim over the `_at` inputs. -/
+theorem damping_column_mass_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_dampingCol A ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin (P_fewWhite A) → ℕ × ℤ,
+          hold.iid (P_fewWhite A) v *
           ENNReal.ofReal (
-            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range (P_fewWhite A),
               Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
                 (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
-            ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A)))
+            ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v (P_fewWhite A)).1)) 1 : ℕ) : ℝ) ^ (-A)))
         ≤ ENNReal.ofReal ((m : ℝ) ^ (-A)) := by
-  obtain ⟨P, hP1, Cdamp, hdamp⟩ := damping_expectation_le A hA
-  obtain ⟨Ctail, htail⟩ := col_tail_mass_le A hA P hP1
-  refine ⟨max (max Cdamp Ctail) 10, P, hP1, ?_⟩
-  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
-  have hmC : Cdamp ≤ m := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hm
-  have hmT : Ctail ≤ m := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hm
+  have hdamp := damping_expectation_le_at A hA
+  have htail := col_tail_mass_le_at A hA (P_fewWhite A) (one_le_P_fewWhite A hA)
+  unfold Cthr_dampingCol
+  revert hdamp htail
+  generalize P_fewWhite A = P
+  intro hdamp htail n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hmC : Cthr_fewWhite A ≤ m := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hm
+  have hmT : T_colTail A P ≤ m := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hm
   have hm10 : 10 ≤ m := le_trans (le_max_right _ _) hm
   have hmpos : 0 < m := by omega
   have hmR : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hmpos
@@ -2767,27 +3181,25 @@ theorem damping_column_mass_le (A : ℝ) (hA : 0 < A) :
         rw [← ENNReal.ofReal_add (by positivity) (by positivity)]
         exact ENNReal.ofReal_le_ofReal (by linarith [hm0R])
 
-/-- **X11d crux — the damped-walk expectation bound** (paper (7.54)–(7.67)).
-This is the pure integral estimate that remains once `Q_le_damped_iter` (7.53) has
-converted `Q` at the black edge into a first-passage ⊗ Hold-walk expectation. It states:
-for a suitable threshold `Cthr` and horizon `P` (both `A`-explicit, `n`-uniform), the
-damped walk expectation over the `P`-step Hold walk after first passage is
-`≤ m^{−A}·Q_{m−1}`.
+/-- **X11d crux (post-(7.54)) — the damping × column mass estimate.** Once the end
+value `Q(end)` has been peeled by (7.54) (`Q_le_Qm`: `Q(end) ≤ max(n/2−j_end,1)^{−A}·Q_{m−1}`)
+and the constant `Q_{m−1}` factored out, what remains is this pure first-passage ⊗ Hold-walk
+mass bound: the damping factor `exp(−ε³·Nw)` times the column weight `max(n/2−j_end,1)^{−A}`,
+integrated against `fpDist s ⊗ hold.iid P`, is `≤ m^{−A}`.
 
-The remaining obligation decomposes (next laps) into the three attack-path pieces:
-- **(7.54) column split** — the end value `Q(end)` weight `max(1−j_end/m,1/m)^{−A}` and the
-  `O(e^{−cm})` mass of the bad column `j_end ≥ 0.9m` (`fpDistPlus_col_tail`,
-  `budget_le_of_mem_triangle`);
-- **damping split by white count** `K=⌈10A/ε³⌉`: on `{Nw>K}` the integrand is `≤ e^{−10A}`;
+The remaining obligation is the (7.55)–(7.67) numerical closure:
+- **damping split by white count** `K=⌈10A/ε³⌉`: on `{Nw>K}` the exp factor is `≤ e^{−10A}`;
 - **few-white geometry** `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
-  (`deterministic_encounter_or_bigTriangle`, `encFold_cumWhite`), the two masses bounded by
-  `reaches_fewWhite_mass_le_ten` and `estar_union_le ∘ bigTriangle_of_encounter`
-  (the latter at the `j−1` phase shift), with `R=⌈(K+(A+3)log10+2)/ε⌉`.
+  (`deterministic_encounter_or_bigTriangle`, `cumWhite=Nw` via `encFold_cumWhite`), the two
+  masses bounded by `reaches_fewWhite_mass_le_ten` and `estar_union_le ∘ bigTriangle_of_encounter`
+  (latter at the `j−1` phase shift), with `R=⌈(K+(A+3)log10+2)/ε⌉`;
+- the column weight `max(n/2−j_end,1)^{−A} ≤ 10^A` off the bad column `j_end ≥ 0.9m` whose
+  mass is `O(e^{−cm})` (`fpDistPlus_col_tail`, `budget_le_of_mem_triangle`).
 
-Kept in `ENNReal.ofReal`/tsum form so it composes verbatim with the RHS of
-`Q_le_damped_iter` at `half = n/2`, `W = whiteSet n ξ`, `ε = epsBW`, `j = n/2−m`. -/
-theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
-    ∃ Cthr : ℕ, ∃ P : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+Horizon `P = deterministic_encounter_or_bigTriangle`'s `P₀`; `Cthr` large enough for the
+regime plumbing (⌊4^A(1+p)³⌋ ≤ m^{0.4} for p≤P, X10 deep hyp at `j−1`). -/
+theorem damping_column_mass_le (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∃ P : ℕ, 1 ≤ P ∧ ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
       ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
       ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
       ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
@@ -2798,12 +3210,35 @@ theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
             Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
               Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
                 (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            ((max (n / 2 - (n / 2 - m + e.1 + (pathSum v P).1)) 1 : ℕ) : ℝ) ^ (-A)))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A)) :=
+  ⟨Cthr_dampingCol A, P_fewWhite A, one_le_P_fewWhite A hA, damping_column_mass_le_at A hA⟩
+
+/-- `damped_iter_expectation_le`, `_at` sibling (big-C campaign, step 2): pure threshold
+passthrough at `Cthr_dampingCol A`/`P_fewWhite A`; original body verbatim over
+`damping_column_mass_le_at`. -/
+theorem damped_iter_expectation_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_dampingCol A ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin (P_fewWhite A) → ℕ × ℤ,
+          hold.iid (P_fewWhite A) v *
+          ENNReal.ofReal (
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range (P_fewWhite A),
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
             Q (n / 2) (whiteSet n ξ) (epsBW : ℝ)
-              (n / 2 - m + e.1 + (pathSum v P).1) (l + e.2 + (pathSum v P).2)))
+              (n / 2 - m + e.1 + (pathSum v (P_fewWhite A)).1)
+              (l + e.2 + (pathSum v (P_fewWhite A)).2)))
         ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) := by
-  obtain ⟨Cthr, P, hP1, hmass⟩ := damping_column_mass_le A hA
-  refine ⟨Cthr, P, ?_⟩
-  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hmass := damping_column_mass_le_at A hA
+  have hP1 := one_le_P_fewWhite A hA
+  revert hmass hP1
+  generalize P_fewWhite A = P
+  intro hmass hP1 n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
   have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
     have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
     exact_mod_cast h0
@@ -2911,6 +3346,70 @@ theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
     _ = ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) := by
         rw [← ENNReal.ofReal_mul hQM0]; congr 1; ring
 
+/-- **X11d crux — the damped-walk expectation bound** (paper (7.54)–(7.67)).
+This is the pure integral estimate that remains once `Q_le_damped_iter` (7.53) has
+converted `Q` at the black edge into a first-passage ⊗ Hold-walk expectation. It states:
+for a suitable threshold `Cthr` and horizon `P` (both `A`-explicit, `n`-uniform), the
+damped walk expectation over the `P`-step Hold walk after first passage is
+`≤ m^{−A}·Q_{m−1}`.
+
+The remaining obligation decomposes (next laps) into the three attack-path pieces:
+- **(7.54) column split** — the end value `Q(end)` weight `max(1−j_end/m,1/m)^{−A}` and the
+  `O(e^{−cm})` mass of the bad column `j_end ≥ 0.9m` (`fpDistPlus_col_tail`,
+  `budget_le_of_mem_triangle`);
+- **damping split by white count** `K=⌈10A/ε³⌉`: on `{Nw>K}` the integrand is `≤ e^{−10A}`;
+- **few-white geometry** `{Nw≤K} ⊆ {reach R} ∪ {E∗}`
+  (`deterministic_encounter_or_bigTriangle`, `encFold_cumWhite`), the two masses bounded by
+  `reaches_fewWhite_mass_le_ten` and `estar_union_le ∘ bigTriangle_of_encounter`
+  (the latter at the `j−1` phase shift), with `R=⌈(K+(A+3)log10+2)/ε⌉`.
+
+Kept in `ENNReal.ofReal`/tsum form so it composes verbatim with the RHS of
+`Q_le_damped_iter` at `half = n/2`, `W = whiteSet n ξ`, `ε = epsBW`, `j = n/2−m`. -/
+theorem damped_iter_expectation_le (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∃ P : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      (∑' e : ℕ × ℤ, fpDist s e * ∑' v : Fin P → ℕ × ℤ, hold.iid P v *
+          ENNReal.ofReal (
+            Real.exp (-((epsBW : ℝ) ^ 3) * ∑ p ∈ Finset.range P,
+              Set.indicator (whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+                (n / 2 - m + e.1 + (pathSum v p).1, l + e.2 + (pathSum v p).2)) *
+            Q (n / 2) (whiteSet n ξ) (epsBW : ℝ)
+              (n / 2 - m + e.1 + (pathSum v P).1) (l + e.2 + (pathSum v P).2)))
+        ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :=
+  ⟨Cthr_dampingCol A, P_fewWhite A, damped_iter_expectation_le_at A hA⟩
+
+/-- `Q_black_edge_case3`, `_at` sibling (big-C campaign, step 2): **C2 reified** —
+the Case-3 threshold is `Cthr_dampingCol A`, passed through unchanged from
+`damping_column_mass_le`. Original body verbatim over `damped_iter_expectation_le_at`. -/
+theorem Q_black_edge_case3_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamily n ξ,
+      ∀ m : ℕ, Cthr_dampingCol A ≤ m → m ≤ n / 2 → ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
+      (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  have hbound := damped_iter_expectation_le_at A hA
+  revert hbound
+  generalize P_fewWhite A = P
+  intro hbound n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
+    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
+    exact_mod_cast h0
+  have hentry := Q_le_damped_iter (n / 2) (whiteSet n ξ) (epsBW : ℝ) hε0 s P (n / 2 - m) l
+  have hexp := hbound n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
+  have hchain : ENNReal.ofReal (Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l)
+      ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :=
+    le_trans hentry hexp
+  have hRHSnn : (0 : ℝ) ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
+    mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg m) _) (Qm_nonneg _ _ _ _ _ _)
+  exact (ENNReal.ofReal_le_ofReal_iff hRHSnn).mp hchain
+
 /-- **Case 3 of Proposition 7.8** ((7.53)–(7.67), paper pp.48–49 + Lemmas
 7.9/7.10 pp.50–54): deep triangle start, `m/log²m < s ≤ O(m)`.
 
@@ -2927,42 +3426,112 @@ theorem Q_black_edge_case3 (A : ℝ) (hA : 0 < A) :
       (m : ℝ) / Real.log m ^ 2 < (s : ℝ) →
       (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
-        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
-  -- (7.53) entry via `Q_le_damped_iter`, then the crux expectation bound, then strip `ofReal`.
-  obtain ⟨Cthr, P, hbound⟩ := damped_iter_expectation_le A hA
-  refine ⟨Cthr, ?_⟩
-  intro n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
-  have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
-    have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
-    exact_mod_cast h0
-  have hentry := Q_le_damped_iter (n / 2) (whiteSet n ξ) (epsBW : ℝ) hε0 s P (n / 2 - m) l
-  have hexp := hbound n ξ hξ F m hm hmn l hpos t ht hmem s hs hs1 hs2
-  have hchain : ENNReal.ofReal (Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l)
-      ≤ ENNReal.ofReal ((m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1)) :=
-    le_trans hentry hexp
-  have hRHSnn : (0 : ℝ) ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
-    mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg m) _) (Qm_nonneg _ _ _ _ _ _)
-  exact (ENNReal.ofReal_le_ofReal_iff hRHSnn).mp hchain
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
+  ⟨Cthr_dampingCol A, Q_black_edge_case3_at A hA⟩
 
-/-- The black-edge case split, now fed by the sole downstream X11 gate. -/
+/-- **`Q_black_edge` threshold**, symbolic (big-C campaign, step 2): the case
+split's `max C2 C3` at the explicit Case-2/Case-3 thresholds. -/
+noncomputable def Cthr_blackEdge (A : ℝ) : ℕ :=
+  max (Cthr_case2 A) (Cthr_dampingCol A)
+
+/-- The black-edge case split, `_at` sibling (big-C campaign, step 2):
+`Q_black_edge_of_case3`'s body inlined at the explicit case thresholds
+(`Cthr_case2 A`, `Cthr_dampingCol A`), constant names re-bound via `set`,
+body verbatim. -/
+theorem Q_black_edge_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr_blackEdge A ≤ m → m ≤ n / 2 → ∀ l : ℤ,
+      1 ≤ n / 2 - m → (n / 2 - m, l) ∉ whiteSet n ξ →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  classical
+  have hC2 := Q_black_edge_case2_at A hA
+  have hC3 := Q_black_edge_case3_at A hA
+  unfold Cthr_blackEdge
+  set C2 : ℕ := Cthr_case2 A with hC2def
+  set C3 : ℕ := Cthr_dampingCol A with hC3def
+  intro n ξ hξ m hm hmn l h1 hnw
+  have hn1 : 1 ≤ n := by omega
+  obtain ⟨F⟩ := exists_triangleFamily n ξ hξ
+  -- the phase point is black
+  have hb : black n ξ (n / 2 - m - 1) l := by
+    by_contra hw
+    exact hnw ⟨h1, hw⟩
+  -- hence lies in some triangle of the family
+  have hmem0 : (n / 2 - m - 1, l) ∈
+      {p : ℕ × ℤ | p.1 + 1 ≤ n / 2 ∧ black n ξ p.1 p.2} := ⟨by omega, hb⟩
+  rw [F.cover] at hmem0
+  simp only [Set.mem_iUnion, exists_prop] at hmem0
+  obtain ⟨t, ht, hmem⟩ := hmem0
+  -- the height budget
+  have hl : l ≤ t.2.1 := hmem.2.1
+  set s : ℕ := (t.2.1 - l).toNat with hs
+  have hsZ : (s : ℤ) = t.2.1 - l := by omega
+  -- (7.52): s·log 2 ≤ (m+1)·log 9
+  have hbudget : (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 :=
+    budget_le_of_mem_triangle F ht hmem (by omega)
+  rcases le_or_gt (s : ℝ) ((m : ℝ) / Real.log m ^ 2) with hcase | hcase
+  · exact hC2 n ξ hξ F m (le_trans (le_max_left _ _) hm) hmn l h1
+      t ht hmem s hsZ hcase
+  · exact hC3 n ξ hξ F m (le_trans (le_max_right _ _) hm) hmn l h1
+      t ht hmem s hsZ hcase hbudget
+
+/-- The black-edge case split, original `∃`-form: delegates to the `_at`
+sibling at `Cthr_blackEdge A`. -/
 theorem Q_black_edge (A : ℝ) (hA : 0 < A) :
     ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ,
       1 ≤ n / 2 - m → (n / 2 - m, l) ∉ whiteSet n ξ →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
         ≤ (m : ℝ) ^ (-A) * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
-  Q_black_edge_of_case3 A hA (Q_black_edge_case3 A hA)
+  ⟨Cthr_blackEdge A, Q_black_edge_at A hA⟩
 
-/-- **Proposition 7.8 (Monotonicity)**, assembled from the black-edge bound. -/
+/-- **Proposition 7.8 threshold**, symbolic (big-C campaign, step 2):
+`prop_7_8_at`'s `max (max (C_hold A) C2) 1` at `C2 = Cthr_blackEdge A`. -/
+noncomputable def Cthr_prop78 (A : ℝ) : ℕ :=
+  max (max (C_hold A) (Cthr_blackEdge A)) 1
+
+/-- **Proposition 7.8 (Monotonicity)**, `_at` sibling (big-C campaign, step 2):
+`prop_7_8_at` instantiated at the explicit black-edge threshold. -/
+theorem prop_7_8_explicitC (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr_prop78 A ≤ m → m ≤ n / 2 →
+      Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
+  have h := prop_7_8_at A hA (Cthr_blackEdge A) (Q_black_edge_at A hA)
+  unfold Cthr_prop78
+  exact h
+
+/-- **Proposition 7.8 (Monotonicity)**, original `∃`-form: delegates to the
+`_at` sibling at `Cthr_prop78 A`. -/
 theorem prop_7_8 (A : ℝ) (hA : 0 < A) :
     ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
       Qm (n / 2) n ξ (epsBW : ℝ) A m ≤ Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
-  prop_7_8_of_black_edge A hA (Q_black_edge A hA)
+  ⟨Cthr_prop78 A, prop_7_8_explicitC A hA⟩
 
-/-- Paper (7.37), assembled from Proposition 7.8. -/
+/-- **The (7.37) decay constant**, symbolic (big-C campaign, step 2): the
+`Q_polynomial_decay_at` constant `(max C0 1)^A` at `C0 = Cthr_prop78 A` —
+this is the fully reified C0-arm of the ladder. -/
+noncomputable def C_polyDecay (A : ℝ) : ℝ :=
+  ((max (Cthr_prop78 A) 1 : ℕ) : ℝ) ^ A
+
+theorem C_polyDecay_pos (A : ℝ) : 0 < C_polyDecay A := by
+  unfold C_polyDecay
+  refine Real.rpow_pos_of_pos ?_ A
+  exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one (le_max_right _ _)
+
+/-- Paper (7.37), `_at` sibling (big-C campaign, step 2):
+`Q_polynomial_decay_at` instantiated at the explicit Prop-7.8 threshold. -/
+theorem Q_polynomial_decay_explicitC (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l
+        ≤ C_polyDecay A * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) := by
+  have h := Q_polynomial_decay_at A hA (Cthr_prop78 A) (prop_7_8_explicitC A hA)
+  unfold C_polyDecay
+  exact h
+
+/-- Paper (7.37), original `∃`-form: delegates to the `_at` sibling at
+`C_polyDecay A = (max (Cthr_prop78 A) 1)^A`. -/
 theorem Q_polynomial_decay (A : ℝ) (hA : 0 < A) :
     ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ (j : ℕ) (l : ℤ), 1 ≤ j →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) j l
         ≤ C * ((max (n / 2 - j) 1 : ℕ) : ℝ) ^ (-A) :=
-  Q_polynomial_decay_of_prop_7_8 A hA (prop_7_8 A hA)
+  ⟨C_polyDecay A, C_polyDecay_pos A, Q_polynomial_decay_explicitC A hA⟩
 
 end TaoCollatz

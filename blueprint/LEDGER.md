@@ -23,6 +23,7 @@ Trust base = `[propext, Classical.choice, Quot.sound]`.
 | `C6b` | 🟢 **proved, axiom-clean** | `tao_syracuse` |
 | `C6c` | 🟢 **proved, axiom-clean** | `logSum_oddPart_pullback`, `almostAllPos_oddPart_of_almostAllOdd` |
 | `C6s` | 🟢 **proved, axiom-clean** | `tao_collatz_spine`, `tao_collatz_quantitative_spine` |
+| `C6x` | 🟢 **proved, axiom-clean** | `X_spine`, `C_tao_assembled`, `tao_collatz_quantitative_assembled` |
 | `C7d` | 📐 definitions | `passes`, `passTime`, `passLoc`, `logWindow`, `logUnifOdd`, `alpha` |
 | `C7` | 🟢 **proved, axiom-clean** | `first_passage_nonescape` |
 | `C8` | 🟢 **proved, axiom-clean** | `first_passage_approx` |

@@ -722,19 +722,32 @@ theorem exp_neg_mul_log_eq_rpow (n : ℕ) (k : ℝ) (hn : 0 < (n : ℝ)) :
     Real.exp (-(k * Real.log (n : ℝ))) = (n : ℝ) ^ (-k) := by
   rw [Real.rpow_def_of_pos hn]; congr 1; ring
 
-/-- `Real.log n` eventually exceeds any bound `L` (take `n ≥ exp L`). -/
-theorem log_ge_of_large (L : ℝ) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → L ≤ Real.log (n : ℝ) := by
-  refine ⟨⌈Real.exp L⌉₊ + 1, fun n hn => ?_⟩
+/-- The `log_ge_of_large` cutoff, symbolic (big-C campaign, step 2): `⌈e^L⌉+1`. -/
+noncomputable def N_logGe (L : ℝ) : ℕ := ⌈Real.exp L⌉₊ + 1
+
+/-- `Real.log n` eventually exceeds any bound `L` (take `n ≥ exp L`); `_at` sibling. -/
+theorem log_ge_of_large_at (L : ℝ) : ∀ n : ℕ, N_logGe L ≤ n → L ≤ Real.log (n : ℝ) := by
+  unfold N_logGe
+  intro n hn
   have h1 : Real.exp L ≤ (n : ℝ) :=
     le_trans (Nat.le_ceil _) (by exact_mod_cast (by omega : ⌈Real.exp L⌉₊ ≤ n))
   calc L = Real.log (Real.exp L) := (Real.log_exp L).symm
     _ ≤ Real.log (n : ℝ) := Real.log_le_log (Real.exp_pos L) h1
 
+/-- `log_ge_of_large`, original `∃`-form: delegates to the `_at` sibling. -/
+theorem log_ge_of_large (L : ℝ) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → L ≤ Real.log (n : ℝ) :=
+  ⟨N_logGe L, log_ge_of_large_at L⟩
+
+/-- The `const_rpow_absorb` cutoff, symbolic (big-C campaign, step 2): `⌈κ⌉+1`. -/
+noncomputable def N_rpowAbsorb (κ : ℝ) : ℕ := ⌈κ⌉₊ + 1
+
 /-- **Constant absorption**: a `κ·n^{−β}` bound with `β` at least a full unit above `A+2` is
-eventually below `n^{−(A+2)}`, since `n^{β−(A+2)} ≥ n → ∞` swallows the constant `κ`. -/
-theorem const_rpow_absorb (A κ β : ℝ) (hβ : A + 3 ≤ β) :
-    ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → κ * (n : ℝ) ^ (-β) ≤ (n : ℝ) ^ (-(A + 2)) := by
-  refine ⟨⌈κ⌉₊ + 1, fun n hn => ?_⟩
+eventually below `n^{−(A+2)}`, since `n^{β−(A+2)} ≥ n → ∞` swallows the constant `κ`.
+`_at` sibling at `N_rpowAbsorb κ` (big-C campaign, step 2). -/
+theorem const_rpow_absorb_at (A κ β : ℝ) (hβ : A + 3 ≤ β) :
+    ∀ n : ℕ, N_rpowAbsorb κ ≤ n → κ * (n : ℝ) ^ (-β) ≤ (n : ℝ) ^ (-(A + 2)) := by
+  unfold N_rpowAbsorb
+  intro n hn
   have hn1 : 1 ≤ n := by omega
   have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
   have hnpos : (0 : ℝ) < (n : ℝ) := by linarith
@@ -748,14 +761,26 @@ theorem const_rpow_absorb (A κ β : ℝ) (hβ : A + 3 ≤ β) :
     _ = (n : ℝ) ^ (-(A + 2)) := by
         rw [← Real.rpow_add hnpos]; congr 1; ring
 
+/-- **Constant absorption**, original `∃`-form: delegates to the `_at` sibling at
+`N_rpowAbsorb κ` (big-C campaign, step 2). -/
+theorem const_rpow_absorb (A κ β : ℝ) (hβ : A + 3 ≤ β) :
+    ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → κ * (n : ℝ) ^ (-β) ≤ (n : ℝ) ^ (-(A + 2)) :=
+  ⟨N_rpowAbsorb κ, const_rpow_absorb_at A κ β hβ⟩
+
+/-- The G1 cutoff, symbolic (big-C campaign, step 2). -/
+noncomputable def N_g1 (A : ℝ) : ℕ :=
+  max (max (N_rpowAbsorb 4)
+    (T_logLin ((2 - Real.log 3 / Real.log 2) ^ 2 / (320000 * (A + 3))))) 1
+
 /-- **(6.3) family G1 — the total-mass deficit.** `P(pre a n ≤ caThr)` is exponentially small: the
 prefix sum `pre a n` has mean `2n` while `caThr ≈ n·log₂3 ≈ 1.585 n`, a linear deviation.  Via
 `iidMap_pre` + `geomHalf_tail_bound` at `λ = 2n − caThr ≈ 0.415 n`, dominated by `n^{-(A+2)}`.
 TODO(prove): the marginal rewrite `masked_tsum_map` + `iidMap_pre n n` then `geomHalf_tail_bound`. -/
-theorem g1_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n →
+theorem g1_mass_le_at (A : ℝ) (hA : 0 < A) : ∀ n : ℕ, N_g1 A ≤ n →
     (∑' a : Fin n → ℕ, if caThr (caConst A) n < (pre a n : ℝ) then 0
       else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) := by
   classical
+  unfold N_g1
   set C := caConst A with hCdef
   have hApos : (0 : ℝ) < A + 3 := by linarith
   have hcge : 1000 * (A + 3) ≤ C := by rw [hCdef]; unfold caConst; nlinarith [le_max_left A 0]
@@ -771,9 +796,11 @@ theorem g1_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
   set ε : ℝ := δ ^ 2 / (320000 * (A + 3)) with hεdef
   have hεpos : 0 < ε := by rw [hεdef]; positivity
   have hεcancel : (A + 3) * ε = δ ^ 2 / 320000 := by rw [hεdef]; field_simp
-  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A 4 (A + 3) (le_refl _)
-  obtain ⟨nε, hεle⟩ := log_le_eps_mul_of_large ε hεpos
-  refine ⟨max (max nκ nε) 1, fun n hn => ?_⟩
+  have hκ := const_rpow_absorb_at A 4 (A + 3) (le_refl _)
+  have hεle := log_le_eps_mul_at ε hεpos
+  set nκ : ℕ := N_rpowAbsorb 4 with hnκdef
+  set nε : ℕ := T_logLin ε with hnεdef
+  intro n hn
   have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
   have hnκle : nκ ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn
   have hnεle : nε ≤ n := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn
@@ -860,20 +887,33 @@ theorem g1_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
     _ = 4 * (n : ℝ) ^ (-(A + 3)) := by ring
     _ ≤ (n : ℝ) ^ (-(A + 2)) := hκ n hnκle
 
+/-- **(6.3) family G1**, original `∃`-form: delegates to the `_at` sibling at
+`N_g1 A` (big-C campaign, step 2). -/
+theorem g1_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n →
+    (∑' a : Fin n → ℕ, if caThr (caConst A) n < (pre a n : ℝ) then 0
+      else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) :=
+  ⟨N_g1 A, g1_mass_le_at A hA⟩
+
+/-- The G2 cutoff, symbolic (big-C campaign, step 2). -/
+noncomputable def N_g2 : ℕ := max (max (N_rpowAbsorb (4 * Real.exp (1 / 200))) (N_logGe 1)) 1
+
 /-- **(6.3) family G2 — the per-coordinate overshoot.** For each `i`, `P(a i > 2·C_A·log n)` is
 polynomially small: `a i` is a single Geom(2) draw (`iid_map_coord`, mean 2), and the deviation
 `λ ≈ 2·C_A·log n` gives `geomHalf_tail_bound ≈ n^{-c·2·C_A}` with `c·C_A ≥ A+3`.  Uniform in `i`. -/
-theorem g2_mass_le (A : ℝ) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → ∀ i : Fin n,
+theorem g2_mass_le_at (A : ℝ) : ∀ n : ℕ, N_g2 ≤ n → ∀ i : Fin n,
     (∑' a : Fin n → ℕ, if (a i : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ) then 0
       else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) := by
   classical
+  unfold N_g2
   have hC3000 : 3000 ≤ caConst A := by unfold caConst; nlinarith [le_max_right A 0]
   have hCpos : 0 < caConst A := by linarith
   have hCexp : A + 3 ≤ caConst A / 200 := by
     have h := caConst_tail_exponent A; linarith
-  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A (4 * Real.exp (1 / 200)) (caConst A / 200) hCexp
-  obtain ⟨nL, hL⟩ := log_ge_of_large 1
-  refine ⟨max (max nκ nL) 1, fun n hn i => ?_⟩
+  have hκ := const_rpow_absorb_at A (4 * Real.exp (1 / 200)) (caConst A / 200) hCexp
+  have hL := log_ge_of_large_at 1
+  set nκ : ℕ := N_rpowAbsorb (4 * Real.exp (1 / 200)) with hnκdef
+  set nL : ℕ := N_logGe 1 with hnLdef
+  intro n hn i
   have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
   have hnκle : nκ ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn
   have hnLle : nL ≤ n := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn
@@ -935,6 +975,16 @@ theorem g2_mass_le (A : ℝ) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → ∀ i
     _ = (4 * Real.exp (1 / 200)) * (n : ℝ) ^ (-(caConst A / 200)) := by rw [hexpval]; ring
     _ ≤ (n : ℝ) ^ (-(A + 2)) := hκ n hnκle
 
+/-- **(6.3) family G2**, original `∃`-form: delegates to the `_at` sibling at
+`N_g2` (big-C campaign, step 2). -/
+theorem g2_mass_le (A : ℝ) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → ∀ i : Fin n,
+    (∑' a : Fin n → ℕ, if (a i : ℝ) ≤ 2 * caConst A * Real.log (n : ℝ) then 0
+      else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) :=
+  ⟨N_g2, g2_mass_le_at A⟩
+
+/-- The G3 cutoff, symbolic (big-C campaign, step 2). -/
+noncomputable def N_g3 : ℕ := max (max (N_rpowAbsorb 4) (N_logGe 1)) 1
+
 /-- **(6.3) family G3 — the per-scale suffix-window deficit.** For each `r ∈ [1,n]`,
 `P(sufSum a r < 2r − C_A(√(r log n)+log n))` is polynomially small: `sufSum a r` is a length-`r`
 block sum (mean `2r`), the deviation is `λ = C_A(√(r log n)+log n)`.  The `√(r log n)` part feeds the
@@ -942,11 +992,12 @@ Gaussian factor `≤ n^{−c²C_A²/2}`, the `+log n` part feeds `exp(−cλ) �
 window carries the extra `log n`), so `Gweight ≤ 2 n^{−(A+2)}`.  Uniform in `r`.  Needs the SUFFIX
 marginal `(geomHalf.iid n).map (sufSum · r) = iidSum geomHalf r` (a last-`r`-block analogue of
 `iidMap_pre`, provable via `iid`'s exchangeability / `cexpect_iid_append` with trivial head). -/
-theorem g3_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → ∀ r, 1 ≤ r → r ≤ n →
+theorem g3_mass_le_at (A : ℝ) (hA : 0 < A) : ∀ n : ℕ, N_g3 ≤ n → ∀ r, 1 ≤ r → r ≤ n →
     (∑' a : Fin n → ℕ, if 2 * (r : ℝ) - caConst A *
         (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) + Real.log (n : ℝ)) ≤ (sufSum a r : ℝ) then 0
       else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) := by
   classical
+  unfold N_g3
   set C := caConst A with hCdef
   have hApos : (0 : ℝ) < A + 3 := by linarith
   have hcge : 1000 * (A + 3) ≤ C := by rw [hCdef]; unfold caConst; nlinarith [le_max_left A 0]
@@ -956,9 +1007,11 @@ theorem g3_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
     have := mul_le_mul hcge hcge (by positivity) (by linarith)
     nlinarith [this]
   have hC2_320 : 320000 * (A + 3) ≤ C ^ 2 := by nlinarith [hCsq, hApos]
-  obtain ⟨nκ, hκ⟩ := const_rpow_absorb A 4 (A + 3) (le_refl _)
-  obtain ⟨nL, hL⟩ := log_ge_of_large 1
-  refine ⟨max (max nκ nL) 1, fun n hn r hr1 hrn => ?_⟩
+  have hκ := const_rpow_absorb_at A 4 (A + 3) (le_refl _)
+  have hL := log_ge_of_large_at 1
+  set nκ : ℕ := N_rpowAbsorb 4 with hnκdef
+  set nL : ℕ := N_logGe 1 with hnLdef
+  intro n hn r hr1 hrn
   have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
   have hnκle : nκ ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn
   have hnLle : nL ≤ n := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn
@@ -1043,17 +1096,31 @@ theorem g3_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ �
     _ = 4 * (n : ℝ) ^ (-(A + 3)) := by ring
     _ ≤ (n : ℝ) ^ (-(A + 2)) := hκ n hnκle
 
+/-- **(6.3) family G3**, original `∃`-form: delegates to the `_at` sibling at
+`N_g3` (big-C campaign, step 2). -/
+theorem g3_mass_le (A : ℝ) (hA : 0 < A) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → ∀ r, 1 ≤ r → r ≤ n →
+    (∑' a : Fin n → ℕ, if 2 * (r : ℝ) - caConst A *
+        (Real.sqrt ((r : ℝ) * Real.log (n : ℝ)) + Real.log (n : ℝ)) ≤ (sufSum a r : ℝ) then 0
+      else ((geomHalf.iid n) a).toReal) ≤ (n : ℝ) ^ (-(A + 2)) :=
+  ⟨N_g3, g3_mass_le_at A hA⟩
+
+/-- The (6.6)-threshold positivity cutoff, symbolic (big-C campaign, step 2). -/
+noncomputable def N_caThrNonneg (A : ℝ) : ℕ := T_logLin ((caConst A ^ 2)⁻¹)
+
 /-- **Large-`n` positivity of the (6.6) threshold.** `caThr C n = n·log₂3 − C²·log n ≥ 0` once
 `n·log₂3 ≥ C²·log n`, i.e. `n/log n ≥ C²·log2/log3`; a standard `log n = o(n)` threshold (via
-`log n ≤ 2√n`).  This is exactly the hypothesis `globalGood_subset_mainEvent` consumes. -/
-theorem caThr_nonneg_large (A : ℝ) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → 0 ≤ caThr (caConst A) n := by
+`log n ≤ 2√n`).  This is exactly the hypothesis `globalGood_subset_mainEvent` consumes.
+`_at` sibling at `N_caThrNonneg A` (big-C campaign, step 2). -/
+theorem caThr_nonneg_large_at (A : ℝ) :
+    ∀ n : ℕ, N_caThrNonneg A ≤ n → 0 ≤ caThr (caConst A) n := by
+  unfold N_caThrNonneg
   set C := caConst A with hCdef
   have hC : 30 ≤ C := caConst_ge_thirty A
   have hD : 0 < C ^ 2 := by nlinarith
   have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
   have hlog23 : Real.log 2 ≤ Real.log 3 := Real.log_le_log (by norm_num) (by norm_num)
-  obtain ⟨n₀, hn₀⟩ := log_le_eps_mul_of_large (C ^ 2)⁻¹ (inv_pos.mpr hD)
-  refine ⟨n₀, fun n hn => ?_⟩
+  have hn₀ := log_le_eps_mul_at (C ^ 2)⁻¹ (inv_pos.mpr hD)
+  intro n hn
   have hlog := hn₀ n hn
   have hDn : C ^ 2 * Real.log (n : ℝ) ≤ (n : ℝ) := by
     calc C ^ 2 * Real.log (n : ℝ) ≤ C ^ 2 * ((C ^ 2)⁻¹ * (n : ℝ)) :=
@@ -1066,6 +1133,17 @@ theorem caThr_nonneg_large (A : ℝ) : ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n �
   rw [caThr]
   linarith
 
+/-- **Large-`n` positivity of the (6.6) threshold**, original `∃`-form: delegates to
+the `_at` sibling at `N_caThrNonneg A` (big-C campaign, step 2). -/
+theorem caThr_nonneg_large (A : ℝ) :
+    ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n → 0 ≤ caThr (caConst A) n :=
+  ⟨N_caThrNonneg A, caThr_nonneg_large_at A⟩
+
+/-- The `prob_not_globalGood_le` cutoff, symbolic (big-C campaign, step 2):
+the four family cutoffs joined (+1 forces `1 ≤ n`); the constant is the numeral 6. -/
+noncomputable def N_probGlobalGood (A : ℝ) : ℕ :=
+  max (max (N_caThrNonneg A) (N_g1 A)) (max N_g2 N_g3) + 1
+
 /-- **The remaining C10 tail estimate — a pure probability bound (Tao (6.3)–(6.4)).**
 `P(¬globalGood) ≤ (C/2)·m^{-A}`, together with the large-`n` positivity `0 ≤ caThr` that the inclusion
 `globalGood_subset_mainEvent` consumes; both are delivered by the same `n₀`. The bound is a union over
@@ -1073,18 +1151,24 @@ the finitely many one-sided large-deviation events making up `¬globalGood` — 
 `pre a n ≤ T` (G1), the per-coordinate overshoots `a_i > 2C log n` (G2), and the per-scale window
 deficits `sufSum a r < 2r − C(√(r log n)+log n)` (G3) — each dominated by `geomHalf_tail_bound`, with
 the `n → m` conversion paid out of `0.9n ≤ m ≤ n`. There is no structural content left: the event
-algebra is discharged (`globalGood_subset_mainEvent`), only this probability estimate remains. -/
-theorem prob_not_globalGood_le (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, m ≤ n → n₀ ≤ n → 9 * n ≤ 10 * m →
+algebra is discharged (`globalGood_subset_mainEvent`), only this probability estimate remains.
+`_at` sibling at (`6`, `N_probGlobalGood A`) (big-C campaign, step 2). -/
+theorem prob_not_globalGood_le_at (A : ℝ) (hA : 0 < A) :
+    ∀ n m : ℕ, m ≤ n → N_probGlobalGood A ≤ n → 9 * n ≤ 10 * m →
       0 ≤ caThr (caConst A) n ∧
       2 * (∑' a : Fin n → ℕ, if globalGood A n a then 0 else ((geomHalf.iid n) a).toReal)
-        ≤ C * (m : ℝ) ^ (-A) := by
+        ≤ 6 * (m : ℝ) ^ (-A) := by
   classical
-  obtain ⟨nA, hpos⟩ := caThr_nonneg_large A
-  obtain ⟨n1, hg1⟩ := g1_mass_le A hA
-  obtain ⟨n2, hg2⟩ := g2_mass_le A
-  obtain ⟨n3, hg3⟩ := g3_mass_le A hA
-  refine ⟨6, by norm_num, max (max nA n1) (max n2 n3) + 1, fun n m hmn hn hreg => ?_⟩
+  have hpos := caThr_nonneg_large_at A
+  have hg1 := g1_mass_le_at A hA
+  have hg2 := g2_mass_le_at A
+  have hg3 := g3_mass_le_at A hA
+  unfold N_probGlobalGood
+  set nA : ℕ := N_caThrNonneg A with hnAdef
+  set n1 : ℕ := N_g1 A with hn1def
+  set n2 : ℕ := N_g2 with hn2def
+  set n3 : ℕ := N_g3 with hn3def
+  intro n m hmn hn hreg
   -- unpack the combined threshold
   have ha1 : nA ≤ max nA n1 := le_max_left _ _
   have ha2 : n1 ≤ max nA n1 := le_max_right _ _
@@ -1186,15 +1270,24 @@ theorem prob_not_globalGood_le (A : ℝ) (hA : 0 < A) :
         have hchain : (n : ℝ) ^ (-(A + 1)) ≤ (m : ℝ) ^ (-A) := le_trans hexp2 hnm
         linarith
 
+/-- **The remaining C10 tail estimate**, original `∃`-form: delegates to the `_at`
+sibling at (`6`, `N_probGlobalGood A`) (big-C campaign, step 2). -/
+theorem prob_not_globalGood_le (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, m ≤ n → n₀ ≤ n → 9 * n ≤ 10 * m →
+      0 ≤ caThr (caConst A) n ∧
+      2 * (∑' a : Fin n → ℕ, if globalGood A n a then 0 else ((geomHalf.iid n) a).toReal)
+        ≤ C * (m : ℝ) ^ (-A) :=
+  ⟨6, by norm_num, N_probGlobalGood A, prob_not_globalGood_le_at A hA⟩
+
 /-- **Obligation 1 (error term)**: the `L¹` mass of `syracZ − mainHigh` is polynomially small. Now a
 thin wrapper: `sum_abs_syracZ_sub_mainHigh_eq` turns the `L¹` sum into `P(¬mainEvent)`, the proved
 inclusion `globalGood_subset_mainEvent` bounds it by `P(¬globalGood)`, and the pure tail estimate
 `prob_not_globalGood_le` finishes. This is Tao (6.3), `P(Ē) ≤ n^{-A-1}`, plus the (6.4) enlargements. -/
-theorem error_l1_high_bound (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, m ≤ n → n₀ ≤ n → 9 * n ≤ 10 * m →
-      2 * ∑ Y, |(syracZ n Y).toReal - mainHigh A n Y| ≤ C * (m : ℝ) ^ (-A) := by
-  obtain ⟨C, hC, n₀, H⟩ := prob_not_globalGood_le A hA
-  refine ⟨C, hC, n₀, fun n m hmn hn hreg => ?_⟩
+theorem error_l1_high_bound_at (A : ℝ) (hA : 0 < A) :
+    ∀ n m : ℕ, m ≤ n → N_probGlobalGood A ≤ n → 9 * n ≤ 10 * m →
+      2 * ∑ Y, |(syracZ n Y).toReal - mainHigh A n Y| ≤ 6 * (m : ℝ) ^ (-A) := by
+  have H := prob_not_globalGood_le_at A hA
+  intro n m hmn hn hreg
   obtain ⟨hTpos, hbnd⟩ := H n m hmn hn hreg
   rw [sum_abs_syracZ_sub_mainHigh_eq]
   refine le_trans ?_ hbnd
@@ -1226,5 +1319,12 @@ theorem error_l1_high_bound (A : ℝ) (hA : 0 < A) :
       · simp [hmain, ENNReal.toReal_nonneg]
       · simp [hmain]
   exact mul_le_mul_of_nonneg_left hmono (by norm_num)
+
+/-- **Obligation 1 (error term)**, original `∃`-form: delegates to the `_at` sibling
+at (`6`, `N_probGlobalGood A`) (big-C campaign, step 2). -/
+theorem error_l1_high_bound (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, m ≤ n → n₀ ≤ n → 9 * n ≤ 10 * m →
+      2 * ∑ Y, |(syracZ n Y).toReal - mainHigh A n Y| ≤ C * (m : ℝ) ^ (-A) :=
+  ⟨6, by norm_num, N_probGlobalGood A, error_l1_high_bound_at A hA⟩
 
 end TaoCollatz

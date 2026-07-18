@@ -34,25 +34,35 @@ theorem osc_syracZ_le_sum_steps (m n : ℕ) (hmn : m ≤ n) :
           rw [Finset.sum_Ico_succ_top hmn]
           ac_rfl
 
+/-- The `ζ(2)`-mass of the telescope, symbolic (big-C campaign, step 2). -/
+noncomputable def S_zeta2 : ℝ := ∑' k : ℕ, (k : ℝ) ^ (-(2 : ℝ))
+
+theorem S_zeta2_nonneg : 0 ≤ S_zeta2 :=
+  tsum_nonneg (fun _ => Real.rpow_nonneg (Nat.cast_nonneg _) _)
+
 /-- **(6.1) the regime reduction** (C10, obligation 0): the general bound for all `1 ≤ m ≤ n` follows
 from the high-regime bound (`0.9n ≤ m ≤ n`, large `n`). Tao p.28: once (1.23) holds in the regime
 `0.9n ≤ m ≤ n`, the (1.22)-consistency telescope across scales gives it for general `10 ≤ m ≤ n`, and
 `1 ≤ m < 10` follows trivially from the triangle inequality; the finitely many small `n < n₀` are
-absorbed by the trivial `osc ≤ 2` bound (a probability density has total mass ≤ 1) into a large constant. -/
-theorem osc_syracZ_regime_telescope (A : ℝ) (hA : 0 < A)
-    (hhigh : ∀ B : ℝ, 0 < B →
-      ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, ∀ hmn : m ≤ n, n₀ ≤ n → 9 * n ≤ 10 * m →
-        osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-B)) :
-    ∃ C > 0, ∀ n m : ℕ, ∀ hmn : m ≤ n, 1 ≤ m →
-      osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-A) := by
-  obtain ⟨C, hC, n₀, hstep⟩ := hhigh (A + 2) (by linarith)
-  let N : ℕ := max 9 n₀
-  let S : ℝ := ∑' k : ℕ, (k : ℝ) ^ (-(2 : ℝ))
+absorbed by the trivial `osc ≤ 2` bound (a probability density has total mass ≤ 1) into a large constant.
+
+Threshold-explicit form (big-C campaign, step 2): the high-regime bound is supplied at
+exponent `A+2` with EXPLICIT constant `C` and cutoff `n₀`; the general-`m` constant is
+`2·(max 9 n₀)^A + C·S_zeta2`. -/
+theorem osc_syracZ_regime_telescope_at (A : ℝ) (hA : 0 < A) (C : ℝ) (hC : 0 < C) (n₀ : ℕ)
+    (hstep : ∀ n m : ℕ, ∀ hmn : m ≤ n, n₀ ≤ n → 9 * n ≤ 10 * m →
+      osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-(A + 2))) :
+    ∀ n m : ℕ, ∀ hmn : m ≤ n, 1 ≤ m →
+      osc m n hmn (fun Y => ((syracZ n) Y).toReal)
+        ≤ (2 * ((max 9 n₀ : ℕ) : ℝ) ^ A + C * S_zeta2) * (m : ℝ) ^ (-A) := by
+  unfold S_zeta2
+  set N : ℕ := max 9 n₀ with hNdef
+  set S : ℝ := ∑' k : ℕ, (k : ℝ) ^ (-(2 : ℝ)) with hSdef
   have hsummable : Summable (fun k : ℕ => (k : ℝ) ^ (-(2 : ℝ))) := by
     rw [Real.summable_nat_rpow]
     norm_num
   have hS0 : 0 ≤ S := tsum_nonneg (fun _ => Real.rpow_nonneg (Nat.cast_nonneg _) _)
-  refine ⟨2 * (N : ℝ) ^ A + C * S, by positivity, fun n m hmn hm => ?_⟩
+  intro n m hmn hm
   by_cases hmN : m < N
   · have hmpos : (0 : ℝ) < m := by exact_mod_cast hm
     have hmN' : (m : ℝ) ≤ N := by exact_mod_cast (Nat.le_of_lt hmN)
@@ -104,5 +114,22 @@ theorem osc_syracZ_regime_telescope (A : ℝ) (hA : 0 < A)
         have hmneg : 0 ≤ (m : ℝ) ^ (-A) := Real.rpow_nonneg (Nat.cast_nonneg _) _
         have hNA : 0 ≤ (N : ℝ) ^ A := Real.rpow_nonneg (Nat.cast_nonneg _) _
         nlinarith
+
+/-- **(6.1) the regime reduction**, original `∃`-form: delegates to the
+threshold-explicit telescope (big-C campaign, step 2). -/
+theorem osc_syracZ_regime_telescope (A : ℝ) (hA : 0 < A)
+    (hhigh : ∀ B : ℝ, 0 < B →
+      ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, ∀ hmn : m ≤ n, n₀ ≤ n → 9 * n ≤ 10 * m →
+        osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-B)) :
+    ∃ C > 0, ∀ n m : ℕ, ∀ hmn : m ≤ n, 1 ≤ m →
+      osc m n hmn (fun Y => ((syracZ n) Y).toReal) ≤ C * (m : ℝ) ^ (-A) := by
+  obtain ⟨C, hC, n₀, hstep⟩ := hhigh (A + 2) (by linarith)
+  refine ⟨2 * ((max 9 n₀ : ℕ) : ℝ) ^ A + C * S_zeta2, ?_,
+    osc_syracZ_regime_telescope_at A hA C hC n₀ hstep⟩
+  have h9 : (0 : ℝ) < ((max 9 n₀ : ℕ) : ℝ) := by
+    have : (1 : ℕ) ≤ max 9 n₀ := le_trans (by norm_num) (le_max_left _ _)
+    exact_mod_cast lt_of_lt_of_le Nat.zero_lt_one this
+  have := mul_nonneg hC.le S_zeta2_nonneg
+  nlinarith [Real.rpow_pos_of_pos h9 A]
 
 end TaoCollatz

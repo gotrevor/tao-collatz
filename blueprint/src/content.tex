@@ -458,6 +458,38 @@ harmonic-mass bounds on the full window.  Headline route: C6b at \(\tilde f\) + 
   \texttt{exact}.  Trust-the-treadmill flip; judge flip-back allowed.
 \end{proof}
 
+% ---- Ruling II successor (2026-07-17): the assembled explicit big-C layer.  Additive on
+% the clean library; the retired CTao pin is NOT this node.  Numeric/structural trap: check27.
+% \leanok set by JUDGE ratification 2026-07-17 (host-verified, NOT self-set by a lap):
+% #print axioms {tao_collatz_quantitative_assembled, C_tao_assembled} = [propext,
+% Classical.choice, Quot.sound] (no sorryAx); ExplicitnessClosure walked 209 project defs
+% with no witness selector; big_c_cutoff_audit --complete green; check27 pass; library
+% sorry census 0; statement read against BIG_C_EXPLICIT_BOUND_PLAN.md "Exact deliverable".
+\begin{theorem}[Assembled fully-explicit Thm 3.1 (our augmentation)]\label{C6x}
+  \lean{X_spine, C_tao_assembled, tao_collatz_quantitative_assembled}
+  \uses{C6a, C6s}
+  \leanok
+Beyond the paper: Theorem 3.1 with BOTH slots closed --- the explicit exponent
+\(c_{\mathrm{Tao}}\) and a closed (tower-valued, deliberately non-small) constant
+\(C_{\mathrm{assembled}} = \max(C_{\mathrm{spine}}(X_{\mathrm{spine}}),
+\log^{c_{\mathrm{Tao}}}2)\), where \(X_{\mathrm{spine}}\) is the X-chase closure of the
+development's cutoff tree (no existential exponent, constant, or cutoff on the proof
+path; explicitness contract per \texttt{BIG\_C\_EXPLICIT\_BOUND\_PLAN.md}, enforced by
+\texttt{tools/ExplicitnessClosure.lean} + \texttt{big\_c\_cutoff\_audit.py --complete}).
+\lapsrisk{0}{low}{100\%}
+\end{theorem}
+\begin{proof}
+  \leanok
+  Kernel-clean (axioms = the standard three, no \texttt{sorryAx}; host-verified
+  2026-07-17 — receipt in the source comment above this node).  Delegation:
+  \texttt{tao\_collatz\_quantitative\_spine\_atCX} at the closed cutoff, weakened to the
+  exponent \(c_{\mathrm{Tao}}\) by monotonicity (\texttt{\_of\_le}); the \(N_0 = 2\)
+  window is absorbed by the second \texttt{max} arm.  \texttt{BigCTower.lean} then proves
+  the readable ceiling \(C_{\mathrm{assembled}} \le 10\uparrow\uparrow 63\)
+  (\texttt{tenTower 62}), rendered on the trusted surface as \texttt{CTao} +
+  \texttt{tao\_collatz\_quantitative\_fully\_explicit} (\texttt{Statement.lean}).
+\end{proof}
+
 \section{First passage (§5)}
 
 \begin{definition}[First-passage data and the log-uniform window]\label{C7d}

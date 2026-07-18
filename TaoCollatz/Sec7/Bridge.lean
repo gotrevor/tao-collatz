@@ -498,26 +498,45 @@ theorem bridge_renewal (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (hε : 0 �
           _ = 1 := hold_tsum_toReal
   exact key _ j l rfl
 
+/-- **The Proposition 7.3 constant**, symbolic (big-C campaign, step 2): the
+`renewal_white_encounters` witness `max (n₀^A) (C0·e^{ε³/2}·3^A)` at
+`n₀ = 2·C_hold A + 2`, `C0 = C_polyDecay A`. ⚠️ C0-arm dominated — see check19 /
+the lap-8 JUDGE-FLAG in PENDING_WORK.md. -/
+noncomputable def C_renewalWhite (A : ℝ) : ℝ :=
+  max (((2 * C_hold A + 2 : ℕ) : ℝ) ^ A)
+    (C_polyDecay A * Real.exp ((epsBW : ℝ) ^ 3 / 2) * (3 : ℝ) ^ A)
+
+theorem C_renewalWhite_pos (A : ℝ) : 0 < C_renewalWhite A := by
+  unfold C_renewalWhite
+  exact lt_max_iff.mpr (Or.inl (Real.rpow_pos_of_pos (by positivity) A))
+
 open Classical in
 /-- **Proposition 7.3** (finitized, D6 form; moved from `Holding.lean` 2026-07-10):
 the expected damping factor `exp(-ε³ · #white encounters)` over the paired valuation
 vector `b ~ Pascal^{⌊n/2⌋}` decays super-polynomially: `≤ C·n^{-A}` for every `A`.
 PROVED from `bridge_vector` + `bridge_renewal` (the two open X5 seams) +
-`Q_polynomial_decay` + `hold_weight_expect`. -/
-theorem renewal_white_encounters (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → 1 ≤ n →
+`Q_polynomial_decay` + `hold_weight_expect`.
+
+`_at` sibling (big-C campaign, step 2): the two `obtain`s replaced by the explicit
+siblings, constant names re-bound via `set`, body verbatim. -/
+theorem renewal_white_encounters_at (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → 1 ≤ n →
       (PMF.iid pascal (n / 2)).expect (fun b =>
         Real.exp (-((epsBW : ℝ) ^ 3) *
           ((Finset.univ.filter fun j : Fin (n / 2) =>
             b j = 3 ∧ white n ξ (j : ℕ) ((pre b ((j : ℕ) + 1) : ℤ))).card : ℝ)))
-        ≤ C * (n : ℝ) ^ (-A) := by
-  obtain ⟨C0, hC00, hC0⟩ := Q_polynomial_decay A hA
-  obtain ⟨C1, hC11, hC1⟩ := hold_weight_expect A hA
+        ≤ C_renewalWhite A * (n : ℝ) ^ (-A) := by
+  have hC00 : (0 : ℝ) < C_polyDecay A := C_polyDecay_pos A
+  have hC0 := Q_polynomial_decay_explicitC A hA
+  have hC11 : 1 ≤ C_hold A := one_le_C_hold A
+  have hC1 := hold_weight_expect_explicitC A hA
+  unfold C_renewalWhite
+  set C0 : ℝ := C_polyDecay A with hC0def
+  set C1 : ℕ := C_hold A with hC1def
   -- constants: below n₀ := 2·C1 + 2 use the trivial bound E ≤ 1 ≤ n₀^A·n^{-A};
   -- above, the chain gives C0·exp(ε³/2)·3^A·n^{-A}.
   set n0 : ℕ := 2 * C1 + 2 with hn0
-  refine ⟨max ((n0 : ℝ) ^ A) (C0 * Real.exp ((epsBW : ℝ) ^ 3 / 2) * (3 : ℝ) ^ A),
-    lt_max_iff.mpr (Or.inl (Real.rpow_pos_of_pos (by positivity) A)), fun n ξ hξ hn => ?_⟩
+  intro n ξ hξ hn
   have hε0 : (0 : ℝ) ≤ (epsBW : ℝ) := by
     have h0 : (0 : ℚ) ≤ epsBW := by unfold epsBW; norm_num
     exact_mod_cast h0
@@ -658,5 +677,36 @@ theorem renewal_white_encounters (A : ℝ) (hA : 0 < A) :
       _ ≤ max ((n0 : ℝ) ^ A) (C0 * Real.exp ((epsBW : ℝ) ^ 3 / 2) * (3 : ℝ) ^ A)
             * (n : ℝ) ^ (-A) :=
           mul_le_mul_of_nonneg_right (le_max_right _ _) (Real.rpow_nonneg hn0R.le _)
+
+open Classical in
+/-- **Proposition 7.3**, original `∃`-form: delegates to the `_at` sibling at
+`C_renewalWhite A`. -/
+theorem renewal_white_encounters (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → 1 ≤ n →
+      (PMF.iid pascal (n / 2)).expect (fun b =>
+        Real.exp (-((epsBW : ℝ) ^ 3) *
+          ((Finset.univ.filter fun j : Fin (n / 2) =>
+            b j = 3 ∧ white n ξ (j : ℕ) ((pre b ((j : ℕ) + 1) : ℤ))).card : ℝ)))
+        ≤ C * (n : ℝ) ^ (-A) :=
+  ⟨C_renewalWhite A, C_renewalWhite_pos A, renewal_white_encounters_at A hA⟩
+
+/- **The Option-B "tight" island was REMOVED 2026-07-17** (judge ruling; the `CTao` pin it
+served was retired the same day).
+
+It held `C_renewalWhite_tight`, `C_Qtight`, `Q_black_edge_tight`, `Q_polynomial_decay_tight`,
+and `renewal_white_encounters_tight`: a parallel, tighter rendering of Prop 7.3 whose sole
+purpose was to discharge the `CTao = 10^(10¹¹)` pin, resting on the named crux
+`Q_black_edge_tight` (a `#white` lower-tail / `θq` anti-concentration estimate beating
+`few_white_mass_le`'s (7.67) tower horizon).
+
+That crux has no route we could find, and the evidence says the door is dead: the walk's
+entry-depth tail is a scaling form in the triangle size spectrum with no rate of its own
+(`tools/judge_probe_depth_tail.py`), and the flat-envelope contradiction (check23(i)) is
+architecture-level. With the pin retired the island had no consumer, and a `sorry`-backed
+theorem in a library is a liability — anything that imported it would inherit `sorryAx`.
+
+The frontier it marked is not lost: it is stated, sized, and evidenced in `PENDING_WORK.md`
+(laps 12–19) and `DIRECTION.md`, which is a better home for an open question than a `sorry`.
+`git log --follow` this file for the code. -/
 
 end TaoCollatz

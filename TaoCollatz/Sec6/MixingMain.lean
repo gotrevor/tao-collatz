@@ -6,20 +6,27 @@ open scoped BigOperators
 
 namespace TaoCollatz
 
+/-- The `eventually_ca_window` cutoff, symbolic (big-C campaign, step 2):
+`T_logLin D⁻¹` at the window loss `D = caConst² - 2·caConst`. -/
+noncomputable def N_caWindow (A : ℝ) : ℕ :=
+  T_logLin (((caConst A) ^ 2 - 2 * caConst A)⁻¹)
+
 /-- The tight valuation window used by `mainHigh` is nonempty-compatible for all sufficiently
 large `n`: its quadratic-in-`C_A` logarithmic loss is eventually dominated by the linear main
-term. This discharges the `hwin` hypothesis of `lRange_hbudget`; no numerical cutoff is exposed. -/
-theorem eventually_ca_window (A : ℝ) :
-    ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n →
+term. This discharges the `hwin` hypothesis of `lRange_hbudget`; no numerical cutoff is exposed.
+`_at` sibling at the explicit cutoff `N_caWindow A` (big-C campaign, step 2). -/
+theorem eventually_ca_window_at (A : ℝ) :
+    ∀ n : ℕ, N_caWindow A ≤ n →
       ((caConst A) ^ 2 - 2 * caConst A) * Real.log (n : ℝ)
         ≤ (n : ℝ) * Real.log 3 / Real.log 2 := by
+  unfold N_caWindow
   let D : ℝ := (caConst A) ^ 2 - 2 * caConst A
   have hC : 30 ≤ caConst A := caConst_ge_thirty A
   have hD : 0 < D := by
     dsimp [D]
     nlinarith
-  obtain ⟨n₀, hn₀⟩ := log_le_eps_mul_of_large D⁻¹ (inv_pos.mpr hD)
-  refine ⟨n₀, fun n hn => ?_⟩
+  have hn₀ := log_le_eps_mul_at D⁻¹ (inv_pos.mpr hD)
+  intro n hn
   have hlog := hn₀ n hn
   have hDn : D * Real.log (n : ℝ) ≤ (n : ℝ) := by
     calc
@@ -33,6 +40,14 @@ theorem eventually_ca_window (A : ℝ) :
     exact mul_le_mul_of_nonneg_left hlog23 (Nat.cast_nonneg n)
   change D * Real.log (n : ℝ) ≤ _
   exact hDn.trans hratio
+
+/-- `eventually_ca_window`, original `∃`-form: delegates to the `_at` sibling at
+`N_caWindow A` (big-C campaign, step 2). -/
+theorem eventually_ca_window (A : ℝ) :
+    ∃ n₀ : ℕ, ∀ n : ℕ, n₀ ≤ n →
+      ((caConst A) ^ 2 - 2 * caConst A) * Real.log (n : ℝ)
+        ≤ (n : ℝ) * Real.log 3 / Real.log 2 :=
+  ⟨N_caWindow A, eventually_ca_window_at A⟩
 
 /-- Cancellation of the exponential factors in Tao's `(6.10)`: on the tight valuation window,
 `sqrt (3^n * 2⁻ˡ)` costs only a polynomial in `n`.  The exponent here is deliberately loose
@@ -237,15 +252,17 @@ theorem highFreq_cast_ne_zero (m n j : ℕ) (hj : n - m ≤ j) (hjn : j ≤ n)
 /-- Uniform head decay once the head length `j` exceeds the high-frequency cutoff `n-m` by a
 residual margin `q₀`.  The exact `3`-valuation of `ξ` is peeled off; multiplication by `2⁻ˡ` is a
 unit and therefore preserves the coprime cofactor. -/
-theorem head_uniform_highFreq_of_margin (B : ℝ) (hB : 0 < B) :
-    ∃ C > 0, ∀ (j p m l q₀ : ℕ), 1 ≤ q₀ → m ≤ j + p →
+theorem head_uniform_highFreq_of_margin_at (B : ℝ) (hB : 0 < B) :
+    ∀ (j p m l q₀ : ℕ), 1 ≤ q₀ → m ≤ j + p →
       (j + p - m) + q₀ ≤ j → ∀ ξ ∈ highFreq m (j + p),
       ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
           (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
             * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
             * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))‖
-        ≤ C * (q₀ : ℝ) ^ (-B) := by
-  obtain ⟨C, hC, hdecay⟩ := head_factor_norm_le_charFn B hB
+        ≤ C_renewalWhite B * (q₀ : ℝ) ^ (-B) := by
+  have hdecay := head_factor_norm_le_charFn_at B hB
+  have hC : (0 : ℝ) < C_renewalWhite B := C_renewalWhite_pos B
+  set C : ℝ := C_renewalWhite B with hCdef
   have htransport {j' q j p l : ℕ} (hjq : j' + q = j) (hq : 1 ≤ q)
       (ξ : ZMod (3 ^ (j + p))) (η : ZMod (3 ^ j))
       (hfreq : (2 : ZMod (3 ^ j))⁻¹ ^ l
@@ -260,7 +277,7 @@ theorem head_uniform_highFreq_of_margin (B : ℝ) (hB : 0 < B) :
         ≤ C * (q : ℝ) ^ (-B) := by
     subst j
     exact hdecay j' q p l hq ξ η hfreq hη3
-  refine ⟨C, hC, fun j p m l q₀ hq₀ hmn hmargin ξ hξ => ?_⟩
+  intro j p m l q₀ hq₀ hmn hmargin ξ hξ
   rw [highFreq, Finset.mem_filter] at hξ
   have hnotdvd : ¬3 ^ (j + p - m) ∣ ξ.val := hξ.2
   have hξval : ξ.val ≠ 0 := by
@@ -338,15 +355,34 @@ theorem head_uniform_highFreq_of_margin (B : ℝ) (hB : 0 < B) :
     · linarith
   exact mul_le_mul_of_nonneg_left hpow hC.le
 
+/-- `head_uniform_highFreq_of_margin`, original `∃`-form: delegates to the `_at`
+sibling at `C_renewalWhite B` (big-C campaign, step 2). -/
+theorem head_uniform_highFreq_of_margin (B : ℝ) (hB : 0 < B) :
+    ∃ C > 0, ∀ (j p m l q₀ : ℕ), 1 ≤ q₀ → m ≤ j + p →
+      (j + p - m) + q₀ ≤ j → ∀ ξ ∈ highFreq m (j + p),
+      ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar
+          (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j)
+            * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))‖
+        ≤ C * (q₀ : ℝ) ^ (-B) :=
+  ⟨C_renewalWhite B, C_renewalWhite_pos B, head_uniform_highFreq_of_margin_at B hB⟩
+
+/-- The `eventually_condWindowB_empty_p_gt` cutoff, symbolic (big-C campaign, step 2):
+`T_logLin (r²)` at `r = δ/(4C)`, `δ = 8/5 - log3/log2` (the `3⁵ < 2⁸` gap). -/
+noncomputable def N_condWindowB (C : ℝ) : ℕ :=
+  T_logLin (((8 / 5 - Real.log 3 / Real.log 2) / (4 * C)) ^ 2)
+
 /-- For large `n`, the conditioning window has no support at cuts with `p = k+1 > 0.8n`.
 The strict numerical gap is `8/5 - log 3 / log 2 > 0`, equivalently `3^5 < 2^8`.
-This is what supplies a linear residual head margin for `head_uniform_highFreq_of_margin`. -/
-theorem eventually_condWindowB_empty_p_gt (C : ℝ) (hC : 30 ≤ C) :
-    ∃ n₀ : ℕ, ∀ (j p l : ℕ) (T : ℝ), n₀ ≤ j + p → 1 ≤ j + p →
+This is what supplies a linear residual head margin for `head_uniform_highFreq_of_margin`.
+`_at` sibling at the explicit cutoff `N_condWindowB C` (big-C campaign, step 2). -/
+theorem eventually_condWindowB_empty_p_gt_at (C : ℝ) (hC : 30 ≤ C) :
+    ∀ (j p l : ℕ) (T : ℝ), N_condWindowB C ≤ j + p → 1 ≤ j + p →
       ((C ^ 2 - 2 * C) * Real.log ((j + p : ℕ) : ℝ)
         ≤ ((j + p : ℕ) : ℝ) * Real.log 3 / Real.log 2) →
       l ∈ lRange C (j + p) → 4 * (j + p) < 5 * p →
       ∀ vt, ¬ condWindowB j p C l T vt := by
+  unfold N_condWindowB
   have hCpos : 0 < C := lt_of_lt_of_le (by norm_num) hC
   have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
   have hgaplog : 5 * Real.log 3 < 8 * Real.log 2 := by
@@ -370,8 +406,8 @@ theorem eventually_condWindowB_empty_p_gt (C : ℝ) (hC : 30 ≤ C) :
     dsimp [r]
     rw [div_le_one (by positivity : 0 < 4 * C)]
     nlinarith
-  obtain ⟨n₀, hn₀⟩ := log_le_eps_mul_of_large (r ^ 2) (sq_pos_of_pos hr)
-  refine ⟨n₀, fun j p l T hnlarge hn hwin hl hp vt hW => ?_⟩
+  have hn₀ := log_le_eps_mul_at (r ^ 2) (sq_pos_of_pos hr)
+  intro j p l T hnlarge hn hwin hl hp vt hW
   let n := j + p
   have hnpos : (0 : ℝ) < n := by dsimp [n]; exact_mod_cast hn
   have hlogn : 0 ≤ Real.log (n : ℝ) := Real.log_nonneg (by exact_mod_cast hn)
@@ -431,6 +467,16 @@ theorem eventually_condWindowB_empty_p_gt (C : ℝ) (hC : 30 ≤ C) :
   have hcoeffn := mul_lt_mul_of_pos_right hcoeff hnpos
   exact (not_lt_of_ge hupper2) (hcoeffn.trans hpcast)
 
+/-- `eventually_condWindowB_empty_p_gt`, original `∃`-form: delegates to the `_at`
+sibling at `N_condWindowB C` (big-C campaign, step 2). -/
+theorem eventually_condWindowB_empty_p_gt (C : ℝ) (hC : 30 ≤ C) :
+    ∃ n₀ : ℕ, ∀ (j p l : ℕ) (T : ℝ), n₀ ≤ j + p → 1 ≤ j + p →
+      ((C ^ 2 - 2 * C) * Real.log ((j + p : ℕ) : ℝ)
+        ≤ ((j + p : ℕ) : ℝ) * Real.log 3 / Real.log 2) →
+      l ∈ lRange C (j + p) → 4 * (j + p) < 5 * p →
+      ∀ vt, ¬ condWindowB j p C l T vt :=
+  ⟨N_condWindowB C, eventually_condWindowB_empty_p_gt_at C hC⟩
+
 /-- A windowed conditioned density is zero when its window predicate is empty. -/
 theorem condDensW_eq_zero_of_empty (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W]
     (hW : ∀ vt, ¬ W vt) : condDensW j p l W = 0 := by
@@ -452,22 +498,40 @@ theorem div_twenty_rpow_neg_le (B : ℝ) (hB : 0 < B) (n : ℕ) (hn : 40 ≤ n) 
     Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 40), div_inv_eq_mul] at hpow
   simpa [mul_comm] using hpow
 
+/-- The `osc_mainHigh_bound` constant, symbolic (big-C campaign, step 2):
+`3·C·40^B` at `C = C_renewalWhite B`, `B = mainDecayExponent A`. -/
+noncomputable def C_oscMainHigh (A : ℝ) : ℝ :=
+  3 * C_renewalWhite (mainDecayExponent A) * (40 : ℝ) ^ (mainDecayExponent A)
+
+/-- The `osc_mainHigh_bound` cutoff, symbolic (big-C campaign, step 2). -/
+noncomputable def N_oscMainHigh (A : ℝ) : ℕ :=
+  max 40 (max (N_caWindow A) (N_condWindowB (caConst A)))
+
+theorem C_oscMainHigh_pos (A : ℝ) : 0 < C_oscMainHigh A := by
+  unfold C_oscMainHigh
+  exact mul_pos (mul_pos (by norm_num) (C_renewalWhite_pos _))
+    (Real.rpow_pos_of_pos (by norm_num) _)
+
 /-- **Obligation 1+2 (main term)**: the oscillation of the §6 main density is polynomially small in
 the high regime. This is (6.10)+(6.11) [per-conditioning osc `≤ D·√(3ⁿ2⁻ˡ)`, obl-3 DONE] summed over
 the `(k,l)` partition via `osc_mainDensity_le` [k-sum cast, DONE] with `D = C_A·q⁻ᴬ` [obl 2, `hunif`
 from `head_factor_norm_le_charFn`], then the geometric `l`-sum `∑ √(2⁻ˡ)` + `k`-count + the constant
-chase absorbing `n^{O(C_A²)}` into a larger characteristic-function exponent `A′`. -/
-theorem osc_mainHigh_bound (A : ℝ) (hA : 0 < A) :
-    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, ∀ hmn : m ≤ n, n₀ ≤ n → 9 * n ≤ 10 * m →
-      osc m n hmn (mainHigh A n) ≤ C * (m : ℝ) ^ (-A) := by
-  let B := mainDecayExponent A
+chase absorbing `n^{O(C_A²)}` into a larger characteristic-function exponent `A′`.
+`_at` sibling at `C_oscMainHigh A`/`N_oscMainHigh A` (big-C campaign, step 2). -/
+theorem osc_mainHigh_bound_at (A : ℝ) (hA : 0 < A) :
+    ∀ n m : ℕ, ∀ hmn : m ≤ n, N_oscMainHigh A ≤ n → 9 * n ≤ 10 * m →
+      osc m n hmn (mainHigh A n) ≤ C_oscMainHigh A * (m : ℝ) ^ (-A) := by
+  unfold C_oscMainHigh N_oscMainHigh
+  set B : ℝ := mainDecayExponent A with hBdef
   have hB : 0 < B := mainDecayExponent_pos A hA
-  obtain ⟨C, hC, hhead⟩ := head_uniform_highFreq_of_margin B hB
-  obtain ⟨nwin, hnwin⟩ := eventually_ca_window A
-  obtain ⟨ncut, hncut⟩ := eventually_condWindowB_empty_p_gt (caConst A) (caConst_ge_thirty A)
-  let n₀ := max 40 (max nwin ncut)
-  refine ⟨3 * C * (40 : ℝ) ^ B, by positivity, n₀,
-    fun n m hmn hnlarge hreg => ?_⟩
+  have hhead := head_uniform_highFreq_of_margin_at B hB
+  have hC : (0 : ℝ) < C_renewalWhite B := C_renewalWhite_pos B
+  set C : ℝ := C_renewalWhite B with hCdef
+  have hnwin := eventually_ca_window_at A
+  have hncut := eventually_condWindowB_empty_p_gt_at (caConst A) (caConst_ge_thirty A)
+  set nwin : ℕ := N_caWindow A with hnwindef
+  set ncut : ℕ := N_condWindowB (caConst A) with hncutdef
+  intro n m hmn hnlarge hreg
   have hn40 : 40 ≤ n := le_trans (le_max_left 40 (max nwin ncut)) hnlarge
   have hn1 : 1 ≤ n := by omega
   have hn2 : 2 ≤ n := by omega
@@ -566,5 +630,12 @@ theorem osc_mainHigh_bound (A : ℝ) (hA : 0 < A) :
       have hpow : (n : ℝ) ^ (-A) ≤ (m : ℝ) ^ (-A) :=
         Real.rpow_le_rpow_of_nonpos hmpos (by exact_mod_cast hmn) (by linarith)
       gcongr
+
+/-- `osc_mainHigh_bound`, original `∃`-form: delegates to the `_at` sibling at
+`C_oscMainHigh A`/`N_oscMainHigh A` (big-C campaign, step 2). -/
+theorem osc_mainHigh_bound (A : ℝ) (hA : 0 < A) :
+    ∃ C > 0, ∃ n₀ : ℕ, ∀ n m : ℕ, ∀ hmn : m ≤ n, n₀ ≤ n → 9 * n ≤ 10 * m →
+      osc m n hmn (mainHigh A n) ≤ C * (m : ℝ) ^ (-A) :=
+  ⟨C_oscMainHigh A, C_oscMainHigh_pos A, N_oscMainHigh A, osc_mainHigh_bound_at A hA⟩
 
 end TaoCollatz

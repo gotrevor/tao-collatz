@@ -127,10 +127,12 @@ lemmas below give the same facts with `⌈…⌉₊`-explicit witnesses, in the 
 *downstream* of this file, hence the private copies here rather than an import. -/
 
 /-- `exp (-ρ m)` drops below any positive bound at the explicit threshold
-`⌈log b⁻¹ / ρ⌉₊` (private copy of `exp_neg_mul_le_of_large`, `Sec7/BlackEdge.lean`). -/
-private theorem exp_neg_mul_le_of_large' (ρ : ℝ) (hρ : 0 < ρ) (b : ℝ) (hb : 0 < b) :
-    ∃ N : ℕ, ∀ m : ℕ, N ≤ m → Real.exp (-ρ * m) ≤ b := by
-  refine ⟨⌈Real.log b⁻¹ / ρ⌉₊, fun m hm => ?_⟩
+`⌈log b⁻¹ / ρ⌉₊`, in threshold-explicit (non-`∃`) form so the witness is a formula the
+big-C ladder's symbolic defs can name (private copy of `exp_neg_mul_le_of_large`,
+`Sec7/BlackEdge.lean`). -/
+private theorem exp_neg_mul_le_at (ρ : ℝ) (hρ : 0 < ρ) (b : ℝ) (hb : 0 < b) :
+    ∀ m : ℕ, ⌈Real.log b⁻¹ / ρ⌉₊ ≤ m → Real.exp (-ρ * m) ≤ b := by
+  intro m hm
   have hx : Real.log b⁻¹ / ρ ≤ (m : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hm)
   have hρm : Real.log b⁻¹ ≤ (m : ℝ) * ρ := by
     have h := mul_le_mul_of_nonneg_right hx hρ.le
@@ -139,11 +141,11 @@ private theorem exp_neg_mul_le_of_large' (ρ : ℝ) (hρ : 0 < ρ) (b : ℝ) (hb
   calc Real.exp (-ρ * (m : ℝ)) ≤ Real.exp (Real.log b) := Real.exp_le_exp.mpr hfin
     _ = b := Real.exp_log hb
 
-/-- `log m ≤ ε·m` for `m ≥ ⌈(2/ε)²⌉₊ + 1` (private copy of `log_le_eps_mul_of_large`,
-`Sec7/BlackEdge.lean`; proof via `log m ≤ 2√m` and `√m ≥ 2/ε`). -/
-private theorem log_le_eps_mul_of_large' (ε : ℝ) (hε : 0 < ε) :
-    ∃ N : ℕ, ∀ m : ℕ, N ≤ m → Real.log m ≤ ε * m := by
-  refine ⟨⌈(2 / ε) ^ 2⌉₊ + 1, fun m hm => ?_⟩
+/-- `log m ≤ ε·m` for `m ≥ ⌈(2/ε)²⌉₊ + 1`, threshold-explicit form (private copy of
+`log_le_eps_mul_of_large`, `Sec7/BlackEdge.lean`; proof via `log m ≤ 2√m` and `√m ≥ 2/ε`). -/
+private theorem log_le_eps_mul_at (ε : ℝ) (hε : 0 < ε) :
+    ∀ m : ℕ, ⌈(2 / ε) ^ 2⌉₊ + 1 ≤ m → Real.log m ≤ ε * m := by
+  intro m hm
   have hm1 : 1 ≤ m := by omega
   have hmpos : (0 : ℝ) < m := by exact_mod_cast hm1
   have hsqrt_pos : 0 < Real.sqrt m := Real.sqrt_pos.mpr hmpos
@@ -172,35 +174,48 @@ private theorem log_le_eps_mul_of_large' (ε : ℝ) (hε : 0 < ε) :
       _ = ε * m := by rw [hsq]
   linarith
 
-/-- `(3/4)^K` drops strictly below any positive bound, with the witness explicit one
-`obtain`-hop away (`⌈log (b/2)⁻¹ / log (4/3)⌉₊`). D3-effective replacement for
-`exists_pow_lt_of_lt_one` at base `3/4`. -/
-private theorem geom_three_quarters_lt (b : ℝ) (hb : 0 < b) :
-    ∃ K : ℕ, (3 / 4 : ℝ) ^ K < b := by
-  obtain ⟨K, hK⟩ := exp_neg_mul_le_of_large' (Real.log (4 / 3))
-    (Real.log_pos (by norm_num)) (b / 2) (half_pos hb)
-  refine ⟨K, ?_⟩
+/-- The explicit `K` past which `(3/4)^K < b`: `⌈log (b/2)⁻¹ / log (4/3)⌉₊` — the witness
+of the former `geom_three_quarters_lt`, reified as a symbolic def (big-C campaign step 2)
+so the ladder can name it. -/
+noncomputable def K_geom (b : ℝ) : ℕ := ⌈Real.log (b / 2)⁻¹ / Real.log (4 / 3)⌉₊
+
+/-- `(3/4)^{K_geom b} < b`. D3-effective replacement for `exists_pow_lt_of_lt_one` at
+base `3/4`, threshold-explicit form. -/
+private theorem geom_three_quarters_at (b : ℝ) (hb : 0 < b) :
+    (3 / 4 : ℝ) ^ K_geom b < b := by
+  have hK := exp_neg_mul_le_at (Real.log (4 / 3))
+    (Real.log_pos (by norm_num)) (b / 2) (half_pos hb) (K_geom b)
+    (by unfold K_geom; exact le_rfl)
   have hlog34 : Real.log (3 / 4 : ℝ) = -Real.log (4 / 3) := by
     rw [show (3 / 4 : ℝ) = (4 / 3)⁻¹ by norm_num, Real.log_inv]
-  calc (3 / 4 : ℝ) ^ K
-      = Real.exp ((K : ℝ) * Real.log (3 / 4)) := by
+  calc (3 / 4 : ℝ) ^ K_geom b
+      = Real.exp ((K_geom b : ℝ) * Real.log (3 / 4)) := by
         rw [Real.exp_nat_mul, Real.exp_log (by norm_num : (0 : ℝ) < 3 / 4)]
-    _ = Real.exp (-Real.log (4 / 3) * K) := by rw [hlog34, mul_comm]
-    _ ≤ b / 2 := hK K le_rfl
+    _ = Real.exp (-Real.log (4 / 3) * K_geom b) := by rw [hlog34, mul_comm]
+    _ ≤ b / 2 := hK
     _ < b := by linarith
 
-/-- `t^k·(3/4)^t` stays strictly below any positive bound past an explicit threshold
-(`1 + ⌈(4(k+1)/log(4/3))²⌉₊ + ⌈log (b/2)⁻¹ / (log(4/3)/2)⌉₊`, reading the two
-`obtain`s below). D3-effective replacement for the rate-free
-`Filter.eventually_atTop` route through `t^k·(3/4)^t → 0`. -/
-private theorem pow_mul_geom_lt_of_large (k : ℕ) (b : ℝ) (hb : 0 < b) :
-    ∃ T : ℕ, ∀ t : ℕ, T ≤ t → (t : ℝ) ^ k * (3 / 4 : ℝ) ^ t < b := by
+/-- The explicit `T` past which `t^k·(3/4)^t < b`:
+`1 + (⌈(2 / (log(4/3)/(2(k+1))))²⌉₊ + 1) + ⌈log (b/2)⁻¹ / (log(4/3)/2)⌉₊` — the witness
+of the former `pow_mul_geom_lt_of_large`, reified as a symbolic def (big-C campaign
+step 2). -/
+noncomputable def T_powGeom (k : ℕ) (b : ℝ) : ℕ :=
+  1 + (⌈(2 / (Real.log (4 / 3) / (2 * ((k : ℝ) + 1)))) ^ 2⌉₊ + 1)
+    + ⌈Real.log (b / 2)⁻¹ / (Real.log (4 / 3) / 2)⌉₊
+
+/-- `t^k·(3/4)^t` stays strictly below `b` for all `t ≥ T_powGeom k b`. D3-effective
+replacement for the rate-free `Filter.eventually_atTop` route, threshold-explicit form. -/
+private theorem pow_mul_geom_lt_at (k : ℕ) (b : ℝ) (hb : 0 < b) :
+    ∀ t : ℕ, T_powGeom k b ≤ t → (t : ℝ) ^ k * (3 / 4 : ℝ) ^ t < b := by
   have hρ : (0 : ℝ) < Real.log (4 / 3) := Real.log_pos (by norm_num)
-  obtain ⟨Nlog, hNlog⟩ := log_le_eps_mul_of_large'
+  have hNlog := log_le_eps_mul_at
     (Real.log (4 / 3) / (2 * ((k : ℝ) + 1))) (div_pos hρ (by positivity))
-  obtain ⟨Nexp, hNexp⟩ := exp_neg_mul_le_of_large'
+  have hNexp := exp_neg_mul_le_at
     (Real.log (4 / 3) / 2) (half_pos hρ) (b / 2) (half_pos hb)
-  refine ⟨1 + Nlog + Nexp, fun t ht => ?_⟩
+  intro t ht
+  unfold T_powGeom at ht
+  set Nlog := ⌈(2 / (Real.log (4 / 3) / (2 * ((k : ℝ) + 1)))) ^ 2⌉₊ + 1 with hNlogdef
+  set Nexp := ⌈Real.log (b / 2)⁻¹ / (Real.log (4 / 3) / 2)⌉₊ with hNexpdef
   have ht1 : 1 ≤ t := by omega
   have htpos : (0 : ℝ) < (t : ℝ) := by exact_mod_cast (by omega : 0 < t)
   have hlogt0 : (0 : ℝ) ≤ Real.log t := Real.log_nonneg (by exact_mod_cast ht1)
@@ -231,22 +246,72 @@ private theorem pow_mul_geom_lt_of_large (k : ℕ) (b : ℝ) (hb : 0 < b) :
     _ ≤ b / 2 := hNexp t (by omega)
     _ < b := by linarith
 
-/-- **The Case 1 geometric-expectation leaf** ((7.43) numerics): the holding step's
-first coordinate is `Geom(4)`-distributed, so the expected depth-weight ratio is
-`1 + o(1)`; quantitatively `E[max(m - d₁, 1)^{-A}] ≤ exp(ε³/2)·m^{-A}` once
-`m ≥ C_A`. Proof (2026-07-10): marginalize to `geomQuarter` via `hold_tsum_fst`, then a
-three-region split with `δ := exp(ε³/2) - 1 > 0`: head `k ≤ K` (full mass, weight
-`≤ (m-K)^{-A} ≤ (1+δ/3)m^{-A}` once `m ≥ ⌈Kc/(c-1)⌉` with `c := (1+δ/3)^{1/A}`),
-middle `K < k ≤ m/2` (tail mass `(3/4)^K ≤ (δ/3)2^{-A}` by choice of `K`, weight
-`≤ 2^A m^{-A}`), tail `k > m/2` (weight `≤ 1`, mass `(3/4)^{m/2} ≤ (δ/3)m^{-A}` for
-large `m` since geometric beats polynomial). All three cutoffs (`K`, `M1`, `T`) come
-from the explicit-threshold lemmas above, so the witness `Cthr = K + M1 + 2T + 4` is
-traceable to a formula — no rate-free limits (BLUEPRINT D3 amendment; this was the
-lemma that blocked any upper bound on the headline `C`). -/
-theorem hold_weight_expect (A : ℝ) (hA : 0 < A) :
-    ∃ Cthr : ℕ, 1 ≤ Cthr ∧ ∀ m : ℕ, Cthr ≤ m →
+/-! ### Symbolic witness constants for `hold_weight_expect` (big-C campaign, step 2)
+
+The witness `Cthr = K + M1 + 2T + 4` of `hold_weight_expect`, reified as named
+`noncomputable def`s so the headline `C`-ladder can be traced symbolically
+(`C_hold` is the `n₀`-driver of the whole ladder: `M1_hold` carries the
+`1/δ ≈ 2×10³⁰⁰⁰` factor — see `PENDING_WORK.md` and `tools/check_blueprint.py`
+check17/check18). -/
+
+/-- `δ_BW := exp(epsBW³/2) − 1` — the per-step multiplicative-loss budget of
+`hold_weight_expect`'s three-region split (`≈ 0.5×10⁻³⁰⁰⁰` at `epsBW = 10⁻¹⁰⁰⁰`). -/
+noncomputable def deltaBW : ℝ := Real.exp ((epsBW : ℝ) ^ 3 / 2) - 1
+
+theorem deltaBW_pos : 0 < deltaBW := by
+  have hεpos : (0 : ℝ) < (epsBW : ℝ) ^ 3 / 2 := by
+    have h0 : (0 : ℚ) < epsBW := by unfold epsBW; norm_num
+    have h1 : (0 : ℝ) < (epsBW : ℝ) := by exact_mod_cast h0
+    positivity
+  have h2 := Real.add_one_le_exp ((epsBW : ℝ) ^ 3 / 2)
+  unfold deltaBW
+  linarith
+
+/-- The head-region contraction base `c := (1 + δ_BW/3)^{1/A}` of
+`hold_weight_expect`'s region-1 estimate. -/
+noncomputable def cHold (A : ℝ) : ℝ := (1 + deltaBW / 3) ^ A⁻¹
+
+theorem one_lt_cHold (A : ℝ) (hA : 0 < A) : 1 < cHold A := by
+  unfold cHold
+  rw [Real.one_lt_rpow_iff_of_pos (by linarith [deltaBW_pos])]
+  exact Or.inl ⟨by linarith [deltaBW_pos], by positivity⟩
+
+theorem cHold_rpow (A : ℝ) (hA : 0 < A) : cHold A ^ A = 1 + deltaBW / 3 := by
+  unfold cHold
+  rw [← Real.rpow_mul (by linarith [deltaBW_pos]), inv_mul_cancel₀ hA.ne', Real.rpow_one]
+
+/-- The middle-region cutoff `K` of `hold_weight_expect` (geometric tail beats the
+`δ/3`-budget over the `2^A` weight): `≈ 7.5×10⁷` at `A = mainDecayExponent 3.7`. -/
+noncomputable def K_hold (A : ℝ) : ℕ := K_geom (deltaBW / 3 * (2 : ℝ) ^ (-A))
+
+/-- The head-region threshold `M1 = ⌈K·c/(c−1)⌉` of `hold_weight_expect` — the
+`1/δ`-carrying dominant term of the whole headline `C`-ladder (`≈ 10^3016` at
+`A = mainDecayExponent 3.7`). -/
+noncomputable def M1_hold (A : ℝ) : ℕ := ⌈(K_hold A : ℝ) * cHold A / (cHold A - 1)⌉₊
+
+/-- The tail-region threshold `T` of `hold_weight_expect` (super-exponential beats
+polynomial): `≈ 1.87×10¹⁷` at `A = mainDecayExponent 3.7`. -/
+noncomputable def T_hold (A : ℝ) : ℕ := T_powGeom ⌈A⌉₊ (deltaBW / 3 * (3 : ℝ) ^ (-A))
+
+/-- `hold_weight_expect`'s witness threshold, symbolic form: `Cthr = K + M1 + 2T + 4`. -/
+noncomputable def C_hold (A : ℝ) : ℕ := K_hold A + M1_hold A + 2 * T_hold A + 4
+
+theorem one_le_C_hold (A : ℝ) : 1 ≤ C_hold A := by unfold C_hold; omega
+
+/-- **Core of `hold_weight_expect`, cutoffs abstracted**: any `K` beating the
+middle-region budget, any `M1` above the head-region ratio `K·c/(c−1)`, and any `T`
+past which `t^⌈A⌉·(3/4)^t` is below the tail budget give the geometric-expectation
+bound for all `m ≥ K + M1 + 2T + 4`. Factored out (big-C campaign, step 2) so the
+`_explicitC` sibling (at `K_hold`/`M1_hold`/`T_hold`) and the original `∃`-form share
+one proof. -/
+theorem hold_weight_expect_core (A : ℝ) (hA : 0 < A) (K M1 T : ℕ)
+    (hK : (3 / 4 : ℝ) ^ K < deltaBW / 3 * (2 : ℝ) ^ (-A))
+    (hM1 : (K : ℝ) * cHold A / (cHold A - 1) ≤ (M1 : ℝ))
+    (hT : ∀ t : ℕ, T ≤ t → (t : ℝ) ^ ⌈A⌉₊ * (3 / 4 : ℝ) ^ t < deltaBW / 3 * (3 : ℝ) ^ (-A)) :
+    ∀ m : ℕ, K + M1 + 2 * T + 4 ≤ m →
       ∑' d : ℕ × ℤ, (hold d).toReal * ((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A)
         ≤ Real.exp ((epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A) := by
+  intro m hm
   set E := Real.exp ((epsBW : ℝ) ^ 3 / 2) with hEdef
   have hεpos : (0 : ℝ) < (epsBW : ℝ) ^ 3 / 2 := by
     have h0 : (0 : ℚ) < epsBW := by unfold epsBW; norm_num
@@ -257,21 +322,12 @@ theorem hold_weight_expect (A : ℝ) (hA : 0 < A) :
     rw [hEdef]; linarith
   set δ := E - 1 with hδdef
   have hE1 : E = 1 + δ := by rw [hδdef]; ring
-  -- middle-region cutoff K: geometric tail beats the δ/3-budget over the 2^A weight
-  -- (explicit witness: K = ⌈log(δ/6·2^{-A})⁻¹ / log(4/3)⌉₊, one hop into the lemma)
-  obtain ⟨K, hK⟩ := geom_three_quarters_lt (δ / 3 * (2 : ℝ) ^ (-A)) (by positivity)
-  -- head-region constant c > 1 with c^A = 1 + δ/3
-  set c := (1 + δ / 3) ^ A⁻¹ with hcdef
-  have hc1 : 1 < c := by
-    rw [hcdef, Real.one_lt_rpow_iff_of_pos (by linarith)]
-    exact Or.inl ⟨by linarith, by positivity⟩
-  have hcA : c ^ A = 1 + δ / 3 := by
-    rw [hcdef, ← Real.rpow_mul (by linarith), inv_mul_cancel₀ hA.ne', Real.rpow_one]
-  set M1 := ⌈(K : ℝ) * c / (c - 1)⌉₊ with hM1def
-  -- tail-region threshold T: geometric × polynomial, explicit-threshold form
+  have hδBW : deltaBW = δ := by rw [hδdef, hEdef]; unfold deltaBW; rfl
+  rw [hδBW] at hK hT
+  set c := cHold A with hcdef
+  have hc1 : 1 < c := one_lt_cHold A hA
+  have hcA : c ^ A = 1 + δ / 3 := by rw [hcdef, ← hδBW]; exact cHold_rpow A hA
   set kA := ⌈A⌉₊ with hkAdef
-  obtain ⟨T, hT⟩ := pow_mul_geom_lt_of_large kA (δ / 3 * (3 : ℝ) ^ (-A)) (by positivity)
-  refine ⟨K + M1 + 2 * T + 4, by omega, fun m hm => ?_⟩
   have hm0 : (0 : ℝ) < (m : ℝ) := by
     have : 0 < m := by omega
     exact_mod_cast this
@@ -329,7 +385,7 @@ theorem hold_weight_expect (A : ℝ) (hA : 0 < A) :
       rw [Nat.cast_sub (by omega)]
     have hcpos : (0 : ℝ) < c - 1 := by linarith
     have hmge : (K : ℝ) * c / (c - 1) ≤ (m : ℝ) := by
-      calc (K : ℝ) * c / (c - 1) ≤ (M1 : ℝ) := Nat.le_ceil _
+      calc (K : ℝ) * c / (c - 1) ≤ (M1 : ℝ) := hM1
         _ ≤ (m : ℝ) := by exact_mod_cast (by omega : M1 ≤ m)
     have hKc : (K : ℝ) * c ≤ (m : ℝ) * (c - 1) := by
       rw [div_le_iff₀ hcpos] at hmge; linarith
@@ -462,6 +518,48 @@ theorem hold_weight_expect (A : ℝ) (hA : 0 < A) :
     _ = (1 + δ) * (m : ℝ) ^ (-A) := by ring
     _ = E * (m : ℝ) ^ (-A) := by rw [← hE1]
 
+/-- Sibling of `hold_weight_expect` with the threshold slot pinned to the symbolic
+witness `C_hold A = K_hold A + M1_hold A + 2·T_hold A + 4` (big-C campaign, step 2);
+the original `∃`-form delegates to this. -/
+theorem hold_weight_expect_explicitC (A : ℝ) (hA : 0 < A) :
+    ∀ m : ℕ, C_hold A ≤ m →
+      ∑' d : ℕ × ℤ, (hold d).toReal * ((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A)
+        ≤ Real.exp ((epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A) := by
+  have hb2 : (0 : ℝ) < deltaBW / 3 * (2 : ℝ) ^ (-A) :=
+    mul_pos (by linarith [deltaBW_pos]) (Real.rpow_pos_of_pos (by norm_num) _)
+  have hb3 : (0 : ℝ) < deltaBW / 3 * (3 : ℝ) ^ (-A) :=
+    mul_pos (by linarith [deltaBW_pos]) (Real.rpow_pos_of_pos (by norm_num) _)
+  have hK : (3 / 4 : ℝ) ^ K_hold A < deltaBW / 3 * (2 : ℝ) ^ (-A) := by
+    unfold K_hold; exact geom_three_quarters_at _ hb2
+  have hM1 : (K_hold A : ℝ) * cHold A / (cHold A - 1) ≤ (M1_hold A : ℝ) := by
+    unfold M1_hold; exact Nat.le_ceil _
+  have hT : ∀ t : ℕ, T_hold A ≤ t →
+      (t : ℝ) ^ ⌈A⌉₊ * (3 / 4 : ℝ) ^ t < deltaBW / 3 * (3 : ℝ) ^ (-A) := by
+    unfold T_hold; exact pow_mul_geom_lt_at _ _ hb3
+  intro m hm
+  exact hold_weight_expect_core A hA (K_hold A) (M1_hold A) (T_hold A) hK hM1 hT m
+    (by unfold C_hold at hm; exact hm)
+
+/-- **The Case 1 geometric-expectation leaf** ((7.43) numerics): the holding step's
+first coordinate is `Geom(4)`-distributed, so the expected depth-weight ratio is
+`1 + o(1)`; quantitatively `E[max(m - d₁, 1)^{-A}] ≤ exp(ε³/2)·m^{-A}` once
+`m ≥ C_A`. Proof (2026-07-10): marginalize to `geomQuarter` via `hold_tsum_fst`, then a
+three-region split with `δ := exp(ε³/2) - 1 > 0`: head `k ≤ K` (full mass, weight
+`≤ (m-K)^{-A} ≤ (1+δ/3)m^{-A}` once `m ≥ ⌈Kc/(c-1)⌉` with `c := (1+δ/3)^{1/A}`),
+middle `K < k ≤ m/2` (tail mass `(3/4)^K ≤ (δ/3)2^{-A}` by choice of `K`, weight
+`≤ 2^A m^{-A}`), tail `k > m/2` (weight `≤ 1`, mass `(3/4)^{m/2} ≤ (δ/3)m^{-A}` for
+large `m` since geometric beats polynomial). All three cutoffs (`K`, `M1`, `T`) come
+from the explicit-threshold lemmas above, so the witness `Cthr = K + M1 + 2T + 4` is
+traceable to a formula — no rate-free limits (BLUEPRINT D3 amendment; this was the
+lemma that blocked any upper bound on the headline `C`). Big-C campaign step 2: the
+witness is now the symbolic `C_hold A`, and the proof delegates to
+`hold_weight_expect_explicitC`. -/
+theorem hold_weight_expect (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, 1 ≤ Cthr ∧ ∀ m : ℕ, Cthr ≤ m →
+      ∑' d : ℕ × ℤ, (hold d).toReal * ((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A)
+        ≤ Real.exp ((epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A) :=
+  ⟨C_hold A, one_le_C_hold A, hold_weight_expect_explicitC A hA⟩
+
 /-- **Case 1 proper** of Proposition 7.8 (paper (7.41)–(7.43), stated per the judge
 item 8 spec, 2026-07-09): a white start at depth `m` from the far edge contracts by
 `exp(-ε³/2)·m^{-A}` against `Q_{m-1}`.
@@ -475,14 +573,15 @@ estimate (first marginal of `hold` is `Geom(4)`): split at `d₁ ≤ m/2`, where
 weight ratio `(m - d₁)^{-A}/m^{-A} ≤ 2^A` needs only `exp(ε³/2)`-room from the
 sub-1 mass at `d₁ ≥ 1`, and the tail `P(d₁ > m/2) ≤ (3/4)^{m/2}` is
 super-polynomial (that leaf is `hold_weight_expect`, proved). -/
-theorem Q_white_case1 (A : ℝ) (hA : 0 < A) :
-    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ,
+theorem Q_white_case1_explicitC (A : ℝ) (hA : 0 < A) :
+    ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, C_hold A ≤ m → m ≤ n / 2 → ∀ l : ℤ,
       (n / 2 - m, l) ∈ whiteSet n ξ →
       Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
         ≤ Real.exp (-(epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A)
           * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) := by
-  obtain ⟨C0, hC0one, hC0⟩ := hold_weight_expect A hA
-  refine ⟨C0, fun n ξ _ m hm hmn l hw => ?_⟩
+  have hC0one := one_le_C_hold A
+  have hC0 := hold_weight_expect_explicitC A hA
+  intro n ξ _ m hm hmn l hw
   set half := n / 2 with hhalf
   set ε : ℝ := (epsBW : ℝ) with hεdef
   have hε0 : (0 : ℝ) ≤ ε := by
@@ -552,6 +651,16 @@ theorem Q_white_case1 (A : ℝ) (hA : 0 < A) :
         congr 1
         ring_nf
     _ = Real.exp (-ε ^ 3 / 2) * (m : ℝ) ^ (-A) * QM := by ring
+
+/-- `Q_white_case1`, original `∃`-form: delegates to the `_explicitC` sibling at the
+symbolic witness `C_hold A` (big-C campaign, step 2). -/
+theorem Q_white_case1 (A : ℝ) (hA : 0 < A) :
+    ∃ Cthr : ℕ, ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 → ∀ l : ℤ,
+      (n / 2 - m, l) ∈ whiteSet n ξ →
+      Q (n / 2) (whiteSet n ξ) (epsBW : ℝ) (n / 2 - m) l
+        ≤ Real.exp (-(epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A)
+          * Qm (n / 2) n ξ (epsBW : ℝ) A (m - 1) :=
+  ⟨C_hold A, Q_white_case1_explicitC A hA⟩
 
 /-- **Case 1, warm-up form** ((7.42)–(7.43)): if the starting point is white, one step of
 the recursion (7.35) already contracts by `exp(-ε³)`:

@@ -70,6 +70,34 @@ PINNED_NAMES = [
     "syracZ_recursion", "syracZ_eq_rev_fnat", "syracZ_map_cast",
     # The trusted base — the two headline theorems
     "tao_collatz", "tao_collatz_quantitative",
+    # The explicit augmentation (PR #9, ratified + merged 2026-07-16) — the def pins guard
+    # the VALUES (see `statement`'s def branch).
+    "cTao", "tao_collatz_quantitative_explicit",
+    # ⚖️ RATIFICATION REVOKED 2026-07-17 (judge ruling; Trevor's call): `CTao` and
+    # `tao_collatz_quantitative_fully_explicit` were REMOVED from the watch list because
+    # they were REMOVED FROM THE REPO — the pin was a wrong guess (the assembled constant
+    # is a tower, check19) and was retired rather than left as an aspirational `sorry`.
+    # This is the ONE legitimate way a name leaves this list: a deliberate, recorded
+    # un-ratification by the pin's owner. A name must NEVER be dropped here to make a diff
+    # go green — that is the exact attack this file exists to stop (see the note in `main`).
+    # ✅ RATIFIED 2026-07-17 (judge, host-verified) — the Ruling II successor deliverable.
+    # `tao_collatz_quantitative_assembled` (+ its constant `C_tao_assembled` and cutoff
+    # `X_spine`) proves Thm 3.1 at a closed tower-valued constant; #print axioms = the
+    # standard three, no sorryAx; ExplicitnessClosure walked 209 project defs clean.
+    # ⚠️ BASELINE: these three did not exist at `fabea6f`, so the campaign-baseline
+    # invocation `tao_stmt_diff.py fabea6f HEAD` reports them NOT-FOUND-at-old by design.
+    # Their drift-watch baseline is THE RATIFYING COMMIT (git log --grep 'ratify.*assembled')
+    # forward — that is the ref a future run passes for the full 36-name set.
+    "X_spine", "C_tao_assembled", "tao_collatz_quantitative_assembled",
+    # ✅ RATIFIED 2026-07-17 (Trevor's direction, host-verified #print axioms = the standard
+    # three): the readable tower headline on the trusted surface. `CTao :=
+    # (hyperoperation 4 10 63 : ℝ)` (Mathlib-native tetration, = 10↑↑63 = tenTower 62)
+    # + `tao_collatz_quantitative_fully_explicit` live in Statement.lean;
+    # `tenTower` (the def VALUE is the pin — the recursion itself) lives in
+    # Basic/ExplicitConstants.lean, as does `cTao` (relocated from Statement.lean in the
+    # same pass, text verbatim — a pin may move files; SEARCH_FILES covers relocation).
+    # Baseline: the commit introducing them (git log --grep 'Statement.*fully-explicit').
+    "CTao", "tenTower", "tao_collatz_quantitative_fully_explicit",
 ]
 
 SEARCH_FILES = [
@@ -90,6 +118,23 @@ SEARCH_FILES = [
     "TaoCollatz/Basic/Collatz.lean",
     "TaoCollatz/Syracuse/SyracRV.lean",
     "TaoCollatz/Statement.lean",
+    # The Ruling-II assembled deliverable (ratified 2026-07-17) — X_spine, C_tao_assembled,
+    # tao_collatz_quantitative_assembled live here. WITHOUT this line the three watched names
+    # are inert (found in no file → reported ✗ at both refs), the exact silent-guard failure
+    # this differ's header warns about.
+    "TaoCollatz/ExplicitBigC.lean",
+    # The readable tower headline (2026-07-17): `tenTower` + relocated `cTao` live in the
+    # Mathlib-only leaf; `CTao` + `fully_explicit` live in Statement.lean (above); the
+    # tower-ceiling chase lives in BigCTower.lean. Without these lines the new watched
+    # names are inert — the silent-guard failure this differ's header warns about.
+    "TaoCollatz/Basic/ExplicitConstants.lean",
+    "TaoCollatz/BigCTower.lean",
+    # The judge-owned comparator surface — a campaign box is under exactly the pressure
+    # this differ exists for.  `CTao`/`fully_explicit` were retired from here 2026-07-17,
+    # then RETURNED the same day as *proved* statements (Statement.lean + this challenge).
+    # The ∃-form `tao_collatz_quantitative_explicit` left the CHALLENGE then too — subsumed
+    # by the concrete witness — but stays pinned in Statement.lean, where the differ finds it.
+    "Comparator/TaoCollatz/Challenge.lean",
 ]
 
 
@@ -117,6 +162,13 @@ def statement(src: str, name: str) -> str | None:
     if not m:
         return None
     tail = src[m.start():]
+    if "def" in m.group(0):
+        # For a pinned DEF the VALUE is the pin (`cTao := 1/(640000000·ln 2)` guards the
+        # number, not just `: ℝ`) — capture the whole definition, through the first blank
+        # line. A def whose signature-only were guarded could have its body quietly
+        # rewritten (e.g. CTao inflated until the ladder fits) with no rail firing.
+        e = re.search(r"\n\s*\n", tail)
+        return (tail[: e.start()] if e else tail).rstrip()
     # end of signature = the first `:= by` or `:=`
     e = re.search(r":=\s*by\b|:=", tail)
     if not e:
