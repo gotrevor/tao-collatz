@@ -40,8 +40,7 @@ theorem tao_collatz_quantitative :
   exact tao_collatz_quantitative_spine
 
 /-- The concrete constant — Mathlib's native tetration: `hyperoperation 4 10 63` is
-`10↑↑63`, a right-associated tower of exactly 63 tens.  Deliberately non-small: the
-deliverable is a closed value, never smallness — `BigCTower.lean` proves the
+`10↑↑63`, a right-associated tower of exactly 63 tens.  `BigCTower.lean` proves the
 development's assembled constant fits under it (via the engine vocabulary `tenTower`;
 bridge: `tenTower_sixty_two_eq_hyperoperation`). -/
 noncomputable def CTao : ℝ := (hyperoperation 4 10 63 : ℝ)
