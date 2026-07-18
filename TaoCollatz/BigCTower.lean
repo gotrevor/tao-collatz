@@ -498,26 +498,23 @@ private theorem sqrt_le_add_one {x : ℝ} (hx : 0 ≤ x) : Real.sqrt x ≤ x + 1
   have hs2 := Real.sq_sqrt hx
   nlinarith [sq_nonneg (Real.sqrt x - 1 / 2)]
 
-private theorem A0_estarUnion_le_tenTower_two : A0_estarUnion ≤ tenTower 2 := by
-  have hlog : Real.log 2 ≤ 2 := (Real.log_le_self (by norm_num)).trans (by norm_num)
+private theorem A0_estarUnion_le_ten_pow : A0_estarUnion ≤ (10 : ℝ) ^ (3 : ℕ) := by
   have harg : Real.log 2 / c_encTri ≤ 102400 := by
+    have hlog : Real.log 2 ≤ 2 := (Real.log_le_self (by norm_num)).trans (by norm_num)
     rw [c_encTri_eq]
     norm_num
     nlinarith
   have harg0 : 0 ≤ Real.log 2 / c_encTri :=
     div_nonneg (Real.log_nonneg (by norm_num)) c_encTri_pos.le
-  have hs : Real.sqrt (Real.log 2 / c_encTri) ≤ (10 : ℝ) ^ (30 : ℕ) := by
+  have hs : Real.sqrt (Real.log 2 / c_encTri) ≤ (10 : ℝ) ^ (3 : ℕ) := by
     rw [Real.sqrt_le_iff]
     constructor
     · positivity
     · calc
         Real.log 2 / c_encTri ≤ 102400 := harg
-        _ ≤ ((10 : ℝ) ^ (30 : ℕ)) ^ 2 := by norm_num
+        _ ≤ ((10 : ℝ) ^ (3 : ℕ)) ^ 2 := by norm_num
   unfold A0_estarUnion
-  exact max_le
-    ((show (5 : ℝ) ≤ (10 : ℝ) ^ (30 : ℕ) by norm_num).trans
-      ten_pow_thirty_le_tenTower_two)
-    (hs.trans ten_pow_thirty_le_tenTower_two)
+  exact max_le (by norm_num) hs
 
 private theorem one_le_log_four : (1 : ℝ) ≤ Real.log 4 := by
   have h2 : (0.6931471803 : ℝ) < Real.log 2 := Real.log_two_gt_d9
@@ -541,8 +538,8 @@ private theorem two_fifths_le_log_sixteen_sub_log_ten :
   rw [h4, h10]
   linarith
 
-private theorem Kthr_estarScaled_spine_le_tenTower_seventeen :
-    Kthr_estarScaled C_estarUnion ≤ tenTower 17 := by
+private theorem Kthr_estarScaled_le_ten_pow :
+    Kthr_estarScaled C_estarUnion ≤ (10 : ℝ) ^ (10 ^ 27 + 14 : ℕ) := by
   let d : ℝ := 2 * Real.log 4 - Real.log 10
   have hd : (2 / 5 : ℝ) ≤ d := two_fifths_le_log_sixteen_sub_log_ten
   have hd0 : 0 < d := lt_of_lt_of_le (by norm_num) hd
@@ -566,36 +563,29 @@ private theorem Kthr_estarScaled_spine_le_tenTower_seventeen :
     norm_num at this ⊢
     exact this
   have hinv4' : ((Real.log 4) ^ 3)⁻¹ ≤ 1 := by simpa [one_div] using hinv4
-  have hc1 : 3456000 / (d ^ 2 * (Real.log 4) ^ 3) ≤ tenTower 2 := by
-    calc
-      3456000 / (d ^ 2 * (Real.log 4) ^ 3) ≤ (10 : ℝ) ^ (30 : ℕ) := by
-        rw [div_eq_mul_inv]
-        nlinarith
-      _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
-  have hc2 : 216000 / (Real.log 4) ^ 3 ≤ tenTower 2 := by
-    calc
-      216000 / (Real.log 4) ^ 3 ≤ (10 : ℝ) ^ (30 : ℕ) := by
-        rw [div_eq_mul_inv]
-        nlinarith
-      _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
-  have ht1 : 3456000 * C_estarUnion / (d ^ 2 * (Real.log 4) ^ 3) ≤ tenTower 16 := by
+  have hc1 : 3456000 / (d ^ 2 * (Real.log 4) ^ 3) ≤ (10 : ℝ) ^ (8 : ℕ) := by
+    rw [div_eq_mul_inv]
+    nlinarith
+  have hc2 : 216000 / (Real.log 4) ^ 3 ≤ (10 : ℝ) ^ (6 : ℕ) := by
+    rw [div_eq_mul_inv]
+    nlinarith
+  have ht1 : 3456000 * C_estarUnion / (d ^ 2 * (Real.log 4) ^ 3)
+      ≤ (10 : ℝ) ^ (10 ^ 27 + 13 : ℕ) := by
     rw [show 3456000 * C_estarUnion / (d ^ 2 * (Real.log 4) ^ 3)
       = (3456000 / (d ^ 2 * (Real.log 4) ^ 3)) * C_estarUnion by ring]
-    exact tenTower_mul_le_succ 15 (by positivity) C_estarUnion_pos.le
-      (hc1.trans (tenTower_mono (by omega))) C_estarUnion_le_tenTower_fifteen
-  have ht2 : 216000 * C_estarUnion / (Real.log 4) ^ 3 ≤ tenTower 16 := by
+    exact (mul_le_ten_pow C_estarUnion_pos.le hc1 C_estarUnion_le_ten_pow).trans
+      (ten_pow_mono (by norm_num))
+  have ht2 : 216000 * C_estarUnion / (Real.log 4) ^ 3
+      ≤ (10 : ℝ) ^ (10 ^ 27 + 13 : ℕ) := by
     rw [show 216000 * C_estarUnion / (Real.log 4) ^ 3
       = (216000 / (Real.log 4) ^ 3) * C_estarUnion by ring]
-    exact tenTower_mul_le_succ 15 (by positivity) C_estarUnion_pos.le
-      (hc2.trans (tenTower_mono (by omega))) C_estarUnion_le_tenTower_fifteen
+    exact (mul_le_ten_pow C_estarUnion_pos.le hc2 C_estarUnion_le_ten_pow).trans
+      (ten_pow_mono (by norm_num))
   unfold Kthr_estarScaled
   change 3456000 * C_estarUnion / (d ^ 2 * (Real.log 4) ^ 3)
-      + 216000 * C_estarUnion / (Real.log 4) ^ 3 ≤ tenTower 17
-  have ht1zero : 0 ≤ 3456000 * C_estarUnion / (d ^ 2 * (Real.log 4) ^ 3) :=
-    div_nonneg (mul_nonneg (by norm_num) C_estarUnion_pos.le) hden1pos.le
-  have ht2zero : 0 ≤ 216000 * C_estarUnion / (Real.log 4) ^ 3 :=
-    div_nonneg (mul_nonneg (by norm_num) C_estarUnion_pos.le) (pow_nonneg (by linarith) 3)
-  exact tenTower_add_le_succ 16 ht1zero ht2zero ht1 ht2
+      + 216000 * C_estarUnion / (Real.log 4) ^ 3
+      ≤ (10 : ℝ) ^ (10 ^ 27 + 14 : ℕ)
+  exact add_le_ten_pow ht1 ht2
 
 private theorem one_le_C_encTri : (1 : ℝ) ≤ C_encTri := by
   have harg0 : 0 ≤ c_fpHeightTail * (M_encTri : ℝ) :=
@@ -615,8 +605,8 @@ private theorem one_le_C_estarUnion : (1 : ℝ) ≤ C_estarUnion := by
   unfold C_estarUnion
   nlinarith [one_le_C_encTri]
 
-private theorem Warg_estarScaled_spine_le_tenTower_eighteen :
-    Warg_estarScaled C_estarUnion c_estarUnion ≤ tenTower 18 := by
+private theorem Warg_estarScaled_le_ten_pow :
+    Warg_estarScaled C_estarUnion c_estarUnion ≤ (10 : ℝ) ^ (10 ^ 27 + 20 : ℕ) := by
   have hinput0 : 0 ≤ 2000 * C_estarUnion :=
     mul_nonneg (by norm_num) C_estarUnion_pos.le
   have hinput1 : (1 : ℝ) ≤ 2000 * C_estarUnion := by
@@ -639,50 +629,48 @@ private theorem Warg_estarScaled_spine_le_tenTower_eighteen :
   have hnum0 : 0 ≤ num := by
     dsimp [num]
     exact add_nonneg (mul_nonneg (mul_nonneg (by norm_num) hc0) hlog0) (sq_nonneg _)
-  have h32000 : (32000 : ℝ) ≤ tenTower 15 :=
-    (show (32000 : ℝ) ≤ (10 : ℝ) ^ (30 : ℕ) by norm_num).trans
-      (ten_pow_thirty_le_tenTower_two.trans (tenTower_mono (by omega)))
-  have hprod : 32000 * C_estarUnion ≤ tenTower 16 :=
-    tenTower_mul_le_succ 15 (by norm_num) C_estarUnion_pos.le h32000
-      C_estarUnion_le_tenTower_fifteen
-  have hnum : num ≤ tenTower 17 := by
+  have hprod : 32000 * C_estarUnion ≤ (10 : ℝ) ^ (10 ^ 27 + 10 : ℕ) :=
+    (mul_le_ten_pow C_estarUnion_pos.le
+      (by norm_num : (32000 : ℝ) ≤ (10 : ℝ) ^ (5 : ℕ)) C_estarUnion_le_ten_pow).trans
+      (ten_pow_mono (by norm_num))
+  have hnum : num ≤ (10 : ℝ) ^ (10 ^ 27 + 11 : ℕ) := by
     dsimp [num]
-    exact tenTower_add_le_succ 16 (by positivity) (sq_nonneg _)
-      (hterm.trans (hprod.trans (tenTower_mono (by omega))))
-      ((show (Real.log 10) ^ (2 : ℕ) ≤ (100 : ℝ) from hlog10sq).trans
-        ((show (100 : ℝ) ≤ (10 : ℝ) ^ (30 : ℕ) by norm_num).trans
-          (ten_pow_thirty_le_tenTower_two.trans (tenTower_mono (by omega)))))
+    exact add_le_ten_pow (hterm.trans hprod)
+      (((show (Real.log 10) ^ (2 : ℕ) ≤ (100 : ℝ) from hlog10sq).trans
+        (by norm_num : (100 : ℝ) ≤ (10 : ℝ) ^ (2 : ℕ))).trans
+        (ten_pow_mono (by norm_num)))
   have hinv0 : 0 ≤ (16 * c_estarUnion ^ (2 : ℕ))⁻¹ := by positivity
-  have hinv : (16 * c_estarUnion ^ (2 : ℕ))⁻¹ ≤ tenTower 2 := by
-    calc
-      (16 * c_estarUnion ^ (2 : ℕ))⁻¹ ≤ (10 : ℝ) ^ (30 : ℕ) := by
-        norm_num [c_estarUnion_eq]
-      _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
+  have hinv : (16 * c_estarUnion ^ (2 : ℕ))⁻¹ ≤ (10 : ℝ) ^ (9 : ℕ) := by
+    norm_num [c_estarUnion_eq]
   unfold Warg_estarScaled
-  change num / (16 * c_estarUnion ^ (2 : ℕ)) ≤ tenTower 18
+  change num / (16 * c_estarUnion ^ (2 : ℕ)) ≤ (10 : ℝ) ^ (10 ^ 27 + 20 : ℕ)
   rw [div_eq_mul_inv]
-  exact tenTower_mul_le_succ 17 hnum0 hinv0 hnum
-    (hinv.trans (tenTower_mono (by omega)))
+  exact (mul_le_ten_pow hinv0 hnum hinv).trans (ten_pow_mono (by norm_num))
 
-theorem A0_fewEstar_le_tenTower_nineteen : A0_fewEstar ≤ tenTower 19 := by
-  have hWmax : max 0 (Warg_estarScaled C_estarUnion c_estarUnion) ≤ tenTower 18 :=
-    max_le (tenTower_pos 18).le Warg_estarScaled_spine_le_tenTower_eighteen
+theorem A0_fewEstar_le_ten_pow : A0_fewEstar ≤ (10 : ℝ) ^ (10 ^ 27 + 22 : ℕ) := by
+  have hone : (1 : ℝ) ≤ (10 : ℝ) ^ (10 ^ 27 + 22 : ℕ) :=
+    one_le_pow₀ (by norm_num : (1 : ℝ) ≤ 10)
+  have hWmax : max 0 (Warg_estarScaled C_estarUnion c_estarUnion)
+      ≤ (10 : ℝ) ^ (10 ^ 27 + 20 : ℕ) :=
+    max_le (le_trans (by norm_num : (0 : ℝ) ≤ (10 : ℝ) ^ (0 : ℕ))
+      (ten_pow_mono (by norm_num))) Warg_estarScaled_le_ten_pow
   have hWmax0 : 0 ≤ max 0 (Warg_estarScaled C_estarUnion c_estarUnion) := le_max_left _ _
   have hsqrt : Real.sqrt (max 0 (Warg_estarScaled C_estarUnion c_estarUnion))
-      ≤ tenTower 19 := by
-    calc
-      Real.sqrt (max 0 (Warg_estarScaled C_estarUnion c_estarUnion))
-          ≤ max 0 (Warg_estarScaled C_estarUnion c_estarUnion) + 1 :=
-        sqrt_le_add_one hWmax0
-      _ ≤ tenTower 19 := tenTower_add_le_succ 18 hWmax0 (by norm_num)
-        hWmax (tenTower_one_le 18)
+      ≤ (10 : ℝ) ^ (10 ^ 27 + 21 : ℕ) :=
+    (sqrt_le_add_one hWmax0).trans
+      (add_le_ten_pow hWmax (one_le_pow₀ (by norm_num : (1 : ℝ) ≤ 10)))
   unfold A0_fewEstar A0_estarScaled
   exact max_le
-    (A0_estarUnion_le_tenTower_two.trans (tenTower_mono (by omega)))
-    (max_le (tenTower_one_le 19)
-      (max_le
-        (Kthr_estarScaled_spine_le_tenTower_seventeen.trans (tenTower_mono (by omega)))
-        hsqrt))
+    (A0_estarUnion_le_ten_pow.trans (ten_pow_mono (by norm_num)))
+    (max_le hone
+      (max_le (Kthr_estarScaled_le_ten_pow.trans (ten_pow_mono (by norm_num)))
+        (hsqrt.trans (ten_pow_mono (by norm_num)))))
+
+theorem A0_fewEstar_le_tenTower_three : A0_fewEstar ≤ tenTower 3 :=
+  A0_fewEstar_le_ten_pow.trans (ten_pow_le_tenTower_three (by norm_num))
+
+theorem A0_fewEstar_le_tenTower_nineteen : A0_fewEstar ≤ tenTower 19 :=
+  A0_fewEstar_le_tenTower_three.trans (tenTower_mono (by omega))
 
 /-! ## The explicit cubic horizon at the exponent used by §6 -/
 

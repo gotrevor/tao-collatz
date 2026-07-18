@@ -1391,3 +1391,16 @@ via the same ten-power accounting; then the cubic node `encWindowIter_le_tenTowe
 `Warg_estarScaled` → `A0_fewEstar`, currently 17-19 → should be tT3-ish), then the cubic
 node `encWindowIter_le_tenTower_add_six` `+6 → +2`, then the Sec6/Sec3 climb (lines
 ~740+), `check28`, discharge LAST.
+
+### Lap 3 (2026-07-18) — A0_fewEstar chain converted ✅
+
+- `A0_estarUnion ≤ 10^3`, `Kthr_estarScaled ≤ 10^(10^27+14)`, `Warg_estarScaled ≤
+  10^(10^27+20)`, `A0_fewEstar ≤ 10^(10^27+22)` ⟹ **`A0_fewEstar ≤ tenTower 3`**
+  (was 19). Old `_le_tenTower_nineteen` kept as corollary; downstream untouched.
+- Lean gotcha: a one-step `calc` whose only step carries a multiline `by` block plus a
+  later `change … ≤ _` underscore broke the parser mid-proof ("unknown identifier
+  unfold"); plain tactic blocks + explicit change RHS fixed it.
+
+**Next (lap 4):** the cubic node `encWindowIter_le_tenTower_add_six` `+6 → +2`, then the
+Sec6/Sec3 climb (`mainDecayExponent`, `hold_weight_expect` chain, `C_renewalWhite` …
+`C_tao_assembled`), `check28`, discharge LAST.
