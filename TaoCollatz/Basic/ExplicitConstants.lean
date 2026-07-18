@@ -243,6 +243,46 @@ theorem exp_le_ten_rpow {x : ℝ} (hx : 0 ≤ x) : Real.exp x ≤ (10 : ℝ) ^ x
 theorem self_le_ten_rpow {x : ℝ} (hx : 0 ≤ x) : x ≤ (10 : ℝ) ^ x :=
   le_trans (by linarith [Real.add_one_le_exp x]) (exp_le_ten_rpow hx)
 
+/-! ### The rpow budget kit
+
+For the tall region of the climb (above the cubic recurrence) the decimal exponents are
+themselves astronomical, so budgets are carried as real exponents: `x ≤ 10 ^ e` with `e`
+a symbolic closed form.  These five lemmas are the whole calculus — multiplication adds
+exponents, addition costs `+1`, a real power multiplies the exponent, `exp` embeds, and
+monotonicity moves between exponent forms.  This mirrors `check17`/`check19`'s log-space
+float trace symbolically. -/
+
+theorem mul_le_ten_rpow {x y e f : ℝ} (hy : 0 ≤ y)
+    (hxe : x ≤ (10 : ℝ) ^ e) (hyf : y ≤ (10 : ℝ) ^ f) :
+    x * y ≤ (10 : ℝ) ^ (e + f) := by
+  calc
+    x * y ≤ (10 : ℝ) ^ e * (10 : ℝ) ^ f :=
+      mul_le_mul hxe hyf hy (Real.rpow_nonneg (by norm_num) _)
+    _ = (10 : ℝ) ^ (e + f) := (Real.rpow_add (by norm_num) _ _).symm
+
+theorem add_le_ten_rpow {x y e : ℝ} (hxe : x ≤ (10 : ℝ) ^ e)
+    (hye : y ≤ (10 : ℝ) ^ e) : x + y ≤ (10 : ℝ) ^ (e + 1) := by
+  have hp : (0 : ℝ) < (10 : ℝ) ^ e := Real.rpow_pos_of_pos (by norm_num) _
+  calc
+    x + y ≤ 2 * (10 : ℝ) ^ e := by linarith
+    _ ≤ 10 * (10 : ℝ) ^ e := by linarith
+    _ = (10 : ℝ) ^ (e + 1) := by
+      rw [Real.rpow_add_one (by norm_num : (10 : ℝ) ≠ 0)]
+      ring
+
+theorem rpow_le_ten_rpow {x t e : ℝ} (hx0 : 0 ≤ x) (ht0 : 0 ≤ t)
+    (hxe : x ≤ (10 : ℝ) ^ e) : x ^ t ≤ (10 : ℝ) ^ (e * t) := by
+  calc
+    x ^ t ≤ ((10 : ℝ) ^ e) ^ t := Real.rpow_le_rpow hx0 hxe ht0
+    _ = (10 : ℝ) ^ (e * t) := (Real.rpow_mul (by norm_num) _ _).symm
+
+theorem ten_rpow_mono {e f : ℝ} (h : e ≤ f) : (10 : ℝ) ^ e ≤ (10 : ℝ) ^ f :=
+  Real.rpow_le_rpow_of_exponent_le (by norm_num) h
+
+/-- Bridge a `ℕ`-exponent budget into the rpow kit. -/
+theorem ten_pow_eq_ten_rpow (a : ℕ) : (10 : ℝ) ^ a = (10 : ℝ) ^ (a : ℝ) :=
+  (Real.rpow_natCast 10 a).symm
+
 /-! ### Ten-power leaf accounting -/
 
 /-- Multiply two explicit ten-power budgets: exponents add, no tower level spent. -/

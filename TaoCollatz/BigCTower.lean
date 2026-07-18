@@ -90,18 +90,12 @@ theorem encWindowIter_cast_add_one_le (A : ℝ) (K i : ℕ) :
           have hp : 1 ≤ (3 : ℕ) ^ (i + 1) := one_le_pow₀ (by omega)
           omega
 
-/-- The retightened cubic node (Tier-1): the recurrence costs TWO tower levels, not six.
-`enc + 1 ≤ B^{3^{i+1}}` with `B ≤ 10^{A+K+6}` and `3^{i+1} ≤ 10^{(i+1)/2}`, so the
-total decimal exponent is `(A+K+6)·10^{(i+1)/2} ≤ (2T+6)·10^{(T+1)/2} ≤ 10^T` for
-`T = tenTower h ≥ 10` — one level for the exponent, one for the power.  The height
-increase stays independent of the (possibly astronomical) iteration count. -/
-theorem encWindowIter_le_tenTower_add_two {A : ℝ} {K i : ℕ} (h : ℕ)
-    (hA : 0 ≤ A) (hAT : A ≤ tenTower h)
-    (hKT : (K : ℝ) ≤ tenTower h) (hiT : (i : ℝ) ≤ tenTower h) :
-    ((encWindowIter A K i : ℕ) : ℝ) + 1 ≤ tenTower (h + 2) := by
-  have hT10 : (10 : ℝ) ≤ tenTower h := ten_le_tenTower h
-  have hT0 : (0 : ℝ) < tenTower h := tenTower_pos h
-  set T := tenTower h with hTdef
+/-- The cubic recurrence in the rpow budget kit: the iterate is a single explicit
+ten-power, `enc + 1 ≤ 10^{(A+K+6)·10^{(i+1)/2}}` — via `B ≤ 10^{A+K+6}` and
+`3^{i+1} ≤ 10^{(i+1)/2}`.  This is the exact-form seat of the whole tower's height. -/
+theorem encWindowIter_le_ten_rpow (A : ℝ) (K i : ℕ) (hA : 0 ≤ A) :
+    ((encWindowIter A K i : ℕ) : ℝ) + 1
+      ≤ (10 : ℝ) ^ ((A + (K : ℝ) + 6) * (10 : ℝ) ^ (((i : ℝ) + 1) / 2)) := by
   have hK0 : (0 : ℝ) ≤ (K : ℝ) := by positivity
   have hs0 : (0 : ℝ) ≤ A + (K : ℝ) + 6 := by linarith
   have hB : encWindowBase A K ≤ (10 : ℝ) ^ (A + (K : ℝ) + 6) := by
@@ -144,21 +138,32 @@ theorem encWindowIter_le_tenTower_add_two {A : ℝ} {K i : ℕ} (h : ℕ)
           congr 1
           push_cast
           ring
-  have hBE : ((encWindowIter A K i : ℕ) : ℝ) + 1
-      ≤ (10 : ℝ) ^ ((A + (K : ℝ) + 6) * (10 : ℝ) ^ (((i : ℝ) + 1) / 2)) := by
-    refine (encWindowIter_cast_add_one_le A K i).trans ?_
-    have hB0 : (0 : ℝ) ≤ encWindowBase A K :=
-      (encWindowBase_one_le A K).trans' zero_le_one
-    calc
-      encWindowBase A K ^ ((3 : ℕ) ^ (i + 1) - 1)
-          ≤ ((10 : ℝ) ^ (A + (K : ℝ) + 6)) ^ ((3 : ℕ) ^ (i + 1) - 1) :=
-            pow_le_pow_left₀ hB0 hB _
-      _ = (10 : ℝ) ^ ((A + (K : ℝ) + 6) * (((3 : ℕ) ^ (i + 1) - 1 : ℕ) : ℝ)) := by
-          rw [← Real.rpow_natCast ((10 : ℝ) ^ (A + (K : ℝ) + 6)) _,
-            ← Real.rpow_mul (by norm_num)]
-      _ ≤ (10 : ℝ) ^ ((A + (K : ℝ) + 6) * (10 : ℝ) ^ (((i : ℝ) + 1) / 2)) :=
-          Real.rpow_le_rpow_of_exponent_le (by norm_num)
-            (mul_le_mul_of_nonneg_left hE hs0)
+  refine (encWindowIter_cast_add_one_le A K i).trans ?_
+  have hB0 : (0 : ℝ) ≤ encWindowBase A K :=
+    (encWindowBase_one_le A K).trans' zero_le_one
+  calc
+    encWindowBase A K ^ ((3 : ℕ) ^ (i + 1) - 1)
+        ≤ ((10 : ℝ) ^ (A + (K : ℝ) + 6)) ^ ((3 : ℕ) ^ (i + 1) - 1) :=
+          pow_le_pow_left₀ hB0 hB _
+    _ = (10 : ℝ) ^ ((A + (K : ℝ) + 6) * (((3 : ℕ) ^ (i + 1) - 1 : ℕ) : ℝ)) := by
+        rw [← Real.rpow_natCast ((10 : ℝ) ^ (A + (K : ℝ) + 6)) _,
+          ← Real.rpow_mul (by norm_num)]
+    _ ≤ (10 : ℝ) ^ ((A + (K : ℝ) + 6) * (10 : ℝ) ^ (((i : ℝ) + 1) / 2)) :=
+        Real.rpow_le_rpow_of_exponent_le (by norm_num)
+          (mul_le_mul_of_nonneg_left hE hs0)
+
+/-- The retightened cubic node (Tier-1): the recurrence costs TWO tower levels, not six.
+The decimal exponent `(A+K+6)·10^{(i+1)/2} ≤ (2T+6)·10^{(T+1)/2} ≤ 10^T` for
+`T = tenTower h ≥ 10` — one level for the exponent, one for the power.  The height
+increase stays independent of the (possibly astronomical) iteration count. -/
+theorem encWindowIter_le_tenTower_add_two {A : ℝ} {K i : ℕ} (h : ℕ)
+    (hA : 0 ≤ A) (hAT : A ≤ tenTower h)
+    (hKT : (K : ℝ) ≤ tenTower h) (hiT : (i : ℝ) ≤ tenTower h) :
+    ((encWindowIter A K i : ℕ) : ℝ) + 1 ≤ tenTower (h + 2) := by
+  have hT10 : (10 : ℝ) ≤ tenTower h := ten_le_tenTower h
+  have hT0 : (0 : ℝ) < tenTower h := tenTower_pos h
+  set T := tenTower h with hTdef
+  have hK0 : (0 : ℝ) ≤ (K : ℝ) := by positivity
   have hfinal : (A + (K : ℝ) + 6) * (10 : ℝ) ^ (((i : ℝ) + 1) / 2)
       ≤ tenTower (h + 1) := by
     have h1 : A + (K : ℝ) + 6 ≤ 2 * T + 6 := by linarith
@@ -191,7 +196,7 @@ theorem encWindowIter_le_tenTower_add_two {A : ℝ} {K i : ℕ} (h : ℕ)
           rw [← Real.rpow_add (by norm_num)]
           ring_nf
       _ = tenTower (h + 1) := (tenTower_succ h).symm
-  refine hBE.trans ?_
+  refine (encWindowIter_le_ten_rpow A K i hA).trans ?_
   calc
     (10 : ℝ) ^ ((A + (K : ℝ) + 6) * (10 : ℝ) ^ (((i : ℝ) + 1) / 2))
         ≤ (10 : ℝ) ^ tenTower (h + 1) :=

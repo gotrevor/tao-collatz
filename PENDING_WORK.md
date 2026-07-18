@@ -1421,3 +1421,27 @@ BigCTower.lean): `mainDecayExponent`, `hold_weight_expect` chain (`K/M1/T` witne
 the `1/δ ≈ 10^3000` factor — this is where the REAL `10^3010` top exponent lives),
 `C_renewalWhite`, Sec6 oscillation constants, Sec3/Syracuse spine, then
 `C_tao_assembled_le` at the proved height; `check28`; discharge LAST.
+
+### Lap 5 (2026-07-18) — rpow budget kit + cubic node in exact rpow form ✅
+
+- Bank: `mul_le_ten_rpow` (exponents add), `add_le_ten_rpow` (+1), `rpow_le_ten_rpow`
+  (exponent multiplies), `ten_rpow_mono`, `ten_pow_eq_ten_rpow` — budgets as SYMBOLIC
+  real exponents, for the tall region where decimal exponents are astronomical.
+- `encWindowIter_le_ten_rpow`: `enc+1 ≤ 10^{(A+K+6)·10^{(i+1)/2}}` extracted standalone;
+  the `+2` tower node is now a corollary of it.
+- **Sizing note for the tall region** (from check19 + the §7 trace): honest values are
+  `K_fewWhite ≈ 7.5×10⁷`, `R_fewWhite ≈ 10^3017` (the `1/δ ≈ 10^3000` M1 seat),
+  `P/B_fewWhite ≈ 10^(10^(0.48·10^3017))` — so `C_renewalWhite … C_tao_assembled` are
+  `≤ 10^(10^(10^3020))`-shaped: NOT ≤ tenTower 3; the honest ceiling is **tenTower 4**
+  (matches DIRECTION "honest target tenTower 4; take 3 if it falls out" — 3 does NOT
+  fall out, it is false). Final lift: exponent `(10^3020ish:ℕ) ≤ tenTower 1`? NO —
+  `10^3020 > 10^10`; lift via `(3020-digit literal) ≤ tenTower 2` (`natCast_le_tenTower_two`
+  needs `≤ 10^30` — insufficient; need a `natCast_le_tenTower_two'` for any `a ≤ 10^(10^10)`,
+  i.e. ℕ-literal exponents up to 10^10 digits — 10^3020 has 3021 digits ✓).
+
+**Next (lap 6):** convert the fewWhite core with the rpow kit: `K_fewWhite ≤ 10^8`
+(level-1), `R_fewWhite ≤ 10^3020` (level-1, ℕ literal exponent), `P_fewWhite+1` /
+`B_fewWhite` via `encWindowIter_le_ten_rpow` (exponent `≤ 10^3021`-shaped),
+`Cthr_fewWhite`, then `C_renewalWhite ≤ 10^(10^(10^3025))`-form, then the Sec6/Sec3
+chain in rpow budgets, ceiling `C_tao_assembled ≤ tenTower 4` (pin: tenTower 9 ✓),
+`check28`, discharge LAST.
