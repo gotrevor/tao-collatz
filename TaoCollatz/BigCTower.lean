@@ -1697,6 +1697,27 @@ private theorem deltaBW_inv_le_tenTower_three : deltaBW⁻¹ ≤ tenTower 3 := b
       epsBW_cube_inv_le_tenTower_two
   exact hinv.trans heT
 
+/-- `deltaBW⁻¹` in honest level-1 form: `≤ 10^3001` (the `epsBW⁻³ = 10^3000` seat
+times the linearization factor 2). -/
+private theorem deltaBW_inv_le_ten_pow : deltaBW⁻¹ ≤ (10 : ℝ) ^ (3001 : ℕ) := by
+  let e : ℝ := (epsBW : ℝ) ^ (3 : ℕ) / 2
+  have he0 : 0 < e := by dsimp [e]; norm_num [epsBW]
+  have heδ : e ≤ deltaBW := by
+    dsimp [e]
+    unfold deltaBW
+    linarith [Real.add_one_le_exp ((epsBW : ℝ) ^ (3 : ℕ) / 2)]
+  have hinv : deltaBW⁻¹ ≤ e⁻¹ := by
+    simpa [one_div] using one_div_le_one_div_of_le he0 heδ
+  have heq : e⁻¹ = 2 * ((epsBW : ℝ) ^ (3 : ℕ))⁻¹ := by
+    dsimp [e]
+    field_simp [show (epsBW : ℝ) ^ (3 : ℕ) ≠ 0 by norm_num [epsBW]]
+  have heP : e⁻¹ ≤ (10 : ℝ) ^ (3001 : ℕ) := by
+    rw [heq]
+    exact (mul_le_ten_pow (inv_nonneg.2 (pow_nonneg (by norm_num [epsBW]) 3))
+      (by norm_num : (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) epsBW_cube_inv_le_ten_pow).trans
+      (ten_pow_mono (by norm_num))
+  exact hinv.trans heP
+
 private theorem C_hold_main_cast_le_tenTower_eighteen :
     ((C_hold (mainDecayExponent 3.7) : ℕ) : ℝ) ≤ tenTower 18 := by
   let A : ℝ := mainDecayExponent 3.7
@@ -1847,6 +1868,211 @@ private theorem C_hold_main_cast_le_tenTower_eighteen :
   exact tenTower_add_le_succ 17 (by positivity) (by norm_num)
     (hs.trans (tenTower_mono (by omega)))
     ((show (4 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 17))
+
+/-- `C_hold` in honest level-1 form: `≤ 10^6020`.  The `M1_hold` arm dominates:
+`K_hold ≤ 10^3005` (its log rides `log deltaBW⁻¹ ≤ 10^3002`) times the holding-gap
+inverse `(cHold−1)⁻¹ ≤ 6·A·deltaBW⁻¹ ≤ 10^3010`. -/
+private theorem C_hold_main_cast_le_ten_pow :
+    ((C_hold (mainDecayExponent 3.7) : ℕ) : ℝ) ≤ (10 : ℝ) ^ (6020 : ℕ) := by
+  let A : ℝ := mainDecayExponent 3.7
+  let b₂ : ℝ := deltaBW / 3 * (2 : ℝ) ^ (-A)
+  let b₃ : ℝ := deltaBW / 3 * (3 : ℝ) ^ (-A)
+  let L : ℝ := Real.log (4 / 3)
+  have hL0 : 0 < L := by dsimp [L]; exact Real.log_pos (by norm_num)
+  have hLinv : L⁻¹ ≤ (10 : ℝ) ^ (1 : ℕ) := by
+    dsimp [L]
+    exact log_four_thirds_inv_le_four.trans (by norm_num)
+  have hA0 : 0 < A := by dsimp [A]; exact mainDecayExponent_pos 3.7 (by norm_num)
+  have hA1 : 1 ≤ A := by
+    dsimp [A]
+    unfold mainDecayExponent
+    have hterm : 0 ≤ caConst 3.7 ^ 2 * Real.log 2 :=
+      mul_nonneg (sq_nonneg _) (Real.log_nonneg (by norm_num))
+    norm_num
+    linarith
+  have hA : A ≤ (10 : ℝ) ^ (8 : ℕ) := mainDecayExponent_37_le_ten_pow
+  have hb₂0 : 0 < b₂ := by dsimp [b₂]; positivity [deltaBW_pos]
+  have hb₃0 : 0 < b₃ := by dsimp [b₃]; positivity [deltaBW_pos]
+  have h6δ : 6 * deltaBW⁻¹ ≤ (10 : ℝ) ^ (3002 : ℕ) :=
+    (mul_le_ten_pow (inv_nonneg.2 deltaBW_pos.le)
+      (by norm_num : (6 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) deltaBW_inv_le_ten_pow).trans
+      (ten_pow_mono (by norm_num))
+  have h6δ0 : 0 < 6 * deltaBW⁻¹ := by positivity [deltaBW_pos]
+  -- `log (b₂/2)⁻¹ = log (6·deltaBW⁻¹) + A·log 2 ≤ 10^3003`
+  have hb₂split : (b₂ / 2)⁻¹ = 6 * deltaBW⁻¹ * (2 : ℝ) ^ A := by
+    have hp0 : 0 < (2 : ℝ) ^ A := Real.rpow_pos_of_pos (by norm_num) A
+    dsimp [b₂]
+    rw [Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2)]
+    field_simp [ne_of_gt deltaBW_pos, ne_of_gt hp0]
+    ring
+  have hb₃split : (b₃ / 2)⁻¹ = 6 * deltaBW⁻¹ * (3 : ℝ) ^ A := by
+    have hp0 : 0 < (3 : ℝ) ^ A := Real.rpow_pos_of_pos (by norm_num) A
+    dsimp [b₃]
+    rw [Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 3)]
+    field_simp [ne_of_gt deltaBW_pos, ne_of_gt hp0]
+    ring
+  have hlog6δ : Real.log (6 * deltaBW⁻¹) ≤ (10 : ℝ) ^ (3002 : ℕ) :=
+    (Real.log_le_self h6δ0.le).trans h6δ
+  have hAlog2 : A * Real.log 2 ≤ (10 : ℝ) ^ (9 : ℕ) :=
+    (mul_le_ten_pow (Real.log_nonneg (by norm_num)) hA
+      ((Real.log_le_self (by norm_num)).trans
+        (by norm_num : (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)))).trans
+      (ten_pow_mono (by norm_num))
+  have hAlog3 : A * Real.log 3 ≤ (10 : ℝ) ^ (9 : ℕ) :=
+    (mul_le_ten_pow (Real.log_nonneg (by norm_num)) hA
+      ((Real.log_le_self (by norm_num)).trans
+        (by norm_num : (3 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)))).trans
+      (ten_pow_mono (by norm_num))
+  have hlogb₂ : Real.log (b₂ / 2)⁻¹ ≤ (10 : ℝ) ^ (3003 : ℕ) := by
+    rw [hb₂split, Real.log_mul (ne_of_gt h6δ0)
+      (ne_of_gt (Real.rpow_pos_of_pos (by norm_num) A)),
+      Real.log_rpow (by norm_num : (0 : ℝ) < 2)]
+    exact (add_le_ten_pow hlog6δ
+      (hAlog2.trans (ten_pow_mono (by norm_num)))).trans (ten_pow_mono (by norm_num))
+  have hlogb₃ : Real.log (b₃ / 2)⁻¹ ≤ (10 : ℝ) ^ (3003 : ℕ) := by
+    rw [hb₃split, Real.log_mul (ne_of_gt h6δ0)
+      (ne_of_gt (Real.rpow_pos_of_pos (by norm_num) A)),
+      Real.log_rpow (by norm_num : (0 : ℝ) < 3)]
+    exact (add_le_ten_pow hlog6δ
+      (hAlog3.trans (ten_pow_mono (by norm_num)))).trans (ten_pow_mono (by norm_num))
+  -- `K_hold ≤ 10^3005`
+  have hK : ((K_hold A : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3005 : ℕ) := by
+    unfold K_hold K_geom
+    have hquot : Real.log (b₂ / 2)⁻¹ / L ≤ (10 : ℝ) ^ (3004 : ℕ) := by
+      rw [div_eq_mul_inv]
+      exact (mul_le_ten_pow (inv_nonneg.2 hL0.le) hlogb₂ hLinv).trans
+        (ten_pow_mono (by norm_num))
+    exact (natCeil_le_ten_pow_succ hquot).trans (ten_pow_mono (by norm_num))
+  -- `T_hold ≤ 10^3006`
+  have hkceil : ((⌈A⌉₊ : ℕ) : ℝ) ≤ (10 : ℝ) ^ (9 : ℕ) :=
+    (natCeil_le_ten_pow_succ hA).trans (ten_pow_mono (by norm_num))
+  have hT : ((T_hold A : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3007 : ℕ) := by
+    unfold T_hold T_powGeom
+    have hk1 : ((⌈A⌉₊ : ℕ) : ℝ) + 1 ≤ (10 : ℝ) ^ (10 : ℕ) :=
+      (add_le_ten_pow hkceil (one_le_pow₀ (by norm_num))).trans
+        (ten_pow_mono (by norm_num))
+    have hbaseEq : 2 / (L / (2 * (((⌈A⌉₊ : ℕ) : ℝ) + 1)))
+        = 4 * (((⌈A⌉₊ : ℕ) : ℝ) + 1) * L⁻¹ := by
+      field_simp [ne_of_gt hL0]
+      ring
+    have h4k : 4 * (((⌈A⌉₊ : ℕ) : ℝ) + 1) ≤ (10 : ℝ) ^ (11 : ℕ) :=
+      (mul_le_ten_pow (by positivity)
+        (by norm_num : (4 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) hk1).trans
+        (ten_pow_mono (by norm_num))
+    have hbase : 2 / (L / (2 * (((⌈A⌉₊ : ℕ) : ℝ) + 1))) ≤ (10 : ℝ) ^ (12 : ℕ) := by
+      rw [hbaseEq]
+      exact (mul_le_ten_pow (inv_nonneg.2 hL0.le) h4k hLinv).trans
+        (ten_pow_mono (by norm_num))
+    have hbase0 : 0 ≤ 2 / (L / (2 * (((⌈A⌉₊ : ℕ) : ℝ) + 1))) := by positivity
+    have hsq : (2 / (L / (2 * (((⌈A⌉₊ : ℕ) : ℝ) + 1)))) ^ (2 : ℕ)
+        ≤ (10 : ℝ) ^ (24 : ℕ) := by
+      rw [pow_two]
+      exact (mul_le_ten_pow hbase0 hbase hbase).trans (ten_pow_mono (by norm_num))
+    have hceilSq : ((⌈(2 / (L / (2 * (((⌈A⌉₊ : ℕ) : ℝ) + 1)))) ^ (2 : ℕ)⌉₊ : ℕ) : ℝ)
+        ≤ (10 : ℝ) ^ (25 : ℕ) :=
+      (natCeil_le_ten_pow_succ hsq).trans (ten_pow_mono (by norm_num))
+    have hhalfInv : (L / 2)⁻¹ = 2 * L⁻¹ := by field_simp [ne_of_gt hL0]
+    have hhalfInvP : (L / 2)⁻¹ ≤ (10 : ℝ) ^ (2 : ℕ) := by
+      rw [hhalfInv]
+      exact (mul_le_ten_pow (inv_nonneg.2 hL0.le)
+        (by norm_num : (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) hLinv).trans
+        (ten_pow_mono (by norm_num))
+    have hquot3 : Real.log (b₃ / 2)⁻¹ / (L / 2) ≤ (10 : ℝ) ^ (3005 : ℕ) := by
+      rw [div_eq_mul_inv]
+      exact (mul_le_ten_pow (inv_nonneg.2 (div_nonneg hL0.le (by norm_num)))
+        hlogb₃ hhalfInvP).trans (ten_pow_mono (by norm_num))
+    have hceilLog : ((⌈Real.log (b₃ / 2)⁻¹ / (L / 2)⌉₊ : ℕ) : ℝ)
+        ≤ (10 : ℝ) ^ (3006 : ℕ) :=
+      (natCeil_le_ten_pow_succ hquot3).trans (ten_pow_mono (by norm_num))
+    push_cast
+    have hs1 : (1 : ℝ) + (((⌈(2 / (L / (2 * (((⌈A⌉₊ : ℕ) : ℝ) + 1)))) ^ (2 : ℕ)⌉₊ : ℕ) : ℝ) + 1)
+        ≤ (10 : ℝ) ^ (27 : ℕ) := by
+      have hin : (((⌈(2 / (L / (2 * (((⌈A⌉₊ : ℕ) : ℝ) + 1)))) ^ (2 : ℕ)⌉₊ : ℕ) : ℝ) + 1)
+          ≤ (10 : ℝ) ^ (26 : ℕ) :=
+        (add_le_ten_pow hceilSq (one_le_pow₀ (by norm_num))).trans
+          (ten_pow_mono (by norm_num))
+      exact (add_le_ten_pow (one_le_pow₀ (by norm_num)) hin).trans
+        (ten_pow_mono (by norm_num))
+    exact (add_le_ten_pow (hs1.trans (ten_pow_mono (by norm_num))) hceilLog).trans
+      (ten_pow_mono (by norm_num))
+  -- the holding gap: `(cHold−1)⁻¹ ≤ 6·A·deltaBW⁻¹ ≤ 10^3010`, `cHold ≤ 10`
+  let u : ℝ := deltaBW / 3
+  have hu0 : 0 < u := by dsimp [u]; positivity [deltaBW_pos]
+  have hu2 : u ≤ 2 := by dsimp [u]; linarith [deltaBW_le_two]
+  have hlogLower : u / 2 ≤ Real.log (1 + u) := by
+    have hfrac := Real.le_log_one_add_of_nonneg hu0.le
+    have hden : 0 < u + 2 := by linarith
+    have hhalf : u / 2 ≤ 2 * u / (u + 2) := by
+      rw [le_div_iff₀ hden]
+      nlinarith
+    exact hhalf.trans hfrac
+  have hgapLower : u / (2 * A) ≤ cHold A - 1 := by
+    have hz : u / (2 * A) ≤ Real.log (1 + u) * A⁻¹ := by
+      rw [div_eq_mul_inv, mul_inv_rev]
+      have := mul_le_mul_of_nonneg_right hlogLower (inv_nonneg.2 hA0.le)
+      nlinarith
+    have hexp := Real.add_one_le_exp (Real.log (1 + u) * A⁻¹)
+    have hbasePos : 0 < 1 + deltaBW / 3 := by linarith [deltaBW_pos]
+    unfold cHold
+    rw [Real.rpow_def_of_pos hbasePos]
+    change u / (2 * A) ≤ Real.exp (Real.log (1 + u) * A⁻¹) - 1
+    linarith
+  have hsmall0 : 0 < u / (2 * A) := div_pos hu0 (mul_pos two_pos hA0)
+  have hgapInvRaw : (cHold A - 1)⁻¹ ≤ (u / (2 * A))⁻¹ := by
+    simpa [one_div] using one_div_le_one_div_of_le hsmall0 hgapLower
+  have hsmallInvEq : (u / (2 * A))⁻¹ = 6 * A * deltaBW⁻¹ := by
+    dsimp [u]
+    field_simp [ne_of_gt deltaBW_pos, ne_of_gt hA0]
+    ring
+  have h6A : 6 * A ≤ (10 : ℝ) ^ (9 : ℕ) :=
+    (mul_le_ten_pow hA0.le (by norm_num : (6 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) hA).trans
+      (ten_pow_mono (by norm_num))
+  have hgapInv : (cHold A - 1)⁻¹ ≤ (10 : ℝ) ^ (3010 : ℕ) := by
+    apply hgapInvRaw.trans
+    rw [hsmallInvEq]
+    exact (mul_le_ten_pow (inv_nonneg.2 deltaBW_pos.le) h6A
+      deltaBW_inv_le_ten_pow).trans (ten_pow_mono (by norm_num))
+  have hcHold : cHold A ≤ (10 : ℝ) ^ (1 : ℕ) := by
+    have hbase1 : (1 : ℝ) ≤ 1 + deltaBW / 3 := by linarith [deltaBW_pos]
+    have hexp1 : A⁻¹ ≤ 1 := (inv_le_one₀ hA0).2 hA1
+    unfold cHold
+    calc
+      (1 + deltaBW / 3) ^ A⁻¹ ≤ (1 + deltaBW / 3) ^ (1 : ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le hbase1 hexp1
+      _ = 1 + deltaBW / 3 := Real.rpow_one _
+      _ ≤ (10 : ℝ) ^ (1 : ℕ) := by
+          have := deltaBW_le_two
+          norm_num
+          linarith
+  have hcHold0 : 0 < cHold A := (one_lt_cHold A hA0).trans' zero_lt_one
+  have hgap0 : 0 < cHold A - 1 := sub_pos.mpr (one_lt_cHold A hA0)
+  -- `M1_hold ≤ 10^6017`
+  have hKM : (K_hold A : ℝ) * cHold A ≤ (10 : ℝ) ^ (3006 : ℕ) :=
+    (mul_le_ten_pow hcHold0.le hK hcHold).trans (ten_pow_mono (by norm_num))
+  have hratio : (K_hold A : ℝ) * cHold A / (cHold A - 1) ≤ (10 : ℝ) ^ (6016 : ℕ) := by
+    rw [div_eq_mul_inv]
+    exact (mul_le_ten_pow (inv_nonneg.2 hgap0.le) hKM hgapInv).trans
+      (ten_pow_mono (by norm_num))
+  have hM : ((M1_hold A : ℕ) : ℝ) ≤ (10 : ℝ) ^ (6017 : ℕ) := by
+    unfold M1_hold
+    exact (natCeil_le_ten_pow_succ hratio).trans (ten_pow_mono (by norm_num))
+  unfold C_hold
+  change ((K_hold A + M1_hold A + 2 * T_hold A + 4 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (6020 : ℕ)
+  push_cast
+  have hKMsum : (K_hold A : ℝ) + ((M1_hold A : ℕ) : ℝ) ≤ (10 : ℝ) ^ (6018 : ℕ) :=
+    (add_le_ten_pow (hK.trans (ten_pow_mono (by norm_num))) hM).trans
+      (ten_pow_mono (by norm_num))
+  have h2T : (2 : ℝ) * ((T_hold A : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3008 : ℕ) :=
+    (mul_le_ten_pow (by positivity)
+      (by norm_num : (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) hT).trans
+      (ten_pow_mono (by norm_num))
+  have hs : (K_hold A : ℝ) + ((M1_hold A : ℕ) : ℝ) + 2 * ((T_hold A : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (6019 : ℕ) :=
+    (add_le_ten_pow hKMsum (h2T.trans (ten_pow_mono (by norm_num)))).trans
+      (ten_pow_mono (by norm_num))
+  exact (add_le_ten_pow hs
+    ((show (4 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ) by norm_num).trans
+      (ten_pow_mono (by norm_num)))).trans (ten_pow_mono (by norm_num))
 
 private theorem T_logLin_cast_le_tenTower_add_four {ε : ℝ} (h : ℕ)
     (hε : 0 < ε) (hεinv : ε⁻¹ ≤ tenTower h) :

@@ -1481,3 +1481,20 @@ ceiling `C_tao_assembled ≤ tenTower 4`, restate ceiling theorem, `check28`, di
 prop78` level-3 (max passthrough at 3050), `C_polyDecay = (max Cthr 1)^A ≤
 10^(10^(10^3051))`, `C_renewalWhite ≤ 10^(10^(10^3052))`. Then Sec3 spine, ceiling
 `C_tao_assembled ≤ tenTower 4`, `check28`, discharge LAST.
+
+### Lap 8 (2026-07-18) — C_hold in honest level-1 form ✅
+
+- `deltaBW_inv_le_ten_pow ≤ 10^3001` (epsBW⁻³ seat ×2), `C_hold ≤ 10^6020`:
+  `K_hold ≤ 10^3005` via `log(b₂/2)⁻¹ = log(6δ⁻¹) + A·log 2 ≤ 10^3003` (log_mul +
+  log_rpow — the ONLY route; `log_le_self` on `2^A ≈ 10^(10^7.4)` would hand back a
+  level-2 bound), `T_hold ≤ 10^3007`, `(cHold−1)⁻¹ ≤ 6A·deltaBW⁻¹ ≤ 10^3010`,
+  `M1_hold ≤ 10^6017` (dominant: K×gap⁻¹ double-counts the δ seat — loose vs honest
+  10^3018 but level-1 and harmless; ceiling only sees the level-3 σ).
+- Note: correct T_powGeom sum accounting is (1+(c1+1))+c2 → +1 twice: 10^25 ceil →
+  10^27 head, +10^3006 ceil → 10^3007 (first attempt said 3006: off-by-one).
+
+**Next (lap 9):** `Cthr_case2` chain level-1 (`delta_case2⁻¹ ≤ 10^3001` mirror of
+deltaBW, then T_fstMgf/T_fstTail/T_holdTail/T_edgeWeight — mirror the tT17-24 climbs
+with ten-pow budgets; expect ~10^3010-ish level-1), then lap 10: dampingCol/blackEdge/
+prop78 level-3 max passthrough, `C_polyDecay ≤ 10^(10^(10^3051))`, `C_renewalWhite ≤
+10^(10^(10^3052))`, Sec3 spine, ceiling, `check28`, discharge LAST.
