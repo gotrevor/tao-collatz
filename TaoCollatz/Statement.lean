@@ -55,24 +55,32 @@ theorem CTao_pos : 0 < CTao := by
     ← tenTower_nine_eq_hyperoperation]
   exact tenTower_pos 9
 
-set_option warningAsError false in
 /-- **Theorem 3.1, fully-explicit form** (our augmentation): Theorem 3.1 holds with BOTH
 parameters concrete — one may take `c = cTao = 1/(640_000_000 log 2)` and
 `C = CTao = 10↑↑10` — the explicit values asked for by
 [MO 341570](https://mathoverflow.net/questions/341570).
 
-⚠️ **CAMPAIGN PIN — `sorry` until the Tier-1 tower tightening discharges it.**  The
-statement is true with room to spare: main (`4dde699`) proves it at `10↑↑63`, and the
-assembled constant's honest height is ≈ `10↑↑4`.  Route: batched level-budget calculus →
-`C_tao_assembled ≤ tenTower 9` (tighter is the goal; the ceiling theorem records the
-honest height) → `tenTower_nine_eq_hyperoperation`.  Discharge this LAST, after `check28`
-asserts the honest height — the run's `--done-when sorry-free:TaoCollatz` gate fires on
-this discharge.  The `warningAsError` shield covers exactly this planted `sorry`; remove
-both together at discharge. -/
+Discharged 2026-07-18 (Tier-1 tower-tightening campaign): the honest ceiling
+`C_tao_assembled ≤ 10^(10^(10^3053)) ≤ tenTower 4` (`BigCTower.lean`, base-free
+record `log log log C ≲ 3053`, top-exponent provenance `epsBW⁻³ = 10^3000`) rides
+to the pin through `C_tao_assembled_le_tenTower_nine` and
+`tenTower_nine_eq_hyperoperation`. -/
 theorem tao_collatz_quantitative_fully_explicit :
     ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
-      1 - CTao / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) :=
-  sorry
+      1 - CTao / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
+  intro N₀ x hN₀ hx
+  have hbase := tao_collatz_quantitative_assembled N₀ x hN₀ hx
+  have hN₀real : (1 : ℝ) < N₀ := by exact_mod_cast (show 1 < N₀ by omega)
+  have hden : 0 < (Real.log N₀) ^ cTao :=
+    Real.rpow_pos_of_pos (Real.log_pos hN₀real) _
+  have hC : C_tao_assembled ≤ CTao := by
+    rw [show CTao = ((hyperoperation 4 10 10 : ℕ) : ℝ) from rfl,
+      ← tenTower_nine_eq_hyperoperation]
+    exact C_tao_assembled_le_tenTower_nine
+  have hfrac : C_tao_assembled / (Real.log N₀) ^ cTao ≤
+      CTao / (Real.log N₀) ^ cTao :=
+    (div_le_div_iff_of_pos_right hden).2 hC
+  linarith
 
 /-- **Theorem 3.1, explicit-exponent form** (our augmentation): Theorem 3.1 holds with the
 concrete exponent `cTao` — the explicit value asked for by
