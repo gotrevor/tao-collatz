@@ -751,157 +751,232 @@ theorem A0_fewEstar_le_tenTower_nineteen : A0_fewEstar ≤ tenTower 19 :=
 
 /-! ## The explicit cubic horizon at the exponent used by §6 -/
 
-private theorem mainDecayExponent_37_le_tenTower_two :
-    mainDecayExponent 3.7 ≤ tenTower 2 := by
+private theorem mainDecayExponent_37_le_ten_pow :
+    mainDecayExponent 3.7 ≤ (10 : ℝ) ^ (8 : ℕ) := by
   have hlog : Real.log 2 ≤ 2 := (Real.log_le_self (by norm_num)).trans (by norm_num)
-  calc
-    mainDecayExponent 3.7 ≤ (10 : ℝ) ^ (30 : ℕ) := by
-      norm_num [mainDecayExponent, caConst, max_def]
-      nlinarith
-    _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
+  norm_num [mainDecayExponent, caConst, max_def]
+  nlinarith
+
+private theorem mainDecayExponent_37_le_tenTower_two :
+    mainDecayExponent 3.7 ≤ tenTower 2 :=
+  mainDecayExponent_37_le_ten_pow.trans (ten_pow_le_tenTower_two (by norm_num))
 
 private theorem ten_pow_three_thousand_le_tenTower_two :
-    (10 : ℝ) ^ (3000 : ℕ) ≤ tenTower 2 := by
-  apply ten_pow_le_tenTower_succ 1
-  norm_num [tenTower, Real.rpow_natCast]
+    (10 : ℝ) ^ (3000 : ℕ) ≤ tenTower 2 :=
+  ten_pow_le_tenTower_two (by norm_num)
 
-private theorem epsBW_cube_inv_le_tenTower_two :
-    ((epsBW : ℝ) ^ (3 : ℕ))⁻¹ ≤ tenTower 2 := by
+private theorem epsBW_cube_inv_le_ten_pow :
+    ((epsBW : ℝ) ^ (3 : ℕ))⁻¹ ≤ (10 : ℝ) ^ (3000 : ℕ) := by
   calc
     ((epsBW : ℝ) ^ (3 : ℕ))⁻¹ = (10 : ℝ) ^ (3000 : ℕ) := by
       norm_num [epsBW, ← pow_mul]
-    _ ≤ tenTower 2 := ten_pow_three_thousand_le_tenTower_two
+    _ ≤ (10 : ℝ) ^ (3000 : ℕ) := le_refl _
 
-private theorem K_fewWhite_main_le_tenTower_six :
-    ((K_fewWhite (mainDecayExponent 3.7) : ℕ) : ℝ) ≤ tenTower 6 := by
+private theorem epsBW_cube_inv_le_tenTower_two :
+    ((epsBW : ℝ) ^ (3 : ℕ))⁻¹ ≤ tenTower 2 :=
+  epsBW_cube_inv_le_ten_pow.trans ten_pow_three_thousand_le_tenTower_two
+
+private theorem log_ten_le_ten_pow : Real.log 10 ≤ (10 : ℝ) ^ (1 : ℕ) :=
+  (Real.log_le_self (by norm_num)).trans (by norm_num)
+
+/-- Honest size of the §7.56 damping horizon: `K ≈ 7×10³⁰⁰⁷` (the `epsBW⁻³ = 10³⁰⁰⁰`
+seat times the decay exponent `≈ 3×10⁷`). -/
+private theorem K_fewWhite_main_le_ten_pow :
+    ((K_fewWhite (mainDecayExponent 3.7) : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3011 : ℕ) := by
   let A : ℝ := mainDecayExponent 3.7
   have hA0 : 0 ≤ A := (mainDecayExponent_pos 3.7 (by norm_num)).le
-  have hA : A ≤ tenTower 2 := mainDecayExponent_37_le_tenTower_two
-  have hA3 : A + 3 ≤ tenTower 3 :=
-    tenTower_add_le_succ 2 hA0 (by norm_num) hA
-      ((show (3 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 2))
-  have hlog : Real.log 10 ≤ tenTower 3 :=
-    (Real.log_le_self (by norm_num)).trans
-      ((show (10 : ℝ) ≤ tenTower 3 from ten_le_tenTower 3))
-  have hnum : (A + 3) * Real.log 10 ≤ tenTower 4 :=
-    tenTower_mul_le_succ 3 (by positivity) (Real.log_nonneg (by norm_num))
-      (hA3.trans (tenTower_mono (by omega))) hlog
+  have hA : A ≤ (10 : ℝ) ^ (8 : ℕ) := mainDecayExponent_37_le_ten_pow
+  have hA3 : A + 3 ≤ (10 : ℝ) ^ (9 : ℕ) := by
+    have : A + 3 ≤ (10 : ℝ) ^ (8 : ℕ) + 3 := by linarith
+    refine this.trans ?_
+    norm_num
+  have hnum : (A + 3) * Real.log 10 ≤ (10 : ℝ) ^ (9 + 1 : ℕ) :=
+    mul_le_ten_pow (Real.log_nonneg (by norm_num)) hA3 log_ten_le_ten_pow
+  have hinv0 : 0 ≤ ((epsBW : ℝ) ^ (3 : ℕ))⁻¹ := by
+    have heps : (0 : ℝ) ≤ (epsBW : ℝ) := by norm_num [epsBW]
+    exact inv_nonneg.2 (pow_nonneg heps 3)
   have hquot : ((A + 3) * Real.log 10) / (epsBW : ℝ) ^ (3 : ℕ)
-      ≤ tenTower 5 := by
+      ≤ (10 : ℝ) ^ (9 + 1 + 3000 : ℕ) := by
     rw [div_eq_mul_inv]
-    have hnum0 : 0 ≤ (A + 3) * Real.log 10 :=
-      mul_nonneg (by linarith) (Real.log_nonneg (by norm_num))
-    have hinv0 : 0 ≤ ((epsBW : ℝ) ^ (3 : ℕ))⁻¹ := by
-      have heps : (0 : ℝ) ≤ (epsBW : ℝ) := by norm_num [epsBW]
-      exact inv_nonneg.2 (pow_nonneg heps 3)
-    exact tenTower_mul_le_succ 4 hnum0 hinv0 hnum
-      (epsBW_cube_inv_le_tenTower_two.trans (tenTower_mono (by omega)))
+    exact mul_le_ten_pow hinv0 hnum epsBW_cube_inv_le_ten_pow
   unfold K_fewWhite
-  change ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ) ≤ tenTower 6
-  have harg0 : 0 ≤ ((A + 3) * Real.log 10) / (epsBW : ℝ) ^ (3 : ℕ) := by
-    exact div_nonneg (mul_nonneg (by linarith) (Real.log_nonneg (by norm_num)))
-      (pow_nonneg (by norm_num [epsBW]) 3)
-  exact natCeil_le_tenTower_succ 5 harg0 hquot
+  change ((⌈((A + 3) * Real.log 10) / (epsBW : ℝ) ^ 3⌉₊ : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (3011 : ℕ)
+  exact (natCeil_le_ten_pow_succ hquot).trans (ten_pow_mono (by norm_num))
 
-private theorem R_fewWhite_main_le_tenTower_eleven :
-    ((R_fewWhite (mainDecayExponent 3.7) : ℕ) : ℝ) ≤ tenTower 11 := by
+private theorem K_fewWhite_main_le_tenTower_six :
+    ((K_fewWhite (mainDecayExponent 3.7) : ℕ) : ℝ) ≤ tenTower 6 :=
+  (K_fewWhite_main_le_ten_pow.trans (ten_pow_le_tenTower_two (by norm_num))).trans
+    (tenTower_mono (by omega))
+
+/-- Honest size of the §7.56 reach horizon: `R ≈ K/eps0`, still level-1. -/
+private theorem R_fewWhite_main_le_ten_pow :
+    ((R_fewWhite (mainDecayExponent 3.7) : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3045 : ℕ) := by
   let A : ℝ := mainDecayExponent 3.7
   let K : ℕ := K_fewWhite A
   have hA0 : 0 ≤ A := (mainDecayExponent_pos 3.7 (by norm_num)).le
-  have hA : A ≤ tenTower 2 := mainDecayExponent_37_le_tenTower_two
-  have hK : (K : ℝ) ≤ tenTower 6 := K_fewWhite_main_le_tenTower_six
-  have hK1 : (K : ℝ) + 1 ≤ tenTower 7 :=
-    tenTower_add_le_succ 6 (by positivity) (by norm_num) hK (tenTower_one_le 6)
-  have hA5 : A + 5 ≤ tenTower 3 :=
-    tenTower_add_le_succ 2 hA0 (by norm_num) hA
-      ((show (5 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 2))
-  have hlog : Real.log 10 ≤ tenTower 3 :=
-    (Real.log_le_self (by norm_num)).trans (ten_le_tenTower 3)
-  have hprod : (A + 5) * Real.log 10 ≤ tenTower 4 :=
-    tenTower_mul_le_succ 3 (by positivity) (Real.log_nonneg (by norm_num))
-      hA5 hlog
-  have hsum1 : ((K : ℝ) + 1) + (A + 5) * Real.log 10 ≤ tenTower 8 :=
-    tenTower_add_le_succ 7 (by positivity) (by positivity) hK1
-      (hprod.trans (tenTower_mono (by omega)))
-  have hsum : ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ tenTower 9 :=
-    tenTower_add_le_succ 8 (by positivity) (by norm_num) hsum1
-      ((show (2 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 8))
-  have hinv : (eps0_manyTri : ℝ)⁻¹ ≤ tenTower 2 := by
-    calc
-      (eps0_manyTri : ℝ)⁻¹ ≤ (10 : ℝ) ^ (30 : ℕ) := by
-        norm_num [eps0_manyTri, p_whiteExit, min_def]
-      _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
+  have hA : A ≤ (10 : ℝ) ^ (8 : ℕ) := mainDecayExponent_37_le_ten_pow
+  have hK : (K : ℝ) ≤ (10 : ℝ) ^ (3011 : ℕ) := K_fewWhite_main_le_ten_pow
+  have hK1 : (K : ℝ) + 1 ≤ (10 : ℝ) ^ (3012 : ℕ) :=
+    add_le_ten_pow hK (one_le_pow₀ (by norm_num))
+  have hA5 : A + 5 ≤ (10 : ℝ) ^ (9 : ℕ) := by
+    have : A + 5 ≤ (10 : ℝ) ^ (8 : ℕ) + 5 := by linarith
+    refine this.trans ?_
+    norm_num
+  have hprod : (A + 5) * Real.log 10 ≤ (10 : ℝ) ^ (3012 : ℕ) :=
+    (mul_le_ten_pow (Real.log_nonneg (by norm_num)) hA5 log_ten_le_ten_pow).trans
+      (ten_pow_mono (by norm_num))
+  have hsum1 : ((K : ℝ) + 1) + (A + 5) * Real.log 10 ≤ (10 : ℝ) ^ (3013 : ℕ) :=
+    add_le_ten_pow hK1 hprod
+  have hsum : ((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2 ≤ (10 : ℝ) ^ (3014 : ℕ) :=
+    add_le_ten_pow hsum1
+      (le_trans (by norm_num : (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) (ten_pow_mono (by norm_num)))
+  have hinv : (eps0_manyTri : ℝ)⁻¹ ≤ (10 : ℝ) ^ (30 : ℕ) := by
+    norm_num [eps0_manyTri, p_whiteExit, min_def]
   have hquot : (((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / eps0_manyTri
-      ≤ tenTower 10 := by
+      ≤ (10 : ℝ) ^ (3014 + 30 : ℕ) := by
     rw [div_eq_mul_inv]
-    exact tenTower_mul_le_succ 9 (by positivity) (inv_nonneg.2 eps0_manyTri_pos.le) hsum
-      (hinv.trans (tenTower_mono (by omega)))
+    exact mul_le_ten_pow (inv_nonneg.2 eps0_manyTri_pos.le) hsum hinv
   unfold R_fewWhite
   change ((⌈(((K : ℝ) + 1) + (A + 5) * Real.log 10 + 2) / eps0_manyTri⌉₊ : ℕ) : ℝ)
-      ≤ tenTower 11
-  exact natCeil_le_tenTower_succ 10 (div_nonneg (by positivity) eps0_manyTri_pos.le) hquot
+      ≤ (10 : ℝ) ^ (3045 : ℕ)
+  exact (natCeil_le_ten_pow_succ hquot).trans (ten_pow_mono (by norm_num))
+
+private theorem R_fewWhite_main_le_tenTower_eleven :
+    ((R_fewWhite (mainDecayExponent 3.7) : ℕ) : ℝ) ≤ tenTower 11 :=
+  (R_fewWhite_main_le_ten_pow.trans (ten_pow_le_tenTower_two (by norm_num))).trans
+    (tenTower_mono (by omega))
+
+private theorem A0_fewEstar_nonneg : 0 ≤ A0_fewEstar := by
+  unfold A0_fewEstar A0_estarScaled
+  exact le_trans zero_le_one (le_trans (le_max_left _ _) (le_max_right _ _))
+
+/-- The walk horizon `P` in canonical level-3 form: `P + 1 ≤ 10^(10^(10^3047))`.
+This is THE seat of the assembled constant's height — the cubic recurrence run for
+`R ≈ 10^3045` steps. -/
+private theorem P_fewWhite_main_add_one_le_ten3 :
+    ((P_fewWhite (mainDecayExponent 3.7) : ℕ) : ℝ) + 1
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ))) := by
+  let A : ℝ := mainDecayExponent 3.7
+  have hA0 : 0 ≤ A := (mainDecayExponent_pos 3.7 (by norm_num)).le
+  have hA : A ≤ (10 : ℝ) ^ (8 : ℕ) := mainDecayExponent_37_le_ten_pow
+  have h2A : 2 * A ≤ (10 : ℝ) ^ (9 : ℕ) := by
+    have : 2 * A ≤ 2 * (10 : ℝ) ^ (8 : ℕ) := by linarith
+    refine this.trans ?_
+    norm_num
+  have hAenc : 2 * A + A0_fewEstar ≤ (10 : ℝ) ^ (10 ^ 27 + 23 : ℕ) :=
+    add_le_ten_pow (h2A.trans (ten_pow_mono (by norm_num))) A0_fewEstar_le_ten_pow
+  have hK1 : ((K_fewWhite A + 1 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3012 : ℕ) := by
+    push_cast
+    exact add_le_ten_pow K_fewWhite_main_le_ten_pow (one_le_pow₀ (by norm_num))
+  have hs : 2 * A + A0_fewEstar + ((K_fewWhite A + 1 : ℕ) : ℝ) + 6
+      ≤ (10 : ℝ) ^ (10 ^ 27 + 25 : ℕ) := by
+    have h1 : 2 * A + A0_fewEstar + ((K_fewWhite A + 1 : ℕ) : ℝ)
+        ≤ (10 : ℝ) ^ (10 ^ 27 + 24 : ℕ) :=
+      add_le_ten_pow hAenc (hK1.trans (ten_pow_mono (by norm_num)))
+    exact add_le_ten_pow h1
+      (le_trans (by norm_num : (6 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) (ten_pow_mono (by norm_num)))
+  have hhalf : (((R_fewWhite A : ℕ) : ℝ) + 1) / 2 ≤ (10 : ℝ) ^ (3046 : ℕ) := by
+    have hR : ((R_fewWhite A : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3045 : ℕ) :=
+      R_fewWhite_main_le_ten_pow
+    calc
+      (((R_fewWhite A : ℕ) : ℝ) + 1) / 2 ≤ ((R_fewWhite A : ℕ) : ℝ) + 1 := by
+        have h0 : (0 : ℝ) ≤ ((R_fewWhite A : ℕ) : ℝ) := by positivity
+        linarith
+      _ ≤ (10 : ℝ) ^ (3046 : ℕ) := add_le_ten_pow hR (one_le_pow₀ (by norm_num))
+  have hexact := encWindowIter_le_ten_rpow (2 * A + A0_fewEstar)
+    (K_fewWhite A + 1) (R_fewWhite A)
+    (add_nonneg (by linarith) A0_fewEstar_nonneg)
+  unfold P_fewWhite
+  refine hexact.trans (ten_rpow_mono ?_)
+  have hs' : 2 * A + A0_fewEstar + ((K_fewWhite A + 1 : ℕ) : ℝ) + 6
+      ≤ (10 : ℝ) ^ (((10 ^ 27 + 25 : ℕ) : ℝ)) := by
+    rw [← ten_pow_eq_ten_rpow]
+    exact hs
+  have hpow : (10 : ℝ) ^ ((((R_fewWhite A : ℕ) : ℝ) + 1) / 2)
+      ≤ (10 : ℝ) ^ (((10 : ℝ) ^ (3046 : ℕ) : ℝ)) := ten_rpow_mono hhalf
+  have hmul := mul_le_ten_rpow (Real.rpow_nonneg (by norm_num) _) hs' hpow
+  refine hmul.trans (ten_rpow_mono ?_)
+  have h1 : (((10 ^ 27 + 25 : ℕ)) : ℝ) ≤ (10 : ℝ) ^ (3046 : ℕ) := by
+    have h28 : (((10 ^ 27 + 25 : ℕ)) : ℝ) ≤ (10 : ℝ) ^ (28 : ℕ) := by
+      push_cast
+      norm_num
+    exact h28.trans (ten_pow_mono (by norm_num))
+  exact add_le_ten_pow h1 (le_refl _)
 
 private theorem P_fewWhite_main_add_one_le_tenTower_thirty_one :
-    ((P_fewWhite (mainDecayExponent 3.7) : ℕ) : ℝ) + 1 ≤ tenTower 31 := by
+    ((P_fewWhite (mainDecayExponent 3.7) : ℕ) : ℝ) + 1 ≤ tenTower 31 :=
+  (P_fewWhite_main_add_one_le_ten3.trans
+    (ten_rpow_rpow_ten_pow_le_tenTower_four (by norm_num))).trans
+    (tenTower_mono (by omega))
+
+/-- The triangle-size envelope in canonical level-3 form. -/
+private theorem B_fewWhite_main_le_ten3 :
+    B_fewWhite (mainDecayExponent 3.7)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3049 : ℕ))) := by
   let A : ℝ := mainDecayExponent 3.7
   have hA0 : 0 ≤ A := (mainDecayExponent_pos 3.7 (by norm_num)).le
-  have hA : A ≤ tenTower 2 := mainDecayExponent_37_le_tenTower_two
-  have hA00 : 0 ≤ A0_fewEstar := by
-    unfold A0_fewEstar A0_estarScaled
-    exact le_trans zero_le_one (le_trans (le_max_left _ _) (le_max_right _ _))
-  have h2A : 2 * A ≤ tenTower 20 := by
-    exact tenTower_mul_le_succ 19 (by norm_num) hA0
-      ((show (2 : ℝ) ≤ tenTower 19 from
-        (show (2 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 19)))
-      (hA.trans (tenTower_mono (by omega)))
-  have hAenc : 2 * A + A0_fewEstar ≤ tenTower 21 :=
-    tenTower_add_le_succ 20 (mul_nonneg (by norm_num) hA0) hA00 h2A
-      (A0_fewEstar_le_tenTower_nineteen.trans (tenTower_mono (by omega)))
-  have hK1 : ((K_fewWhite A + 1 : ℕ) : ℝ) ≤ tenTower 7 := by
-    push_cast
-    exact tenTower_add_le_succ 6 (by positivity) (by norm_num)
-      K_fewWhite_main_le_tenTower_six (tenTower_one_le 6)
-  have hR : ((R_fewWhite A : ℕ) : ℝ) ≤ tenTower 11 :=
-    R_fewWhite_main_le_tenTower_eleven
-  unfold P_fewWhite
-  exact encWindowIter_le_tenTower_add_six 25
-    (add_nonneg (mul_nonneg (by norm_num) hA0) hA00)
-    (hAenc.trans (tenTower_mono (by omega)))
-    (hK1.trans (tenTower_mono (by omega)))
-    (hR.trans (tenTower_mono (by omega)))
+  have hA0f : 0 ≤ 2 * A + A0_fewEstar :=
+    add_nonneg (by linarith) A0_fewEstar_nonneg
+  have hA : A ≤ (10 : ℝ) ^ (8 : ℕ) := mainDecayExponent_37_le_ten_pow
+  have h2A : 2 * A ≤ (10 : ℝ) ^ (9 : ℕ) := by
+    have : 2 * A ≤ 2 * (10 : ℝ) ^ (8 : ℕ) := by linarith
+    refine this.trans ?_
+    norm_num
+  have hAenc : 2 * A + A0_fewEstar ≤ (10 : ℝ) ^ (10 ^ 27 + 23 : ℕ) :=
+    add_le_ten_pow (h2A.trans (ten_pow_mono (by norm_num))) A0_fewEstar_le_ten_pow
+  -- first factor: 4^(2A+A0) ≤ 10^(10^(10^3048))
+  have ht1 : (4 : ℝ) ^ (2 * A + A0_fewEstar)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3048 : ℕ))) := by
+    calc
+      (4 : ℝ) ^ (2 * A + A0_fewEstar) ≤ (10 : ℝ) ^ (2 * A + A0_fewEstar) :=
+        Real.rpow_le_rpow (by norm_num) (by norm_num) hA0f
+      _ ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3048 : ℕ))) := by
+          refine ten_rpow_mono (hAenc.trans ?_)
+          rw [ten_pow_eq_ten_rpow]
+          refine ten_rpow_mono ?_
+          have h28 : (((10 ^ 27 + 23 : ℕ)) : ℝ) ≤ (10 : ℝ) ^ (28 : ℕ) := by
+            push_cast
+            norm_num
+          exact h28.trans (ten_pow_mono (by norm_num))
+  -- second factor: (1+P)³ ≤ 10^(3·10^(10^3047)) ≤ 10^(10^(10^3048))
+  have hP1 : 1 + ((P_fewWhite A : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ))) := by
+    rw [add_comm]
+    exact P_fewWhite_main_add_one_le_ten3
+  have hP0 : (0 : ℝ) ≤ 1 + ((P_fewWhite A : ℕ) : ℝ) := by positivity
+  have ht2 : (1 + ((P_fewWhite A : ℕ) : ℝ)) ^ (3 : ℕ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3048 : ℕ))) := by
+    calc
+      (1 + ((P_fewWhite A : ℕ) : ℝ)) ^ (3 : ℕ)
+          ≤ ((10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)))) ^ (3 : ℕ) :=
+            pow_le_pow_left₀ hP0 hP1 3
+      _ = (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) * ((3 : ℕ) : ℝ)) := by
+          rw [← Real.rpow_natCast
+            ((10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)))) 3,
+            ← Real.rpow_mul (by norm_num)]
+      _ ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3048 : ℕ))) := by
+          refine ten_rpow_mono ?_
+          have hM0 : (0 : ℝ) < (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) :=
+            Real.rpow_pos_of_pos (by norm_num) _
+          calc
+            (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) * ((3 : ℕ) : ℝ)
+                ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ)) * 10 :=
+              mul_le_mul_of_nonneg_left (by norm_num) hM0.le
+            _ = (10 : ℝ) ^ ((10 : ℝ) ^ (3047 : ℕ) + 1) := by
+                rw [Real.rpow_add_one (by norm_num : (10 : ℝ) ≠ 0)]
+            _ ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3048 : ℕ)) :=
+                ten_rpow_mono (add_le_ten_pow (le_refl _) (one_le_pow₀ (by norm_num)))
+  unfold B_fewWhite
+  refine (mul_le_ten_rpow (pow_nonneg hP0 3) ht1 ht2).trans (ten_rpow_mono ?_)
+  exact (add_le_ten_rpow (le_refl _) (le_refl _)).trans
+    (ten_rpow_mono (add_le_ten_pow (le_refl _) (one_le_pow₀ (by norm_num))))
 
 private theorem B_fewWhite_main_le_tenTower_thirty_five :
-    B_fewWhite (mainDecayExponent 3.7) ≤ tenTower 35 := by
-  let A : ℝ := mainDecayExponent 3.7
-  have hA0 : 0 ≤ A := (mainDecayExponent_pos 3.7 (by norm_num)).le
-  have hA : A ≤ tenTower 2 := mainDecayExponent_37_le_tenTower_two
-  have hA00 : 0 ≤ A0_fewEstar := by
-    unfold A0_fewEstar A0_estarScaled
-    exact le_trans zero_le_one (le_trans (le_max_left _ _) (le_max_right _ _))
-  have h2A : 2 * A ≤ tenTower 20 := by
-    exact tenTower_mul_le_succ 19 (by norm_num) hA0
-      ((show (2 : ℝ) ≤ tenTower 19 from
-        (show (2 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 19)))
-      (hA.trans (tenTower_mono (by omega)))
-  have hAenc : 2 * A + A0_fewEstar ≤ tenTower 21 :=
-    tenTower_add_le_succ 20 (mul_nonneg (by norm_num) hA0) hA00 h2A
-      (A0_fewEstar_le_tenTower_nineteen.trans (tenTower_mono (by omega)))
-  have hpow4 : (4 : ℝ) ^ (2 * A + A0_fewEstar) ≤ tenTower 23 :=
-    rpow_le_tenTower_add_two 21 (by norm_num)
-      (add_nonneg (mul_nonneg (by norm_num) hA0) hA00)
-      ((show (4 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 21)) hAenc
-  have hP1 : 1 + (P_fewWhite A : ℝ) ≤ tenTower 31 := by
-    simpa [add_comm] using P_fewWhite_main_add_one_le_tenTower_thirty_one
-  have hcube : (1 + (P_fewWhite A : ℝ)) ^ (3 : ℕ) ≤ tenTower 33 := by
-    rw [← Real.rpow_natCast]
-    exact rpow_le_tenTower_add_two 31 (by positivity) (by norm_num) hP1
-      ((show (3 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 31))
-  unfold B_fewWhite
-  exact tenTower_mul_le_succ 34
-    (Real.rpow_nonneg (by norm_num) _)
-    (pow_nonneg (by positivity) 3)
-    (hpow4.trans (tenTower_mono (by omega)))
-    (hcube.trans (tenTower_mono (by omega)))
+    B_fewWhite (mainDecayExponent 3.7) ≤ tenTower 35 :=
+  (B_fewWhite_main_le_ten3.trans
+    (ten_rpow_rpow_ten_pow_le_tenTower_four (by norm_num))).trans
+    (tenTower_mono (by omega))
 
 private theorem T_expRpow_main_colTail_cast_le_tenTower_fifteen :
     ((T_expRpow (mainDecayExponent 3.7) (c_fpColTail / 16960)

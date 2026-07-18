@@ -326,6 +326,7 @@ theorem ten_pow_le_tenTower_three {a : ℕ} (ha : a ≤ 10 ^ 30) :
     (10 : ℝ) ^ a ≤ tenTower 3 :=
   ten_pow_le_tenTower_succ 2 (natCast_le_tenTower_two ha)
 
+
 /-- `exp` of an argument `≤ a` fits in the ten-power budget `10 ^ a`. -/
 theorem exp_le_ten_pow {x : ℝ} {a : ℕ} (hxa : x ≤ (a : ℝ)) :
     Real.exp x ≤ (10 : ℝ) ^ a := by
@@ -335,6 +336,39 @@ theorem exp_le_ten_pow {x : ℝ} {a : ℕ} (hxa : x ≤ (a : ℝ)) :
     _ ≤ (10 : ℝ) ^ a :=
       pow_le_pow_left₀ (Real.exp_pos 1).le
         (Real.exp_one_lt_d9.le.trans (by norm_num)) a
+
+/-- Cash a level-2 budget `x ≤ 10^(10^σ)` at `tenTower 3` (for any `σ ≤ 10¹⁰`). -/
+theorem ten_rpow_ten_pow_le_tenTower_three {σ : ℕ} (hσ : σ ≤ 10 ^ 10) :
+    (10 : ℝ) ^ ((10 : ℝ) ^ (σ : ℕ)) ≤ tenTower 3 := by
+  calc
+    (10 : ℝ) ^ ((10 : ℝ) ^ (σ : ℕ)) ≤ (10 : ℝ) ^ tenTower 2 :=
+      ten_rpow_mono (ten_pow_le_tenTower_two hσ)
+    _ = tenTower 3 := (tenTower_succ 2).symm
+
+/-- Cash a level-3 budget `x ≤ 10^(10^(10^σ))` at `tenTower 4` (for any `σ ≤ 10¹⁰`).
+This is the ceiling lift for the tall region of the constant DAG: every constant above
+the cubic recurrence is `10^(10^(10^~3050))`-shaped, so `σ` stays four-digit. -/
+theorem ten_rpow_rpow_ten_pow_le_tenTower_four {σ : ℕ} (hσ : σ ≤ 10 ^ 10) :
+    (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (σ : ℕ))) ≤ tenTower 4 := by
+  calc
+    (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (σ : ℕ)))
+        ≤ (10 : ℝ) ^ tenTower 3 :=
+      ten_rpow_mono (ten_rpow_ten_pow_le_tenTower_three hσ)
+    _ = tenTower 4 := (tenTower_succ 3).symm
+
+/-- Ceiling a `⌈·⌉₊` over a ten-power budget: one decimal digit. -/
+theorem natCeil_le_ten_pow_succ {x : ℝ} {a : ℕ} (hxa : x ≤ (10 : ℝ) ^ a) :
+    ((⌈x⌉₊ : ℕ) : ℝ) ≤ (10 : ℝ) ^ (a + 1) := by
+  rcases le_total x 0 with hx | hx
+  · calc
+      ((⌈x⌉₊ : ℕ) : ℝ) = 0 := by
+        rw [Nat.ceil_eq_zero.mpr hx]
+        norm_num
+      _ ≤ (10 : ℝ) ^ (a + 1) := by positivity
+  · calc
+      ((⌈x⌉₊ : ℕ) : ℝ) ≤ x + 1 := (Nat.ceil_lt_add_one hx).le
+      _ ≤ (10 : ℝ) ^ (a + 1) := add_le_ten_pow hxa (one_le_pow₀ (by norm_num))
+
 
 /-- The bridge to Mathlib's native tetration: `tenTower h` is `10↑↑(h+1)`,
 i.e. `hyperoperation 4 10 (h+1)`. -/

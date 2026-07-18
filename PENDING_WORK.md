@@ -1445,3 +1445,19 @@ the `1/δ ≈ 10^3000` factor — this is where the REAL `10^3010` top exponent 
 `Cthr_fewWhite`, then `C_renewalWhite ≤ 10^(10^(10^3025))`-form, then the Sec6/Sec3
 chain in rpow budgets, ceiling `C_tao_assembled ≤ tenTower 4` (pin: tenTower 9 ✓),
 `check28`, discharge LAST.
+
+### Lap 6 (2026-07-18) — fewWhite core in exact form ✅
+
+- Bank: level-2/3 tenTower lifts (`ten_rpow_ten_pow_le_tenTower_three`,
+  `ten_rpow_rpow_ten_pow_le_tenTower_four` — ANY σ ≤ 10^10), `natCeil_le_ten_pow_succ`.
+- Converted: `mainDecayExponent 3.7 ≤ 10^8`, `K_fewWhite ≤ 10^3011` (the epsBW⁻³ seat),
+  `R_fewWhite ≤ 10^3045`, `P_fewWhite+1 ≤ 10^(10^(10^3047))` (level-3 canonical, THE
+  height seat), `B_fewWhite ≤ 10^(10^(10^3049))`. Old tenTower names = corollaries.
+- Gotcha: a `let A := …` in a proof breaks linarith atom-matching against lemmas stated
+  with the unfolded term (defeq ≠ syntactic); use exact/calc steps, not linarith, across
+  the let boundary.
+
+**Next (lap 7):** T_expRpow/T_colTail/T_outStrip/Cthr_fewWhite (the ⌈B^2.5⌉ arm rides
+B_fewWhite's level-3), then Cthr_case2/dampingCol/blackEdge/prop78 → C_polyDecay →
+C_renewalWhite (level-3, σ≈3055). Then the Sec3 spine (C_mainZ…C_windowBad, X_spine),
+ceiling `C_tao_assembled ≤ tenTower 4`, restate ceiling theorem, `check28`, discharge.
