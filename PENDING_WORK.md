@@ -1349,3 +1349,25 @@ the box then executed it cleanly. Both directions of the review mechanism worked
 
 **Owed to Trevor (not grind):** (1) comparator `theorem_names` add — public, paired not
 executed; (2) Zulip follow-up "C landed, as a tower" (Ren drafts / Trevor posts); (3) merge/PR.
+
+---
+
+## Tier-1 tower-tightening campaign (branch tier1-tower-tightening)
+
+### Lap 1 (2026-07-18) — calculus bank + POC GREEN ✅
+
+- **Bank** (`Basic/ExplicitConstants.lean`): `prod_le_tenTower_succ`,
+  `sum_le_tenTower_succ`, `rpow_le_tenTower_succ` (operands ≤ tT(h+1), batch size /
+  exponent ≤ tT h ⟹ result ≤ tT(h+2): one level per batch), plus leaf accounting
+  `mul_le_ten_pow` (exponents add) and `exp_le_ten_pow`.
+  Note: the plan §2 signature "(∀ xᵢ ≤ tT h) → k ≤ tT h → ∏ ≤ tT(h+1)" is FALSE as
+  literally stated ((tT h)^(tT h) ≫ tT(h+1)); the bank uses the corrected index shift.
+- **POC gate PASSED**: `C_fpLocation ≤ tenTower 2` (was 8) — six factors, ten-power
+  budgets 43+14+1+5+2+9 = 10^74, one `ten_pow_le_tenTower_succ`. Old `_le_tenTower_eight`
+  kept as a corollary so downstream is untouched.
+- Differ 39/39 vs plant `b7825fc`; census 1 (the pin); full build green; commit `7198777`.
+
+**Next (lap 2+, plan §3 bottom-up):** Sec5 leaves + first-passage cluster
+(`C_fpCol` 9→3ish, `C_fpHeight*`, `C_encSep`, `C_encTri`, `C_estarUnion`, `A0_fewEstar`)
+via the same ten-power accounting; then the cubic node `encWindowIter_le_tenTower_add_six`
+`+6 → +2`; then the Sec6/Sec3 climb; `check28`; discharge LAST.
