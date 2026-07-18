@@ -4285,6 +4285,534 @@ private theorem C_windowBad_le_tenTower_sixty : C_windowBad ≤ tenTower 60 := b
     ((show (2 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 59))
     C_descWhp_le_tenTower_fifty_nine
 
+/-! ## §6/§3 spine at honest heights 🗼
+
+Everything below `C_renewalWhite` rides its level-2 exponent seat
+`E52 = 10^(10^3052)`: each §6/§3 node multiplies in or adds on only
+polynomially-small factors, so the *exponent* grows by a slack that stays
+`≤ 10^11` across the whole spine, and the assembled constant lands at
+`10^(10^(10^3053))` — one top decimal digit above the §7 chain, not the twenty
+tower levels the old climb spent.  Slack is budgeted in generous units of `10^9`
+per node so the intermediate statements stay round numbers. -/
+
+/-- The level-2 exponent seat of the honest spine: `E52 = 10^(10^3052)`, the
+exponent of `C_renewalWhite`'s level-3 form.  Kept as an opaque `def` so
+`linarith` treats it as an atom (decimal-rpow context poison otherwise). -/
+private noncomputable def E52 : ℝ := (10 : ℝ) ^ ((10 : ℝ) ^ (3052 : ℕ))
+
+private theorem E52_nonneg : (0 : ℝ) ≤ E52 :=
+  (Real.rpow_pos_of_pos (by norm_num) _).le
+
+private theorem E52_ge : (10 : ℝ) ^ (12 : ℕ) ≤ E52 := by
+  unfold E52
+  rw [ten_pow_eq_ten_rpow]
+  refine ten_rpow_mono ?_
+  calc
+    ((12 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (2 : ℕ) := by norm_num
+    _ ≤ (10 : ℝ) ^ (3052 : ℕ) := ten_pow_mono (by norm_num)
+
+private theorem ten_pow_add_one_le (σ : ℕ) :
+    (10 : ℝ) ^ σ + 1 ≤ (10 : ℝ) ^ (σ + 1) := by
+  have h1 : (1 : ℝ) ≤ (10 : ℝ) ^ σ := one_le_pow₀ (by norm_num)
+  rw [pow_succ]
+  nlinarith
+
+/-- Cash a slack budget on the `E52` seat at the canonical level-3 height `3053`:
+any `x ≤ 10^(E52 + c)` with slack `c ≤ 10^11` satisfies `x ≤ 10^(10^(10^3053))`. -/
+private theorem slack_le_ten3_3053 {x c : ℝ} (hc : c ≤ (10 : ℝ) ^ (11 : ℕ))
+    (hx : x ≤ (10 : ℝ) ^ (E52 + c)) :
+    x ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3053 : ℕ))) := by
+  refine hx.trans (ten_rpow_mono ?_)
+  have hge := E52_ge
+  have h11 : (10 : ℝ) ^ (11 : ℕ) ≤ (10 : ℝ) ^ (12 : ℕ) := ten_pow_mono (by norm_num)
+  have h2 : E52 + c ≤ 2 * E52 := by linarith
+  refine h2.trans ?_
+  unfold E52
+  have hX0 : (0 : ℝ) ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3052 : ℕ)) :=
+    (Real.rpow_pos_of_pos (by norm_num) _).le
+  have hstep : (2 : ℝ) * (10 : ℝ) ^ ((10 : ℝ) ^ (3052 : ℕ))
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3052 : ℕ) + 1) := by
+    rw [Real.rpow_add_one (by norm_num : (10 : ℝ) ≠ 0)]
+    nlinarith
+  refine hstep.trans (ten_rpow_mono ?_)
+  calc
+    (10 : ℝ) ^ (3052 : ℕ) + 1 ≤ (10 : ℝ) ^ (3052 + 1 : ℕ) := ten_pow_add_one_le 3052
+    _ = (10 : ℝ) ^ (3053 : ℕ) := by norm_num
+
+/-- Lift a small budget `x ≤ 10^e` (real exponent `e ≤ 10^12`) onto the `E52` seat
+with any nonnegative slack: `x ≤ 10^(E52 + c)`. -/
+private theorem small_rpow_le_E52_slack {x c e : ℝ} (hx : x ≤ (10 : ℝ) ^ e)
+    (hc : 0 ≤ c) (he : e ≤ (10 : ℝ) ^ (12 : ℕ)) : x ≤ (10 : ℝ) ^ (E52 + c) := by
+  refine hx.trans (ten_rpow_mono ?_)
+  have := E52_ge
+  linarith
+
+/-- `ℕ`-exponent version of `small_rpow_le_E52_slack`. -/
+private theorem small_pow_le_E52_slack {x c : ℝ} {a : ℕ} (hx : x ≤ (10 : ℝ) ^ a)
+    (hc : 0 ≤ c) (ha : (a : ℝ) ≤ (10 : ℝ) ^ (12 : ℕ)) :
+    x ≤ (10 : ℝ) ^ (E52 + c) := by
+  rw [ten_pow_eq_ten_rpow] at hx
+  exact small_rpow_le_E52_slack hx hc ha
+
+/-! ### Honest level-1 bounds for the §6 mixing cutoffs
+
+The `N_*` family are ceilings of small closed-form quantities — everything is a
+plain decimal number `≤ 10^32`; the old climb's `tenTower 9` bound was pure
+level-spending slop. -/
+
+private theorem N_rpowAbsorb_cast_le_ten_pow {κ : ℝ} {a : ℕ}
+    (hκ : κ ≤ (10 : ℝ) ^ a) :
+    ((N_rpowAbsorb κ : ℕ) : ℝ) ≤ (10 : ℝ) ^ (a + 2) := by
+  have hc : ((⌈κ⌉₊ : ℕ) : ℝ) ≤ (10 : ℝ) ^ (a + 1) := natCeil_le_ten_pow_succ hκ
+  unfold N_rpowAbsorb
+  push_cast
+  exact (add_le_ten_pow hc (one_le_pow₀ (by norm_num))).trans
+    (ten_pow_mono (by omega))
+
+private theorem N_logGe_cast_le_ten_pow {L : ℝ} {a : ℕ}
+    (hL : L ≤ (a : ℝ)) : ((N_logGe L : ℕ) : ℝ) ≤ (10 : ℝ) ^ (a + 2) := by
+  have he : Real.exp L ≤ (10 : ℝ) ^ a := exp_le_ten_pow hL
+  have hc : ((⌈Real.exp L⌉₊ : ℕ) : ℝ) ≤ (10 : ℝ) ^ (a + 1) := natCeil_le_ten_pow_succ he
+  unfold N_logGe
+  push_cast
+  exact (add_le_ten_pow hc (one_le_pow₀ (by norm_num))).trans
+    (ten_pow_mono (by omega))
+
+private theorem N_caWindow_37_cast_le_ten_pow :
+    ((N_caWindow 3.7 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (20 : ℕ) := by
+  let D : ℝ := caConst 3.7 ^ (2 : ℕ) - 2 * caConst 3.7
+  have hDEq : D = 44876600 := by dsimp [D]; norm_num [caConst, max_def]
+  have hD0 : 0 < D := by rw [hDEq]; norm_num
+  have hinv : (D⁻¹)⁻¹ ≤ (10 : ℝ) ^ (8 : ℕ) := by
+    rw [inv_inv, hDEq]; norm_num
+  unfold N_caWindow
+  change ((T_logLin D⁻¹ : ℕ) : ℝ) ≤ _
+  exact (T_logLin_cast_le_ten_pow (inv_pos.2 hD0) hinv).trans
+    (ten_pow_mono (by norm_num))
+
+private theorem N_condWindowB_ca37_cast_le_ten_pow :
+    ((N_condWindowB (caConst 3.7) : ℕ) : ℝ) ≤ (10 : ℝ) ^ (32 : ℕ) := by
+  let δ : ℝ := 8 / 5 - Real.log 3 / Real.log 2
+  let C : ℝ := caConst 3.7
+  let r : ℝ := δ / (4 * C)
+  have hδ0 : 0 < δ := by
+    dsimp [δ]
+    linarith [log_three_div_log_two_le_159_over_100]
+  have hCeq : C = 6700 := by dsimp [C]; norm_num [caConst, max_def]
+  have hC0 : 0 < C := by rw [hCeq]; norm_num
+  have hr0 : 0 < r := by dsimp [r]; positivity
+  have hrInvEq : r⁻¹ = 4 * C * δ⁻¹ := by
+    dsimp [r]
+    field_simp [ne_of_gt hδ0, ne_of_gt hC0]
+  have hrInv : r⁻¹ ≤ (10 : ℝ) ^ (7 : ℕ) := by
+    rw [hrInvEq, hCeq, show ((10 : ℝ) ^ (7 : ℕ)) = 10000000 by norm_num]
+    have hδinv : δ⁻¹ ≤ 100 := gap_eight_fifths_inv_le_hundred
+    have hδinv0 : 0 ≤ δ⁻¹ := inv_nonneg.2 hδ0.le
+    nlinarith
+  have hrSqInv : (r ^ (2 : ℕ))⁻¹ ≤ (10 : ℝ) ^ (14 : ℕ) := by
+    rw [pow_two, mul_inv_rev]
+    exact mul_le_ten_pow (inv_nonneg.2 hr0.le) hrInv hrInv
+  unfold N_condWindowB
+  change ((T_logLin (r ^ (2 : ℕ)) : ℕ) : ℝ) ≤ _
+  exact (T_logLin_cast_le_ten_pow (pow_pos hr0 2) hrSqInv).trans
+    (ten_pow_mono (by norm_num))
+
+private theorem N_caThrNonneg_37_cast_le_ten_pow :
+    ((N_caThrNonneg 3.7 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (20 : ℕ) := by
+  let C : ℝ := caConst 3.7
+  have hCeq : C = 6700 := by dsimp [C]; norm_num [caConst, max_def]
+  have hC0 : 0 < C := by rw [hCeq]; norm_num
+  have hC2 : ((C ^ (2 : ℕ))⁻¹)⁻¹ ≤ (10 : ℝ) ^ (8 : ℕ) := by
+    rw [inv_inv, hCeq]; norm_num
+  unfold N_caThrNonneg
+  change ((T_logLin ((C ^ (2 : ℕ))⁻¹) : ℕ) : ℝ) ≤ _
+  exact (T_logLin_cast_le_ten_pow (inv_pos.2 (pow_pos hC0 2)) hC2).trans
+    (ten_pow_mono (by norm_num))
+
+private theorem N_g1_37_cast_le_ten_pow :
+    ((N_g1 3.7 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (22 : ℕ) := by
+  let δ : ℝ := 2 - Real.log 3 / Real.log 2
+  let b : ℝ := δ ^ (2 : ℕ) / (320000 * ((3.7 : ℝ) + 3))
+  have hδ0 : 0 < δ := by
+    dsimp [δ]
+    linarith [log_three_div_log_two_le_159_over_100]
+  have hδInv : δ⁻¹ ≤ 4 := gap_two_inv_le_four
+  have hb0 : 0 < b := by dsimp [b]; positivity
+  have hbInvEq : b⁻¹ = (320000 * ((3.7 : ℝ) + 3)) * (δ⁻¹ * δ⁻¹) := by
+    dsimp [b]
+    rw [pow_two]
+    field_simp [ne_of_gt hδ0]
+  have hbInv : b⁻¹ ≤ (10 : ℝ) ^ (9 : ℕ) := by
+    rw [hbInvEq]
+    have hδinv0 : 0 ≤ δ⁻¹ := inv_nonneg.2 hδ0.le
+    nlinarith
+  have hlog : ((T_logLin b : ℕ) : ℝ) ≤ (10 : ℝ) ^ (22 : ℕ) :=
+    (T_logLin_cast_le_ten_pow hb0 hbInv).trans (ten_pow_mono (by norm_num))
+  have hrpow : ((N_rpowAbsorb 4 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3 : ℕ) :=
+    N_rpowAbsorb_cast_le_ten_pow
+      (show (4 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ) by norm_num)
+  unfold N_g1
+  change ((max (max (N_rpowAbsorb 4) (T_logLin b)) 1 : ℕ) : ℝ) ≤ _
+  push_cast
+  exact max_le (max_le (hrpow.trans (ten_pow_mono (by norm_num))) hlog)
+    (one_le_pow₀ (by norm_num))
+
+private theorem N_g2_cast_le_ten_pow : ((N_g2 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (4 : ℕ) := by
+  have hk : 4 * Real.exp ((1 : ℝ) / 200) ≤ (10 : ℝ) ^ (2 : ℕ) := by
+    have he : Real.exp ((1 : ℝ) / 200) ≤ Real.exp 1 :=
+      Real.exp_le_exp.mpr (by norm_num)
+    nlinarith [Real.exp_one_lt_d9]
+  have hr : ((N_rpowAbsorb (4 * Real.exp ((1 : ℝ) / 200)) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ (4 : ℕ) := N_rpowAbsorb_cast_le_ten_pow hk
+  have hl : ((N_logGe 1 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3 : ℕ) :=
+    N_logGe_cast_le_ten_pow (show (1 : ℝ) ≤ ((1 : ℕ) : ℝ) by norm_num)
+  unfold N_g2
+  push_cast
+  exact max_le (max_le hr (hl.trans (ten_pow_mono (by norm_num))))
+    (one_le_pow₀ (by norm_num))
+
+private theorem N_g3_cast_le_ten_pow : ((N_g3 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3 : ℕ) := by
+  have hr : ((N_rpowAbsorb 4 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3 : ℕ) :=
+    N_rpowAbsorb_cast_le_ten_pow
+      (show (4 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ) by norm_num)
+  have hl : ((N_logGe 1 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3 : ℕ) :=
+    N_logGe_cast_le_ten_pow (show (1 : ℝ) ≤ ((1 : ℕ) : ℝ) by norm_num)
+  unfold N_g3
+  push_cast
+  exact max_le (max_le hr hl) (one_le_pow₀ (by norm_num))
+
+private theorem N_probGlobalGood_37_cast_le_ten_pow :
+    ((N_probGlobalGood 3.7 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (23 : ℕ) := by
+  unfold N_probGlobalGood
+  push_cast
+  have hm : max (max ((N_caThrNonneg 3.7 : ℕ) : ℝ) ((N_g1 3.7 : ℕ) : ℝ))
+      (max ((N_g2 : ℕ) : ℝ) ((N_g3 : ℕ) : ℝ)) ≤ (10 : ℝ) ^ (22 : ℕ) :=
+    max_le
+      (max_le (N_caThrNonneg_37_cast_le_ten_pow.trans (ten_pow_mono (by norm_num)))
+        N_g1_37_cast_le_ten_pow)
+      (max_le (N_g2_cast_le_ten_pow.trans (ten_pow_mono (by norm_num)))
+        (N_g3_cast_le_ten_pow.trans (ten_pow_mono (by norm_num))))
+  exact (add_le_ten_pow hm (one_le_pow₀ (by norm_num))).trans
+    (ten_pow_mono (by norm_num))
+
+private theorem N_oscHigh_37_cast_le_ten_pow :
+    ((N_oscHigh 3.7 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (32 : ℕ) := by
+  have hmain : ((N_oscMainHigh 3.7 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (32 : ℕ) := by
+    unfold N_oscMainHigh
+    push_cast
+    exact max_le
+      ((show (40 : ℝ) ≤ (10 : ℝ) ^ (2 : ℕ) by norm_num).trans
+        (ten_pow_mono (by norm_num)))
+      (max_le (N_caWindow_37_cast_le_ten_pow.trans (ten_pow_mono (by norm_num)))
+        N_condWindowB_ca37_cast_le_ten_pow)
+  unfold N_oscHigh
+  push_cast
+  exact max_le hmain
+    (N_probGlobalGood_37_cast_le_ten_pow.trans (ten_pow_mono (by norm_num)))
+
+/-! ### The C-chain on the `E52` seat: `C_oscMainHigh → … → C_windowBad` -/
+
+private theorem S_zeta2_le_ten : S_zeta2 ≤ (10 : ℝ) ^ ((1 : ℕ) : ℝ) := by
+  have heq : S_zeta2 = Real.pi ^ (2 : ℕ) / 6 := by
+    unfold S_zeta2
+    calc
+      (∑' k : ℕ, (k : ℝ) ^ (-(2 : ℝ))) =
+          ∑' k : ℕ, (1 : ℝ) / (k : ℝ) ^ (2 : ℕ) := by
+        apply tsum_congr
+        intro k
+        rw [Real.rpow_neg (Nat.cast_nonneg k)]
+        simp [one_div]
+      _ = Real.pi ^ (2 : ℕ) / 6 := hasSum_zeta_two.tsum_eq
+  have hpiSq : Real.pi ^ (2 : ℕ) ≤ 16 := by
+    nlinarith [Real.pi_pos.le, Real.pi_lt_four]
+  rw [heq, ← ten_pow_eq_ten_rpow]
+  nlinarith
+
+private theorem C_valSumGeom_le_ten_pow : C_valSumGeom ≤ (10 : ℝ) ^ (30 : ℕ) := by
+  norm_num [C_valSumGeom, C_valuationDistC, K_intTest, C_geomTail]
+
+private theorem C_fpApprox_le_ten_pow : C_fpApprox ≤ (10 : ℝ) ^ (30 : ℕ) := by
+  norm_num [C_fpApprox, C_windowReduce, C_affineReindex, C_steppedMid,
+    C_goodTupleDev, C_passtimeWindow, C_passtimeInner, C_edgeMass,
+    C_valSumGeom, C_valuationDistC, K_intTest, C_geomTail]
+
+private theorem C_perNHarm_le_ten_pow : C_perNHarm ≤ (10 : ℝ) ^ (30 : ℕ) := by
+  norm_num [C_perNHarm, C_epsPerNHarm, alpha]
+
+private theorem C_harmZfine_le_ten_pow : C_harmZfine ≤ (10 : ℝ) ^ (30 : ℕ) := by
+  norm_num [C_harmZfine, C_syracZsub, C_goodWhp, C_geomTail]
+
+private theorem C_renewalWhite_main_le_E52 :
+    C_renewalWhite (mainDecayExponent 3.7) ≤ (10 : ℝ) ^ E52 := by
+  unfold E52
+  exact C_renewalWhite_main_le_ten3
+
+private theorem C_oscMainHigh_le_E52_slack :
+    C_oscMainHigh 3.7 ≤ (10 : ℝ) ^ (E52 + 2000000000) := by
+  set B : ℝ := mainDecayExponent 3.7 with hBdef
+  have hB0 : 0 < B := mainDecayExponent_pos 3.7 (by norm_num)
+  have hB : B ≤ (10 : ℝ) ^ (8 : ℕ) := mainDecayExponent_37_le_ten_pow
+  have h3C : 3 * C_renewalWhite B ≤ (10 : ℝ) ^ ((1 : ℝ) + E52) :=
+    mul_le_ten_rpow (C_renewalWhite_pos B).le
+      (by rw [Real.rpow_one]; norm_num) C_renewalWhite_main_le_E52
+  have h40B : (40 : ℝ) ^ B ≤ (10 : ℝ) ^ ((2 : ℝ) * B) :=
+    rpow_le_ten_rpow (by norm_num) hB0.le
+      (by
+        rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+        norm_num)
+  have hmul : C_oscMainHigh 3.7 ≤ (10 : ℝ) ^ ((1 : ℝ) + E52 + (2 : ℝ) * B) := by
+    unfold C_oscMainHigh
+    rw [← hBdef]
+    exact mul_le_ten_rpow (Real.rpow_nonneg (by norm_num) _) h3C h40B
+  refine hmul.trans (ten_rpow_mono ?_)
+  have hnum : (10 : ℝ) ^ (8 : ℕ) ≤ 100000000 := by norm_num
+  linarith
+
+private theorem C_oscHigh_le_E52_slack :
+    C_oscHigh 3.7 ≤ (10 : ℝ) ^ (E52 + 3000000000) := by
+  have hm : max (C_oscMainHigh 3.7) 6 ≤ (10 : ℝ) ^ (E52 + 2000000000) :=
+    max_le C_oscMainHigh_le_E52_slack
+      (small_rpow_le_E52_slack
+        (show (6 : ℝ) ≤ (10 : ℝ) ^ (1 : ℝ) by rw [Real.rpow_one]; norm_num)
+        (by norm_num) (by norm_num))
+  have h2 : C_oscHigh 3.7 ≤ (10 : ℝ) ^ ((1 : ℝ) + (E52 + 2000000000)) := by
+    unfold C_oscHigh
+    exact mul_le_ten_rpow (le_max_of_le_right (by norm_num))
+      (by rw [Real.rpow_one]; norm_num) hm
+  exact h2.trans (ten_rpow_mono (by linarith))
+
+private theorem C_fineScale_le_E52_slack :
+    C_fineScale 1.7 ≤ (10 : ℝ) ^ (E52 + 4000000000) := by
+  have hbase : ((max 9 (N_oscHigh 3.7) : ℕ) : ℝ) ≤ (10 : ℝ) ^ ((32 : ℕ) : ℝ) := by
+    rw [← ten_pow_eq_ten_rpow]
+    push_cast
+    refine max_le ?_ N_oscHigh_37_cast_le_ten_pow
+    calc
+      (9 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ) := by norm_num
+      _ ≤ (10 : ℝ) ^ (32 : ℕ) := ten_pow_mono (by norm_num)
+  have hpow : (((max 9 (N_oscHigh 3.7) : ℕ) : ℝ) ^ (1.7 : ℝ))
+      ≤ (10 : ℝ) ^ (((32 : ℕ) : ℝ) * (1.7 : ℝ)) :=
+    rpow_le_ten_rpow (by positivity) (by norm_num) hbase
+  have harm1 : 2 * (((max 9 (N_oscHigh 3.7) : ℕ) : ℝ) ^ (1.7 : ℝ))
+      ≤ (10 : ℝ) ^ ((1 : ℝ) + ((32 : ℕ) : ℝ) * (1.7 : ℝ)) :=
+    mul_le_ten_rpow (Real.rpow_nonneg (by positivity) _)
+      (by rw [Real.rpow_one]; norm_num) hpow
+  have harm1' : 2 * (((max 9 (N_oscHigh 3.7) : ℕ) : ℝ) ^ (1.7 : ℝ))
+      ≤ (10 : ℝ) ^ (E52 + 3000000001) :=
+    small_rpow_le_E52_slack harm1 (by norm_num) (by norm_num)
+  have harm2 : C_oscHigh 3.7 * S_zeta2
+      ≤ (10 : ℝ) ^ (E52 + 3000000000 + ((1 : ℕ) : ℝ)) :=
+    mul_le_ten_rpow S_zeta2_nonneg C_oscHigh_le_E52_slack S_zeta2_le_ten
+  have harm2' : C_oscHigh 3.7 * S_zeta2 ≤ (10 : ℝ) ^ (E52 + 3000000001) :=
+    harm2.trans (ten_rpow_mono (by push_cast; linarith))
+  unfold C_fineScale
+  rw [show (1.7 : ℝ) + 2 = 3.7 by norm_num]
+  exact (add_le_ten_rpow harm1' harm2').trans (ten_rpow_mono (by linarith))
+
+private theorem C_mainZbridge_le_E52_slack :
+    C_mainZbridge ≤ (10 : ℝ) ^ (E52 + 5000000000) := by
+  have hfactor : (1 / 200000 : ℝ) ^ (-(1.7 : ℝ))
+      ≤ (10 : ℝ) ^ ((6 : ℝ) * (1.7 : ℝ)) := by
+    rw [Real.rpow_neg_eq_inv_rpow]
+    have hbase : (1 / 200000 : ℝ)⁻¹ = 200000 := by norm_num
+    rw [hbase]
+    exact rpow_le_ten_rpow (by norm_num) (by norm_num)
+      (by
+        rw [show (6 : ℝ) = ((6 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+        norm_num)
+  have h4C : 4 * C_fineScale 1.7 ≤ (10 : ℝ) ^ ((1 : ℝ) + (E52 + 4000000000)) :=
+    mul_le_ten_rpow (C_fineScale_pos 1.7).le
+      (by rw [Real.rpow_one]; norm_num) C_fineScale_le_E52_slack
+  have h : C_mainZbridge
+      ≤ (10 : ℝ) ^ ((1 : ℝ) + (E52 + 4000000000) + (6 : ℝ) * (1.7 : ℝ)) := by
+    unfold C_mainZbridge
+    exact mul_le_ten_rpow (Real.rpow_nonneg (by norm_num) _) h4C hfactor
+  exact h.trans (ten_rpow_mono (by linarith))
+
+private theorem C_harmonicZ_le_E52_slack :
+    C_harmonicZ ≤ (10 : ℝ) ^ (E52 + 6000000000) := by
+  have hfine : C_harmZfine ≤ (10 : ℝ) ^ (E52 + 5000000000) :=
+    small_pow_le_E52_slack C_harmZfine_le_ten_pow (by norm_num) (by norm_num)
+  unfold C_harmonicZ
+  exact (add_le_ten_rpow hfine C_mainZbridge_le_E52_slack).trans
+    (ten_rpow_mono (by linarith))
+
+private theorem C_perNTermEval_le_E52_slack :
+    C_perNTermEval ≤ (10 : ℝ) ^ (E52 + 7000000000) := by
+  have hharm : C_perNHarm ≤ (10 : ℝ) ^ (E52 + 6000000000) :=
+    small_pow_le_E52_slack C_perNHarm_le_ten_pow (by norm_num) (by norm_num)
+  unfold C_perNTermEval
+  exact (add_le_ten_rpow hharm C_harmonicZ_le_E52_slack).trans
+    (ten_rpow_mono (by linarith))
+
+private theorem C_mainZ_le_E52_slack :
+    C_mainZ ≤ (10 : ℝ) ^ (E52 + 7000000000) := by
+  have hrest : C_perNHarm + 1000 * (1 + C_fpApprox) ≤ (10 : ℝ) ^ (35 : ℕ) := by
+    have h1 : 1 + C_fpApprox ≤ (10 : ℝ) ^ (31 : ℕ) :=
+      (add_le_ten_pow (one_le_pow₀ (by norm_num)) C_fpApprox_le_ten_pow).trans
+        (ten_pow_mono (by norm_num))
+    have h2 : 1000 * (1 + C_fpApprox) ≤ (10 : ℝ) ^ (34 : ℕ) :=
+      (mul_le_ten_pow (add_nonneg (by norm_num) C_fpApprox_pos.le)
+        (show (1000 : ℝ) ≤ (10 : ℝ) ^ (3 : ℕ) by norm_num) h1).trans
+        (ten_pow_mono (by norm_num))
+    have hp : C_perNHarm ≤ (10 : ℝ) ^ (34 : ℕ) :=
+      C_perNHarm_le_ten_pow.trans (ten_pow_mono (by norm_num))
+    exact (add_le_ten_pow hp h2).trans (ten_pow_mono (by norm_num))
+  have hrest' : C_perNHarm + 1000 * (1 + C_fpApprox)
+      ≤ (10 : ℝ) ^ (E52 + 6000000000) :=
+    small_pow_le_E52_slack hrest (by norm_num) (by norm_num)
+  have hsplit : C_mainZ = C_harmonicZ + (C_perNHarm + 1000 * (1 + C_fpApprox)) := by
+    unfold C_mainZ
+    ring
+  rw [hsplit]
+  exact (add_le_ten_rpow C_harmonicZ_le_E52_slack hrest').trans
+    (ten_rpow_mono (by linarith))
+
+private theorem C_approxToZ_le_E52_slack :
+    C_approxToZ ≤ (10 : ℝ) ^ (E52 + 8000000000) := by
+  have hcoef : 2 / Real.log (4 / 3) + 6000 ≤ (10 : ℝ) ^ ((4 : ℕ) : ℝ) := by
+    rw [← ten_pow_eq_ten_rpow]
+    have hdiv : 2 / Real.log (4 / 3) ≤ 8 := by
+      rw [div_eq_mul_inv]
+      nlinarith [log_four_thirds_inv_le_four]
+    nlinarith
+  have hcoef0 : 0 ≤ 2 / Real.log (4 / 3) + 6000 := by positivity
+  have hterm1 : (2 / Real.log (4 / 3) + 6000) * C_perNTermEval
+      ≤ (10 : ℝ) ^ (((4 : ℕ) : ℝ) + (E52 + 7000000000)) :=
+    mul_le_ten_rpow C_perNTermEval_pos.le hcoef C_perNTermEval_le_E52_slack
+  have hterm2 : C_mainZ * 6000
+      ≤ (10 : ℝ) ^ (E52 + 7000000000 + ((4 : ℕ) : ℝ)) :=
+    mul_le_ten_rpow (by norm_num) C_mainZ_le_E52_slack
+      (by
+        rw [← ten_pow_eq_ten_rpow]
+        norm_num)
+  have ht1 : (2 / Real.log (4 / 3) + 6000) * C_perNTermEval
+      ≤ (10 : ℝ) ^ (E52 + 7000000004) :=
+    hterm1.trans (ten_rpow_mono (by push_cast; linarith))
+  have ht2 : C_mainZ * 6000 ≤ (10 : ℝ) ^ (E52 + 7000000004) :=
+    hterm2.trans (ten_rpow_mono (by push_cast; linarith))
+  unfold C_approxToZ
+  exact (add_le_ten_rpow ht1 ht2).trans (ten_rpow_mono (by linarith))
+
+private theorem C_windowStable_le_E52_slack :
+    C_windowStable ≤ (10 : ℝ) ^ (E52 + 9000000000) := by
+  have h : C_windowStable ≤ (10 : ℝ) ^ ((1 : ℝ) + (E52 + 8000000000)) := by
+    unfold C_windowStable
+    exact mul_le_ten_rpow C_approxToZ_pos.le
+      (by rw [Real.rpow_one]; norm_num) C_approxToZ_le_E52_slack
+  exact h.trans (ten_rpow_mono (by linarith))
+
+private theorem C_stab_le_E52_slack :
+    C_stab ≤ (10 : ℝ) ^ (E52 + 10000000000) := by
+  have hhead : C_valSumGeom + 4 * C_fpApprox ≤ (10 : ℝ) ^ (35 : ℕ) := by
+    have h4fp : 4 * C_fpApprox ≤ (10 : ℝ) ^ (31 : ℕ) :=
+      mul_le_ten_pow C_fpApprox_pos.le
+        (show (4 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ) by norm_num) C_fpApprox_le_ten_pow
+    exact (add_le_ten_pow (C_valSumGeom_le_ten_pow.trans (ten_pow_mono (by norm_num)))
+      h4fp).trans (ten_pow_mono (by norm_num))
+  have hhead' : C_valSumGeom + 4 * C_fpApprox
+      ≤ (10 : ℝ) ^ (E52 + 9000000001) :=
+    small_pow_le_E52_slack hhead (by norm_num) (by norm_num)
+  have h2w : 2 * C_windowStable ≤ (10 : ℝ) ^ ((1 : ℝ) + (E52 + 9000000000)) :=
+    mul_le_ten_rpow C_windowStable_pos.le
+      (by rw [Real.rpow_one]; norm_num) C_windowStable_le_E52_slack
+  have h2w' : 2 * C_windowStable ≤ (10 : ℝ) ^ (E52 + 9000000001) :=
+    h2w.trans (ten_rpow_mono (by linarith))
+  unfold C_stab
+  exact (add_le_ten_rpow hhead' h2w').trans (ten_rpow_mono (by linarith))
+
+private theorem C_descLadder_le_E52_slack :
+    C_descLadder ≤ (10 : ℝ) ^ (E52 + 11000000000) := by
+  have hstep : C_descStep ≤ (10 : ℝ) ^ ((1 : ℝ) + (E52 + 10000000000)) := by
+    unfold C_descStep
+    exact mul_le_ten_rpow C_stab_pos.le
+      (by rw [Real.rpow_one]; norm_num) C_stab_le_E52_slack
+  unfold C_descLadder
+  exact max_le
+    (small_pow_le_E52_slack C_valSumGeom_le_ten_pow (by norm_num) (by norm_num))
+    (hstep.trans (ten_rpow_mono (by linarith)))
+
+private theorem descGeomFactor_le_ten_pow :
+    1 + (1 - alpha ^ (-c_ladder))⁻¹ ≤ (10 : ℝ) ^ ((15 : ℕ) : ℝ) := by
+  have ha0 : 0 < alpha := by norm_num [alpha]
+  have ha1 : 1 < alpha := by norm_num [alpha]
+  have hc0 : 0 < c_ladder := c_ladder_pos
+  have hlog0 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog2 : Real.log 2 ≤ 1 := by
+    nlinarith [Real.log_two_lt_d9]
+  set z : ℝ := c_ladder * Real.log alpha with hzdef
+  have hz0 : 0 < z := mul_pos hc0 (Real.log_pos ha1)
+  have hpowEq : alpha ^ (-c_ladder) = Real.exp (-z) := by
+    rw [Real.rpow_def_of_pos ha0, hzdef]
+    congr 1
+    ring
+  have hclInv : c_ladder⁻¹ ≤ (10 : ℝ) ^ (10 : ℕ) := by
+    rw [c_ladder_eq]
+    have heq : ((1 / 640000000 : ℝ) / Real.log 2)⁻¹ = 640000000 * Real.log 2 := by
+      field_simp [ne_of_gt hlog0]
+    rw [heq]
+    nlinarith
+  have hzInv : z⁻¹ ≤ (10 : ℝ) ^ (14 : ℕ) := by
+    rw [hzdef, mul_inv_rev]
+    have hla : (Real.log alpha)⁻¹ ≤ 2000 := log_alpha_inv_le_two_thousand
+    have hla0 : 0 ≤ (Real.log alpha)⁻¹ := inv_nonneg.2 (Real.log_pos ha1).le
+    have hcl0 : 0 ≤ c_ladder⁻¹ := inv_nonneg.2 hc0.le
+    calc
+      (Real.log alpha)⁻¹ * c_ladder⁻¹ ≤ 2000 * c_ladder⁻¹ := by
+        exact mul_le_mul_of_nonneg_right hla hcl0
+      _ ≤ 2000 * (10 : ℝ) ^ (10 : ℕ) := by
+        exact mul_le_mul_of_nonneg_left hclInv (by norm_num)
+      _ ≤ (10 : ℝ) ^ (14 : ℕ) := by norm_num
+  have hden : (1 - Real.exp (-z))⁻¹ ≤ 1 + z⁻¹ := by
+    simpa [one_div] using one_div_one_sub_exp_neg_le hz0
+  rw [hpowEq, ← ten_pow_eq_ten_rpow]
+  have hz0' : 0 ≤ z⁻¹ := inv_nonneg.2 hz0.le
+  have : (1 - Real.exp (-z))⁻¹ ≤ 1 + (10 : ℝ) ^ (14 : ℕ) := by
+    refine hden.trans ?_
+    linarith
+  nlinarith
+
+private theorem alpha_rpow_c_ladder_le_ten :
+    alpha ^ c_ladder ≤ (10 : ℝ) ^ ((1 : ℕ) : ℝ) := by
+  have hc1 : c_ladder ≤ 1 := by
+    have hcl : c_ladder = c_valSumTail := by
+      unfold c_ladder
+      rw [c_stab_eq_valSumTail, min_self]
+    rw [hcl]
+    exact c_valSumTail_le_one_fifth.trans (by norm_num)
+  have h : alpha ^ c_ladder ≤ alpha ^ (1 : ℝ) :=
+    Real.rpow_le_rpow_of_exponent_le (by norm_num [alpha]) hc1
+  rw [Real.rpow_one] at h
+  rw [← ten_pow_eq_ten_rpow]
+  refine h.trans ?_
+  norm_num [alpha]
+
+private theorem C_descWhp_le_E52_slack :
+    C_descWhp ≤ (10 : ℝ) ^ (E52 + 12000000000) := by
+  have ha1 : 1 < alpha := by norm_num [alpha]
+  have hpowlt : alpha ^ (-c_ladder) < 1 :=
+    Real.rpow_lt_one_of_one_lt_of_neg ha1 (neg_lt_zero.mpr c_ladder_pos)
+  have hfac0 : 0 ≤ 1 + (1 - alpha ^ (-c_ladder))⁻¹ := by
+    have : 0 < 1 - alpha ^ (-c_ladder) := sub_pos.mpr hpowlt
+    positivity
+  have hp : C_descLadder * (1 + (1 - alpha ^ (-c_ladder))⁻¹)
+      ≤ (10 : ℝ) ^ (E52 + 11000000000 + ((15 : ℕ) : ℝ)) :=
+    mul_le_ten_rpow hfac0 C_descLadder_le_E52_slack descGeomFactor_le_ten_pow
+  have h : C_descWhp
+      ≤ (10 : ℝ) ^ (E52 + 11000000000 + ((15 : ℕ) : ℝ) + ((1 : ℕ) : ℝ)) := by
+    unfold C_descWhp
+    exact mul_le_ten_rpow (Real.rpow_nonneg (by norm_num [alpha]) _) hp
+      alpha_rpow_c_ladder_le_ten
+  exact h.trans (ten_rpow_mono (by push_cast; linarith))
+
+private theorem C_windowBad_le_E52_slack :
+    C_windowBad ≤ (10 : ℝ) ^ (E52 + 13000000000) := by
+  have h : C_windowBad ≤ (10 : ℝ) ^ ((1 : ℝ) + (E52 + 12000000000)) := by
+    unfold C_windowBad
+    exact mul_le_ten_rpow C_descWhp_pos.le
+      (by rw [Real.rpow_one]; norm_num) C_descWhp_le_E52_slack
+  exact h.trans (ten_rpow_mono (by linarith))
+
 /-! ## The cutoff tree -/
 
 private theorem X_windowBase_le_tenTower_four : X_windowBase ≤ tenTower 4 := by
