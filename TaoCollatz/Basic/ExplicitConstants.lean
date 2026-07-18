@@ -234,6 +234,41 @@ theorem mul_le_ten_pow {x y : ℝ} {a b : ℕ} (hy : 0 ≤ y) (hxa : x ≤ (10 :
   rw [pow_add]
   exact mul_le_mul hxa hyb hy (by positivity)
 
+/-- Add two ten-power budgets at a common exponent: one decimal digit, never a level. -/
+theorem add_le_ten_pow {x y : ℝ} {a : ℕ} (hxa : x ≤ (10 : ℝ) ^ a)
+    (hya : y ≤ (10 : ℝ) ^ a) : x + y ≤ (10 : ℝ) ^ (a + 1) := by
+  have hp : (0 : ℝ) < (10 : ℝ) ^ a := by positivity
+  calc
+    x + y ≤ 2 * (10 : ℝ) ^ a := by linarith
+    _ ≤ (10 : ℝ) ^ (a + 1) := by rw [pow_succ]; nlinarith
+
+/-- Monotonicity of ten-power budgets in the exponent. -/
+theorem ten_pow_mono {a b : ℕ} (h : a ≤ b) : (10 : ℝ) ^ a ≤ (10 : ℝ) ^ b :=
+  pow_le_pow_right₀ (by norm_num) h
+
+/-- A natural number `≤ 10 ^ 10` sits under `tenTower 1`. -/
+theorem natCast_le_tenTower_one {a : ℕ} (ha : a ≤ 10 ^ 10) : (a : ℝ) ≤ tenTower 1 := by
+  calc
+    (a : ℝ) ≤ ((10 ^ 10 : ℕ) : ℝ) := Nat.cast_le.mpr ha
+    _ ≤ tenTower 1 := by norm_num [tenTower, Real.rpow_natCast]
+
+/-- Cash out a ten-power budget with exponent `≤ 10 ^ 10` at `tenTower 2`. -/
+theorem ten_pow_le_tenTower_two {a : ℕ} (ha : a ≤ 10 ^ 10) :
+    (10 : ℝ) ^ a ≤ tenTower 2 :=
+  ten_pow_le_tenTower_succ 1 (natCast_le_tenTower_one ha)
+
+/-- A natural number `≤ 10 ^ 30` sits under `tenTower 2`. -/
+theorem natCast_le_tenTower_two {a : ℕ} (ha : a ≤ 10 ^ 30) : (a : ℝ) ≤ tenTower 2 := by
+  calc
+    (a : ℝ) ≤ ((10 ^ 30 : ℕ) : ℝ) := Nat.cast_le.mpr ha
+    _ = (10 : ℝ) ^ (30 : ℕ) := by push_cast; norm_num
+    _ ≤ tenTower 2 := ten_pow_le_tenTower_two (by norm_num)
+
+/-- Cash out a ten-power budget with exponent `≤ 10 ^ 30` at `tenTower 3`. -/
+theorem ten_pow_le_tenTower_three {a : ℕ} (ha : a ≤ 10 ^ 30) :
+    (10 : ℝ) ^ a ≤ tenTower 3 :=
+  ten_pow_le_tenTower_succ 2 (natCast_le_tenTower_two ha)
+
 /-- `exp` of an argument `≤ a` fits in the ten-power budget `10 ^ a`. -/
 theorem exp_le_ten_pow {x : ℝ} {a : ℕ} (hxa : x ≤ (a : ℝ)) :
     Real.exp x ≤ (10 : ℝ) ^ a := by

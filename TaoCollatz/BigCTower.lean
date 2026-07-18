@@ -241,11 +241,10 @@ private theorem K_sqrtExp_spine_le_tenTower_two :
       norm_num [K_sqrtExp, gamma_holdStep_eq]
     _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
 
-/-- POC of the Design B batched calculus: the honest height of `C_fpLocation` is 2,
-not the 8 the per-operation `_succ` climb charged.  Every factor carries an explicit
-`10 ^ a` budget, the exponents add (`mul_le_ten_pow`), and one
-`ten_pow_le_tenTower_succ` lands the whole product under `tenTower 2`. -/
-theorem C_fpLocation_le_tenTower_two : C_fpLocation ≤ tenTower 2 := by
+/-- POC of the Design B batched calculus: the honest size of `C_fpLocation` is a plain
+`10 ^ 74`.  Every factor carries an explicit `10 ^ a` budget and the exponents add
+(`mul_le_ten_pow`); no tower level is spent at all. -/
+theorem C_fpLocation_le_ten_pow : C_fpLocation ≤ (10 : ℝ) ^ (74 : ℕ) := by
   have ha : 0 < (c_holdLocal / 2) ^ 2 / 2 := by
     have := c_holdLocal_pos
     positivity
@@ -282,223 +281,217 @@ theorem C_fpLocation_le_tenTower_two : C_fpLocation ≤ tenTower 2 := by
         (mul_le_ten_pow h4pos
           (mul_le_ten_pow (Real.exp_pos _).le
             (mul_le_ten_pow C_holdStep_pos.le h1 h2) h3) h4) h5) h6
-  refine hprod.trans (ten_pow_le_tenTower_succ 1 ?_)
-  norm_num [tenTower, Real.rpow_natCast]
+  exact hprod.trans (ten_pow_mono (by norm_num))
+
+/-- The POC gate of the Tier-1 campaign: `C_fpLocation` at its honest height 2 (the
+per-operation `_succ` climb charged 8). -/
+theorem C_fpLocation_le_tenTower_two : C_fpLocation ≤ tenTower 2 :=
+  C_fpLocation_le_ten_pow.trans (ten_pow_le_tenTower_two (by norm_num))
 
 /-- The pre-tightening bound, kept as the interface the downstream climb still
 consumes; now a corollary of the honest `tenTower 2` height. -/
 theorem C_fpLocation_le_tenTower_eight : C_fpLocation ≤ tenTower 8 :=
   C_fpLocation_le_tenTower_two.trans (tenTower_mono (by omega))
 
-theorem C_fpCol_le_tenTower_nine : C_fpCol ≤ tenTower 9 := by
-  have hratio : Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation))
-      ≤ tenTower 2 := by
-    calc
-      Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation))
-          ≤ 1 / c_fpLocation := exp_neg_div_one_sub_exp_neg_le_inv c_fpLocation_pos
-      _ ≤ (10 : ℝ) ^ (30 : ℕ) := by norm_num [c_fpLocation_eq]
-      _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
-  have hratio0 : 0 ≤ Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation)) := by
-    have hd : 0 < 1 - Real.exp (-c_fpLocation) := by
-      rw [sub_pos, Real.exp_lt_one_iff]
-      linarith [c_fpLocation_pos]
-    exact (div_pos (Real.exp_pos _) hd).le
-  unfold C_fpCol
-  exact tenTower_mul_le_succ 8 C_fpLocation_pos.le hratio0
-    C_fpLocation_le_tenTower_eight (hratio.trans (tenTower_mono (by omega)))
+/-! The geometric-ratio and row-sum helpers of the first-passage cluster, each with an
+explicit ten-power budget (`ratio(c) = e^{-c}/(1-e^{-c}) ≤ 1/c`). -/
 
-private theorem K_rowG_fpLocation_le_tenTower_two : K_rowG c_fpLocation ≤ tenTower 2 := by
+private theorem ratio_fpLocation_nonneg :
+    0 ≤ Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation)) := by
+  have hd : 0 < 1 - Real.exp (-c_fpLocation) := by
+    rw [sub_pos, Real.exp_lt_one_iff]
+    linarith [c_fpLocation_pos]
+  exact (div_pos (Real.exp_pos _) hd).le
+
+private theorem ratio_fpLocation_le_ten_pow :
+    Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation)) ≤ (10 : ℝ) ^ (5 : ℕ) :=
+  calc
+    Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation))
+        ≤ 1 / c_fpLocation := exp_neg_div_one_sub_exp_neg_le_inv c_fpLocation_pos
+    _ ≤ (10 : ℝ) ^ (5 : ℕ) := by norm_num [c_fpLocation_eq]
+
+private theorem ratio_half_fpLocation_nonneg :
+    0 ≤ Real.exp (-(c_fpLocation / 2)) / (1 - Real.exp (-(c_fpLocation / 2))) := by
+  have hd : 0 < 1 - Real.exp (-(c_fpLocation / 2)) := by
+    rw [sub_pos, Real.exp_lt_one_iff]
+    linarith [c_fpLocation_pos]
+  exact (div_pos (Real.exp_pos _) hd).le
+
+private theorem ratio_half_fpLocation_le_ten_pow :
+    Real.exp (-(c_fpLocation / 2)) / (1 - Real.exp (-(c_fpLocation / 2)))
+      ≤ (10 : ℝ) ^ (5 : ℕ) := by
+  have hc : 0 < c_fpLocation / 2 := div_pos c_fpLocation_pos two_pos
+  calc
+    Real.exp (-(c_fpLocation / 2)) / (1 - Real.exp (-(c_fpLocation / 2)))
+        ≤ 1 / (c_fpLocation / 2) := exp_neg_div_one_sub_exp_neg_le_inv hc
+    _ ≤ (10 : ℝ) ^ (5 : ℕ) := by norm_num [c_fpLocation_eq]
+
+private theorem K_rowG_fpLocation_le_ten_pow :
+    K_rowG c_fpLocation ≤ (10 : ℝ) ^ (5 : ℕ) := by
   have hgeom := one_div_one_sub_exp_neg_le c_fpLocation_pos
-  have hraw : K_rowG c_fpLocation ≤ (10 : ℝ) ^ (30 : ℕ) := by
-    unfold K_rowG
-    calc
-      10 + 2 / (1 - Real.exp (-c_fpLocation)) + 4 / c_fpLocation
-          ≤ 10 + 2 * (1 + 1 / c_fpLocation) + 4 / c_fpLocation := by
-            rw [div_eq_mul_inv]
-            gcongr
-            simpa [one_div] using hgeom
-      _ ≤ (10 : ℝ) ^ (30 : ℕ) := by norm_num [c_fpLocation_eq]
-  exact hraw.trans ten_pow_thirty_le_tenTower_two
+  unfold K_rowG
+  calc
+    10 + 2 / (1 - Real.exp (-c_fpLocation)) + 4 / c_fpLocation
+        ≤ 10 + 2 * (1 + 1 / c_fpLocation) + 4 / c_fpLocation := by
+          rw [div_eq_mul_inv]
+          gcongr
+          simpa [one_div] using hgeom
+    _ ≤ (10 : ℝ) ^ (5 : ℕ) := by norm_num [c_fpLocation_eq]
 
-private theorem K_rowG_half_fpLocation_le_tenTower_two :
-    K_rowG (c_fpLocation / 2) ≤ tenTower 2 := by
+private theorem K_rowG_half_fpLocation_le_ten_pow :
+    K_rowG (c_fpLocation / 2) ≤ (10 : ℝ) ^ (6 : ℕ) := by
   have hc : 0 < c_fpLocation / 2 := div_pos c_fpLocation_pos two_pos
   have hgeom := one_div_one_sub_exp_neg_le hc
-  have hraw : K_rowG (c_fpLocation / 2) ≤ (10 : ℝ) ^ (30 : ℕ) := by
-    unfold K_rowG
-    calc
-      10 + 2 / (1 - Real.exp (-(c_fpLocation / 2))) + 4 / (c_fpLocation / 2)
-          ≤ 10 + 2 * (1 + 1 / (c_fpLocation / 2)) + 4 / (c_fpLocation / 2) := by
-            rw [div_eq_mul_inv]
-            gcongr
-            simpa [one_div] using hgeom
-      _ ≤ (10 : ℝ) ^ (30 : ℕ) := by norm_num [c_fpLocation_eq]
-  exact hraw.trans ten_pow_thirty_le_tenTower_two
-
-theorem C_fpHeight_le_tenTower_ten : C_fpHeight ≤ tenTower 10 := by
-  have hp : C_fpLocation * K_rowG c_fpLocation ≤ tenTower 9 :=
-    tenTower_mul_le_succ 8 C_fpLocation_pos.le (K_rowG_pos c_fpLocation_pos).le
-      C_fpLocation_le_tenTower_eight
-      (K_rowG_fpLocation_le_tenTower_two.trans (tenTower_mono (by omega)))
-  have hratio : Real.exp (-(c_fpLocation / 2)) /
-      (1 - Real.exp (-(c_fpLocation / 2))) ≤ tenTower 2 := by
-    have hc : 0 < c_fpLocation / 2 := div_pos c_fpLocation_pos two_pos
-    calc
-      Real.exp (-(c_fpLocation / 2)) / (1 - Real.exp (-(c_fpLocation / 2)))
-          ≤ 1 / (c_fpLocation / 2) := exp_neg_div_one_sub_exp_neg_le_inv hc
-      _ ≤ (10 : ℝ) ^ (30 : ℕ) := by norm_num [c_fpLocation_eq]
-      _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
-  unfold C_fpHeight
-  have hp0 : 0 ≤ C_fpLocation * K_rowG c_fpLocation :=
-    mul_nonneg C_fpLocation_pos.le (K_rowG_pos c_fpLocation_pos).le
-  have hr0 : 0 ≤ Real.exp (-(c_fpLocation / 2)) /
-      (1 - Real.exp (-(c_fpLocation / 2))) := by
-    have hc : 0 < c_fpLocation / 2 := div_pos c_fpLocation_pos two_pos
-    have hd : 0 < 1 - Real.exp (-(c_fpLocation / 2)) := by
-      rw [sub_pos, Real.exp_lt_one_iff]
-      linarith
-    exact (div_pos (Real.exp_pos _) hd).le
-  exact tenTower_mul_le_succ 9 hp0 hr0 hp
-    (hratio.trans (tenTower_mono (by omega)))
-
-theorem C_fpColDev_le_tenTower_ten : C_fpColDev ≤ tenTower 10 := by
-  have hp : C_fpLocation * K_rowG (c_fpLocation / 2) ≤ tenTower 9 :=
-    tenTower_mul_le_succ 8 C_fpLocation_pos.le
-      (K_rowG_pos (div_pos c_fpLocation_pos two_pos)).le
-      C_fpLocation_le_tenTower_eight
-      (K_rowG_half_fpLocation_le_tenTower_two.trans (tenTower_mono (by omega)))
-  have hratio : Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation))
-      ≤ tenTower 2 := by
-    calc
-      Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation))
-          ≤ 1 / c_fpLocation := exp_neg_div_one_sub_exp_neg_le_inv c_fpLocation_pos
-      _ ≤ (10 : ℝ) ^ (30 : ℕ) := by norm_num [c_fpLocation_eq]
-      _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
-  unfold C_fpColDev
-  have hp0 : 0 ≤ C_fpLocation * K_rowG (c_fpLocation / 2) :=
-    mul_nonneg C_fpLocation_pos.le (K_rowG_pos (div_pos c_fpLocation_pos two_pos)).le
-  have hr0 : 0 ≤ Real.exp (-c_fpLocation) / (1 - Real.exp (-c_fpLocation)) := by
-    have hd : 0 < 1 - Real.exp (-c_fpLocation) := by
-      rw [sub_pos, Real.exp_lt_one_iff]
-      linarith [c_fpLocation_pos]
-    exact (div_pos (Real.exp_pos _) hd).le
-  exact tenTower_mul_le_succ 9 hp0 hr0 hp
-    (hratio.trans (tenTower_mono (by omega)))
-
-theorem C_fpHeightTail_le_tenTower_eleven : C_fpHeightTail ≤ tenTower 11 := by
-  unfold C_fpHeightTail
-  exact tenTower_add_le_succ 10 C_fpHeight_pos.le (by norm_num)
-    C_fpHeight_le_tenTower_ten (tenTower_one_le 10)
-
-theorem C_fpColTail_le_tenTower_eleven : C_fpColTail ≤ tenTower 11 := by
-  unfold C_fpColTail
-  exact tenTower_add_le_succ 10 C_fpColDev_pos.le (by norm_num)
-    C_fpColDev_le_tenTower_ten (tenTower_one_le 10)
-
-private theorem K_intG_fpLocation_le_tenTower_three :
-    K_intG c_fpLocation ≤ tenTower 3 := by
-  unfold K_intG
-  have h2 : (2 : ℝ) ≤ tenTower 2 :=
-    (show (2 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 2)
-  exact tenTower_mul_le_succ 2 (by norm_num) (K_rowG_pos c_fpLocation_pos).le
-    h2 K_rowG_fpLocation_le_tenTower_two
-
-theorem C_encSep_le_tenTower_twelve : C_encSep ≤ tenTower 12 := by
-  have h12 : (12 : ℝ) ≤ tenTower 9 :=
-    (show (12 : ℝ) ≤ (10 : ℝ) ^ (30 : ℕ) by norm_num).trans
-      (ten_pow_thirty_le_tenTower_two.trans (tenTower_mono (by omega)))
-  have ht1 : 12 * C_fpCol ≤ tenTower 10 :=
-    tenTower_mul_le_succ 9 (by norm_num) C_fpCol_pos.le h12 C_fpCol_le_tenTower_nine
-  have h120 : (120 : ℝ) ≤ tenTower 9 :=
-    (show (120 : ℝ) ≤ (10 : ℝ) ^ (30 : ℕ) by norm_num).trans
-      (ten_pow_thirty_le_tenTower_two.trans (tenTower_mono (by omega)))
-  have hp : 120 * C_fpCol ≤ tenTower 10 :=
-    tenTower_mul_le_succ 9 (by norm_num) C_fpCol_pos.le h120 C_fpCol_le_tenTower_nine
-  have hp0 : 0 ≤ 120 * C_fpCol := mul_nonneg (by norm_num) C_fpCol_pos.le
-  have ht2 : 120 * C_fpCol * K_intG c_fpLocation ≤ tenTower 11 :=
-    tenTower_mul_le_succ 10 hp0 (K_intG_pos c_fpLocation_pos).le hp
-      (K_intG_fpLocation_le_tenTower_three.trans (tenTower_mono (by omega)))
-  have ht1zero : 0 ≤ 12 * C_fpCol := mul_nonneg (by norm_num) C_fpCol_pos.le
-  have ht2zero : 0 ≤ 120 * C_fpCol * K_intG c_fpLocation :=
-    mul_nonneg hp0 (K_intG_pos c_fpLocation_pos).le
-  unfold C_encSep
-  exact tenTower_add_le_succ 11 ht1zero ht2zero
-    (ht1.trans (tenTower_mono (by omega))) ht2
-
-private theorem M_encTri_cast_le_tenTower_two : (M_encTri : ℝ) ≤ tenTower 2 := by
+  unfold K_rowG
   calc
-    (M_encTri : ℝ) ≤ (10 : ℝ) ^ (30 : ℕ) := by
-      norm_num [M_encTri, S_apexProx, max_def]
-    _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
+    10 + 2 / (1 - Real.exp (-(c_fpLocation / 2))) + 4 / (c_fpLocation / 2)
+        ≤ 10 + 2 * (1 + 1 / (c_fpLocation / 2)) + 4 / (c_fpLocation / 2) := by
+          rw [div_eq_mul_inv]
+          gcongr
+          simpa [one_div] using hgeom
+    _ ≤ (10 : ℝ) ^ (6 : ℕ) := by norm_num [c_fpLocation_eq]
 
-theorem C_encTri_le_tenTower_fourteen : C_encTri ≤ tenTower 14 := by
-  have harg : c_fpHeightTail * (M_encTri : ℝ) ≤ tenTower 2 := by
-    rw [c_fpHeightTail_eq]
-    have hM0 : 0 ≤ (M_encTri : ℝ) := by positivity
+private theorem K_intG_fpLocation_le_ten_pow :
+    K_intG c_fpLocation ≤ (10 : ℝ) ^ (6 : ℕ) := by
+  unfold K_intG
+  exact (mul_le_ten_pow (K_rowG_pos c_fpLocation_pos).le
+    (by norm_num : (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ)) K_rowG_fpLocation_le_ten_pow).trans
+    (ten_pow_mono (by norm_num))
+
+theorem C_fpCol_le_ten_pow : C_fpCol ≤ (10 : ℝ) ^ (79 : ℕ) := by
+  unfold C_fpCol
+  exact (mul_le_ten_pow ratio_fpLocation_nonneg C_fpLocation_le_ten_pow
+    ratio_fpLocation_le_ten_pow).trans (ten_pow_mono (by norm_num))
+
+theorem C_fpCol_le_tenTower_two : C_fpCol ≤ tenTower 2 :=
+  C_fpCol_le_ten_pow.trans (ten_pow_le_tenTower_two (by norm_num))
+
+theorem C_fpCol_le_tenTower_nine : C_fpCol ≤ tenTower 9 :=
+  C_fpCol_le_tenTower_two.trans (tenTower_mono (by omega))
+
+theorem C_fpHeight_le_ten_pow : C_fpHeight ≤ (10 : ℝ) ^ (84 : ℕ) := by
+  unfold C_fpHeight
+  exact (mul_le_ten_pow ratio_half_fpLocation_nonneg
+    (mul_le_ten_pow (K_rowG_pos c_fpLocation_pos).le C_fpLocation_le_ten_pow
+      K_rowG_fpLocation_le_ten_pow)
+    ratio_half_fpLocation_le_ten_pow).trans (ten_pow_mono (by norm_num))
+
+theorem C_fpHeight_le_tenTower_ten : C_fpHeight ≤ tenTower 10 :=
+  (C_fpHeight_le_ten_pow.trans (ten_pow_le_tenTower_two (by norm_num))).trans
+    (tenTower_mono (by omega))
+
+theorem C_fpColDev_le_ten_pow : C_fpColDev ≤ (10 : ℝ) ^ (85 : ℕ) := by
+  unfold C_fpColDev
+  exact (mul_le_ten_pow ratio_fpLocation_nonneg
+    (mul_le_ten_pow (K_rowG_pos (div_pos c_fpLocation_pos two_pos)).le
+      C_fpLocation_le_ten_pow K_rowG_half_fpLocation_le_ten_pow)
+    ratio_fpLocation_le_ten_pow).trans (ten_pow_mono (by norm_num))
+
+theorem C_fpColDev_le_tenTower_ten : C_fpColDev ≤ tenTower 10 :=
+  (C_fpColDev_le_ten_pow.trans (ten_pow_le_tenTower_two (by norm_num))).trans
+    (tenTower_mono (by omega))
+
+theorem C_fpHeightTail_le_ten_pow : C_fpHeightTail ≤ (10 : ℝ) ^ (85 : ℕ) := by
+  unfold C_fpHeightTail
+  exact add_le_ten_pow (C_fpHeight_le_ten_pow.trans (ten_pow_mono (by norm_num)))
+    (by norm_num)
+
+theorem C_fpHeightTail_le_tenTower_eleven : C_fpHeightTail ≤ tenTower 11 :=
+  (C_fpHeightTail_le_ten_pow.trans (ten_pow_le_tenTower_two (by norm_num))).trans
+    (tenTower_mono (by omega))
+
+theorem C_fpColTail_le_ten_pow : C_fpColTail ≤ (10 : ℝ) ^ (86 : ℕ) := by
+  unfold C_fpColTail
+  exact add_le_ten_pow (C_fpColDev_le_ten_pow.trans (ten_pow_mono (by norm_num)))
+    (by norm_num)
+
+theorem C_fpColTail_le_tenTower_eleven : C_fpColTail ≤ tenTower 11 :=
+  (C_fpColTail_le_ten_pow.trans (ten_pow_le_tenTower_two (by norm_num))).trans
+    (tenTower_mono (by omega))
+
+theorem C_encSep_le_ten_pow : C_encSep ≤ (10 : ℝ) ^ (89 : ℕ) := by
+  have ht1 : 12 * C_fpCol ≤ (10 : ℝ) ^ (88 : ℕ) :=
+    (mul_le_ten_pow C_fpCol_pos.le
+      (by norm_num : (12 : ℝ) ≤ (10 : ℝ) ^ (2 : ℕ)) C_fpCol_le_ten_pow).trans
+      (ten_pow_mono (by norm_num))
+  have ht2 : 120 * C_fpCol * K_intG c_fpLocation ≤ (10 : ℝ) ^ (88 : ℕ) :=
+    (mul_le_ten_pow (K_intG_pos c_fpLocation_pos).le
+      (mul_le_ten_pow C_fpCol_pos.le
+        (by norm_num : (120 : ℝ) ≤ (10 : ℝ) ^ (3 : ℕ)) C_fpCol_le_ten_pow)
+      K_intG_fpLocation_le_ten_pow).trans (ten_pow_mono (by norm_num))
+  unfold C_encSep
+  exact add_le_ten_pow ht1 ht2
+
+theorem C_encSep_le_tenTower_two : C_encSep ≤ tenTower 2 :=
+  C_encSep_le_ten_pow.trans (ten_pow_le_tenTower_two (by norm_num))
+
+theorem C_encSep_le_tenTower_twelve : C_encSep ≤ tenTower 12 :=
+  C_encSep_le_tenTower_two.trans (tenTower_mono (by omega))
+
+private theorem M_encTri_cast_le_ten_pow : (M_encTri : ℝ) ≤ (10 : ℝ) ^ (27 : ℕ) := by
+  norm_num [M_encTri, S_apexProx, max_def]
+
+/-- `C_encTri` is the first genuinely tower-tall constant of the cluster: its
+`exp(c_fpHeightTail · M_encTri) ≈ exp(2×10²²)` term is honestly doubly exponential, so
+the budget exponent is `10²⁷ + 4` and the height is 3, not 2. -/
+theorem C_encTri_le_ten_pow : C_encTri ≤ (10 : ℝ) ^ (10 ^ 27 + 4 : ℕ) := by
+  have hM0 : (0 : ℝ) ≤ (M_encTri : ℝ) := by positivity
+  have harg : c_fpHeightTail * (M_encTri : ℝ) ≤ ((10 ^ 27 : ℕ) : ℝ) := by
+    have h1 : c_fpHeightTail * (M_encTri : ℝ) ≤ 1 * (M_encTri : ℝ) := by
+      rw [c_fpHeightTail_eq]
+      exact mul_le_mul_of_nonneg_right (by norm_num) hM0
     calc
-      (1 / 51200 : ℝ) * (M_encTri : ℝ) ≤ 1 * (M_encTri : ℝ) :=
-        mul_le_mul_of_nonneg_right (by norm_num) hM0
-      _ = (M_encTri : ℝ) := one_mul _
-      _ ≤ tenTower 2 := M_encTri_cast_le_tenTower_two
-  have hexp : Real.exp (c_fpHeightTail * (M_encTri : ℝ)) ≤ tenTower 3 :=
-    exp_le_tenTower_succ 2 harg
-  have ht1 : 100 * C_apexProx ≤ tenTower 3 := by
-    calc
-      100 * C_apexProx ≤ (10 : ℝ) ^ (30 : ℕ) := by norm_num [C_apexProx]
-      _ ≤ tenTower 3 := ten_pow_thirty_le_tenTower_two.trans (tenTower_mono (by omega))
-  have hcoef : 432 / c_fpColTail ^ (3 : ℕ) ≤ tenTower 2 := by
-    calc
-      432 / c_fpColTail ^ (3 : ℕ) ≤ (10 : ℝ) ^ (30 : ℕ) := by
-        norm_num [c_fpColTail_eq]
-      _ ≤ tenTower 2 := ten_pow_thirty_le_tenTower_two
-  have ht4 : 432 * C_fpColTail / c_fpColTail ^ (3 : ℕ) ≤ tenTower 12 := by
-    have heq : 432 * C_fpColTail / c_fpColTail ^ (3 : ℕ)
-        = (432 / c_fpColTail ^ (3 : ℕ)) * C_fpColTail := by ring
-    rw [heq]
-    have hcoef0 : 0 ≤ 432 / c_fpColTail ^ (3 : ℕ) := by
-      exact div_nonneg (by norm_num) (pow_nonneg c_fpColTail_pos.le 3)
-    exact tenTower_mul_le_succ 11 hcoef0 C_fpColTail_pos.le
-      (hcoef.trans (tenTower_mono (by omega))) C_fpColTail_le_tenTower_eleven
-  have ht5 : C_encSep * C_apexProx ≤ tenTower 13 := by
-    have h2 : C_apexProx ≤ tenTower 12 := by
-      exact (show C_apexProx ≤ (10 : ℝ) ^ (30 : ℕ) by norm_num [C_apexProx]).trans
-        (ten_pow_thirty_le_tenTower_two.trans (tenTower_mono (by omega)))
-    exact tenTower_mul_le_succ 12 C_encSep_pos.le (by norm_num [C_apexProx])
-      C_encSep_le_tenTower_twelve h2
-  have hs12 : 100 * C_apexProx + Real.exp (c_fpHeightTail * (M_encTri : ℝ))
-      + C_fpHeightTail ≤ tenTower 12 := by
-    have ht1zero : 0 ≤ 100 * C_apexProx := by norm_num [C_apexProx]
-    have hs4zero : 0 ≤ 100 * C_apexProx +
-        Real.exp (c_fpHeightTail * (M_encTri : ℝ)) :=
-      add_nonneg ht1zero (Real.exp_pos _).le
-    have hs4 : 100 * C_apexProx + Real.exp (c_fpHeightTail * (M_encTri : ℝ))
-        ≤ tenTower 4 := tenTower_add_le_succ 3 ht1zero (Real.exp_pos _).le ht1 hexp
-    exact tenTower_add_le_succ 11 hs4zero C_fpHeightTail_pos.le
-      (hs4.trans (tenTower_mono (by omega))) C_fpHeightTail_le_tenTower_eleven
-  have hs12zero : 0 ≤ 100 * C_apexProx + Real.exp (c_fpHeightTail * (M_encTri : ℝ))
-      + C_fpHeightTail := by
-    exact add_nonneg (add_nonneg (by norm_num [C_apexProx]) (Real.exp_pos _).le)
-      C_fpHeightTail_pos.le
-  have ht4zero : 0 ≤ 432 * C_fpColTail / c_fpColTail ^ (3 : ℕ) := by
-    exact div_nonneg (mul_nonneg (by norm_num) C_fpColTail_pos.le)
-      (pow_nonneg c_fpColTail_pos.le 3)
-  have hs13 : 100 * C_apexProx + Real.exp (c_fpHeightTail * (M_encTri : ℝ))
-      + C_fpHeightTail + 432 * C_fpColTail / c_fpColTail ^ (3 : ℕ) ≤ tenTower 13 :=
-    tenTower_add_le_succ 12 hs12zero ht4zero hs12 ht4
-  have hs13zero : 0 ≤ 100 * C_apexProx + Real.exp (c_fpHeightTail * (M_encTri : ℝ))
-      + C_fpHeightTail + 432 * C_fpColTail / c_fpColTail ^ (3 : ℕ) :=
-    add_nonneg hs12zero ht4zero
-  have ht5zero : 0 ≤ C_encSep * C_apexProx :=
-    mul_nonneg C_encSep_pos.le (by norm_num [C_apexProx])
+      c_fpHeightTail * (M_encTri : ℝ) ≤ (M_encTri : ℝ) := by linarith
+      _ ≤ (10 : ℝ) ^ (27 : ℕ) := M_encTri_cast_le_ten_pow
+      _ ≤ ((10 ^ 27 : ℕ) : ℝ) := by push_cast; norm_num
+  have hexp : Real.exp (c_fpHeightTail * (M_encTri : ℝ))
+      ≤ (10 : ℝ) ^ (10 ^ 27 : ℕ) := exp_le_ten_pow harg
+  have ht1 : 100 * C_apexProx ≤ (10 : ℝ) ^ (10 ^ 27 : ℕ) :=
+    le_trans (by norm_num [C_apexProx] :
+        100 * C_apexProx ≤ (10 : ℝ) ^ (3 : ℕ)) (ten_pow_mono (by norm_num))
+  have ht10 : (0 : ℝ) ≤ 100 * C_apexProx := by norm_num [C_apexProx]
+  have ht3 : C_fpHeightTail ≤ (10 : ℝ) ^ (10 ^ 27 : ℕ) :=
+    C_fpHeightTail_le_ten_pow.trans (ten_pow_mono (by norm_num))
+  have ht4 : 432 * C_fpColTail / c_fpColTail ^ 3 ≤ (10 : ℝ) ^ (10 ^ 27 : ℕ) := by
+    rw [show 432 * C_fpColTail / c_fpColTail ^ 3
+      = (432 / c_fpColTail ^ 3) * C_fpColTail by ring]
+    exact le_trans (mul_le_ten_pow C_fpColTail_pos.le
+      (show 432 / c_fpColTail ^ 3 ≤ (10 : ℝ) ^ (29 : ℕ) by norm_num [c_fpColTail_eq])
+      C_fpColTail_le_ten_pow) (ten_pow_mono (by norm_num))
+  have ht5 : C_encSep * C_apexProx ≤ (10 : ℝ) ^ (10 ^ 27 : ℕ) :=
+    le_trans (mul_le_ten_pow (by norm_num [C_apexProx]) C_encSep_le_ten_pow
+      (show C_apexProx ≤ (10 : ℝ) ^ (1 : ℕ) by norm_num [C_apexProx]))
+      (ten_pow_mono (by norm_num))
+  have hpow : (10 : ℝ) ^ (10 ^ 27 + 4 : ℕ)
+      = (10 : ℝ) ^ (4 : ℕ) * (10 : ℝ) ^ (10 ^ 27 : ℕ) := by
+    rw [← pow_add]
+    exact congrArg _ (Nat.add_comm _ 4)
+  -- Opaque-variable the astronomically-exponented power BEFORE any arithmetic tactic
+  -- runs: linarith/norm_num otherwise try to evaluate `10 ^ 10²⁷` as a numeral and
+  -- panic the kernel (`Nat.pow exponent is too big`).
+  generalize hB : (10 : ℝ) ^ (10 ^ 27 : ℕ) = B at hexp ht1 ht3 ht4 ht5 hpow
   unfold C_encTri
-  exact tenTower_add_le_succ 13 hs13zero ht5zero hs13 ht5
+  rw [hpow]
+  have hB0 : (0 : ℝ) ≤ B := le_trans ht10 ht1
+  linarith
 
-theorem C_estarUnion_le_tenTower_fifteen : C_estarUnion ≤ tenTower 15 := by
+theorem C_encTri_le_tenTower_three : C_encTri ≤ tenTower 3 :=
+  C_encTri_le_ten_pow.trans (ten_pow_le_tenTower_three (by norm_num))
+
+theorem C_encTri_le_tenTower_fourteen : C_encTri ≤ tenTower 14 :=
+  C_encTri_le_tenTower_three.trans (tenTower_mono (by omega))
+
+theorem C_estarUnion_le_ten_pow : C_estarUnion ≤ (10 : ℝ) ^ (10 ^ 27 + 5 : ℕ) := by
   unfold C_estarUnion
-  have h4 : (4 : ℝ) ≤ tenTower 14 :=
-    (show (4 : ℝ) ≤ 10 by norm_num).trans (ten_le_tenTower 14)
-  exact tenTower_mul_le_succ 14 (by norm_num) C_encTri_pos.le h4
-    C_encTri_le_tenTower_fourteen
+  exact (mul_le_ten_pow C_encTri_pos.le
+    (show (4 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ) by norm_num) C_encTri_le_ten_pow).trans
+    (ten_pow_mono (by norm_num))
+
+theorem C_estarUnion_le_tenTower_three : C_estarUnion ≤ tenTower 3 :=
+  C_estarUnion_le_ten_pow.trans (ten_pow_le_tenTower_three (by norm_num))
+
+theorem C_estarUnion_le_tenTower_fifteen : C_estarUnion ≤ tenTower 15 :=
+  C_estarUnion_le_tenTower_three.trans (tenTower_mono (by omega))
 
 private theorem sqrt_le_add_one {x : ℝ} (hx : 0 ≤ x) : Real.sqrt x ≤ x + 1 := by
   have hs0 := Real.sqrt_nonneg x
