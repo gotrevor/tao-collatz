@@ -3544,6 +3544,180 @@ private theorem C_renewalWhite_main_le_tenTower_forty_two :
     (mainDecayExponent_pos 3.7 (by norm_num)) mainDecayExponent_37_le_tenTower_two
     C_hold_main_cast_le_tenTower_eighteen C_polyDecay_main_le_tenTower_forty
 
+/-! ### The §7 chain assembled at level-3: `Cthr_dampingCol → … → C_renewalWhite`,
+σ = 3050 → 3052.  Every arm below is one of the honest forms proved above; the
+`max` passthroughs cost nothing and the two rpow arms (`^A`) cost `+8` and `+1`
+decimal digits on the middle exponent respectively. -/
+
+private theorem Cthr_dampingCol_main_le_ten3 :
+    ((Cthr_dampingCol (mainDecayExponent 3.7) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) := by
+  unfold Cthr_dampingCol
+  push_cast
+  exact max_le (max_le Cthr_fewWhite_main_le_ten3
+    (T_colTail_main_le_ten3.trans (ten3_mono (by norm_num))))
+    ((show (10 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ) by norm_num).trans
+      (ten_pow_le_ten3 (by norm_num) (by norm_num)))
+
+private theorem Cthr_blackEdge_main_le_ten3 :
+    ((Cthr_blackEdge (mainDecayExponent 3.7) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) := by
+  unfold Cthr_blackEdge
+  push_cast
+  exact max_le
+    (Cthr_case2_main_cast_le_ten_rpow.trans
+      (ten_rpow_mono (ten_pow_le_ten_rpow_level2 (by norm_num) (by norm_num))))
+    Cthr_dampingCol_main_le_ten3
+
+private theorem Cthr_prop78_main_le_ten3 :
+    ((Cthr_prop78 (mainDecayExponent 3.7) : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) := by
+  have h1 : (1 : ℝ) ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) := by
+    calc
+      (1 : ℝ) = (10 : ℝ) ^ (0 : ℝ) := (Real.rpow_zero 10).symm
+      _ ≤ _ := ten_rpow_mono (by positivity)
+  unfold Cthr_prop78
+  push_cast
+  exact max_le (max_le
+    (C_hold_main_cast_le_ten_pow.trans (ten_pow_le_ten3 (by norm_num) (by norm_num)))
+    Cthr_blackEdge_main_le_ten3) h1
+
+/-- `C_polyDecay = (max Cthr_prop78 1)^A` in canonical level-3 form: the `^A`
+multiplies the level-2 exponent by `A ≤ 10^8`, i.e. `+8` decimal digits at the
+top: σ 3050 → 3051. -/
+private theorem C_polyDecay_main_le_ten3 :
+    C_polyDecay (mainDecayExponent 3.7)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ))) := by
+  let A : ℝ := mainDecayExponent 3.7
+  have hA0 : 0 < A := by dsimp [A]; exact mainDecayExponent_pos 3.7 (by norm_num)
+  have hA : A ≤ (10 : ℝ) ^ (8 : ℕ) := mainDecayExponent_37_le_ten_pow
+  have h1 : (1 : ℝ) ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) := by
+    calc
+      (1 : ℝ) = (10 : ℝ) ^ (0 : ℝ) := (Real.rpow_zero 10).symm
+      _ ≤ _ := ten_rpow_mono (by positivity)
+  have hbase : ((max (Cthr_prop78 A) 1 : ℕ) : ℝ)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ))) := by
+    push_cast
+    exact max_le Cthr_prop78_main_le_ten3 h1
+  have hb0 : (0 : ℝ) ≤ ((max (Cthr_prop78 A) 1 : ℕ) : ℝ) := by positivity
+  unfold C_polyDecay
+  refine (rpow_le_ten_rpow hb0 hA0.le hbase).trans (ten_rpow_mono ?_)
+  have hL2pos : (0 : ℝ) ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ)) :=
+    (Real.rpow_pos_of_pos (by norm_num) _).le
+  calc
+    (10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ)) * A
+        ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ)) * (10 : ℝ) ^ ((8 : ℕ) : ℝ) := by
+          rw [← ten_pow_eq_ten_rpow]
+          exact mul_le_mul_of_nonneg_left hA hL2pos
+    _ = (10 : ℝ) ^ ((10 : ℝ) ^ (3050 : ℕ) + ((8 : ℕ) : ℝ)) :=
+        (Real.rpow_add (by norm_num) _ _).symm
+    _ ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ)) := by
+        refine ten_rpow_mono ?_
+        have h8 : ((8 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (3050 : ℕ) := by
+          calc
+            ((8 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ) := by norm_num
+            _ ≤ (10 : ℝ) ^ (3050 : ℕ) := ten_pow_mono (by norm_num)
+        exact (add_le_ten_pow (le_refl _) h8).trans (ten_pow_mono (by norm_num))
+
+/-- **`C_renewalWhite` in canonical level-3 form**: `≤ 10^(10^(10^3052))` — the
+honest height of the entire §7 renewal chain (`log₁₀³ ≈ 3052`; DIRECTION's
+base-free record `log log log C ≲ 3050`-ish lives here). -/
+private theorem C_renewalWhite_main_le_ten3 :
+    C_renewalWhite (mainDecayExponent 3.7)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3052 : ℕ))) := by
+  let A : ℝ := mainDecayExponent 3.7
+  have hA0 : 0 < A := by dsimp [A]; exact mainDecayExponent_pos 3.7 (by norm_num)
+  have hA : A ≤ (10 : ℝ) ^ (8 : ℕ) := mainDecayExponent_37_le_ten_pow
+  -- arm 1: (2·C_hold + 2)^A ≤ 10^(6022·10^8) ≤ 10^(10^12), far below level 3
+  have hCh : ((2 * C_hold A + 2 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (6022 : ℕ) := by
+    push_cast
+    have h2C : (2 : ℝ) * ((C_hold A : ℕ) : ℝ) ≤ (10 : ℝ) ^ (6021 : ℕ) :=
+      (mul_le_ten_pow (by positivity)
+        (by norm_num : (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ))
+        C_hold_main_cast_le_ten_pow).trans (ten_pow_mono (by norm_num))
+    exact (add_le_ten_pow h2C
+      ((show (2 : ℝ) ≤ (10 : ℝ) ^ (1 : ℕ) by norm_num).trans
+        (ten_pow_mono (by norm_num)))).trans (ten_pow_mono (by norm_num))
+  have hCh0 : (0 : ℝ) ≤ ((2 * C_hold A + 2 : ℕ) : ℝ) := by positivity
+  have harm1 : ((2 * C_hold A + 2 : ℕ) : ℝ) ^ A
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3052 : ℕ))) := by
+    have hb : ((2 * C_hold A + 2 : ℕ) : ℝ) ≤ (10 : ℝ) ^ (((6022 : ℕ)) : ℝ) := by
+      rw [← ten_pow_eq_ten_rpow]
+      exact hCh
+    refine (rpow_le_ten_rpow hCh0 hA0.le hb).trans (ten_rpow_mono ?_)
+    have h1 : ((6022 : ℕ) : ℝ) * A ≤ ((6022 : ℕ) : ℝ) * (10 : ℝ) ^ (8 : ℕ) :=
+      mul_le_mul_of_nonneg_left hA (by positivity)
+    have h2 : ((6022 : ℕ) : ℝ) * (10 : ℝ) ^ (8 : ℕ) ≤ (10 : ℝ) ^ (12 : ℕ) := by
+      norm_num
+    refine (h1.trans h2).trans ?_
+    exact ten_pow_le_ten_rpow_level2 (by norm_num) (by norm_num)
+  -- arm 2: C_polyDecay · e^{ε³/2} · 3^A — exponents add: L2(3051) + 1 + 10^8
+  have heps0 : 0 ≤ (epsBW : ℝ) := by norm_num [epsBW]
+  have heps1 : (epsBW : ℝ) ≤ 1 := by
+    have hepsEq : (epsBW : ℝ) = ((10 : ℝ) ^ (1000 : ℕ))⁻¹ := by
+      norm_num [epsBW]
+    rw [hepsEq]
+    exact (inv_le_one₀ (by positivity)).2 (one_le_pow₀ (by norm_num))
+  have hcube : (epsBW : ℝ) ^ (3 : ℕ) ≤ 1 := pow_le_one₀ heps0 heps1
+  have hehalf : (epsBW : ℝ) ^ (3 : ℕ) / 2 ≤ 1 := by nlinarith
+  have hexp : Real.exp ((epsBW : ℝ) ^ (3 : ℕ) / 2) ≤ (10 : ℝ) ^ ((1 : ℕ) : ℝ) := by
+    have h10 : Real.exp ((epsBW : ℝ) ^ (3 : ℕ) / 2) ≤ (10 : ℝ) := by
+      calc
+        Real.exp ((epsBW : ℝ) ^ (3 : ℕ) / 2) ≤ Real.exp 1 :=
+          Real.exp_le_exp.mpr hehalf
+        _ ≤ 10 := Real.exp_one_lt_three.le.trans (by norm_num)
+    calc
+      Real.exp ((epsBW : ℝ) ^ (3 : ℕ) / 2) ≤ (10 : ℝ) := h10
+      _ = (10 : ℝ) ^ ((1 : ℕ) : ℝ) := by
+          rw [← ten_pow_eq_ten_rpow]
+          norm_num
+  have h3A : (3 : ℝ) ^ A ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (8 : ℕ)) := by
+    calc
+      (3 : ℝ) ^ A ≤ (10 : ℝ) ^ A :=
+        Real.rpow_le_rpow (by norm_num) (by norm_num) hA0.le
+      _ ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (8 : ℕ)) := ten_rpow_mono hA
+  have hpe : C_polyDecay A * Real.exp ((epsBW : ℝ) ^ (3 : ℕ) / 2)
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ)) + ((1 : ℕ) : ℝ)) :=
+    mul_le_ten_rpow (Real.exp_pos _).le C_polyDecay_main_le_ten3 hexp
+  have harm2raw : C_polyDecay A * Real.exp ((epsBW : ℝ) ^ (3 : ℕ) / 2) * (3 : ℝ) ^ A
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ)) + ((1 : ℕ) : ℝ)
+          + (10 : ℝ) ^ (8 : ℕ)) :=
+    mul_le_ten_rpow (Real.rpow_nonneg (by norm_num) _) hpe h3A
+  have harm2 : C_polyDecay A * Real.exp ((epsBW : ℝ) ^ (3 : ℕ) / 2) * (3 : ℝ) ^ A
+      ≤ (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3052 : ℕ))) := by
+    refine harm2raw.trans (ten_rpow_mono ?_)
+    have h9 : ((1 : ℕ) : ℝ) + (10 : ℝ) ^ (8 : ℕ) ≤ (10 : ℝ) ^ (9 : ℕ) := by
+      norm_num
+    have h9X : (10 : ℝ) ^ (9 : ℕ)
+        ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ)) :=
+      ten_pow_le_ten_rpow_level2 (by norm_num) (by norm_num)
+    have hdouble : (2 : ℝ) * (10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ))
+        ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3052 : ℕ)) := by
+      have h2ten : (2 : ℝ) * (10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ))
+          ≤ (10 : ℝ) * (10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ)) := by
+        have hp : (0 : ℝ) ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ)) :=
+          (Real.rpow_pos_of_pos (by norm_num) _).le
+        nlinarith
+      refine h2ten.trans ?_
+      calc
+        (10 : ℝ) * (10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ))
+            = (10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ) + 1) := by
+              rw [Real.rpow_add_one (by norm_num : (10 : ℝ) ≠ 0)]
+              ring
+        _ ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3052 : ℕ)) := by
+            refine ten_rpow_mono ?_
+            exact (add_le_ten_pow (le_refl _) (one_le_pow₀ (by norm_num))).trans
+              (ten_pow_mono (by norm_num))
+    have hX0 : (0 : ℝ) ≤ (10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ)) :=
+      (Real.rpow_pos_of_pos (by norm_num) _).le
+    generalize hX : (10 : ℝ) ^ ((10 : ℝ) ^ (3051 : ℕ)) = X at h9X hdouble hX0 ⊢
+    generalize hY : (10 : ℝ) ^ ((10 : ℝ) ^ (3052 : ℕ)) = Y at hdouble ⊢
+    have h89 : ((1 : ℕ) : ℝ) + (10 : ℝ) ^ (8 : ℕ) ≤ X :=
+      h9.trans h9X
+    linarith only [h89, hdouble, hX0]
+  unfold C_renewalWhite
+  exact max_le harm1 harm2
+
 /-! ## §6 propagation -/
 
 private theorem N_rpowAbsorb_cast_le_tenTower_add_two {κ : ℝ} (h : ℕ)

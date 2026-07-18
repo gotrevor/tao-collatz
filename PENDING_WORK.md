@@ -1520,3 +1520,19 @@ prop78 level-3 max passthrough, `C_polyDecay ≤ 10^(10^(10^3051))`, `C_renewalW
 10^(10^(10^3052))` (arm1 `(2·C_hold+2)^A ≤ 10^(6021·10^8)` level-1-large; arm2
 poly·e^{ε³/2}·3^A exponent-adds). Then Sec3 spine, ceiling `C_tao_assembled ≤
 tenTower 4`, bridge to `tenTower 9 = CTao`, `check28`, discharge LAST.
+
+### Lap 10 (2026-07-18) — **C_renewalWhite ≤ 10^(10^(10^3052))** ✅ (§7 chain done)
+
+- `Cthr_dampingCol/blackEdge/prop78 ≤ L3(3050)` (max passthrough; case2's level-2
+  lifts via `ten_rpow_mono ∘ ten_pow_le_ten_rpow_level2`), `C_polyDecay ≤ L3(3051)`
+  (`^A` = ×A on the level-2 exponent = `+8` top digits via `Real.rpow_add`),
+  `C_renewalWhite ≤ L3(3052)` (arm1 `(2C_hold+2)^A ≤ 10^(6022·10^8) ≤ 10^(10^12)`;
+  arm2 exponent `L2(3051)+1+10^8 ≤ 2·L2 ≤ L2(3052)` via generalize+linarith only).
+- The whole §7 renewal chain is now at honest height. First-try green.
+
+**Next (lap 11):** the Sec6/Sec3 spine at honest heights (`C_mainZ…C_windowBad`,
+`X_*` — per lap-5 sizing most X_* are small; only the C-chain rides C_renewalWhite's
+L3(3052)), then the ceiling `C_tao_assembled ≤ tenTower 4` (final lift
+`ten_rpow_rpow_ten_pow_le_tenTower_four`, σ=3052+Δ ≤ 10^10 ✓), bridge
+`tenTower 4 ≤ tenTower 9 = CTao`, `check28` in tools/check_blueprint.py, discharge
+the pin LAST (sorry + warningAsError shield in one commit).
