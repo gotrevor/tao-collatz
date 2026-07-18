@@ -8,7 +8,7 @@ The quantitative headline `tao_collatz_quantitative` (Theorem 3.1, Colmin form) 
 ```
 
 **Short answer:** the headline holds with the explicit exponent
-**`cTao = 1/(640_000_000 · ln 2) ≈ 2.25 × 10⁻⁹`, and that is now kernel-certified** —
+**`cTao = 1/(640000000 · ln 2) ≈ 2.25 × 10⁻⁹`, and that is now kernel-certified** —
 `Statement.lean` defines `cTao` and proves `tao_collatz_quantitative_explicit` (PR
 [#9](https://github.com/gotrevor/tao-collatz/pull/9)).
 **`C` has no certified upper bound yet.** The rate-free step that made one unreadable from
@@ -77,7 +77,7 @@ below anything the kernel certifies.
 
 | | value |
 |---|---|
-| **cTao** | **`1 / (640_000_000 · ln 2)`** ≈ **2.25 × 10⁻⁹** |
+| **cTao** | **`1 / (640000000 · ln 2)`** ≈ **2.25 × 10⁻⁹** |
 
 `Statement.lean` defines the constant and proves the headline at it:
 
@@ -109,7 +109,7 @@ geomHalf tail const  1/400        c_geomTail
   → finalDecay = min(ln2, ·)
   / ln 2                           the finalDecay division
   / 20   (nZero step)              c_valSumTail, via two_rpow_neg_nZero_le_explicit
-= 1/(640_000_000 · ln 2)
+= 1/(640000000 · ln 2)
 ```
 
 ### The `≤`-vs-`=` caveat, retired by the kernel
@@ -424,7 +424,7 @@ is that nobody had redone it. Two concrete things this note pointed at, and wher
 
 1. **Pin the `O(1)`.** Inverting Theorem 3.1 (`δ = C/(log N₀)^c`) gives
    `C_δ = exp(C^{1/c} · δ^{-1/c})`, so the exponent in Remark 1.4's `exp(δ^{-O(1)})` is `1/c`,
-   needing **no `C`** — and `1/cTao = 640_000_000 · ln 2 ≈ 4.4 × 10⁸`.
+   needing **no `C`** — and `1/cTao = 640000000 · ln 2 ≈ 4.4 × 10⁸`.
    ⚠️ The inversion is unverified algebra, not machine-checked. Check before quoting.
 2. **Formalize the bounds**, so they are kernel-certified rather than hand-read — the only
    version of this note worth citing. ✅ Done for `c` (PR #9, `tao_collatz_quantitative_explicit`);
