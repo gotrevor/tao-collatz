@@ -178,4 +178,10 @@ theorem tenTower_sixty_two_eq_hyperoperation :
     tenTower 62 = ((hyperoperation 4 10 63 : ℕ) : ℝ) := by
   simpa using tenTower_eq_hyperoperation 62
 
+/-- The instance the Tier-1 campaign pin uses: `tenTower 9` is `10↑↑10`, a
+right-associated tower of exactly 10 tens. -/
+theorem tenTower_nine_eq_hyperoperation :
+    tenTower 9 = ((hyperoperation 4 10 10 : ℕ) : ℝ) := by
+  simpa using tenTower_eq_hyperoperation 9
+
 end TaoCollatz

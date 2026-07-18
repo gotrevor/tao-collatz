@@ -1,4 +1,4 @@
-# DIRECTION — Tier-1 tower tightening 🗼 (`10↑↑63 → ~10↑↑5`)
+# DIRECTION — Tier-1 tower tightening 🗼 (`10↑↑63 → 10↑↑10` pin; honest ceiling `~10↑↑4`)
 
 *Grind laps READ and OBEY this file; it outranks any handoff.  `blueprint_rules.md` remains
 BINDING.  `TIER1-TOWER-TIGHTENING-PLAN.md` (this branch) is the campaign spec — read it in
@@ -15,78 +15,89 @@ lives in git history (`git log --follow DIRECTION.md`).*
 
 ---
 
-## 🎯 CURRENT DIRECTIVE (operator, 2026-07-18) — burn the ceiling `10↑↑63 → 10↑↑5`; Design B only
+## 🎯 CURRENT DIRECTIVE (operator, 2026-07-18) — discharge the planted `10↑↑10` pin at the honest height; Design B only
 
-**Objective**: re-pin the reported ceiling on the already axiom-clean `C_tao_assembled` at
-its honest tower height, using the plan's **Design B batched level-budget calculus**.  End
-state: `C_tao_assembled ≤ tenTower 4` proved (take `tenTower 3` if it falls out; report
-loudly and settle for `tenTower 5` only after a real fight, blocker written up), `CTao`
-re-pinned to `hyperoperation 4 10 (h+1)` at the proved height `h`,
-`tao_collatz_quantitative_fully_explicit` re-derived at the new pin, and the comparator
-`Challenge.lean` updated in lockstep.
+**The pin is already planted (judge, 2026-07-18).**  `Statement.lean` carries
+`CTao := hyperoperation 4 10 10` (= `10↑↑10`) with `tao_collatz_quantitative_fully_explicit`
+as a shielded `sorry`, and `Comparator/TaoCollatz/Challenge.lean` carries the same value in
+lockstep.  **Comparator CI is RED until the pin is discharged — that is the design; never
+"fix" it and never touch `Comparator/`.**  You write the PROOF, never these statements.
+
+**Objective**: prove `C_tao_assembled ≤ tenTower 9` — and the *honest* target is
+`tenTower 4` (take `3` if it falls out) — via the plan's **Design B batched level-budget
+calculus**, then discharge the pin.  Its `10↑↑63` predecessor proof is on main at
+`4dde699`; the ceiling climb you are tightening is `BigCTower.lean`.
+
+**Work order (the discharge is LAST — this is load-bearing, see Stop discipline):**
+
+1. **Calculus bank** in `Basic/ExplicitConstants.lean`: `prod_le_tenTower_succ`,
+   `sum_le_tenTower_succ`, `rpow_batch`, `max` passthrough (plan §2 Design B).
+2. **POC gate (binding)**: re-prove `C_fpLocation ≤ tenTower 2` (or `3`)
+   (`BigCTower.lean:244`, currently climbs to `tenTower 8`).  Green POC unlocks step 3.
+   If it fights: `JUDGE-FLAG:` + `box stuck` — never grind downstream on a failed gate.
+3. **Convert bottom-up**, cluster by cluster, one commit per node/cluster, in the plan §3
+   order (Sec5 leaves → cubic-recurrence node `+6 → +2` → Sec6/Sec3 climb → the ceiling
+   theorem restated at the proved height).
+4. **`check28`** in `tools/check_blueprint.py`: log/log-log mirror of the full
+   `C_tao_assembled` max-tree, prints the height, asserts it, mutation-trapped (extend
+   check19; resolve which arm of each `max` wins in log-space — never assume).
+5. **Discharge the pin**: remove the `sorry` AND its `warningAsError` shield together in
+   the final commit.  The host's `--done-when sorry-free:TaoCollatz` gate then ends the
+   run.  Discharging early at a slop height (e.g. a quick `≤ tenTower 8` proof) is a
+   DIRECTIVE violation: it halts the run with the honest height unreached.
 
 **Operator rulings, recorded — do not relitigate in-lap:**
 
 - **Design B only this run.**  Design A (`tenTowerR` real-topped carrier, the tight
-  `10^(10^(10^3010))` headline) is a banked follow-on, not this campaign.  Speed-to-merge
-  is the point.
-- **Base stays 10.**  Plan §1's bonus-finding analysis is ratified: the tower HEIGHT is the
-  base-free content; a smaller base (2, e, ln 4) spends *more* levels to express the same
-  value, which polishes slop instead of removing it; and the top exponent's `3 × 1000`
-  provenance (`epsBW⁻³` with `epsBW = 10⁻¹⁰⁰⁰`) is decimal-shaped, so base 10 keeps it
-  legible.  On completion, record the base-free form **`log log log C ≲ 3010`** + the
-  `epsBW⁻³` provenance in the `CTao`/ceiling docstrings (plan §6).
-
-**Phase gate (binding, plan §2)**: build the batched lemma bank in
-`Basic/ExplicitConstants.lean` (`prod_le_tenTower_succ`, `sum_le_tenTower_succ`,
-`rpow_batch`, `max` passthrough), then the **POC** — re-prove `C_fpLocation ≤ tenTower 2`
-(or `3`) (`BigCTower.lean:244`, currently climbs to `tenTower 8`).  A green POC unlocks
-Phase 2.  If the POC fights, `JUDGE-FLAG:` with the specific obstruction + `box stuck` —
-never grind downstream clusters on a failed gate.
-
-**Phase 2 (plan §3)**: convert bottom-up, cluster by cluster, one commit per node or small
-cluster, in the plan's order: Sec5 leaves + first-passage cluster → the cubic-recurrence
-node (`encWindowIter_le_tenTower_add_six`: retighten `+6 → +2`) → the Sec6/Sec3 climb
-(lines ~740–3256) → `C_tao_assembled_le` restated + the re-pin.  **`check28`** in
-`tools/check_blueprint.py` (log/log-log mirror of the full `C_tao_assembled` max-tree,
-prints the height, asserts it, mutation-trapped; extend check19; resolve which arm of each
-`max` wins in log-space — never assume) lands no later than the ceiling restatement.
+  `10^(10^(10^3010))` headline) is a banked follow-on.
+- **`CTao` does not move again.**  It stays `10↑↑10` (the comparator-pinned public bound);
+  the *ceiling theorem* + `check28` + docstrings record the tighter honest height.  Any
+  later re-pin tighter is a judge call after this campaign, not lap work.
+- **Base stays 10.**  The height is the base-free content; a smaller base spends more
+  levels on the same value; the top exponent's `3 × 1000` provenance (`epsBW⁻³`,
+  `epsBW = 10⁻¹⁰⁰⁰`) is decimal-shaped.  On completion, record the base-free form
+  **`log log log C ≲ 3010`** + the `epsBW⁻³` provenance in the ceiling docstrings (plan §6).
+- **Legibility is a requirement, not a nicety** (Dvořák, Zulip 2026-07-18: *"I love
+  reading Lean code that is well-organized and elegant"*).  The calculus bank and the
+  converted climb are human-read surfaces.  Named lemmas, clean statements, docstrings on
+  the bank, no copy-paste sprawl.
 
 ## 🔒 Hard rails (plan §4 governs; the differ adjudicates)
 
 - **FROZEN**: every paper pin (the 24 numbered claims / §7 lemmas), `C_tao_assembled`
   (the **definition**), `X_spine`, `tao_collatz_quantitative_assembled`, `tao_collatz`,
-  `tao_collatz_quantitative`, `cTao`, `tao_collatz_quantitative_explicit`.
-- **INTENTIONALLY MOVED — the only expected differ hits**: `CTao`'s value, the ceiling
-  theorem's RHS (`tenTower 62 → tenTower 4`), the constant inside
-  `tao_collatz_quantitative_fully_explicit`, and the lockstep `Challenge.lean` copies of
-  exactly those.  Run `tools/tao_stmt_diff.py 4dde699 HEAD` every commit: everything else
-  character-identical.  The move is monotone-safe (smaller `C` ⟹ strictly stronger
-  theorem) — that licenses these surfaces and nothing else.
-- **`TaoCollatz/` stays sorry-clean (0) on every commit.**  This campaign tightens; it
-  never adds a `sorry` and never weakens a statement.  A cluster that cannot be tightened
-  keeps its old bound (the old lemmas remain valid) — worst case the final height is
-  looser, never broken.
+  `tao_collatz_quantitative`, `cTao`, `tao_collatz_quantitative_explicit`, **and the
+  planted pin itself** (`CTao`'s new value + the `fully_explicit` statement, both files).
+- **Differ**: run `tools/tao_stmt_diff.py <plant-commit> HEAD` every commit (the plant
+  commit is the one titled "plant the Tier-1 campaign pin"; `git log --grep 'plant the
+  Tier-1'`).  It must print **39/39 character-identical** for the entire campaign — the
+  engine lemmas you tighten in `BigCTower.lean` are not on the watched surface; nothing
+  watched moves again.
+- **`TaoCollatz/` carries exactly ONE `sorry`** (the planted pin) until the final commit,
+  which takes it to 0.  Never add another; never weaken a statement.  A cluster that
+  cannot be tightened keeps its old bound — worst case the final height is looser, never
+  broken.
 - **Never evaluate a tower numeral** (`norm_num [CTao]`, `decide`, kernel reduction of the
   numeral — hangs; `native_decide` — mints axioms, banned).  Log-arithmetic + monotonicity
   only, as check17/check19 do.  Local justified `maxHeartbeats` bumps on one declaration
   only.
-- **Axioms**: `#print axioms` on both headlines + `fully_explicit` = exactly
-  `[propext, Classical.choice, Quot.sound]` at every report point.
-- **Comparator**: update `Challenge.lean` in lockstep with the re-pin; run
-  `scripts/comparator-probe` locally and require a **non-zero printed closure size** (an
-  empty walk passing green is the known failure mode).  `build` + `comparator` CI green
-  before the campaign reports done.
+- **Axioms**: at discharge, `#print axioms` on `tao_collatz_quantitative_fully_explicit`
+  (and spot-check the headlines) = exactly `[propext, Classical.choice, Quot.sound]`.
+- **This branch merges via PR only** (main is protected; `build` + `comparator` required).
+  Commit + push on `tier1-tower-tightening`; the PR flips green exactly when you are done.
 
 ## 🛑 Stop discipline
 
-Self-stop cannot fire on this repo (the 8 comparator `Challenge.lean` stubs at the root
-are sorry-by-design), and `--forever` is not passed — **`box stuck` is the governed exit
-and must stay alive**.  The operator stops the run when the end state above is green
-(report it loudly in the lap log + HANDOFF), or on a `JUDGE-FLAG`.  `--max-duration` is
-the backstop.
+- **Primary: `--done-when sorry-free:TaoCollatz`** — the host checks it after every lap
+  and halts the run when the pin is discharged.  Combined with "discharge LAST", the gate
+  fires exactly at campaign completion.
+- The box-side repo-root sorry gate stays blocked by the Comparator challenge stubs
+  (sorry-by-design) — irrelevant here; the host-side `--done-when` is scoped to
+  `TaoCollatz/` and independent of it.
+- `box stuck` is the escalate lane (POC failure, unanswered `JUDGE-FLAG`).  `--forever`
+  must NOT be passed.  `--max-duration` is the backstop.
 
 ## 📝 Report per lap
 
 "tier1: calculus {n lemmas}/POC {state}; clusters {k}/{total} converted; proved ceiling
-tenTower {h}; differ {clean/expected-hits-only}; sorries 0; blockers".
+tenTower {h}; differ 39/39 {yes/no}; sorries {1|0}; blockers".

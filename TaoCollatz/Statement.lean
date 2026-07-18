@@ -39,27 +39,40 @@ theorem tao_collatz_quantitative :
       1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
   exact tao_collatz_quantitative_spine
 
-/-- The concrete constant — Mathlib's native tetration: `hyperoperation 4 10 63` is
-`10↑↑63`, a right-associated tower of exactly 63 tens.  `BigCTower.lean` proves the
-development's assembled constant fits under it (via the engine vocabulary `tenTower`;
-bridge: `tenTower_sixty_two_eq_hyperoperation`). -/
-noncomputable def CTao : ℝ := (hyperoperation 4 10 63 : ℝ)
+/-- The concrete constant — Mathlib's native tetration: `hyperoperation 4 10 10` is
+`10↑↑10`, a right-associated tower of exactly 10 tens.
+
+⚠️ **CAMPAIGN PIN (planted 2026-07-18, judge-owned).**  The previous, *proved* value was
+`10↑↑63` (main at `4dde699`); the Tier-1 tower-tightening campaign
+(`TIER1-TOWER-TIGHTENING-PLAN.md` + `DIRECTION.md`) re-pins it at `10↑↑10` and re-proves
+`tao_collatz_quantitative_fully_explicit` by tightening the `BigCTower.lean` ceiling to
+`C_tao_assembled ≤ tenTower 9` — with the honest height ≈ 3 (plan §1), there is ample
+room.  Laps write the PROOF, never this statement. -/
+noncomputable def CTao : ℝ := (hyperoperation 4 10 10 : ℝ)
 
 theorem CTao_pos : 0 < CTao := by
-  rw [show CTao = ((hyperoperation 4 10 63 : ℕ) : ℝ) from rfl,
-    ← tenTower_sixty_two_eq_hyperoperation]
-  exact tenTower_pos 62
+  rw [show CTao = ((hyperoperation 4 10 10 : ℕ) : ℝ) from rfl,
+    ← tenTower_nine_eq_hyperoperation]
+  exact tenTower_pos 9
 
+set_option warningAsError false in
 /-- **Theorem 3.1, fully-explicit form** (our augmentation): Theorem 3.1 holds with BOTH
 parameters concrete — one may take `c = cTao = 1/(640_000_000 log 2)` and
-`C = CTao = 10↑↑63` — the explicit values asked for by
-[MO 341570](https://mathoverflow.net/questions/341570). -/
+`C = CTao = 10↑↑10` — the explicit values asked for by
+[MO 341570](https://mathoverflow.net/questions/341570).
+
+⚠️ **CAMPAIGN PIN — `sorry` until the Tier-1 tower tightening discharges it.**  The
+statement is true with room to spare: main (`4dde699`) proves it at `10↑↑63`, and the
+assembled constant's honest height is ≈ `10↑↑4`.  Route: batched level-budget calculus →
+`C_tao_assembled ≤ tenTower 9` (tighter is the goal; the ceiling theorem records the
+honest height) → `tenTower_nine_eq_hyperoperation`.  Discharge this LAST, after `check28`
+asserts the honest height — the run's `--done-when sorry-free:TaoCollatz` gate fires on
+this discharge.  The `warningAsError` shield covers exactly this planted `sorry`; remove
+both together at discharge. -/
 theorem tao_collatz_quantitative_fully_explicit :
     ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
-      1 - CTao / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
-  rw [show CTao = ((hyperoperation 4 10 63 : ℕ) : ℝ) from rfl,
-    ← tenTower_sixty_two_eq_hyperoperation]
-  exact tao_collatz_quantitative_tower_of_sixty_three_tens
+      1 - CTao / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) :=
+  sorry
 
 /-- **Theorem 3.1, explicit-exponent form** (our augmentation): Theorem 3.1 holds with the
 concrete exponent `cTao` — the explicit value asked for by
@@ -87,8 +100,13 @@ methods are effective; nobody computed the constant) into "effective in fact,
 kernel-certified" — which is what [MO 341570](https://mathoverflow.net/questions/341570)
 actually asks for.  `BigCTower.lean` then proves the closed term fits under `tenTower 62`,
 which is how the fully-explicit form returned to this file (`CTao` +
-`tao_collatz_quantitative_fully_explicit` above) — proved this time, at an honest value:
+`tao_collatz_quantitative_fully_explicit` above) — proved at `10↑↑63`, an honest value:
 a tower, not a guessed numeral.
+
+2026-07-18: the Tier-1 tower-tightening campaign re-pinned `CTao` at `10↑↑10` (planted
+`sorry` above).  Unlike the retired `10^(10¹¹)` pin, this one carries machine-checked
+evidence of reachability: check19's height floor + the plan's §1 slop census say the
+honest ceiling is ≈ `10↑↑4`, so `10↑↑10` has five spare tower levels.
 
 History: `git log --follow` this file; the full route map, the machine-checked evidence,
 and the judge rulings are in `PENDING_WORK.md` + `DIRECTION.md`. -/

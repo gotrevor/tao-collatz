@@ -101,13 +101,13 @@ theorem tao_collatz_quantitative :
 /-- The explicit exponent — OUR augmentation, beyond the paper. -/
 noncomputable def cTao : ℝ := 1 / (640_000_000 * Real.log 2)
 
-/-- The concrete constant: `hyperoperation 4 10 63` is `10↑↑63`, a right-associated
-tower of exactly 63 tens. -/
-noncomputable def CTao : ℝ := (hyperoperation 4 10 63 : ℝ)
+/-- The concrete constant: `hyperoperation 4 10 10` is `10↑↑10`, a right-associated
+tower of exactly 10 tens. -/
+noncomputable def CTao : ℝ := (hyperoperation 4 10 10 : ℝ)
 
 /-- **Theorem 3.1, fully-explicit form** (our augmentation): Theorem 3.1 holds with BOTH
 parameters concrete — one may take `c = cTao = 1/(640_000_000 log 2)` and
-`C = CTao = 10↑↑63`. -/
+`C = CTao = 10↑↑10`. -/
 theorem tao_collatz_quantitative_fully_explicit :
     ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       1 - CTao / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := sorry
