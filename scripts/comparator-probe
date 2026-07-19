@@ -38,11 +38,13 @@ open Lean Meta
 namespace CmpProbe
 
 /-- Skip constants that live in Mathlib/core: both environments import Mathlib, so they agree by
-construction, and printing them buries the signal. Anything project-shaped is kept. -/
+construction, and printing them buries the signal. Anything project-shaped is kept -- where
+"project-shaped" is "under one of the top-level namespaces of the theorems being compared". Those
+prefixes are DERIVED from the config's `theorem_names` (see the Python side) and interpolated here,
+so a port to a new project cannot silently carry the wrong hardcoded list. -/
 def keep (n : Name) : Bool :=
   let s := n.toString
-  s.startsWith "LeanGallery" || s.startsWith "Comparator" || s.startsWith "Erdos" ||
-  s.startsWith "Goodstein" || s.startsWith "Hydra"
+  [{prefixes}].any (fun p => s.startsWith p)
 
 partial def constClosure (seen : NameSet) (todo : List Name) : MetaM NameSet := do
   match todo with
@@ -103,8 +105,21 @@ end CmpProbe
 """
 
 
+def keep_prefixes(names: list[str]) -> list[str]:
+    """Top-level namespace of each theorem name, e.g. TaoCollatz.colMin_zero -> TaoCollatz.
+
+    This is what makes the probe generic: the keep-list is the data the tool is already handed,
+    not a hardcoded per-repo constant that is right in one repo and silently wrong in every port.
+    """
+    return sorted({n.split(".", 1)[0] for n in names})
+
+
 def run(module: str, names: list[str]) -> tuple[bool, str]:
-    src = PROBE.format(module=module, names=", ".join(f"`{n}" for n in names))
+    src = PROBE.format(
+        module=module,
+        names=", ".join(f"`{n}" for n in names),
+        prefixes=", ".join(f'"{p}"' for p in keep_prefixes(names)),
+    )
     with tempfile.NamedTemporaryFile("w", suffix=".lean", dir=REPO, delete=False) as f:
         f.write(src)
         path = pathlib.Path(f.name)
@@ -151,6 +166,19 @@ def main() -> int:
         )
         if missing:
             print(f"❌ {name}: theorem_names not found in the environment: {', '.join(missing)}")
+            bad += 1
+            continue
+
+        # An EMPTY closure means the probe walked into zero project definitions -- it compared only
+        # the theorem TYPES, never a single definition body. That is the silent-false-green the old
+        # hardcoded keep-list caused (prefixes matched nothing). For a comparator harness the
+        # statement is supposed to be stated IN the project's own definitions, so an empty closure is
+        # never a legitimate pass -- fail loudly, same principle as the MISSING guard above.
+        if "  CONST " not in out_c:
+            print(f"❌ {name}: EMPTY closure -- walked into 0 project definitions. keep-prefixes "
+                  f"{keep_prefixes(names)} matched no constant in the theorem types, so only the "
+                  f"statement TYPES were compared, not definition bodies. (Do the theorems live "
+                  f"under a different namespace than their config entries?)")
             bad += 1
             continue
 
