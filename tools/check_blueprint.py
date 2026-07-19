@@ -1521,12 +1521,16 @@ def check28():
         r"hc : c ≤ \(10 : ℝ\) \^ \(11 : ℕ\)",
     ]:
         assert re.search(pat, big), pat
-    assert re.search(r"hyperoperation 4 10 10", stmt)      # the frozen pin 10↑↑10
+    # the frozen pin: tightened past 10↑↑10 on discharge to the literal honest ceiling,
+    # byte-identical to the C_tao_assembled_le_ten3_3053 RHS above (pin == proved ceiling)
+    assert re.search(
+        r"noncomputable def CTao : ℝ := \(10 : ℝ\) \^ \(\(10 : ℝ\) \^ \(\(10 : ℝ\) \^ \(3053 : ℕ\)\)\)",
+        stmt), "CTao pin must be the tight literal 10^(10^(10^3053))"
     print("28. tier1 honest height: spine slack ledger %.1f digits (< every "
           "committed budget, total 1.5e10 < 1e11) on the E52 = 10^(10^3052) seat; "
           "max arms resolve as proved; central log10^3(C) ~ %.1f (level-2 top "
           ">= %.1f robust > 10 => tenTower 3 FALSE); proved ceiling "
-          "C_tao_assembled <= 10^(10^(10^3053)) <= tenTower 4 <= tenTower 9 = CTao  OK"
+          "C_tao_assembled <= 10^(10^(10^3053)) = CTao (< tenTower 4 < tenTower 9)  OK"
           % (ledger["C_tao_assembled"][0], logloglog_P_central, log10log10_robust))
 
 
