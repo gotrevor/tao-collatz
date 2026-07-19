@@ -1349,3 +1349,209 @@ the box then executed it cleanly. Both directions of the review mechanism worked
 
 **Owed to Trevor (not grind):** (1) comparator `theorem_names` add — public, paired not
 executed; (2) Zulip follow-up "C landed, as a tower" (Ren drafts / Trevor posts); (3) merge/PR.
+
+---
+
+## Tier-1 tower-tightening campaign (branch tier1-tower-tightening)
+
+### Lap 1 (2026-07-18) — calculus bank + POC GREEN ✅
+
+- **Bank** (`Basic/ExplicitConstants.lean`): `prod_le_tenTower_succ`,
+  `sum_le_tenTower_succ`, `rpow_le_tenTower_succ` (operands ≤ tT(h+1), batch size /
+  exponent ≤ tT h ⟹ result ≤ tT(h+2): one level per batch), plus leaf accounting
+  `mul_le_ten_pow` (exponents add) and `exp_le_ten_pow`.
+  Note: the plan §2 signature "(∀ xᵢ ≤ tT h) → k ≤ tT h → ∏ ≤ tT(h+1)" is FALSE as
+  literally stated ((tT h)^(tT h) ≫ tT(h+1)); the bank uses the corrected index shift.
+- **POC gate PASSED**: `C_fpLocation ≤ tenTower 2` (was 8) — six factors, ten-power
+  budgets 43+14+1+5+2+9 = 10^74, one `ten_pow_le_tenTower_succ`. Old `_le_tenTower_eight`
+  kept as a corollary so downstream is untouched.
+- Differ 39/39 vs plant `b7825fc`; census 1 (the pin); full build green; commit `7198777`.
+
+**Next (lap 2+, plan §3 bottom-up):** Sec5 leaves + first-passage cluster
+(`C_fpCol` 9→3ish, `C_fpHeight*`, `C_encSep`, `C_encTri`, `C_estarUnion`, `A0_fewEstar`)
+via the same ten-power accounting; then the cubic node `encWindowIter_le_tenTower_add_six`
+`+6 → +2`; then the Sec6/Sec3 climb; `check28`; discharge LAST.
+
+### Lap 2 (2026-07-18) — first-passage cluster converted ✅ (commit a26079c)
+
+- Bank additions: `add_le_ten_pow`, `ten_pow_mono`, `natCast_le_tenTower_one/two`,
+  `ten_pow_le_tenTower_two/three` (cash a `10^a` budget at tT2 for `a ≤ 10^10`, tT3 for
+  `a ≤ 10^30`).
+- Honest heights landed: `C_fpLocation ≤ 10^74`, `C_fpCol 10^79`, `C_fpHeight 10^84`,
+  `C_fpColDev 10^85`, `C_fpHeightTail 10^85`, `C_fpColTail 10^86`, `C_encSep 10^89`
+  — all `≤ tenTower 2`; `C_encTri ≤ 10^(10^27+4)`, `C_estarUnion ≤ 10^(10^27+5)`
+  — `≤ tenTower 3` (the `exp(c_fpHeightTail·M_encTri) ≈ exp(2×10²²)` term is REAL
+  height; tT2 is impossible for these two). Old `_le_tenTower_N` names kept as
+  corollaries → zero downstream edits.
+- **Gotcha (recorded in code comment)**: any linarith/norm_num over a
+  `(10:ℝ)^(10^27:ℕ)` atom panics the kernel ("Nat.pow exponent is too big") trying to
+  evaluate the numeral. `generalize hB : (10:ℝ)^(10^27:ℕ) = B` first, then linarith.
+
+**Next (lap 3):** `A0_fewEstar` sub-chain (`A0_estarUnion`, `Kthr_estarScaled`,
+`Warg_estarScaled` → `A0_fewEstar`, currently 17-19 → should be tT3-ish), then the cubic
+node `encWindowIter_le_tenTower_add_six` `+6 → +2`, then the Sec6/Sec3 climb (lines
+~740+), `check28`, discharge LAST.
+
+### Lap 3 (2026-07-18) — A0_fewEstar chain converted ✅
+
+- `A0_estarUnion ≤ 10^3`, `Kthr_estarScaled ≤ 10^(10^27+14)`, `Warg_estarScaled ≤
+  10^(10^27+20)`, `A0_fewEstar ≤ 10^(10^27+22)` ⟹ **`A0_fewEstar ≤ tenTower 3`**
+  (was 19). Old `_le_tenTower_nineteen` kept as corollary; downstream untouched.
+- Lean gotcha: a one-step `calc` whose only step carries a multiline `by` block plus a
+  later `change … ≤ _` underscore broke the parser mid-proof ("unknown identifier
+  unfold"); plain tactic blocks + explicit change RHS fixed it.
+
+**Next (lap 4):** the cubic node `encWindowIter_le_tenTower_add_six` `+6 → +2`, then the
+Sec6/Sec3 climb (`mainDecayExponent`, `hold_weight_expect` chain, `C_renewalWhite` …
+`C_tao_assembled`), `check28`, discharge LAST.
+
+### Lap 4 (2026-07-18) — cubic node retightened +6 → +2 ✅
+
+- New `encWindowIter_le_tenTower_add_two`: `enc+1 ≤ B^{3^{i+1}}`, `B ≤ 10^{A+K+6}`
+  (via `self_le_ten_rpow`), `3^{i+1} ≤ 10^{(i+1)/2}` (3 ≤ √10), and
+  `(2T+6)·10^{(T+1)/2} ≤ 10^T` for `T = tenTower h ≥ 10` (via `(T+1)²/4 ≤ e^{T-1} ≤
+  10^{(T-1)/2}`, needs `log 10 ≥ 2`). Bank: `two_le_log_ten`, `exp_le_ten_rpow`,
+  `self_le_ten_rpow`. Old `add_six` now a corollary.
+- Gotchas: `Real.rpow_add` rw pattern `?x^(?y+?z)` grabs the WRONG occurrence when the
+  goal has several rpow sums (use `rpow_add_one` after a shaping `show`-rw);
+  `rw [Real.rpow_natCast]` BEFORE `push_cast` or the cast shape is destroyed.
+
+**Next (lap 5):** the Sec6/Sec3 climb (currently 19 → 62, lines ~880+ in
+BigCTower.lean): `mainDecayExponent`, `hold_weight_expect` chain (`K/M1/T` witnesses,
+the `1/δ ≈ 10^3000` factor — this is where the REAL `10^3010` top exponent lives),
+`C_renewalWhite`, Sec6 oscillation constants, Sec3/Syracuse spine, then
+`C_tao_assembled_le` at the proved height; `check28`; discharge LAST.
+
+### Lap 5 (2026-07-18) — rpow budget kit + cubic node in exact rpow form ✅
+
+- Bank: `mul_le_ten_rpow` (exponents add), `add_le_ten_rpow` (+1), `rpow_le_ten_rpow`
+  (exponent multiplies), `ten_rpow_mono`, `ten_pow_eq_ten_rpow` — budgets as SYMBOLIC
+  real exponents, for the tall region where decimal exponents are astronomical.
+- `encWindowIter_le_ten_rpow`: `enc+1 ≤ 10^{(A+K+6)·10^{(i+1)/2}}` extracted standalone;
+  the `+2` tower node is now a corollary of it.
+- **Sizing note for the tall region** (from check19 + the §7 trace): honest values are
+  `K_fewWhite ≈ 7.5×10⁷`, `R_fewWhite ≈ 10^3017` (the `1/δ ≈ 10^3000` M1 seat),
+  `P/B_fewWhite ≈ 10^(10^(0.48·10^3017))` — so `C_renewalWhite … C_tao_assembled` are
+  `≤ 10^(10^(10^3020))`-shaped: NOT ≤ tenTower 3; the honest ceiling is **tenTower 4**
+  (matches DIRECTION "honest target tenTower 4; take 3 if it falls out" — 3 does NOT
+  fall out, it is false). Final lift: exponent `(10^3020ish:ℕ) ≤ tenTower 1`? NO —
+  `10^3020 > 10^10`; lift via `(3020-digit literal) ≤ tenTower 2` (`natCast_le_tenTower_two`
+  needs `≤ 10^30` — insufficient; need a `natCast_le_tenTower_two'` for any `a ≤ 10^(10^10)`,
+  i.e. ℕ-literal exponents up to 10^10 digits — 10^3020 has 3021 digits ✓).
+
+**Next (lap 6):** convert the fewWhite core with the rpow kit: `K_fewWhite ≤ 10^8`
+(level-1), `R_fewWhite ≤ 10^3020` (level-1, ℕ literal exponent), `P_fewWhite+1` /
+`B_fewWhite` via `encWindowIter_le_ten_rpow` (exponent `≤ 10^3021`-shaped),
+`Cthr_fewWhite`, then `C_renewalWhite ≤ 10^(10^(10^3025))`-form, then the Sec6/Sec3
+chain in rpow budgets, ceiling `C_tao_assembled ≤ tenTower 4` (pin: tenTower 9 ✓),
+`check28`, discharge LAST.
+
+### Lap 6 (2026-07-18) — fewWhite core in exact form ✅
+
+- Bank: level-2/3 tenTower lifts (`ten_rpow_ten_pow_le_tenTower_three`,
+  `ten_rpow_rpow_ten_pow_le_tenTower_four` — ANY σ ≤ 10^10), `natCeil_le_ten_pow_succ`.
+- Converted: `mainDecayExponent 3.7 ≤ 10^8`, `K_fewWhite ≤ 10^3011` (the epsBW⁻³ seat),
+  `R_fewWhite ≤ 10^3045`, `P_fewWhite+1 ≤ 10^(10^(10^3047))` (level-3 canonical, THE
+  height seat), `B_fewWhite ≤ 10^(10^(10^3049))`. Old tenTower names = corollaries.
+- Gotcha: a `let A := …` in a proof breaks linarith atom-matching against lemmas stated
+  with the unfolded term (defeq ≠ syntactic); use exact/calc steps, not linarith, across
+  the let boundary.
+
+**Next (lap 7):** T_expRpow/T_colTail/T_outStrip/Cthr_fewWhite (the ⌈B^2.5⌉ arm rides
+B_fewWhite's level-3), then Cthr_case2/dampingCol/blackEdge/prop78 → C_polyDecay →
+C_renewalWhite (level-3, σ≈3055). Then the Sec3 spine (C_mainZ…C_windowBad, X_spine),
+ceiling `C_tao_assembled ≤ tenTower 4`, restate ceiling theorem, `check28`, discharge.
+
+### Lap 7 (2026-07-18) — Cthr_fewWhite chain head at level-3 ✅
+
+- Bank: `ten3_mono` (level-3 mono in top σ), `ten_pow_le_ten3` (decimal → level-3 lift,
+  any a ≤ 10³⁰, σ ≥ 2) — how short `max` arms join a tall level-3 arm for free.
+- Honest level-1: `T_expRpow(§7.56 args) ≤ 10^120` (T_expNeg arm dominates: log δ⁻¹ ≤
+  δ⁻¹ = 4·C_fpColTail ≤ 10^87, (ρ/2)⁻¹ ≤ 10^31), `T_outStrip ≤ 10^126` (D ≤ 10^111,
+  γ⁻¹ ≤ 10^10).
+- Level-3: `T_colTail_main_le_ten3 ≤ 10^(10^(10^3048))` (rides P+1 at 3047),
+  `Cthr_fewWhite_main_le_ten3 ≤ 10^(10^(10^3050))` (⌈B^2.5⌉ arm: ×2.5 on the level-2
+  exponent = one decimal digit at top, 3049 → 3050).
+- Gotcha: a `(X.trans (ten_pow_mono _)).trans (ten_pow_le_ten3 _ _)` chain leaves the
+  intermediate exponent as an unresolvable metavariable — name the intermediate `have`
+  with an explicit `10^k` type, then `.trans`.
+
+**Next (lap 8):** honest level-1 for `C_hold` (K_geom/M1/T_powGeom at deltaBW·2^{-A},
+~10^12-ish) and `Cthr_case2` (T_edgeWeight chain), then `Cthr_dampingCol/blackEdge/
+prop78` level-3 (max passthrough at 3050), `C_polyDecay = (max Cthr 1)^A ≤
+10^(10^(10^3051))`, `C_renewalWhite ≤ 10^(10^(10^3052))`. Then Sec3 spine, ceiling
+`C_tao_assembled ≤ tenTower 4`, `check28`, discharge LAST.
+
+### Lap 8 (2026-07-18) — C_hold in honest level-1 form ✅
+
+- `deltaBW_inv_le_ten_pow ≤ 10^3001` (epsBW⁻³ seat ×2), `C_hold ≤ 10^6020`:
+  `K_hold ≤ 10^3005` via `log(b₂/2)⁻¹ = log(6δ⁻¹) + A·log 2 ≤ 10^3003` (log_mul +
+  log_rpow — the ONLY route; `log_le_self` on `2^A ≈ 10^(10^7.4)` would hand back a
+  level-2 bound), `T_hold ≤ 10^3007`, `(cHold−1)⁻¹ ≤ 6A·deltaBW⁻¹ ≤ 10^3010`,
+  `M1_hold ≤ 10^6017` (dominant: K×gap⁻¹ double-counts the δ seat — loose vs honest
+  10^3018 but level-1 and harmless; ceiling only sees the level-3 σ).
+- Note: correct T_powGeom sum accounting is (1+(c1+1))+c2 → +1 twice: 10^25 ceil →
+  10^27 head, +10^3006 ceil → 10^3007 (first attempt said 3006: off-by-one).
+
+**Next (lap 9):** `Cthr_case2` chain level-1 (`delta_case2⁻¹ ≤ 10^3001` mirror of
+deltaBW, then T_fstMgf/T_fstTail/T_holdTail/T_edgeWeight — mirror the tT17-24 climbs
+with ten-pow budgets; expect ~10^3010-ish level-1), then lap 10: dampingCol/blackEdge/
+prop78 level-3 max passthrough, `C_polyDecay ≤ 10^(10^(10^3051))`, `C_renewalWhite ≤
+10^(10^(10^3052))`, Sec3 spine, ceiling, `check28`, discharge LAST.
+
+### Lap 9 (2026-07-18) — Cthr_case2 chain honest (level-1 kit + level-2 fstMgf) ✅
+
+- 9a: generic level-1 combinators (`T_logLin ≤ 10^(2a+4)`, `T_expNeg ≤ 10^(2a+1)`,
+  `T_logSq` small, `geomDenInv ≤ 10^(a+1)`); `delta_case2⁻¹ ≤ 10^3001`;
+  `T_fstTail ≤ 10^6191`, `T_holdTail ≤ 10^6006`.
+- 9b: **`T_fstMgf` is the case-2 chain's only level-2 arm** — `T_logSq B` with
+  `B ≈ A/log(1+δ/16) ≈ 10^3014` is `exp(√B)`, a genuine double exponential:
+  `T_fstMgf ≤ 10^(10^3020)`; `T_edgeWeight ≤ 10^(10^3021)`;
+  `Cthr_case2 ≤ 10^(10^3021)`. New lifts: `T_logSq_cast_le_ten_rpow` (level-2),
+  `ten_pow_le_ten_rpow_level2` (needs σ ≥ 30 — as σ ≥ 2 it is FALSE, caught by build).
+- Gotchas: linarith/ring/norm_num on `(10:ℝ)^(3016:ℕ)` npow atoms hits the
+  `exponentiation.threshold 256` wall (ring evaluates!); use pure lemma chains
+  (`add_le_ten_pow (le_refl _) …`) or `generalize`-to-opaque + `linarith only [h]`.
+  Right-associate ℕ sums with `simp only [add_assoc]` (safe; ring is not).
+
+**Next (lap 10):** `Cthr_dampingCol/blackEdge/prop78` level-3 max passthrough
+(case2 level-2 lifts into L3(3050) for free), `C_polyDecay = (max Cthr_prop78 1)^A ≤
+10^(10^(10^3051))` (rpow_le_ten_rpow ×A = +8 on middle exponent), `C_renewalWhite ≤
+10^(10^(10^3052))` (arm1 `(2·C_hold+2)^A ≤ 10^(6021·10^8)` level-1-large; arm2
+poly·e^{ε³/2}·3^A exponent-adds). Then Sec3 spine, ceiling `C_tao_assembled ≤
+tenTower 4`, bridge to `tenTower 9 = CTao`, `check28`, discharge LAST.
+
+### Lap 10 (2026-07-18) — **C_renewalWhite ≤ 10^(10^(10^3052))** ✅ (§7 chain done)
+
+- `Cthr_dampingCol/blackEdge/prop78 ≤ L3(3050)` (max passthrough; case2's level-2
+  lifts via `ten_rpow_mono ∘ ten_pow_le_ten_rpow_level2`), `C_polyDecay ≤ L3(3051)`
+  (`^A` = ×A on the level-2 exponent = `+8` top digits via `Real.rpow_add`),
+  `C_renewalWhite ≤ L3(3052)` (arm1 `(2C_hold+2)^A ≤ 10^(6022·10^8) ≤ 10^(10^12)`;
+  arm2 exponent `L2(3051)+1+10^8 ≤ 2·L2 ≤ L2(3052)` via generalize+linarith only).
+- The whole §7 renewal chain is now at honest height. First-try green.
+
+**Next (lap 11):** the Sec6/Sec3 spine at honest heights (`C_mainZ…C_windowBad`,
+`X_*` — per lap-5 sizing most X_* are small; only the C-chain rides C_renewalWhite's
+L3(3052)), then the ceiling `C_tao_assembled ≤ tenTower 4` (final lift
+`ten_rpow_rpow_ten_pow_le_tenTower_four`, σ=3052+Δ ≤ 10^10 ✓), bridge
+`tenTower 4 ≤ tenTower 9 = CTao`, `check28` in tools/check_blueprint.py, discharge
+the pin LAST (sorry + warningAsError shield in one commit).
+
+## Tier-1 laps 11–12 + discharge (2026-07-18, this box)
+
+- **Lap 11a** (`e4ad90b`): honest level-1 `N_*` mixing-cutoff bounds (all ≤ 10^32;
+  old tT9 was level slop); C-chain `C_oscMainHigh → C_windowBad` in exponent-slack
+  form on `E52 = 10^(10^3052)` (+10^9 budget/node); `slack_le_ten3_3053`.
+  Gotcha: pin every intermediate exponent with an explicit `have` — an
+  `add_le_ten_rpow` fed by inline `.trans (ten_rpow_mono …)` leaves the common
+  exponent as an unsolvable metavariable.  `nlinarith` fails on `10^7`-npow
+  goals: rewrite the numeral first (`show (10:ℝ)^(7:ℕ) = 10000000`).
+- **Lap 11b** (`36e36c7`): honest X-tree: `XB = 10^(10^700)` uniform interior
+  bound (`X_logRpowExp` seats peak at `exp(10^200)`), two `^α` bumps →
+  `X_spine ≤ 10^(10^701) = XB'`; `log X_spine ≤ 10^702`; assembled
+  `C_tao_assembled ≤ 10^(E52+1.5e10) ≤ 10^(10^(10^3053)) ≤ tenTower 4 ≤ tT9`.
+  Gotcha: `rw [pow_succ]` on a goal with several `10^k` numerals rewrites the
+  wrong occurrence — use `_ = 10^(k+1:ℕ) := (pow_succ 10 k).symm` calc steps.
+- **Lap 12** (`355d600`): check28 height ledger (see tool docstring).
+- **DISCHARGE** (`dfb464a`): pin proved, shield removed, axioms clean on all
+  headlines.  Campaign complete; judge ratification owed (see HANDOFF.md).

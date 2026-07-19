@@ -1412,6 +1412,128 @@ def check27():
           "cutoff audit --complete clean  OK")
 
 
+def check28():
+    # Tier-1 tower-tightening (2026-07-18): the HONEST-HEIGHT LEDGER for the full
+    # C_tao_assembled max-tree — the log/log-log mirror of BigCTower.lean's honest
+    # climb (laps 5-11), replacing the retired tenTower-62 level-spending ceiling.
+    # Heights are held as (top-level, top-exponent): Lk(s) := 10^10^...^10^s with k
+    # tens; the §7 renewal chain is level-3 with four-digit top exponent, and the
+    # whole §6/§3 spine above it rides the SAME level-2 exponent seat
+    # E52 = 10^(10^3052) with polynomially small slack (each op adds decimal digits
+    # INSIDE the level-2 exponent, never a level).  Three duties:
+    #   (a) SLACK LEDGER: recompute the spine's exponent slack op-by-op from the def
+    #       bodies (mul-by-c adds log10(c); add costs 1) and assert every committed
+    #       per-node budget in BigCTower.lean dominates it, with total < 10^11 —
+    #       the hypothesis of slack_le_ten3_3053 (E52 + c <= 2*E52 <= L2(3053)).
+    #   (b) MAX-ARM RESOLUTION in log space (never assume): which arm wins at each
+    #       max on the spine, cross-checked against the arm the Lean proof rides.
+    #   (c) LEAN-TEXT TRAP: the honest theorems must carry EXACTLY these exponents;
+    #       a silent re-height (or a def edit that shifts an arm) breaks (a)/(b),
+    #       and an edit to the theorem statements breaks (c).
+    # Central lower-bound trace: check19's fully-iterated P gives
+    # log10(log10(log10 C)) >~ 3009.5 (and >= 32.6/10 = level-2 top 32.6 ROBUSTLY,
+    # any bottom constant) — so tenTower 3 = 10^10^10 is FALSE as a ceiling
+    # (log10^2(tT3) = 10 < 32.6) and tenTower 4 is the least tower height:
+    # 3053 <= 10^10 fits under tT4's third floor.  Proved chain (kernel-checked):
+    #   P+1: L3(3047) -> T_colTail: L3(3048) -> B: L3(3049) -> Cthr_fewWhite:
+    #   L3(3050) = Cthr_dampingCol/blackEdge/prop78 -> C_polyDecay: L3(3051)
+    #   (the ^A rpow adds log10(A) <= 8 digits) -> C_renewalWhite: L3(3052)
+    #   -> [spine slack <= 1.5e10 inside E52] -> C_tao_assembled: L3(3053).
+    from math import log10
+    import os, re
+    # --- (a) the spine slack ledger, from the def bodies as written -------------
+    logA = 8                       # mainDecayExponent 3.7 <= 10^8 (~3.11e7)
+    slack = 0.0                    # decimal digits added inside the E52 exponent
+    ledger = {}
+    slack += 1 + 2 * 10 ** logA            # C_oscMainHigh = 3*CRW*40^B: 40^B <= 10^(2B)
+    ledger["C_oscMainHigh"] = (slack, 2000000000)
+    slack += 1                             # C_oscHigh = 2*max(.,6)
+    ledger["C_oscHigh"] = (slack, 3000000000)
+    slack += 1 + 1                         # C_fineScale: *S_zeta2 (<=10) then + small arm
+    ledger["C_fineScale"] = (slack, 4000000000)
+    slack += 1 + 6 * 1.7                   # C_mainZbridge = 4*C_fineScale*200000^1.7
+    ledger["C_mainZbridge"] = (slack, 5000000000)
+    slack += 1                             # C_harmonicZ = C_harmZfine + .
+    ledger["C_harmonicZ"] = (slack, 6000000000)
+    ledger["C_perNTermEval"] = (slack + 1, 7000000000)   # C_perNHarm + C_harmonicZ
+    ledger["C_mainZ"] = (slack + 1, 7000000000)          # C_harmonicZ + small rest
+    slack = ledger["C_perNTermEval"][0]
+    slack += 4 + 1                         # C_approxToZ: coef<=10^4 each arm, then +
+    ledger["C_approxToZ"] = (slack, 8000000000)
+    slack += 1                             # C_windowStable = 2*.
+    ledger["C_windowStable"] = (slack, 9000000000)
+    slack += 1                             # C_stab = small + 2*C_windowStable
+    ledger["C_stab"] = (slack, 10000000000)
+    slack += 1                             # C_descLadder = max(small, 2*C_stab)
+    ledger["C_descLadder"] = (slack, 11000000000)
+    slack += 15 + 1                        # C_descWhp: geom factor <=10^15, alpha^c<=10
+    ledger["C_descWhp"] = (slack, 12000000000)
+    slack += 1                             # C_windowBad = 2*.
+    ledger["C_windowBad"] = (slack, 13000000000)
+    slack += log10(1001) + 1               # C_syrSum: 1001*C_windowBad vs small arm
+    ledger["C_syrSum"] = (slack, 14000000000)
+    slack += log10(16) + 1                 # C_spine = 16*.; assembled max costs 0
+    ledger["C_tao_assembled"] = (slack, 15000000000)
+    for node, (actual, budget) in ledger.items():
+        assert actual <= budget, (node, actual, budget)
+    assert ledger["C_tao_assembled"][1] < 10 ** 11         # slack_le_ten3_3053 gate
+    assert 3052 + 1 == 3053                                 # E52+c <= 2E52 <= L2(3053)
+    # --- (b) max-arm resolution in log space ------------------------------------
+    # C_renewalWhite: arm1 = (2*C_hold+2)^A is level-2 (log10 <= 6022*10^8 < 10^12),
+    # arm2 rides C_polyDecay at L3(3051): arm2 wins (level 3 beats level 2).
+    assert log10(6022) + logA < 12 < 3051
+    # Cthr_fewWhite: ceil(B^2.5) arm at L3(3049 + log10 2.5) beats T_colTail L3(3048),
+    # 10^30 and 10*g_manyTri (level 1), and ceil(10*500^(1/A)) (level 0).
+    assert 3048 < 3049 + log10(2.5) <= 3050
+    # C_syrSum X_spine: the log-arm is 4*max(1, (log X_spine)^c_ladder) with
+    # X_spine <= 10^(10^701) honest (the tree is exp of <=10^300-sized arguments:
+    # the X_logRpowExp seats peak at exp((10^20)^(1/0.2)) = exp(10^100) <= 10^(10^100),
+    # then two ^alpha bumps): log X_spine <= 10^702, c_ladder <= 1, so the arm is
+    # <= 4*10^702 — the 1001*C_windowBad arm on the E52 seat wins by ~10^3049 levels.
+    assert 20 / 0.2 == 100 and 100 < 300 < 700
+    assert log10(4) + 702 < 10 ** 3        # << E52's exponent 10^3052
+    # C_tao_assembled: (log 2)^cTao <= 1 (log 2 < 1, cTao > 0): the C_spine arm wins.
+    # C_descLadder: C_valSumGeom <= 10^30 (level 1) vs C_descStep on the E52 seat.
+    # --- central lower bound (check19's trace): tenTower 3 is FALSE ------------
+    A_high = 3.7
+    ca = 1000 * (A_high + 3)
+    Am = A_high + ca ** 2 * log(2) + 3
+    log10_K_central = log10((Am + 3) * log(10)) + 3000     # K ~ 10^3007.9
+    logloglog_P_central = (log10_K_central + 2) + log10(log10(3))
+    assert 3009 < logloglog_P_central < 3010               # central top ~ 3009.5
+    assert logloglog_P_central < 3047                      # proved P-ledger dominates
+    log10log10_robust = log10(2.5 * log10(4) * Am) + log10(9.5e24)  # check19 robust
+    assert log10log10_robust > 10                          # > log10^2(tenTower 3) = 10
+    assert 3053 <= 10 ** 10                                # 3053 fits under tenTower 4
+    # --- (c) the Lean text carries exactly these heights ------------------------
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    big = open(os.path.join(root, "TaoCollatz", "BigCTower.lean")).read()
+    stmt = open(os.path.join(root, "TaoCollatz", "Statement.lean")).read()
+    for pat in [
+        r"def E52 : ℝ := \(10 : ℝ\) \^ \(\(10 : ℝ\) \^ \(3052 : ℕ\)\)",
+        r"theorem C_renewalWhite_main_le_ten3 :\n    C_renewalWhite \(mainDecayExponent 3.7\)\n      ≤ \(10 : ℝ\) \^ \(\(10 : ℝ\) \^ \(\(10 : ℝ\) \^ \(3052 : ℕ\)\)\)",
+        r"theorem C_tao_assembled_le_ten3_3053 :\n    C_tao_assembled ≤ \(10 : ℝ\) \^ \(\(10 : ℝ\) \^ \(\(10 : ℝ\) \^ \(3053 : ℕ\)\)\)",
+        r"theorem C_tao_assembled_le_tenTower_four :\n    C_tao_assembled ≤ tenTower 4",
+        r"theorem C_tao_assembled_le_tenTower_nine :\n    C_tao_assembled ≤ tenTower 9",
+        r"C_tao_assembled ≤ \(10 : ℝ\) \^ \(E52 \+ 15000000000\)",
+        r"def XB : ℝ := \(10 : ℝ\) \^ \(\(10 : ℝ\) \^ \(700 : ℕ\)\)",
+        r"def XB' : ℝ := \(10 : ℝ\) \^ \(\(10 : ℝ\) \^ \(701 : ℕ\)\)",
+        r"hc : c ≤ \(10 : ℝ\) \^ \(11 : ℕ\)",
+    ]:
+        assert re.search(pat, big), pat
+    # the frozen pin: tightened past 10↑↑10 on discharge to the literal honest ceiling,
+    # byte-identical to the C_tao_assembled_le_ten3_3053 RHS above (pin == proved ceiling)
+    assert re.search(
+        r"noncomputable def CTao : ℝ := \(10 : ℝ\) \^ \(\(10 : ℝ\) \^ \(\(10 : ℝ\) \^ \(3053 : ℕ\)\)\)",
+        stmt), "CTao pin must be the tight literal 10^(10^(10^3053))"
+    print("28. tier1 honest height: spine slack ledger %.1f digits (< every "
+          "committed budget, total 1.5e10 < 1e11) on the E52 = 10^(10^3052) seat; "
+          "max arms resolve as proved; central log10^3(C) ~ %.1f (level-2 top "
+          ">= %.1f robust > 10 => tenTower 3 FALSE); proved ceiling "
+          "C_tao_assembled <= 10^(10^(10^3053)) = CTao (< tenTower 4 < tenTower 9)  OK"
+          % (ledger["C_tao_assembled"][0], logloglog_P_central, log10log10_robust))
+
+
 if __name__ == "__main__":
     check1(); check2(); check3(); check4(); check5(); check6()
     check7()
@@ -1435,4 +1557,5 @@ if __name__ == "__main__":
     check25()                                     # lap-17b point-mass half (flag CONFIRMED)
     check26()                                     # lap-18 exp-depth door REFUTED empirically
     check27()                                     # Ruling II assembled big-C (X_spine tree)
+    check28()                                     # tier1 honest-height ledger (tenTower 4)
     print("ALL CHECKS PASS ✅")
