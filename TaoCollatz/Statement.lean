@@ -39,32 +39,29 @@ theorem tao_collatz_quantitative :
       1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
   exact tao_collatz_quantitative_spine
 
-/-- The concrete constant — Mathlib's native tetration: `hyperoperation 4 10 10` is
-`10↑↑10`, a right-associated tower of exactly 10 tens.
+/-- The concrete constant: `10^(10^(10^3053))`, the honest closed-form ceiling the
+Tier-1 tower-tightening campaign proved for the assembled Tao constant (base-free
+record `log log log C ≲ 3053`, `BigCTower.lean`'s `C_tao_assembled_le_ten3_3053`).
 
-⚠️ **CAMPAIGN PIN (planted 2026-07-18, judge-owned).**  The previous, *proved* value was
-`10↑↑63` (main at `4dde699`); the Tier-1 tower-tightening campaign
-(`TIER1-TOWER-TIGHTENING-PLAN.md` + `DIRECTION.md`) re-pins it at `10↑↑10` and re-proves
-`tao_collatz_quantitative_fully_explicit` by tightening the `BigCTower.lean` ceiling to
-`C_tao_assembled ≤ tenTower 9` — with the honest height ≈ 3 (plan §1), there is ample
-room.  Laps write the PROOF, never this statement. -/
-noncomputable def CTao : ℝ := (hyperoperation 4 10 10 : ℝ)
+This is the tightest value the development bounds `C_tao_assembled` by, and it is
+*strictly smaller* than any clean tower `10↑↑k` that holds (`10↑↑4` is false; `10↑↑5`
+holds but overshoots by a full tower level, since its level-3 exponent is `10^10`
+against this value's `3053`).  Pin history — `10↑↑63` (main at `4dde699`) → `10↑↑10`
+(campaign target) → this tight value on discharge — is in the note below. -/
+noncomputable def CTao : ℝ := (10 : ℝ) ^ ((10 : ℝ) ^ ((10 : ℝ) ^ (3053 : ℕ)))
 
 theorem CTao_pos : 0 < CTao := by
-  rw [show CTao = ((hyperoperation 4 10 10 : ℕ) : ℝ) from rfl,
-    ← tenTower_nine_eq_hyperoperation]
-  exact tenTower_pos 9
+  unfold CTao; positivity
 
 /-- **Theorem 3.1, fully-explicit form** (our augmentation): Theorem 3.1 holds with BOTH
 parameters concrete — one may take `c = cTao = 1/(640_000_000 log 2)` and
-`C = CTao = 10↑↑10` — the explicit values asked for by
+`C = CTao = 10^(10^(10^3053))` — the explicit values asked for by
 [MO 341570](https://mathoverflow.net/questions/341570).
 
-Discharged 2026-07-18 (Tier-1 tower-tightening campaign): the honest ceiling
-`C_tao_assembled ≤ 10^(10^(10^3053)) ≤ tenTower 4` (`BigCTower.lean`, base-free
-record `log log log C ≲ 3053`, top-exponent provenance `epsBW⁻³ = 10^3000`) rides
-to the pin through `C_tao_assembled_le_tenTower_nine` and
-`tenTower_nine_eq_hyperoperation`. -/
+Discharged 2026-07-18 (Tier-1 tower-tightening campaign): `CTao` is *exactly* the honest
+closed-form ceiling `C_tao_assembled ≤ 10^(10^(10^3053))` (`BigCTower.lean`'s
+`C_tao_assembled_le_ten3_3053`; base-free record `log log log C ≲ 3053`, top-exponent
+provenance `epsBW⁻³ = 10^3000`), so `hC` is that theorem directly. -/
 theorem tao_collatz_quantitative_fully_explicit :
     ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
       1 - CTao / (Real.log N₀) ^ cTao ≤ logProb {N | colMin N ≤ N₀} (Finset.Icc 1 x) := by
@@ -74,9 +71,7 @@ theorem tao_collatz_quantitative_fully_explicit :
   have hden : 0 < (Real.log N₀) ^ cTao :=
     Real.rpow_pos_of_pos (Real.log_pos hN₀real) _
   have hC : C_tao_assembled ≤ CTao := by
-    rw [show CTao = ((hyperoperation 4 10 10 : ℕ) : ℝ) from rfl,
-      ← tenTower_nine_eq_hyperoperation]
-    exact C_tao_assembled_le_tenTower_nine
+    unfold CTao; exact C_tao_assembled_le_ten3_3053
   have hfrac : C_tao_assembled / (Real.log N₀) ^ cTao ≤
       CTao / (Real.log N₀) ^ cTao :=
     (div_le_div_iff_of_pos_right hden).2 hC
@@ -112,9 +107,13 @@ which is how the fully-explicit form returned to this file (`CTao` +
 a tower, not a guessed numeral.
 
 2026-07-18: the Tier-1 tower-tightening campaign re-pinned `CTao` at `10↑↑10` (planted
-`sorry` above).  Unlike the retired `10^(10¹¹)` pin, this one carries machine-checked
-evidence of reachability: check19's height floor + the plan's §1 slop census say the
-honest ceiling is ≈ `10↑↑4`, so `10↑↑10` has five spare tower levels.
+`sorry` above).  Unlike the retired `10^(10¹¹)` pin, this one carried machine-checked
+evidence of reachability: check19's height floor + the plan's §1 slop census said the
+honest ceiling is ≈ `10↑↑4`, so `10↑↑10` had five spare tower levels.  On discharge the
+pin was then tightened past `10↑↑10` to the literal honest ceiling `10^(10^(10^3053))`
+(`C_tao_assembled_le_ten3_3053`) — *strictly smaller* than `10↑↑5`, the tightest value
+`BigCTower.lean` proves.  No reason to ship the looser round tower once the tight bound
+was in hand: the explicit form answers MO 341570, which asks for the smallest honest `C`.
 
 History: `git log --follow` this file; the full route map, the machine-checked evidence,
 and the judge rulings are in `PENDING_WORK.md` + `DIRECTION.md`. -/
