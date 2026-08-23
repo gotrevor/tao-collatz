@@ -45,8 +45,12 @@ jobs:
     runs-on: ubuntu-26.04
     env:
       # lean4export MUST match the Lean version of THIS project's oleans, or it refuses them with
-      # "incompatible header". Keep in lockstep with lean-toolchain.
-      LEAN4EXPORT_TAG: v4.31.0
+      # "incompatible header". Keep in lockstep with lean-toolchain -- BUT lean4export only tags
+      # x.y.0 releases (no v4.33.1 tag exists), so this is the nearest existing SOURCE ref; the
+      # build step below overwrites its lean-toolchain with THIS repo's, so the binary is built on
+      # our exact toolchain and accepts our oleans. The cache key hashes our lean-toolchain, so a
+      # patch-version bump still rotates the cache even when this tag does not change.
+      LEAN4EXPORT_TAG: v4.33.0
       # The other three verifier components ship no usable release tags (landrun's tags stop at
       # v0.1.9 while it reports 0.1.15), so they are pinned by SHA. They used to be cloned from
       # `main`, which combined with the cache below was worse than merely irreproducible -- it was
@@ -84,7 +88,7 @@ jobs:
           path: ~/verifier-bin
           # Every pinned rev is in the key: bumping any pin rotates the cache and the rebuild
           # below actually runs, instead of the pin being a comment that changes nothing.
-          key: verifier-bin-${{ runner.os }}-${{ env.LEAN4EXPORT_TAG }}-${{ env.LANDRUN_REV }}-${{ env.NANODA_REV }}-${{ env.COMPARATOR_REV }}
+          key: verifier-bin-${{ runner.os }}-${{ env.LEAN4EXPORT_TAG }}-${{ hashFiles('lean-toolchain') }}-${{ env.LANDRUN_REV }}-${{ env.NANODA_REV }}-${{ env.COMPARATOR_REV }}
 
       - name: Build landrun, lean4export, nanoda, comparator
         if: steps.cache-bins.outputs.cache-hit != 'true'
@@ -103,9 +107,12 @@ jobs:
           (cd nanoda_lib && git checkout "$NANODA_REV" && cargo build --release \
              && cp target/release/nanoda_bin ~/verifier-bin/)
 
-          # lean4export — pinned to OUR Lean version (see note above).
+          # lean4export — sources from the nearest existing tag, BUILT ON OUR TOOLCHAIN (see the
+          # LEAN4EXPORT_TAG note above): the toolchain overwrite is what makes its binary accept
+          # this repo's oleans when our patch version has no lean4export tag of its own.
           git clone https://github.com/leanprover/lean4export.git
-          (cd lean4export && git checkout "$LEAN4EXPORT_TAG" && lake build \
+          (cd lean4export && git checkout "$LEAN4EXPORT_TAG" \
+             && cp "$GITHUB_WORKSPACE/lean-toolchain" lean-toolchain && lake build \
              && cp .lake/build/bin/lean4export ~/verifier-bin/)
 
           # comparator itself (builds on its own toolchain; elan fetches it).
