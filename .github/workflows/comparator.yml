@@ -47,6 +47,27 @@ jobs:
       # lean4export MUST match the Lean version of THIS project's oleans, or it refuses them with
       # "incompatible header". Keep in lockstep with lean-toolchain.
       LEAN4EXPORT_TAG: v4.31.0
+      # The other three verifier components ship no usable release tags (landrun's tags stop at
+      # v0.1.9 while it reports 0.1.15), so they are pinned by SHA. They used to be cloned from
+      # `main`, which combined with the cache below was worse than merely irreproducible -- it was
+      # actively MISLEADING. The cache key did not mention them, so once it was warm the whole
+      # "Build landrun, lean4export, nanoda, comparator" step was SKIPPED on every run: this job
+      # reported green while replaying binaries frozen at whatever `main` happened to be the day
+      # the key was first populated. It was verifying nothing new about the toolchain.
+      #
+      # It surfaced in lean-gallery when its v4.31 -> v4.32 bump changed LEAN4EXPORT_TAG, rotating
+      # the key and forcing a real rebuild -- which picked up, in one go, every upstream commit
+      # since. landrun had merged its long-pending urfave/cli v2 -> v3 migration hours earlier
+      # (PR #50); v3 consumes the bare `--` terminator, so comparator's
+      # `lean4export <module> -- <constants...>` arrived as `lean4export <module> <constants...>`
+      # and lean4export died trying to import a module named `Nat`. Hence the landrun pin is the
+      # last commit BEFORE that migration.
+      #
+      # Every pin is in the cache key, so changing one rotates the cache automatically and the
+      # rebuild actually runs. Bump these deliberately, and expect to re-verify when you do.
+      LANDRUN_REV: 5e9a0d15d6009cdaf27133bf2d59d29e7018cc47
+      NANODA_REV: f58f2f6d535e189a40fcb02ede8eb95f97a92d37
+      COMPARATOR_REV: 68a064109f01c08f47c8edc9f51d6a2bbffaa188
     steps:
       - uses: actions/checkout@v7
 
@@ -61,7 +82,9 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/verifier-bin
-          key: verifier-bin-${{ runner.os }}-${{ env.LEAN4EXPORT_TAG }}-v1
+          # Every pinned rev is in the key: bumping any pin rotates the cache and the rebuild
+          # below actually runs, instead of the pin being a comment that changes nothing.
+          key: verifier-bin-${{ runner.os }}-${{ env.LEAN4EXPORT_TAG }}-${{ env.LANDRUN_REV }}-${{ env.NANODA_REV }}-${{ env.COMPARATOR_REV }}
 
       - name: Build landrun, lean4export, nanoda, comparator
         if: steps.cache-bins.outputs.cache-hit != 'true'
@@ -69,14 +92,16 @@ jobs:
           set -euo pipefail
           mkdir -p ~/verifier-bin ~/verifier-src && cd ~/verifier-src
 
-          # landrun — Landlock sandbox (built from main per comparator's README).
-          git clone --depth 1 https://github.com/Zouuup/landrun.git
-          (cd landrun && go build -o ~/verifier-bin/landrun ./cmd/landrun)
+          # landrun — Landlock sandbox. Pinned to the last commit on urfave/cli v2; see the
+          # LANDRUN_REV note above for why v3 breaks comparator's lean4export invocation.
+          git clone https://github.com/Zouuup/landrun.git
+          (cd landrun && git checkout "$LANDRUN_REV" && go build -o ~/verifier-bin/landrun ./cmd/landrun)
 
           # nanoda — the INDEPENDENT kernel: trust weakens from "Lean's kernel is correct" to
           # "Lean's kernel OR nanoda is correct".
-          git clone --depth 1 https://github.com/ammkrn/nanoda_lib.git
-          (cd nanoda_lib && cargo build --release && cp target/release/nanoda_bin ~/verifier-bin/)
+          git clone https://github.com/ammkrn/nanoda_lib.git
+          (cd nanoda_lib && git checkout "$NANODA_REV" && cargo build --release \
+             && cp target/release/nanoda_bin ~/verifier-bin/)
 
           # lean4export — pinned to OUR Lean version (see note above).
           git clone https://github.com/leanprover/lean4export.git
@@ -84,8 +109,9 @@ jobs:
              && cp .lake/build/bin/lean4export ~/verifier-bin/)
 
           # comparator itself (builds on its own toolchain; elan fetches it).
-          git clone --depth 1 https://github.com/leanprover/comparator.git
-          (cd comparator && lake build comparator && cp .lake/build/bin/comparator ~/verifier-bin/)
+          git clone https://github.com/leanprover/comparator.git
+          (cd comparator && git checkout "$COMPARATOR_REV" && lake build comparator \
+             && cp .lake/build/bin/comparator ~/verifier-bin/)
 
       - name: Build project + comparator modules
         run: |
