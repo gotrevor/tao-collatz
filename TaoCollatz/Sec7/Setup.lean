@@ -49,7 +49,7 @@ theorem sfrac_scale_of (c : ℤ) (x y : ℚ) (m : ℤ) (h : y = c * x + m) :
 `arg(W') = c · arg(W) + integer`. -/
 theorem argRel (n ξ : ℕ) (c : ℤ) (W W' : ZMod (3 ^ n)) (hWW' : W' = (c : ZMod (3 ^ n)) * W) :
     ∃ m : ℤ, ((ξ * W'.val : ℚ) / 3 ^ n) = c * ((ξ * W.val : ℚ) / 3 ^ n) + m := by
-  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
+  have : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
   have hdvd : ((3 : ℤ) ^ n) ∣ (c * (W.val : ℤ) - (W'.val : ℤ)) := by
     have hz : (((c * (W.val : ℤ) - (W'.val : ℤ)) : ℤ) : ZMod (3 ^ n)) = 0 := by
       push_cast

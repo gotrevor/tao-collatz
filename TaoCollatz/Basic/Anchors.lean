@@ -60,7 +60,7 @@ theorem almostAllPos_true : AlmostAllPos fun _ => True := by
   have h : ∀ x : ℕ, 1 ≤ x → logProb {N : ℕ | True} (Finset.Icc 1 x) = 1 := by
     intro x hx
     unfold logProb
-    rw [Set.setOf_true, div_self (logSum_univ_pos hx).ne']
+    rw [Set.ofPred_true, div_self (logSum_univ_pos hx).ne']
   exact Tendsto.congr' (eventually_atTop.mpr ⟨1, fun x hx => (h x hx).symm⟩) tendsto_const_nhds
 
 /-- The empty property does *not* hold almost everywhere: log density distinguishes.
@@ -86,6 +86,6 @@ theorem logProb_odd_window_two : logProb {N : ℕ | N % 2 = 1} (Finset.Icc 1 2) 
   rw [hwin, Finset.sum_filter, Finset.sum_filter,
     Finset.sum_insert (by decide : (1 : ℕ) ∉ ({2} : Finset ℕ)), Finset.sum_singleton,
     Finset.sum_insert (by decide : (1 : ℕ) ∉ ({2} : Finset ℕ)), Finset.sum_singleton]
-  norm_num [Set.mem_setOf_eq]
+  norm_num [Set.mem_ofPred_eq]
 
 end TaoCollatz

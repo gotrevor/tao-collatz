@@ -346,7 +346,7 @@ theorem descentProb_base_atCX :
       N ∈ (descentEvent ⌊x⌋₊ N₀)ᶜ → N ∈ {N | ¬ passes ⌊x⌋₊ N} := by
     intro N _ hN
     by_contra hpass
-    rw [Set.mem_setOf_eq, not_not] at hpass
+    rw [Set.mem_ofPred_eq, not_not] at hpass
     exact hN ⟨hpass, le_trans
       (le_trans (syrMin_le_self _) (passLoc_le_of_passes hpass)) hfloor⟩
   have hmono := expect_mono_on_support (logUnifOdd (x ^ alpha) ((x ^ alpha) ^ alpha))
@@ -966,7 +966,7 @@ theorem tao_syracuse_quantitative_sum_atCX :
         rw [Finset.sum_filter]
         refine le_of_eq (Finset.sum_eq_zero fun N hN => if_neg ?_)
         rw [oddInterval, Finset.mem_filter, Finset.mem_range] at hN
-        simp only [Set.mem_setOf_eq, not_lt]
+        simp only [Set.mem_ofPred_eq, not_lt]
         have := syrMin_le_self N
         omega
       have hRHS : (0 : ℝ) ≤ C * Real.log x / (Real.log N₀) ^ c := by positivity
@@ -1302,11 +1302,11 @@ theorem tao_syracuse_quantitative_atC :
     refine Finset.sum_congr rfl fun N _ => ?_
     by_cases h : syrMin N ≤ N₀
     · have h1 : N ∈ {N | syrMin N ≤ N₀} := h
-      have h2 : N ∉ {N | N₀ < syrMin N} := by simp only [Set.mem_setOf_eq]; omega
+      have h2 : N ∉ {N | N₀ < syrMin N} := by simp only [Set.mem_ofPred_eq]; omega
       rw [if_pos h1, if_neg h2, if_pos (Set.mem_univ N)]
       ring
     · have h1 : N ∉ {N | syrMin N ≤ N₀} := h
-      have h2 : N ∈ {N | N₀ < syrMin N} := by simp only [Set.mem_setOf_eq]; omega
+      have h2 : N ∈ {N | N₀ < syrMin N} := by simp only [Set.mem_ofPred_eq]; omega
       rw [if_neg h1, if_pos h2, if_pos (Set.mem_univ N)]
       ring
   have hB0 : (0 : ℝ) ≤ B := by
@@ -1412,7 +1412,7 @@ theorem tao_syracuse (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
       have h1' : syrMin N ≤ N₀ := h1
       rcases le_or_gt M N with h2 | h2
       · have hgood : N ∈ {N | (syrMin N : ℝ) < f N} := by
-          simp only [Set.mem_setOf_eq]
+          simp only [Set.mem_ofPred_eq]
           have hs : (syrMin N : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast h1'
           exact lt_of_le_of_lt hs (hM N h2)
         rw [if_pos hgood]
@@ -1477,7 +1477,7 @@ theorem logSum_oddPart_pullback (A : Set ℕ) (x : ℕ) :
   have hmem : ∀ N ∈ S, 1 ≤ N ∧ N ≤ x ∧ oddPart N ∈ A := by
     intro N hN
     simp only [hSdef, Finset.mem_filter, Finset.mem_Icc,
-      Set.mem_setOf_eq] at hN
+      Set.mem_ofPred_eq] at hN
     exact ⟨hN.1.1, hN.1.2, hN.2⟩
   -- reindex `N ↦ (ν₂ N, oddPart N)`; recover `N` via `2^{ν₂ N}·oddPart N = N`
   have hinj : ∀ a ∈ S, ∀ b ∈ S,
@@ -1689,11 +1689,11 @@ theorem tao_collatz_quantitative_spine_atCX :
     refine Finset.sum_congr rfl fun N _ => ?_
     by_cases h : colMin N ≤ N₀
     · have h1 : N ∈ {N | colMin N ≤ N₀} := h
-      have h2 : N ∉ {N | N₀ < colMin N} := by simp only [Set.mem_setOf_eq]; omega
+      have h2 : N ∉ {N | N₀ < colMin N} := by simp only [Set.mem_ofPred_eq]; omega
       rw [if_pos h1, if_neg h2, if_pos (Set.mem_univ N)]
       ring
     · have h1 : N ∉ {N | colMin N ≤ N₀} := h
-      have h2 : N ∈ {N | N₀ < colMin N} := by simp only [Set.mem_setOf_eq]; omega
+      have h2 : N ∈ {N | N₀ < colMin N} := by simp only [Set.mem_ofPred_eq]; omega
       rw [if_neg h1, if_pos h2, if_pos (Set.mem_univ N)]
       ring
   have hB0 : (0 : ℝ) ≤ B := by
@@ -1738,7 +1738,7 @@ theorem tao_collatz_quantitative_spine_atCX :
     · rw [if_pos h]
       have h' : N₀ < colMin N := h
       have hgood : N ∈ {N | oddPart N ∈ {M | N₀ < syrMin M}} := by
-        simp only [Set.mem_setOf_eq]
+        simp only [Set.mem_ofPred_eq]
         rwa [← colMin_eq_syrMin_oddPart (by omega : 0 < N)]
       rw [if_pos hgood]
     · rw [if_neg h]
@@ -1951,7 +1951,7 @@ theorem tao_collatz_spine (f : ℕ → ℝ) (hf : Tendsto f atTop atTop) :
       have h1' : colMin N ≤ N₀ := h1
       rcases le_or_gt M N with h2 | h2
       · have hgood : N ∈ {N | (colMin N : ℝ) < f N} := by
-          simp only [Set.mem_setOf_eq]
+          simp only [Set.mem_ofPred_eq]
           have hs : (colMin N : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast h1'
           exact lt_of_le_of_lt hs (hM N h2)
         rw [if_pos hgood]

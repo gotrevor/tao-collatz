@@ -262,7 +262,7 @@ theorem Q_le_walk_damped (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (hε : 0
           intro p
           refine Set.indicator_of_notMem (fun hmem => ?_) 1
           have := hmem.2
-          simp only [Set.mem_setOf_eq] at this
+          simp only [Set.mem_ofPred_eq] at this
           omega
         have hQ : Q half W ε (j + (pathSum (Fin.cons d w) (P + 1)).1)
             (l + (pathSum (Fin.cons d w) (P + 1)).2) = 1 :=
@@ -1725,7 +1725,7 @@ theorem few_white_pointwise_split {n ξ : ℕ} (F : TriangleFamily n ξ)
         _ ≤ T1 + T2 + T3 := self_le_add_left _ _
     · -- good column: depth holds, apply the dichotomy.
       have hset : whiteSet n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2} = whiteStrip n ξ := by
-        ext q; simp only [whiteStrip, Set.mem_inter_iff, Set.mem_setOf_eq]; tauto
+        ext q; simp only [whiteStrip, Set.mem_inter_iff, Set.mem_ofPred_eq]; tauto
       have hcast : Nw = ((∑ p ∈ Finset.range P,
               (if q₀ + pathSum v p ∈ whiteStrip n ξ then (1 : ℕ) else 0) : ℕ) : ℝ) := by
         rw [hNwdef, Nat.cast_sum]

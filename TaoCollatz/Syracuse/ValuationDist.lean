@@ -24,8 +24,8 @@ noncomputable def unifOddMod (n' : ℕ) : PMF (ZMod (2 ^ n')) :=
       have h2 : 1 < 2 ^ n' := by
         calc 1 < 2 := one_lt_two
           _ ≤ 2 ^ n' := Nat.le_self_pow _h 2
-      haveI : Fact (1 < 2 ^ n') := ⟨h2⟩
-      haveI : NeZero (2 ^ n') := ⟨by omega⟩
+      have : Fact (1 < 2 ^ n') := ⟨h2⟩
+      have : NeZero (2 ^ n') := ⟨by omega⟩
       have hmem : (1 : ZMod (2 ^ n')) ∈
           Finset.univ.filter fun z : ZMod (2 ^ n') => z.val % 2 = 1 := by
         simp [Finset.mem_filter, ZMod.val_one]
@@ -889,7 +889,7 @@ theorem iid_geomHalf_overflow_eq (n k : Nat) :
     (Set.indicator E 1) (fun L => Set.indicator_nonneg (fun _ _ => zero_le_one) L)
   rw [show (geomHalf.iid n).map (fun a => ∑ i, a i) = iidSum geomHalf n from rfl] at hmap
   unfold PMF.expect at hmap
-  simpa only [Function.comp_apply, E, Set.indicator, Set.mem_setOf_eq, Pi.one_apply,
+  simpa only [Function.comp_apply, E, Set.indicator, Set.mem_ofPred_eq, Pi.one_apply,
     mul_ite, mul_one, mul_zero, pre_eq_fin_sum] using hmap.symm
 
 theorem geomHalf_overflow_le_Gweight (c₀ c C : ℝ) (hc₀ : 0 < c₀)
@@ -1149,7 +1149,7 @@ theorem valuation_tail (c₀ K : ℝ) (hc₀ : 0 < c₀) (hK : 0 < K) :
     unfold PMF.expect
     apply tsum_congr
     intro a
-    simp only [Set.indicator, Set.mem_setOf_eq, Pi.one_apply, mul_ite, mul_one, mul_zero]
+    simp only [Set.indicator, Set.mem_ofPred_eq, Pi.one_apply, mul_ite, mul_one, mul_zero]
   have hdistPQ : P.dTV Q ≤ Cd * (2 : ℝ) ^ (-cd * (n : ℝ)) :=
     hdist n n' X hsize hodd hmod
   have hevent := PMF.abs_expect_indicator_sub_le_dTV P Q E

@@ -159,8 +159,12 @@ theorem fiber_syracZ_sum (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) :
       split
       · exact (syracZ n).apply_ne_top a
       · exact ENNReal.zero_ne_top)] at hmap
-  simpa only [fiber, Finset.sum_filter, apply_ite ENNReal.toReal,
-    ENNReal.toReal_zero, eq_comm, π] using hmap
+  simp only [fiber, Finset.sum_filter, apply_ite ENNReal.toReal,
+    ENNReal.toReal_zero, eq_comm, π] at hmap ⊢
+  -- The `classical` above makes `Finset.sum_filter` re-synthesize the summand's `ite` with
+  -- `Classical.propDecidable`, while the goal's `ite` carries `ZMod.decidableEq`; `congr!`
+  -- bridges the two instances (Decidable is a subsingleton).
+  exact hmap.trans (by congr!)
 
 /-- The level-`m` Syracuse density, lifted uniformly to level `n`. -/
 noncomputable def syracLift (m n : ℕ) (hmn : m ≤ n) (Y : ZMod (3 ^ n)) : ℝ :=
@@ -630,7 +634,7 @@ of the C10 bound: combined with the head-factor decay (`dft_condDens_norm_le`), 
 step underneath, reusable for any conditioned density. -/
 theorem highfreq_l2_le_collision (m n : ℕ) (c : ZMod (3 ^ n) → ℝ) :
     ∑ ξ ∈ highFreq m n, ‖ZMod.dft (densC n c) ξ‖ ^ 2 ≤ (3 ^ n : ℝ) * ∑ Y, (c Y) ^ 2 := by
-  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
+  have : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
   calc ∑ ξ ∈ highFreq m n, ‖ZMod.dft (densC n c) ξ‖ ^ 2
       ≤ ∑ ξ, ‖ZMod.dft (densC n c) ξ‖ ^ 2 :=
         Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
@@ -743,7 +747,7 @@ theorem norm_stdAddChar {N : ℕ} [NeZero N] (x : ZMod N) : ‖ZMod.stdAddChar x
 `stdAddChar`) be bounded by `charFn_decay` (Prop 1.17, written in `eC`). -/
 theorem stdAddChar_eq_eC {n : ℕ} (j : ZMod (3 ^ n)) :
     ZMod.stdAddChar j = eC ((j.val : ℚ) / 3 ^ n) := by
-  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
+  have : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
   rw [ZMod.stdAddChar_apply, ZMod.toCircle_apply, eC]
   push_cast
   ring_nf
@@ -758,8 +762,8 @@ both characters through `stdAddChar_coe` to `exp(2πi·(·)/·)`, and cancel `3�
 theorem stdAddChar_pow3_descent {j p : ℕ} (w : ZMod (3 ^ (j + p))) :
     ZMod.stdAddChar ((3 : ZMod (3 ^ (j + p))) ^ j * w)
       = ZMod.stdAddChar (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) w) := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
-  haveI : NeZero (3 ^ p) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ p) := ⟨pow_ne_zero _ (by norm_num)⟩
   set m : ℕ := w.val with hmdef
   have hw : w = ((m : ℕ) : ZMod (3 ^ (j + p))) := (ZMod.natCast_zmod_val w).symm
   rw [hw]
@@ -786,8 +790,8 @@ through `stdAddChar_coe`, cancel `3ᵖ / 3^(j+p) = 1/3ʲ`. -/
 theorem stdAddChar_pow3_descent_right {j p : ℕ} (w : ZMod (3 ^ (j + p))) :
     ZMod.stdAddChar ((3 : ZMod (3 ^ (j + p))) ^ p * w)
       = ZMod.stdAddChar (ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_right j p)) (ZMod (3 ^ j)) w) := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
-  haveI : NeZero (3 ^ j) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ j) := ⟨pow_ne_zero _ (by norm_num)⟩
   set m : ℕ := w.val with hmdef
   have hw : w = ((m : ℕ) : ZMod (3 ^ (j + p))) := (ZMod.natCast_zmod_val w).symm
   rw [hw]
@@ -896,7 +900,7 @@ theorem eC_val_congr {n : ℕ} (a b : ℤ) (h : (a : ZMod (3 ^ n)) = (b : ZMod (
 `eC_val_congr` (both sides reduce to `-(ξ·Y)` in `ZMod (3ⁿ)`). -/
 theorem stdAddChar_mul_eq_eC {n : ℕ} (ξ Y : ZMod (3 ^ n)) :
     ZMod.stdAddChar (-(Y * ξ)) = eC (-(ξ.val * Y.val : ℚ) / 3 ^ n) := by
-  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ n) := ⟨pow_ne_zero _ (by norm_num)⟩
   rw [stdAddChar_eq_eC,
     show ((-(Y * ξ)).val : ℚ) = (((-(Y * ξ)).val : ℤ) : ℚ) by push_cast; ring,
     show (-(ξ.val * Y.val : ℚ)) = (((-(↑ξ.val * ↑Y.val) : ℤ)) : ℚ) by push_cast; ring]
@@ -910,7 +914,7 @@ theorem tail_cexpect_eq_syracZ {j p : ℕ} (ζ : ZMod (3 ^ (j + p))) :
         * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) ζ)))
       = (syracZ p).cexpect (fun Y => ZMod.stdAddChar (-(Y
           * ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left p j)) (ZMod (3 ^ p)) ζ))) := by
-  haveI : NeZero (3 ^ p) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ p) := ⟨pow_ne_zero _ (by norm_num)⟩
   rw [syracZ_eq_rev_fnat p, cexpect_map _ _ _ (fun Y => le_of_eq (norm_stdAddChar _))]
 
 /-- **Brick (b), the tail-factor ⟹ `charFn_decay` capstone** (C10): for a frequency `ξ = 3ʲ·ζ`, the
@@ -975,7 +979,7 @@ theorem syracZ_char_descent {j' q : ℕ} (η : ZMod (3 ^ (j' + q))) :
         ((3 : ZMod (3 ^ (j' + q))) ^ j' * η))))
       = (syracZ q).cexpect (fun Y' => ZMod.stdAddChar (-(Y' *
           ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) η))) := by
-  haveI : NeZero (3 ^ q) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ q) := ⟨pow_ne_zero _ (by norm_num)⟩
   have hpt : ∀ Y : ZMod (3 ^ (j' + q)),
       ZMod.stdAddChar (-(Y * ((3 : ZMod (3 ^ (j' + q))) ^ j' * η)))
         = ZMod.stdAddChar (-(ZMod.castHom (pow_dvd_pow 3 (Nat.le_add_left q j')) (ZMod (3 ^ q)) Y
@@ -1027,7 +1031,7 @@ theorem offset_cexpect_eq_syracZ {n : ℕ} (freq : ZMod (3 ^ n)) :
     (geomHalf.iid n).cexpect (fun v => ZMod.stdAddChar (-(((fnat n v : ZMod (3 ^ n))
         * (2 : ZMod (3 ^ n))⁻¹ ^ pre v n) * freq)))
       = (syracZ n).cexpect (fun Y => ZMod.stdAddChar (-(Y * freq))) := by
-  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ n) := ⟨pow_ne_zero _ (by norm_num)⟩
   rw [syracZ_eq_rev_fnat n, cexpect_map _ _ _ (fun Y => le_of_eq (norm_stdAddChar _))]
 
 /-- **Brick (b), the head factor as a level-`j` Syracuse character sum** (C10, Stage A wrapped). The
@@ -1123,7 +1127,7 @@ expectation, hence has norm `≤ 1` (`cexpect_norm_le` + `norm_stdAddChar`). The
 theorem head_factor_norm_le {j p : ℕ} (ξ : ZMod (3 ^ (j + p))) (l : ℕ) :
     ‖(geomHalf.iid j).cexpect (fun vh => ZMod.stdAddChar (-((3 ^ p * ((fnat j vh : ZMod (3 ^ (j + p)))
         * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vh j) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ l) * ξ)))‖ ≤ 1 := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
   exact cexpect_norm_le _ _ (fun vh => le_of_eq (norm_stdAddChar _))
 
 /-- **Brick (b), step 3 — the conditional character factorization** (C10). Fix the cut
@@ -1186,7 +1190,7 @@ theorem dft_cond_density {ι : Type*} {n : ℕ} (P : PMF ι) (X : ι → ZMod (3
         ∑' a, (P a).toReal * (if X a = Y ∧ w a then (1 : ℝ) else 0))) ξ
       = P.cexpect (fun a => ZMod.stdAddChar (-(X a * ξ)) * (if w a then (1 : ℂ) else 0)) := by
   classical
-  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
+  have : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
   have hbase : Summable (fun a => (P a).toReal) :=
     ENNReal.summable_toReal (by rw [P.tsum_coe]; exact ENNReal.one_ne_top)
   have hsum : ∀ Y : ZMod (3 ^ n), Summable (fun a => ZMod.stdAddChar (-(Y * ξ))
@@ -1264,7 +1268,7 @@ space is exhaustive, so conditioning on it loses no mass). Proof: `syracZ = (iid
 theorem syracZ_eq_tsum_condDens (j p : ℕ) (Y : ZMod (3 ^ (j + p))) :
     ((syracZ (j + p)) Y).toReal = ∑' l : ℕ, condDens j p l Y := by
   classical
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
   -- each per-`l` indicator term of `condDens` is finite in `ENNReal`
   have hGne : ∀ (a : Fin (j + p) → ℕ) (l : ℕ),
       (geomHalf.iid (j + p)) a
@@ -1346,7 +1350,7 @@ theorem tail_factor_l2_eq (j p l : ℕ) :
     ∑ ξ, ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
           * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ)) * (if pre vt p = l then 1 else 0))‖ ^ 2
       = (3 ^ (j + p) : ℝ) * ∑ Y, (tailDens j p l Y) ^ 2 := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
   have h1 : ∀ ξ : ZMod (3 ^ (j + p)),
       (geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
           * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ)) * (if pre vt p = l then 1 else 0))
@@ -1380,7 +1384,7 @@ theorem tailDens_nonneg (j p l : ℕ) (Y : ZMod (3 ^ (j + p))) : 0 ≤ tailDens 
 /-- The tail sub-density total mass is `≤ 1` (it is `P(pre = l) ≤ 1`): swap the finite `∑_Y` into the
 `tsum`, collapse `∑_Y 1_{offset = Y ∧ pre = l} = 1_{pre = l} ≤ 1`, and use `∑' (iid) = 1`. -/
 theorem tailDens_sum_le_one (j p l : ℕ) : ∑ Y, tailDens j p l Y ≤ 1 := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
   have hbase : Summable (fun vt : Fin p → ℕ => ((geomHalf.iid p) vt).toReal) :=
     ENNReal.summable_toReal (by rw [(geomHalf.iid p).tsum_coe]; exact ENNReal.one_ne_top)
   have hone : ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal = 1 := by
@@ -1482,7 +1486,7 @@ from `sum_sq_le_max_mul_sum` + `tailDens_sum_le_one` (`∑ tailDens ≤ 1`) + `M
 Rényi block is exactly `sup_Y tailDens Y ≤ M ≈ 3⁻ᵖ`. -/
 theorem tailDens_renyi_le (j p l : ℕ) (M : ℝ) (hM : ∀ Y, tailDens j p l Y ≤ M) :
     ∑ Y, (tailDens j p l Y) ^ 2 ≤ M := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
   have hM0 : 0 ≤ M := le_trans (tailDens_nonneg j p l 0) (hM 0)
   calc ∑ Y, (tailDens j p l Y) ^ 2
       ≤ M * ∑ Y, tailDens j p l Y :=
@@ -1496,7 +1500,7 @@ into the `tsum`, collapse `∑_Y 1_{offset = Y ∧ pre = l ∧ W} = 1_{pre = l �
 `∑' (iid) = 1`. -/
 theorem tailDensW_sum_le_one (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W] :
     ∑ Y, tailDensW j p l W Y ≤ 1 := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
   have hbase : Summable (fun vt : Fin p → ℕ => ((geomHalf.iid p) vt).toReal) :=
     ENNReal.summable_toReal (by rw [(geomHalf.iid p).tsum_coe]; exact ENNReal.one_ne_top)
   have hone : ∑' vt : Fin p → ℕ, ((geomHalf.iid p) vt).toReal = 1 := by
@@ -1557,7 +1561,7 @@ entropy is `∑_Y (tailDensW)² ≤ M`. Mirror of `tailDens_renyi_le`; `sum_sq_l
 theorem tailDensW_renyi_le (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [DecidablePred W] (M : ℝ)
     (hM : ∀ Y, tailDensW j p l W Y ≤ M) :
     ∑ Y, (tailDensW j p l W Y) ^ 2 ≤ M := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
   have hM0 : 0 ≤ M := le_trans (tailDensW_nonneg j p l W 0) (hM 0)
   calc ∑ Y, (tailDensW j p l W Y) ^ 2
       ≤ M * ∑ Y, tailDensW j p l W Y :=
@@ -1774,7 +1778,7 @@ theorem fnat_offset_zmod_inj {j p l : ℕ} (vt vt' : Fin p → ℕ)
     (hoff : (fnat p vt : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p
           = (fnat p vt' : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt' p) :
     vt = vt' := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
   rw [hl, hl'] at hoff
   have hunit : (2 : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ = 1 := by
     apply ZMod.mul_inv_of_unit
@@ -1802,7 +1806,7 @@ theorem tailDensW_le_single_mass (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [D
       fnat p vt < 3 ^ (j + p))
     (Y : ZMod (3 ^ (j + p))) :
     tailDensW j p l W Y ≤ (2 : ℝ)⁻¹ ^ l := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
   by_cases hex : ∃ vt₀ : Fin p → ℕ, (∀ i, 1 ≤ vt₀ i)
       ∧ (fnat p vt₀ : ZMod (3 ^ (j + p))) * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt₀ p = Y
       ∧ pre vt₀ p = l ∧ W vt₀
@@ -1858,7 +1862,7 @@ theorem tail_indicator_factor_norm_le {j p : ℕ} (ξ : ZMod (3 ^ (j + p))) (l :
     ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
           * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ))
         * (if pre vt p = l then 1 else 0))‖ ≤ 1 := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
   refine cexpect_norm_le _ _ (fun vt => ?_)
   by_cases h : pre vt p = l
   · rw [if_pos h, mul_one]; exact le_of_eq (norm_stdAddChar _)
@@ -2071,7 +2075,7 @@ theorem tail_factor_l2_eqW (j p l : ℕ) (W : (Fin p → ℕ) → Prop) [Decidab
     ∑ ξ, ‖(geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
           * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ)) * (if pre vt p = l ∧ W vt then 1 else 0))‖ ^ 2
       = (3 ^ (j + p) : ℝ) * ∑ Y, (tailDensW j p l W Y) ^ 2 := by
-  haveI : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
+  have : NeZero (3 ^ (j + p)) := ⟨pow_ne_zero _ (by norm_num)⟩
   have h1 : ∀ ξ : ZMod (3 ^ (j + p)),
       (geomHalf.iid p).cexpect (fun vt => ZMod.stdAddChar (-(((fnat p vt : ZMod (3 ^ (j + p)))
           * (2 : ZMod (3 ^ (j + p)))⁻¹ ^ pre vt p) * ξ)) * (if pre vt p = l ∧ W vt then 1 else 0))

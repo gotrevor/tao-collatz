@@ -194,7 +194,7 @@ theorem iidSum_nat_apply_le_center_of_decay (p : PMF ℕ) {c : ℝ} (hc : 1 ≤ 
   · -- large n: circle method at N = √n + 1
     have hn9' : 9 ≤ n := hn9
     set N := n.sqrt + 1 with hN
-    haveI : NeZero N := ⟨Nat.succ_ne_zero _⟩
+    have : NeZero N := ⟨Nat.succ_ne_zero _⟩
     have hs3 : 3 ≤ n.sqrt := (Nat.le_sqrt.mpr (by omega))
     have hN4 : 4 ≤ N := by omega
     have hNlow : n + 1 ≤ N ^ 2 := Nat.lt_succ_sqrt' n

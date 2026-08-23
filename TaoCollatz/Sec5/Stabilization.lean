@@ -398,7 +398,7 @@ theorem class_window_ap_form {lo hi : ℝ} (hlo : 1 ≤ lo) {q : ℕ} (hq : 1 �
       ∧ lo ≤ (a : ℝ)
       ∧ (a : ℝ) + (q : ℝ) * (count : ℝ) ≤ hi + (q : ℝ) := by
   have hqpos : 0 < q := hq
-  haveI : NeZero q := ⟨by omega⟩
+  have : NeZero q := ⟨by omega⟩
   have hlopos : (0 : ℝ) < lo := by linarith
   have hqR : (0 : ℝ) < (q : ℝ) := by exact_mod_cast hqpos
   have hhi : (0 : ℝ) ≤ hi := by linarith
@@ -784,7 +784,7 @@ regroup the `E'`-harmonic sum by residue class `X = M mod 3^{n−m₀}` via `har
 theorem harmZfine_eq_sum_cn (x : ℝ) (E : Set ℕ) (n : ℕ) :
     harmZfine x E n
       = ∑ X : ZMod (3 ^ (n - mZero x)), ((syracZ (n - mZero x)) X).toReal * cn x E n X := by
-  haveI : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
+  have : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
   have hreindex := harmonic_reindex x E (3 ^ (n - mZero x))
     (fun X => (3 : ℝ) ^ (n - mZero x) * ((syracZ (n - mZero x)) X).toReal)
     (fun X => cn_class_summable x E _ X)
@@ -815,7 +815,7 @@ theorem mainZ_eq_sum_fiber_cn (x : ℝ) (E : Set ℕ) (n : ℕ) (hmn : mZero x �
               * ((syracZ (mZero x))
                   (ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ mZero x)) X)).toReal)
             * cn x E n X := by
-  haveI : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
+  have : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
   have hreindex := harmonic_reindex x E (3 ^ (n - mZero x))
     (fun X => (3 : ℝ) ^ mZero x
       * ((syracZ (mZero x)) (ZMod.castHom (pow_dvd_pow 3 hmn) (ZMod (3 ^ mZero x)) X)).toReal)
@@ -1006,7 +1006,7 @@ theorem perNHarmonic_eq_sum_cn (x : ℝ) (E : Set ℕ) (n : ℕ)
     perNHarmonic x E n
       = ∑ X : ZMod (3 ^ (n - mZero x)), perNGoodMass x n X * cn x E n X := by
   classical
-  haveI : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
+  have : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
   -- every `M ∈ E'` dominates the modulus: `3^{n−m₀} ≤ M` (window floor, `cn_window_size` (i))
   have h3kM : ∀ M : ℕ, Eprime x E M → 3 ^ (n - mZero x) ≤ M := by
     intro M hEp
@@ -1488,7 +1488,7 @@ theorem perNHarmonic_le_at :
   have hxcn : xcn ≤ x := le_trans (le_max_left _ _) hx
   have hx1024 : Real.exp 1024 ≤ x := le_trans (le_max_right _ _) hx
   have hkn : n - mZero x ≤ nZero x := le_trans (Nat.sub_le _ _) (mem_Iy_le_nZero hn)
-  haveI : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
+  have : NeZero (3 ^ (n - mZero x)) := ⟨by positivity⟩
   rw [perNHarmonic_eq_sum_cn x E n hx1024 hkn]
   -- pointwise `perNGoodMass ≤ syracZ` (drop the good-restriction)
   have hpoint : ∀ X : ZMod (3 ^ (n - mZero x)),

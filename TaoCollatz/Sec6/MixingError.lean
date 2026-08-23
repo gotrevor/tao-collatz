@@ -335,8 +335,8 @@ theorem mainHigh_eq_restrictedDensity (A : ℝ) (n : ℕ) (Y : ZMod (3 ^ n)) :
   unfold mainEvent
   let E : ℕ × ℕ → (Fin n → ℕ) → Prop := fun kl =>
     mainPieceEvent n kl.1 kl.2 (caConst A) (caThr (caConst A) n)
-  letI : ∀ kl, DecidablePred (E kl) := fun _ => Classical.decPred _
-  letI : DecidablePred (fun a =>
+  let _ : ∀ kl, DecidablePred (E kl) := fun _ => Classical.decPred _
+  let _ : DecidablePred (fun a =>
       ∃ kl ∈ Finset.range n ×ˢ lRange (caConst A) n, E kl a) := Classical.decPred _
   have hdisj : ∀ a kl, kl ∈ Finset.range n ×ˢ lRange (caConst A) n →
       ∀ kl', kl' ∈ Finset.range n ×ˢ lRange (caConst A) n →

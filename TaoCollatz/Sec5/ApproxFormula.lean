@@ -599,7 +599,7 @@ theorem iid_prefix_twosided_eq (n₀ n : ℕ) (h : n ≤ n₀) (lam : ℝ) :
     (Set.indicator E 1) (fun L => Set.indicator_nonneg (fun _ _ => zero_le_one) L)
   rw [iidMap_pre' n₀ n h] at hmap
   unfold PMF.expect at hmap
-  simpa only [Function.comp_apply, E, Set.indicator, Set.mem_setOf_eq, Pi.one_apply,
+  simpa only [Function.comp_apply, E, Set.indicator, Set.mem_ofPred_eq, Pi.one_apply,
     mul_ite, mul_one, mul_zero] using hmap.symm
 
 -- `first_passage_approx` (RATIFY-C8, Prop 5.2 / (5.8)) is proved at the END of this file
@@ -738,7 +738,7 @@ theorem goodTuple_prefix_dev_sum_atCX :
         (fun a => Set.indicator_nonneg (fun _ _ => zero_le_one) a)]
       unfold PMF.expect
       apply tsum_congr; intro N; congr 1
-      simp only [Function.comp_apply, Set.indicator_apply, Set.mem_setOf_eq,
+      simp only [Function.comp_apply, Set.indicator_apply, Set.mem_ofPred_eq,
         pre_valVec hnle, Pi.one_apply]
     have hev := PMF.abs_expect_indicator_sub_le_dTV P₀ Q₀
       {a : Fin (nZero x) → ℕ | Real.log x ^ (0.6 : ℝ) ≤ |(pre a n : ℝ) - 2 * n|}
@@ -762,7 +762,7 @@ theorem goodTuple_prefix_dev_sum_atCX :
                 then (Q₀ a).toReal else 0 := by
         unfold PMF.expect
         apply tsum_congr; intro a
-        simp only [Set.indicator, Set.mem_setOf_eq, Pi.one_apply, mul_ite, mul_one, mul_zero]
+        simp only [Set.indicator, Set.mem_ofPred_eq, Pi.one_apply, mul_ite, mul_one, mul_zero]
       rw [hexpand, hQ₀def, iid_prefix_twosided_eq (nZero x) n hnle (Real.log x ^ (0.6 : ℝ))]
       exact htail n (Real.log x ^ (0.6 : ℝ)) hlam
     rw [htarget]; linarith [hXe, hQside]
@@ -906,7 +906,7 @@ theorem approx_good_tuple_whp_atCX :
       · rw [ha]; simp
       · have hmem : a ∈ P.support := ha
         have hodd : a % 2 = 1 := (logUnifOdd_support_le hyα1 hmem).1
-        rw [Set.indicator_of_notMem (by simp only [Set.mem_setOf_eq, not_not]; exact hodd)]; ring
+        rw [Set.indicator_of_notMem (by simp only [Set.mem_ofPred_eq, not_not]; exact hodd)]; ring
     show ∑' a, (P a).toReal * Set.indicator {N : ℕ | ¬ (N % 2 = 1)} 1 a = 0
     simp_rw [hzero]; exact tsum_zero
   have hpw1 : ∀ N, Set.indicator {N | ¬ goodTuple x (nZero x) (valVec N (nZero x))} (1 : ℕ → ℝ) N ≤
@@ -1104,7 +1104,7 @@ theorem passtime_edge_of_good_atX :
   -- sEdge x = s
   have hs_eq : sEdge x = s := by rw [sEdge, hsdef, hℓdef]
   -- unfold Edge and do contrapositive
-  simp only [Edge, Set.mem_setOf_eq, hs_eq]
+  simp only [Edge, Set.mem_ofPred_eq, hs_eq]
   by_contra hcon
   push Not at hcon
   obtain ⟨hIntLo, hIntHi⟩ := hcon
@@ -1781,7 +1781,7 @@ theorem passtime_edge_mass_atCX :
       obtain ⟨hNW, hNE⟩ := hN
       rw [mem_logWindow_iff] at hNW
       obtain ⟨hodd, hylo, hyhi⟩ := hNW
-      simp only [Edge, Set.mem_setOf_eq] at hNE
+      simp only [Edge, Set.mem_ofPred_eq] at hNE
       rw [Finset.mem_union, mem_logWindow_iff, mem_logWindow_iff]
       rcases hNE with hE | hE
       · exact Or.inl ⟨hodd, hylo, hE⟩
@@ -1926,7 +1926,7 @@ theorem passtime_window_inner_atCX :
       · rw [ha]; simp
       · have hmem : a ∈ P.support := ha
         have hodd : a % 2 = 1 := (logUnifOdd_support_le hyα1 hmem).1
-        rw [Set.indicator_of_notMem (by simp only [Set.mem_setOf_eq, not_not]; exact hodd)]; ring
+        rw [Set.indicator_of_notMem (by simp only [Set.mem_ofPred_eq, not_not]; exact hodd)]; ring
     show ∑' a, (P a).toReal * Set.indicator {N : ℕ | ¬ (N % 2 = 1)} 1 a = 0
     simp_rw [hzero]; exact tsum_zero
   -- the "bad" set: not a good tuple, or in the edge window
@@ -2241,20 +2241,20 @@ theorem first_passage_window_reduce_atCX :
             ⟨rfl, hP2.1, hP2.2⟩), Pi.one_apply]
         · intro n _ hne
           rw [Set.indicator_of_notMem]
-          simp only [Set.mem_setOf_eq]; rintro ⟨he, _, _⟩; exact hne he.symm
+          simp only [Set.mem_ofPred_eq]; rintro ⟨he, _, _⟩; exact hne he.symm
         · intro hna; exact absurd hT hna
       · rw [Set.indicator_of_notMem (show a ∉ Sbig from fun h => hT h.1)]
         symm
         apply Finset.sum_eq_zero
         intro n hn
         rw [Set.indicator_of_notMem]
-        simp only [Set.mem_setOf_eq]; rintro ⟨he, _, _⟩; exact hT (he ▸ hn)
+        simp only [Set.mem_ofPred_eq]; rintro ⟨he, _, _⟩; exact hT (he ▸ hn)
     · rw [Set.indicator_of_notMem (show a ∉ Sbig from fun h => hP2 ⟨h.2.1, h.2.2⟩)]
       symm
       apply Finset.sum_eq_zero
       intro n _
       rw [Set.indicator_of_notMem]
-      simp only [Set.mem_setOf_eq]; rintro ⟨_, h2, h3⟩; exact hP2 ⟨h2, h3⟩
+      simp only [Set.mem_ofPred_eq]; rintro ⟨_, h2, h3⟩; exact hP2 ⟨h2, h3⟩
   have hmid : firstPassMid x E y = P.expect (Set.indicator Sbig 1) := by
     unfold firstPassMid PMF.expect
     rw [← hP]
@@ -2916,7 +2916,7 @@ theorem stepback_passage_scale_atX :
   have hpass : passes ⌊x⌋₊ N := by
     by_contra hnp
     have hempty : {k | syr^[k] N ≤ ⌊x⌋₊} = ∅ := by
-      ext k; simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+      ext k; simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
       exact fun hk => hnp ⟨k, hk⟩
     have hz : passTime ⌊x⌋₊ N = 0 := by unfold passTime; rw [hempty, Nat.sInf_empty]
     omega
@@ -3135,7 +3135,7 @@ theorem firstPassMid_le_steppedMid_atX :
     by_contra hnp
     have hempty : {k | syr^[k] N ≤ ⌊x⌋₊} = ∅ := by
       ext k
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
       exact fun hk => hnp ⟨k, hk⟩
     have hz : passTime ⌊x⌋₊ N = 0 := by unfold passTime; rw [hempty, Nat.sInf_empty]
     omega
@@ -3218,7 +3218,7 @@ theorem passes_of_eprime {x : ℝ} {E : Set ℕ} {N k : ℕ} (hm : 1 ≤ mZero x
     by_contra hnp
     have hempty : {j | syr^[j] (syr^[k] N) ≤ ⌊x⌋₊} = ∅ := by
       ext j
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
       exact fun hj => hnp ⟨j, hj⟩
     have hz : passTime ⌊x⌋₊ (syr^[k] N) = 0 := by unfold passTime; rw [hempty, Nat.sInf_empty]
     omega

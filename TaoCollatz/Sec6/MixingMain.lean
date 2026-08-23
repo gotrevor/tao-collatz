@@ -446,7 +446,7 @@ theorem eventually_condWindowB_empty_p_gt_at (C : ℝ) (hC : 30 ≤ C) :
   have hp1 : 1 ≤ p := by omega
   have hwindow : 2 * (p : ℝ)
       - C * (Real.sqrt ((p : ℝ) * Real.log (n : ℝ)) + Real.log (n : ℝ)) ≤ (l : ℝ) := by
-    simpa [condWindow, n] using hW.1 p hp1 le_rfl
+    simpa [condWindow, n, pre] using hW.1 p hp1 le_rfl
   have hpcast : (8 / 5 : ℝ) * (n : ℝ) < 2 * (p : ℝ) := by
     have : (4 : ℝ) * n < 5 * p := by exact_mod_cast hp
     nlinarith
