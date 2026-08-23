@@ -28,7 +28,7 @@ are stated in:
 - CI ([`.github/workflows/comparator.yml`](.github/workflows/comparator.yml)) replays the proofs through Lean's kernel **and the
   independent `nanoda` kernel** (`enable_nanoda: true`), enforces the three-axiom whitelist,
   and runs sandboxed under `landrun`.
-- Local pre-flight of the statement-identity check: [`scripts/comparator-probe`](scripts/comparator-probe).
+- Local pre-flight of the statement-identity check: `comparator-probe` from the [comparator-harness skill](https://github.com/gotrevor/lean-agent-skills/tree/main/skills/comparator-harness), run from this repo's root.
 
 Provenance metadata: [`formalization.yaml`](formalization.yaml).
 
