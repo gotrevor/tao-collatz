@@ -220,7 +220,7 @@ theorem apex_gap {n ξ : ℕ} (F : TriangleFamily n ξ) {t' t'' : ℕ × ℤ × 
     t'.2.2 < ((t''.1 : ℝ) - t'.1) * Real.log 9 + ((t'.2.1 : ℝ) - lstar) * Real.log 2 := by
   have hnot : ((t''.1, lstar) : ℕ × ℤ) ∉ triangle t'.1 t'.2.1 t'.2.2 :=
     fun hmem' => F.not_mem_two ht' ht'' hne hmem' hmem''
-  rw [triangle, Set.mem_setOf_eq] at hnot
+  rw [triangle, Set.mem_ofPred_eq] at hnot
   push Not at hnot
   exact hnot hj hl'
 
@@ -1971,7 +1971,7 @@ theorem fpDist_out_of_strip_le_core (c C' : ℝ) (Cthr : ℕ)
       Set.indicator (outStripSet n) 1 (n / 2 - m + e.1, l + e.2) = (if m < e.1 then (1 : ℝ) else 0) := by
     intro e
     have hiff : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ outStripSet n ↔ m < e.1 := by
-      simp only [outStripSet, Set.mem_setOf_eq]; omega
+      simp only [outStripSet, Set.mem_ofPred_eq]; omega
     by_cases h : m < e.1
     · rw [Set.indicator_of_mem (hiff.mpr h), Pi.one_apply, if_pos h]
     · rw [Set.indicator_of_notMem (fun hm' => h (hiff.mp hm')), if_neg h]
@@ -2288,7 +2288,7 @@ theorem fpDist_white_exit_deep_core (CthrO CthrT : ℕ)
       · rw [Set.indicator_of_mem hP]; simp only [Pi.one_apply]; linarith
       · -- neither: the endpoint is white and in-strip
         have hle : n / 2 - m + e.1 ≤ n / 2 := by
-          simp only [outStripSet, Set.mem_setOf_eq, not_lt] at hO; exact hO
+          simp only [outStripSet, Set.mem_ofPred_eq, not_lt] at hO; exact hO
         have hWmem : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ whiteStrip n ξ := by
           refine ⟨hle, hq1, ?_⟩
           intro hblack

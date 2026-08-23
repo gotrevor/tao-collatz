@@ -18,12 +18,14 @@ weak.warningAsError = true
 # this is false; Mathlib omits it too.) It cost exactly one explicit binder to adopt here.
 autoImplicit = false
 
-# Mathlib pinned as a DIRECT require at v4.31.0 (matches the ~/.lake-base/4.31.0 universe
-# store, so `lake-base link` CoW-clones the prebuilt oleans in — no 40-min cold build).
+# Mathlib pinned as a DIRECT require at the release tag matching `lean-toolchain` (which is
+# also the universe store's key, so `lake-base link` CoW-clones the prebuilt oleans in — no
+# 40-min cold build). The tag lives in the `rev` below; naming it again here would only go
+# stale on the next bump.
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4.git"
-rev = "v4.31.0"
+rev = "v4.33.1"
 
 [[lean_lib]]
 name = "TaoCollatz"

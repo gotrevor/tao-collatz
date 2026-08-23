@@ -500,7 +500,7 @@ change the phase. -/
 theorem sfrac_phase_absorb (n ξ : ℕ) (X : ZMod (3 ^ n)) :
     sfrac ((ξ * X.val : ℚ) / 3 ^ n)
       = sfrac (((((ξ : ZMod (3 ^ n)) * X).val : ℕ) : ℚ) / 3 ^ n) := by
-  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
+  have : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
   set Y := (ξ : ZMod (3 ^ n)) * X with hY
   have hdvd : ((3 : ℤ) ^ n) ∣ ((ξ * X.val : ℤ) - (Y.val : ℤ)) := by
     have hz : (((ξ * X.val : ℤ) - (Y.val : ℤ) : ℤ) : ZMod (3 ^ n)) = 0 := by
@@ -524,7 +524,7 @@ theorem sfrac_phase_absorb (n ξ : ℕ) (X : ZMod (3 ^ n)) :
 `3^{-(n-2j)} ≤ |θ(j,l)|` for every `l`. -/
 theorem θq_lower_bound (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) (j : ℕ) (l : ℤ) (h2j : 2 * j + 1 ≤ n) :
     (1 : ℚ) / 3 ^ (n - 2 * j) ≤ |θq n ξ j l| := by
-  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
+  have : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
   set u : ZMod (3 ^ n) := (↑((u2 n) ^ (1 - l)) : ZMod (3 ^ n)) with hu
   set X : ZMod (3 ^ n) := (3 : ZMod (3 ^ n)) ^ (2 * j) * u with hX
   set X' : ZMod (3 ^ n) := (3 : ZMod (3 ^ n)) ^ (n - 1) * u with hX'
@@ -1789,7 +1789,7 @@ theorem black_structure (n ξ : ℕ) (hξ : ¬ 3 ∣ ξ) :
     exact ⟨p, hps, hpb, rfl⟩
   · -- the black strip is exactly the union of the corner triangles
     ext q
-    simp only [Set.mem_setOf_eq, Set.mem_iUnion, exists_prop]
+    simp only [Set.mem_ofPred_eq, Set.mem_iUnion, exists_prop]
     constructor
     · rintro ⟨hqs, hqb⟩
       refine ⟨cornerTriple n ξ q, ⟨q, ⟨hqs, hqb⟩, rfl⟩, ?_⟩

@@ -335,7 +335,7 @@ theorem windowMass_eq_sum_classMass {lo hi : ℝ} {n' : ℕ} (hn' : 0 < n') :
       = ∑ r ∈ Finset.univ.filter (fun r : ZMod (2 ^ n') => r.val % 2 = 1),
           classMass lo hi n' r := by
   classical
-  haveI : NeZero (2 ^ n') := ⟨by positivity⟩
+  have : NeZero (2 ^ n') := ⟨by positivity⟩
   unfold windowMass classMass
   refine (Finset.sum_fiberwise_of_maps_to (fun N hN => ?_) _).symm
   rw [Finset.mem_filter]
@@ -354,7 +354,7 @@ theorem intTest_dTV_le {lo hi : ℝ} (hhi : 1 ≤ hi) (hne : (logWindow lo hi).N
     PMF.dTV ((logUnifOdd lo hi).map fun N => (N : ZMod (2 ^ n'))) (unifOddMod n')
       ≤ 2 * ε * ((2 ^ (n' - 1) : ℕ) : ℝ) / windowMass lo hi := by
   classical
-  haveI : NeZero (2 ^ n') := ⟨by positivity⟩
+  have : NeZero (2 ^ n') := ⟨by positivity⟩
   set O : Finset (ZMod (2 ^ n')) := Finset.univ.filter (fun r => r.val % 2 = 1) with hOdef
   have hcard : O.card = 2 ^ (n' - 1) := card_odd_zmod_two_pow n' hn'
   -- the uniform mass on an odd residue in `ℝ`
@@ -568,7 +568,7 @@ theorem classMass_ap_form_atX :
   have hM2 : 2 ≤ 2 ^ n' := by
     calc 2 = 2 ^ 1 := (pow_one 2).symm
       _ ≤ 2 ^ n' := Nat.pow_le_pow_right (by norm_num) hn'pos
-  haveI : NeZero (2 ^ n') := ⟨by positivity⟩
+  have : NeZero (2 ^ n') := ⟨by positivity⟩
   have hMdvd2 : 2 ∣ 2 ^ n' := dvd_pow_self 2 hn'pos.ne'
   -- reals
   have hy2 : (2:ℝ) ≤ y := le_trans (by exact_mod_cast hM2) hMy
@@ -1316,7 +1316,7 @@ theorem geomHalf_underflow_le_Gweight (c C : ℝ)
       (Set.indicator E 1) (fun L => Set.indicator_nonneg (fun _ _ => zero_le_one) L)
     rw [show (geomHalf.iid n).map (fun a => ∑ i, a i) = iidSum geomHalf n from rfl] at hmap
     unfold PMF.expect at hmap
-    simpa only [Function.comp_apply, E, Set.indicator, Set.mem_setOf_eq, Pi.one_apply,
+    simpa only [Function.comp_apply, E, Set.indicator, Set.mem_ofPred_eq, Pi.one_apply,
       mul_ite, mul_one, mul_zero, pre_eq_fin_sum] using hmap.symm
   rw [hbridge]
   have hdom : ∀ L : Nat,
@@ -1451,7 +1451,7 @@ theorem valSum_lower_geom_atCX :
     unfold PMF.expect
     apply tsum_congr; intro N
     congr 1
-    simp only [Function.comp_apply, Set.indicator_apply, Set.mem_setOf_eq, hEdef,
+    simp only [Function.comp_apply, Set.indicator_apply, Set.mem_ofPred_eq, hEdef,
       pre_valVec (le_refl (nZero x)), Pi.one_apply]
   have hQside : Q.expect (Set.indicator E 1)
       ≤ Ct * Gweight (1 + nZero x) (c_geomTail * (0.1 * (nZero x : ℝ))) := by
@@ -1462,7 +1462,7 @@ theorem valSum_lower_geom_atCX :
     rw [hQdef, hEdef]
     unfold PMF.expect
     apply tsum_congr; intro a
-    simp only [Set.indicator_apply, Set.mem_setOf_eq, Pi.one_apply, mul_ite, mul_one, mul_zero]
+    simp only [Set.indicator_apply, Set.mem_ofPred_eq, Pi.one_apply, mul_ite, mul_one, mul_zero]
   have hevent := PMF.abs_expect_indicator_sub_le_dTV P Q E
   have hXevent : P.expect (Set.indicator E 1) ≤ Q.expect (Set.indicator E 1) + P.dTV Q := by
     have := le_abs_self (P.expect (Set.indicator E 1) - Q.expect (Set.indicator E 1))

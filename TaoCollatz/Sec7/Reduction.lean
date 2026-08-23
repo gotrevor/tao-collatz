@@ -59,7 +59,7 @@ the `val` of a sum differs from the sum of `val`s by a multiple of `3ⁿ`, which
 theorem eC_char_add (n ξ : ℕ) (y z : ZMod (3 ^ n)) :
     eC (-(ξ * (((y + z).val : ℕ) : ℚ)) / 3 ^ n)
       = eC (-(ξ * ((y.val : ℕ) : ℚ)) / 3 ^ n) * eC (-(ξ * ((z.val : ℕ) : ℚ)) / 3 ^ n) := by
-  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
+  have : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
   set t : ℕ := (y.val + z.val) / 3 ^ n with ht
   have hval : y.val + z.val = 3 ^ n * t + (y + z).val := by
     rw [ZMod.val_add, ht]
@@ -164,7 +164,7 @@ exactly `|cos(π θ(j,l))|` — the pair `(a₁,a₂)` is uniform on `{(1,2),(2,
 (7.7) phase point. -/
 theorem fCond_three_norm (n ξ j l : ℕ) :
     ‖fCond n ξ (xArg n j l) 3‖ = |cosπθ n ξ j (l : ℤ)| := by
-  haveI : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
+  have : NeZero (3 ^ n) := ⟨pow_ne_zero n (by norm_num)⟩
   set x := xArg n j l with hx
   -- the two-term sum: a ∈ {1, 2}
   have hIcc : Finset.Icc 1 (3 - 1) = ({1, 2} : Finset ℕ) := by decide

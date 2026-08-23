@@ -201,7 +201,7 @@ private theorem geom_fold {P : ℕ} (hP : 0 < P) (g : ℕ → ℝ≥0∞)
     (hper : ∀ a, g (a + P) = g a) :
     ∑' a : ℕ, (2⁻¹ : ℝ≥0∞) ^ a * g a
       = (1 - (2⁻¹ : ℝ≥0∞) ^ P)⁻¹ * ∑ r ∈ Finset.range P, (2⁻¹ : ℝ≥0∞) ^ r * g r := by
-  haveI : NeZero P := ⟨hP.ne'⟩
+  have : NeZero P := ⟨hP.ne'⟩
   have hperk : ∀ k r, g (k * P + r) = g r := by
     intro k r
     induction k with
@@ -323,7 +323,7 @@ private theorem three_mul_eq_iff (n : ℕ) (A B : ZMod (3 ^ (n + 1))) :
     3 * A = 3 * B ↔
       (ZMod.castHom (pow_dvd_pow 3 (Nat.le_succ n)) (ZMod (3 ^ n))) A
         = (ZMod.castHom (pow_dvd_pow 3 (Nat.le_succ n)) (ZMod (3 ^ n))) B := by
-  haveI : NeZero (3 ^ (n + 1)) := ⟨by positivity⟩
+  have : NeZero (3 ^ (n + 1)) := ⟨by positivity⟩
   set φ := ZMod.castHom (pow_dvd_pow 3 (Nat.le_succ n)) (ZMod (3 ^ n)) with hφ
   have key : ∀ C : ZMod (3 ^ (n + 1)), 3 * C = 0 ↔ φ C = 0 := by
     intro C
@@ -357,7 +357,7 @@ private theorem syracZ_fiber (n : ℕ) (a0 : ℕ) (x : ZMod (3 ^ (n + 1))) :
       = (if (2 ^ a0 * x.val) % 3 = 1
           then (syracZ n) (((2 ^ a0 * x.val - 1) / 3 : ℕ) : ZMod (3 ^ n))
           else 0) := by
-  haveI : NeZero (3 ^ (n + 1)) := ⟨by positivity⟩
+  have : NeZero (3 ^ (n + 1)) := ⟨by positivity⟩
   set φ := ZMod.castHom (pow_dvd_pow 3 (Nat.le_succ n)) (ZMod (3 ^ n)) with hφ
   -- `2` (hence `2^{a₀}`) is a unit mod `3ⁿ⁺¹`.
   have hunit : (2 : ZMod (3 ^ (n + 1))) * (2 : ZMod (3 ^ (n + 1)))⁻¹ = 1 := by
@@ -520,7 +520,7 @@ theorem syracZ_recursion (n : ℕ) (x : ZMod (3 ^ (n + 1))) :
       rw [if_pos hga, if_pos hgaP]
       congr 1
       -- arg equality: `(2^{a+P}x.val−1)/3 ≡ (2^{a}x.val−1)/3 (mod 3ⁿ)`.
-      haveI : NeZero (3 ^ (n + 1)) := ⟨by positivity⟩
+      have : NeZero (3 ^ (n + 1)) := ⟨by positivity⟩
       have hAB : ((2 ^ (a + P) * x.val : ℕ) : ZMod (3 ^ (n + 1)))
           = ((2 ^ a * x.val : ℕ) : ZMod (3 ^ (n + 1))) := by
         have hsplit : ((2 ^ (a + P) * x.val : ℕ) : ZMod (3 ^ (n + 1)))

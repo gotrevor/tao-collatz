@@ -78,7 +78,7 @@ theorem two_pow_val_mul_syr' (M : ℕ) :
 
 /-- `padicValNat 2` vanishes on odd numbers. -/
 theorem padicValNat_two_of_odd {a : ℕ} (h : a % 2 = 1) : padicValNat 2 a = 0 := by
-  haveI : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   exact padicValNat.eq_zero_of_not_dvd (by rw [Nat.dvd_iff_mod_eq_zero]; omega)
 
 /-- The odd part of an odd number is itself. -/
@@ -88,7 +88,7 @@ theorem oddPart_of_odd {a : ℕ} (h : a % 2 = 1) : oddPart a = a := by
 /-- Doubling shifts the 2-adic valuation by one. -/
 theorem padicValNat_two_two_mul {a : ℕ} (ha : 0 < a) :
     padicValNat 2 (2 * a) = padicValNat 2 a + 1 := by
-  haveI : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   have h22 : padicValNat 2 2 = 1 := padicValNat_self
   rw [padicValNat.mul (by norm_num) ha.ne', h22]; omega
 

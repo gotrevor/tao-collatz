@@ -183,7 +183,7 @@ theorem bridge_vector (n ξ : ℕ) :
     rw [show (0 : ℤ) + (pre v ((i : ℕ) + 1) : ℤ) = (pre v ((i : ℕ) + 1) : ℤ)
       from zero_add _]
     unfold whiteSet
-    rw [Set.mem_setOf_eq, show (0 + (i : ℕ) + 1) - 1 = (i : ℕ) from by omega]
+    rw [Set.mem_ofPred_eq, show (0 + (i : ℕ) + 1) - 1 = (i : ℕ) from by omega]
     constructor
     · exact fun h => ⟨by omega, h⟩
     · exact fun h => h.2
