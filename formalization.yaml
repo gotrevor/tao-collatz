@@ -1,10 +1,9 @@
 # formalization.yaml -- self-reported provenance for the tao-collatz formalization.
 # Schema: https://github.com/mathlib-initiative/formalization.yaml (v0.3)
 #
-# ⚠️ THIS IS AN IN-PROGRESS PROJECT. The headline theorems are NOT yet proved. Read `status.scope`
-# before reading anything else here as a claim of formalization. Everything below is either
-# machine-derived or explicitly marked as an estimate; where a fact was not recorded, it says so
-# rather than guessing.
+# Status: COMPLETE (2026-07-15). Both headline theorems are proved and kernel-verified
+# axiom-clean. Everything below is either machine-derived or explicitly marked as an estimate;
+# where a fact was not recorded, it says so rather than guessing.
 
 version: "v0.3"
 
@@ -22,21 +21,21 @@ sources:
 
 status:
   scope: >-
-    IN PROGRESS. The goal is Tao's Theorem 1.3 (almost all Collatz orbits attain almost bounded
-    values, in LOGARITHMIC density) and its quantitative form Theorem 3.1. Those two headline
-    theorems (`TaoCollatz.tao_collatz`, `TaoCollatz.tao_collatz_quantitative`) are still `sorry`
-    at time of writing and are NOT part of the comparator harness — a challenge may contain only
-    theorems the solution actually proves.
+    COMPLETE (2026-07-15). Tao's Theorem 1.3 (almost all Collatz orbits attain almost bounded
+    values, in LOGARITHMIC density) and its quantitative form Theorem 3.1 (`Colmin` form) are both
+    proved: `TaoCollatz.tao_collatz` and `TaoCollatz.tao_collatz_quantitative`, sorry-free and
+    kernel-verified axiom-clean (`#print axioms` = exactly propext/Quot.sound/Classical.choice,
+    dated run 2026-07-15 via `tools/blueprint_audit.py`, 114 declarations).
 
-    What the comparator harness (`Comparator/TaoCollatz/`) certifies TODAY is the project's TRUSTED
-    VOCABULARY: the Mathlib-only rendering of every definition the headlines are stated in
+    The comparator harness (`Comparator/TaoCollatz/`) certifies BOTH the trusted vocabulary and
+    the headlines: the Mathlib-only rendering of every definition the headlines are stated in
     (`col`, `colMin`, `logSum`, `logProb`, `posInterval`, `HasLogDensity`, `AlmostAllPos`) is
-    byte-identical to the ones the development uses, and five proved NON-VACUITY ANCHORS pin their
+    byte-identical to the ones the development uses; five proved NON-VACUITY ANCHORS pin their
     semantics against exact finite instances (notably `logProb_odd_window_two`, which separates
-    logarithmic from natural density — the axis Theorem 1.3 lives on). This lets a reader confirm,
-    now, that "Colmin", "log density", and "almost all" will mean what Tao means when the headline
-    lands. It is a vocabulary certificate, not a theorem certificate.
-  sorry_count: ">0 (headline theorems + open spine nodes; see the repo's STATUS.md for the live count)"
+    logarithmic from natural density — the axis Theorem 1.3 lives on); and the two headline
+    theorems are proved against exactly those definitions. Residual trust: a human reading of
+    `Challenge.lean` against the paper (statement faithfulness), as always.
+  sorry_count: "0"
   sorry_in_definitions: 0
   # Axioms below are for the COMPLETED spine nodes and the anchors, verified by `#print axioms`.
   # They are NOT a claim about the (unproved) headlines.
@@ -45,12 +44,12 @@ status:
   main_results:
     - declaration: "TaoCollatz.tao_collatz"
       file: "TaoCollatz/Statement.lean"
-      status: "in-progress (sorry)"
-      note: "Tao Theorem 1.3, logarithmic density. Not in the comparator harness until proved."
+      status: "proved (2026-07-15, kernel-verified axiom-clean)"
+      note: "Tao Theorem 1.3, logarithmic density. In the comparator harness."
     - declaration: "TaoCollatz.tao_collatz_quantitative"
       file: "TaoCollatz/Statement.lean"
-      status: "in-progress (sorry)"
-      note: "Tao Theorem 3.1 (Colmin form). Not in the comparator harness until proved."
+      status: "proved (2026-07-15, kernel-verified axiom-clean)"
+      note: "Tao Theorem 3.1 (Colmin form). In the comparator harness."
 
   # The comparator-harnessed, proved declarations (the vocabulary anchors):
   harness_results:
@@ -67,6 +66,12 @@ status:
       comparator_config: "Comparator/TaoCollatz/config.json"
       axioms: ["propext", "Quot.sound", "Classical.choice"]
     - declaration: "TaoCollatz.logProb_odd_window_two"
+      comparator_config: "Comparator/TaoCollatz/config.json"
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
+    - declaration: "TaoCollatz.tao_collatz"
+      comparator_config: "Comparator/TaoCollatz/config.json"
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
+    - declaration: "TaoCollatz.tao_collatz_quantitative"
       comparator_config: "Comparator/TaoCollatz/config.json"
       axioms: ["propext", "Quot.sound", "Classical.choice"]
 
@@ -117,11 +122,11 @@ alignment:
     - source: "Tao 2019, Theorem 1.3 (almost all Collatz orbits attain almost bounded values; log density)"
       lean: "TaoCollatz.tao_collatz"
       module: "TaoCollatz.Statement"
-      status: "in-progress"
+      status: "formalized"
     - source: "Tao 2019, Theorem 3.1 (quantitative Colmin form)"
       lean: "TaoCollatz.tao_collatz_quantitative"
       module: "TaoCollatz.Statement"
-      status: "in-progress"
+      status: "formalized"
 
 acknowledgements: >-
   Mathlib and the Lean FRO. `leanprover/comparator` and the `nanoda` kernel, which make this repo's

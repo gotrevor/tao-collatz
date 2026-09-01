@@ -10,12 +10,12 @@ project actually uses.
 The theorems below are the project's proved *non-vacuity anchors*; comparator
 checks the SOLUTION discharges each one against these very definitions.
 
-⚠️ The two headline theorems (`TaoCollatz.tao_collatz`,
-`TaoCollatz.tao_collatz_quantitative`, Tao's Thm 1.3 / 3.1) are deliberately NOT
-here: they are still `sorry` in the development, and a challenge may contain only
-theorems the solution actually proves. This harness certifies the trusted
-VOCABULARY today (so a reader can confirm `Colmin`, log density, "almost all" mean
-what Tao means); the headlines join the challenge when they are discharged.
+The two HEADLINE theorems (`TaoCollatz.tao_collatz`,
+`TaoCollatz.tao_collatz_quantitative` — Tao's Thm 1.3 and the Thm 3.1 Colmin
+form) joined the challenge 2026-07-15, the day the development discharged them.
+Their statements are rendered below over THIS file's Mathlib-only vocabulary;
+comparator certifies the solution proves byte-identical statements under the
+axiom whitelist, replayed through Lean's kernel and independently through nanoda.
 
 This file is the human audit surface. Read the DEFINITIONS against Tao 2019
 (arXiv:1909.03562): (1.1) for `col`, and Def. 1.2 for logarithmic density. The
@@ -81,5 +81,21 @@ natural-density impostor would give `1/2`, so this separates logarithmic from
 natural density — the axis Tao's Thm 1.3 lives on. -/
 theorem logProb_odd_window_two :
     logProb {N : ℕ | N % 2 = 1} (posInterval 2) = 2 / 3 := sorry
+
+/-! ### The headlines (Tao 2019: Theorem 1.3, and Theorem 3.1 in `Colmin` form)
+
+Discharged in the development 2026-07-15. Statements match
+`TaoCollatz/Statement.lean` over the vocabulary declared above. -/
+
+/-- **Theorem 1.3** (Tao 2019): for any `f : ℕ → ℝ` with `f(N) → ∞`, almost all
+`N` (in logarithmic density) satisfy `Colmin(N) < f(N)`. -/
+theorem tao_collatz (f : ℕ → ℝ) (hf : Filter.Tendsto f Filter.atTop Filter.atTop) :
+    AlmostAllPos fun N => (colMin N : ℝ) < f N := sorry
+
+/-- **Theorem 3.1** (Tao 2019, `Colmin` form): the log-probability that
+`Colmin(N) ≤ N₀` on the window `[1, x]` is at least `1 - C/(log N₀)^c`. -/
+theorem tao_collatz_quantitative :
+    ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ N₀ x : ℕ, 2 ≤ N₀ → 2 ≤ x →
+      1 - C / (Real.log N₀) ^ c ≤ logProb {N | colMin N ≤ N₀} (posInterval x) := sorry
 
 end TaoCollatz
