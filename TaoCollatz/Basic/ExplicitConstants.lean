@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2026 Trevor Morris. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Trevor Morris
+-/
+
 -- Full Mathlib, not slices: `Challenge.lean` re-declares `cTao`/`tenTower`/`CTao` under
 -- `import Mathlib`, and comparator demands *identical* elaborations, not defeq ones — a
 -- narrower import set here can pick a different instance path and fail the harness with

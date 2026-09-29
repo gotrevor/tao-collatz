@@ -77,6 +77,10 @@ lake build Comparator  # the comparator harness (challenge stubs carry sorry by 
 
 Toolchain and Mathlib pin live in [`lean-toolchain`](lean-toolchain) / [`lake-manifest.json`](lake-manifest.json) (Lean v4.31.0).
 
+## Acknowledgments
+
+Thanks to Martin Dvořák for clearing every build warning ([#1](https://github.com/gotrevor/tao-collatz/pull/1)).
+
 ## License
 
 [Apache License 2.0](LICENSE). Copyright 2026 Trevor Morris.
