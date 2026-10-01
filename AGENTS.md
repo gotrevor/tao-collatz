@@ -82,3 +82,9 @@ of lean-gallery's 2026-07-05 `main` divergence).
 statement differ over the watched set, a dated `#print axioms` on every claimed node,
 and a diff of the governance paths above. A worker cannot hide an edit from a diff.
 That is cheaper than a gate and it has caught every real incident so far.
+
+## Shared Lean context
+
+The standing rules for my Lean repos ([public copy](https://github.com/gotrevor/lean-agent-skills/blob/main/context/LEAN-NEW-MATH.md)).  New math is the default lane.
+
+@~/src/lean-agent-skills/context/LEAN-NEW-MATH.md
