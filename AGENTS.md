@@ -31,9 +31,15 @@ FALSE GREEN that fails the build (`./tools/blueprint_audit.py`).
 
 ## House rules
 
-- **Statements are copy-not-compose.** Render verbatim against the paper's numbered display, tag
-  `-- RATIFY-<node>`, then freeze. **Never edit a ratified pin** — not to weaken, not to strengthen,
-  not to generalize. Blocked? Write **`JUDGE-FLAG:`** in `PENDING_WORK.md` + your handoff, and move on.
+- **Statements are copy-not-compose.** Render verbatim against the paper's numbered display **plus
+  the standing context that display sits in** — §7 opens *"Let n ≥ 1, let ξ ∈ ℤ/3ⁿℤ be not divisible
+  by 3"*, so both belong in every §7 statement even though Lemma 7.4's display states neither. Tag
+  `-- RATIFY-<node>`, record where each hypothesis came from, then freeze. **Let the paper dictate the
+  statement; let the proof dictate only the proof** — a hypothesis the proof turns out not to need
+  still belongs if the paper declares it: keep it, silence the linter, say why. **A ratified statement
+  is the judge's to change** — want it stronger or more general? Add that *beside* the pin and let the
+  pin delegate to it. To change the pin itself, write **`JUDGE-FLAG:`** in `PENDING_WORK.md` + your
+  handoff, and move on. Full rule, incl. the definitions a statement reaches: `blueprint_rules.md` §4.
 - **A `sorry` is honest; a weakened theorem is a lie that compiles.** If a statement will not yield,
   **decompose it** into named sub-`sorry`s and prove what you can. **Raising the sorry count that way
   is PROGRESS.** Register load-bearing sub-lemmas as blueprint sub-nodes in the SAME pass you coin

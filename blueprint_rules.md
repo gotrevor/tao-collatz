@@ -86,12 +86,21 @@ it. See `blueprint_architecture.md`.)
    upstream node's *definitions* exist, **you can pin the statement today** — a proof-dependency
    does **not** block a pin. *This is what lets a scary node be de-risked before a cheap one.*
 4. **Statements are copy-not-compose — and this reaches the DEFINITIONS a statement rests on, not
-   just its top line.** Render each verbatim against its numbered display in the PDF, mark it
-   `RATIFY-<node>`, then freeze. **A pinned statement is faithful only if every non-trivial
-   definition it invokes is itself faithful** (ratified, or paper-verbatim). Reusing a plausibly-named
-   `def` whose body is subtly wrong hides a wrong object behind a right-looking statement — the C8
-   failure. **Never edit a ratified pin** — not to weaken it, not to strengthen it, not to
-   generalize it. Blocked? Write `JUDGE-FLAG:` and move on.
+   just its top line.** Render each verbatim against its numbered display in the PDF **together with
+   the standing context that display sits in** — §7 opens *"Let n ≥ 1, let ξ ∈ ℤ/3ⁿℤ be not divisible
+   by 3, and let A > 0 be fixed"*, so `1 ≤ n` and `¬ 3 ∣ ξ` belong in every §7 statement even though
+   Lemma 7.4's own display states neither. Mark it `RATIFY-<node>`, record where each hypothesis came
+   from, then freeze. **A pinned statement is faithful only if every non-trivial definition it invokes
+   is itself faithful** (ratified, or paper-verbatim). Reusing a plausibly-named `def` whose body is
+   subtly wrong hides a wrong object behind a right-looking statement — the C8 failure.
+   **Let the paper dictate the statement; let the proof dictate only the proof.** A hypothesis the
+   proof turns out not to need still belongs if the paper declares it: keep it, silence the linter
+   (`set_option linter.unusedVariables false in` + a why-comment, as mathlib does in
+   `Mathlib/Algebra/Lie/Sl2.lean`), and say where it came from. Deleting a binder is monotone, so the
+   build stays green and the axioms stay clean — the statement's recorded provenance is what catches it.
+   **A ratified statement is the judge's to change.** Want it weaker, stronger, or more general? Add
+   that *beside* the pin and let the pin delegate to it — `example : Stronger → Pinned := …` keeps the
+   generality and the correspondence at once. To change the pin itself, write `JUDGE-FLAG:` and move on.
 5. **A definition's docstring is a claim, held to its code.** `Aff`'s docstring said *"guarded by the
    divisibility"* while its body floored — the reader trusts the prose, the compiler runs the code,
    and the gap is invisible. When you reuse a `def`, read its **body**, not its docstring.
