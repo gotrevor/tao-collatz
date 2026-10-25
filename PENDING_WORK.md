@@ -1849,3 +1849,26 @@ cutoffs, force `θ = 2A/m ≤ min (ε/32) (1/192000000)` and
 `θ ≤ 1/2000`; then
 `(125/8)θ + 96000000θ² ≤ (129/8)θ < ε`. Feed the result into the
 white-exit/`QP_black_edge_case2` port before starting ManyTriangles or Case 3.
+
+### Grind lap 16 (2026-10-25) — uniform tilted edge-weight estimate landed ✅
+
+- Re-ran the binding calibration gate before downstream work:
+  `pascalDamping_half_decay` remains trust-base-clean, the 46 watched
+  declarations are character-identical to plant, and the blueprint audit is
+  green.
+- Proved `fpDistP_edgeWeight_le`, the complete `Pascal(p)` version of Tao's
+  (7.48)/(7.49) Case-2 weight degradation. Its threshold is selected before
+  `p`, then works for every `p ∈ [1/5,3/5]` and every first-passage budget
+  `s ≤ m/log²m`.
+- The proof combines `fpDistP_edgeWeight_split` with the two uniform MGF
+  inputs and two fixed-tilt tails. The new large holding-MGF coefficient is
+  handled by the explicit p-independent cutoffs
+  `2A/m ≤ 1/192000000` and `2A/m ≤ ε/32`; hence
+  `96000000θ² ≤ θ/2` and the holding MGF is at most `1+ε`.
+- The new theorem has exactly `[Classical.choice, Quot.sound, propext]`.
+  No new proof debt: **1 sorry + 0 orange nodes**. Proof commit: `4eb5704`.
+
+**Next:** port the law-parametric endpoint step as `QP_fp_endpoint_le`, along
+with `edgeWeightP_le_one` and `rpow_neg_le_edgeWeightP`. Then prove the moving-
+centre white-exit estimate for `fpDistP` (the real remaining geometric input to
+Case 2) and assemble `QP_black_edge_case2`.
