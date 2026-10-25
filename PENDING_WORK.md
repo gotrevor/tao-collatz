@@ -1716,3 +1716,22 @@ independent of `p`; then begin `Sec7P/FpLocation.lean`.
 **Next:** add `Sec7P/FpLocation.lean` with `renewalMassP`, `stepMassP`, and the
 first-passage convolution bound, then use the new local bound to center the
 renewal Gaussian at `j - (p/2)l` uniformly on the window.
+
+### Grind lap 10 (2026-10-25) — p-renewal convolution layer landed ✅
+
+- Added `Sec7P/FpLocation.lean` with the exact renewal measure
+  `renewalMassP`, its positive-time part `stepMassP`, the zero-layer split,
+  and the first-step convolution identity over `holdP`.
+- Proved the budget-restricted first-passage decomposition
+  `fpDistP_le_renewal_conv` and its unrestricted consequence
+  `fpDistP_le_stepMassP`. The fixed-law proof transfers exactly; the only
+  law-specific input is the already-proved positive-height support of
+  `holdP`.
+- Both headline lemmas have exactly the trusted three axioms. No new debt:
+  **1 sorry + 0 orange nodes**; the final target remains mandated-LAST; watched
+  declarations remain 46/46 character-identical.
+
+**Next:** prove the p-window renewal Gaussian bound by summing
+`holdP_local_bound_explicitC` over the step count, with center
+`j-(p/2)l` and constants chosen before `p`. Then convolve it through the new
+first-passage bound using the uniform one-step tail to finish Lemma 7.7@p.
