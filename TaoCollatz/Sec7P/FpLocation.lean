@@ -638,6 +638,629 @@ theorem sum_abs_real_AP_le {f : ℝ → ℝ} (hnn : ∀ u, 0 ≤ f u)
         exact Finset.mem_range.mpr (by omega)
   linarith
 
+/-! ### Uniform renewal summation along the tilted drift
+
+The height drift of `holdP p` is not integral, but on the campaign window it
+lies in `[10, 200]`.  The next estimate is the variable-spacing analogue of
+`TaoCollatz.renewal_weight_sum_le_explicitC`.  The edge/central split is made
+at `k = ⌊l/400⌋`: the upper drift bound then leaves a height discrepancy at
+least `l/2` in the edge range, while the lower drift bound controls both
+arithmetic-progression sums in the central range.
+-/
+
+/-- A uniform constant for `renewal_weight_sumP_le_explicitC`. -/
+noncomputable def C_renewalWeightP (a b : ℝ) : ℝ :=
+  32 / min (a / 8) (b / 2) ^ 2 + (3200 + 80 / b + 160 / Real.sqrt a)
+
+theorem C_renewalWeightP_pos {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    0 < C_renewalWeightP a b := by
+  unfold C_renewalWeightP
+  have hε0 : 0 < min (a / 8) (b / 2) := lt_min (by positivity) (by positivity)
+  have hsa : 0 < Real.sqrt a := Real.sqrt_pos.mpr ha
+  positivity
+
+/-- **Uniform tilted renewal `k`-sum envelope.**  For every real drift spacing
+`d ∈ [10,200]`, the local-limit weights summed over the possible renewal
+lengths cost only a constant (independent of `d`) times `(1+l)⁻¹ᐟ²`. -/
+theorem renewal_weight_sumP_le_explicitC {a b d : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hd0 : 10 ≤ d) (hd1 : d ≤ 200) :
+    ∀ (l : ℤ), 0 ≤ l →
+      ∑ k ∈ Finset.range (l.toNat / 3 + 1),
+        1 / (1 + (k : ℝ))
+          * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+            + Real.exp (-b * |(l : ℝ) - d * k|))
+        ≤ C_renewalWeightP a b / Real.sqrt (1 + (l : ℝ)) := by
+  unfold C_renewalWeightP
+  set ε : ℝ := min (a / 8) (b / 2) with hε
+  have hε0 : 0 < ε := lt_min (by positivity) (by positivity)
+  have hsa : 0 < Real.sqrt a := Real.sqrt_pos.mpr ha
+  have hd : 0 < d := lt_of_lt_of_le (by norm_num) hd0
+  intro l hl
+  set t : ℕ := l.toNat with hts
+  have hcast : ((t : ℕ) : ℝ) = (l : ℝ) := by
+    have := Int.toNat_of_nonneg hl
+    exact_mod_cast congrArg (Int.cast : ℤ → ℝ) this
+  have hl0 : (0 : ℝ) ≤ (l : ℝ) := by exact_mod_cast hl
+  have h1l : (0 : ℝ) < 1 + (l : ℝ) := by linarith
+  set s : ℝ := Real.sqrt (1 + (l : ℝ)) with hs
+  have hs0 : 0 < s := Real.sqrt_pos.mpr h1l
+  have hs1 : 1 ≤ s := Real.one_le_sqrt.mpr (by linarith)
+  have hss : s * s = 1 + (l : ℝ) := Real.mul_self_sqrt h1l.le
+  set N : ℕ := t / 3 + 1 with hN
+  set T : ℕ := t / 400 with hT
+  have hkl : ∀ k ∈ Finset.range N, (k : ℝ) ≤ (l : ℝ) := by
+    intro k hk
+    have hk' : k ≤ t := by
+      have := Finset.mem_range.mp hk
+      omega
+    rw [← hcast]
+    exact_mod_cast hk'
+  rw [← Finset.sum_filter_add_sum_filter_not (Finset.range N) (fun k => k < T)]
+  have hterm_nonneg : ∀ k : ℕ, 0 ≤ 1 / (1 + (k : ℝ))
+      * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+        + Real.exp (-b * |(l : ℝ) - d * k|)) := fun k => by positivity
+  -- Edge range: `k < l/400`, so the worst drift `d = 200` still leaves `z ≥ l/2`.
+  have hedge : ∑ k ∈ (Finset.range N).filter (fun k => k < T),
+      1 / (1 + (k : ℝ))
+        * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+          + Real.exp (-b * |(l : ℝ) - d * k|))
+      ≤ (32 / ε ^ 2) / s := by
+    by_cases hT0 : T = 0
+    · rw [Finset.filter_false_of_mem (fun k _ => by omega), Finset.sum_empty]
+      positivity
+    · have ht400 : 400 ≤ t := by omega
+      have hl1 : (1 : ℝ) ≤ (l : ℝ) := by
+        rw [← hcast]
+        exact_mod_cast le_trans (by norm_num) ht400
+      have hbound : ∀ k ∈ (Finset.range N).filter (fun k => k < T),
+          1 / (1 + (k : ℝ))
+            * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+              + Real.exp (-b * |(l : ℝ) - d * k|))
+          ≤ 2 * Real.exp (-(ε * (l : ℝ))) := by
+        intro k hk
+        have hkT : k < T := (Finset.mem_filter.mp hk).2
+        have hkN := (Finset.mem_filter.mp hk).1
+        have h400k : 400 * k + 400 ≤ t := by
+          have := Nat.div_mul_le_self t 400
+          omega
+        have h200k : 200 * (k : ℝ) ≤ (l : ℝ) / 2 := by
+          have h : ((400 * k + 400 : ℕ) : ℝ) ≤ ((t : ℕ) : ℝ) :=
+            Nat.cast_le.mpr h400k
+          rw [hcast] at h
+          push_cast at h
+          nlinarith
+        have hdk : d * (k : ℝ) ≤ (l : ℝ) / 2 := by
+          calc
+            d * (k : ℝ) ≤ 200 * (k : ℝ) :=
+              mul_le_mul_of_nonneg_right hd1 (Nat.cast_nonneg k)
+            _ ≤ (l : ℝ) / 2 := h200k
+        have hzl : (l : ℝ) / 2 ≤ |(l : ℝ) - d * k| := by
+          rw [abs_of_nonneg (by linarith)]
+          linarith
+        have hz0 : (0 : ℝ) ≤ (l : ℝ) / 2 := by linarith
+        have h1k : (0 : ℝ) < 1 + (k : ℝ) := by positivity
+        have h1kl : 1 + (k : ℝ) ≤ 1 + (l : ℝ) := by
+          linarith [hkl k hkN]
+        have hq : ε * (l : ℝ) ≤
+            a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)) := by
+          have h1 : a * ((l : ℝ) / 2) ^ 2 / (1 + (l : ℝ))
+              ≤ a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)) := by
+            calc
+              a * ((l : ℝ) / 2) ^ 2 / (1 + (l : ℝ))
+                  ≤ a * |(l : ℝ) - d * k| ^ 2 / (1 + (l : ℝ)) := by
+                    gcongr
+              _ ≤ a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)) :=
+                    div_le_div_of_nonneg_left (by positivity) h1k h1kl
+          have h2 : ε * (l : ℝ) ≤
+              a * ((l : ℝ) / 2) ^ 2 / (1 + (l : ℝ)) := by
+            rw [le_div_iff₀ h1l]
+            have hεa : ε ≤ a / 8 := min_le_left _ _
+            nlinarith [mul_nonneg ha.le (mul_nonneg hl0 (sub_nonneg.mpr hl1)),
+              mul_le_mul_of_nonneg_right hεa (mul_nonneg hl0 h1l.le)]
+          linarith
+        have hlin : ε * (l : ℝ) ≤ b * |(l : ℝ) - d * k| := by
+          have hεb : ε ≤ b / 2 := min_le_right _ _
+          nlinarith [mul_le_mul_of_nonneg_left hzl hb.le,
+            mul_le_mul_of_nonneg_right hεb hl0]
+        have hE1 : Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+            ≤ Real.exp (-(ε * (l : ℝ))) := by
+          apply Real.exp_le_exp.mpr
+          rw [neg_mul, neg_div]
+          linarith
+        have hE2 : Real.exp (-b * |(l : ℝ) - d * k|)
+            ≤ Real.exp (-(ε * (l : ℝ))) := by
+          apply Real.exp_le_exp.mpr
+          rw [neg_mul]
+          linarith
+        have hfr : 1 / (1 + (k : ℝ)) ≤ 1 := by
+          rw [div_le_one h1k]
+          linarith
+        calc
+          1 / (1 + (k : ℝ))
+              * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+                + Real.exp (-b * |(l : ℝ) - d * k|))
+              ≤ 1 * (Real.exp (-(ε * (l : ℝ))) +
+                  Real.exp (-(ε * (l : ℝ)))) := by
+                apply mul_le_mul hfr (add_le_add hE1 hE2) (by positivity) one_pos.le
+          _ = 2 * Real.exp (-(ε * (l : ℝ))) := by ring
+      have hcard : ∑ k ∈ (Finset.range N).filter (fun k => k < T),
+          1 / (1 + (k : ℝ))
+            * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+              + Real.exp (-b * |(l : ℝ) - d * k|))
+          ≤ (1 + (l : ℝ)) * (2 * Real.exp (-(ε * (l : ℝ)))) := by
+        calc
+          ∑ k ∈ (Finset.range N).filter (fun k => k < T),
+              1 / (1 + (k : ℝ))
+                * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+                  + Real.exp (-b * |(l : ℝ) - d * k|))
+              ≤ ∑ _k ∈ (Finset.range N).filter (fun k => k < T),
+                  2 * Real.exp (-(ε * (l : ℝ))) := Finset.sum_le_sum hbound
+          _ = (((Finset.range N).filter (fun k => k < T)).card : ℝ)
+                * (2 * Real.exp (-(ε * (l : ℝ)))) := by
+                rw [Finset.sum_const, nsmul_eq_mul]
+          _ ≤ (1 + (l : ℝ)) * (2 * Real.exp (-(ε * (l : ℝ)))) := by
+                apply mul_le_mul_of_nonneg_right ?_ (by positivity)
+                have hc1 : ((Finset.range N).filter (fun k => k < T)).card ≤ N :=
+                  le_trans (Finset.card_filter_le _ _) (by rw [Finset.card_range])
+                have hc2 : ((N : ℕ) : ℝ) ≤ 1 + (l : ℝ) := by
+                  have hN3 : ((t / 3 : ℕ) : ℝ) ≤ (t : ℝ) / 3 := Nat.cast_div_le
+                  have : (N : ℝ) = ((t / 3 : ℕ) : ℝ) + 1 := by
+                    rw [hN]
+                    push_cast
+                    ring
+                  rw [this, ← hcast] at *
+                  nlinarith [Nat.cast_nonneg (α := ℝ) t]
+                exact le_trans (Nat.cast_le.mpr hc1) hc2
+      refine hcard.trans ?_
+      rw [le_div_iff₀ hs0]
+      have hsle : s ≤ 1 + (l : ℝ) := by
+        calc
+          s ≤ s * s := le_mul_of_one_le_left hs0.le hs1
+          _ = 1 + (l : ℝ) := hss
+      have hεl : 0 < ε * (l : ℝ) := mul_pos hε0 (by linarith)
+      have hexp : Real.exp (-(ε * (l : ℝ))) ≤ 4 / (ε * (l : ℝ)) ^ 2 :=
+        TaoCollatz.exp_neg_le_four_div_sq hεl
+      have h2l : 1 + (l : ℝ) ≤ 2 * (l : ℝ) := by linarith
+      calc
+        (1 + (l : ℝ)) * (2 * Real.exp (-(ε * (l : ℝ)))) * s
+            ≤ (1 + (l : ℝ)) * (2 * Real.exp (-(ε * (l : ℝ))))
+                * (1 + (l : ℝ)) := by
+              apply mul_le_mul_of_nonneg_left hsle (by positivity)
+        _ = 2 * ((1 + (l : ℝ)) ^ 2 * Real.exp (-(ε * (l : ℝ)))) := by ring
+        _ ≤ 2 * ((2 * (l : ℝ)) ^ 2 * (4 / (ε * (l : ℝ)) ^ 2)) := by
+              apply mul_le_mul_of_nonneg_left ?_ (by norm_num)
+              apply mul_le_mul (by nlinarith) hexp (Real.exp_pos _).le (by positivity)
+        _ = 32 / ε ^ 2 := by
+              field_simp
+              ring
+  -- Central range: the reciprocal prefactor costs at most `400/(1+l)`.
+  have hcen : ∑ k ∈ (Finset.range N).filter (fun k => ¬ k < T),
+      1 / (1 + (k : ℝ))
+        * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+          + Real.exp (-b * |(l : ℝ) - d * k|))
+      ≤ (3200 + 80 / b + 160 / Real.sqrt a) / s := by
+    have hper : ∀ k ∈ (Finset.range N).filter (fun k => ¬ k < T),
+        1 / (1 + (k : ℝ))
+          * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+            + Real.exp (-b * |(l : ℝ) - d * k|))
+        ≤ 400 / (1 + (l : ℝ))
+          * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (l : ℝ)))
+            + Real.exp (-b * |(l : ℝ) - d * k|)) := by
+      intro k hk
+      have hkT : T ≤ k := Nat.le_of_not_lt (Finset.mem_filter.mp hk).2
+      have hkN := (Finset.mem_filter.mp hk).1
+      have h1k : (0 : ℝ) < 1 + (k : ℝ) := by positivity
+      have h1kl : 1 + (k : ℝ) ≤ 1 + (l : ℝ) := by
+        linarith [hkl k hkN]
+      have h400 : 1 + (l : ℝ) ≤ 400 * (1 + (k : ℝ)) := by
+        have h1 : t ≤ 400 * k + 399 := by omega
+        have h2 : ((t : ℕ) : ℝ) ≤ ((400 * k + 399 : ℕ) : ℝ) := Nat.cast_le.mpr h1
+        rw [hcast] at h2
+        push_cast at h2
+        linarith
+      have hfrac : 1 / (1 + (k : ℝ)) ≤ 400 / (1 + (l : ℝ)) := by
+        rw [div_le_div_iff₀ h1k h1l]
+        linarith
+      have hquad :
+          Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+            ≤ Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (l : ℝ))) := by
+        apply Real.exp_le_exp.mpr
+        rw [neg_mul, neg_div, neg_div, neg_le_neg_iff]
+        exact div_le_div_of_nonneg_left (by positivity) h1k h1kl
+      apply mul_le_mul hfrac (add_le_add hquad le_rfl) (by positivity) (by positivity)
+    have hwNnat : t < 10 * N := by omega
+    have hwN10 : (t : ℝ) < 10 * (N : ℝ) := by exact_mod_cast hwNnat
+    have hwN : (t : ℝ) < d * (N : ℝ) :=
+      hwN10.trans_le (mul_le_mul_of_nonneg_right hd0 (Nat.cast_nonneg N))
+    have hf1nn : ∀ u : ℝ, 0 ≤ Real.exp (-a * u ^ 2 / (1 + (l : ℝ))) :=
+      fun u => (Real.exp_pos _).le
+    have hf1anti : ∀ ⦃u v : ℝ⦄, 0 ≤ u → u ≤ v →
+        Real.exp (-a * v ^ 2 / (1 + (l : ℝ)))
+          ≤ Real.exp (-a * u ^ 2 / (1 + (l : ℝ))) := by
+      intro u v hu huv
+      apply Real.exp_le_exp.mpr
+      rw [neg_mul, neg_div, neg_mul, neg_div, neg_le_neg_iff]
+      apply div_le_div_of_nonneg_right ?_ h1l.le
+      nlinarith [mul_self_le_mul_self hu huv, ha.le]
+    have hAP1 := sum_abs_real_AP_le hf1nn hf1anti hd t N hwN
+    rw [hcast] at hAP1
+    have hf2nn : ∀ u : ℝ, 0 ≤ Real.exp (-b * u) :=
+      fun u => (Real.exp_pos _).le
+    have hf2anti : ∀ ⦃u v : ℝ⦄, 0 ≤ u → u ≤ v →
+        Real.exp (-b * v) ≤ Real.exp (-b * u) := by
+      intro u v hu huv
+      apply Real.exp_le_exp.mpr
+      nlinarith
+    have hAP2 := sum_abs_real_AP_le hf2nn hf2anti hd t N hwN
+    rw [hcast] at hAP2
+    set β : ℝ := d ^ 2 * a / (1 + (l : ℝ)) with hβdef
+    have hβ : 0 < β := by positivity
+    have hgauss : ∑ m ∈ Finset.range N,
+        Real.exp (-a * (d * (m : ℝ)) ^ 2 / (1 + (l : ℝ)))
+          ≤ 3 + 2 / Real.sqrt β := by
+      calc
+        ∑ m ∈ Finset.range N,
+            Real.exp (-a * (d * (m : ℝ)) ^ 2 / (1 + (l : ℝ)))
+            = ∑ m ∈ Finset.range N, Real.exp (-β * (m : ℝ) ^ 2) := by
+                refine Finset.sum_congr rfl fun m _ => congrArg Real.exp ?_
+                rw [hβdef]
+                field_simp
+        _ ≤ 3 + 2 / Real.sqrt β := TaoCollatz.sum_range_exp_neg_sq_le hβ N
+    have hβs : Real.sqrt β * s = d * Real.sqrt a := by
+      rw [hs, ← Real.sqrt_mul hβ.le]
+      rw [show β * (1 + (l : ℝ)) = d ^ 2 * a by rw [hβdef]; field_simp]
+      rw [Real.sqrt_mul (sq_nonneg d), Real.sqrt_sq hd.le]
+    have hβpos : 0 < Real.sqrt β := Real.sqrt_pos.mpr hβ
+    have h2β : 2 / Real.sqrt β ≤ s / (5 * Real.sqrt a) := by
+      rw [div_le_div_iff₀ hβpos (by positivity)]
+      nlinarith [hβs, mul_le_mul_of_nonneg_right hd0 hsa.le]
+    have hgeom : ∑ m ∈ Finset.range N, Real.exp (-b * (d * (m : ℝ)))
+        ≤ 1 + 1 / (10 * b) := by
+      have hterm : ∀ m : ℕ,
+          Real.exp (-b * (d * (m : ℝ))) = Real.exp (-(d * b)) ^ m := by
+        intro m
+        rw [← Real.exp_nat_mul]
+        exact congrArg Real.exp (by ring)
+      rw [Finset.sum_congr rfl fun m _ => hterm m]
+      have hr1 : Real.exp (-(d * b)) < 1 :=
+        Real.exp_lt_one_iff.mpr (neg_lt_zero.mpr (mul_pos hd hb))
+      calc
+        ∑ m ∈ Finset.range N, Real.exp (-(d * b)) ^ m
+            ≤ (1 - Real.exp (-(d * b)))⁻¹ :=
+              TaoCollatz.sum_range_geom_le (Real.exp_pos _).le hr1 N
+        _ ≤ 1 + 1 / (d * b) := TaoCollatz.one_sub_exp_neg_inv_le_one_add (by positivity)
+        _ ≤ 1 + 1 / (10 * b) := by
+              gcongr
+    calc
+      ∑ k ∈ (Finset.range N).filter (fun k => ¬ k < T),
+          1 / (1 + (k : ℝ))
+            * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+              + Real.exp (-b * |(l : ℝ) - d * k|))
+          ≤ ∑ k ∈ (Finset.range N).filter (fun k => ¬ k < T),
+              400 / (1 + (l : ℝ))
+                * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (l : ℝ)))
+                  + Real.exp (-b * |(l : ℝ) - d * k|)) := Finset.sum_le_sum hper
+      _ ≤ ∑ k ∈ Finset.range N,
+            400 / (1 + (l : ℝ))
+              * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (l : ℝ)))
+                + Real.exp (-b * |(l : ℝ) - d * k|)) :=
+          Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
+            fun k _ _ => by positivity
+      _ = 400 / (1 + (l : ℝ))
+            * (∑ k ∈ Finset.range N,
+                Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (l : ℝ)))
+              + ∑ k ∈ Finset.range N, Real.exp (-b * |(l : ℝ) - d * k|)) := by
+          rw [← Finset.sum_add_distrib, Finset.mul_sum]
+      _ ≤ 400 / (1 + (l : ℝ))
+            * (2 * (3 + 2 / Real.sqrt β) + 2 * (1 + 1 / (10 * b))) := by
+          apply mul_le_mul_of_nonneg_left ?_ (by positivity)
+          have g1 : ∑ k ∈ Finset.range N,
+              Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (l : ℝ)))
+                ≤ 2 * (3 + 2 / Real.sqrt β) :=
+            hAP1.trans (by linarith [hgauss])
+          have g2 : ∑ k ∈ Finset.range N, Real.exp (-b * |(l : ℝ) - d * k|)
+                ≤ 2 * (1 + 1 / (10 * b)) :=
+            hAP2.trans (by linarith [hgeom])
+          linarith
+      _ ≤ 400 / (1 + (l : ℝ))
+            * (8 + 1 / (5 * b) + 2 * s / (5 * Real.sqrt a)) := by
+          apply mul_le_mul_of_nonneg_left ?_ (by positivity)
+          have h4β : 4 / Real.sqrt β ≤ 2 * s / (5 * Real.sqrt a) := by
+            calc
+              4 / Real.sqrt β = 2 * (2 / Real.sqrt β) := by ring
+              _ ≤ 2 * (s / (5 * Real.sqrt a)) :=
+                mul_le_mul_of_nonneg_left h2β (by norm_num)
+              _ = 2 * s / (5 * Real.sqrt a) := by ring
+          have e3 : 2 * (2 / Real.sqrt β) = 4 / Real.sqrt β := by ring
+          have e4 : 2 * (1 / (10 * b)) = 1 / (5 * b) := by ring
+          linarith [h4β, e3, e4]
+      _ ≤ (3200 + 80 / b + 160 / Real.sqrt a) / s := by
+          rw [← hss, le_div_iff₀ hs0]
+          have heq : 400 / (s * s)
+                * (8 + 1 / (5 * b) + 2 * s / (5 * Real.sqrt a)) * s
+              = 3200 / s + 80 / (b * s) + 160 / Real.sqrt a := by
+            field_simp [hs0.ne', hb.ne', hsa.ne']
+            ring
+          rw [heq]
+          have hA : 3200 / s ≤ (3200 : ℝ) := by
+            rw [div_le_iff₀ hs0]
+            simpa only [mul_one] using
+              (mul_le_mul_of_nonneg_left hs1 (show (0 : ℝ) ≤ 3200 by norm_num))
+          have hB : 80 / (b * s) ≤ 80 / b := by
+            rw [div_le_div_iff₀ (mul_pos hb hs0) hb]
+            exact mul_le_mul_of_nonneg_left
+              (le_mul_of_one_le_right hb.le hs1) (by norm_num)
+          exact add_le_add (add_le_add hA hB) le_rfl
+  calc
+    ∑ k ∈ (Finset.range N).filter (fun k => k < T),
+        1 / (1 + (k : ℝ))
+          * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+            + Real.exp (-b * |(l : ℝ) - d * k|))
+      + ∑ k ∈ (Finset.range N).filter (fun k => ¬ k < T),
+        1 / (1 + (k : ℝ))
+          * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+            + Real.exp (-b * |(l : ℝ) - d * k|))
+        ≤ (32 / ε ^ 2) / s + (3200 + 80 / b + 160 / Real.sqrt a) / s :=
+          add_le_add hedge hcen
+    _ = (32 / ε ^ 2 + (3200 + 80 / b + 160 / Real.sqrt a)) / s :=
+      (add_div _ _ _).symm
+
+/-- Existential-constant form of the uniform tilted renewal sum. -/
+theorem renewal_weight_sumP_le {a b d : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hd0 : 10 ≤ d) (hd1 : d ≤ 200) :
+    ∃ C > (0 : ℝ), ∀ (l : ℤ), 0 ≤ l →
+      ∑ k ∈ Finset.range (l.toNat / 3 + 1),
+        1 / (1 + (k : ℝ))
+          * (Real.exp (-a * |(l : ℝ) - d * k| ^ 2 / (1 + (k : ℝ)))
+            + Real.exp (-b * |(l : ℝ) - d * k|))
+        ≤ C / Real.sqrt (1 + (l : ℝ)) :=
+  ⟨C_renewalWeightP a b, C_renewalWeightP_pos ha hb,
+    renewal_weight_sumP_le_explicitC ha hb hd0 hd1⟩
+
+/-! ### Uniform renewal Gaussian bound -/
+
+/-- The transverse decay rate in the tilted renewal-mass bound. -/
+noncomputable def c_renewalMassP : ℝ := c_holdLocalP / 2 / 2
+
+/-- A constant for the tilted renewal-mass bound, uniform over the campaign
+window. -/
+noncomputable def C_renewalMassP : ℝ :=
+  C_holdLocalP *
+    C_renewalWeightP (2 * (c_holdLocalP / 2) ^ 2 / 5) (c_holdLocalP / 2 / 2)
+
+theorem c_renewalMassP_pos : 0 < c_renewalMassP := by
+  unfold c_renewalMassP
+  linarith [c_holdLocalP_pos]
+
+theorem C_renewalMassP_pos : 0 < C_renewalMassP := by
+  have h5 := C_renewalWeightP_pos
+    (a := 2 * (c_holdLocalP / 2) ^ 2 / 5) (b := c_holdLocalP / 2 / 2)
+    (by positivity [c_holdLocalP_pos]) (by positivity [c_holdLocalP_pos])
+  unfold C_renewalMassP
+  exact mul_pos C_holdLocalP_pos h5
+
+/-- **Uniform tilted renewal Gaussian bound** (the first display in Tao's
+Lemma 7.7 proof).  The exact drift is removed from the transverse coordinate,
+leaving the center `j - (p/2)l`; all constants are independent of `p` on
+`[1/5,3/5]`. -/
+theorem renewalMassP_bound_explicitC
+    (hp0 : 1 / 5 ≤ tilt) (hp1 : tilt ≤ 3 / 5) :
+    ∀ (j : ℕ) (l : ℤ), 0 ≤ l →
+      (renewalMassLaw (j, l)).toReal
+        ≤ C_renewalMassP / Real.sqrt (1 + (l : ℝ))
+            * TaoCollatz.Gweight (1 + (l : ℝ))
+              (c_renewalMassP * ((j : ℝ) - tilt / 2 * (l : ℝ))) := by
+  have hc0 := c_holdLocalP_pos
+  have hC0 := C_holdLocalP_pos
+  have hloc := holdP_local_bound_explicitC tilt hp0 hp1
+  unfold C_renewalMassP c_renewalMassP
+  set c0 := c_holdLocalP with hc0def
+  set C0 := C_holdLocalP with hC0def
+  set c1 : ℝ := c0 / 2 with hc1def
+  have hc1 : 0 < c1 := by rw [hc1def]; positivity
+  have hC5 := C_renewalWeightP_pos (a := 2 * c1 ^ 2 / 5) (b := c1 / 2)
+    (by positivity) (by positivity)
+  set C5 := C_renewalWeightP (2 * c1 ^ 2 / 5) (c1 / 2) with hC5def
+  set d : ℝ := (pairThreeProb tilt)⁻¹ * (2 / tilt) with hddef
+  have hdmem : 10 ≤ d ∧ d ≤ 200 := by
+    rw [hddef]
+    exact holdP_height_drift_mem_window hp0 hp1
+  have hsum := renewal_weight_sumP_le_explicitC
+    (a := 2 * c1 ^ 2 / 5) (b := c1 / 2) (d := d)
+    (by positivity) (by positivity) hdmem.1 hdmem.2
+  intro j l hl
+  have hl0 : (0 : ℝ) ≤ (l : ℝ) := by exact_mod_cast hl
+  have h1l : (0 : ℝ) < 1 + (l : ℝ) := by linarith
+  set G : ℝ := TaoCollatz.Gweight (1 + (l : ℝ))
+    (c1 / 2 * ((j : ℝ) - tilt / 2 * (l : ℝ))) with hGdef
+  have hG : 0 ≤ G := TaoCollatz.Gweight_nonneg _ _
+  set N : ℕ := l.toNat / 3 + 1 with hN
+  have hkl : ∀ k ∈ Finset.range N, (k : ℝ) ≤ (l : ℝ) := by
+    intro k hk
+    have hk3 : k ≤ l.toNat := by
+      have := Finset.mem_range.mp hk
+      omega
+    have h : ((k : ℕ) : ℝ) ≤ ((l.toNat : ℕ) : ℝ) := Nat.cast_le.mpr hk3
+    rwa [show ((l.toNat : ℕ) : ℝ) = (l : ℝ) by
+      exact_mod_cast congrArg (Int.cast : ℤ → ℝ) (Int.toNat_of_nonneg hl)] at h
+  have hterm : ∀ k ∈ Finset.range N,
+      (TaoCollatz.iidSum holdLaw k (j, l)).toReal
+        ≤ C0 * G * (1 / (1 + (k : ℝ))
+            * (Real.exp (-(2 * c1 ^ 2 / 5) * |(l : ℝ) - d * k| ^ 2 /
+                (1 + (k : ℝ)))
+              + Real.exp (-(c1 / 2) * |(l : ℝ) - d * k|))) := by
+    intro k hk
+    have h1 := hloc k j l
+    rw [holdSumP_eq_iidSum] at h1
+    refine h1.trans ?_
+    set u : ℝ := (j : ℝ) - (pairThreeProb tilt)⁻¹ * k with hu
+    set v : ℝ := (l : ℝ) - d * k with hv
+    have h1k : (0 : ℝ) < 1 + (k : ℝ) := by positivity
+    have h1kl : 1 + (k : ℝ) ≤ 1 + (l : ℝ) := by linarith [hkl k hk]
+    have hnorm : ‖((u, v) : ℝ × ℝ)‖ = max |u| |v| := by
+      rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs]
+    have hstep1 : TaoCollatz.Gweight (1 + (k : ℝ))
+          (c0 * ‖((u, v) : ℝ × ℝ)‖)
+        ≤ TaoCollatz.Gweight (1 + (k : ℝ)) (c1 * (|u| + |v|)) := by
+      apply TaoCollatz.Gweight_anti h1k (by positivity)
+      rw [hnorm, hc1def]
+      rcases max_cases |u| |v| with ⟨hm, hle⟩ | ⟨hm, hle⟩ <;> rw [hm] <;>
+        nlinarith [abs_nonneg u, abs_nonneg v, hc0.le]
+    have hxe : (j : ℝ) - tilt / 2 * (l : ℝ) = u - tilt / 2 * v := by
+      rw [hu, hv, hddef]
+      exact (holdP_transverse_drift_cancel htilt0.ne' (j : ℝ) (l : ℝ) (k : ℝ)).symm
+    have hy : |(j : ℝ) - tilt / 2 * (l : ℝ)| + 7 / 10 * |v| ≤ |u| + |v| := by
+      have h := transverse_triangle_window (p := tilt) (u := u) (v := v) hp0 hp1
+      rwa [← hxe] at h
+    have hstep2 := Gweight_factorP
+      (x := (j : ℝ) - tilt / 2 * (l : ℝ)) (z := |v|) (y := |u| + |v|)
+      hc1 h1k h1kl (abs_nonneg v) hy
+    calc
+      C0 / (1 + (k : ℝ)) * TaoCollatz.Gweight (1 + (k : ℝ))
+          (c0 * ‖((u, v) : ℝ × ℝ)‖)
+          ≤ C0 / (1 + (k : ℝ)) * (G
+              * (Real.exp (-(2 * c1 ^ 2 / 5) * |v| ^ 2 / (1 + (k : ℝ)))
+                + Real.exp (-(c1 / 2) * |v|))) := by
+            apply mul_le_mul_of_nonneg_left (hstep1.trans hstep2) (by positivity)
+      _ = C0 * G * (1 / (1 + (k : ℝ))
+            * (Real.exp (-(2 * c1 ^ 2 / 5) * |v| ^ 2 / (1 + (k : ℝ)))
+              + Real.exp (-(c1 / 2) * |v|))) := by ring
+  calc
+    (renewalMassLaw (j, l)).toReal
+        = ∑ k ∈ Finset.range N,
+            (TaoCollatz.iidSum holdLaw k (j, l)).toReal :=
+          renewalMassP_toReal_eq tilt htilt0 htilt1 j l
+    _ ≤ ∑ k ∈ Finset.range N, C0 * G * (1 / (1 + (k : ℝ))
+          * (Real.exp (-(2 * c1 ^ 2 / 5) * |(l : ℝ) - d * k| ^ 2 /
+              (1 + (k : ℝ)))
+            + Real.exp (-(c1 / 2) * |(l : ℝ) - d * k|))) :=
+        Finset.sum_le_sum hterm
+    _ = C0 * G * ∑ k ∈ Finset.range N, 1 / (1 + (k : ℝ))
+          * (Real.exp (-(2 * c1 ^ 2 / 5) * |(l : ℝ) - d * k| ^ 2 /
+              (1 + (k : ℝ)))
+            + Real.exp (-(c1 / 2) * |(l : ℝ) - d * k|)) := by
+        rw [Finset.mul_sum]
+    _ ≤ C0 * G * (C5 / Real.sqrt (1 + (l : ℝ))) := by
+        apply mul_le_mul_of_nonneg_left (hsum l hl) (by positivity)
+    _ = C0 * C5 / Real.sqrt (1 + (l : ℝ)) * G := by ring
+
+/-- Existential interface: both renewal constants are chosen before `p`. -/
+theorem renewalMassP_bound_window :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ),
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ (j : ℕ) (l : ℤ), 0 ≤ l →
+        (renewalMassP p (by linarith) (by linarith) (j, l)).toReal
+          ≤ C / Real.sqrt (1 + (l : ℝ))
+              * TaoCollatz.Gweight (1 + (l : ℝ))
+                (c * ((j : ℝ) - p / 2 * (l : ℝ))) :=
+  ⟨c_renewalMassP, c_renewalMassP_pos,
+    C_renewalMassP, C_renewalMassP_pos,
+    fun p hp0 hp1 => renewalMassP_bound_explicitC p (by linarith) (by linarith) hp0 hp1⟩
+
+/-! ### Uniform one-step overshoot bound -/
+
+/-- Uniform exponential rate for one tilted holding increment. -/
+noncomputable def gamma_holdStepP : ℝ := c_holdLocalP / 4
+
+/-- Uniform constant for one tilted holding increment. -/
+noncomputable def C_holdStepP : ℝ := 2 * C_holdLocalP
+
+theorem gamma_holdStepP_pos : 0 < gamma_holdStepP := by
+  unfold gamma_holdStepP
+  linarith [c_holdLocalP_pos]
+
+theorem C_holdStepP_pos : 0 < C_holdStepP := by
+  unfold C_holdStepP
+  linarith [C_holdLocalP_pos]
+
+/-- The single-overshoot-step estimate for `holdP`, centered at its exact
+p-dependent mean and with constants uniform on `[1/5,3/5]`. -/
+theorem holdP_step_bound_explicitC
+    (hp0 : 1 / 5 ≤ tilt) (hp1 : tilt ≤ 3 / 5) :
+    ∀ d : ℕ × ℤ,
+      (holdLaw d).toReal
+        ≤ C_holdStepP *
+            Real.exp (-gamma_holdStepP *
+              |(d.1 : ℝ) - (pairThreeProb tilt)⁻¹|) *
+            Real.exp (-gamma_holdStepP *
+              |(d.2 : ℝ) - (pairThreeProb tilt)⁻¹ * (2 / tilt)|) := by
+  have hc0 := c_holdLocalP_pos
+  have hC0 := C_holdLocalP_pos
+  have hloc := holdP_local_bound_explicitC tilt hp0 hp1
+  unfold C_holdStepP gamma_holdStepP
+  set c0 := c_holdLocalP with hc0def
+  set C0 := C_holdLocalP with hC0def
+  intro e
+  have h1 := hloc 1 e.1 e.2
+  rw [holdSumP_eq_iidSum] at h1
+  have hone : TaoCollatz.iidSum holdLaw 1 = holdLaw := by
+    rw [TaoCollatz.iidSum_succ, TaoCollatz.iidSum_zero]
+    simp only [PMF.pure_map, add_zero, PMF.bind_pure]
+  rw [hone] at h1
+  refine h1.trans ?_
+  set A : ℝ := (e.1 : ℝ) - (pairThreeProb tilt)⁻¹ * (1 : ℕ) with hA
+  set B : ℝ := (e.2 : ℝ) -
+    ((pairThreeProb tilt)⁻¹ * (2 / tilt)) * (1 : ℕ) with hB
+  have hnorm : ‖((A, B) : ℝ × ℝ)‖ = max |A| |B| := by
+    rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs]
+  have hstep1 : TaoCollatz.Gweight (1 + ((1 : ℕ) : ℝ))
+        (c0 * ‖((A, B) : ℝ × ℝ)‖)
+      ≤ TaoCollatz.Gweight (1 + ((1 : ℕ) : ℝ))
+          (c0 / 2 * (|A| + |B|)) := by
+    apply TaoCollatz.Gweight_anti (by push_cast; norm_num) (by positivity)
+    rw [hnorm]
+    rcases max_cases |A| |B| with ⟨hm, hle⟩ | ⟨hm, hle⟩ <;> rw [hm] <;>
+      nlinarith [abs_nonneg A, abs_nonneg B, hc0.le]
+  have hstep2 : TaoCollatz.Gweight (1 + ((1 : ℕ) : ℝ))
+        (c0 / 2 * (|A| + |B|))
+      ≤ 4 * Real.exp (-(c0 / 4) * |A|) * Real.exp (-(c0 / 4) * |B|) := by
+    have h12 : (1 : ℝ) + ((1 : ℕ) : ℝ) = 2 := by push_cast; norm_num
+    rw [h12]
+    calc
+      TaoCollatz.Gweight 2 (c0 / 2 * (|A| + |B|))
+          ≤ 4 * Real.exp (-(c0 / 2 * (|A| + |B|)) / 2) :=
+            TaoCollatz.Gweight_two_le (by positivity)
+      _ = 4 * Real.exp (-(c0 / 4) * |A|) *
+            Real.exp (-(c0 / 4) * |B|) := by
+          rw [mul_assoc, ← Real.exp_add]
+          exact congrArg (4 * ·) (congrArg Real.exp (by ring))
+  have hAe : |A| = |(e.1 : ℝ) - (pairThreeProb tilt)⁻¹| := by
+    rw [hA]
+    push_cast
+    ring
+  have hBe : |B| =
+      |(e.2 : ℝ) - (pairThreeProb tilt)⁻¹ * (2 / tilt)| := by
+    rw [hB]
+    push_cast
+    ring
+  calc
+    C0 / (1 + ((1 : ℕ) : ℝ)) * TaoCollatz.Gweight (1 + ((1 : ℕ) : ℝ))
+        (c0 * ‖((A, B) : ℝ × ℝ)‖)
+        ≤ C0 / (1 + ((1 : ℕ) : ℝ))
+            * (4 * Real.exp (-(c0 / 4) * |A|) *
+              Real.exp (-(c0 / 4) * |B|)) := by
+          apply mul_le_mul_of_nonneg_left (hstep1.trans hstep2) (by positivity)
+    _ = 2 * C0 * Real.exp (-(c0 / 4) * |A|) *
+          Real.exp (-(c0 / 4) * |B|) := by
+        push_cast
+        ring
+    _ = 2 * C0 *
+          Real.exp (-(c0 / 4) * |(e.1 : ℝ) - (pairThreeProb tilt)⁻¹|) *
+          Real.exp (-(c0 / 4) *
+            |(e.2 : ℝ) - (pairThreeProb tilt)⁻¹ * (2 / tilt)|) := by
+        rw [hAe, hBe]
+
+/-- Existential interface for the uniform one-step estimate. -/
+theorem holdP_step_bound_window :
+    ∃ γ > (0 : ℝ), ∃ C > (0 : ℝ),
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5), ∀ d : ℕ × ℤ,
+        (holdP p (by linarith) (by linarith) d).toReal
+          ≤ C * Real.exp (-γ * |(d.1 : ℝ) - (pairThreeProb p)⁻¹|) *
+              Real.exp (-γ *
+                |(d.2 : ℝ) - (pairThreeProb p)⁻¹ * (2 / p)|) :=
+  ⟨gamma_holdStepP, gamma_holdStepP_pos, C_holdStepP, C_holdStepP_pos,
+    fun p hp0 hp1 => holdP_step_bound_explicitC p (by linarith) (by linarith) hp0 hp1⟩
+
 end
 
 end TaoCollatz.Sec7P
