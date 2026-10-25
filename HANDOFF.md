@@ -52,6 +52,18 @@ lake build TaoCollatz.Sec7P.BlackEdge
   all four axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
+~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
+  --import TaoCollatz \
+  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
+  --axioms TaoCollatz.Sec7P.slope_margin \
+  --axioms TaoCollatz.Sec7P.gaussExpP_col_tail \
+  --axioms TaoCollatz.Sec7P.fst_mgf_moving_center_general \
+  --axioms TaoCollatz.Sec7P.fpDistP_fst_mgf_general
+  Build completed successfully (8763 jobs).
+  proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
+  all five axiom sets: [Classical.choice, Quot.sound, propext]
+  FORMALIZE-TIER GREEN
+
 ./tools/tao_stmt_diff.py eb40bf3 HEAD
   character-identical (46/46)
 
