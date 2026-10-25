@@ -45,6 +45,8 @@ import TaoCollatz.Sec7P.Prob
 import TaoCollatz.Sec7P.Holding
 import TaoCollatz.Sec7P.HoldBasics
 import TaoCollatz.Sec7P.HoldTail
+import TaoCollatz.Sec7P.Monotone
+import TaoCollatz.Sec7P.Unroll
 import TaoCollatz.Sec7P.Statement
 import TaoCollatz.Sec3.Reduction
 import TaoCollatz.Statement

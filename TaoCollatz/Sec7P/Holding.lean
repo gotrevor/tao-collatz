@@ -169,4 +169,188 @@ theorem holdP_apply_two (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1) (b : ℕ) :
       simp only [Function.comp_apply]
       simp)]
 
+/-! ### The tilted renewal recursion
+
+The renewal recursion itself only uses that the first coordinate of `holdP` is
+positive.  This is the `Pascal(p)` version of Tao's (7.34)--(7.35); keeping `p`
+and its endpoint hypotheses explicit lets every downstream estimate retain the
+uniformity discipline of the campaign.
+-/
+
+/-- Slicing `holdP` at a fixed first coordinate recovers its geometric first
+marginal. -/
+theorem holdP_fst_marginal (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1) (k : ℕ) :
+    ∑' l : ℤ, holdP p hp0 hp1 (k, l) =
+      geomP (pairThreeProb p) (pairThreeProb_pos p hp0 hp1)
+        (pairThreeProb_le_one p hp0 hp1) k := by
+  have h1 : (holdP p hp0 hp1).map Prod.fst k =
+      ∑' l : ℤ, holdP p hp0 hp1 (k, l) := by
+    rw [PMF.map_apply, ENNReal.tsum_prod']
+    rw [tsum_eq_single k (fun k' hk' => by simp [Ne.symm hk'])]
+    exact tsum_congr fun l => by simp
+  rw [← h1, holdP_map_fst]
+
+/-- Expectations depending only on the first holding coordinate reduce to the
+geometric first marginal. -/
+theorem holdP_tsum_fst (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (f : ℕ → ℝ) (hf : ∀ k, 0 ≤ f k) :
+    ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal * f d.1 =
+      ∑' k : ℕ,
+        (geomP (pairThreeProb p) (pairThreeProb_pos p hp0 hp1)
+          (pairThreeProb_le_one p hp0 hp1) k).toReal * f k := by
+  let g := geomP (pairThreeProb p) (pairThreeProb_pos p hp0 hp1)
+    (pairThreeProb_le_one p hp0 hp1)
+  have hEN : ∑' d : ℕ × ℤ, holdP p hp0 hp1 d * ENNReal.ofReal (f d.1) =
+      ∑' k : ℕ, g k * ENNReal.ofReal (f k) := by
+    rw [ENNReal.tsum_prod']
+    refine tsum_congr fun k => ?_
+    have h : ∀ l : ℤ,
+        holdP p hp0 hp1 (k, l) * ENNReal.ofReal (f (k, l).1) =
+          holdP p hp0 hp1 (k, l) * ENNReal.ofReal (f k) := fun l => rfl
+    rw [tsum_congr h, ENNReal.tsum_mul_right, holdP_fst_marginal]
+  calc
+    ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal * f d.1
+        = ∑' d : ℕ × ℤ,
+            (holdP p hp0 hp1 d * ENNReal.ofReal (f d.1)).toReal :=
+          tsum_congr fun d => by
+            rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hf _)]
+    _ = (∑' d : ℕ × ℤ,
+          holdP p hp0 hp1 d * ENNReal.ofReal (f d.1)).toReal :=
+      (ENNReal.tsum_toReal_eq fun d =>
+        ENNReal.mul_ne_top ((holdP p hp0 hp1).apply_ne_top d)
+          ENNReal.ofReal_ne_top).symm
+    _ = (∑' k : ℕ, g k * ENNReal.ofReal (f k)).toReal := by rw [hEN]
+    _ = ∑' k : ℕ, (g k * ENNReal.ofReal (f k)).toReal :=
+      ENNReal.tsum_toReal_eq fun k =>
+        ENNReal.mul_ne_top (g.apply_ne_top k) ENNReal.ofReal_ne_top
+    _ = ∑' k : ℕ, (g k).toReal * f k :=
+      tsum_congr fun k => by
+        rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hf _)]
+
+/-- The real masses of `holdP` sum to one. -/
+theorem holdP_tsum_toReal (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1) :
+    ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal = 1 := by
+  rw [← ENNReal.tsum_toReal_eq (fun d => (holdP p hp0 hp1).apply_ne_top d),
+    (holdP p hp0 hp1).tsum_coe, ENNReal.toReal_one]
+
+/-- The real mass function of `holdP` is summable. -/
+theorem holdP_summable_toReal (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1) :
+    Summable fun d : ℕ × ℤ => (holdP p hp0 hp1 d).toReal :=
+  ENNReal.summable_toReal (holdP p hp0 hp1).tsum_coe_ne_top
+
+/-- The renewal value for the tilted holding law.  This is Tao's (7.34)--(7.35)
+with `hold` replaced by `holdP p`; well-foundedness is uniform in `p` because
+every supported increment moves at least one column to the right. -/
+noncomputable def QP (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) : ℕ → ℤ → ℝ
+  | j, l =>
+    if half < j then 1
+    else Real.exp (-(ε ^ 3) * Set.indicator W 1 (j, l)) *
+      ∑' d : ℕ × ℤ,
+        if hd : d.1 = 0 then 0
+        else (holdP p hp0 hp1 d).toReal *
+          QP p hp0 hp1 half W ε (j + d.1) (l + d.2)
+  termination_by j _ => half + 1 - j
+  decreasing_by omega
+
+/-- Boundary equation for the tilted renewal value. -/
+theorem QP_boundary (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (j : ℕ) (l : ℤ) (hj : half < j) :
+    QP p hp0 hp1 half W ε j l = 1 := by
+  rw [QP]
+  simp [hj]
+
+/-- Tao's renewal equation (7.35) for the tilted holding law. -/
+theorem QP_rec (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (j : ℕ) (l : ℤ) (hj : j ≤ half) :
+    QP p hp0 hp1 half W ε j l =
+      Real.exp (-(ε ^ 3) * Set.indicator W 1 (j, l)) *
+        ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+          QP p hp0 hp1 half W ε (j + d.1) (l + d.2) := by
+  rw [QP]
+  rw [if_neg (by omega : ¬ half < j)]
+  congr 1
+  apply tsum_congr
+  intro d
+  by_cases h0 : d.1 = 0
+  · rw [dif_pos h0, holdP_zero_of_fst_zero p hp0 hp1 h0,
+      ENNReal.toReal_zero, zero_mul]
+  · rw [dif_neg h0]
+
+/-- The tilted renewal value is nonnegative. -/
+theorem QP_nonneg (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) :
+    ∀ j l, 0 ≤ QP p hp0 hp1 half W ε j l := by
+  have key : ∀ n j l, half + 1 - j = n → 0 ≤ QP p hp0 hp1 half W ε j l := by
+    intro n
+    induction n using Nat.strong_induction_on with
+    | _ n IH =>
+      intro j l hn
+      rcases Nat.lt_or_ge half j with hj | hj
+      · rw [QP_boundary p hp0 hp1 half W ε j l hj]
+        exact zero_le_one
+      · rw [QP_rec p hp0 hp1 half W ε j l hj]
+        refine mul_nonneg (Real.exp_pos _).le (tsum_nonneg fun d => ?_)
+        rcases Nat.eq_zero_or_pos d.1 with h0 | hpos
+        · rw [holdP_zero_of_fst_zero p hp0 hp1 h0, ENNReal.toReal_zero, zero_mul]
+        · exact mul_nonneg ENNReal.toReal_nonneg
+            (IH (half + 1 - (j + d.1)) (by omega) _ _ rfl)
+  exact fun j l => key _ j l rfl
+
+/-- The tilted renewal value is at most one when the damping parameter is
+nonnegative. -/
+theorem QP_le_one (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half : ℕ) (W : Set (ℕ × ℤ)) (ε : ℝ) (hε : 0 ≤ ε) :
+    ∀ j l, QP p hp0 hp1 half W ε j l ≤ 1 := by
+  have key : ∀ n j l, half + 1 - j = n → QP p hp0 hp1 half W ε j l ≤ 1 := by
+    intro n
+    induction n using Nat.strong_induction_on with
+    | _ n IH =>
+      intro j l hn
+      rcases Nat.lt_or_ge half j with hj | hj
+      · rw [QP_boundary p hp0 hp1 half W ε j l hj]
+      · rw [QP_rec p hp0 hp1 half W ε j l hj]
+        have hexp : Real.exp (-(ε ^ 3) * Set.indicator W 1 (j, l)) ≤ 1 := by
+          rw [Real.exp_le_one_iff, neg_mul, neg_nonpos]
+          exact mul_nonneg (pow_nonneg hε 3)
+            (Set.indicator_nonneg (fun _ _ => zero_le_one) _)
+        have hterm : ∀ d : ℕ × ℤ,
+            (holdP p hp0 hp1 d).toReal *
+                QP p hp0 hp1 half W ε (j + d.1) (l + d.2)
+              ≤ (holdP p hp0 hp1 d).toReal := by
+          intro d
+          rcases Nat.eq_zero_or_pos d.1 with h0 | hpos
+          · rw [holdP_zero_of_fst_zero p hp0 hp1 h0, ENNReal.toReal_zero, zero_mul]
+          · calc
+              (holdP p hp0 hp1 d).toReal *
+                    QP p hp0 hp1 half W ε (j + d.1) (l + d.2)
+                  ≤ (holdP p hp0 hp1 d).toReal * 1 :=
+                    mul_le_mul_of_nonneg_left
+                      (IH (half + 1 - (j + d.1)) (by omega) _ _ rfl)
+                      ENNReal.toReal_nonneg
+              _ = (holdP p hp0 hp1 d).toReal := mul_one _
+        have hterm_nonneg : ∀ d : ℕ × ℤ,
+            0 ≤ (holdP p hp0 hp1 d).toReal *
+              QP p hp0 hp1 half W ε (j + d.1) (l + d.2) :=
+          fun d => mul_nonneg ENNReal.toReal_nonneg
+            (QP_nonneg p hp0 hp1 half W ε _ _)
+        have hsum_f : Summable fun d : ℕ × ℤ =>
+            (holdP p hp0 hp1 d).toReal *
+              QP p hp0 hp1 half W ε (j + d.1) (l + d.2) :=
+          Summable.of_nonneg_of_le hterm_nonneg hterm
+            (holdP_summable_toReal p hp0 hp1)
+        have htsum :
+            ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+                QP p hp0 hp1 half W ε (j + d.1) (l + d.2) ≤ 1 :=
+          le_trans (Summable.tsum_le_tsum hterm hsum_f
+              (holdP_summable_toReal p hp0 hp1))
+            (holdP_tsum_toReal p hp0 hp1).le
+        calc
+          Real.exp (-(ε ^ 3) * Set.indicator W 1 (j, l)) *
+                ∑' d, (holdP p hp0 hp1 d).toReal *
+                  QP p hp0 hp1 half W ε (j + d.1) (l + d.2)
+              ≤ 1 * 1 := mul_le_mul hexp htsum (tsum_nonneg hterm_nonneg) zero_le_one
+          _ = 1 := mul_one 1
+  exact fun j l => key _ j l rfl
+
 end TaoCollatz.Sec7P
