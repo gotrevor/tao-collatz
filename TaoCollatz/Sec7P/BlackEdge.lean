@@ -960,4 +960,157 @@ theorem fpDistP_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
       nlinarith [mul_le_mul_of_nonneg_left hKm4 hθ₀nn]
     _ ≤ δ * (m : ℝ) ^ (-A) := hfin
 
+/-! ### Holding-law inputs for the Case-2 edge weight -/
+
+/-- Real-valued first-coordinate MGF bound for the tilted holding law, uniform
+on the campaign window.  The exact linear coefficient is `q(p)⁻¹`; here it
+is replaced by `125/8` using `q(p) ≥ 8/125`, so the bound can be selected
+before `p`. -/
+theorem holdP_fst_mgf_le_real {p theta : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5)
+    (htheta0 : 0 ≤ theta) (htheta1 : theta ≤ 1 / 2000) :
+    ∑' d : ℕ × ℤ,
+        (holdP p (by linarith) (by linarith) d).toReal *
+          Real.exp (theta * (d.1 : ℝ)) ≤
+      1 + (125 / 8 : ℝ) * theta + 96000000 * theta ^ 2 := by
+  have hp0' : 0 < p := by linarith
+  have hp1' : p < 1 := by linarith
+  have hterm : ∀ d : ℕ × ℤ,
+      (holdP p hp0' hp1' d).toReal * Real.exp (theta * (d.1 : ℝ)) =
+        (holdP p hp0' hp1' d * TaoCollatz.expW2 theta 0 d).toReal := by
+    intro d
+    rw [TaoCollatz.expW2, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (Real.exp_pos _).le]
+    congr 2
+    ring
+  have hquad :
+      ∑' d : ℕ × ℤ,
+          (holdP p hp0' hp1' d).toReal * Real.exp (theta * (d.1 : ℝ)) ≤
+        1 + (pairThreeProb p)⁻¹ * theta + 96000000 * theta ^ 2 := by
+    calc
+      ∑' d : ℕ × ℤ,
+          (holdP p hp0' hp1' d).toReal * Real.exp (theta * (d.1 : ℝ)) =
+          ∑' d : ℕ × ℤ,
+            (holdP p hp0' hp1' d * TaoCollatz.expW2 theta 0 d).toReal :=
+        tsum_congr hterm
+      _ = (TaoCollatz.tiltZ (holdP p hp0' hp1')
+          (TaoCollatz.expW2 theta 0)).toReal :=
+        (ENNReal.tsum_toReal_eq (fun d =>
+          ENNReal.mul_ne_top (PMF.apply_ne_top _ _) ENNReal.ofReal_ne_top)).symm
+      _ ≤ (ENNReal.ofReal
+          (1 + (pairThreeProb p)⁻¹ * theta + 96000000 * theta ^ 2)).toReal :=
+        ENNReal.toReal_mono ENNReal.ofReal_ne_top
+          (tiltZ_holdP_fst_le_quad_window hp0 hp1 (by linarith) htheta1)
+      _ = 1 + (pairThreeProb p)⁻¹ * theta + 96000000 * theta ^ 2 := by
+        rw [ENNReal.toReal_ofReal]
+        have hqpos := pairThreeProb_pos p hp0' hp1'
+        positivity
+  have hq := (pairThreeProb_mem_window hp0 hp1).1
+  have hinv : (pairThreeProb p)⁻¹ ≤ (125 / 8 : ℝ) := by
+    have h := inv_anti₀ (show (0 : ℝ) < 8 / 125 by norm_num) hq
+    norm_num at h ⊢
+    exact h
+  nlinarith
+
+/-- Uniform first-coordinate right tail for `holdP`, the holding-law companion
+to `fpDistP_fst_tail_le`.  The exact first marginal is geometric with failure
+ratio `1-q(p) ≤ 117/125`; this fixed worst-case ratio gives one threshold
+chosen before `p`. -/
+theorem holdP_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∃ Cthr : ℕ, ∀ p : ℝ, ∀ hp0 : 1 / 5 ≤ p, ∀ hp1 : p ≤ 3 / 5,
+      ∀ m : ℕ, Cthr ≤ m →
+      ∑' d : ℕ × ℤ,
+          (holdP p (by linarith [hp0]) (by linarith [hp1]) d).toReal *
+            (if m < 4 * d.1 then (1 : ℝ) else 0) ≤
+        δ * (m : ℝ) ^ (-A) := by
+  set rho : ℝ := Real.log (125 / 117) / 8 with hrhodef
+  have hlogpos : 0 < Real.log (125 / 117) := Real.log_pos (by norm_num)
+  have hrhopos : 0 < rho := by rw [hrhodef]; positivity
+  obtain ⟨Nlog, hNlog⟩ :=
+    TaoCollatz.log_le_eps_mul_of_large (rho / (2 * A)) (by positivity)
+  obtain ⟨Nexp, hNexp⟩ :=
+    TaoCollatz.exp_neg_mul_le_of_large (rho / 2) (by positivity) δ hδ
+  refine ⟨max 400 (max Nlog Nexp), ?_⟩
+  intro p hp0 hp1 m hm
+  have hp0' : 0 < p := by linarith
+  have hp1' : p < 1 := by linarith
+  have hm400 : 400 ≤ m := le_trans (le_max_left _ _) hm
+  have hmNlog : Nlog ≤ m :=
+    le_trans (le_trans (le_max_left _ _) (le_max_right _ _)) hm
+  have hmNexp : Nexp ≤ m :=
+    le_trans (le_trans (le_max_right _ _) (le_max_right _ _)) hm
+  have hmpos : (0 : ℝ) < m := by exact_mod_cast (by omega : 0 < m)
+  have hf : ∀ k : ℕ, (0 : ℝ) ≤ (if m < 4 * k then (1 : ℝ) else 0) := by
+    intro k
+    split_ifs <;> norm_num
+  have hstep : ∀ k : ℕ,
+      (geomP (pairThreeProb p) (pairThreeProb_pos p hp0' hp1')
+          (pairThreeProb_le_one p hp0' hp1') k).toReal *
+            (if m < 4 * k then (1 : ℝ) else 0) =
+        (if m / 4 < k then
+          (geomP (pairThreeProb p) (pairThreeProb_pos p hp0' hp1')
+            (pairThreeProb_le_one p hp0' hp1') k).toReal else 0) := by
+    intro k
+    by_cases h : m < 4 * k
+    · rw [if_pos h, mul_one, if_pos (by omega)]
+    · rw [if_neg h, mul_zero, if_neg (by omega)]
+  have hred :
+      ∑' d : ℕ × ℤ, (holdP p hp0' hp1' d).toReal *
+          (if m < 4 * d.1 then (1 : ℝ) else 0) =
+        (1 - pairThreeProb p) ^ (m / 4) := by
+    rw [show (∑' d : ℕ × ℤ, (holdP p hp0' hp1' d).toReal *
+          (if m < 4 * d.1 then (1 : ℝ) else 0)) =
+        ∑' k : ℕ,
+          (geomP (pairThreeProb p) (pairThreeProb_pos p hp0' hp1')
+            (pairThreeProb_le_one p hp0' hp1') k).toReal *
+              (if m < 4 * k then (1 : ℝ) else 0) from
+        holdP_tsum_fst p hp0' hp1'
+          (fun k => if m < 4 * k then (1 : ℝ) else 0) hf,
+      tsum_congr hstep,
+      geomP_tail (pairThreeProb p) (pairThreeProb_pos p hp0' hp1')
+        (pairThreeProb_le_one p hp0' hp1')]
+  rw [hred]
+  have hq := pairThreeProb_mem_window hp0 hp1
+  have hsurv0 : 0 ≤ 1 - pairThreeProb p := by
+    have := pairThreeProb_le_one p hp0' hp1'
+    linarith
+  have hsurv : 1 - pairThreeProb p ≤ (117 / 125 : ℝ) := by linarith [hq.1]
+  have hpow : (1 - pairThreeProb p) ^ (m / 4) ≤
+      (117 / 125 : ℝ) ^ (m / 4) :=
+    pow_le_pow_left₀ hsurv0 hsurv _
+  have hbase : (117 / 125 : ℝ) ^ (m / 4) =
+      Real.exp (Real.log (117 / 125) * ((m / 4 : ℕ) : ℝ)) := by
+    rw [← Real.rpow_natCast (117 / 125 : ℝ) (m / 4),
+      Real.rpow_def_of_pos (by norm_num)]
+  have hm4lb : (m : ℝ) / 8 ≤ ((m / 4 : ℕ) : ℝ) := by
+    have hnat : m ≤ 4 * (m / 4) + 3 := by omega
+    have hh : (m : ℝ) ≤ 4 * ((m / 4 : ℕ) : ℝ) + 3 := by exact_mod_cast hnat
+    have h400 : (400 : ℝ) ≤ m := by exact_mod_cast hm400
+    linarith
+  have hexp_le : Real.log (117 / 125) * ((m / 4 : ℕ) : ℝ) ≤
+      -rho * m := by
+    have hlog : Real.log (117 / 125) = -Real.log (125 / 117) := by
+      rw [show (117 / 125 : ℝ) = (125 / 117)⁻¹ by norm_num, Real.log_inv]
+    rw [hlog, hrhodef]
+    nlinarith [mul_le_mul_of_nonneg_left hm4lb hlogpos.le]
+  have hclose : Real.exp (-rho * m) ≤ δ * (m : ℝ) ^ (-A) := by
+    rw [Real.rpow_neg hmpos.le, ← div_eq_mul_inv,
+      le_div_iff₀ (Real.rpow_pos_of_pos hmpos A), Real.rpow_def_of_pos hmpos A,
+      ← Real.exp_add]
+    have hAlog : A * Real.log m ≤ rho / 2 * m := by
+      have h := hNlog m hmNlog
+      have h2 : A * Real.log m ≤ A * (rho / (2 * A) * (m : ℝ)) :=
+        mul_le_mul_of_nonneg_left h hA.le
+      have h3 : A * (rho / (2 * A) * (m : ℝ)) = rho / 2 * m := by
+        field_simp
+      linarith [h2, h3.le, h3.ge]
+    have hexparg : -rho * (m : ℝ) + Real.log m * A ≤
+        -(rho / 2) * m := by nlinarith [hAlog]
+    exact le_trans (Real.exp_le_exp.mpr hexparg) (hNexp m hmNexp)
+  calc
+    (1 - pairThreeProb p) ^ (m / 4) ≤ (117 / 125 : ℝ) ^ (m / 4) := hpow
+    _ = Real.exp (Real.log (117 / 125) * ((m / 4 : ℕ) : ℝ)) := hbase
+    _ ≤ Real.exp (-rho * m) := Real.exp_le_exp.mpr hexp_le
+    _ ≤ δ * (m : ℝ) ^ (-A) := hclose
+
 end TaoCollatz.Sec7P
