@@ -21,6 +21,10 @@ debt remains the mandated-LAST `pascal_damping_decay` pin:
   of supported increments.
 - Added the new module to `TaoCollatz.lean`. No frozen declaration, read-only
   §7 source, or tool changed; no `sorry` was added.
+- Proof commit: `0a5c4f2`.
+- Publication is still unavailable in this box: `git-safe push origin
+  ren/sec7p-pascal` fails immediately because the configured SSH transport has
+  no `ssh` executable.
 
 ## Exact verification run
 
@@ -69,6 +73,9 @@ Gaussian estimate. In the fixed-law proof this is `renewalMass_bound`; here
 the center must be rewritten from `j-l/4` to `j-(p/2)l`. The step-count sum
 must use `holdP_local_bound_explicitC` with constants independent of
 `p ∈ [1/5,3/5]`. The thin-slope issue has not entered yet.
+
+Separately, branch publication remains blocked by the missing SSH client; retry
+the push from a host with GitHub transport.
 
 ## Next highest-value attack
 
