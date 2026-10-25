@@ -1,107 +1,122 @@
-# HANDOFF — tilted renewal geometry and real-spacing AP engine landed 🌀 (grind lap, 2026-10-25)
+# HANDOFF — uniform tilted renewal Gaussian bound landed 🌀 (review lap, 2026-10-25)
 
 Branch `ren/sec7p-pascal`. The calibration gate remains discharged (believed
 clean, judge to verify), directive step 2 remains closed, and the p-uniform
-first-passage proof now has both its renewal algebra and its variable-drift
-summation geometry. The sole Sec7P proof debt remains the mandated-LAST
+first-passage proof now has both the renewal Gaussian and final-step
+exponential inputs. The sole Sec7P proof debt remains the mandated-LAST
 `pascal_damping_decay` pin: **1 sorry + 0 orange nodes**.
+
+## Fresh review verdict
+
+The checked-in theorem statements, source DAG, recent commits, and historical
+ledger agree. The calibration conventions still match the proved §7 library;
+all 46 frozen declarations remain character-identical to the plant; and the
+current work is on the load-bearing Lemma 7.7@p path into Proposition 7.3@p.
+No route correction or `JUDGE-FLAG:` is warranted.
 
 ## Concrete advance
 
-- Extended `TaoCollatz/Sec7P/FpLocation.lean` with the finite tilted-renewal
-  layer: `iidSum_holdP_snd_zero`, `renewalMassP_eq_sum`,
-  `renewalMassP_toReal_eq`, finiteness, and vanishing at negative height.
-- Proved the exact transverse cancellation
-  `holdP_transverse_drift_cancel`: the p-dependent means cancel in
-  `j - (p/2)l`, replacing the fixed-law center `j-l/4`.
-- Proved the window-uniform height-drift enclosure
-  `10 ≤ q(p)⁻¹(2/p) ≤ 200`. This turns the nonintegral progression of
-  renewal centers into a compact family.
-- Proved `sum_abs_real_AP_le`, the real-spacing version of the fixed-law
-  arithmetic-progression envelope. It works for every positive real spacing,
-  using the two rays around `⌊w/d⌋`, and loses only the same factor two.
-- Proved `transverse_triangle_window` and `Gweight_factorP`, the uniform
-  p-window replacement for the fixed `Gweight_factor`.
-- Found and resolved a genuine endpoint adjustment: at `p = 3/5`, the
-  recentering retains only `1-p/2 = 7/10` of the height offset, whose square
-  is `49/100 < 1/2`. Thus the fixed-law extracted Gaussian coefficient
-  `c²/2` does not follow uniformly from the same argument. `Gweight_factorP`
-  safely uses `2c²/5`; this is still strictly positive and only changes the
-  eventual uniform constant.
+- Proved `renewal_weight_sumP_le_explicitC` and its existential interface for
+  every real drift spacing `d ∈ [10,200]`. The edge/central split at
+  `k < l/400` uses `d ≤ 200` to retain half the height discrepancy, while
+  `d ≥ 10` makes both central arithmetic-progression sums uniform.
+- Defined the uniform constant `C_renewalWeightP`; the bound is independent of
+  `d`, hence independent of `p` after inserting the holding-law drift.
+- Assembled `renewalMassP_bound_explicitC` and
+  `renewalMassP_bound_window`. They combine the finite renewal identity,
+  `holdP_local_bound_explicitC`, `Gweight_factorP`, and exact drift
+  cancellation to center the transverse Gaussian at `j-(p/2)l`.
+- Proved `holdP_step_bound_explicitC` and `holdP_step_bound_window`, giving a
+  uniform exponential bound on the final overshoot step around the exact
+  centers `q(p)⁻¹` and `q(p)⁻¹(2/p)`.
 - No frozen declaration, read-only §7 source, or tool changed; no `sorry` was
-  added. Proof commit: `a8ade47`.
+  added. Proof commit: `879daa8`.
 
 ## Exact verification run
 
 ```text
-lake build TaoCollatz.Sec7P.FpLocation
-  Build completed successfully (3318 jobs).
-
-~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --target TaoCollatz.Sec7P.FpLocation \
-  --import TaoCollatz.Sec7P.FpLocation \
-  --axioms TaoCollatz.Sec7P.Gweight_factorP \
-  --axioms TaoCollatz.Sec7P.sum_abs_real_AP_le \
-  --axioms TaoCollatz.Sec7P.renewalMassP_toReal_eq
-  Build completed successfully (3318 jobs).
-  all three axiom sets: [Classical.choice, Quot.sound, propext]
-  FORMALIZE-TIER GREEN
-
-~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
-  --axioms TaoCollatz.Sec7P.Gweight_factorP \
-  --axioms TaoCollatz.Sec7P.sum_abs_real_AP_le
-  Build completed successfully (8762 jobs).
-  proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
-  all three axiom sets: [Classical.choice, Quot.sound, propext]
-  FORMALIZE-TIER GREEN
-
 ./tools/tao_stmt_diff.py eb40bf3 HEAD
   character-identical (46/46)
 
 ./tools/blueprint_audit.py
   26 nodes proved + axiom-clean; 0 orange; 0 drift; 0 false-green
 
+~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
+  --target TaoCollatz.Sec7P.Statement \
+  --import TaoCollatz.Sec7P.Statement \
+  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay
+  Build completed successfully (3313 jobs).
+  proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
+  pascalDamping_half_decay axioms: [Classical.choice, Quot.sound, propext]
+  FORMALIZE-TIER GREEN
+
+lake build TaoCollatz.Sec7P.FpLocation
+  Build completed successfully (3318 jobs).
+
+~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
+  --target TaoCollatz.Sec7P.FpLocation \
+  --import TaoCollatz.Sec7P.FpLocation \
+  --axioms TaoCollatz.Sec7P.renewal_weight_sumP_le_explicitC \
+  --axioms TaoCollatz.Sec7P.renewalMassP_bound_window \
+  --axioms TaoCollatz.Sec7P.holdP_step_bound_window
+  Build completed successfully (3318 jobs).
+  all three axiom sets: [Classical.choice, Quot.sound, propext]
+  FORMALIZE-TIER GREEN
+
+pre-commit full lake build
+  Build completed successfully (8762 jobs).
+
+~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
+  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
+  --axioms TaoCollatz.Sec7P.renewal_weight_sumP_le_explicitC \
+  --axioms TaoCollatz.Sec7P.renewalMassP_bound_window \
+  --axioms TaoCollatz.Sec7P.holdP_step_bound_window
+  Build completed successfully (8762 jobs).
+  proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
+  all four axiom sets: [Classical.choice, Quot.sound, propext]
+  FORMALIZE-TIER GREEN
+
 git diff --check
   clean
-```
 
-The pre-commit hook independently ran the full `lake build` and reported
-`Build completed successfully (8762 jobs)`.
+rg -n "^[[:space:]]*sorry([[:space:]]|$)" TaoCollatz/Sec7P
+  TaoCollatz/Sec7P/Statement.lean:142:  sorry
+```
 
 ## Campaign state
 
 `sec7p: calibration proof landed (believed clean, judge to verify); prob-layer
-3/3 closed; Prop 7.3@p modules 1/10 complete, with the FpLocation renewal
-algebra and variable-drift geometry landed; Sec7P sorries 1; differ 46/46 yes;
-blockers none.`
+3/3 closed; Prop 7.3@p modules 1/10 complete, with FpLocation proved through
+the uniform renewal Gaussian and one-step overshoot estimates; Sec7P sorries
+1; differ 46/46 yes; blockers none.`
 
 ## Current blocker
 
-There is no route blocker. The remaining FpLocation crux is now a bounded
-port, not a convention uncertainty: generalize `renewal_weight_sum_le` from
-the fixed spacing `16` to a real `d ∈ [10,200]`, using
-`sum_abs_real_AP_le`. The edge/central split can use the uniform coarse cutoff
-`k < l/400`; the central progression may be compared to spacing `10`.
+There is no route blocker. The remaining FpLocation work is the final
+last-step convolution. The existing p-free analytic lemmas
+`conv_Gweight_exp`, `Gweight_shift`, and `sum_sqrt_exp_le_explicitC` do not
+depend on the gap law and should be reused. What must be generalized is the
+assembly core's fixed center `j-l/4` and fixed step means `(4,16)`.
 
-The local-bound factorization should use `Gweight_factorP`, hence Gaussian
-height parameter `a = 2*c1^2/5` (not the fixed `c1^2/2`) and linear parameter
-`b = c1/2`. Once this finite sum is closed, `renewalMassP_toReal_eq` and
-`holdP_local_bound_explicitC` assemble the desired uniform renewal Gaussian
-bound centered at `j-(p/2)l`.
+For the tilted law set `r=p/2`, `m₁=q(p)⁻¹`, and
+`m₂=q(p)⁻¹(2/p)`. The decisive algebraic identity is `m₁=r*m₂`, already
+available through `holdP_transverse_drift_cancel`; it should remove all
+p-dependence from the convolution recentering. Bounds `m₁ ≤ 125/8` and
+`m₂ ≤ 200` are enough to absorb any residual shift factors into one uniform
+constant.
 
-Separately, branch publication remains blocked by the missing SSH client;
-retry the push from a host with GitHub transport.
+Branch publication remains blocked by the missing SSH client; retry the push
+from a host with GitHub transport.
 
 ## Next highest-value attack
 
-1. Prove a window-uniform `renewal_weight_sumP_le` for every real spacing
-   `d ∈ [10,200]`, reusing `sum_abs_real_AP_le` and the fixed elementary
-   Gaussian/geometric summation lemmas.
-2. Assemble `renewalMassP_bound` from that envelope,
-   `Gweight_factorP`, `renewalMassP_toReal_eq`, and
-   `holdP_local_bound_explicitC`.
-3. Port the last-step convolution (`hold_step_bound`, `sum_sqrt_exp_le`, and
-   `fpDist_location_bound`) with center `j-(p/2)l` and constants chosen before
-   `p`.
+1. State a last-step convolution core parameterized by `r,m₁,m₂`, assuming
+   `m₁=r*m₂`, a renewal Gaussian centered at `j-r*l`, and a step exponential
+   centered at `(m₁,m₂)`.
+2. Port the body of `TaoCollatz.fpDist_location_bound_core`, reusing the
+   existing p-free convolution/shift/square-root-sum lemmas rather than
+   copying them into `Sec7P/`.
+3. Instantiate the core with `renewalMassP_bound_window`,
+   `holdP_step_bound_window`, and `fpDistP_le_renewal_conv` to prove the
+   constants-before-`p` `fpDistP_location_bound` (Lemma 7.7@p).
 4. Keep `pascal_damping_decay` untouched until final assembly.

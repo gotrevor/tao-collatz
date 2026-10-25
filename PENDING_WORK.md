@@ -1735,3 +1735,30 @@ renewal Gaussian at `j - (p/2)l` uniformly on the window.
 `holdP_local_bound_explicitC` over the step count, with center
 `j-(p/2)l` and constants chosen before `p`. Then convolve it through the new
 first-passage bound using the uniform one-step tail to finish Lemma 7.7@p.
+
+### Review lap 11 (2026-10-25) — tilted renewal Gaussian and overshoot inputs landed ✅
+
+- Re-ran the calibration gate before work: `pascalDamping_half_decay` still has
+  exactly the trusted three axioms, the 46 frozen declarations match the plant,
+  and the sole Sec7P proof debt is still the mandated-LAST target pin.
+- Proved `renewal_weight_sumP_le_explicitC`, uniformly for every real drift
+  spacing `d ∈ [10,200]`.  The proof uses the real arithmetic-progression
+  envelope, an edge/central split at `k < l/400`, and constants independent of
+  both `d` and `p`.
+- Assembled `renewalMassP_bound_window`: the finite renewal sum, the p-uniform
+  local limit, exact transverse cancellation, and `Gweight_factorP` now give a
+  Gaussian renewal bound centered at `j-(p/2)l`, with constants chosen before
+  `p`.
+- Proved `holdP_step_bound_window`, the uniform exponential estimate for the
+  final overshoot step centered at the exact means
+  `q(p)⁻¹` and `q(p)⁻¹(2/p)`.
+- All three new headline results have exactly
+  `[Classical.choice, Quot.sound, propext]`; no frozen source or existing §7
+  file changed and no new `sorry` was introduced.  Sec7P remains
+  **1 sorry + 0 orange nodes**.
+
+**Next:** generalize the p-free last-step convolution core to the slope
+`r=p/2`, using the exact identity `q(p)⁻¹ = r·q(p)⁻¹(2/p)`.  Instantiate it
+with `renewalMassP_bound_window`, `holdP_step_bound_window`, and the existing
+p-free `conv_Gweight_exp` / `Gweight_shift` / `sum_sqrt_exp_le_explicitC`
+lemmas to finish `fpDistP_location_bound` (Lemma 7.7@p).
