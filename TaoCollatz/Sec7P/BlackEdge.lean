@@ -46,6 +46,76 @@ theorem slope_margin {p : ℝ} (hp1 : p ≤ 3 / 5) :
   · have : (24 / 25 : ℝ) * Real.log 2 < Real.log 2 := by nlinarith
     nlinarith
 
+/-- The transverse exponential moment of every tilted first-passage endpoint
+is at most one.  This combines the exact one-step cancellation in `holdP` with
+the finitized optional-stopping lemma, and is uniform in both `p` and the
+height budget. -/
+theorem fpDistP_transverse_tiltZ_le_one {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) (s : ℕ) :
+    TaoCollatz.tiltZ (fpDistP p (by linarith) (by linarith) s)
+      (TaoCollatz.expW2 (4 / 25) (-1 / 20)) ≤ 1 :=
+  fpDistP_tiltZ_le_one p (by linarith) (by linarith)
+    (TaoCollatz.expW2 (4 / 25) (-1 / 20))
+    (TaoCollatz.expW2_add (4 / 25) (-1 / 20))
+    (tiltZ_holdP_transverse_le_one hp0 hp1) s
+
+/-- Fixed transverse tail for the tilted first-passage law.  The threshold
+`300` is chosen so the weight at `θ = 1/100` is at least `e³ ≥ 8`; unlike the
+old renewal-sum proof, there is no geometric prefactor. -/
+theorem fpDistP_transverse_tail_le_eighth {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) (s : ℕ) :
+    (∑' e : ℕ × ℤ,
+      if (300 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+        then fpDistP p (by linarith) (by linarith) s e else 0) ≤
+      (1 : ℝ≥0∞) / 8 := by
+  let hp0' : 0 < p := by linarith
+  let hp1' : p < 1 := by linarith
+  let P := fpDistP p hp0' hp1' s
+  let w := TaoCollatz.expW2 (4 / 25) (-1 / 20)
+  have hmgf : TaoCollatz.tiltZ P w ≤ 1 := by
+    dsimp only [P, w]
+    exact fpDistP_transverse_tiltZ_le_one hp0 hp1 s
+  have he1 : (2 : ℝ) ≤ Real.exp 1 := by
+    nlinarith [Real.add_one_le_exp (1 : ℝ)]
+  have he3 : (8 : ℝ) ≤ Real.exp 3 := by
+    calc
+      (8 : ℝ) = 2 ^ (3 : ℕ) := by norm_num
+      _ ≤ Real.exp 1 ^ 3 := pow_le_pow_left₀ (by norm_num) he1 3
+      _ = Real.exp 3 := by rw [← Real.exp_nat_mul]; norm_num
+  have hcoef : (1 / 8 : ℝ≥0∞) * 8 = 1 := by
+    rw [div_eq_mul_inv, one_mul,
+      ENNReal.inv_mul_cancel (by norm_num) (by finiteness)]
+  have hpoint : ∀ e : ℕ × ℤ,
+      (if (300 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ) then P e else 0) ≤
+        (1 / 8 : ℝ≥0∞) * (P e * w e) := by
+    intro e
+    by_cases he : (300 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+    · rw [if_pos he]
+      have harg : (3 : ℝ) ≤
+          (4 / 25) * (e.1 : ℝ) + (-1 / 20) * (e.2 : ℝ) := by
+        nlinarith
+      have hw8 : (8 : ℝ≥0∞) ≤ w e := by
+        dsimp only [w, TaoCollatz.expW2]
+        rw [show (8 : ℝ≥0∞) = ENNReal.ofReal 8 by norm_num]
+        exact ENNReal.ofReal_le_ofReal
+          (he3.trans (Real.exp_le_exp.mpr harg))
+      calc
+        P e = 1 * P e := by rw [one_mul]
+        _ = ((1 / 8 : ℝ≥0∞) * 8) * P e := by rw [hcoef]
+        _ = (1 / 8 : ℝ≥0∞) * (P e * 8) := by ring
+        _ ≤ (1 / 8 : ℝ≥0∞) * (P e * w e) := by gcongr
+    · rw [if_neg he]
+      exact bot_le
+  calc
+    (∑' e : ℕ × ℤ,
+        if (300 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ) then P e else 0) ≤
+        ∑' e : ℕ × ℤ, (1 / 8 : ℝ≥0∞) * (P e * w e) :=
+      ENNReal.tsum_le_tsum hpoint
+    _ = (1 / 8 : ℝ≥0∞) * TaoCollatz.tiltZ P w := by
+      rw [ENNReal.tsum_mul_left, TaoCollatz.tiltZ]
+    _ ≤ (1 / 8 : ℝ≥0∞) * 1 := mul_le_mul_right hmgf _
+    _ = (1 : ℝ≥0∞) / 8 := by norm_num
+
 /-- Gaussian times a growing exponential, summed over columns to the right of
 `m`, uniformly for every centre slope `0 ≤ r ≤ 3/10`.  This is the moving-centre
 version of `TaoCollatz.gaussExp_col_tail`.

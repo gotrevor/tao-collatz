@@ -56,6 +56,38 @@ theorem tiltZ_geomP (p : ℝ) (hp0 : 0 < p) (hp1 : p ≤ 1) (lam : ℝ) :
   simp only [Nat.add_sub_cancel]
   rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric]
 
+/-- A scaled geometric MGF is at most one when its numerator plus geometric
+ratio is at most one.  This is the one-dimensional supermartingale test used
+below for the transverse coordinate. -/
+theorem tiltZ_geomP_scaled_le_one (p : ℝ) (hp0 : 0 < p) (hp1 : p ≤ 1)
+    (lam mu : ℝ)
+    (hmix : p * Real.exp (mu + lam) + (1 - p) * Real.exp lam ≤ 1) :
+    ENNReal.ofReal (Real.exp mu) *
+      TaoCollatz.tiltZ (geomP p hp0 hp1) (TaoCollatz.expW lam) ≤ 1 := by
+  rw [tiltZ_geomP]
+  set N : ℝ≥0∞ := ENNReal.ofReal (p * Real.exp (mu + lam)) with hNdef
+  set R : ℝ≥0∞ := ENNReal.ofReal ((1 - p) * Real.exp lam) with hRdef
+  have hfront : ENNReal.ofReal (Real.exp mu) *
+      ENNReal.ofReal (p * Real.exp lam) = N := by
+    rw [hNdef, ← ENNReal.ofReal_mul (Real.exp_pos mu).le]
+    congr 1
+    rw [Real.exp_add]
+    ring
+  rw [← mul_assoc, hfront]
+  have hN0 : 0 ≤ p * Real.exp (mu + lam) := by positivity
+  have hR0 : 0 ≤ (1 - p) * Real.exp lam :=
+    mul_nonneg (sub_nonneg.mpr hp1) (Real.exp_pos _).le
+  have hNR : N + R ≤ 1 := by
+    rw [hNdef, hRdef, ← ENNReal.ofReal_add hN0 hR0,
+      show (1 : ℝ≥0∞) = ENNReal.ofReal 1 from ENNReal.ofReal_one.symm]
+    exact ENNReal.ofReal_le_ofReal hmix
+  have hRtop : R ≠ ∞ := by simp [hRdef]
+  have hNsub : N ≤ 1 - R := ENNReal.le_sub_of_add_le_right hRtop hNR
+  calc
+    N * (1 - R)⁻¹ ≤ (1 - R) * (1 - R)⁻¹ := by
+      simpa [mul_comm] using mul_le_mul_right hNsub ((1 - R)⁻¹)
+    _ ≤ 1 := ENNReal.mul_inv_le_one _
+
 /-- The tilted geometric MGF is nonzero. -/
 theorem tiltZ_geomP_ne_zero (p : ℝ) (hp0 : 0 < p) (hp1 : p ≤ 1) (lam : ℝ) :
     TaoCollatz.tiltZ (geomP p hp0 hp1) (TaoCollatz.expW lam) ≠ 0 := by
@@ -291,6 +323,137 @@ theorem tiltZ_holdP_closed (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1) (l1 l2 : ℝ)
       (ENNReal.ofReal ((1 - q) * Real.exp l1) * Z) ^ (k - 1))]
   simp only [Nat.add_sub_cancel]
   rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric]
+
+/-- The stopped holding-law MGF is at most one whenever the underlying
+unconditioned Pascal increment has the corresponding supermartingale tilt.
+The deleted `3` atom cancels exactly between the numerator and the geometric
+ratio, so no geometric-series loss remains. -/
+theorem tiltZ_holdP_le_one_of_pascalP (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (l1 l2 : ℝ) (hstrip : (1 - p) * Real.exp l2 < 1)
+    (hpascal : ENNReal.ofReal (Real.exp l1) *
+      TaoCollatz.tiltZ (pascalP p hp0 hp1.le) (TaoCollatz.expW l2) ≤ 1) :
+    TaoCollatz.tiltZ (holdP p hp0 hp1) (TaoCollatz.expW2 l1 l2) ≤ 1 := by
+  have hq := pairThreeProb_basic_bounds p hp0 hp1.le
+  have hZt := tiltZ_pascalNe3P_ne_top p hp0 hp1.le hstrip
+  rw [tiltZ_holdP_closed p hp0 hp1 l1 l2 hZt]
+  set N : ℝ≥0∞ := ENNReal.ofReal
+    (pairThreeProb p * Real.exp (l1 + 3 * l2)) with hNdef
+  set R : ℝ≥0∞ := ENNReal.ofReal
+      ((1 - pairThreeProb p) * Real.exp l1) *
+        TaoCollatz.tiltZ (pascalNe3P p hp0 hp1.le) (TaoCollatz.expW l2) with hRdef
+  have hN : N = ENNReal.ofReal (Real.exp l1) *
+      (ENNReal.ofReal (pairThreeProb p) * TaoCollatz.expW l2 3) := by
+    rw [hNdef, TaoCollatz.expW]
+    have hexp : Real.exp (l1 + 3 * l2) =
+        Real.exp l1 * Real.exp (l2 * (3 : ℕ)) := by
+      rw [← Real.exp_add]
+      congr 1
+      push_cast
+      ring
+    rw [hexp, ENNReal.ofReal_mul hq.1,
+      ENNReal.ofReal_mul (Real.exp_pos l1).le]
+    ring
+  have hR : R = ENNReal.ofReal (Real.exp l1) *
+      (ENNReal.ofReal (1 - pairThreeProb p) *
+        TaoCollatz.tiltZ (pascalNe3P p hp0 hp1.le) (TaoCollatz.expW l2)) := by
+    have hq1 : pairThreeProb p ≤ 1 := hq.2.trans (by norm_num)
+    rw [hRdef, ENNReal.ofReal_mul (sub_nonneg.mpr hq1)]
+    ring
+  have hNR : N + R ≤ 1 := by
+    calc
+      N + R = ENNReal.ofReal (Real.exp l1) *
+          (ENNReal.ofReal (1 - pairThreeProb p) *
+              TaoCollatz.tiltZ (pascalNe3P p hp0 hp1.le) (TaoCollatz.expW l2) +
+            ENNReal.ofReal (pairThreeProb p) * TaoCollatz.expW l2 3) := by
+              rw [hN, hR]
+              ring
+      _ = ENNReal.ofReal (Real.exp l1) *
+          TaoCollatz.tiltZ (pascalP p hp0 hp1.le) (TaoCollatz.expW l2) := by
+            rw [tiltZ_pascalNe3P_add]
+      _ ≤ 1 := hpascal
+  have hRtop : R ≠ ∞ := ne_top_of_le_ne_top (by simp)
+    (le_trans (le_add_left (le_refl R)) hNR)
+  have hNsub : N ≤ 1 - R := ENNReal.le_sub_of_add_le_right hRtop hNR
+  calc
+    N * (1 - R)⁻¹ ≤ (1 - R) * (1 - R)⁻¹ := by
+      simpa [mul_comm] using mul_le_mul_right hNsub ((1 - R)⁻¹)
+    _ ≤ 1 := ENNReal.mul_inv_le_one _
+
+/-- The scalar inequality behind the campaign's transverse supermartingale:
+at `θ = 1/100`, the worst parameter is `p = 3/5`, and even there
+`p e^(3θ) + (1-p)e^(-5θ) < 1`. -/
+theorem transverse_mix_le_one {p : ℝ} (_hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) :
+    p * Real.exp (3 / 100) + (1 - p) * Real.exp (-1 / 20) ≤ 1 := by
+  have hepos : Real.exp (3 / 100) ≤ 103046 / 100000 := by
+    have h := Real.exp_bound (x := 3 / 100)
+      (by rw [abs_le]; constructor <;> norm_num) (n := 6) (by norm_num)
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+    norm_num [Nat.factorial] at h
+    rw [abs_le] at h
+    nlinarith [h.1, h.2]
+  have heneg : Real.exp (-1 / 20) ≤ 95123 / 100000 := by
+    have h := Real.exp_bound (x := -1 / 20)
+      (by rw [abs_le]; constructor <;> norm_num) (n := 6) (by norm_num)
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+    norm_num [Nat.factorial] at h
+    rw [abs_le] at h
+    nlinarith [h.1, h.2]
+  have hmono : Real.exp (-1 / 20) ≤ Real.exp (3 / 100) :=
+    Real.exp_le_exp.mpr (by norm_num)
+  have hprod : 0 ≤ (3 / 5 - p) *
+      (Real.exp (3 / 100) - Real.exp (-1 / 20)) :=
+    mul_nonneg (by linarith) (sub_nonneg.mpr hmono)
+  calc
+    p * Real.exp (3 / 100) + (1 - p) * Real.exp (-1 / 20) ≤
+        (3 / 5) * Real.exp (3 / 100) + (2 / 5) * Real.exp (-1 / 20) := by
+          nlinarith
+    _ ≤ (3 / 5) * (103046 / 100000) + (2 / 5) * (95123 / 100000) := by
+          gcongr
+    _ ≤ 1 := by norm_num
+
+/-- The unconditioned Pascal increment is a transverse supermartingale at
+`θ = 1/100`, uniformly throughout the campaign window. -/
+theorem tiltZ_pascalP_transverse_le_one {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) :
+    ENNReal.ofReal (Real.exp (4 / 25)) *
+      TaoCollatz.tiltZ (pascalP p (by linarith) (by linarith))
+        (TaoCollatz.expW (-1 / 20)) ≤ 1 := by
+  let hp0' : 0 < p := by linarith
+  let hp1' : p ≤ 1 := by linarith
+  have hmix : p * Real.exp ((2 / 25 : ℝ) + (-1 / 20)) +
+      (1 - p) * Real.exp (-1 / 20) ≤ 1 := by
+    norm_num
+    convert transverse_mix_le_one hp0 hp1 using 1
+    all_goals norm_num
+  have hgeom := tiltZ_geomP_scaled_le_one p hp0' hp1'
+    (-1 / 20) (2 / 25) hmix
+  have hstrip : (1 - p) * Real.exp (-1 / 20) < 1 := by
+    have he : Real.exp (-1 / 20) ≤ 1 := Real.exp_le_one_iff.mpr (by norm_num)
+    have hm : (1 - p) * Real.exp (-1 / 20) ≤ 1 - p :=
+      mul_le_of_le_one_right (by linarith) he
+    linarith
+  rw [tiltZ_pascalP p hp0' hp1' hstrip]
+  have hscale : ENNReal.ofReal (Real.exp (4 / 25)) =
+      ENNReal.ofReal (Real.exp (2 / 25)) ^ 2 := by
+    rw [← ENNReal.ofReal_pow (Real.exp_pos _).le, ← Real.exp_nat_mul]
+    congr 2
+    norm_num
+  rw [hscale, ← mul_pow]
+  exact (pow_le_pow_left' hgeom 2).trans_eq (one_pow 2)
+
+/-- The tilted holding increment has transverse MGF at most one at
+`θ = 1/100`, uniformly in `p ∈ [1/5,3/5]`. -/
+theorem tiltZ_holdP_transverse_le_one {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) :
+    TaoCollatz.tiltZ (holdP p (by linarith) (by linarith))
+      (TaoCollatz.expW2 (4 / 25) (-1 / 20)) ≤ 1 := by
+  have hstrip : (1 - p) * Real.exp (-1 / 20) < 1 := by
+    have he : Real.exp (-1 / 20) ≤ 1 := Real.exp_le_one_iff.mpr (by norm_num)
+    have hm : (1 - p) * Real.exp (-1 / 20) ≤ 1 - p :=
+      mul_le_of_le_one_right (by linarith) he
+    linarith
+  exact tiltZ_holdP_le_one_of_pascalP p (by linarith) (by linarith)
+    (4 / 25) (-1 / 20) hstrip (tiltZ_pascalP_transverse_le_one hp0 hp1)
 
 /-- At the fixed campaign tilt `1/1000`, the geometric MGF is bounded
 uniformly on `p ∈ [1/5,3/5]`. -/

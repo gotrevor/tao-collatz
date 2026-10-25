@@ -5,6 +5,7 @@ Authors: Trevor Morris
 -/
 import TaoCollatz.Sec7P.Monotone
 import TaoCollatz.Sec7.Unroll
+import TaoCollatz.Prob.Tilt
 
 /-!
 # First-passage unrolling for the tilted renewal walk
@@ -113,6 +114,43 @@ theorem fpDistP_support_snd_gt (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1) :
       show (s : ℤ) < d.2 + e'.2
       have : ((s - d.2.toNat : ℕ) : ℤ) = (s : ℤ) - d.2 := by omega
       omega
+
+/-- Optional-stopping bound for the finitized first-passage law.  If a
+multiplicative weight has one-step expectation at most one, then its
+expectation at the first endpoint above any height budget is also at most one.
+
+This formulation is deliberately law-local: it avoids expanding the stopped
+walk into a renewal series, whose geometric prefactor is too lossy for the
+moving-centre white-exit estimate. -/
+theorem fpDistP_tiltZ_le_one (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (w : ℕ × ℤ → ℝ≥0∞) (hwadd : ∀ a b, w (a + b) = w a * w b)
+    (hstep : TaoCollatz.tiltZ (holdP p hp0 hp1) w ≤ 1) :
+    ∀ s, TaoCollatz.tiltZ (fpDistP p hp0 hp1 s) w ≤ 1 := by
+  intro s
+  induction s using Nat.strong_induction_on with
+  | _ s IH =>
+    rw [TaoCollatz.tiltZ, fpDistP, PMF.tsum_bind_mul]
+    refine le_trans (ENNReal.tsum_le_tsum fun d => ?_) hstep
+    refine mul_le_mul_right ?_ _
+    split_ifs with hcond
+    · rw [tsum_eq_single d (fun e he => by
+        rw [PMF.pure_apply, if_neg he, zero_mul])]
+      rw [PMF.pure_apply, if_pos rfl, one_mul]
+    · push Not at hcond
+      rw [PMF.tsum_map_mul]
+      calc
+        (∑' e, fpDistP p hp0 hp1 (s - d.2.toNat) e *
+              w (d.1 + e.1, d.2 + e.2)) =
+            w d * TaoCollatz.tiltZ (fpDistP p hp0 hp1 (s - d.2.toNat)) w := by
+              rw [TaoCollatz.tiltZ, ← ENNReal.tsum_mul_left]
+              refine tsum_congr fun e => ?_
+              rw [show (d.1 + e.1, d.2 + e.2) = d + e by
+                ext <;> rfl, hwadd]
+              ring
+        _ ≤ w d * 1 := by
+          simpa [mul_comm] using
+            mul_le_mul_right (IH (s - d.2.toNat) (by omega)) (w d)
+        _ = w d := mul_one _
 
 /-- Dropping the accumulated damping bounds `QP` by its expectation at the
 tilted first-passage endpoint.  This is the inequality form of (7.45) used by
