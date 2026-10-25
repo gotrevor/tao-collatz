@@ -1956,3 +1956,27 @@ overshoot alone), or revise the campaign window/statement.  Do not continue the
 **Next:** copy-generalize Lemma 7.4 to `blackP`/`whiteP`, carefully scaling the
 old 300-step Claim (*) window; then port the increasing-height renewal grouping
 to turn the proved `Y=12000` numeric into the first-passage vertical tail.
+
+### Review lap 20 (2026-10-25) — finer triangles and full localization landed ✅
+
+- Re-ran the calibration gate first: the half-decay theorem remains
+  trust-base-clean, the sole Sec7P debt remains the mandated-LAST final pin,
+  and the watched set remains 46/46 character-identical.
+- Added `Sec7P/Triangles.lean` and proved Lemma 7.4 at `epsP`. The quantitative
+  Claim (*) window was recomputed as `40000`; exact rational arithmetic proves
+  `9^40000 * 2^40000 * epsP ≤ 1/100`. Packaged the result as
+  `TriangleFamilyP`.
+- Added the strictly-increasing-height renewal decomposition for `holdP` and
+  proved the first-passage vertical tail at `Y=12000` is `≤1/16` uniformly on
+  the whole Pascal window.
+- Sharpened the existing `B=300` transverse tail from `1/8` to `1/16` using
+  `e³ ≥ (8/3)³ ≥16`. The union now gives the intended full localization bad
+  mass `≤1/8` inside the explicit `(X,Y)=(3769,12000)` triangle-separation box.
+- Started `Sec7P/ManyTriangles.lean` and closed the deterministic foreign-
+  triangle seam plus all support/indicator/`toReal` bookkeeping:
+  `fpDistP_any_triangle_le` is uniform in `p` and bounded by `1/8`.
+- No new proof debt: **1 sorry + 0 orange nodes**.
+
+**Next:** derive the Case-2 out-of-strip tail from `fpDistP_fst_tail_le`, port
+the `whiteP` cover/indicator assembly, and close the tilted white-exit theorem;
+then feed it into `QP_black_edge_case2`.

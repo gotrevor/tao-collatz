@@ -50,6 +50,9 @@ import TaoCollatz.Sec7P.Unroll
 import TaoCollatz.Sec7P.HoldLocal
 import TaoCollatz.Sec7P.FpLocation
 import TaoCollatz.Sec7P.Setup
+import TaoCollatz.Sec7P.Triangles
+import TaoCollatz.Sec7P.Localization
+import TaoCollatz.Sec7P.ManyTriangles
 import TaoCollatz.Sec7P.BlackEdge
 import TaoCollatz.Sec7P.Statement
 import TaoCollatz.Sec3.Reduction
