@@ -352,6 +352,292 @@ theorem fpDistP_le_stepMassP (s : ℕ) (e : ℕ × ℤ) : fpLaw s e ≤ stepMass
   · rw [if_neg hp, zero_mul]
     exact bot_le
 
+/-! ### Finite renewal sums and a variable-spacing summation tool
+
+The fixed-law proof of Lemma 7.7 sums its local bound along the lattice
+`16 * k`.  For `holdP`, the corresponding height drift is
+`k / (p³(1-p))`, which is generally not integral.  The following results
+separate the two issues needed by the tilted proof: the renewal sum still
+truncates at `k ≤ l / 3`, and an antitone envelope can be summed along any
+positive real arithmetic progression with the same factor-two loss as in the
+integer-spacing argument.
+-/
+
+/-- Every tilted holding step raises the height by at least `3`, so `k` steps
+cannot land at height below `3k`. -/
+theorem iidSum_holdP_snd_zero : ∀ (k : ℕ) (q : ℕ × ℤ),
+    q.2 < 3 * (k : ℤ) → TaoCollatz.iidSum holdLaw k q = 0 := by
+  intro k
+  induction k with
+  | zero =>
+    intro q hq
+    rw [TaoCollatz.iidSum_zero, PMF.pure_apply, if_neg]
+    intro h
+    subst h
+    simp at hq
+  | succ k ih =>
+    intro q hq
+    rw [iidSum_succ_apply]
+    refine ENNReal.tsum_eq_zero.mpr fun d => ?_
+    by_cases hd : holdLaw d = 0
+    · rw [hd, zero_mul]
+    · have hd2 : 3 ≤ d.2 :=
+        holdP_support_snd_ge tilt htilt0 htilt1 d (by rwa [PMF.mem_support_iff])
+      have hz : (∑' q' : ℕ × ℤ,
+          if q = d + q' then TaoCollatz.iidSum holdLaw k q' else 0) = 0 := by
+        refine ENNReal.tsum_eq_zero.mpr fun q' => ?_
+        by_cases he : q = d + q'
+        · rw [if_pos he]
+          refine ih q' ?_
+          have hsnd : q.2 = d.2 + q'.2 := by rw [he]; rfl
+          push_cast at hq ⊢
+          omega
+        · rw [if_neg he]
+      rw [hz, mul_zero]
+
+/-- The tilted renewal mass at nonnegative height `l` is a finite sum. -/
+theorem renewalMassP_eq_sum (j : ℕ) (l : ℤ) :
+    renewalMassLaw (j, l) =
+      ∑ k ∈ Finset.range (l.toNat / 3 + 1), TaoCollatz.iidSum holdLaw k (j, l) := by
+  rw [renewalMassP]
+  refine tsum_eq_sum fun k hk => iidSum_holdP_snd_zero tilt htilt0 htilt1 k (j, l) ?_
+  have hk' : l.toNat / 3 + 1 ≤ k :=
+    Nat.le_of_not_lt fun h => hk (Finset.mem_range.mpr h)
+  show l < 3 * (k : ℤ)
+  omega
+
+/-- Real-valued form of `renewalMassP_eq_sum`. -/
+theorem renewalMassP_toReal_eq (j : ℕ) (l : ℤ) :
+    (renewalMassLaw (j, l)).toReal =
+      ∑ k ∈ Finset.range (l.toNat / 3 + 1),
+        (TaoCollatz.iidSum holdLaw k (j, l)).toReal := by
+  rw [renewalMassP_eq_sum, ENNReal.toReal_sum fun k _ => PMF.apply_ne_top _ _]
+
+/-- The tilted renewal mass is finite. -/
+theorem renewalMassP_ne_top (p : ℕ × ℤ) : renewalMassLaw p ≠ ⊤ := by
+  obtain ⟨j, l⟩ := p
+  rw [renewalMassP_eq_sum]
+  exact (ENNReal.sum_lt_top.mpr fun k _ =>
+    lt_of_le_of_lt (PMF.coe_le_one _ _) ENNReal.one_lt_top).ne
+
+/-- Negative heights carry no tilted renewal mass. -/
+theorem renewalMassP_zero_of_snd_neg {p : ℕ × ℤ} (hp : p.2 < 0) :
+    renewalMassLaw p = 0 := by
+  rw [renewalMassP]
+  refine ENNReal.tsum_eq_zero.mpr fun k =>
+    iidSum_holdP_snd_zero tilt htilt0 htilt1 k p ?_
+  have : (0 : ℤ) ≤ 3 * (k : ℤ) := by positivity
+  omega
+
+/-- The height drift of one tilted holding increment stays in a fixed compact
+interval on the campaign window.  The generous endpoints `10` and `200` are
+chosen to make the subsequent renewal summation uniform and transparent. -/
+theorem holdP_height_drift_mem_window {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) :
+    10 ≤ (pairThreeProb p)⁻¹ * (2 / p) ∧
+      (pairThreeProb p)⁻¹ * (2 / p) ≤ 200 := by
+  have hp : 0 < p := by linarith
+  have hq := pairThreeProb_mem_window hp0 hp1
+  have hqpos : 0 < pairThreeProb p := by linarith
+  have hprodpos : 0 < pairThreeProb p * p := mul_pos hqpos hp
+  have hform : (pairThreeProb p)⁻¹ * (2 / p) =
+      2 / (pairThreeProb p * p) := by
+    field_simp
+  rw [hform]
+  constructor
+  · rw [le_div_iff₀ hprodpos]
+    have hprod : pairThreeProb p * p ≤ (36 / 125 : ℝ) * (3 / 5) :=
+      mul_le_mul hq.2 hp1 (by linarith) (by linarith)
+    nlinarith
+  · rw [div_le_iff₀ hprodpos]
+    have hprod : (8 / 125 : ℝ) * (1 / 5) ≤ pairThreeProb p * p :=
+      mul_le_mul hq.1 hp0 (by norm_num) (by linarith)
+    nlinarith
+
+/-- The exact p-dependent drift cancels in the transverse coordinate
+`j - (p/2)l`.  This is the tilted replacement for the fixed-law identity
+`(j-4k) - (l-16k)/4 = j-l/4`. -/
+theorem holdP_transverse_drift_cancel {p : ℝ} (hp : p ≠ 0)
+    (j l k : ℝ) :
+    (j - (pairThreeProb p)⁻¹ * k) - p / 2 *
+        (l - ((pairThreeProb p)⁻¹ * (2 / p)) * k) =
+      j - p / 2 * l := by
+  field_simp
+  ring
+
+/-- Uniform triangle inequality behind the tilted `Gweight` factorization.
+The coefficient `7/10` is exactly the worst-case remainder `1-p/2` on the
+campaign window. -/
+theorem transverse_triangle_window {p u v : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) :
+    |u - p / 2 * v| + 7 / 10 * |v| ≤ |u| + |v| := by
+  have hpnonneg : 0 ≤ p := by linarith
+  have htri : |u - p / 2 * v| ≤ |u| + |p / 2 * v| := abs_sub _ _
+  have habs : |p / 2 * v| = p / 2 * |v| := by
+    rw [abs_mul, abs_of_nonneg (div_nonneg hpnonneg (by norm_num))]
+  have hpv : p / 2 * |v| ≤ 3 / 10 * |v| := by
+    exact mul_le_mul_of_nonneg_right (by linarith) (abs_nonneg v)
+  rw [habs] at htri
+  linarith
+
+/-- Uniform `Gweight` factorization for the tilted transverse slope.  On the
+window, `p/2 ≤ 3/10`, so the height error retains at least `7/10` of its
+coefficient after recentering.  The Gaussian height factor is weakened from
+the fixed-law `c²/2` to `2c²/5`; this is the small but essential adjustment
+at the top endpoint `p = 3/5`. -/
+theorem Gweight_factorP {c1 t1 t2 x z y : ℝ} (hc1 : 0 < c1)
+    (ht1 : 0 < t1) (ht : t1 ≤ t2) (hz : 0 ≤ z)
+    (hy : |x| + 7 / 10 * z ≤ y) :
+    TaoCollatz.Gweight t1 (c1 * y) ≤
+      TaoCollatz.Gweight t2 (c1 / 2 * x) *
+        (Real.exp (-(2 * c1 ^ 2 / 5) * z ^ 2 / t1) +
+          Real.exp (-(c1 / 2) * z)) := by
+  have hx0 : 0 ≤ |x| := abs_nonneg x
+  have hy0 : 0 ≤ y := by linarith
+  have ht2 : 0 < t2 := lt_of_lt_of_le ht1 ht
+  set A := Real.exp (-(c1 / 2 * x) ^ 2 / t2) with hA
+  set B := Real.exp (-(2 * c1 ^ 2 / 5) * z ^ 2 / t1) with hB
+  set C := Real.exp (-|c1 / 2 * x|) with hC
+  set D := Real.exp (-(c1 / 2) * z) with hD
+  have hquad : Real.exp (-(c1 * y) ^ 2 / t1) ≤ A * B := by
+    rw [hA, hB, ← Real.exp_add]
+    apply Real.exp_le_exp.mpr
+    rw [div_add_div _ _ ht2.ne' ht1.ne', div_le_div_iff₀ ht1 (by positivity)]
+    have hy2 : x ^ 2 + 2 / 5 * z ^ 2 ≤ y ^ 2 := by
+      have h2 : x ^ 2 = |x| ^ 2 := (sq_abs x).symm
+      nlinarith [mul_nonneg hx0 hz, sq_nonneg z]
+    nlinarith [mul_le_mul_of_nonneg_left hy2 (sq_nonneg c1),
+      mul_le_mul_of_nonneg_left ht (mul_nonneg (sq_nonneg (c1 * x)) ht1.le),
+      sq_nonneg (c1 * x), sq_nonneg (c1 * z), mul_pos ht1 ht2,
+      mul_nonneg (mul_nonneg (sq_nonneg (c1 * z)) ht1.le) (sub_nonneg.mpr ht)]
+  have hlin : Real.exp (-|c1 * y|) ≤ C * D := by
+    rw [hC, hD, ← Real.exp_add]
+    apply Real.exp_le_exp.mpr
+    rw [abs_of_nonneg (mul_nonneg hc1.le hy0), abs_mul,
+      abs_of_pos (by positivity : (0 : ℝ) < c1 / 2)]
+    nlinarith [mul_le_mul_of_nonneg_left hy hc1.le,
+      mul_nonneg hc1.le hx0, mul_nonneg hc1.le hz]
+  have hABCD : A * B + C * D ≤ (A + C) * (B + D) := by
+    nlinarith [mul_nonneg (Real.exp_pos (-(c1 / 2 * x) ^ 2 / t2)).le
+        (Real.exp_pos (-(c1 / 2) * z)).le,
+      mul_nonneg (Real.exp_pos (-|c1 / 2 * x|)).le
+        (Real.exp_pos (-(2 * c1 ^ 2 / 5) * z ^ 2 / t1)).le]
+  calc
+    TaoCollatz.Gweight t1 (c1 * y) =
+        Real.exp (-(c1 * y) ^ 2 / t1) + Real.exp (-|c1 * y|) := rfl
+    _ ≤ A * B + C * D := add_le_add hquad hlin
+    _ ≤ (A + C) * (B + D) := hABCD
+    _ = TaoCollatz.Gweight t2 (c1 / 2 * x) * (B + D) := rfl
+
+/-- **Real arithmetic-progression sum against an antitone envelope.**
+The offsets `|w - d*k|`, for positive real spacing `d`, lie on two monotone
+rays about `⌊w/d⌋`.  Each ray is bounded by the progression `d*m`, so the
+whole sum costs at most twice the on-progression sum.  This is the
+variable-drift replacement for `TaoCollatz.sum_abs_AP_le`. -/
+theorem sum_abs_real_AP_le {f : ℝ → ℝ} (hnn : ∀ u, 0 ≤ f u)
+    (hanti : ∀ ⦃u v : ℝ⦄, 0 ≤ u → u ≤ v → f v ≤ f u)
+    {d : ℝ} (hd : 0 < d) (w N : ℕ) (hw : (w : ℝ) < d * N) :
+    ∑ k ∈ Finset.range N, f |(w : ℝ) - d * k|
+      ≤ 2 * ∑ m ∈ Finset.range N, f (d * m) := by
+  set q : ℕ := ⌊(w : ℝ) / d⌋₊ with hq
+  have hdiv0 : 0 ≤ (w : ℝ) / d := by positivity
+  have hqle : (q : ℝ) ≤ (w : ℝ) / d := by
+    rw [hq]
+    exact Nat.floor_le hdiv0
+  have hqlt : (w : ℝ) / d < q + 1 := by
+    rw [hq]
+    exact Nat.lt_floor_add_one _
+  have hdq : d * q ≤ (w : ℝ) := by
+    have := (le_div_iff₀ hd).mp hqle
+    simpa [mul_comm] using this
+  have hwdq : (w : ℝ) < d * (q + 1) := by
+    have := (div_lt_iff₀ hd).mp hqlt
+    simpa [mul_comm] using this
+  have hqN : q < N := by
+    have hwdiv : (w : ℝ) / d < N := by
+      rw [div_lt_iff₀ hd]
+      simpa [mul_comm] using hw
+    exact_mod_cast lt_of_le_of_lt hqle hwdiv
+  rw [← Finset.sum_filter_add_sum_filter_not (Finset.range N) (fun k => k ≤ q)]
+  have hA : ∑ k ∈ (Finset.range N).filter (fun k => k ≤ q),
+      f |(w : ℝ) - d * k| ≤ ∑ m ∈ Finset.range N, f (d * m) := by
+    have hstep : ∀ k ∈ (Finset.range N).filter (fun k => k ≤ q),
+        f |(w : ℝ) - d * k| ≤ f (d * (q - k : ℕ)) := by
+      intro k hk
+      have hkq : k ≤ q := (Finset.mem_filter.mp hk).2
+      refine hanti (by positivity) ?_
+      have hdk : d * k ≤ (w : ℝ) := by
+        calc d * k ≤ d * q := by gcongr
+          _ ≤ (w : ℝ) := hdq
+      rw [abs_of_nonneg (sub_nonneg.mpr hdk), Nat.cast_sub hkq]
+      calc
+        d * ((q : ℝ) - k) = d * q - d * k := by ring
+        _ ≤ (w : ℝ) - d * k := sub_le_sub_right hdq _
+    have hinj : ∀ x ∈ (Finset.range N).filter (fun k => k ≤ q),
+        ∀ y ∈ (Finset.range N).filter (fun k => k ≤ q),
+          q - x = q - y → x = y := by
+      intro x hx y hy hxy
+      have hxq := (Finset.mem_filter.mp hx).2
+      have hyq := (Finset.mem_filter.mp hy).2
+      omega
+    have key : ∑ m ∈ ((Finset.range N).filter (fun k => k ≤ q)).image
+          (fun k => q - k), f (d * m)
+        = ∑ k ∈ (Finset.range N).filter (fun k => k ≤ q),
+            f (d * (q - k : ℕ)) := Finset.sum_image hinj
+    calc
+      ∑ k ∈ (Finset.range N).filter (fun k => k ≤ q), f |(w : ℝ) - d * k|
+          ≤ ∑ k ∈ (Finset.range N).filter (fun k => k ≤ q),
+              f (d * (q - k : ℕ)) := Finset.sum_le_sum hstep
+      _ = ∑ m ∈ ((Finset.range N).filter (fun k => k ≤ q)).image
+            (fun k => q - k), f (d * m) := key.symm
+      _ ≤ ∑ m ∈ Finset.range N, f (d * m) := by
+        refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun m _ _ => hnn _
+        intro m hm
+        obtain ⟨k, hk, rfl⟩ := Finset.mem_image.mp hm
+        exact Finset.mem_range.mpr (by omega)
+  have hB : ∑ k ∈ (Finset.range N).filter (fun k => ¬ k ≤ q),
+      f |(w : ℝ) - d * k| ≤ ∑ m ∈ Finset.range N, f (d * m) := by
+    have hstep : ∀ k ∈ (Finset.range N).filter (fun k => ¬ k ≤ q),
+        f |(w : ℝ) - d * k| ≤ f (d * (k - (q + 1) : ℕ)) := by
+      intro k hk
+      have hkq : q < k := Nat.lt_of_not_le (Finset.mem_filter.mp hk).2
+      refine hanti (by positivity) ?_
+      have hwk : (w : ℝ) ≤ d * k := by
+        calc (w : ℝ) ≤ d * (q + 1) := hwdq.le
+          _ ≤ d * k := by gcongr; exact_mod_cast Nat.succ_le_iff.mpr hkq
+      rw [abs_of_nonpos (sub_nonpos.mpr hwk), Nat.cast_sub (by omega : q + 1 ≤ k)]
+      have hwdq' : (w : ℝ) ≤ d * ((q + 1 : ℕ) : ℝ) := by
+        simpa using hwdq.le
+      calc
+        d * ((k : ℝ) - ((q + 1 : ℕ) : ℝ)) =
+            d * k - d * (q + 1 : ℕ) := by ring
+        _ ≤ d * k - (w : ℝ) := sub_le_sub_left hwdq' _
+        _ = -((w : ℝ) - d * k) := by ring
+    have hinj : ∀ x ∈ (Finset.range N).filter (fun k => ¬ k ≤ q),
+        ∀ y ∈ (Finset.range N).filter (fun k => ¬ k ≤ q),
+          x - (q + 1) = y - (q + 1) → x = y := by
+      intro x hx y hy hxy
+      have hxq := Nat.lt_of_not_le (Finset.mem_filter.mp hx).2
+      have hyq := Nat.lt_of_not_le (Finset.mem_filter.mp hy).2
+      omega
+    have key : ∑ m ∈ ((Finset.range N).filter (fun k => ¬ k ≤ q)).image
+          (fun k => k - (q + 1)), f (d * m)
+        = ∑ k ∈ (Finset.range N).filter (fun k => ¬ k ≤ q),
+            f (d * (k - (q + 1) : ℕ)) := Finset.sum_image hinj
+    calc
+      ∑ k ∈ (Finset.range N).filter (fun k => ¬ k ≤ q), f |(w : ℝ) - d * k|
+          ≤ ∑ k ∈ (Finset.range N).filter (fun k => ¬ k ≤ q),
+              f (d * (k - (q + 1) : ℕ)) := Finset.sum_le_sum hstep
+      _ = ∑ m ∈ ((Finset.range N).filter (fun k => ¬ k ≤ q)).image
+            (fun k => k - (q + 1)), f (d * m) := key.symm
+      _ ≤ ∑ m ∈ Finset.range N, f (d * m) := by
+        refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun m _ _ => hnn _
+        intro m hm
+        obtain ⟨k, hk, rfl⟩ := Finset.mem_image.mp hm
+        have hkN := Finset.mem_range.mp (Finset.mem_filter.mp hk).1
+        exact Finset.mem_range.mpr (by omega)
+  linarith
+
 end
 
 end TaoCollatz.Sec7P
