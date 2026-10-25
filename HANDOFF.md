@@ -33,8 +33,7 @@ lake build TaoCollatz.Sec7P.Statement
   26 nodes proved + axiom-clean; 0 orange; 0 drift; 0 false-green
 ```
 
-The watched-statement differ and real full-repository gate are run after this handoff
-is committed; their exact verdicts are appended below.
+Additional post-checkpoint verification is recorded in the final verdict below.
 
 ## Campaign state
 
@@ -61,4 +60,14 @@ Every constant feeding the target must remain uniform for `p ∈ [1/5,3/5]`.
 
 ## Final gate verdict
 
-Pending the post-commit full gate.
+```text
+./tools/tao_stmt_diff.py eb40bf3 HEAD
+  character-identical (46/46)
+
+~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
+  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay
+  Build completed successfully (8755 jobs)
+  proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
+  axioms: [Classical.choice, Quot.sound, propext]
+  FORMALIZE-TIER GREEN
+```
