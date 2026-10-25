@@ -1699,6 +1699,105 @@ theorem fpDistP_location_bound :
   ⟨c_fpLocationP, c_fpLocationP_pos, C_fpLocationP, C_fpLocationP_pos,
     fun p hp0 hp1 => fpDistP_location_bound_explicitC p (by linarith) (by linarith) hp0 hp1⟩
 
+/-- Collapse the height coordinate in the tilted Lemma 7.7 bound.  The proof
+is law-independent after the support statement; `r` only records the moving
+horizontal centre. -/
+theorem fpDistP_col_le_core (r c C : ℝ) (hc : 0 < c) (hC : 0 < C)
+    (hbound : ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+      (fpLaw s (j, l)).toReal
+        ≤ C * (Real.exp (-c * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+            * TaoCollatz.Gweight (1 + s) (c * ((j : ℝ) - r * s))) :
+    ∀ (s j : ℕ),
+      ∑' l : ℤ, (fpLaw s (j, l)).toReal
+        ≤ C * (Real.exp (-c) / (1 - Real.exp (-c)))
+            * (TaoCollatz.Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - r * s))
+                  / Real.sqrt (1 + (s : ℝ))) := by
+  have he1 : Real.exp (-c) < 1 := by rw [Real.exp_lt_one_iff]; linarith
+  have hpos : (0 : ℝ) < 1 - Real.exp (-c) := by linarith
+  intro s j
+  set G : ℝ := TaoCollatz.Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - r * s)) with hG
+  have hGnn : 0 ≤ G := TaoCollatz.Gweight_nonneg _ _
+  have hsq : (0 : ℝ) < Real.sqrt (1 + (s : ℝ)) := Real.sqrt_pos.mpr (by positivity)
+  set A : ℝ := C * G / Real.sqrt (1 + (s : ℝ)) with hA
+  have hAnn : 0 ≤ A := by rw [hA]; positivity
+  have hdom : HasSum
+      (fun l : ℤ => A * (if (s : ℤ) < l then
+        Real.exp (-c * ((l : ℝ) - (s : ℝ))) else 0))
+      (A * (Real.exp (-c) / (1 - Real.exp (-c)))) :=
+    (TaoCollatz.hasSum_int_shift_exp hc s).mul_left A
+  have hptw : ∀ l : ℤ, (fpLaw s (j, l)).toReal
+      ≤ A * (if (s : ℤ) < l then
+          Real.exp (-c * ((l : ℝ) - (s : ℝ))) else 0) := by
+    intro l
+    by_cases hl : (s : ℤ) < l
+    · rw [if_pos hl, hA, hG]
+      calc
+        (fpLaw s (j, l)).toReal
+            ≤ C * (Real.exp (-c * ((l : ℝ) - (s : ℝ)))
+                / Real.sqrt (1 + (s : ℝ)))
+              * TaoCollatz.Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - r * s)) :=
+              hbound s j l
+        _ = C * TaoCollatz.Gweight (1 + (s : ℝ)) (c * ((j : ℝ) - r * s))
+              / Real.sqrt (1 + (s : ℝ))
+              * Real.exp (-c * ((l : ℝ) - (s : ℝ))) := by ring
+    · rw [if_neg hl, mul_zero]
+      have h0 : fpLaw s (j, l) = 0 := by
+        by_contra h
+        exact hl (fpDistP_support_snd_gt tilt htilt0 htilt1 s (j, l)
+          (by rwa [PMF.mem_support_iff]))
+      rw [h0, ENNReal.toReal_zero]
+  have hslice : Summable (fun l : ℤ => (fpLaw s (j, l)).toReal) := by
+    have h2d : Summable (fun p : ℕ × ℤ => (fpLaw s p).toReal) :=
+      ENNReal.summable_toReal (by rw [(fpLaw s).tsum_coe]; exact ENNReal.one_ne_top)
+    exact h2d.comp_injective (fun a b h => by simpa using h)
+  calc
+    ∑' l : ℤ, (fpLaw s (j, l)).toReal
+        ≤ ∑' l : ℤ, A * (if (s : ℤ) < l then
+            Real.exp (-c * ((l : ℝ) - (s : ℝ))) else 0) :=
+          hslice.tsum_le_tsum hptw hdom.summable
+    _ = A * (Real.exp (-c) / (1 - Real.exp (-c))) := hdom.tsum_eq
+    _ = C * (Real.exp (-c) / (1 - Real.exp (-c)))
+          * (G / Real.sqrt (1 + (s : ℝ))) := by rw [hA]; ring
+
+/-- Uniform constant for the tilted first-passage column marginal. -/
+noncomputable def C_fpColP : ℝ :=
+  C_fpLocationP * (Real.exp (-c_fpLocationP) / (1 - Real.exp (-c_fpLocationP)))
+
+theorem C_fpColP_pos : 0 < C_fpColP := by
+  have hc := c_fpLocationP_pos
+  have he1 : Real.exp (-c_fpLocationP) < 1 := by
+    rw [Real.exp_lt_one_iff]
+    linarith
+  unfold C_fpColP
+  exact mul_pos C_fpLocationP_pos (div_pos (Real.exp_pos _) (by linarith))
+
+/-- Uniform tilted first-passage column marginal, with explicit constants. -/
+theorem fpDistP_col_le_explicitC
+    (hp0 : 1 / 5 ≤ tilt) (hp1 : tilt ≤ 3 / 5) :
+    ∀ (s j : ℕ),
+      ∑' l : ℤ, (fpLaw s (j, l)).toReal
+        ≤ C_fpColP
+            * (TaoCollatz.Gweight (1 + (s : ℝ))
+                (c_fpLocationP * ((j : ℝ) - tilt / 2 * s))
+              / Real.sqrt (1 + (s : ℝ))) := by
+  have h := fpDistP_col_le_core tilt htilt0 htilt1 (tilt / 2)
+    c_fpLocationP C_fpLocationP c_fpLocationP_pos C_fpLocationP_pos
+    (fpDistP_location_bound_explicitC tilt htilt0 htilt1 hp0 hp1)
+  intro s j
+  have hs := h s j
+  unfold C_fpColP
+  exact hs
+
+/-- Existential interface for the tilted first-passage column marginal. -/
+theorem fpDistP_col_le :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ),
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5), ∀ (s j : ℕ),
+        ∑' l : ℤ, (fpDistP p (by linarith) (by linarith) s (j, l)).toReal
+          ≤ C * (TaoCollatz.Gweight (1 + (s : ℝ))
+              (c * ((j : ℝ) - p / 2 * s)) / Real.sqrt (1 + (s : ℝ))) :=
+  ⟨c_fpLocationP, c_fpLocationP_pos, C_fpColP, C_fpColP_pos,
+    fun p hp0 hp1 => fpDistP_col_le_explicitC p (by linarith) (by linarith) hp0 hp1⟩
+
 end
 
 end TaoCollatz.Sec7P
