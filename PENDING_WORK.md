@@ -1938,3 +1938,21 @@ either authorize a new white-exit geometry that uses the strongly negative
 transverse displacement of these tall endpoints (rather than bounding vertical
 overshoot alone), or revise the campaign window/statement.  Do not continue the
 `Y≈200` vertical-tail port.
+
+### Grind lap 19 (2026-10-25) — finer epsilon reopens localization ✅
+
+- The lap-18 flag is upheld as a refutation of localization at the **fixed**
+  `epsBW = 10^-1000` scale, but it does not force an operator stop: the standing
+  ruling in `DIRECTION.md` explicitly authorizes a new `blackP`/`whiteP` epsilon
+  when the p-dependent localization box is larger.
+- Added `Sec7P/Setup.lean` at `epsP = 10^-100000`. Proved the generalized white
+  cosine estimate and product damping bound, so the smaller scale still feeds
+  the frozen pair-factor target.
+- Kernel-checked separation `>20000` and the explicit compatible box
+  `(X,Y,B)=(3769,12000,300)`. Proved the `1/1000`-tilt renewal-level numeric is
+  `≤1/16` and extracted the uniform vertical holding-step tail.
+- No new sorry: Sec7P remains **1 sorry + 0 orange nodes**.
+
+**Next:** copy-generalize Lemma 7.4 to `blackP`/`whiteP`, carefully scaling the
+old 300-step Claim (*) window; then port the increasing-height renewal grouping
+to turn the proved `Y=12000` numeric into the first-passage vertical tail.
