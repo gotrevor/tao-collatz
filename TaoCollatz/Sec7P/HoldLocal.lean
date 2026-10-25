@@ -679,4 +679,203 @@ theorem holdSumP_apply_le_chernoff_window {p l1 l2 : ℝ}
     _ = (32 * 312500000 : ℝ) ^ 2 / (1 + (n : ℝ)) *
         Real.exp ((n : ℝ) * u - theta) := by
       rw [mul_assoc, ← Real.exp_add, sub_eq_add_neg]
+
+/-! ### Uniform optimization of the Chernoff bound -/
+
+/-- The clipped-tilt optimization for the campaign's quadratic coefficient.
+For `K = 10⁹` and the available box `|λ| ≤ 1/4000`, the central optimizer is
+`λ = dev/(2Kn)` and the saturated optimizer gives the linear tail. -/
+theorem chernoff_clipP_le {n : ℕ} (hn : 1 ≤ n) (dev : ℝ) :
+    ∃ lam : ℝ, -(1 / 4000) ≤ lam ∧ lam ≤ 1 / 4000 ∧
+      1000000000 * (n : ℝ) * lam ^ 2 - lam * dev ≤
+        -min (dev ^ 2 / (4000000000 * n)) (|dev| / 8000) := by
+  have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hnpos : (0 : ℝ) < n := by linarith
+  have hne : (n : ℝ) ≠ 0 := hnpos.ne'
+  by_cases hc : |dev| ≤ 500000 * n
+  · have habs : |dev / (2000000000 * n)| ≤ 1 / 4000 := by
+      rw [abs_div, abs_of_pos (by positivity : (0 : ℝ) < 2000000000 * n),
+        div_le_iff₀ (by positivity)]
+      nlinarith [abs_nonneg dev]
+    obtain ⟨hlo, hhi⟩ := abs_le.mp habs
+    refine ⟨dev / (2000000000 * n), hlo, hhi, ?_⟩
+    have heq :
+        1000000000 * (n : ℝ) * (dev / (2000000000 * n)) ^ 2 -
+            dev / (2000000000 * n) * dev =
+          -(dev ^ 2 / (4000000000 * n)) := by
+      field_simp
+      ring
+    rw [heq, neg_le_neg_iff]
+    exact min_le_left _ _
+  · push Not at hc
+    refine ⟨if 0 ≤ dev then (1 / 4000 : ℝ) else -(1 / 4000), ?_, ?_, ?_⟩
+    · split_ifs <;> norm_num
+    · split_ifs <;> norm_num
+    · have habs : (if 0 ≤ dev then (1 / 4000 : ℝ) else -(1 / 4000)) * dev =
+          |dev| / 4000 := by
+        split_ifs with h
+        · rw [abs_of_nonneg h]
+          ring
+        · rw [abs_of_neg (lt_of_not_ge h)]
+          ring
+      have hsq : (if 0 ≤ dev then (1 / 4000 : ℝ) else -(1 / 4000)) ^ 2 =
+          1 / 16000000 := by
+        split_ifs <;> norm_num
+      rw [habs, hsq]
+      refine le_trans ?_
+        (neg_le_neg (min_le_right (dev ^ 2 / (4000000000 * n)) (|dev| / 8000)))
+      linarith
+
+/-- The optimized exponent from `chernoff_clipP_le` fits Tao's two-branch
+`Gweight`, with a constant independent of `p`. -/
+theorem exp_neg_minP_le_Gweight {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 0 ≤ x) :
+    Real.exp (-min (x ^ 2 / (4000000000 * n)) (x / 8000)) ≤
+      TaoCollatz.Gweight (1 + n) (1 / 100000 * x) := by
+  have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hnpos : (0 : ℝ) < n := by linarith
+  rcases min_cases (x ^ 2 / (4000000000 * (n : ℝ))) (x / 8000) with
+    ⟨hm, _⟩ | ⟨hm, _⟩
+  · rw [hm]
+    have hbr : Real.exp (-(x ^ 2 / (4000000000 * n))) ≤
+        Real.exp (-((1 / 100000 * x) ^ 2) / (1 + (n : ℝ))) := by
+      apply Real.exp_le_exp.mpr
+      rw [neg_div, neg_le_neg_iff,
+        div_le_div_iff₀ (by positivity) (by positivity)]
+      nlinarith [sq_nonneg x, mul_nonneg (sq_nonneg x) hnpos.le]
+    exact le_trans hbr (le_add_of_nonneg_right (Real.exp_pos _).le)
+  · rw [hm]
+    have harg : -(x / 8000) ≤ -|1 / 100000 * x| := by
+      rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ 1 / 100000 * x)]
+      nlinarith
+    exact le_trans (Real.exp_le_exp.mpr harg)
+      (le_add_of_nonneg_left (Real.exp_pos _).le)
+
+/-- The uniform spatial scale in the local bound for `holdP`. -/
+noncomputable def c_holdLocalP : ℝ := 1 / 100000
+
+/-- The uniform center-bound constant in the local bound for `holdP`. -/
+noncomputable def C_holdLocalP : ℝ := (32 * 312500000) ^ 2
+
+theorem c_holdLocalP_pos : 0 < c_holdLocalP := by
+  unfold c_holdLocalP
+  norm_num
+
+theorem C_holdLocalP_pos : 0 < C_holdLocalP := by
+  unfold C_holdLocalP
+  positivity
+
+/-- Tao's Lemma 2.2(i) for the parameterized holding walk, with constants
+chosen uniformly before `p`.  The center is the exact drift
+`n q(p)⁻¹ (1, 2/p)`. -/
+theorem holdP_local_bound_explicitC (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5)
+    (n j : ℕ) (l : ℤ) :
+    ((holdSumP p (by linarith) (by linarith) n) (j, l)).toReal ≤
+      C_holdLocalP / (1 + n) *
+        TaoCollatz.Gweight (1 + n)
+          (c_holdLocalP *
+            ‖(((j : ℝ) - (pairThreeProb p)⁻¹ * n,
+              (l : ℝ) - ((pairThreeProb p)⁻¹ * (2 / p)) * n) : ℝ × ℝ)‖) := by
+  unfold c_holdLocalP C_holdLocalP
+  let hp0' : 0 < p := by linarith
+  let hp1' : p < 1 := by linarith
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [holdSumP_eq_iidSum p hp0' hp1' 0, TaoCollatz.iidSum_zero,
+      PMF.pure_apply]
+    split_ifs with h
+    · have hj : j = 0 := congrArg Prod.fst h
+      have hl : l = 0 := congrArg Prod.snd h
+      subst hj
+      subst hl
+      rw [ENNReal.toReal_one]
+      norm_num [TaoCollatz.Gweight, Prod.norm_def, Real.norm_eq_abs,
+        Real.exp_zero]
+    · rw [ENNReal.toReal_zero]
+      exact mul_nonneg (by positivity) (TaoCollatz.Gweight_nonneg _ _)
+  · have hn1 : 1 ≤ n := hn
+    have hn' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+    have hnpos : (0 : ℝ) < n := by linarith
+    let m1 : ℝ := (pairThreeProb p)⁻¹
+    let m2 : ℝ := (pairThreeProb p)⁻¹ * (2 / p)
+    set d1 : ℝ := (j : ℝ) - m1 * n with hd1
+    set d2 : ℝ := (l : ℝ) - m2 * n with hd2
+    obtain ⟨l1, h1lo, h1hi, hE1⟩ := chernoff_clipP_le hn1 d1
+    obtain ⟨l2, h2lo, h2hi, hE2⟩ := chernoff_clipP_le hn1 d2
+    have hch := holdSumP_apply_le_chernoff_window hp0 hp1
+      h1lo h1hi h2lo h2hi n j l
+    change ((holdSumP p hp0' hp1' n) (j, l)).toReal ≤
+      (32 * 312500000 : ℝ) ^ 2 / (1 + (n : ℝ)) *
+        Real.exp ((n : ℝ) * (m1 * l1 + m2 * l2 +
+          1000000000 * (l1 ^ 2 + l2 ^ 2)) - (l1 * j + l2 * l)) at hch
+    have hEeq :
+        (n : ℝ) * (m1 * l1 + m2 * l2 +
+            1000000000 * (l1 ^ 2 + l2 ^ 2)) - (l1 * j + l2 * l) =
+          (1000000000 * n * l1 ^ 2 - l1 * d1) +
+            (1000000000 * n * l2 ^ 2 - l2 * d2) := by
+      rw [hd1, hd2]
+      ring
+    rw [hEeq] at hch
+    set M : ℝ := max |d1| |d2| with hM
+    have hnorm : ‖((d1, d2) : ℝ × ℝ)‖ = M := by
+      rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs]
+    have hM0 : 0 ≤ M := le_trans (abs_nonneg d1) (le_max_left _ _)
+    have hmin_nonneg : ∀ x : ℝ,
+        0 ≤ min (x ^ 2 / (4000000000 * n)) (|x| / 8000) := fun x =>
+      le_min (by positivity) (by positivity)
+    have hEle :
+        (1000000000 * n * l1 ^ 2 - l1 * d1) +
+            (1000000000 * n * l2 ^ 2 - l2 * d2) ≤
+          -min (M ^ 2 / (4000000000 * n)) (M / 8000) := by
+      rcases max_cases |d1| |d2| with ⟨hMe, _⟩ | ⟨hMe, _⟩
+      · have h2np : 1000000000 * n * l2 ^ 2 - l2 * d2 ≤ 0 :=
+          le_trans hE2 (neg_nonpos.mpr (hmin_nonneg d2))
+        have hsq : M ^ 2 = d1 ^ 2 := by rw [hM, hMe, sq_abs]
+        have habs : M = |d1| := by rw [hM, hMe]
+        calc
+          (1000000000 * n * l1 ^ 2 - l1 * d1) +
+              (1000000000 * n * l2 ^ 2 - l2 * d2) ≤
+              -min (d1 ^ 2 / (4000000000 * n)) (|d1| / 8000) + 0 :=
+            add_le_add hE1 h2np
+          _ = -min (M ^ 2 / (4000000000 * n)) (M / 8000) := by
+            rw [add_zero, hsq, habs]
+      · have h1np : 1000000000 * n * l1 ^ 2 - l1 * d1 ≤ 0 :=
+          le_trans hE1 (neg_nonpos.mpr (hmin_nonneg d1))
+        have hsq : M ^ 2 = d2 ^ 2 := by rw [hM, hMe, sq_abs]
+        have habs : M = |d2| := by rw [hM, hMe]
+        calc
+          (1000000000 * n * l1 ^ 2 - l1 * d1) +
+              (1000000000 * n * l2 ^ 2 - l2 * d2) ≤
+              0 + -min (d2 ^ 2 / (4000000000 * n)) (|d2| / 8000) :=
+            add_le_add h1np hE2
+          _ = -min (M ^ 2 / (4000000000 * n)) (M / 8000) := by
+            rw [zero_add, hsq, habs]
+    have hGw :
+        Real.exp ((1000000000 * n * l1 ^ 2 - l1 * d1) +
+          (1000000000 * n * l2 ^ 2 - l2 * d2)) ≤
+            TaoCollatz.Gweight (1 + n) (1 / 100000 * M) :=
+      le_trans (Real.exp_le_exp.mpr hEle) (exp_neg_minP_le_Gweight hn1 hM0)
+    calc
+      ((holdSumP p hp0' hp1' n) (j, l)).toReal ≤
+          (32 * 312500000 : ℝ) ^ 2 / (1 + (n : ℝ)) *
+            Real.exp ((1000000000 * n * l1 ^ 2 - l1 * d1) +
+              (1000000000 * n * l2 ^ 2 - l2 * d2)) := hch
+      _ ≤ (32 * 312500000 : ℝ) ^ 2 / (1 + (n : ℝ)) *
+          TaoCollatz.Gweight (1 + n) (1 / 100000 * M) :=
+        mul_le_mul_of_nonneg_left hGw (by positivity)
+      _ = (32 * 312500000 : ℝ) ^ 2 / (1 + (n : ℝ)) *
+          TaoCollatz.Gweight (1 + n)
+            (1 / 100000 * ‖((d1, d2) : ℝ × ℝ)‖) := by rw [hnorm]
+
+/-- Existential interface for the uniform local bound.  The quantifier order
+records that both constants are chosen before the tilt parameter `p`. -/
+theorem holdP_local_bound_window :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ),
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ (n j : ℕ) (l : ℤ),
+        ((holdSumP p (by linarith) (by linarith) n) (j, l)).toReal ≤
+          C / (1 + n) *
+            TaoCollatz.Gweight (1 + n)
+              (c * ‖(((j : ℝ) - (pairThreeProb p)⁻¹ * n,
+                (l : ℝ) - ((pairThreeProb p)⁻¹ * (2 / p)) * n) : ℝ × ℝ)‖) :=
+  ⟨c_holdLocalP, c_holdLocalP_pos, C_holdLocalP, C_holdLocalP_pos,
+    holdP_local_bound_explicitC⟩
 end TaoCollatz.Sec7P
