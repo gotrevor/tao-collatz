@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Trevor Morris
 -/
 import TaoCollatz.Sec7.Decay
+import TaoCollatz.Sec7P.Prob
 
 /-!
 # Convention bridge for the tilted Pascal damping campaign
@@ -58,6 +59,14 @@ theorem pascalWeight_half_bridge (b : ℕ) :
     rw [← pow_add]
     congr 1
     omega
+
+/-- For every probability parameter, the moonshot pair-sum weight is the real
+mass of the normalized `pascalP` law.  This is the general-`p` weight seam reused
+by the final assembly. -/
+theorem pascalWeight_bridge (p : ℝ) (hp0 : 0 < p) (hp1 : p ≤ 1) (b : ℕ) :
+    (if 2 ≤ b then ((b : ℝ) - 1) * p ^ 2 * (1 - p) ^ (b - 2) else 0) =
+      (pascalP p hp0 hp1 b).toReal :=
+  pascalWeight_eq_pascalP_toReal p hp0 hp1 b
 
 /-- `eC(q / 3^n)` depends only on the numerator modulo `3^n`. -/
 theorem eC_div_congr {n : ℕ} (a b : ℤ)

@@ -1571,3 +1571,23 @@ the pin LAST (sorry + warningAsError shield in one commit).
 ## Sec7P trace (append below)
 
 *(plant — nothing yet.)*
+
+### Grind lap 2 (2026-10-25) — tilted PMFs normalized, general weight bridge landed ✅
+
+- Added `Sec7P/Prob.lean`: `geomP`, `pascalP`, and `pascalNe3P` are genuine `PMF`s
+  for explicit hypotheses `0 < p ≤ 1`; the two unconditioned laws are normalized
+  from exact real geometric-series calculations, not an opaque choice.
+- Proved pointwise real masses and the general convention seam
+  `pascalWeight p b = (pascalP p … b).toReal` (expanded frozen formula in the lemma
+  statement because `pascalWeight` itself lives downstream in `Statement.lean`).
+- Named `pairThreeProb p = 2p²(1-p)` and proved the window-uniform bounds
+  `8/125 ≤ pairThreeProb p ≤ 36/125` on `[1/5,3/5]`; defined the conditioned
+  law with the positive `b=2` atom as its normalization witness and proved its
+  `b=3` mass vanishes.
+- No new sorry: Sec7P remains **1 sorry + 0 orange nodes**, with the final pin still
+  deliberately untouched.
+
+**Next:** close the algebraic characterization still owed by the `Prob` module:
+`pascalP = iidSum (geomP) 2` and the exact `pascalNe3P` mass/normalizer
+`(1-pairThreeProb p)⁻¹`. Then define `holdP` and copy-generalize the support,
+mean, aperiodicity, and uniform exponential-tail package.

@@ -1,66 +1,64 @@
-# HANDOFF — Sec7P calibration gate discharged 🌀 (grind lap, 2026-10-25)
+# HANDOFF — Sec7P tilted probability laws planted and normalized 🌀 (grind lap, 2026-10-25)
 
-Branch `ren/sec7p-pascal`. This lap discharged the binding calibration gate
-`pascalDamping_half_decay`; its proof is believed clean, judge to verify. The final uniform-p
-pin remains deliberately untouched. Current Sec7P debt is **1 sorry + 0 orange nodes**.
+Branch `ren/sec7p-pascal`. The calibration gate remains discharged (believed clean,
+judge to verify). This lap advanced directive step 2 by landing the three foundational
+tilted PMFs and the general-`p` weight bridge. The final uniform pin remains deliberately
+untouched. Current Sec7P debt is **1 sorry + 0 orange nodes**.
 
 ## Concrete advance
 
-- Added `TaoCollatz/Sec7P/Bridge.lean` with the exact p-independent convention seams:
-  inclusive `Fin` prefix = `pre b (j+1)`, and moving `ξ` from `charZ`'s `ZMod` argument into
-  Tao's rational `eC` numerator (using periodicity modulo `3^n`).
-- Proved the calibration-only weight identity
-  `pascalWeight (1/2) b = (pascal b).toReal`.
-- Rewrote the copied `pascalDamping` `tsum` exactly as the existing
-  `(PMF.iid pascal (n/2)).expect` of the `fCond` product. Thus the calibration does not need
-  `cexpect_pairing`: it is already in paired form.
-- Closed the bound by `prod_fCond_le_damping`, expectation monotonicity, and
-  `renewal_white_encounters_at`. Removed the calibration `sorry` and its warning shield.
-- Watched pins remain **46/46 character-identical** against plant commit `eb40bf3`.
+- Added `TaoCollatz/Sec7P/Prob.lean`.
+- Proved from geometric-series identities that the positive-geometric mass
+  `p(1-p)^(a-1)` and Pascal mass `(b-1)p²(1-p)^(b-2)` each sum to one for
+  `0 < p ≤ 1`, and packaged them as `geomP` and `pascalP` PMFs.
+- Proved `geomP_toReal`, `pascalP_toReal`, and
+  `pascalWeight_eq_pascalP_toReal`. `Bridge.lean` now exports the corresponding
+  general convention seam `pascalWeight_bridge`; this is the bridge the final
+  assembly will reuse.
+- Defined `pairThreeProb p = 2p²(1-p)`, proved
+  `8/125 ≤ pairThreeProb p ≤ 36/125` uniformly for `p ∈ [1/5,3/5]`, and
+  checked it is exactly the real `pascalP` mass at `3`.
+- Defined `pascalNe3P` by filtering `pascalP` away from `3`, using the strictly
+  positive atom at `2` as the normalization witness; proved its atom at `3` is zero.
+- Introduced no proof debt. The only Sec7P `sorry` remains the mandated-LAST
+  `pascal_damping_decay` pin.
 
 ## Exact verification run
 
 ```text
 lake build TaoCollatz.Sec7P.Statement
-  Build completed successfully (3312 jobs); only pascal_damping_decay reports sorry.
-
-~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --target TaoCollatz.Sec7P.Statement \
-  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay
-  FORMALIZE-TIER GREEN
-  axioms: [Classical.choice, Quot.sound, propext]
-
-./tools/tao_stmt_diff.py eb40bf3 HEAD
-  character-identical (46/46)
+  Build completed successfully (3313 jobs); only pascal_damping_decay reports sorry.
 
 ./tools/blueprint_audit.py
   26 nodes proved + axiom-clean; 0 orange; 0 drift; 0 false-green
 ```
 
-The final full-repository gate was also run immediately before the checkpoint commit; its
-verdict is recorded below.
+The watched-statement differ and real full-repository gate are run after this handoff
+is committed; their exact verdicts are appended below.
 
 ## Campaign state
 
-`sec7p: calibration proof landed (believed clean, judge to verify); prob-layer 0/3;
-Prop 7.3@p modules 0/10; Sec7P sorries 1; differ 46/46 yes; blockers none.`
+`sec7p: calibration proof landed (believed clean, judge to verify); prob-layer
+foundational PMFs landed, module characterization still open (0/3 modules fully
+closed); Prop 7.3@p modules 0/10; Sec7P sorries 1; blockers none.`
 
 ## Next highest-value attack
 
-Start directive step 2 in `TaoCollatz/Sec7P/Prob.lean`:
+Finish `TaoCollatz/Sec7P/Prob.lean` before starting holding-time proofs:
 
-1. Define the general `geomP p` PMF on positive naturals and prove its pointwise real mass.
-2. Define `pascalP p` (preferably as `iidSum (geomP p) 2`, with the closed
-   `(b-1)p^2(1-p)^(b-2)` mass proved) and `pascalNe3P p`.
-3. Keep the bridge general where possible: establish
-   `(pascalP p b).toReal = pascalWeight p b` under the probability-range hypotheses. Then
-   proceed to `holdP p` and the mean/support/tail package in `Holding.lean`/`HoldBasics.lean`.
+1. Prove `pascalP p = iidSum (geomP p) 2`, or an equivalent two-draw convolution
+   theorem. The current closed mass is normalized and exact, but this identity is the
+   formal justification for calling it the pair-sum law and will feed MGF reuse.
+2. Compute the filter normalizer exactly and expose
+   `(pascalNe3P p b).toReal = (1 - pairThreeProb p)⁻¹ * pascalWeight p b`
+   for `b ≠ 3` (zero at `3`). The uniform q-window gives a uniform lower bound on
+   the denominator for free.
+3. Define `holdP` in `Sec7P/Holding.lean`, then copy-generalize support/application
+   lemmas before attacking the mean, aperiodicity, and tail package in `HoldBasics`.
 
-Every constant feeding the target must be uniform for `p ∈ [1/5,3/5]`. The target
+Every constant feeding the target must remain uniform for `p ∈ [1/5,3/5]`.
 `pascal_damping_decay` is discharged LAST.
 
 ## Final gate verdict
 
-`~/personal/bin/lean-green ~/src/tao-collatz-sec7p` completed successfully (8754 jobs),
-reported exactly the remaining `pascal_damping_decay` declaration as proof debt, and ended
-`FORMALIZE-TIER GREEN`.
+Pending the post-commit full gate.
