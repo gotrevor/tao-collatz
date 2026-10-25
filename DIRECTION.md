@@ -1,103 +1,101 @@
-# DIRECTION — Tier-1 tower tightening 🗼 (`10↑↑63 → 10↑↑10` pin; honest ceiling `~10↑↑4`)
+# DIRECTION — Sec7P: Tao §7 at the pair-sum law `Pascal(p)`, uniform on `p ∈ [1/5, 3/5]` 🌀
 
 *Grind laps READ and OBEY this file; it outranks any handoff.  `blueprint_rules.md` remains
-BINDING.  `TIER1-TOWER-TIGHTENING-PLAN.md` (this branch) is the campaign spec — read it in
-full before any lap-1 work; where this file is terse, the plan governs.  The predecessor
-campaign (assembled big-C, ratified 2026-07-17, merged as PR #10) is done; its DIRECTION
-lives in git history (`git log --follow DIRECTION.md`).*
+BINDING except where this file scopes it.  `SEC7P-PLAN.md` (this branch) is the campaign
+spec — read it in full before lap-1 work; where this file is terse, the plan governs.  The
+predecessor campaign (Tier-1 tower tightening, complete 2026-07-18) lives in git history
+(`git log --follow DIRECTION.md`).*
 
 > **🔒 ONE OWNER (standing ruling, 2026-07-17).**  This file has exactly one writer: the
 > operator/judge layer (host-side).  No lap — grind, review, reflection, or altitude — may
-> write DIRECTION.md.  The treadmill governor's general "altitude laps own DIRECTION.md"
-> rule is **overridden here** and does not apply to this repo.  A lap that believes the
-> directive is wrong records the argument in `PENDING_WORK.md` as a `JUDGE-FLAG:` and
-> stops the loop with `box stuck`.
+> write DIRECTION.md.  A lap that believes the directive is wrong records the argument in
+> `PENDING_WORK.md` as a `JUDGE-FLAG:` and stops the loop with `box stuck`.
 
 ---
 
-## 🎯 CURRENT DIRECTIVE (operator, 2026-07-18) — discharge the planted `10↑↑10` pin at the honest height; Design B only
+## 🎯 CURRENT DIRECTIVE (operator, 2026-10-25) — discharge the two Sec7P pins
 
-**The pin is already planted (judge, 2026-07-18).**  `Statement.lean` carries
-`CTao := hyperoperation 4 10 10` (= `10↑↑10`) with `tao_collatz_quantitative_fully_explicit`
-as a shielded `sorry`, and `Comparator/TaoCollatz/Challenge.lean` carries the same value in
-lockstep.  **Comparator CI is RED until the pin is discharged — that is the design; never
-"fix" it and never touch `Comparator/`.**  You write the PROOF, never these statements.
+**This is new mathematics, not formalization.**  Tao proves the §7 damping bound at
+`p = 1/2`; nobody has it uniformly on a window of tilts.  It is the input node of a live
+research chain in `gotrevor/collatz-moonshot` (`PascalDampingDecay` ⇒ `SliceCharDecay` ⇒
+`TruncatedSyracMixing` ⇒ `BiasDecays`).  The paper-level transfer is in `SEC7P-PLAN.md` §1;
+it is a sketch, so treat each step as a claim to check, and a step that fails as a finding
+to record precisely (`JUDGE-FLAG:` with the failing inequality), never to paper over.
 
-**Objective**: prove `C_tao_assembled ≤ tenTower 9` — and the *honest* target is
-`tenTower 4` (take `3` if it falls out) — via the plan's **Design B batched level-budget
-calculus**, then discharge the pin.  Its `10↑↑63` predecessor proof is on main at
-`4dde699`; the ceiling climb you are tightening is `BigCTower.lean`.
+**The pins are planted** in `TaoCollatz/Sec7P/Statement.lean` (plant commit: `git log --grep
+'plant the Sec7P'`): five definitions copied verbatim from the moonshot node, and
 
-**Work order (the discharge is LAST — this is load-bearing, see Stop discipline):**
+- `pascalDamping_half_decay` — **calibration**: the `p = 1/2` case.
+- `pascal_damping_decay` — **target**: `∀ A > 0, ∃ C > 0, ∀ p ∈ [1/5, 3/5], ∀ n ≥ 1,
+  ∀ ξ (3 ∤ ξ), pascalDamping n p ξ ≤ C · n^{-A}`.  `C` is chosen **before** `p`: every
+  constant in the proof must be uniform on the window.
 
-1. **Calculus bank** in `Basic/ExplicitConstants.lean`: `prod_le_tenTower_succ`,
-   `sum_le_tenTower_succ`, `rpow_batch`, `max` passthrough (plan §2 Design B).
-2. **POC gate (binding)**: re-prove `C_fpLocation ≤ tenTower 2` (or `3`)
-   (`BigCTower.lean:244`, currently climbs to `tenTower 8`).  Green POC unlocks step 3.
-   If it fights: `JUDGE-FLAG:` + `box stuck` — never grind downstream on a failed gate.
-3. **Convert bottom-up**, cluster by cluster, one commit per node/cluster, in the plan §3
-   order (Sec5 leaves → cubic-recurrence node `+6 → +2` → Sec6/Sec3 climb → the ceiling
-   theorem restated at the proved height).
-4. **`check28`** in `tools/check_blueprint.py`: log/log-log mirror of the full
-   `C_tao_assembled` max-tree, prints the height, asserts it, mutation-trapped (extend
-   check19; resolve which arm of each `max` wins in log-space — never assume).
-5. **Discharge the pin**: remove the `sorry` AND its `warningAsError` shield together in
-   the final commit.  The host's `--done-when sorry-free:TaoCollatz` gate then ends the
-   run.  Discharging early at a slop height (e.g. a quick `≤ tenTower 8` proof) is a
-   DIRECTIVE violation: it halts the run with the honest height unreached.
+You write the PROOFS, never these statements.
+
+**Work order:**
+
+1. **Calibration gate (binding).**  Discharge `pascalDamping_half_decay` from the proved §7
+   (`renewal_white_encounters_at`, `cexpect_pairing`'s machinery, `prod_fCond_le_damping`) via
+   a convention bridge in `TaoCollatz/Sec7P/Bridge.lean`: `charZ`/`fPair`/`Sec7P.xArg` ↔
+   `eC`/`fCond`/`xArg` (ξ moves from the character into the argument; `e` is 1-periodic),
+   prefix sum `Σ_{i ≤ j} b i` ↔ `pre b (j+1)`, `pascalWeight (1/2)` ↔ `(pascal b).toReal`,
+   the `tsum` over `Fin (n/2) → ℕ` ↔ `(PMF.iid pascal (n/2)).expect`.  State the bridge for
+   **general** `p` wherever it does not need `p = 1/2` — step 4 reuses it.  Green gate
+   unlocks step 2.  If it fights (the conventions do not match): `JUDGE-FLAG:` with the
+   exact mismatch + `box stuck`.  Never grind downstream on a failed gate.
+2. **The p-probability layer** (`Sec7P/Prob.lean`, `Sec7P/HoldBasics.lean`,
+   `Sec7P/Holding.lean`): `geomP p`, `pascalP p`, `pascalNe3P p` as `PMF`s; the holding law
+   `holdP p`; mean `(1/q)·(1, 2/p)` with `q = 2p²(1-p)`; support ⊇ Tao's (hence aperiodicity);
+   exponential tail — **each with window-uniform constants** (plan §2).
+3. **Prop 7.3 at `Pascal(p)`**, bottom-up through the plan §3 module order, each a
+   p-parametrised copy-and-generalize of the corresponding `Sec7/` module into `Sec7P/`,
+   importing the p-free modules (`Setup`, `Triangles`, `White`, `Reduction`'s p-free part)
+   unchanged.  Decompose into named sub-`sorry`s freely — raising the Sec7P sorry count by
+   decomposition is progress.
+4. **Assemble** `pascal_damping_decay` = pairing bound at `p` (bridge, step 1) +
+   `prod_fCond_le_damping` (p-free) + Prop 7.3 at `p` (step 3).  Discharge LAST.
 
 **Operator rulings, recorded — do not relitigate in-lap:**
 
-- **Design B only this run.**  Design A (`tenTowerR` real-topped carrier, the tight
-  `10^(10^(10^3010))` headline) is a banked follow-on.
-- **`CTao` does not move again.**  It stays `10↑↑10` (the comparator-pinned public bound);
-  the *ceiling theorem* + `check28` + docstrings record the tighter honest height.  Any
-  later re-pin tighter is a judge call after this campaign, not lap work.
-- **Base stays 10.**  The height is the base-free content; a smaller base spends more
-  levels on the same value; the top exponent's `3 × 1000` provenance (`epsBW⁻³`,
-  `epsBW = 10⁻¹⁰⁰⁰`) is decimal-shaped.  On completion, record the base-free form
-  **`log log log C ≲ 3010`** + the `epsBW⁻³` provenance in the ceiling docstrings (plan §6).
-- **Legibility is a requirement, not a nicety** (Dvořák, Zulip 2026-07-18: *"I love
-  reading Lean code that is well-organized and elegant"*).  The calculus bank and the
-  converted climb are human-read surfaces.  Named lemmas, clean statements, docstrings on
-  the bank, no copy-paste sprawl.
+- **Copy-and-generalize into `Sec7P/`; existing files are read-only** (except one `import`
+  line per new module in `TaoCollatz.lean`).  The summit library stays byte-identical; a
+  post-campaign refactor (generalizing `Sec7/` itself) is a coordinator call, not lap work.
+- **`ε` is the lap's choice.**  The target is `ε`-free.  If the window needs a smaller `ε`
+  (e.g. Lemma 7.4's separation vs a p-dependent localization box), define `blackP`/`whiteP`
+  at a new `ε` in `Sec7P/` — never edit `epsBW`.
+- **Existential constants are fine.**  No explicit-constant (`_at` / big-C) machinery this
+  campaign; prove `∃ C` forms.  Window-uniformity is the only constant discipline.
+- **Legibility matters** — named lemmas, docstrings that say which paper step a lemma
+  generalizes and how `p` enters.  No copy-paste sprawl where a `p`-general lemma would do.
 
-## 🔒 Hard rails (plan §4 governs; the differ adjudicates)
+## 🔒 Hard rails (the differ adjudicates)
 
-- **FROZEN**: every paper pin (the 24 numbered claims / §7 lemmas), `C_tao_assembled`
-  (the **definition**), `X_spine`, `tao_collatz_quantitative_assembled`, `tao_collatz`,
-  `tao_collatz_quantitative`, `cTao`, `tao_collatz_quantitative_explicit`, **and the
-  planted pin itself** (`CTao`'s new value + the `fully_explicit` statement, both files).
-- **Differ**: run `tools/tao_stmt_diff.py <plant-commit> HEAD` every commit (the plant
-  commit is the one titled "plant the Tier-1 campaign pin"; `git log --grep 'plant the
-  Tier-1'`).  It must print **39/39 character-identical** for the entire campaign — the
-  engine lemmas you tighten in `BigCTower.lean` are not on the watched surface; nothing
-  watched moves again.
-- **`TaoCollatz/` carries exactly ONE `sorry`** (the planted pin) until the final commit,
-  which takes it to 0.  Never add another; never weaken a statement.  A cluster that
-  cannot be tightened keeps its old bound — worst case the final height is looser, never
-  broken.
-- **Never evaluate a tower numeral** (`norm_num [CTao]`, `decide`, kernel reduction of the
-  numeral — hangs; `native_decide` — mints axioms, banned).  Log-arithmetic + monotonicity
-  only, as check17/check19 do.  Local justified `maxHeartbeats` bumps on one declaration
-  only.
-- **Axioms**: at discharge, `#print axioms` on `tao_collatz_quantitative_fully_explicit`
-  (and spot-check the headlines) = exactly `[propext, Classical.choice, Quot.sound]`.
-- **This branch merges via PR only** (main is protected; `build` + `comparator` required).
-  Commit + push on `tier1-tower-tightening`; the PR flips green exactly when you are done.
+- **FROZEN**: every pin `tools/tao_stmt_diff.py` watches — the 39 summit pins and the 7
+  Sec7P pins (5 defs + 2 theorems).  Run `tools/tao_stmt_diff.py <plant-commit> HEAD` every
+  commit; it must print **46/46 character-identical** for the whole campaign.
+- **Read-only paths**: `TaoCollatz/` outside `Sec7P/` (bar the import lines), `Comparator/`,
+  `BLUEPRINT.md`, `blueprint/**`, `judge/**`, `DIRECTION.md`, `STATUS.md`, `tools/`.
+  Sec7P nodes are tracked in `SEC7P-PLAN.md` §4's node table (the lap may edit that table),
+  not in the blueprint; blueprint reconciliation is the coordinator's after the campaign.
+- **Sorries live only in `TaoCollatz/Sec7P/`.**  Every Sec7P `sorry` carries its own
+  `set_option warningAsError false in` shield (CI builds warnings-as-errors); a discharge
+  removes the `sorry` and its shield together.  `./tools/blueprint_audit.py` must stay green.
+- **`pascalDamping` is a `tsum`**: summability is something you prove (weights are a
+  probability, factors are `≤ 1`), never something you exploit.
+- **Axioms**: at discharge, `#print axioms pascal_damping_decay` (and `_half_decay`) =
+  exactly `[propext, Classical.choice, Quot.sound]`.  No `native_decide`; `-- HEARTBEAT:`
+  on any local bump.
+- **Branch `ren/sec7p-pascal` only.**  Commit + push there.  Never touch `main`.
 
 ## 🛑 Stop discipline
 
-- **Primary: `--done-when sorry-free:TaoCollatz`** — the host checks it after every lap
-  and halts the run when the pin is discharged.  Combined with "discharge LAST", the gate
-  fires exactly at campaign completion.
-- The box-side repo-root sorry gate stays blocked by the Comparator challenge stubs
-  (sorry-by-design) — irrelevant here; the host-side `--done-when` is scoped to
-  `TaoCollatz/` and independent of it.
-- `box stuck` is the escalate lane (POC failure, unanswered `JUDGE-FLAG`).  `--forever`
-  must NOT be passed.  `--max-duration` is the backstop.
+- **Primary: `--done-when sorry-free:TaoCollatz/Sec7P`** — the host halts the run when the
+  Sec7P directory is sorry-free.  With "discharge LAST", that is campaign completion.
+- `--require-decls` guards the five defs and both pins against deletion.
+- `box stuck` is the escalate lane (failed calibration gate, a transfer step that is false
+  as stated, an unanswered `JUDGE-FLAG`).  `--max-duration` is the backstop.
 
 ## 📝 Report per lap
 
-"tier1: calculus {n lemmas}/POC {state}; clusters {k}/{total} converted; proved ceiling
-tenTower {h}; differ 39/39 {yes/no}; sorries {1|0}; blockers".
+"sec7p: calibration {state}; prob-layer {k}/{total}; Prop 7.3@p modules {k}/{total};
+Sec7P sorries {n}; differ 46/46 {yes/no}; blockers".

@@ -98,9 +98,18 @@ PINNED_NAMES = [
     # same pass, text verbatim — a pin may move files; SEARCH_FILES covers relocation).
     # Baseline: the commit introducing them (git log --grep 'Statement.*fully-explicit').
     "CTao", "tenTower", "tao_collatz_quantitative_fully_explicit",
+    # 🌀 Sec7P campaign pins (operator, 2026-10-25): §7 at Pascal(p), uniform on [1/5, 3/5].
+    # The five defs are copied verbatim from collatz-moonshot's `PascalDampingDecay` node (the
+    # def VALUE is the pin); the two theorems are the calibration (p = 1/2) and target pins.
+    # Baseline: the plant commit (git log --grep "plant the Sec7P"). `xArg` also names an
+    # unwatched def in Sec7/Reduction.lean, which is why Sec7P/Statement.lean is searched FIRST.
+    "charZ", "fPair", "xArg", "pascalWeight", "pascalDamping",
+    "pascalDamping_half_decay", "pascal_damping_decay",
 ]
 
 SEARCH_FILES = [
+    # Searched first: `xArg` collides with Sec7/Reduction.lean (see the Sec7P note above).
+    "TaoCollatz/Sec7P/Statement.lean",
     "TaoCollatz/Sec7/Setup.lean",
     "TaoCollatz/Sec7/Triangles.lean",
     "TaoCollatz/Sec7/White.lean",

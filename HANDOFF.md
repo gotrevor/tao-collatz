@@ -1,41 +1,27 @@
-# HANDOFF — Tier-1 tower tightening: CAMPAIGN COMPLETE 🗼 (2026-07-18)
+# HANDOFF — Sec7P campaign planted 🌀 (operator, 2026-10-25)
 
-**The pin is DISCHARGED.**  Branch `tier1-tower-tightening`, HEAD `dfb464a`, build
-GREEN, differ **39/39** vs plant `b7825fc` at every commit, `TaoCollatz/` census
-= **0** — the host's `--done-when sorry-free:TaoCollatz` gate is satisfied.
+**Nothing proved yet; this is the starting baton.**  Branch `ren/sec7p-pascal` (from
+`main` @ `95a7172`, the summit + Tier-1 tree).  Build green with exactly two shielded
+`sorry`s, both in `TaoCollatz/Sec7P/Statement.lean`.
 
-## What was proved (laps 1–12; per-lap ledger in `PENDING_WORK.md`)
+## Read, in order
 
-- `tao_collatz_quantitative_fully_explicit` is a real proof: `c = cTao`,
-  `C = CTao = 10↑↑10` (`hyperoperation 4 10 10`), via
-  `C_tao_assembled_le_tenTower_nine` + `tenTower_nine_eq_hyperoperation`.
-- **Honest ceiling** (`BigCTower.lean`): `C_tao_assembled ≤ 10^(10^(10^3053))`
-  (`C_tao_assembled_le_ten3_3053`) `≤ tenTower 4`
-  (`C_tao_assembled_le_tenTower_four`).  Base-free record **`log log log C ≲ 3053`**,
-  top-exponent provenance `epsBW⁻³ = 10^3000` (`epsBW = 10^{-1000}`) — in the
-  ceiling docstrings.  `tenTower 3` is FALSE (log₁₀³C ≈ 3053 > 10; check28 holds
-  the robust central trace).
-- Route (laps 11a/11b): the whole §6/§3 spine rides `C_renewalWhite`'s level-2
-  exponent seat `E52 = 10^(10^3052)` with slack ≤ 1.5×10^10 < 10^11
-  (`slack_le_ten3_3053` cashes it at 3053); honest level-1 `N_*` cutoff bounds
-  (≤ 10^32); honest cutoff tree `X_spine ≤ 10^(10^701)` (`XB`/`XB'`),
-  `log X_spine ≤ 10^702`.
-- **check28** (`tools/check_blueprint.py`): slack ledger recomputed from def
-  bodies, max arms resolved in log space, central lower bound, and Lean-text
-  regex traps pinning `E52`/3052/3053/`XB`/tenTower-4 statements verbatim.
-- `#print axioms` on `tao_collatz`, `tao_collatz_quantitative`,
-  `tao_collatz_quantitative_explicit`, `tao_collatz_quantitative_fully_explicit`,
-  `C_tao_assembled_le_tenTower_four`: exactly
-  `[propext, Classical.choice, Quot.sound]` — believed clean, **judge to verify**.
+1. `DIRECTION.md` — the CURRENT DIRECTIVE (calibration gate first; discharge LAST).
+2. `SEC7P-PLAN.md` — the transfer math (§1), window-uniformity discipline (§2), module
+   order (§3), node table (§4).
+3. Tao's §7 full text: `tmp/ren-tao/tao.txt` (gitignored; never commit it).  §7.1 starts
+   line 1736, Prop 7.3 at 1834, §7.3 (holding time) 2092, Lemma 7.7 2178, §7.4 2253.
 
-## Owed to the judge / operator
+## Lap-1 plan
 
-- Ratification pass over the new public ceiling theorems
-  (`C_tao_assembled_le_ten3_3053`, `_le_tenTower_four`, `_le_tenTower_nine`) and
-  the discharged pin's dated `#print axioms` run.
-- The `fully_explicit` docstring now records the discharge; the retired-pin
-  history note below it was left untouched.
-- PR merge (`main` protected; `build` + `comparator` must flip green — the
-  comparator RED was by design until this discharge).
-- Banked follow-on (operator ruling): Design A `tenTowerR` tight headline
-  `10^(10^(10^3010))`-ish — NOT this campaign.
+- **Calibration gate**: `TaoCollatz/Sec7P/Bridge.lean` + discharge of
+  `pascalDamping_half_decay`.  First check whether the target's paired form lets you
+  skip the raw-valuation pairing (`cexpect_pairing`) entirely — the bridge may only need
+  `pascalWeight (1/2) b = (pascal b).toReal`, `tsum ↔ PMF.iid expect`, and the
+  `fPair ↔ fCond` identity, then `prod_fCond_le_damping` + `renewal_white_encounters`.
+- Then the p-probability layer (plan §3 rows 1–3).
+
+## Checks every commit
+
+`lake build` · `tools/tao_stmt_diff.py <plant-commit> HEAD` → 46/46 ·
+`./tools/blueprint_audit.py` green · sorries only under `TaoCollatz/Sec7P/`.

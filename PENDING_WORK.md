@@ -1555,3 +1555,19 @@ the pin LAST (sorry + warningAsError shield in one commit).
 - **Lap 12** (`355d600`): check28 height ledger (see tool docstring).
 - **DISCHARGE** (`dfb464a`): pin proved, shield removed, axioms clean on all
   headlines.  Campaign complete; judge ratification owed (see HANDOFF.md).
+
+---
+
+# Sec7P campaign ledger 🌀 (opened 2026-10-25)
+
+*DIRECTION.md (Sec7P) governs; `SEC7P-PLAN.md` is the spec.  Append per lap below.
+`JUDGE-FLAG:` lines for this campaign go here too.*
+
+- [ ] **Calibration gate** — `pascalDamping_half_decay` from the proved §7 via `Sec7P/Bridge.lean`
+- [ ] **p-probability layer** — `geomP`/`pascalP`/`pascalNe3P`/`holdP`, means, aperiodicity, tails (window-uniform)
+- [ ] **Prop 7.3 at `Pascal(p)`** — plan §3 rows 4–9
+- [ ] **Assembly + discharge** of `pascal_damping_decay` (LAST)
+
+## Sec7P trace (append below)
+
+*(plant — nothing yet.)*
