@@ -1676,3 +1676,20 @@ mean `q(p)⁻¹·(1,2/p)`. The box bound `≤ 6` suffices for tilted nondegenera
 not Chernoff decay after taking the `n`th power. Combine exact closed forms from
 `HoldTail` with `tiltZ_expW2_sq_le`, then assemble the full local bound and start
 the p-dependent first-passage localization.
+
+### Grind lap 8 (2026-10-25) — uniform quadratic MGF and Chernoff bridge landed ✅
+
+- Proved a generic nonnegative-coordinate Taylor/moment lemma: exact first moment
+  plus the fixed `exp(X/1000)` moment gives an MGF envelope with quadratic
+  coefficient `96000000` throughout `|μ| ≤ 1/2000`.
+- Instantiated both `holdP` coordinates and combined them by Cauchy--Schwarz to
+  obtain a two-dimensional envelope centered at the exact p-dependent mean, with
+  uniform coefficient `10^9` on `|λᵢ| ≤ 1/4000`.
+- Combined that envelope with the tilted center estimate and the exact tilting
+  identity in `holdSumP_apply_le_chernoff_window`, giving the first p-uniform
+  off-center point-mass estimate. Both new headline theorems are believed clean,
+  judge to verify; no new debt was introduced: **1 sorry + 0 orange nodes**.
+
+**Next:** copy-generalize the p-free local-bound optimizer. Clip the two tilt
+coordinates at `1/4000`, center at `n q(p)⁻¹·(1,2/p)`, and package constants
+independent of `p`; then begin `Sec7P/FpLocation.lean`.
