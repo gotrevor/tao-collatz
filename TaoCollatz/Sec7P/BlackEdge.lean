@@ -1113,4 +1113,254 @@ theorem holdP_fst_tail_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
     _ ≤ Real.exp (-rho * m) := Real.exp_le_exp.mpr hexp_le
     _ ≤ δ * (m : ℝ) ^ (-A) := hclose
 
+/-! ### Law-parametric edge-weight split -/
+
+/-- The depth-weight factor for an arbitrary holding law.  Keeping the law as
+an argument isolates the Fubini/summability proof from all `Pascal(p)`
+specific estimates. -/
+noncomputable def edgeWeightFor (P : PMF (ℕ × ℤ))
+    (A : ℝ) (m : ℕ) (e : ℕ × ℤ) : ℝ :=
+  ∑' d : ℕ × ℤ,
+    (P d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)
+
+/-- The edge-weight factor for the tilted holding law. -/
+noncomputable def edgeWeightP (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (A : ℝ) (m : ℕ) (e : ℕ × ℤ) : ℝ :=
+  edgeWeightFor (holdP p hp0 hp1) A m e
+
+theorem edgeWeightFor_nonneg (P : PMF (ℕ × ℤ))
+    (A : ℝ) (m : ℕ) (e : ℕ × ℤ) :
+    0 ≤ edgeWeightFor P A m e :=
+  tsum_nonneg fun _ => mul_nonneg ENNReal.toReal_nonneg
+    (Real.rpow_nonneg (Nat.cast_nonneg _) _)
+
+/-- Law-parametric Fubini split behind Tao's (7.48)--(7.49).  The only
+probabilistic inputs are that `P` and `E` are PMFs; all law dependence is
+confined to the two MGF series and two one-coordinate tails. -/
+theorem edgeWeightFor_split {P E : PMF (ℕ × ℤ)} {A : ℝ}
+    (hA : 0 ≤ A) {m : ℕ} (hm : 2 ≤ m)
+    (hZE : Summable fun e : ℕ × ℤ =>
+      (E e).toReal * Real.exp (2 * A / (m : ℝ) * (e.1 : ℝ)))
+    (hZP : Summable fun d : ℕ × ℤ =>
+      (P d).toReal * Real.exp (2 * A / (m : ℝ) * (d.1 : ℝ))) :
+    ∑' e : ℕ × ℤ, (E e).toReal * edgeWeightFor P A m e ≤
+      (m : ℝ) ^ (-A)
+          * (∑' e : ℕ × ℤ,
+              (E e).toReal * Real.exp (2 * A / (m : ℝ) * (e.1 : ℝ)))
+          * (∑' d : ℕ × ℤ,
+              (P d).toReal * Real.exp (2 * A / (m : ℝ) * (d.1 : ℝ)))
+        + (∑' e : ℕ × ℤ,
+            (E e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0))
+        + (∑' d : ℕ × ℤ,
+            (P d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)) := by
+  have hmpos : (0 : ℝ) < m := by exact_mod_cast (by omega : 0 < m)
+  set theta : ℝ := 2 * A / (m : ℝ) with hthetadef
+  have hthetann : 0 ≤ theta := by rw [hthetadef]; positivity
+  set mA : ℝ := (m : ℝ) ^ (-A) with hmAdef
+  have hmA0 : 0 < mA := Real.rpow_pos_of_pos hmpos _
+  set ZE : ℝ := ∑' e : ℕ × ℤ,
+    (E e).toReal * Real.exp (theta * (e.1 : ℝ)) with hZEdef
+  set ZP : ℝ := ∑' d : ℕ × ℤ,
+    (P d).toReal * Real.exp (theta * (d.1 : ℝ)) with hZPdef
+  set TE : ℝ := ∑' e : ℕ × ℤ,
+    (E e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0) with hTEdef
+  set TP : ℝ := ∑' d : ℕ × ℤ,
+    (P d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0) with hTPdef
+  have hPsum : Summable fun d : ℕ × ℤ => (P d).toReal :=
+    ENNReal.summable_toReal P.tsum_coe_ne_top
+  have hPmass : ∑' d : ℕ × ℤ, (P d).toReal = 1 := by
+    rw [← ENNReal.tsum_toReal_eq (fun d => P.apply_ne_top d), P.tsum_coe,
+      ENNReal.toReal_one]
+  have hEsum : Summable fun e : ℕ × ℤ => (E e).toReal :=
+    ENNReal.summable_toReal E.tsum_coe_ne_top
+  have hEmass : ∑' e : ℕ × ℤ, (E e).toReal = 1 := by
+    rw [← ENNReal.tsum_toReal_eq (fun e => E.apply_ne_top e), E.tsum_coe,
+      ENNReal.toReal_one]
+  have hsumP_le : ∀ f : ℕ × ℤ → ℝ, (∀ d, 0 ≤ f d) → (∀ d, f d ≤ 1) →
+      Summable fun d => (P d).toReal * f d := by
+    intro f hf0 hf1
+    refine Summable.of_nonneg_of_le
+      (fun d => mul_nonneg ENNReal.toReal_nonneg (hf0 d)) (fun d => ?_) hPsum
+    simpa using mul_le_mul_of_nonneg_left (hf1 d) ENNReal.toReal_nonneg
+  have hsumE_le : ∀ f : ℕ × ℤ → ℝ, (∀ e, 0 ≤ f e) → (∀ e, f e ≤ 1) →
+      Summable fun e => (E e).toReal * f e := by
+    intro f hf0 hf1
+    refine Summable.of_nonneg_of_le
+      (fun e => mul_nonneg ENNReal.toReal_nonneg (hf0 e)) (fun e => ?_) hEsum
+    simpa using mul_le_mul_of_nonneg_left (hf1 e) ENNReal.toReal_nonneg
+  have hrpow01 : ∀ e d : ℕ × ℤ,
+      ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) ≤ 1 :=
+    fun e d => Real.rpow_le_one_of_one_le_of_nonpos
+      (by exact_mod_cast Nat.le_max_right _ _) (by linarith)
+  have hrpow0 : ∀ e d : ℕ × ℤ,
+      (0 : ℝ) ≤ ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) :=
+    fun _ _ => Real.rpow_nonneg (by positivity) _
+  have hind0 : ∀ (Q : Prop) [Decidable Q],
+      (0 : ℝ) ≤ (if Q then (1 : ℝ) else 0) := by
+    intro Q _
+    split_ifs <;> norm_num
+  have hind1 : ∀ (Q : Prop) [Decidable Q],
+      (if Q then (1 : ℝ) else 0) ≤ 1 := by
+    intro Q _
+    split_ifs <;> norm_num
+  have hpere : ∀ e : ℕ × ℤ, edgeWeightFor P A m e ≤
+      mA * Real.exp (theta * (e.1 : ℝ)) * ZP
+        + (if m < 4 * e.1 then (1 : ℝ) else 0) + TP := by
+    intro e
+    have hEWsum : Summable fun d : ℕ × ℤ =>
+        (P d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) :=
+      hsumP_le _ (hrpow0 e) (hrpow01 e)
+    have ht1 : Summable fun d : ℕ × ℤ =>
+        mA * Real.exp (theta * (e.1 : ℝ)) *
+          ((P d).toReal * Real.exp (theta * (d.1 : ℝ))) := hZP.mul_left _
+    have ht2 : Summable fun d : ℕ × ℤ =>
+        (P d).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0) :=
+      hsumP_le _ (fun _ => hind0 _) (fun _ => hind1 _)
+    have ht3 : Summable fun d : ℕ × ℤ =>
+        (P d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0) :=
+      hsumP_le _ (fun _ => hind0 _) (fun _ => hind1 _)
+    have hptw : ∀ d : ℕ × ℤ,
+        (P d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) ≤
+          mA * Real.exp (theta * (e.1 : ℝ)) *
+              ((P d).toReal * Real.exp (theta * (d.1 : ℝ)))
+            + (P d).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+            + (P d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0) := by
+      intro d
+      have hsummand := TaoCollatz.edgeWeight_summand_le hA hm e d
+      have hexpsplit : mA *
+          Real.exp (2 * A * ((e.1 + d.1 : ℕ) : ℝ) / (m : ℝ)) =
+        mA * Real.exp (theta * (e.1 : ℝ)) * Real.exp (theta * (d.1 : ℝ)) := by
+        rw [show 2 * A * ((e.1 + d.1 : ℕ) : ℝ) / (m : ℝ) =
+          theta * (e.1 : ℝ) + theta * (d.1 : ℝ) by
+            rw [hthetadef]
+            push_cast
+            ring,
+          Real.exp_add]
+        ring
+      have hind : (if m < 2 * (e.1 + d.1) then (1 : ℝ) else 0) ≤
+          (if m < 4 * e.1 then (1 : ℝ) else 0) +
+            (if m < 4 * d.1 then (1 : ℝ) else 0) := by
+        by_cases h2 : m < 2 * (e.1 + d.1)
+        · rw [if_pos h2]
+          rcases (by omega : m < 4 * e.1 ∨ m < 4 * d.1) with h | h
+          · rw [if_pos h]
+            linarith [hind0 (m < 4 * d.1)]
+          · rw [if_pos h]
+            linarith [hind0 (m < 4 * e.1)]
+        · rw [if_neg h2]
+          linarith [hind0 (m < 4 * e.1), hind0 (m < 4 * d.1)]
+      have hPn : (0 : ℝ) ≤ (P d).toReal := ENNReal.toReal_nonneg
+      calc
+        (P d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) ≤
+            (P d).toReal * ((m : ℝ) ^ (-A) *
+              Real.exp (2 * A * ((e.1 + d.1 : ℕ) : ℝ) / (m : ℝ)) +
+                (if m < 2 * (e.1 + d.1) then (1 : ℝ) else 0)) :=
+          mul_le_mul_of_nonneg_left hsummand hPn
+        _ = (P d).toReal * (mA * Real.exp (theta * (e.1 : ℝ)) *
+              Real.exp (theta * (d.1 : ℝ))) +
+            (P d).toReal * (if m < 2 * (e.1 + d.1) then (1 : ℝ) else 0) := by
+          rw [← hmAdef, hexpsplit]
+          ring
+        _ ≤ mA * Real.exp (theta * (e.1 : ℝ)) *
+              ((P d).toReal * Real.exp (theta * (d.1 : ℝ)))
+            + (P d).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)
+            + (P d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0) := by
+          have := mul_le_mul_of_nonneg_left hind hPn
+          nlinarith
+    have hsub1 : (∑' d : ℕ × ℤ,
+        mA * Real.exp (theta * (e.1 : ℝ)) *
+          ((P d).toReal * Real.exp (theta * (d.1 : ℝ)))) =
+        mA * Real.exp (theta * (e.1 : ℝ)) * ZP := by
+      rw [tsum_mul_left, ← hZPdef]
+    have hsub2 : (∑' d : ℕ × ℤ,
+        (P d).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)) =
+        (if m < 4 * e.1 then (1 : ℝ) else 0) := by
+      rw [tsum_mul_right, hPmass, one_mul]
+    calc
+      edgeWeightFor P A m e ≤ ∑' d : ℕ × ℤ,
+          (mA * Real.exp (theta * (e.1 : ℝ)) *
+              ((P d).toReal * Real.exp (theta * (d.1 : ℝ))) +
+            (P d).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0) +
+            (P d).toReal * (if m < 4 * d.1 then (1 : ℝ) else 0)) :=
+        hEWsum.tsum_le_tsum hptw ((ht1.add ht2).add ht3)
+      _ = mA * Real.exp (theta * (e.1 : ℝ)) * ZP +
+          (if m < 4 * e.1 then (1 : ℝ) else 0) + TP := by
+        rw [(ht1.add ht2).tsum_add ht3, ht1.tsum_add ht2, hsub1, hsub2, ← hTPdef]
+  have hEWEsum : Summable fun e : ℕ × ℤ =>
+      (E e).toReal * edgeWeightFor P A m e := by
+    refine hsumE_le _ (fun e => edgeWeightFor_nonneg P A m e) (fun e => ?_)
+    exact (hsumP_le _ (hrpow0 e) (hrpow01 e)).tsum_le_tsum
+      (fun d => by simpa using
+        mul_le_mul_of_nonneg_left (hrpow01 e d) ENNReal.toReal_nonneg) hPsum |>.trans_eq hPmass
+  have hF1 : Summable fun e : ℕ × ℤ =>
+      mA * ZP * ((E e).toReal * Real.exp (theta * (e.1 : ℝ))) := hZE.mul_left _
+  have hF2 : Summable fun e : ℕ × ℤ =>
+      (E e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0) :=
+    hsumE_le _ (fun _ => hind0 _) (fun _ => hind1 _)
+  have hF3 : Summable fun e : ℕ × ℤ => (E e).toReal * TP := hEsum.mul_right _
+  have hFsum : Summable fun e : ℕ × ℤ => (E e).toReal *
+      (mA * Real.exp (theta * (e.1 : ℝ)) * ZP +
+        (if m < 4 * e.1 then (1 : ℝ) else 0) + TP) := by
+    have heq : (fun e : ℕ × ℤ => (E e).toReal *
+        (mA * Real.exp (theta * (e.1 : ℝ)) * ZP +
+          (if m < 4 * e.1 then (1 : ℝ) else 0) + TP)) =
+        fun e => mA * ZP * ((E e).toReal * Real.exp (theta * (e.1 : ℝ))) +
+          (E e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0) +
+          (E e).toReal * TP := by
+      funext e
+      ring
+    rw [heq]
+    exact (hF1.add hF2).add hF3
+  have hsub1 : (∑' e : ℕ × ℤ,
+      mA * ZP * ((E e).toReal * Real.exp (theta * (e.1 : ℝ)))) =
+      mA * ZP * ZE := by rw [tsum_mul_left, ← hZEdef]
+  have hsub3 : (∑' e : ℕ × ℤ, (E e).toReal * TP) = TP := by
+    rw [tsum_mul_right, hEmass, one_mul]
+  calc
+    ∑' e : ℕ × ℤ, (E e).toReal * edgeWeightFor P A m e ≤
+        ∑' e : ℕ × ℤ, (E e).toReal *
+          (mA * Real.exp (theta * (e.1 : ℝ)) * ZP +
+            (if m < 4 * e.1 then (1 : ℝ) else 0) + TP) :=
+      hEWEsum.tsum_le_tsum
+        (fun e => mul_le_mul_of_nonneg_left (hpere e) ENNReal.toReal_nonneg) hFsum
+    _ = ∑' e : ℕ × ℤ,
+        (mA * ZP * ((E e).toReal * Real.exp (theta * (e.1 : ℝ))) +
+          (E e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0) +
+          (E e).toReal * TP) := by
+      refine tsum_congr fun e => ?_
+      ring
+    _ = mA * ZP * ZE + TE + TP := by
+      rw [(hF1.add hF2).tsum_add hF3, hF1.tsum_add hF2, hsub1, hsub3, ← hTEdef]
+    _ = mA * ZE * ZP + TE + TP := by ring
+
+/-- `Pascal(p)` specialization of the law-parametric Fubini split. -/
+theorem fpDistP_edgeWeight_split {p A : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) (hA : 0 ≤ A)
+    {m : ℕ} (hm : 2 ≤ m) (s : ℕ)
+    (hZf : Summable fun e : ℕ × ℤ =>
+      (fpDistP p (by linarith) (by linarith) s e).toReal *
+        Real.exp (2 * A / (m : ℝ) * (e.1 : ℝ)))
+    (hZh : Summable fun d : ℕ × ℤ =>
+      (holdP p (by linarith) (by linarith) d).toReal *
+        Real.exp (2 * A / (m : ℝ) * (d.1 : ℝ))) :
+    ∑' e : ℕ × ℤ,
+        (fpDistP p (by linarith) (by linarith) s e).toReal *
+          edgeWeightP p (by linarith) (by linarith) A m e ≤
+      (m : ℝ) ^ (-A)
+          * (∑' e : ℕ × ℤ,
+              (fpDistP p (by linarith) (by linarith) s e).toReal *
+                Real.exp (2 * A / (m : ℝ) * (e.1 : ℝ)))
+          * (∑' d : ℕ × ℤ,
+              (holdP p (by linarith) (by linarith) d).toReal *
+                Real.exp (2 * A / (m : ℝ) * (d.1 : ℝ)))
+        + (∑' e : ℕ × ℤ,
+            (fpDistP p (by linarith) (by linarith) s e).toReal *
+              (if m < 4 * e.1 then (1 : ℝ) else 0))
+        + (∑' d : ℕ × ℤ,
+            (holdP p (by linarith) (by linarith) d).toReal *
+              (if m < 4 * d.1 then (1 : ℝ) else 0)) := by
+  simpa only [edgeWeightP] using
+    (edgeWeightFor_split (P := holdP p (by linarith) (by linarith))
+      (E := fpDistP p (by linarith) (by linarith) s) hA hm hZf hZh)
+
 end TaoCollatz.Sec7P
