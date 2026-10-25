@@ -1563,7 +1563,7 @@ the pin LAST (sorry + warningAsError shield in one commit).
 *DIRECTION.md (Sec7P) governs; `SEC7P-PLAN.md` is the spec.  Append per lap below.
 `JUDGE-FLAG:` lines for this campaign go here too.*
 
-- [ ] **Calibration gate** — `pascalDamping_half_decay` from the proved §7 via `Sec7P/Bridge.lean`
+- [x] **Calibration gate** — `pascalDamping_half_decay` from the proved §7 via `Sec7P/Bridge.lean`
 - [ ] **p-probability layer** — `geomP`/`pascalP`/`pascalNe3P`/`holdP`, means, aperiodicity, tails (window-uniform)
 - [ ] **Prop 7.3 at `Pascal(p)`** — plan §3 rows 4–9
 - [ ] **Assembly + discharge** of `pascal_damping_decay` (LAST)
@@ -1591,3 +1591,33 @@ the pin LAST (sorry + warningAsError shield in one commit).
 `pascalP = iidSum (geomP) 2` and the exact `pascalNe3P` mass/normalizer
 `(1-pairThreeProb p)⁻¹`. Then define `holdP` and copy-generalize the support,
 mean, aperiodicity, and uniform exponential-tail package.
+
+### Review lap 3 (2026-10-25) — pair-sum law, holding law, exact means, and aperiodicity landed ✅
+
+- Re-ran the calibration gate before downstream work: the 46 watched declarations are
+  character-identical to plant, `pascalDamping_half_decay` builds, and its axiom set is
+  exactly `[Classical.choice, Quot.sound, propext]`.  The route still reaches the frozen
+  final pin; no convention drift was found.
+- Closed the two algebraic obligations left in `Sec7P/Prob.lean`:
+  `pascalP_eq_iidSum` proves that the closed Pascal mass is the two-draw convolution of
+  `geomP`, while `pascalP_ne_three_mass` and `pascalNe3P_toReal` identify the conditioning
+  normalizer exactly as `1 - pairThreeProb p`.  The coarse full-range bound
+  `pairThreeProb p ≤ 1/2` makes the normalizer uniformly non-singular; support lemmas for
+  both tilted laws also landed.
+- Added `Sec7P/Holding.lean`: `holdP` with geometric parameter
+  `q(p)=2p²(1-p)`, positive-coordinate support, first marginal, and exact `(1,3)` / `(2,3+b)`
+  application formulas.
+- Added `Sec7P/HoldBasics.lean`: exact means for `geomP`, `pascalP`, and `pascalNe3P`, then
+  the holding mean
+  `E HoldP = q(p)⁻¹ · (1, 2/p)` in both `ℝ≥0∞` and real forms.  Tao's four support atoms
+  persist for every `0 < p < 1`, so `holdP_aperiodic` transfers without any compactness
+  argument.
+- No new proof debt: Sec7P remains **1 sorry + 0 orange nodes**.  The final pin remains
+  deliberately untouched.
+
+**Next:** finish the only open clause of directive step 2: a window-uniform exponential
+tail/exponential-moment package for `holdP`.  Start from the exact probability generating
+functions now exposed by `pascalP_eq_iidSum` and `pascalNe3P_toReal`; use
+`q(p) ≥ 8/125`, `1-p ≤ 4/5`, and the uniform conditioning normalizer to choose one fixed
+positive tilt valid for every `p ∈ [1/5,3/5]`.  Then begin the p-parametrized `Q` recursion
+only after that uniform tail gate is green.

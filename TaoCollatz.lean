@@ -42,6 +42,8 @@ import TaoCollatz.Sec7.HoldBasics
 import TaoCollatz.Sec7.Decay
 import TaoCollatz.Sec7P.Bridge
 import TaoCollatz.Sec7P.Prob
+import TaoCollatz.Sec7P.Holding
+import TaoCollatz.Sec7P.HoldBasics
 import TaoCollatz.Sec7P.Statement
 import TaoCollatz.Sec3.Reduction
 import TaoCollatz.Statement
