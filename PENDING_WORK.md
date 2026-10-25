@@ -1783,3 +1783,48 @@ lemmas to finish `fpDistP_location_bound` (Lemma 7.7@p).
 the fixed `s/4` center by `(p/2)s`, prove one reusable uniform slope-margin
 lemma for `(p/2) log 9 < log 2`, and port the first-coordinate MGF / edge-weight
 Case-2 package before entering ManyTriangles.
+
+### Grind lap 13 (2026-10-25) — tilted moving-centre MGF engine landed ✅
+
+- Added `Sec7P/BlackEdge.lean`, proving the uniform slope margin
+  `(p/2) log 9 ≤ (24/25) log 2 < log 2` and the moving-centre Gaussian column
+  tail at rate `c²/200`.
+- Proved the law-independent Fubini envelope
+  `fst_mgf_moving_center_general` and its `fpDistP` specialization.  The
+  envelope isolates the mass-one bulk from the Gaussian tail and is shared by
+  both the vanishing-tilt and fixed-tilt consumers.  Commit: `e4541c8`.
+
+### Review lap 14 (2026-10-25) — uniform first-passage MGF and fixed-tilt tail landed ✅
+
+- Re-ran the calibration gate before work: `pascalDamping_half_decay` remains
+  trust-base-clean, all 46 watched declarations are character-identical to the
+  plant, and the sole Sec7P proof debt is still the mandated-LAST target.
+- Adversarially re-read the frozen target against `Sec7P/Bridge.lean`, the
+  general `pascalWeight_bridge`, and the fixed §7 reduction.  The route still
+  reaches the target directly: once Proposition 7.3 is available for
+  `pascalP p`, the p-free factor bound and the already-proved convention seams
+  assemble the frozen `pascalDamping`; no raw-valuation pairing detour or
+  statement change is needed.
+- Proved `fpDistP_fst_mgf_numeric`, uniformly over every moving-centre slope
+  `0 ≤ r ≤ 3/10`.  The split at
+  `K = ⌊m log(1+δ/2)/(2A)⌋` leaves
+  `K+1-rs ≥ m log(1+δ/2)/(4A)`, the moving prefactor is bounded by `exp A`,
+  and the weakened Gaussian rate `c²/200` still gives a uniform exponential
+  closeout.
+- Specialized it as `fpDistP_fst_mgf_le`, with the existential threshold
+  chosen before `p`, proving the sharp vanishing-tilt bound `≤ 1+δ` needed by
+  Case 2.
+- Proved the companion `fpDistP_fst_tail_le` at the fixed tilt
+  `min(c,c²/200)/2`.  The cutoff `⌊m/log²m⌋+100` absorbs every centre
+  `(p/2)s`, and Chernoff gives the uniform `δ m^{-A}` tail beyond `m/4`.
+- All three new declarations have exactly the trusted three axioms.  No new
+  sorry or route trigger: Sec7P remains **1 sorry + 0 orange nodes**.  Proof
+  commit: `f5fed65`.
+
+**Next:** prove the two holding-law companions in `Sec7P/BlackEdge.lean`.
+Convert `tiltZ_holdP_fst_le_quad_window` to a real first-coordinate MGF bound,
+using `pairThreeProb p ≥ 8/125` to make its linear coefficient uniform; then
+prove the fixed-tilt first-coordinate tail from the exact geometric marginal
+(`1-q(p) ≤ 117/125`) or `holdP_exponential_tail`.  Define the tilted
+`edgeWeightP` only after those inputs are green, then port the Fubini split and
+assemble `fpDistP_edgeWeight_le`.

@@ -1,31 +1,34 @@
-# HANDOFF — tilted moving-centre MGF engine landed 🌀 (grind lap, 2026-10-25)
+# HANDOFF — tilted first-passage MGF and tail closed 🌀 (review lap, 2026-10-25)
 
 Branch `ren/sec7p-pascal`. The calibration gate remains discharged (believed
-clean, judge to verify), directive step 2 remains closed, and the first analytic
-engine for the black-edge row is now proved uniformly over the campaign window.
-The sole Sec7P proof debt remains the mandated-LAST `pascal_damping_decay` pin:
-**1 sorry + 0 orange nodes**.
+clean, judge to verify), directive step 2 remains closed, and the two
+first-passage inputs to the Case-2 edge-weight estimate are now proved
+uniformly over the campaign window. The sole Sec7P proof debt remains the
+mandated-LAST `pascal_damping_decay` pin: **1 sorry + 0 orange nodes**.
 
 ## Concrete advance
 
-- Added `TaoCollatz/Sec7P/BlackEdge.lean` and its root import.
-- Proved `slope_margin`: from `p ≤ 3/5` and the exact rational comparison
-  `3^5 ≤ 2^8`, the moving drift obeys
-  `(p/2) log 9 ≤ (24/25) log 2 < log 2`. This is the named uniform margin that
-  replaces every fixed-law use of `¼ log 9 < log 2`.
-- Proved `gaussExpP_col_tail`, the moving-centre version of the Gaussian times
-  growing-exponential column tail. It works for every `0 ≤ r ≤ 3/10`, hence for
-  `r = p/2`, with uniform cutoff `m ≥ 100` and rate `c²/200`. The decisive
-  geometry is
-  `m + 1 - r s ≥ (m - 23)/25` under Tao's budget
-  `s log 2 ≤ (m+2) log 9`, giving `1+s ≤ 200(m+1-rs)`.
-- Proved the law-independent PMF/Fubini envelope
-  `fst_mgf_moving_center_general`, and specialized it as
-  `fpDistP_fst_mgf_general` using the uniform tilted column marginal. This is
-  the common core for the vanishing-tilt MGF and fixed-tilt Chernoff tail in the
-  next checkpoint.
-- No frozen declaration, read-only §7 source, blueprint/tool file, or existing
-  theorem changed; no `sorry` was added. Proof commit: `e4541c8`.
+- Began with the binding calibration/review gate. The half-Pascal theorem is
+  still trust-base-clean, the 46 frozen declarations still match the plant,
+  and the blueprint audit reports no drift or false green.
+- Reconstructed the final route from source rather than inheriting the prior
+  narrative. `pascalWeight_bridge`, the general convention seams in
+  `Sec7P/Bridge.lean`, and the p-free `prod_fCond_le_damping` show that a
+  p-parametrized Proposition 7.3 feeds the frozen final target directly. No
+  raw-valuation pairing detour or statement change is needed.
+- Proved `fpDistP_fst_mgf_numeric`. Its threshold is selected before the centre
+  slope. Uniformly for `0 ≤ r ≤ 3/10`, the split
+  `K = ⌊m log(1+δ/2)/(2A)⌋` satisfies
+  `K+1-rs ≥ m log(1+δ/2)/(4A)`; the prefactor is at most `exp A`, and the
+  Gaussian tail closes at rate `c²/200`.
+- Specialized this as `fpDistP_fst_mgf_le`, with `Cthr` before `p`, obtaining
+  the sharp vanishing-tilt bound `≤ 1+δ` under `s ≤ m/log²m`.
+- Proved `fpDistP_fst_tail_le` at the fixed tilt
+  `min(c,c²/200)/2`. The cutoff `⌊m/log²m⌋+100` absorbs the moving centre
+  `(p/2)s`; Chernoff then gives the uniform `δ m^{-A}` tail past `m/4`.
+- Reused the already-proved p-free threshold calculus from the fixed §7
+  BlackEdge module; no existing §7 source, frozen declaration, blueprint, or
+  tool file changed. No `sorry` was added. Proof commit: `f5fed65`.
 
 ## Exact verification run
 
@@ -44,24 +47,22 @@ lake build TaoCollatz.Sec7P.BlackEdge
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --target TaoCollatz.Sec7P.BlackEdge \
   --import TaoCollatz.Sec7P.BlackEdge \
-  --axioms TaoCollatz.Sec7P.slope_margin \
-  --axioms TaoCollatz.Sec7P.gaussExpP_col_tail \
-  --axioms TaoCollatz.Sec7P.fst_mgf_moving_center_general \
-  --axioms TaoCollatz.Sec7P.fpDistP_fst_mgf_general
+  --axioms TaoCollatz.Sec7P.fpDistP_fst_mgf_numeric \
+  --axioms TaoCollatz.Sec7P.fpDistP_fst_mgf_le \
+  --axioms TaoCollatz.Sec7P.fpDistP_fst_tail_le
   Build completed successfully (3319 jobs).
-  all four axiom sets: [Classical.choice, Quot.sound, propext]
+  all three axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --import TaoCollatz \
   --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
-  --axioms TaoCollatz.Sec7P.slope_margin \
-  --axioms TaoCollatz.Sec7P.gaussExpP_col_tail \
-  --axioms TaoCollatz.Sec7P.fst_mgf_moving_center_general \
-  --axioms TaoCollatz.Sec7P.fpDistP_fst_mgf_general
+  --axioms TaoCollatz.Sec7P.fpDistP_fst_mgf_numeric \
+  --axioms TaoCollatz.Sec7P.fpDistP_fst_mgf_le \
+  --axioms TaoCollatz.Sec7P.fpDistP_fst_tail_le
   Build completed successfully (8763 jobs).
   proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
-  all five axiom sets: [Classical.choice, Quot.sound, propext]
+  all four axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
 ./tools/tao_stmt_diff.py eb40bf3 HEAD
@@ -83,34 +84,33 @@ rg -n "^[[:space:]]*sorry([[:space:]]|$)" TaoCollatz/Sec7P
 ## Campaign state
 
 `sec7p: calibration proof landed (believed clean, judge to verify); prob-layer
-3/3 closed; Prop 7.3@p modules 3/10 complete plus BlackEdge analytic core in
-progress; Sec7P sorries 1; differ 46/46 yes; blockers none.`
+3/3 closed; Prop 7.3@p modules 3/10 complete plus BlackEdge Case-2 analytic
+core in progress; Sec7P sorries 1; differ 46/46 yes; blockers none.`
 
 ## Current blocker
 
-There is no route blocker. `fpDistP_fst_mgf_general` is an envelope, not yet the
-sharp vanishing-tilt estimate `≤ 1+δ`: the numeric cutoff argument from
-`Sec7/BlackEdge.lean` must be ported with centre `r s`, worst slope `r=3/10`,
-and Gaussian rate `c²/200`. The old proof's `exp(A/2)` prefactor becomes safely
-`exp(A)`, and its separation condition should use
-`log² m ≥ 2A/log(1+δ/2)` so that `r s` consumes at most half the split point.
+There is no route blocker. The first-passage half of the Case-2 edge-weight
+estimate is closed, but its holding-law half is not yet exposed in the real
+summation form consumed by the Fubini split. The needed estimates are already
+nearby: `tiltZ_holdP_fst_le_quad_window` gives the ENNReal MGF with exact linear
+coefficient `pairThreeProb p⁻¹`, and `pairThreeProb_mem_window` bounds this by
+`125/8`; `holdP_fst_marginal` identifies the first coordinate as geometric,
+with failure ratio at most `117/125`.
 
-After that, the fixed-tilt first-coordinate tail can reuse the same envelope.
-The holding-law MGF and tail must use `holdP p`; do not copy the fixed-law
-`geomQuarter` numerals. `pairThreeProb_mem_window` gives the uniform first-
-coordinate success range `[8/125, 36/125]`, while `holdP_exponential_tail`
-already supplies a coarser law-uniform Chernoff input.
+Do not use only the coarse total-coordinate tail if the exact marginal makes
+the proof shorter. In either route, the threshold must be chosen before `p`.
+Keep the final pin untouched until the p-renewal Proposition 7.3 assembly is
+available.
 
 ## Next highest-value attack
 
-1. Port `fpDist_fst_mgf_numeric_at` with the worst moving centre `r ≤ 3/10`,
-   then prove the constants-before-`p` interface
-   `fpDistP_fst_mgf_le : ∃ Cthr, ∀ p ...` from
-   `fpDistP_fst_mgf_general`.
-2. Port the fixed-tilt Chernoff bound `fpDistP_fst_tail_le`, again using rate
-   `min(c, c²/200)/2` and cutoff at least `100`.
-3. Prove uniform `holdP_fst_mgf_le_real` and `holdP_fst_tail_le` from the
-   geometric first marginal / existing exponential tail.
-4. Define `edgeWeightP` and assemble `fpDistP_edgeWeight_le`; only then proceed
-   to the Case-2 white-exit estimate. Keep `pascal_damping_decay` untouched
-   until final assembly.
+1. Prove `holdP_fst_mgf_le_real`, converting
+   `tiltZ_holdP_fst_le_quad_window` through `ENNReal.toReal` and replacing
+   `pairThreeProb p⁻¹` by a window-uniform coefficient.
+2. Prove `holdP_fst_tail_le` with one threshold before `p`, preferably from
+   the exact geometric first marginal and `1-q(p) ≤ 117/125`.
+3. Define `edgeWeightP`, port the law-parametric Fubini split, and assemble
+   `fpDistP_edgeWeight_le` from the two first-passage estimates proved here and
+   the two holding-law estimates above.
+4. Then port the Case-2 white-exit estimate; do not enter ManyTriangles/Case 3
+   until the complete Case-2 package is green.
