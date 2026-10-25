@@ -1828,3 +1828,24 @@ prove the fixed-tilt first-coordinate tail from the exact geometric marginal
 (`1-q(p) ≤ 117/125`) or `holdP_exponential_tail`.  Define the tilted
 `edgeWeightP` only after those inputs are green, then port the Fubini split and
 assemble `fpDistP_edgeWeight_le`.
+
+### Grind lap 15 (2026-10-25) — holding tails + law-parametric Fubini split landed ✅
+
+- Re-ran the calibration gate first: the half-decay theorem remains
+  trust-base-clean, the watched declarations remain 46/46 identical, and the
+  blueprint audit remains green.
+- Proved `holdP_fst_mgf_le_real`, replacing the exact linear coefficient
+  `q(p)⁻¹` by the window-uniform `125/8`.
+- Proved `holdP_fst_tail_le` from the exact geometric first marginal and the
+  fixed failure ratio `1-q(p) ≤ 117/125`.
+- Defined `edgeWeightFor`/`edgeWeightP`, proved the full law-parametric
+  `edgeWeightFor_split`, and specialized it as `fpDistP_edgeWeight_split`.
+  All four new headline lemmas have exactly the trusted three axioms. Commits:
+  `01f32e4`, `d4e2da6`.
+- No new debt: **1 sorry + 0 orange nodes**. The final target remains LAST.
+
+**Next:** assemble `fpDistP_edgeWeight_le`. In addition to the fixed-law
+cutoffs, force `θ = 2A/m ≤ min (ε/32) (1/192000000)` and
+`θ ≤ 1/2000`; then
+`(125/8)θ + 96000000θ² ≤ (129/8)θ < ε`. Feed the result into the
+white-exit/`QP_black_edge_case2` port before starting ManyTriangles or Case 3.
