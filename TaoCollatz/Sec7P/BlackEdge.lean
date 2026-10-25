@@ -1134,6 +1134,237 @@ theorem edgeWeightFor_nonneg (P : PMF (ℕ × ℤ))
   tsum_nonneg fun _ => mul_nonneg ENNReal.toReal_nonneg
     (Real.rpow_nonneg (Nat.cast_nonneg _) _)
 
+/-- The law-parametric landing weight is at most one.  This is the only
+upper bound on the weight used in the Case-2 endpoint assembly. -/
+theorem edgeWeightFor_le_one (P : PMF (ℕ × ℤ)) {A : ℝ}
+    (hA : 0 ≤ A) (m : ℕ) (e : ℕ × ℤ) :
+    edgeWeightFor P A m e ≤ 1 := by
+  have hterm : ∀ d : ℕ × ℤ,
+      (P d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) ≤ (P d).toReal := by
+    intro d
+    have h1 : ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) ≤ 1 :=
+      Real.rpow_le_one_of_one_le_of_nonpos
+        (by exact_mod_cast Nat.le_max_right (m - e.1 - d.1) 1) (by linarith)
+    exact mul_le_of_le_one_right ENNReal.toReal_nonneg h1
+  have hPsum : Summable (fun d : ℕ × ℤ => (P d).toReal) :=
+    ENNReal.summable_toReal P.tsum_coe_ne_top
+  have hsummLHS : Summable (fun d : ℕ × ℤ =>
+      (P d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)) :=
+    Summable.of_nonneg_of_le
+      (fun d => mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _))
+      hterm hPsum
+  calc
+    edgeWeightFor P A m e
+        ≤ ∑' d : ℕ × ℤ, (P d).toReal :=
+          hsummLHS.tsum_le_tsum hterm hPsum
+    _ = 1 := by
+      rw [← ENNReal.tsum_toReal_eq (fun d => P.apply_ne_top d), P.tsum_coe,
+        ENNReal.toReal_one]
+
+/-- Every law-parametric landing weight is at least `m⁻ᴬ`. -/
+theorem rpow_neg_le_edgeWeightFor (P : PMF (ℕ × ℤ)) {A : ℝ}
+    (hA : 0 ≤ A) {m : ℕ} (hm : 1 ≤ m) (e : ℕ × ℤ) :
+    (m : ℝ) ^ (-A) ≤ edgeWeightFor P A m e := by
+  have hterm : ∀ d : ℕ × ℤ,
+      (P d).toReal * (m : ℝ) ^ (-A)
+        ≤ (P d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) := by
+    intro d
+    apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+    have hmax_le : ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ≤ (m : ℝ) := by
+      exact_mod_cast (show (max (m - e.1 - d.1) 1 : ℕ) ≤ m by omega)
+    have hmax_pos : (0 : ℝ) < ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) := by
+      exact_mod_cast (show 0 < (max (m - e.1 - d.1) 1 : ℕ) by omega)
+    exact Real.rpow_le_rpow_of_nonpos hmax_pos hmax_le (by linarith)
+  have hPsum : Summable (fun d : ℕ × ℤ => (P d).toReal) :=
+    ENNReal.summable_toReal P.tsum_coe_ne_top
+  have hsummL : Summable (fun d : ℕ × ℤ => (P d).toReal * (m : ℝ) ^ (-A)) :=
+    hPsum.mul_right _
+  have hsummR : Summable (fun d : ℕ × ℤ =>
+      (P d).toReal * ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)) :=
+    Summable.of_nonneg_of_le
+      (fun d => mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _))
+      (fun d => mul_le_of_le_one_right ENNReal.toReal_nonneg
+        (Real.rpow_le_one_of_one_le_of_nonpos
+          (by exact_mod_cast Nat.le_max_right (m - e.1 - d.1) 1) (by linarith)))
+      hPsum
+  calc
+    (m : ℝ) ^ (-A)
+        = ∑' d : ℕ × ℤ, (P d).toReal * (m : ℝ) ^ (-A) := by
+          rw [tsum_mul_right, ← ENNReal.tsum_toReal_eq (fun d => P.apply_ne_top d),
+            P.tsum_coe, ENNReal.toReal_one, one_mul]
+    _ ≤ edgeWeightFor P A m e := hsummL.tsum_le_tsum hterm hsummR
+
+/-- Once the endpoint has already crossed depth `m`, the landing weight is
+exactly one, independently of the holding law. -/
+theorem edgeWeightFor_of_deep (P : PMF (ℕ × ℤ)) (A : ℝ)
+    {m : ℕ} {e : ℕ × ℤ} (hdeep : m ≤ e.1) :
+    edgeWeightFor P A m e = 1 := by
+  have hmax : ∀ d : ℕ × ℤ, max (m - e.1 - d.1) 1 = 1 := by
+    intro d
+    omega
+  unfold edgeWeightFor
+  simp_rw [hmax, Nat.cast_one, Real.one_rpow, mul_one]
+  rw [← ENNReal.tsum_toReal_eq (fun d => P.apply_ne_top d), P.tsum_coe,
+    ENNReal.toReal_one]
+
+theorem edgeWeightP_nonneg (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (A : ℝ) (m : ℕ) (e : ℕ × ℤ) :
+    0 ≤ edgeWeightP p hp0 hp1 A m e :=
+  edgeWeightFor_nonneg (holdP p hp0 hp1) A m e
+
+theorem edgeWeightP_le_one (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {A : ℝ} (hA : 0 ≤ A) (m : ℕ) (e : ℕ × ℤ) :
+    edgeWeightP p hp0 hp1 A m e ≤ 1 :=
+  edgeWeightFor_le_one (holdP p hp0 hp1) hA m e
+
+theorem rpow_neg_le_edgeWeightP (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {A : ℝ} (hA : 0 ≤ A) {m : ℕ} (hm : 1 ≤ m) (e : ℕ × ℤ) :
+    (m : ℝ) ^ (-A) ≤ edgeWeightP p hp0 hp1 A m e :=
+  rpow_neg_le_edgeWeightFor (holdP p hp0 hp1) hA hm e
+
+theorem edgeWeightP_of_deep (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (A : ℝ) {m : ℕ} {e : ℕ × ℤ} (hdeep : m ≤ e.1) :
+    edgeWeightP p hp0 hp1 A m e = 1 :=
+  edgeWeightFor_of_deep (holdP p hp0 hp1) A hdeep
+
+/-- The tilted depth supremum contains the boundary value one. -/
+theorem one_le_QPm (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half n ξ : ℕ) (ε A : ℝ) (hA : 0 ≤ A) (hε : 0 ≤ ε) (m : ℕ) :
+    1 ≤ QPm p hp0 hp1 half n ξ ε A m := by
+  have h := le_QPm p hp0 hp1 half n ξ ε A hA hε m
+    (p1 := half + 1) (l := 0) (by omega) (by omega)
+  have hw : (max (half - (half + 1)) 1 : ℕ) = 1 := by omega
+  rw [hw, QP_boundary p hp0 hp1 half (TaoCollatz.whiteSet n ξ) ε
+    (half + 1) 0 (by omega)] at h
+  simpa using h
+
+/-- Tilted version of Tao's (7.46): one renewal step at a first-passage
+endpoint, with the white-in-strip damping exposed in subtraction-free form. -/
+theorem QP_fp_endpoint_le (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (n ξ : ℕ) (ε A : ℝ) (hA : 0 ≤ A) (hε : 0 ≤ ε)
+    (m : ℕ) (hm1 : 1 ≤ m) (hmn : m ≤ n / 2) (l : ℤ) (e : ℕ × ℤ) :
+    QP p hp0 hp1 (n / 2) (TaoCollatz.whiteSet n ξ) ε
+        (n / 2 - m + e.1) (l + e.2)
+      ≤ (1 - (1 - Real.exp (-ε ^ 3))
+            * Set.indicator (TaoCollatz.whiteStrip n ξ) 1
+                (n / 2 - m + e.1, l + e.2))
+        * (edgeWeightP p hp0 hp1 A m e *
+          QPm p hp0 hp1 (n / 2) n ξ ε A (m - 1)) := by
+  set half := n / 2 with hhalf
+  set j' := half - m + e.1 with hj'
+  set QM := QPm p hp0 hp1 half n ξ ε A (m - 1) with hQM
+  have hQM0 : 0 ≤ QM := QPm_nonneg p hp0 hp1 _ _ _ _ _ _
+  have hQM1 : 1 ≤ QM := one_le_QPm p hp0 hp1 _ _ _ _ _ hA hε _
+  rcases Nat.lt_or_ge half j' with hout | hin
+  · rw [QP_boundary p hp0 hp1 half (TaoCollatz.whiteSet n ξ) ε j' (l + e.2) hout,
+      Set.indicator_of_notMem (fun hmem => absurd hmem.1 (by omega)) 1,
+      mul_zero, sub_zero, one_mul, edgeWeightP_of_deep p hp0 hp1 A (by omega), one_mul]
+    exact hQM1
+  · rw [QP_rec p hp0 hp1 half (TaoCollatz.whiteSet n ξ) ε j' (l + e.2) hin]
+    have hatom : ∀ d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+            QP p hp0 hp1 half (TaoCollatz.whiteSet n ξ) ε
+              (j' + d.1) (l + e.2 + d.2)
+          ≤ (holdP p hp0 hp1 d).toReal *
+              (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) := by
+      intro d
+      rcases Nat.eq_zero_or_pos d.1 with h0 | hpos
+      · rw [holdP_zero_of_fst_zero p hp0 hp1 h0, ENNReal.toReal_zero,
+          zero_mul, zero_mul]
+      · apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+        have h1 : 1 ≤ j' + d.1 := by omega
+        have h2 : half - (m - 1) ≤ j' + d.1 := by omega
+        have hkey := QP_le_QPm p hp0 hp1 half n ξ ε A hA hε (m - 1)
+          (l := l + e.2 + d.2) h1 h2
+        have heq : half - (j' + d.1) = m - e.1 - d.1 := by omega
+        rwa [heq] at hkey
+    have hwle : ∀ d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+            (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM)
+          ≤ (holdP p hp0 hp1 d).toReal * QM := by
+      intro d
+      apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+      calc
+        ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM
+            ≤ 1 * QM := mul_le_mul_of_nonneg_right
+              (Real.rpow_le_one_of_one_le_of_nonpos
+                (by exact_mod_cast Nat.le_max_right (m - e.1 - d.1) 1)
+                (by linarith)) hQM0
+        _ = QM := one_mul _
+    have hsumR : Summable fun d : ℕ × ℤ =>
+        (holdP p hp0 hp1 d).toReal *
+          (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) :=
+      Summable.of_nonneg_of_le
+        (fun d => mul_nonneg ENNReal.toReal_nonneg
+          (mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _) hQM0))
+        hwle ((holdP_summable_toReal p hp0 hp1).mul_right QM)
+    have hsumL : Summable fun d : ℕ × ℤ =>
+        (holdP p hp0 hp1 d).toReal *
+          QP p hp0 hp1 half (TaoCollatz.whiteSet n ξ) ε
+            (j' + d.1) (l + e.2 + d.2) :=
+      Summable.of_nonneg_of_le
+        (fun d => mul_nonneg ENNReal.toReal_nonneg
+          (QP_nonneg p hp0 hp1 _ _ _ _ _))
+        (fun d => (hatom d).trans (hwle d))
+        ((holdP_summable_toReal p hp0 hp1).mul_right QM)
+    have htsum : ∑' d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+          QP p hp0 hp1 half (TaoCollatz.whiteSet n ξ) ε
+            (j' + d.1) (l + e.2 + d.2)
+        ≤ edgeWeightP p hp0 hp1 A m e * QM := by
+      calc
+        ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+              QP p hp0 hp1 half (TaoCollatz.whiteSet n ξ) ε
+                (j' + d.1) (l + e.2 + d.2)
+            ≤ ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+                (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) :=
+              hsumL.tsum_le_tsum hatom hsumR
+        _ = ∑' d : ℕ × ℤ,
+              ((holdP p hp0 hp1 d).toReal *
+                ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)) * QM :=
+              tsum_congr fun d => (mul_assoc _ _ _).symm
+        _ = edgeWeightP p hp0 hp1 A m e * QM := tsum_mul_right
+    have hS0 : 0 ≤ ∑' d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+          QP p hp0 hp1 half (TaoCollatz.whiteSet n ξ) ε
+            (j' + d.1) (l + e.2 + d.2) :=
+      tsum_nonneg fun _ => mul_nonneg ENNReal.toReal_nonneg
+        (QP_nonneg p hp0 hp1 _ _ _ _ _)
+    have hdamp : Real.exp (-ε ^ 3 *
+        Set.indicator (TaoCollatz.whiteSet n ξ) 1 (j', l + e.2)) =
+        1 - (1 - Real.exp (-ε ^ 3)) *
+          Set.indicator (TaoCollatz.whiteStrip n ξ) 1 (j', l + e.2) := by
+      by_cases hw : (j', l + e.2) ∈ TaoCollatz.whiteSet n ξ
+      · have e1 : Set.indicator (TaoCollatz.whiteSet n ξ)
+            (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 1 :=
+          Set.indicator_of_mem hw 1
+        have hmem : (j', l + e.2) ∈ TaoCollatz.whiteStrip n ξ := ⟨hin, hw⟩
+        have e2 : Set.indicator (TaoCollatz.whiteStrip n ξ)
+            (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 1 :=
+          Set.indicator_of_mem hmem 1
+        rw [e1, e2, mul_one, mul_one]
+        ring
+      · have e1 : Set.indicator (TaoCollatz.whiteSet n ξ)
+            (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 0 :=
+          Set.indicator_of_notMem hw 1
+        have e2 : Set.indicator (TaoCollatz.whiteStrip n ξ)
+            (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 0 :=
+          Set.indicator_of_notMem (fun hmem => hw hmem.2) 1
+        rw [e1, e2, mul_zero, mul_zero, sub_zero, Real.exp_zero]
+    calc
+      Real.exp (-ε ^ 3 * Set.indicator (TaoCollatz.whiteSet n ξ) 1
+            (j', l + e.2)) *
+          ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+            QP p hp0 hp1 half (TaoCollatz.whiteSet n ξ) ε
+              (j' + d.1) (l + e.2 + d.2)
+        ≤ Real.exp (-ε ^ 3 * Set.indicator (TaoCollatz.whiteSet n ξ) 1
+              (j', l + e.2)) *
+            (edgeWeightP p hp0 hp1 A m e * QM) :=
+          mul_le_mul_of_nonneg_left htsum (Real.exp_pos _).le
+      _ = (1 - (1 - Real.exp (-ε ^ 3)) *
+            Set.indicator (TaoCollatz.whiteStrip n ξ) 1 (j', l + e.2)) *
+          (edgeWeightP p hp0 hp1 A m e * QM) := by rw [hdamp]
+
 /-- Law-parametric Fubini split behind Tao's (7.48)--(7.49).  The only
 probabilistic inputs are that `P` and `E` are PMFs; all law dependence is
 confined to the two MGF series and two one-coordinate tails. -/
