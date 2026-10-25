@@ -1261,6 +1261,444 @@ theorem holdP_step_bound_window :
   ⟨gamma_holdStepP, gamma_holdStepP_pos, C_holdStepP, C_holdStepP_pos,
     fun p hp0 hp1 => holdP_step_bound_explicitC p (by linarith) (by linarith) hp0 hp1⟩
 
+/-! ### Uniform first-passage localization -/
+
+/-- The last-step convolution assembly for a holding law whose transverse
+renewal slope is `r`.  Unlike the fixed-law proof, the horizontal step mean
+need not be an integer: on the campaign window it is at most `16`, so moving
+the exponential window to the integer endpoint costs `exp (16 * γ)`.  The
+vertical mean is at most `200`, and its analogous cost is `exp (200 * γ)`.
+All remaining analytic inputs are the p-free lemmas used in Tao's Lemma 7.7. -/
+theorem fpDistP_location_bound_core (r m1 m2 c6 C6 γ C7 K : ℝ)
+    (hr0 : 0 ≤ r) (hr1 : r ≤ 1)
+    (hm1 : |m1| ≤ 16) (hm2 : |m2| ≤ 200)
+    (hc6 : 0 < c6) (hC6 : 0 < C6) (hγ : 0 < γ) (hC7 : 0 < C7) (hK : 0 < K)
+    (hU : ∀ (j : ℕ) (l : ℤ), 0 ≤ l →
+      (renewalMassLaw (j, l)).toReal
+        ≤ C6 / Real.sqrt (1 + (l : ℝ))
+            * TaoCollatz.Gweight (1 + (l : ℝ)) (c6 * ((j : ℝ) - r * (l : ℝ))))
+    (hstep : ∀ d : ℕ × ℤ,
+      (holdLaw d).toReal
+        ≤ C7 * Real.exp (-γ * |(d.1 : ℝ) - m1|)
+            * Real.exp (-γ * |(d.2 : ℝ) - m2|))
+    (hKs : ∀ s : ℕ,
+      ∑ m ∈ Finset.range (s + 1),
+          Real.exp (-(γ / 2) * ((s : ℝ) - m)) / Real.sqrt (1 + m)
+        ≤ K / Real.sqrt (1 + s)) :
+    ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+      (fpLaw s (j, l)).toReal
+        ≤ C6 * C7 * Real.exp (16 * γ) * Real.exp (200 * γ) * (4 + 8 / γ)
+              * 2 * K
+            * (Real.exp (-(min (min (c6 / 2) (γ / 4) / 2) γ) * ((l : ℝ) - s))
+                / Real.sqrt (1 + s))
+            * TaoCollatz.Gweight (1 + s)
+                (min (min (c6 / 2) (γ / 4) / 2) γ * ((j : ℝ) - r * s)) := by
+  set c9 : ℝ := min (c6 / 2) (γ / 4) with hc9def
+  have hc9 : 0 < c9 := lt_min (by positivity) (by positivity)
+  have hc9γ : c9 ≤ γ / 4 := min_le_right _ _
+  set cF : ℝ := min (c9 / 2) γ with hcFdef
+  have hcF : 0 < cF := lt_min (by positivity) hγ
+  set D : ℝ :=
+    C6 * C7 * Real.exp (16 * γ) * Real.exp (200 * γ) * (4 + 8 / γ) * 2 with hDdef
+  have hD : 0 < D := by rw [hDdef]; positivity
+  intro s j l
+  have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
+  set X : ℝ := (j : ℝ) - r * s with hXdef
+  by_cases hls : l ≤ (s : ℤ)
+  · have h0 : fpLaw s (j, l) = 0 := by
+      by_contra h
+      exact absurd
+        (fpDistP_support_snd_gt tilt htilt0 htilt1 s (j, l)
+          (by rwa [PMF.mem_support_iff]))
+        (not_lt.mpr hls)
+    rw [h0, ENNReal.toReal_zero]
+    apply mul_nonneg
+    · positivity
+    · exact TaoCollatz.Gweight_nonneg _ _
+  push Not at hls
+  have hlsR : (s : ℝ) ≤ (l : ℝ) := by exact_mod_cast hls.le
+  set F : Finset (ℕ × ℤ) := (Finset.range (j + 1)) ×ˢ (Finset.Icc (0 : ℤ) (s : ℤ))
+    with hF
+  have hinner : ∀ p : ℕ × ℤ,
+      (∑' d : ℕ × ℤ, if (j, l) = p + d then holdLaw d else 0)
+        = if p.1 ≤ j then holdLaw (j - p.1, l - p.2) else 0 := by
+    intro p
+    by_cases hp : p.1 ≤ j
+    · rw [if_pos hp, tsum_eq_single ((j - p.1, l - p.2) : ℕ × ℤ) ?_, if_pos ?_]
+      · apply Prod.ext
+        · show j = p.1 + (j - p.1)
+          omega
+        · show l = p.2 + (l - p.2)
+          ring
+      · intro d hd
+        rw [if_neg]
+        intro he
+        apply hd
+        have h1 : j = p.1 + d.1 := congrArg Prod.fst he
+        have h2 : l = p.2 + d.2 := congrArg Prod.snd he
+        obtain ⟨d1, d2⟩ := d
+        apply Prod.ext
+        · show d1 = j - p.1
+          simp only at h1
+          omega
+        · show d2 = l - p.2
+          simp only at h2
+          omega
+    · rw [if_neg hp]
+      refine ENNReal.tsum_eq_zero.mpr fun d => ?_
+      rw [if_neg]
+      intro he
+      apply hp
+      have h1 : j = p.1 + d.1 := congrArg Prod.fst he
+      omega
+  have hred : (∑' p : ℕ × ℤ, (if p.2 ≤ (s : ℤ) then renewalMassLaw p else 0)
+        * ∑' d : ℕ × ℤ, (if (j, l) = p + d then holdLaw d else 0))
+      = ∑ p ∈ F, renewalMassLaw p * holdLaw (j - p.1, l - p.2) := by
+    rw [tsum_congr fun p => by rw [hinner p]]
+    rw [tsum_eq_sum (s := F) ?_]
+    · refine Finset.sum_congr rfl fun p hp => ?_
+      obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp
+      have h1 : p.1 ≤ j := by
+        have := Finset.mem_range.mp hp1
+        omega
+      have h2 := (Finset.mem_Icc.mp hp2).2
+      rw [if_pos h2, if_pos h1]
+    · intro p hp
+      by_cases h1 : p.1 ≤ j
+      · by_cases h2 : p.2 ≤ (s : ℤ)
+        · have h3 : p.2 < 0 := by
+            by_contra h3
+            push Not at h3
+            exact hp (Finset.mem_product.mpr
+              ⟨Finset.mem_range.mpr (by omega), Finset.mem_Icc.mpr ⟨h3, h2⟩⟩)
+          rw [renewalMassP_zero_of_snd_neg tilt htilt0 htilt1 h3, ite_self, zero_mul]
+        · rw [if_neg h2, zero_mul]
+      · rw [if_neg h1, mul_zero]
+  have hfp : fpLaw s (j, l) ≤
+      ∑ p ∈ F, renewalMassLaw p * holdLaw (j - p.1, l - p.2) :=
+    hred ▸ fpDistP_le_renewal_conv tilt htilt0 htilt1 s (j, l)
+  have hterm_ne : ∀ p ∈ F,
+      renewalMassLaw p * holdLaw (j - p.1, l - p.2) ≠ ⊤ := fun p _ =>
+    ENNReal.mul_ne_top (renewalMassP_ne_top tilt htilt0 htilt1 p) (PMF.apply_ne_top _ _)
+  have hsum_ne : (∑ p ∈ F,
+      renewalMassLaw p * holdLaw (j - p.1, l - p.2)) ≠ ⊤ :=
+    (ENNReal.sum_lt_top.mpr fun p hp => (hterm_ne p hp).lt_top).ne
+  have hreal : (fpLaw s (j, l)).toReal
+      ≤ ∑ p ∈ F, (renewalMassLaw p).toReal
+          * (holdLaw (j - p.1, l - p.2)).toReal := by
+    calc
+      (fpLaw s (j, l)).toReal
+          ≤ (∑ p ∈ F, renewalMassLaw p * holdLaw (j - p.1, l - p.2)).toReal :=
+            ENNReal.toReal_mono hsum_ne hfp
+      _ = ∑ p ∈ F, (renewalMassLaw p).toReal
+            * (holdLaw (j - p.1, l - p.2)).toReal := by
+          rw [ENNReal.toReal_sum hterm_ne]
+          exact Finset.sum_congr rfl fun p _ => ENNReal.toReal_mul
+  refine hreal.trans ?_
+  have hIcc : Finset.Icc (0 : ℤ) (s : ℤ) = (Finset.range (s + 1)).image
+      (fun m : ℕ => (m : ℤ)) := by
+    ext x
+    simp only [Finset.mem_Icc, Finset.mem_image, Finset.mem_range]
+    constructor
+    · rintro ⟨h0, hs'⟩
+      exact ⟨x.toNat, by omega, by omega⟩
+    · rintro ⟨m, hm, rfl⟩
+      omega
+  have hsplit : ∑ p ∈ F, (renewalMassLaw p).toReal
+        * (holdLaw (j - p.1, l - p.2)).toReal
+      = ∑ j₁ ∈ Finset.range (j + 1), ∑ m ∈ Finset.range (s + 1),
+          (renewalMassLaw (j₁, (m : ℤ))).toReal
+            * (holdLaw (j - j₁, l - m)).toReal := by
+    rw [hF, Finset.sum_product]
+    refine Finset.sum_congr rfl fun j₁ _ => ?_
+    rw [hIcc, Finset.sum_image (fun a _ b _ h => by exact_mod_cast h)]
+  rw [hsplit]
+  set G2 : ℝ := TaoCollatz.Gweight (1 + (s : ℝ)) (c9 / 2 * X) with hG2def
+  have hG2 : 0 ≤ G2 := TaoCollatz.Gweight_nonneg _ _
+  have hmsum : ∀ m ∈ Finset.range (s + 1),
+      ∑ j₁ ∈ Finset.range (j + 1),
+        (renewalMassLaw (j₁, (m : ℤ))).toReal
+          * (holdLaw (j - j₁, l - m)).toReal
+      ≤ D * Real.exp (-γ * ((l : ℝ) - s)) * G2
+          * (Real.exp (-(γ / 2) * ((s : ℝ) - m)) / Real.sqrt (1 + m)) := by
+    intro m hm
+    have hms : m ≤ s := by
+      have := Finset.mem_range.mp hm
+      omega
+    have hmsR : (m : ℝ) ≤ (s : ℝ) := by exact_mod_cast hms
+    have h1m : (0 : ℝ) < 1 + (m : ℝ) := by positivity
+    have h1ms : 1 + (m : ℝ) ≤ 1 + (s : ℝ) := by linarith
+    have hterm : ∀ j₁ ∈ Finset.range (j + 1),
+        (renewalMassLaw (j₁, (m : ℤ))).toReal
+            * (holdLaw (j - j₁, l - m)).toReal
+        ≤ (C7 * Real.exp (16 * γ) * Real.exp (200 * γ)
+              * Real.exp (-γ * ((l : ℝ) - m)))
+            * (C6 / Real.sqrt (1 + m))
+            * (TaoCollatz.Gweight (1 + (m : ℝ))
+                  (c6 * ((j₁ : ℝ) - r * m))
+              * Real.exp (-γ * |(j : ℝ) - j₁|)) := by
+      intro j₁ hj₁
+      have hj₁j : j₁ ≤ j := by
+        have := Finset.mem_range.mp hj₁
+        omega
+      have hUb := hU j₁ (m : ℤ) (Int.natCast_nonneg m)
+      simp only [Int.cast_natCast] at hUb
+      have hsb := hstep (j - j₁, l - m)
+      have hc1 : (((j - j₁ : ℕ) : ℝ)) = (j : ℝ) - j₁ := by
+        rw [Nat.cast_sub hj₁j]
+      have hc2 : (((l - m : ℤ) : ℝ)) = (l : ℝ) - m := by push_cast; ring
+      dsimp only at hsb
+      rw [hc1, hc2] at hsb
+      have htri1 : |(j : ℝ) - j₁| ≤ |(j : ℝ) - j₁ - m1| + 16 := by
+        have h := abs_add_le ((j : ℝ) - j₁ - m1) m1
+        rw [show (j : ℝ) - j₁ - m1 + m1 = (j : ℝ) - j₁ by ring] at h
+        linarith
+      have hexp1 : Real.exp (-γ * |(j : ℝ) - j₁ - m1|)
+          ≤ Real.exp (16 * γ) * Real.exp (-γ * |(j : ℝ) - j₁|) := by
+        rw [← Real.exp_add]
+        apply Real.exp_le_exp.mpr
+        nlinarith
+      have htri2 : (l : ℝ) - m ≤ |(l : ℝ) - m - m2| + 200 := by
+        have h := abs_add_le ((l : ℝ) - m - m2) m2
+        rw [show (l : ℝ) - m - m2 + m2 = (l : ℝ) - m by ring] at h
+        linarith [le_abs_self ((l : ℝ) - m)]
+      have hexp2 : Real.exp (-γ * |(l : ℝ) - m - m2|)
+          ≤ Real.exp (200 * γ) * Real.exp (-γ * ((l : ℝ) - m)) := by
+        rw [← Real.exp_add]
+        apply Real.exp_le_exp.mpr
+        nlinarith
+      have hhold : (holdLaw (j - j₁, l - m)).toReal
+          ≤ C7 * (Real.exp (16 * γ) * Real.exp (-γ * |(j : ℝ) - j₁|))
+              * (Real.exp (200 * γ) * Real.exp (-γ * ((l : ℝ) - m))) := by
+        calc
+          (holdLaw (j - j₁, l - m)).toReal
+              ≤ C7 * Real.exp (-γ * |(j : ℝ) - j₁ - m1|)
+                  * Real.exp (-γ * |(l : ℝ) - m - m2|) := hsb
+          _ ≤ C7 * (Real.exp (16 * γ) * Real.exp (-γ * |(j : ℝ) - j₁|))
+                  * (Real.exp (200 * γ) * Real.exp (-γ * ((l : ℝ) - m))) := by
+              calc
+                C7 * Real.exp (-γ * |(j : ℝ) - j₁ - m1|)
+                      * Real.exp (-γ * |(l : ℝ) - m - m2|)
+                    ≤ C7 * (Real.exp (16 * γ) * Real.exp (-γ * |(j : ℝ) - j₁|))
+                        * Real.exp (-γ * |(l : ℝ) - m - m2|) :=
+                      mul_le_mul_of_nonneg_right
+                        (mul_le_mul_of_nonneg_left hexp1 hC7.le) (Real.exp_pos _).le
+                _ ≤ C7 * (Real.exp (16 * γ) * Real.exp (-γ * |(j : ℝ) - j₁|))
+                        * (Real.exp (200 * γ) * Real.exp (-γ * ((l : ℝ) - m))) :=
+                      mul_le_mul_of_nonneg_left hexp2 (by positivity)
+      calc
+        (renewalMassLaw (j₁, (m : ℤ))).toReal
+              * (holdLaw (j - j₁, l - m)).toReal
+            ≤ (C6 / Real.sqrt (1 + (m : ℝ))
+                * TaoCollatz.Gweight (1 + (m : ℝ)) (c6 * ((j₁ : ℝ) - r * m)))
+              * (C7 * (Real.exp (16 * γ) * Real.exp (-γ * |(j : ℝ) - j₁|))
+                * (Real.exp (200 * γ) * Real.exp (-γ * ((l : ℝ) - m)))) := by
+              apply mul_le_mul hUb hhold ENNReal.toReal_nonneg
+                (mul_nonneg (by positivity) (TaoCollatz.Gweight_nonneg _ _))
+        _ = (C7 * Real.exp (16 * γ) * Real.exp (200 * γ)
+                * Real.exp (-γ * ((l : ℝ) - m)))
+              * (C6 / Real.sqrt (1 + m))
+              * (TaoCollatz.Gweight (1 + (m : ℝ)) (c6 * ((j₁ : ℝ) - r * m))
+                * Real.exp (-γ * |(j : ℝ) - j₁|)) := by ring
+    have hconv := TaoCollatz.conv_Gweight_exp (t := 1 + (m : ℝ)) (c := c6) (γ := γ)
+      h1m hc6 hγ (r * m) (j : ℤ) (j + 1) (by simp)
+    have hshift : TaoCollatz.Gweight (1 + (m : ℝ)) (c9 * ((j : ℝ) - r * m))
+        ≤ 2 * Real.exp (c9 * r * ((s : ℝ) - m)) * G2 := by
+      have harg : (j : ℝ) - r * m = X + r * ((s : ℝ) - m) := by
+        rw [hXdef]
+        ring
+      rw [harg, hG2def]
+      refine (TaoCollatz.Gweight_shift h1m h1ms hc9 X (r * ((s : ℝ) - m))).trans ?_
+      have habs : |r * ((s : ℝ) - m)| = r * ((s : ℝ) - m) := by
+        rw [abs_of_nonneg (mul_nonneg hr0 (by linarith))]
+      rw [habs]
+      exact le_of_eq (by ring)
+    have hexps : Real.exp (-γ * ((l : ℝ) - m))
+          * Real.exp (c9 * r * ((s : ℝ) - m))
+        ≤ Real.exp (-γ * ((l : ℝ) - s))
+            * Real.exp (-(γ / 2) * ((s : ℝ) - m)) := by
+      rw [← Real.exp_add, ← Real.exp_add]
+      apply Real.exp_le_exp.mpr
+      have hcr : c9 * r ≤ γ / 4 := by
+        exact (mul_le_mul hc9γ hr1 hr0 (by positivity)).trans_eq (by ring)
+      nlinarith [mul_le_mul_of_nonneg_right hcr (by linarith : (0 : ℝ) ≤ (s : ℝ) - m)]
+    calc
+      ∑ j₁ ∈ Finset.range (j + 1),
+          (renewalMassLaw (j₁, (m : ℤ))).toReal
+            * (holdLaw (j - j₁, l - m)).toReal
+          ≤ ∑ j₁ ∈ Finset.range (j + 1),
+            (C7 * Real.exp (16 * γ) * Real.exp (200 * γ)
+                * Real.exp (-γ * ((l : ℝ) - m)))
+              * (C6 / Real.sqrt (1 + m))
+              * (TaoCollatz.Gweight (1 + (m : ℝ)) (c6 * ((j₁ : ℝ) - r * m))
+                * Real.exp (-γ * |(j : ℝ) - j₁|)) :=
+            Finset.sum_le_sum hterm
+      _ = (C7 * Real.exp (16 * γ) * Real.exp (200 * γ)
+              * Real.exp (-γ * ((l : ℝ) - m)))
+            * (C6 / Real.sqrt (1 + m))
+            * ∑ j₁ ∈ Finset.range (j + 1),
+              TaoCollatz.Gweight (1 + (m : ℝ)) (c6 * ((j₁ : ℝ) - r * m))
+                * Real.exp (-γ * |(j : ℝ) - j₁|) := by
+          rw [Finset.mul_sum]
+      _ ≤ (C7 * Real.exp (16 * γ) * Real.exp (200 * γ)
+              * Real.exp (-γ * ((l : ℝ) - m)))
+            * (C6 / Real.sqrt (1 + m))
+            * ((4 + 8 / γ) * (2 * Real.exp (c9 * r * ((s : ℝ) - m)) * G2)) := by
+          apply mul_le_mul_of_nonneg_left ?_ (by positivity)
+          refine hconv.trans ?_
+          exact mul_le_mul_of_nonneg_left hshift (by positivity)
+      _ = (D * G2) * (Real.exp (-γ * ((l : ℝ) - m))
+            * Real.exp (c9 * r * ((s : ℝ) - m)))
+          * (1 / Real.sqrt (1 + m)) := by
+          rw [hDdef]
+          ring
+      _ ≤ (D * G2) * (Real.exp (-γ * ((l : ℝ) - s))
+            * Real.exp (-(γ / 2) * ((s : ℝ) - m)))
+          * (1 / Real.sqrt (1 + m)) := by
+          apply mul_le_mul_of_nonneg_right ?_ (by positivity)
+          apply mul_le_mul_of_nonneg_left hexps (by positivity)
+      _ = D * Real.exp (-γ * ((l : ℝ) - s)) * G2
+          * (Real.exp (-(γ / 2) * ((s : ℝ) - m)) / Real.sqrt (1 + m)) := by
+          ring
+  calc
+    ∑ j₁ ∈ Finset.range (j + 1), ∑ m ∈ Finset.range (s + 1),
+        (renewalMassLaw (j₁, (m : ℤ))).toReal
+          * (holdLaw (j - j₁, l - m)).toReal
+        = ∑ m ∈ Finset.range (s + 1), ∑ j₁ ∈ Finset.range (j + 1),
+          (renewalMassLaw (j₁, (m : ℤ))).toReal
+            * (holdLaw (j - j₁, l - m)).toReal := Finset.sum_comm
+    _ ≤ ∑ m ∈ Finset.range (s + 1),
+        D * Real.exp (-γ * ((l : ℝ) - s)) * G2
+          * (Real.exp (-(γ / 2) * ((s : ℝ) - m)) / Real.sqrt (1 + m)) :=
+        Finset.sum_le_sum hmsum
+    _ = D * Real.exp (-γ * ((l : ℝ) - s)) * G2
+        * ∑ m ∈ Finset.range (s + 1),
+          Real.exp (-(γ / 2) * ((s : ℝ) - m)) / Real.sqrt (1 + m) := by
+        rw [Finset.mul_sum]
+    _ ≤ D * Real.exp (-γ * ((l : ℝ) - s)) * G2 * (K / Real.sqrt (1 + s)) := by
+        apply mul_le_mul_of_nonneg_left (hKs s) (by positivity)
+    _ ≤ D * K * (Real.exp (-cF * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+        * TaoCollatz.Gweight (1 + (s : ℝ)) (cF * X) := by
+      have hexpF : Real.exp (-γ * ((l : ℝ) - s))
+          ≤ Real.exp (-cF * ((l : ℝ) - s)) := by
+        apply Real.exp_le_exp.mpr
+        have hcFγ : cF ≤ γ := min_le_right _ _
+        have h := mul_le_mul_of_nonneg_right hcFγ (sub_nonneg.mpr hlsR)
+        linarith only [h]
+      have hGrel : G2 ≤ TaoCollatz.Gweight (1 + (s : ℝ)) (cF * X) := by
+        rw [hG2def, ← TaoCollatz.Gweight_abs _ (c9 / 2 * X),
+          ← TaoCollatz.Gweight_abs _ (cF * X), abs_mul, abs_mul,
+          abs_of_pos (by positivity : (0 : ℝ) < c9 / 2), abs_of_pos hcF]
+        apply TaoCollatz.Gweight_anti h1s (by positivity)
+        have hcF9 : cF ≤ c9 / 2 := min_le_left _ _
+        linarith only [mul_le_mul_of_nonneg_right hcF9 (abs_nonneg X)]
+      calc
+        D * Real.exp (-γ * ((l : ℝ) - s)) * G2 * (K / Real.sqrt (1 + s))
+            ≤ D * Real.exp (-cF * ((l : ℝ) - s))
+                * TaoCollatz.Gweight (1 + (s : ℝ)) (cF * X)
+                * (K / Real.sqrt (1 + s)) := by
+              apply mul_le_mul_of_nonneg_right ?_ (by positivity)
+              calc
+                D * Real.exp (-γ * ((l : ℝ) - s)) * G2
+                    ≤ D * Real.exp (-cF * ((l : ℝ) - s)) * G2 := by
+                      apply mul_le_mul_of_nonneg_right ?_ hG2
+                      exact mul_le_mul_of_nonneg_left hexpF hD.le
+                _ ≤ D * Real.exp (-cF * ((l : ℝ) - s))
+                    * TaoCollatz.Gweight (1 + (s : ℝ)) (cF * X) := by
+                      apply mul_le_mul_of_nonneg_left hGrel (by positivity)
+        _ = D * K * (Real.exp (-cF * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+            * TaoCollatz.Gweight (1 + (s : ℝ)) (cF * X) := by ring
+
+/-- Uniform decay rate in Lemma 7.7 for the tilted holding laws. -/
+noncomputable def c_fpLocationP : ℝ :=
+  min (min (c_renewalMassP / 2) (gamma_holdStepP / 4) / 2) gamma_holdStepP
+
+/-- Uniform multiplicative constant in Lemma 7.7 for the tilted holding laws. -/
+noncomputable def C_fpLocationP : ℝ :=
+  C_renewalMassP * C_holdStepP
+    * Real.exp (16 * gamma_holdStepP) * Real.exp (200 * gamma_holdStepP)
+    * (4 + 8 / gamma_holdStepP) * 2
+    * TaoCollatz.K_sqrtExp (gamma_holdStepP / 2)
+
+theorem c_fpLocationP_pos : 0 < c_fpLocationP := by
+  have hc := c_renewalMassP_pos
+  have hγ := gamma_holdStepP_pos
+  unfold c_fpLocationP
+  exact lt_min (by positivity) hγ
+
+theorem C_fpLocationP_pos : 0 < C_fpLocationP := by
+  have hγ := gamma_holdStepP_pos
+  have hγ2 : 0 < gamma_holdStepP / 2 := by linarith
+  have hK := TaoCollatz.K_sqrtExp_pos hγ2
+  unfold C_fpLocationP
+  exact mul_pos
+    (mul_pos
+      (mul_pos
+        (mul_pos
+          (mul_pos
+            (mul_pos C_renewalMassP_pos C_holdStepP_pos)
+              (Real.exp_pos _))
+            (Real.exp_pos _))
+          (by positivity))
+        (by norm_num))
+    hK
+
+/-- Lemma 7.7 for `holdP p`, with one rate and one constant valid on the
+whole campaign window.  This is the `_explicitC` interface consumed by the
+tilted many-triangles argument. -/
+theorem fpDistP_location_bound_explicitC
+    (hp0 : 1 / 5 ≤ tilt) (hp1 : tilt ≤ 3 / 5) :
+    ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+      (fpLaw s (j, l)).toReal
+        ≤ C_fpLocationP
+            * (Real.exp (-c_fpLocationP * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+            * TaoCollatz.Gweight (1 + s)
+                (c_fpLocationP * ((j : ℝ) - tilt / 2 * s)) := by
+  have hp : 0 < tilt := by linarith
+  have hq := pairThreeProb_mem_window hp0 hp1
+  have hqpos : 0 < pairThreeProb tilt := by linarith
+  have hm10 : 0 ≤ (pairThreeProb tilt)⁻¹ := inv_nonneg.mpr hqpos.le
+  have hm1hi : (pairThreeProb tilt)⁻¹ ≤ 16 := by
+    rw [inv_le_comm₀ hqpos (by norm_num : (0 : ℝ) < 16)]
+    norm_num
+    linarith [hq.1]
+  have hm1 : |(pairThreeProb tilt)⁻¹| ≤ 16 := by
+    rw [abs_of_nonneg hm10]
+    exact hm1hi
+  have hm20 : 0 ≤ (pairThreeProb tilt)⁻¹ * (2 / tilt) :=
+    mul_nonneg hm10 (div_nonneg (by norm_num) hp.le)
+  have hm2 : |(pairThreeProb tilt)⁻¹ * (2 / tilt)| ≤ 200 := by
+    rw [abs_of_nonneg hm20]
+    exact (holdP_height_drift_mem_window hp0 hp1).2
+  have hγ := gamma_holdStepP_pos
+  have h := fpDistP_location_bound_core tilt htilt0 htilt1
+    (tilt / 2) (pairThreeProb tilt)⁻¹
+    ((pairThreeProb tilt)⁻¹ * (2 / tilt))
+    c_renewalMassP C_renewalMassP gamma_holdStepP C_holdStepP
+    (TaoCollatz.K_sqrtExp (gamma_holdStepP / 2))
+    (by positivity) (by linarith) hm1 hm2
+    c_renewalMassP_pos C_renewalMassP_pos gamma_holdStepP_pos C_holdStepP_pos
+    (TaoCollatz.K_sqrtExp_pos (by linarith))
+    (renewalMassP_bound_explicitC tilt htilt0 htilt1 hp0 hp1)
+    (holdP_step_bound_explicitC tilt htilt0 htilt1 hp0 hp1)
+    (TaoCollatz.sum_sqrt_exp_le_explicitC (by linarith : 0 < gamma_holdStepP / 2))
+  intro s j l
+  have hs := h s j l
+  unfold C_fpLocationP c_fpLocationP
+  exact hs
+
+/-- Existential interface for the window-uniform tilted Lemma 7.7.  Both
+constants are chosen before `p`. -/
+theorem fpDistP_location_bound :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ),
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+        (fpDistP p (by linarith) (by linarith) s (j, l)).toReal
+          ≤ C * (Real.exp (-c * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+              * TaoCollatz.Gweight (1 + s) (c * ((j : ℝ) - p / 2 * s)) :=
+  ⟨c_fpLocationP, c_fpLocationP_pos, C_fpLocationP, C_fpLocationP_pos,
+    fun p hp0 hp1 => fpDistP_location_bound_explicitC p (by linarith) (by linarith) hp0 hp1⟩
+
 end
 
 end TaoCollatz.Sec7P
