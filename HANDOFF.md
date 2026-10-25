@@ -1,30 +1,48 @@
-# HANDOFF — uniform quadratic MGF and Chernoff bridge landed 🌀 (grind lap, 2026-10-25)
+# HANDOFF — p-uniform holding local bound landed 🌀 (reflection lap, 2026-10-25)
 
 Branch `ren/sec7p-pascal`. The calibration gate remains discharged (believed
-clean, judge to verify), directive step 2 remains closed, and directive step 3
-now has a p-uniform quadratic MGF and the resulting off-center Chernoff estimate.
-The sole Sec7P proof debt remains the mandated-LAST `pascal_damping_decay` pin:
+clean, judge to verify), directive step 2 remains closed, and the local-limit
+row of directive step 3 now has its full p-uniform Lemma 2.2(i) interface. The
+sole Sec7P proof debt remains the mandated-LAST `pascal_damping_decay` pin:
 **1 sorry + 0 orange nodes**.
+
+## Reflection finding
+
+The frozen headline and the live probability layer still agree on the exact
+object and quantifier order: `q(p) = 2p²(1-p)`, the holding drift is
+`q(p)⁻¹(1,2/p)`, and both local-bound constants must be chosen before `p`.
+There is no hidden calibration or statement mismatch. The preceding route was
+not missing another MGF estimate; its exact missing abstraction was the
+deterministic clipped-tilt optimizer for a general p-dependent center. The
+old `p = 1/2` numerals could not be reused verbatim because the new quadratic
+coefficient is `10⁹` and the available box is `1/4000`.
+
+The next architectural seam is similar: `FpLocation.lean` begins with roughly
+350 lines of renewal-measure algebra specialized to `hold`, although most of
+that algebra is law-generic. The highest-value next move is to parameterize
+that slice inside `Sec7P/` (leaving the existing §7 file byte-identical), then
+instantiate it with `holdP`. This avoids cargo-cult duplication while obeying
+the copy-and-generalize ruling.
 
 ## Concrete advance
 
-- Extended `TaoCollatz/Sec7P/HoldLocal.lean` with a reusable Taylor/moment
-  lemma: an exact nonnegative first moment plus the already-proved fixed
-  exponential moment bounds a one-coordinate MGF by
-  `1 + mean * μ + 96000000 * μ²` on `|μ| ≤ 1/2000`.
-- Applied it to both holding coordinates. The second-coordinate proof includes
-  the support bridge from `Int.toNat` back to the integer coordinate.
-- Combined the coordinate estimates through the existing ENNReal
-  Cauchy--Schwarz lemma. For every `p ∈ [1/5,3/5]` and
-  `|λᵢ| ≤ 1/4000`,
-  `tiltZ holdP ≤ 1 + μ_p · λ + 10^9 (λ₁² + λ₂²)`, where
-  `μ_p = q(p)⁻¹ (1, 2/p)`; the quadratic constant is chosen before `p`.
-- Fed that estimate, the exact tilting identity, and the preceding lap's
-  uniform tilted center bound into
-  `holdSumP_apply_le_chernoff_window`. This supplies a uniform off-center
-  exponential point-mass estimate for the parameterized holding walk.
-- No frozen declaration or read-only §7 source changed, and no `sorry` was
-  added. Commit: `99101b0`.
+- Added `chernoff_clipP_le`. For `n ≥ 1`, it clips each coordinate tilt to
+  `1/4000` and proves the optimized exponent
+  `-min(dev²/(4·10⁹ n), |dev|/8000)`.
+- Proved that exponent fits Tao's two-branch `Gweight` uniformly at spatial
+  scale `c_holdLocalP = 1/100000`.
+- Added `holdP_local_bound_explicitC`, centered at the exact p-dependent drift
+  `n q(p)⁻¹(1,2/p)`, with the center-circle constant
+  `C_holdLocalP = (32·312500000)²`.
+- Added the existential interface `holdP_local_bound_window`; its quantifier
+  order chooses `c,C` before `p`, so the theorem exposes exactly the uniformity
+  needed by first-passage localization.
+- No frozen declaration, read-only §7 source, or tool changed; no `sorry` was
+  added. Proof commit: `4ce9260`.
+- Push could not be completed in this box: the configured SSH remote fails
+  because no `ssh` executable is installed, and a prompt-disabled HTTPS
+  fallback made no progress for 90 seconds and was interrupted. The clean
+  local branch is therefore 12 commits ahead of `origin/ren/sec7p-pascal`.
 
 ## Exact verification run
 
@@ -35,19 +53,17 @@ lake build TaoCollatz.Sec7P.HoldLocal
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --target TaoCollatz.Sec7P.HoldLocal \
   --import TaoCollatz.Sec7P.HoldLocal \
-  --axioms TaoCollatz.Sec7P.tiltZ_holdP_le_quad_window \
-  --axioms TaoCollatz.Sec7P.holdSumP_apply_le_chernoff_window
+  --axioms TaoCollatz.Sec7P.holdP_local_bound_window
   Build completed successfully (3317 jobs).
-  both axiom sets: [Classical.choice, Quot.sound, propext]
+  axiom set: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
-  --axioms TaoCollatz.Sec7P.tiltZ_holdP_le_quad_window \
-  --axioms TaoCollatz.Sec7P.holdSumP_apply_le_chernoff_window
+  --axioms TaoCollatz.Sec7P.holdP_local_bound_window
   Build completed successfully (8761 jobs).
   proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
-  all three axiom sets: [Classical.choice, Quot.sound, propext]
+  both axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
 ./tools/tao_stmt_diff.py eb40bf3 HEAD
@@ -63,25 +79,28 @@ git-safe diff --check
 ## Campaign state
 
 `sec7p: calibration proof landed (believed clean, judge to verify); prob-layer
-3/3 closed; Prop 7.3@p modules 0/10 complete, with renewal/unrolling, full
-Monotone Case 1, and the p-uniform quadratic-MGF/Chernoff local layer landed;
-Sec7P sorries 1; differ 46/46 yes; blockers none.`
+3/3 closed; Prop 7.3@p modules 1/10 complete (the local-limit row), with
+renewal/unrolling and full Monotone Case 1 also landed; Sec7P sorries 1; differ
+46/46 yes; blockers none.`
 
 ## Current blocker
 
-The uniform MGF expansion and Chernoff transfer are no longer blockers. The
-next load-bearing gap is the **deterministic choice of the two tilt parameters**
-that turns `holdSumP_apply_le_chernoff_window` into the p-uniform
-`hold_local_bound` shape used by `FpLocation`. The optimizer must stay inside
-`|λᵢ| ≤ 1/4000`, handle the p-dependent center
-`n q(p)⁻¹ (1,2/p)`, and leave constants independent of `p`.
+The MGF, Chernoff, optimizer, and local-bound chain are no longer blockers. The
+next load-bearing gap is the p-parameterized renewal measure and first-passage
+localization from `Sec7/FpLocation.lean`. Its center line changes from `j = l/4`
+to `j = p·l/2`; every localization constant must remain uniform on
+`p ∈ [1/5,3/5]`. There is no mathematical route blocker. Separately, branch
+publication is blocked by the missing SSH client / unavailable HTTPS transport
+described above; retry the push from a host with GitHub transport.
 
 ## Next highest-value attack
 
-1. Copy-generalize the optimizer in the p-free `hold_local_bound`, using
-   `K = 10^9` and clipping the coordinate tilts to `1/4000`.
-2. Package the result as a p-uniform local bound centered at
-   `n q(p)⁻¹ (1,2/p)`; kernel-check its headline axiom set.
-3. Begin `Sec7P/FpLocation.lean`, replacing Tao's slope `1/4` by `p/2`
-   and sizing the localization box uniformly over the window.
+1. Create `Sec7P/FpLocation.lean` and parameterize the generic renewal slice:
+   `renewalMassP`, `stepMassP`, convolution identities, and
+   `fpDistP_le_renewal_conv` over `holdP`/`fpDistP`.
+2. Sum `holdP_local_bound_explicitC` over the step count to prove a uniform
+   renewal Gaussian bound centered on `j - (p/2)l`.
+3. Convolve with the already-proved uniform holding tail to obtain the
+   p-window version of Lemma 7.7, sizing one localization box for the whole
+   window.
 4. Keep `pascal_damping_decay` untouched until final assembly.

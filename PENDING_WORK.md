@@ -1693,3 +1693,26 @@ the p-dependent first-passage localization.
 **Next:** copy-generalize the p-free local-bound optimizer. Clip the two tilt
 coordinates at `1/4000`, center at `n q(p)⁻¹·(1,2/p)`, and package constants
 independent of `p`; then begin `Sec7P/FpLocation.lean`.
+
+### Reflection lap 9 (2026-10-25) — p-uniform holding local bound landed ✅
+
+- Re-read the frozen target, calibration bridge, probability layer, and the
+  p-free local-bound proof. The conventions and drift agree: the exact holding
+  mean is `q(p)⁻¹(1,2/p)`, and the live missing seam was the deterministic
+  optimizer, not another probabilistic estimate.
+- Proved `chernoff_clipP_le` for `K = 10⁹` and tilt box `1/4000`, obtaining
+  `-min(dev²/(4·10⁹n), |dev|/8000)`, and fit it to `Gweight` at the uniform
+  scale `1/100000`.
+- Proved `holdP_local_bound_explicitC` and the constants-before-`p`
+  `holdP_local_bound_window`, centered at `n q(p)⁻¹(1,2/p)` with
+  `C = (32·312500000)²`. The headline has only the trusted three axioms.
+- Reflection on the next row found a reusable seam: the first ~350 lines of
+  `Sec7/FpLocation.lean` are renewal algebra specialized to `hold`. Parameterize
+  that slice inside `Sec7P/`, then instantiate it with `holdP`; do not duplicate
+  it mechanically or edit the p-free source.
+- No new debt: **1 sorry + 0 orange nodes**. The sole sorry remains the
+  mandated-LAST `pascal_damping_decay` pin; watched statements remain 46/46.
+
+**Next:** add `Sec7P/FpLocation.lean` with `renewalMassP`, `stepMassP`, and the
+first-passage convolution bound, then use the new local bound to center the
+renewal Gaussian at `j - (p/2)l` uniformly on the window.
