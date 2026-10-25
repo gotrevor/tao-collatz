@@ -1363,4 +1363,143 @@ theorem fpDistP_edgeWeight_split {p A : ℝ}
     (edgeWeightFor_split (P := holdP p (by linarith) (by linarith))
       (E := fpDistP p (by linarith) (by linarith) s) hA hm hZf hZh)
 
+-- HEARTBEAT: this assembly combines the moving-centre MGF summability
+-- witness with four independently quantified uniform estimates.
+set_option maxHeartbeats 2000000 in
+/-- **The tilted (7.48)/(7.49) weight degradation, Case 2.**  With the
+first-passage budget `s ≤ m / log² m`, the average `Pascal(p)` holding-law
+depth weight is at most `(1+δ)m⁻ᴬ`, uniformly for
+`p ∈ [1/5,3/5]`.  The threshold is selected before `p`.
+
+The proof combines the law-parametric Fubini split with the two uniform MGF
+bounds and the two fixed-tilt tails.  The large quadratic coefficient in the
+holding MGF is absorbed by requiring the vanishing tilt `2A/m` to be at most
+`1/192000000`, independently of `p`. -/
+theorem fpDistP_edgeWeight_le (A : ℝ) (hA : 0 < A) (δ : ℝ) (hδ : 0 < δ) :
+    ∃ Cthr : ℕ, ∀ p : ℝ, ∀ hp0 : 1 / 5 ≤ p, ∀ hp1 : p ≤ 3 / 5,
+      ∀ m : ℕ, Cthr ≤ m → ∀ s : ℕ,
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      ∑' e : ℕ × ℤ,
+          (fpDistP p (by linarith [hp0]) (by linarith [hp1]) s e).toReal *
+            edgeWeightP p (by linarith [hp0]) (by linarith [hp1]) A m e
+        ≤ (1 + δ) * (m : ℝ) ^ (-A) := by
+  set ε : ℝ := min (δ / 8) 2 with hεdef
+  have hεpos : 0 < ε := by
+    rw [hεdef]
+    exact lt_min (by positivity) (by norm_num)
+  have hεle2 : ε ≤ 2 := by rw [hεdef]; exact min_le_right _ _
+  have hε8 : ε ≤ δ / 8 := by rw [hεdef]; exact min_le_left _ _
+  obtain ⟨Cf, hCf⟩ := fpDistP_fst_mgf_le A hA ε hεpos
+  obtain ⟨Ctf, hCtf⟩ := fpDistP_fst_tail_le A hA (δ / 4) (by positivity)
+  obtain ⟨Cth, hCth⟩ := holdP_fst_tail_le A hA (δ / 4) (by positivity)
+  obtain ⟨Cnum, hCnum100, hnum⟩ :=
+    fpDistP_fst_mgf_numeric hA hεpos c_fpLocationP_pos C_fpColP_pos
+  refine ⟨Cf + Ctf + Cth + Cnum + ⌈4000 * A⌉₊ + ⌈384000000 * A⌉₊
+      + ⌈64 * A / ε⌉₊ + 2, ?_⟩
+  intro p hp0 hp1 m hm s hs
+  have hp0' : 0 < p := by linarith
+  have hp1' : p < 1 := by linarith
+  have hmCf : Cf ≤ m := by omega
+  have hmCtf : Ctf ≤ m := by omega
+  have hmCth : Cth ≤ m := by omega
+  have hmCnum : Cnum ≤ m := by omega
+  have hm2 : 2 ≤ m := by omega
+  have hmpos : (0 : ℝ) < (m : ℝ) := by exact_mod_cast (by omega : 0 < m)
+  have h4000 : (4000 : ℝ) * A ≤ m :=
+    le_trans (Nat.le_ceil _) (by
+      exact_mod_cast (show ⌈4000 * A⌉₊ ≤ m by omega))
+  have h384 : (384000000 : ℝ) * A ≤ m :=
+    le_trans (Nat.le_ceil _) (by
+      exact_mod_cast (show ⌈384000000 * A⌉₊ ≤ m by omega))
+  have h64 : (64 : ℝ) * A / ε ≤ m :=
+    le_trans (Nat.le_ceil _) (by
+      exact_mod_cast (show ⌈64 * A / ε⌉₊ ≤ m by omega))
+  set theta : ℝ := 2 * A / (m : ℝ) with hthetadef
+  have htheta0 : 0 ≤ theta := by rw [hthetadef]; positivity
+  have htheta2000 : theta ≤ 1 / 2000 := by
+    rw [hthetadef, div_le_iff₀ hmpos]
+    nlinarith [h4000]
+  have hthetaQuad : theta ≤ 1 / 192000000 := by
+    rw [hthetadef, div_le_iff₀ hmpos]
+    nlinarith [h384]
+  have hthetaε : theta ≤ ε / 32 := by
+    rw [hthetadef, div_le_iff₀ hmpos]
+    rw [div_le_iff₀ hεpos] at h64
+    nlinarith [h64]
+  obtain ⟨K, hK100, hthetale, hbud, _, _⟩ :=
+    hnum m hmCnum (p / 2) (by linarith) (by linarith) s hs
+  have hZf_sum : Summable (fun e : ℕ × ℤ =>
+      (fpDistP p hp0' hp1' s e).toReal * Real.exp (theta * (e.1 : ℝ))) :=
+    (fpDistP_fst_mgf_general p hp0 hp1 htheta0 (by simpa [hthetadef] using hthetale)
+      s K hK100 hbud).1
+  have hZh_sum : Summable (fun d : ℕ × ℤ =>
+      (holdP p hp0' hp1' d).toReal * Real.exp (theta * (d.1 : ℝ))) := by
+    have hne : ∑' d : ℕ × ℤ,
+        holdP p hp0' hp1' d * TaoCollatz.expW2 theta 0 d ≠ ∞ := by
+      rw [← TaoCollatz.tiltZ]
+      exact tiltZ_holdP_ne_top_window hp0 hp1 (by linarith [htheta2000]) (by norm_num)
+    refine (ENNReal.summable_toReal hne).congr (fun d => ?_)
+    rw [TaoCollatz.expW2, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (Real.exp_pos _).le]
+    congr 2
+    ring
+  have hsplit := fpDistP_edgeWeight_split hp0 hp1 hA.le hm2 s hZf_sum hZh_sum
+  refine le_trans hsplit ?_
+  set mA : ℝ := (m : ℝ) ^ (-A) with hmAdef
+  set Zf : ℝ := ∑' e : ℕ × ℤ,
+    (fpDistP p hp0' hp1' s e).toReal * Real.exp (theta * (e.1 : ℝ)) with hZfdef
+  set Zh : ℝ := ∑' d : ℕ × ℤ,
+    (holdP p hp0' hp1' d).toReal * Real.exp (theta * (d.1 : ℝ)) with hZhdef
+  set Tf : ℝ := ∑' e : ℕ × ℤ,
+    (fpDistP p hp0' hp1' s e).toReal *
+      (if m < 4 * e.1 then (1 : ℝ) else 0) with hTfdef
+  set Th : ℝ := ∑' d : ℕ × ℤ,
+    (holdP p hp0' hp1' d).toReal *
+      (if m < 4 * d.1 then (1 : ℝ) else 0) with hThdef
+  have hmA0 : 0 < mA := by
+    rw [hmAdef]
+    exact Real.rpow_pos_of_pos hmpos _
+  have hZh0 : 0 ≤ Zh := by
+    rw [hZhdef]
+    exact tsum_nonneg fun d =>
+      mul_nonneg ENNReal.toReal_nonneg (Real.exp_pos _).le
+  have hZfb : Zf ≤ 1 + ε := by
+    rw [hZfdef]
+    have hexp : ∀ e : ℕ × ℤ,
+        theta * (e.1 : ℝ) = 2 * A * (e.1 : ℝ) / (m : ℝ) := fun _ => by
+      rw [hthetadef]
+      ring
+    simp_rw [hexp]
+    exact hCf p hp0 hp1 m hmCf s hs
+  have hquadTerm : 96000000 * theta ^ 2 ≤ theta / 2 := by
+    have hmul := mul_le_mul_of_nonneg_left hthetaQuad htheta0
+    nlinarith
+  have hZhb : Zh ≤ 1 + ε := by
+    rw [hZhdef]
+    refine le_trans (holdP_fst_mgf_le_real hp0 hp1 htheta0 htheta2000) ?_
+    nlinarith [hquadTerm, hthetaε]
+  have hTfb : Tf ≤ δ / 4 * mA := by
+    rw [hTfdef, hmAdef]
+    exact hCtf p hp0 hp1 m hmCtf s hs
+  have hThb : Th ≤ δ / 4 * mA := by
+    rw [hThdef, hmAdef]
+    exact hCth p hp0 hp1 m hmCth
+  have hquad : 2 * ε + ε ^ 2 ≤ δ / 2 := by
+    nlinarith [hεle2, hε8, hεpos]
+  have hMGF : mA * Zf * Zh ≤ (1 + δ / 2) * mA := by
+    have h1 : mA * Zf * Zh ≤ mA * (1 + ε) * (1 + ε) :=
+      mul_le_mul (mul_le_mul_of_nonneg_left hZfb hmA0.le) hZhb hZh0 (by positivity)
+    have hh := mul_le_mul_of_nonneg_left hquad hmA0.le
+    calc
+      mA * Zf * Zh ≤ mA * (1 + ε) * (1 + ε) := h1
+      _ = mA + mA * (2 * ε + ε ^ 2) := by ring
+      _ ≤ mA + mA * (δ / 2) := by linarith
+      _ = (1 + δ / 2) * mA := by ring
+  change mA * Zf * Zh + Tf + Th ≤ (1 + δ) * mA
+  calc
+    mA * Zf * Zh + Tf + Th
+        ≤ (1 + δ / 2) * mA + δ / 4 * mA + δ / 4 * mA :=
+      add_le_add (add_le_add hMGF hTfb) hThb
+    _ = (1 + δ) * mA := by ring
+
 end TaoCollatz.Sec7P
