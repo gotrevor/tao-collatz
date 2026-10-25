@@ -3,7 +3,7 @@ Copyright (c) 2026 Trevor Morris. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Trevor Morris
 -/
-import TaoCollatz.Sec7.Decay
+import TaoCollatz.Sec7P.Bridge
 
 /-!
 # §7 at the pair-sum law `Pascal(p)`: the campaign pins (Sec7P)
@@ -35,8 +35,8 @@ strictly between `p·log₂ 3` and `1`.
   convention bridge (`fPair`/`xArg`/`pascalWeight` ↔ `fCond`/`xArg`/`pascal`).
 * `pascal_damping_decay` — the campaign target, uniform on `p ∈ [1/5, 3/5]`.
 
-Both carry a `warningAsError` shield covering exactly their planted `sorry`; a discharge
-removes the `sorry` and its shield together.
+The remaining target carries a `warningAsError` shield covering exactly its planted
+`sorry`; its discharge removes the `sorry` and shield together.
 -/
 
 namespace TaoCollatz.Sec7P
@@ -70,9 +70,8 @@ noncomputable def pascalDamping (n : ℕ) (p : ℝ) (ξ : ℕ) : ℝ :=
     ∏ j : Fin (n / 2),
       ‖fPair n (xArg n ξ j (∑ i ∈ Finset.univ.filter (fun i : Fin (n / 2) => i ≤ j), b i)) (b j)‖
 
-set_option warningAsError false in
 -- RATIFY-SEC7P-HALF
-/-- ⚠️ **CAMPAIGN PIN (calibration) — `sorry` until discharged.**  The `p = 1/2` case of
+/-- **CAMPAIGN PIN (calibration).**  The `p = 1/2` case of
 `pascal_damping_decay`.  It is Tao's Props 7.1/7.3 in this file's conventions, so it must
 follow from the proved §7 (`renewal_white_encounters_at` through `cexpect_pairing` /
 `prod_fCond_le_damping`'s chain) plus a convention bridge; it is the gate that proves the
@@ -80,7 +79,57 @@ copied definitions mean what the §7 library means. -/
 theorem pascalDamping_half_decay :
     ∀ A > (0 : ℝ), ∃ C > (0 : ℝ), ∀ n ξ : ℕ, 1 ≤ n → ¬ 3 ∣ ξ →
       pascalDamping n (1 / 2) ξ ≤ C * (n : ℝ) ^ (-A) := by
-  sorry
+  classical
+  intro A hA
+  refine ⟨TaoCollatz.C_renewalWhite A, TaoCollatz.C_renewalWhite_pos A, ?_⟩
+  intro n ξ hn hξ
+  have hpair : pascalDamping n (1 / 2) ξ =
+      (PMF.iid TaoCollatz.pascal (n / 2)).expect fun b =>
+        ∏ j : Fin (n / 2),
+          ‖TaoCollatz.fCond n ξ
+            (TaoCollatz.xArg n (j : ℕ) (TaoCollatz.pre b ((j : ℕ) + 1))) (b j)‖ := by
+    unfold pascalDamping PMF.expect
+    apply tsum_congr
+    intro b
+    rw [PMF.iid_apply_eq_prod, ENNReal.toReal_prod]
+    simp_rw [pascalWeight, pascalWeight_half_bridge]
+    congr 1
+    apply Finset.prod_congr rfl
+    intro j hj
+    rw [prefix_filter_eq_pre]
+    unfold fPair TaoCollatz.fCond xArg TaoCollatz.xArg charZ
+    congr 2
+    apply Finset.sum_congr rfl
+    intro a ha
+    rw [show (ξ : ZMod (3 ^ n)) * 3 ^ (2 * (j : ℕ)) *
+        (2 : ZMod (3 ^ n))⁻¹ ^ TaoCollatz.pre b ((j : ℕ) + 1) * (2 ^ a + 3) =
+        (ξ : ZMod (3 ^ n)) * (3 ^ (2 * (j : ℕ)) *
+          (2 : ZMod (3 ^ n))⁻¹ ^ TaoCollatz.pre b ((j : ℕ) + 1) * (2 ^ a + 3)) by ring]
+    exact charZ_argument_bridge n ξ _
+  rw [hpair]
+  calc
+    (PMF.iid TaoCollatz.pascal (n / 2)).expect (fun b =>
+        ∏ j : Fin (n / 2),
+          ‖TaoCollatz.fCond n ξ
+            (TaoCollatz.xArg n (j : ℕ) (TaoCollatz.pre b ((j : ℕ) + 1))) (b j)‖)
+      ≤ (PMF.iid TaoCollatz.pascal (n / 2)).expect (fun b =>
+          Real.exp (-((TaoCollatz.epsBW : ℝ) ^ 3) *
+            ((Finset.univ.filter fun j : Fin (n / 2) =>
+              b j = 3 ∧ TaoCollatz.white n ξ (j : ℕ)
+                ((TaoCollatz.pre b ((j : ℕ) + 1) : ℤ))).card : ℝ))) := by
+        apply TaoCollatz.expect_mono_le
+        · intro b
+          exact Finset.prod_nonneg fun j _ => norm_nonneg _
+        · exact TaoCollatz.prod_fCond_le_damping n ξ
+        · intro b
+          rw [Real.exp_le_one_iff]
+          exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr (pow_nonneg (by
+            have h : (0 : ℚ) ≤ TaoCollatz.epsBW := by
+              unfold TaoCollatz.epsBW
+              norm_num
+            exact_mod_cast h) 3)) (Nat.cast_nonneg _)
+    _ ≤ TaoCollatz.C_renewalWhite A * (n : ℝ) ^ (-A) :=
+      TaoCollatz.renewal_white_encounters_at A hA n ξ hξ hn
 
 set_option warningAsError false in
 -- RATIFY-SEC7P

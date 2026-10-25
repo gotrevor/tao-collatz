@@ -1,27 +1,66 @@
-# HANDOFF — Sec7P campaign planted 🌀 (operator, 2026-10-25)
+# HANDOFF — Sec7P calibration gate discharged 🌀 (grind lap, 2026-10-25)
 
-**Nothing proved yet; this is the starting baton.**  Branch `ren/sec7p-pascal` (from
-`main` @ `95a7172`, the summit + Tier-1 tree).  Build green with exactly two shielded
-`sorry`s, both in `TaoCollatz/Sec7P/Statement.lean`.
+Branch `ren/sec7p-pascal`. This lap discharged the binding calibration gate
+`pascalDamping_half_decay`; its proof is believed clean, judge to verify. The final uniform-p
+pin remains deliberately untouched. Current Sec7P debt is **1 sorry + 0 orange nodes**.
 
-## Read, in order
+## Concrete advance
 
-1. `DIRECTION.md` — the CURRENT DIRECTIVE (calibration gate first; discharge LAST).
-2. `SEC7P-PLAN.md` — the transfer math (§1), window-uniformity discipline (§2), module
-   order (§3), node table (§4).
-3. Tao's §7 full text: `tmp/ren-tao/tao.txt` (gitignored; never commit it).  §7.1 starts
-   line 1736, Prop 7.3 at 1834, §7.3 (holding time) 2092, Lemma 7.7 2178, §7.4 2253.
+- Added `TaoCollatz/Sec7P/Bridge.lean` with the exact p-independent convention seams:
+  inclusive `Fin` prefix = `pre b (j+1)`, and moving `ξ` from `charZ`'s `ZMod` argument into
+  Tao's rational `eC` numerator (using periodicity modulo `3^n`).
+- Proved the calibration-only weight identity
+  `pascalWeight (1/2) b = (pascal b).toReal`.
+- Rewrote the copied `pascalDamping` `tsum` exactly as the existing
+  `(PMF.iid pascal (n/2)).expect` of the `fCond` product. Thus the calibration does not need
+  `cexpect_pairing`: it is already in paired form.
+- Closed the bound by `prod_fCond_le_damping`, expectation monotonicity, and
+  `renewal_white_encounters_at`. Removed the calibration `sorry` and its warning shield.
+- Watched pins remain **46/46 character-identical** against plant commit `eb40bf3`.
 
-## Lap-1 plan
+## Exact verification run
 
-- **Calibration gate**: `TaoCollatz/Sec7P/Bridge.lean` + discharge of
-  `pascalDamping_half_decay`.  First check whether the target's paired form lets you
-  skip the raw-valuation pairing (`cexpect_pairing`) entirely — the bridge may only need
-  `pascalWeight (1/2) b = (pascal b).toReal`, `tsum ↔ PMF.iid expect`, and the
-  `fPair ↔ fCond` identity, then `prod_fCond_le_damping` + `renewal_white_encounters`.
-- Then the p-probability layer (plan §3 rows 1–3).
+```text
+lake build TaoCollatz.Sec7P.Statement
+  Build completed successfully (3312 jobs); only pascal_damping_decay reports sorry.
 
-## Checks every commit
+~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
+  --target TaoCollatz.Sec7P.Statement \
+  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay
+  FORMALIZE-TIER GREEN
+  axioms: [Classical.choice, Quot.sound, propext]
 
-`lake build` · `tools/tao_stmt_diff.py <plant-commit> HEAD` → 46/46 ·
-`./tools/blueprint_audit.py` green · sorries only under `TaoCollatz/Sec7P/`.
+./tools/tao_stmt_diff.py eb40bf3 HEAD
+  character-identical (46/46)
+
+./tools/blueprint_audit.py
+  26 nodes proved + axiom-clean; 0 orange; 0 drift; 0 false-green
+```
+
+The final full-repository gate was also run immediately before the checkpoint commit; its
+verdict is recorded below.
+
+## Campaign state
+
+`sec7p: calibration proof landed (believed clean, judge to verify); prob-layer 0/3;
+Prop 7.3@p modules 0/10; Sec7P sorries 1; differ 46/46 yes; blockers none.`
+
+## Next highest-value attack
+
+Start directive step 2 in `TaoCollatz/Sec7P/Prob.lean`:
+
+1. Define the general `geomP p` PMF on positive naturals and prove its pointwise real mass.
+2. Define `pascalP p` (preferably as `iidSum (geomP p) 2`, with the closed
+   `(b-1)p^2(1-p)^(b-2)` mass proved) and `pascalNe3P p`.
+3. Keep the bridge general where possible: establish
+   `(pascalP p b).toReal = pascalWeight p b` under the probability-range hypotheses. Then
+   proceed to `holdP p` and the mean/support/tail package in `Holding.lean`/`HoldBasics.lean`.
+
+Every constant feeding the target must be uniform for `p ∈ [1/5,3/5]`. The target
+`pascal_damping_decay` is discharged LAST.
+
+## Final gate verdict
+
+`~/personal/bin/lean-green ~/src/tao-collatz-sec7p` completed successfully (8754 jobs),
+reported exactly the remaining `pascal_damping_decay` declaration as proof debt, and ended
+`FORMALIZE-TIER GREEN`.

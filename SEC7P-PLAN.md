@@ -97,5 +97,5 @@ Modules that never mention the gap law (`Prob/Basic`, `CharFn`, `CharFn1`, `Loca
 
 | node | Lean name | file | state |
 |---|---|---|---|
-| SEC7P-HALF | `pascalDamping_half_decay` | `Sec7P/Statement.lean` | pinned (`sorry`) |
+| SEC7P-HALF | `pascalDamping_half_decay` | `Sec7P/Statement.lean` | proof landed; trust-base axioms evidence, judge to verify |
 | SEC7P | `pascal_damping_decay` | `Sec7P/Statement.lean` | pinned (`sorry`) |

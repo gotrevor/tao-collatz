@@ -40,6 +40,7 @@ import TaoCollatz.Sec7.Bridge
 import TaoCollatz.Sec7.Reduction
 import TaoCollatz.Sec7.HoldBasics
 import TaoCollatz.Sec7.Decay
+import TaoCollatz.Sec7P.Bridge
 import TaoCollatz.Sec7P.Statement
 import TaoCollatz.Sec3.Reduction
 import TaoCollatz.Statement
