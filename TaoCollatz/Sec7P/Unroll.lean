@@ -70,6 +70,25 @@ noncomputable def fpDistP (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1) :
     push Not at _h
     omega
 
+/-- At zero height budget every holding increment overshoots immediately, so
+the first-passage law is exactly the one-step holding law.  Besides being a
+useful boundary simplification, this identifies the worst small-budget
+overshoot regime without unfolding the recursive law pointwise. -/
+theorem fpDistP_zero (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1) :
+    fpDistP p hp0 hp1 0 = holdP p hp0 hp1 := by
+  rw [fpDistP]
+  calc
+    (holdP p hp0 hp1).bind (fun d =>
+        if _h : d.2 ≤ 0 ∨ ((0 : ℕ) : ℤ) < d.2 then PMF.pure d
+        else (fpDistP p hp0 hp1 (0 - d.2.toNat)).map fun e =>
+          (d.1 + e.1, d.2 + e.2)) =
+        (holdP p hp0 hp1).bind PMF.pure := by
+          congr 1
+          funext d
+          simp only [Nat.cast_zero]
+          rw [dif_pos (le_or_gt d.2 0)]
+    _ = holdP p hp0 hp1 := PMF.bind_pure _
+
 /-- Every tilted first-passage endpoint has positive first coordinate. -/
 theorem fpDistP_support_fst_pos (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1) :
     ∀ s, ∀ e ∈ (fpDistP p hp0 hp1 s).support, 1 ≤ e.1 := by

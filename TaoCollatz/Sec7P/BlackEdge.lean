@@ -21,6 +21,24 @@ open scoped ENNReal
 
 namespace TaoCollatz.Sec7P
 
+/-- The fixed Lemma-7.4 separation is strictly below `234`.  This upper
+bound is used when auditing whether a proposed first-passage localization box
+can fit inside the frozen `epsBW` geometry. -/
+theorem sep_const_lt_two_hundred_thirty_four :
+    (1 / 10 : ℝ) * Real.log (1 / (TaoCollatz.epsBW : ℝ)) < 234 := by
+  have heps : (TaoCollatz.epsBW : ℝ) = 1 / 10 ^ 1000 := by
+    norm_num [TaoCollatz.epsBW]
+  have hone : (1 : ℝ) / (TaoCollatz.epsBW : ℝ) = 10 ^ 1000 := by
+    rw [heps]
+    norm_num
+  have hp : (10 : ℝ) ^ (3 : ℕ) < (2 : ℝ) ^ (10 : ℕ) := by norm_num
+  have hlog := Real.strictMonoOn_log (by positivity : (0 : ℝ) < (10 : ℝ) ^ (3 : ℕ))
+    (by positivity : (0 : ℝ) < (2 : ℝ) ^ (10 : ℕ)) hp
+  rw [Real.log_pow, Real.log_pow] at hlog
+  rw [hone, Real.log_pow]
+  push_cast at hlog ⊢
+  nlinarith [Real.log_two_lt_d9]
+
 /-- The uniform slope margin behind the tilted versions of Tao's Case 2 and
 Case 3.  The rational bound `log 3 / log 2 ≤ 8/5` comes from `3^5 ≤ 2^8`;
 therefore `p log₂ 3 ≤ 24/25 < 1` throughout the campaign window. -/

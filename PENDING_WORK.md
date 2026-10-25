@@ -1897,3 +1897,44 @@ Case 2) and assemble `QP_black_edge_case2`.
 identity `1/(1-H)=1+qz³/(1-P)` and the closed Pascal renewal coefficients
 `(p/2)(1-(1-2p)^(u-1))`. Then port the deterministic localization kernel with
 `B=300` (candidate `Y=200`, `X=82`) and assemble the tilted white-exit lemma.
+
+### Grind lap 18 (2026-10-25) — JUDGE-FLAG: the proposed vertical localization route is false at `p=1/5` 🚨
+
+- Added and kernel-checked `fpDistP_zero`: at height budget zero the recursive
+  first-passage law is definitionally the one-step `holdP` law.
+- Added and kernel-checked `sep_const_lt_two_hundred_thirty_four`:
+  `(1/10)·log(1/epsBW) < 234`.  Thus any Euclidean localization box satisfying
+  `X²+Y² < sep²` necessarily has the natural radius `Y ≤ 233`, even before
+  paying for a positive transverse radius `X`.
+- Tested the handoff's proposed sharp-renewal route at the endpoint `p=1/5`
+  by exact rational coefficient arithmetic.  Here `q=8/125`,
+  `P_b=(b-1)/25·(4/5)^(b-2)`, and the holding-height PGF identity
+  `H=qz³/(1-P+qz³)` gives the coefficient recurrence
+
+  ```text
+  h_y = (if y=3 then q else 0)
+        + Σ_{2≤b≤y, b≠3} P_b h_{y-b}.
+  ```
+
+  Python `fractions.Fraction` evaluation of this finite recurrence gives
+
+  ```text
+  Σ_{y=234}^{400} h_y = 0.14693447040571847… > 1/8.
+  ```
+
+  The comparison is exact (the reduced numerator of `sum - 1/8` is positive),
+  not Monte Carlo or floating-point evidence.  Since `fpDistP (1/5) 0 = holdP
+  (1/5)`, every vertical bad event with `Y ≤ 233` already has mass `>1/8` at
+  `s=0`.  In particular the suggested `Y=200`, and indeed every `Y` capable of
+  fitting inside the frozen Lemma-7.4 separation, cannot supply even the whole
+  `1/8` localization budget (let alone the intended `1/16` vertical half).
+
+**JUDGE-FLAG:** directive step 3's current Case-2 route cannot be completed by
+the proposed `vertical tail + transverse tail + Euclidean triangle separation`
+union bound, uniformly on `[1/5,3/5]`.  The failure is quantitative and occurs
+at the frozen target's endpoint `p=1/5`; formalizing the Pascal renewal
+coefficient identity cannot repair it.  An operator route decision is needed:
+either authorize a new white-exit geometry that uses the strongly negative
+transverse displacement of these tall endpoints (rather than bounding vertical
+overshoot alone), or revise the campaign window/statement.  Do not continue the
+`Y≈200` vertical-tail port.
