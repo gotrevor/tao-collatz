@@ -68,6 +68,13 @@ You write the PROOFS, never these statements.
 - **Legibility matters** — named lemmas, docstrings that say which paper step a lemma
   generalizes and how `p` enters.  No copy-paste sprawl where a `p`-general lemma would do.
 
+**Operator addendum (2026-10-25 evening) — an independent audit of `SEC7P-PLAN.md` §1 against `tao.txt`; it outranks the plan where they differ:**
+
+- **A fourth slope site.**  Lemma 7.9 (`tao.txt` line 2652, "by repeating the proof of (7.51)") uses `log 2 − (p/2)·log 9 > 0` again, at **every** depth `s`, not only `s ≤ m/log² m`.  The fix is the same one, `p·log₂ 3 < 1`.
+- **`t₂` changes Case 3's exponents.**  Tao's `0.9` produces the factor `10^A` in (7.55), so (7.56) needs probability `≤ 10^{−A−2}`.  At threshold `t₂` the factor is `(1−t₂)^{−A}` (`50^A` at `t₂ = 0.98`), so every `10^{−A−k}` target in `Case3` / `ManyTriangles` becomes `(1−t₂)^{A+k}`.  The p = ½ library already repairs a related slip in the paper (Tao's `E*` bound `A²·4^{−A}` does not beat `10^{−A}`) with `A' = 2A + A₀` (`Sec7/Case3.lean`, `estar_scaled_numeric_at`, base `16 > 10`).  At `p` you need `4^c > 1/(1−t₂)`: `c = 3` for `t₂ = 0.98` (`64 > 50`), or take `t₂ = 0.97`.
+- **Citation fix.**  The holding time is Tao (7.25)–(7.30), not (7.20)–(7.22), which are Lemma 7.4 geometry.  (7.30)'s `< 4/3` becomes `< 1/(1−q)`.
+- **The tail constants are worst at `p = 1/5`, not at the top.**  Re-derive the `1/400` atoms, `|λ| ≤ 1/50` and the Chernoff `4λ₁ + 16λ₂ + 1000|λ|²` there.  The largest admissible diagonal tilt at `p = 1/5` is about `0.0057`, so `1/1000` works but is tight (`HoldTail` ratio `0.9468` against `19/20`).
+
 ## 🔒 Hard rails (the differ adjudicates)
 
 - **FROZEN**: every pin `tools/tao_stmt_diff.py` watches — the 39 summit pins and the 7
