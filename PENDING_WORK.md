@@ -1641,3 +1641,20 @@ only after that uniform tail gate is green.
 `QP` over `holdP`, prove its boundary/nonnegativity/`≤1` API, then copy-generalize
 `Monotone` and `Unroll`.  Reuse `holdP_exponential_tail` wherever the original path calls
 the fixed-law tail machinery.
+
+### Review lap 6 (2026-10-25) — window-uniform Proposition 7.8 Case 1 landed ✅
+
+- Re-ran the calibration gate and statement differ before work: the half-Pascal theorem
+  remains trust-base-clean (believed clean, judge to verify), and the 46 watched
+  declarations remain character-identical to plant.
+- Added the exact general tail `geomP_tail` and the reusable real-mass API for `geomP`.
+- Confirmed the route-decisive inequality `q(p) ≥ 8/125`, hence
+  `1-q(p) ≤ 117/125`, and rebuilt Tao's full three-region holding-weight estimate with
+  explicit cutoffs independent of `p`.
+- Proved `QP_white_case1`: the white-start branch (7.41)--(7.43) of Proposition 7.8
+  now holds uniformly on `[1/5,3/5]`. No new sorry or route trigger; Sec7P remains
+  **1 sorry + 0 orange nodes**.
+
+**Next:** define `holdSumP` and use uniform lower bounds for the four aperiodicity atoms
+to instantiate the existing p-free circle-method engine. This is the entry to the
+window-uniform local-limit / first-passage localization chain.

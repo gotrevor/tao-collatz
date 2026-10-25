@@ -79,6 +79,50 @@ theorem geomP_mem_support (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
     simpa only [ENNReal.toReal_zero] using hreal
   linarith
 
+/-- The real masses of `Geom(p)` sum to one. -/
+theorem geomP_tsum_toReal (p : ℝ) (hp0 : 0 < p) (hp1 : p ≤ 1) :
+    ∑' a : ℕ, (geomP p hp0 hp1 a).toReal = 1 := by
+  rw [← ENNReal.tsum_toReal_eq (fun a => (geomP p hp0 hp1).apply_ne_top a),
+    (geomP p hp0 hp1).tsum_coe, ENNReal.toReal_one]
+
+/-- The real mass function of `Geom(p)` is summable. -/
+theorem geomP_summable_toReal (p : ℝ) (hp0 : 0 < p) (hp1 : p ≤ 1) :
+    Summable fun a : ℕ => (geomP p hp0 hp1 a).toReal :=
+  ENNReal.summable_toReal (geomP p hp0 hp1).tsum_coe_ne_top
+
+/-- Exact tail of the positive geometric law: the mass strictly beyond `t` is
+`(1-p)^t`.  This is the general-parameter counterpart of `geomQuarter_tail`. -/
+theorem geomP_tail (p : ℝ) (hp0 : 0 < p) (hp1 : p ≤ 1) (t : ℕ) :
+    ∑' a : ℕ, (if t < a then (geomP p hp0 hp1 a).toReal else 0) = (1 - p) ^ t := by
+  have hinj : Function.Injective (fun i : ℕ => t + 1 + i) := add_right_injective (t + 1)
+  have hzero : ∀ a ∉ Set.range (fun i : ℕ => t + 1 + i),
+      (if t < a then (geomP p hp0 hp1 a).toReal else 0) = 0 := by
+    intro a ha
+    have hlt : ¬ t < a := fun h =>
+      ha ⟨a - (t + 1), by show t + 1 + (a - (t + 1)) = a; omega⟩
+    rw [if_neg hlt]
+  have heq : ((fun a => if t < a then (geomP p hp0 hp1 a).toReal else 0) ∘
+        (fun i : ℕ => t + 1 + i)) =
+      fun i : ℕ => (p * (1 - p) ^ t) * (1 - p) ^ i := by
+    funext i
+    simp only [Function.comp_apply]
+    rw [if_pos (by omega : t < t + 1 + i), geomP_toReal,
+      if_neg (by omega : ¬ t + 1 + i = 0),
+      show t + 1 + i - 1 = t + i by omega, pow_add]
+    ring
+  have hgeo := hasSum_geometric_of_lt_one (r := 1 - p)
+    (sub_nonneg.mpr hp1) (sub_lt_self 1 hp0)
+  have hcomp : HasSum (((fun a => if t < a then
+      (geomP p hp0 hp1 a).toReal else 0) ∘ (fun i : ℕ => t + 1 + i)))
+      ((1 - p) ^ t) := by
+    rw [heq]
+    have h := hgeo.mul_left (p * (1 - p) ^ t)
+    have hval : p * (1 - p) ^ t * (1 - (1 - p))⁻¹ = (1 - p) ^ t := by
+      field_simp [hp0.ne']
+      ring
+    rwa [hval] at h
+  exact ((hinj.hasSum_iff hzero).mp hcomp).tsum_eq
+
 /-- Real `Pascal(p)` masses (the sum of two positive geometric variables) sum to one. -/
 theorem pascalP_real_hasSum (p : ℝ) (hp0 : 0 < p) (hp1 : p ≤ 1) :
     HasSum (fun b : ℕ => if b < 2 then 0
