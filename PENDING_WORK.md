@@ -1762,3 +1762,24 @@ first-passage bound using the uniform one-step tail to finish Lemma 7.7@p.
 with `renewalMassP_bound_window`, `holdP_step_bound_window`, and the existing
 p-free `conv_Gweight_exp` / `Gweight_shift` / `sum_sqrt_exp_le_explicitC`
 lemmas to finish `fpDistP_location_bound` (Lemma 7.7@p).
+
+### Grind lap 12 (2026-10-25) — tilted Lemma 7.7 + column marginal landed ✅
+
+- Proved `fpDistP_location_bound_core`. The real horizontal mean is moved to
+  the integer endpoint at uniform cost `exp(16γ)`, and the vertical mean is
+  absorbed at cost `exp(200γ)`; the p-free convolution, shift, and square-root
+  summation engines then close the last-step assembly at center `j-(p/2)s`.
+- Instantiated the core on the campaign window to prove
+  `fpDistP_location_bound_explicitC` and the constants-before-`p`
+  `fpDistP_location_bound`.
+- Proved the height-collapse chain `fpDistP_col_le_core` →
+  `fpDistP_col_le_explicitC` → `fpDistP_col_le`, giving the uniform column
+  Gaussian needed by BlackEdge and ManyTriangles.
+- All six new headline/core declarations have exactly the trusted three
+  axioms. No new proof debt: **1 sorry + 0 orange nodes**; the sole sorry is
+  still the mandated-LAST final pin. Frozen declarations remain 46/46.
+
+**Next:** begin `Sec7P/BlackEdge.lean` bottom-up from the X6 consumers. Replace
+the fixed `s/4` center by `(p/2)s`, prove one reusable uniform slope-margin
+lemma for `(p/2) log 9 < log 2`, and port the first-coordinate MGF / edge-weight
+Case-2 package before entering ManyTriangles.
