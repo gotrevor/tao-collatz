@@ -1564,7 +1564,7 @@ the pin LAST (sorry + warningAsError shield in one commit).
 `JUDGE-FLAG:` lines for this campaign go here too.*
 
 - [x] **Calibration gate** — `pascalDamping_half_decay` from the proved §7 via `Sec7P/Bridge.lean`
-- [ ] **p-probability layer** — `geomP`/`pascalP`/`pascalNe3P`/`holdP`, means, aperiodicity, tails (window-uniform)
+- [x] **p-probability layer** — `geomP`/`pascalP`/`pascalNe3P`/`holdP`, means, aperiodicity, tails (window-uniform)
 - [ ] **Prop 7.3 at `Pascal(p)`** — plan §3 rows 4–9
 - [ ] **Assembly + discharge** of `pascal_damping_decay` (LAST)
 
@@ -1621,3 +1621,23 @@ functions now exposed by `pascalP_eq_iidSum` and `pascalNe3P_toReal`; use
 `q(p) ≥ 8/125`, `1-p ≤ 4/5`, and the uniform conditioning normalizer to choose one fixed
 positive tilt valid for every `p ∈ [1/5,3/5]`.  Then begin the p-parametrized `Q` recursion
 only after that uniform tail gate is green.
+
+### Grind lap 4 (2026-10-25) — uniform holding-law exponential tail landed ✅
+
+- Added `Sec7P/HoldTail.lean`, completing directive step 2.  The module proves exact MGF
+  identities for `Geom(p)`, `Pascal(p)`, `Pascal(p) | b ≠ 3`, and `HoldP`, including the
+  conditioned atom-split identity needed to retain the distinguished-atom margin.
+- At the fixed positive tilt `(1/1000,1/1000)`, proved the renewal geometric-series ratio
+  is at most `19/20` uniformly for `p ∈ [1/5,3/5]`.  The quantitative inputs are
+  `q(p) ≥ 8/125`, `q(p) ≤ 36/125`, and `exp(1/1000) ≤ 1000/999`.
+- Summed the resulting series to obtain `tiltZ_holdP_le_window ≤ 6`, then applied the
+  exponential Markov argument to prove the explicit window-uniform tail
+  `holdP_exponential_tail`: mass where `R ≤ d₁ + d₂` is at most
+  `6 exp(-R/1000)` (with `d₂` represented by `Int.toNat`, equal to `d₂` on support).
+- The new headline tail theorem has exactly the trusted three axioms.  No new `sorry` was
+  introduced: Sec7P remains **1 sorry + 0 orange nodes**, with the final target still LAST.
+
+**Next:** begin directive step 3 at plan row 4: define the p-parametrized renewal recursion
+`QP` over `holdP`, prove its boundary/nonnegativity/`≤1` API, then copy-generalize
+`Monotone` and `Unroll`.  Reuse `holdP_exponential_tail` wherever the original path calls
+the fixed-law tail machinery.
