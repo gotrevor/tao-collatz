@@ -1872,3 +1872,28 @@ white-exit/`QP_black_edge_case2` port before starting ManyTriangles or Case 3.
 with `edgeWeightP_le_one` and `rpow_neg_le_edgeWeightP`. Then prove the moving-
 centre white-exit estimate for `fpDistP` (the real remaining geometric input to
 Case 2) and assemble `QP_black_edge_case2`.
+
+### Reflection lap 17 (2026-10-25) — endpoint and transverse optional stopping landed ✅
+
+- Re-ran the calibration gate first; the half-decay theorem remains
+  trust-base-clean, the sole Sec7P debt remains the mandated-LAST final pin,
+  and the watched set remains 46/46 character-identical.
+- Proved the complete law-parametric endpoint package through
+  `QP_fp_endpoint_le`, including both elementary edge-weight bounds and the
+  boundary value `1 ≤ QPm`. Commit: `1357544`.
+- Audited the fixed ManyTriangles localization route and rejected a tempting
+  renewal-series port: its `(1-M)⁻¹` factor is quantitatively incompatible
+  with the fixed Lemma-7.4 separation near `p=3/5`.
+- Proved instead the generic optional-stopping lemma
+  `fpDistP_tiltZ_le_one` and the exact deleted-atom cancellation
+  `tiltZ_holdP_le_one_of_pascalP`.
+- Instantiated them at transverse tilt `θ=1/100`, proving the uniform one-step
+  and first-passage MGF bounds and the concrete tail
+  `P(16e₁-5e₂≥300)≤1/8`. All new headline declarations have exactly
+  `[Classical.choice, Quot.sound, propext]`. Commit: `750c30d`.
+- No new debt: **1 sorry + 0 orange nodes**.
+
+**Next:** prove the vertical first-passage overshoot bound from the exact PGF
+identity `1/(1-H)=1+qz³/(1-P)` and the closed Pascal renewal coefficients
+`(p/2)(1-(1-2p)^(u-1))`. Then port the deterministic localization kernel with
+`B=300` (candidate `Y=200`, `X=82`) and assemble the tilted white-exit lemma.

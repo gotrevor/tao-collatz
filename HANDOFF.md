@@ -1,10 +1,10 @@
-# HANDOFF — tilted Case-2 edge-weight degradation closed 🌀 (grind lap, 2026-10-25)
+# HANDOFF — Case-2 endpoint + transverse localization tail landed 🌀 (reflection lap, 2026-10-25)
 
 Branch `ren/sec7p-pascal`. The calibration gate remains discharged (believed
-clean, judge to verify), directive step 2 remains closed, and the complete
-tilted analogue of Tao's (7.48)/(7.49) edge-weight estimate is now proved
-uniformly over the campaign window. The sole Sec7P proof debt remains the
-mandated-LAST `pascal_damping_decay` pin: **1 sorry + 0 orange nodes**.
+clean, judge to verify), directive step 2 remains closed, and the Case-2 port
+now has both Tao's endpoint inequality and a usable uniform transverse
+first-passage tail. The sole Sec7P proof debt remains the mandated-LAST
+`pascal_damping_decay` pin: **1 sorry + 0 orange nodes**.
 
 ## Concrete advance
 
@@ -12,18 +12,34 @@ mandated-LAST `pascal_damping_decay` pin: **1 sorry + 0 orange nodes**.
   theorem still has exactly the trusted three axioms; all 46 frozen
   declarations match the plant; the blueprint audit reports no drift or false
   green.
-- Proved `fpDistP_edgeWeight_le`. For every `A,δ>0`, it chooses one threshold
-  before `p` and bounds the tilted first-passage average of `edgeWeightP` by
-  `(1+δ)m⁻ᴬ` for all `p ∈ [1/5,3/5]` and `s ≤ m/log²m`.
-- The proof consumes the previous lap's law-parametric Fubini split and all
-  four analytic inputs. With `ε=min(δ/8,2)`, it additionally forces
-  `θ=2A/m ≤ 1/192000000` and `θ ≤ ε/32`; this gives
-  `96000000θ² ≤ θ/2` and
-  `(125/8)θ+96000000θ² ≤ ε`, so both MGF factors are at most
-  `1+ε`. The two tail terms contribute `(δ/2)m⁻ᴬ` and the same
-  quadratic slack calculation as the fixed-law proof closes the estimate.
-- No existing §7 source, frozen declaration, blueprint, or tool file changed.
-  No `sorry` was added. Proof commit: `4eb5704`.
+- Proved the law-parametric landing-weight bounds
+  `edgeWeightFor_le_one`, `rpow_neg_le_edgeWeightFor`, and
+  `edgeWeightFor_of_deep`, their `edgeWeightP` specializations, and
+  `one_le_QPm`. Used them to prove `QP_fp_endpoint_le`, the tilted form of
+  Tao's (7.46). Proof commit: `1357544`.
+- Reflection against the fixed `Sec7/ManyTriangles.lean` route found a genuine
+  quantitative trap: expanding `fpDistP` as a renewal series pays a factor
+  `(1-M)⁻¹`. Near `p=3/5` the transverse one-step MGF is about `0.986`, so that
+  prefactor forces a half-space radius too large for Lemma 7.4's fixed
+  separation. This route is now retired.
+- Added `fpDistP_tiltZ_le_one`, a generic finitized optional-stopping theorem:
+  every multiplicative weight whose `holdP` expectation is at most one has
+  first-passage expectation at most one, for every height budget.
+- Proved the exact cancellation
+  `tiltZ_holdP_le_one_of_pascalP`. The removed `b=3` atom cancels between the
+  holding MGF numerator and its geometric ratio, reducing the test to the
+  unconditioned `pascalP` MGF with no geometric loss.
+- At `θ=1/100`, proved the uniform scalar bound
+  `p·exp(3θ)+(1-p)·exp(-5θ)≤1` on `[1/5,3/5]`, then
+  `tiltZ_holdP_transverse_le_one` for the weight
+  `exp((16j-5l)/100)`.
+- Combined exact cancellation and optional stopping in
+  `fpDistP_transverse_tiltZ_le_one`, then proved the concrete Chernoff bound
+  `fpDistP_transverse_tail_le_eighth`:
+  `P(16e₁-5e₂ ≥ 300) ≤ 1/8`, uniformly before `p` and `s`. Proof commit:
+  `750c30d`.
+- No frozen declaration, existing p-free §7 source, blueprint, or tool file
+  changed. No `sorry` was added.
 
 ## Exact verification run
 
@@ -37,24 +53,36 @@ mandated-LAST `pascal_damping_decay` pin: **1 sorry + 0 orange nodes**.
   proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
   FORMALIZE-TIER GREEN
 
+lake build TaoCollatz.Sec7P.Unroll
+  Build completed successfully (3300 jobs).
+
+lake build TaoCollatz.Sec7P.HoldTail
+  Build completed successfully (3314 jobs).
+
 lake build TaoCollatz.Sec7P.BlackEdge
   Build completed successfully (3319 jobs).
 
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --target TaoCollatz.Sec7P.BlackEdge \
   --import TaoCollatz.Sec7P.BlackEdge \
-  --axioms TaoCollatz.Sec7P.fpDistP_edgeWeight_le
+  --axioms TaoCollatz.Sec7P.fpDistP_tiltZ_le_one \
+  --axioms TaoCollatz.Sec7P.tiltZ_holdP_transverse_le_one \
+  --axioms TaoCollatz.Sec7P.fpDistP_transverse_tail_le_eighth \
+  --axioms TaoCollatz.Sec7P.QP_fp_endpoint_le
   Build completed successfully (3319 jobs).
-  axioms: [Classical.choice, Quot.sound, propext]
+  all four axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --import TaoCollatz \
   --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
-  --axioms TaoCollatz.Sec7P.fpDistP_edgeWeight_le
+  --axioms TaoCollatz.Sec7P.QP_fp_endpoint_le \
+  --axioms TaoCollatz.Sec7P.fpDistP_tiltZ_le_one \
+  --axioms TaoCollatz.Sec7P.tiltZ_holdP_transverse_le_one \
+  --axioms TaoCollatz.Sec7P.fpDistP_transverse_tail_le_eighth
   Build completed successfully (8763 jobs).
   proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
-  both axiom sets: [Classical.choice, Quot.sound, propext]
+  all five axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
 pre-commit full lake build
@@ -73,31 +101,50 @@ git diff --check
 ## Campaign state
 
 `sec7p: calibration proof landed (believed clean, judge to verify); prob-layer
-3/3 closed; Prop 7.3@p modules 3/10 complete plus the BlackEdge Case-2
-edge-weight estimate complete; Sec7P sorries 1; differ 46/46 yes; blockers
-none.`
+3/3 closed; Prop 7.3@p modules 3/10 complete plus the full Case-2 analytic
+package through endpoint and transverse localization; Sec7P sorries 1; differ
+46/46 yes; blockers none.`
 
 ## Current blocker
 
-There is no route blocker. The remaining Case-2 work has split cleanly into:
+There is no route blocker. The next load-bearing lemma is the **vertical
+first-passage overshoot bound** needed to complement the transverse tail.
+The old generic `holdP_exponential_tail` at rate `1/1000` is far too weak at a
+box compatible with the fixed separation; do not spend another lap trying to
+inflate that estimate.
 
-1. a law-parametric algebraic endpoint step (`QP_fp_endpoint_le`) plus the
-   elementary `edgeWeightP ≤ 1` and `m⁻ᴬ ≤ edgeWeightP` bounds; and
-2. the moving-centre white-exit estimate for `fpDistP`.
+The reflection found the sharper algebraic route. If `P(z)` is the height PGF
+of `pascalP`, `q=2p²(1-p)`, and `H(z)` is the height PGF of `holdP`, then
 
-The second item is the substantive geometric input. The fixed-law theorem is
-proved downstream in `Sec7/ManyTriangles.lean` from localization around `s/4`.
-The tilted port must instead use the already-proved centre `(p/2)s`, uniformly
-over `[s/10,3s/10]`, while retaining the same triangle-separation and in-strip
-conclusions. No mismatch has been found; this is the next theorem to test.
+```text
+H(z) = q z³ / (1 - P(z) + q z³),
+1 / (1 - H(z)) = 1 + q z³ / (1 - P(z)).
+```
+
+Thus the positive-height `holdP` renewal density is exactly `q` times the
+`pascalP` renewal density shifted by three. Its coefficients have the closed
+form
+
+```text
+U_P(u) = (p/2) · (1 - (1 - 2p)^(u-1)),  u ≥ 2.
+```
+
+This is uniformly bounded by `p/2` for `p≤1/2` and by `p` for `p≥1/2`, and is
+the intended replacement for the lossy exponential-tail argument.
 
 ## Next highest-value attack
 
-1. Prove `edgeWeightP_le_one`, `rpow_neg_le_edgeWeightP`, and
-   `QP_fp_endpoint_le` in `Sec7P/BlackEdge.lean` by law-parametrizing the fixed
-   proofs over `holdP`/`QP`/`QPm`.
-2. Port the fixed `fpDist_white_exit_deep` kernel into a new
-   `Sec7P/ManyTriangles.lean`, replacing centre `s/4` by `(p/2)s` and choosing
-   every localization constant before `p`.
-3. Assemble `QP_black_edge_case2` from that white-exit bound and the now-green
-   `fpDistP_edgeWeight_le`; only then proceed into tilted ManyTriangles/Case 3.
+1. In a new `Sec7P/ManyTriangles.lean`, formalize the two PGF/coefficient
+   identities above and port the renewal proof of
+   `fpDist_height_tail_le_sixteenth_sharp` to obtain a useful vertical bound at
+   a radius near `Y=200` (only a positive final white-exit mass is required).
+2. Generalize the deterministic localization lemma's hard-coded `64` to a
+   transverse parameter and instantiate `B=300`. Candidate box:
+   `Y=200`, `X=82`, since `5Y+B=1300≤1312=16X` and
+   `X²+Y²=46724`. Strengthen `sep_const_gt_two_hundred` locally to separation
+   `>217` using `2^32 < 10^10` and `Real.log_two_gt_d9`; the actual separation
+   is about `230.26`.
+3. Combine vertical, transverse, and the already-proved moving-centre
+   out-of-strip tail into the tilted white-exit kernel, then assemble
+   `QP_black_edge_case2` with `QP_fp_endpoint_le` and
+   `fpDistP_edgeWeight_le`.
