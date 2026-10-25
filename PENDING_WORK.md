@@ -1658,3 +1658,21 @@ the fixed-law tail machinery.
 **Next:** define `holdSumP` and use uniform lower bounds for the four aperiodicity atoms
 to instantiate the existing p-free circle-method engine. This is the entry to the
 window-uniform local-limit / first-passage localization chain.
+
+### Grind lap 7 (2026-10-25) — p-uniform tilted center regime landed ✅
+
+- Added `holdSumP`, its iid identity, mod-`N` projection bound, and finite Fourier
+  entry in `Sec7P/Unroll.lean`.
+- Proved all four aperiodicity atoms have a common window-uniform mass floor
+  `1/4000`; this yields un-tilted characteristic decay and the center local bound.
+- Added `Sec7P/HoldLocal.lean`: the fixed positive MGF controls the whole small
+  tilt box by `6`, tilted atom masses remain at least `1/25000`, and the p-free
+  circle method gives a uniform center point-mass bound for every tilted walk.
+- No new debt: Sec7P remains **1 sorry + 0 orange nodes**; watched declarations
+  remain 46/46 identical.
+
+**Next:** prove a window-uniform second-order MGF expansion around the p-dependent
+mean `q(p)⁻¹·(1,2/p)`. The box bound `≤ 6` suffices for tilted nondegeneracy but
+not Chernoff decay after taking the `n`th power. Combine exact closed forms from
+`HoldTail` with `tiltZ_expW2_sq_le`, then assemble the full local bound and start
+the p-dependent first-passage localization.

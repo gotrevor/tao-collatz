@@ -1,42 +1,35 @@
-# HANDOFF — window-uniform Proposition 7.8 Case 1 landed 🌀 (review lap, 2026-10-25)
+# HANDOFF — uniform tilted center bound landed 🌀 (grind lap, 2026-10-25)
 
-Branch `ren/sec7p-pascal`. The calibration gate remains discharged (believed clean,
-judge to verify), directive step 2 remains closed, and directive step 3 now includes
-the complete white-start / Case-1 branch of tilted Proposition 7.8. The sole Sec7P
-proof debt is still the mandated-LAST `pascal_damping_decay` pin: **1 sorry + 0 orange
-nodes**.
-
-## Fresh-mind review
-
-- Re-ran the calibration gate before downstream work. `pascalDamping_half_decay`
-  builds with exactly `[Classical.choice, Quot.sound, propext]`, and all 46 watched
-  declarations are character-identical to plant commit `eb40bf3`.
-- Read the frozen target, the convention bridge, the tilted renewal source, and the
-  proved `p = 1/2` Case-1 source against one another. The route still reaches the
-  headline: `holdP` has first marginal `Geom(q(p))`, with
-  `q(p) = 2p²(1-p)`, and the window lemma already proves `q(p) ≥ 8/125`.
-- The previous handoff's proposed survival factor is therefore correct:
-  `1-q(p) ≤ 117/125`. No hidden dependence on `p` remains in the Case-1 cutoff,
-  and no route trigger or statement drift was found.
+Branch `ren/sec7p-pascal`. The calibration gate remains discharged (believed
+clean, judge to verify), directive step 2 remains closed, and directive step 3
+now has the complete p-uniform finite-circle-method center regime needed by
+Tao's Lemma 2.2(i). The sole Sec7P proof debt is still the mandated-LAST
+`pascal_damping_decay` pin: **1 sorry + 0 orange nodes**.
 
 ## Concrete advance
 
-- Extended `TaoCollatz/Sec7P/Prob.lean` with the reusable general geometric API:
-  - `geomP_tsum_toReal` and `geomP_summable_toReal`;
-  - `geomP_tail`, the exact identity
-    `∑_{a>t} Geom(p)(a) = (1-p)^t`.
-- Extended `TaoCollatz/Sec7P/Monotone.lean` with the first genuinely
-  window-uniform part of Proposition 7.8:
-  - `holdPSurvivalBound = 117/125` and
-    `pairThreeProb_survival_le_window`;
-  - explicit uniform cutoffs `K_geomPWindow`, `T_powGeomPWindow`, `K_holdP`,
-    `M1_holdP`, `T_holdP`, and `C_holdP`;
-  - `holdP_weight_expect_core`, `_explicitC`, and the uniform existential form,
-    reproducing Tao's three-region estimate with the tilted first marginal;
-  - `QP_white_case1_explicitC` and `QP_white_case1`, closing (7.41)--(7.43) for
-    every `p ∈ [1/5,3/5]` with `C_holdP A` chosen before `p`.
-- No `sorry` was added, no frozen declaration changed, and no read-only §7 file was
-  edited.
+- Extended `TaoCollatz/Sec7P/Unroll.lean` with the tilted sum and generic
+  circle-method entry:
+  - `holdSumP` and `holdSumP_eq_iidSum`;
+  - mod-`N` mass domination and the Fourier point-mass bound;
+  - `holdP_apply_two_toReal`, exposing cancellation of the conditioning
+    normalizer at first coordinate two.
+- Proved the compact-window nondegeneracy package:
+  - the four atoms `(1,3)`, `(2,5)`, `(2,7)`, `(2,8)` all have mass at least
+    `1/4000`, uniformly for `p ∈ [1/5,3/5]`;
+  - their mod-`N` projections yield characteristic decay with denominator
+    `8000000`;
+  - `holdSumP_apply_le_center_window` follows from the existing p-free
+    `iidSum_apply_le_center_of_decay` engine.
+- Added `TaoCollatz/Sec7P/HoldLocal.lean`, beginning plan row 5:
+  - `tiltZ_holdP_le_box_window` bounds the partition function by `6` throughout
+    `|λᵢ| ≤ 1/1000`, using positivity of both holding coordinates and the fixed
+    positive exponential moment from `HoldTail`;
+  - every one of the four atoms retains mass at least `1/25000` after tilting;
+  - `tiltHoldP_apply_le_center_window` gives the resulting p- and tilt-uniform
+    center point-mass bound via the p-free circle method.
+- Added the new module import to `TaoCollatz.lean`. No frozen declaration or
+  read-only §7 source changed, and no `sorry` was added.
 
 ## Exact verification run
 
@@ -48,15 +41,19 @@ nodes**.
   axioms: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
-lake build TaoCollatz.Sec7P.Prob
-  Build completed successfully (2498 jobs).
+lake build TaoCollatz.Sec7P.Unroll
+  Build completed successfully (3299 jobs).
+
+lake build TaoCollatz.Sec7P.HoldLocal
+  Build completed successfully (3317 jobs).
 
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --target TaoCollatz.Sec7P.Monotone \
-  --axioms TaoCollatz.Sec7P.geomP_tail \
-  --axioms TaoCollatz.Sec7P.holdP_weight_expect \
-  --axioms TaoCollatz.Sec7P.QP_white_case1
-  Build completed successfully (2614 jobs).
+  --target TaoCollatz.Sec7P.HoldLocal \
+  --import TaoCollatz.Sec7P.HoldLocal \
+  --axioms TaoCollatz.Sec7P.holdP_four_atoms_lower_window \
+  --axioms TaoCollatz.Sec7P.holdSumP_apply_le_center_window \
+  --axioms TaoCollatz.Sec7P.tiltHoldP_apply_le_center_window
+  Build completed successfully (3317 jobs).
   all three axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
@@ -66,12 +63,15 @@ lake build TaoCollatz.Sec7P.Prob
 ./tools/blueprint_audit.py
   26 nodes proved + axiom-clean; 0 orange; 0 drift; 0 false-green
 
+git-safe diff --check
+  clean
+
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
-  --axioms TaoCollatz.Sec7P.geomP_tail \
-  --axioms TaoCollatz.Sec7P.holdP_weight_expect \
-  --axioms TaoCollatz.Sec7P.QP_white_case1
-  Build completed successfully (8760 jobs).
+  --axioms TaoCollatz.Sec7P.holdP_four_atoms_lower_window \
+  --axioms TaoCollatz.Sec7P.holdSumP_apply_le_center_window \
+  --axioms TaoCollatz.Sec7P.tiltHoldP_apply_le_center_window
+  Build completed successfully (8761 jobs).
   proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
   all four axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
@@ -79,20 +79,31 @@ lake build TaoCollatz.Sec7P.Prob
 
 ## Campaign state
 
-`sec7p: calibration proof landed (believed clean, judge to verify); prob-layer 3/3
-closed; Prop 7.3@p modules 0/10 complete, with the renewal/unrolling foundation and
-the full Monotone Case-1 branch landed; Sec7P sorries 1; differ 46/46 yes; blockers
-none.`
+`sec7p: calibration proof landed (believed clean, judge to verify); prob-layer
+3/3 closed; Prop 7.3@p modules 0/10 complete, with renewal/unrolling, full
+Monotone Case 1, and the p-uniform tilted center-regime local bound landed;
+Sec7P sorries 1; differ 46/46 yes; blockers none.`
+
+## Current blocker
+
+The center-regime circle method is no longer the blocker. The next load-bearing
+gap is the **uniform second-order MGF estimate around the p-dependent mean**
+`q(p)⁻¹ · (1, 2/p)`. The existing bound `tiltZ_holdP_le_box_window ≤ 6` is enough
+to preserve tilted atom mass, but is too coarse for Chernoff localization because
+raising it to the `n`th power loses exponentially. A quadratic expansion with a
+constant chosen before `p` is required.
 
 ## Next highest-value attack
 
-Continue directive step 3 at the local-limit seam:
-
-1. Add `holdSumP p := iidSum (holdP p)`, its `iidSum` identity, and the generic
-   projection/circle-method entry lemmas in `Sec7P/Unroll.lean`.
-2. Bound the four aperiodicity atoms `(1,3)`, `(2,5)`, `(2,7)`, `(2,8)` below
-   uniformly on `[1/5,3/5]`; feed those minima to the existing p-free
-   `iidSum_apply_le_center_of_decay` engine.
-3. Combine the resulting uniform center bound with `holdP_exponential_tail` to start
-   the tilted `HoldLocal` package and then the first-passage localization row.
-4. Keep `pascal_damping_decay` untouched until final assembly.
+1. Add `Sec7P/Mgf.lean` (or the corresponding named section of `HoldLocal`) with
+   one-dimensional uniform Taylor bounds for the exact closed forms already in
+   `HoldTail`: first coordinate mean `q(p)⁻¹`, second coordinate mean
+   `2/(p q(p))`, and one fixed quadratic remainder constant on
+   `p ∈ [1/5,3/5]`, `|λ| ≤ 1/1000` (shrink the box if the arithmetic demands it).
+2. Combine them through `tiltZ_expW2_sq_le` to prove
+   `Z_p(λ) ≤ exp(μ_p·λ + K|λ|²)` with `K` independent of `p`.
+3. Feed that estimate and `tiltHoldP_apply_le_center_window` through the existing
+   tilting identity to obtain the full p-uniform analogue of
+   `holdSum_apply_le_chernoff` / `hold_local_bound`.
+4. Only then begin `FpLocationP`, centered at the slope `j ≈ s·p/2`; keep
+   `pascal_damping_decay` untouched until final assembly.

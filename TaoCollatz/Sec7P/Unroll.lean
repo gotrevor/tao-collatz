@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Trevor Morris
 -/
 import TaoCollatz.Sec7P.Monotone
+import TaoCollatz.Sec7.Unroll
 
 /-!
 # First-passage unrolling for the tilted renewal walk
@@ -194,5 +195,161 @@ theorem QP_le_fpDistP_expect (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
           refine le_trans hIH (le_of_eq (tsum_congr fun e => ?_))
           rw [show (j + d.1) + e.1 = j + (d.1 + e.1) from by omega,
             show (l + d.2) + e.2 = l + (d.2 + e.2) from by ring]
+
+/-! ### Uniform circle-method entry -/
+
+/-- The law of the sum of `n` iid tilted holding increments.  This is the
+`Pascal(p)` counterpart of `Sec7.holdSum`. -/
+noncomputable def holdSumP (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (n : ℕ) : PMF (ℕ × ℤ) :=
+  ((holdP p hp0 hp1).iid n).map fun v => (∑ i, (v i).1, ∑ i, (v i).2)
+
+/-- `holdSumP` is the generic iid sum in the additive monoid `ℕ × ℤ`. -/
+theorem holdSumP_eq_iidSum (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1) (n : ℕ) :
+    holdSumP p hp0 hp1 n = TaoCollatz.iidSum (holdP p hp0 hp1) n := by
+  rw [holdSumP, TaoCollatz.iidSum]
+  have hf : (fun v : Fin n → ℕ × ℤ =>
+      ((∑ i, (v i).1, ∑ i, (v i).2) : ℕ × ℤ)) =
+        fun v : Fin n → ℕ × ℤ => ∑ i, v i := by
+    funext v
+    refine Prod.ext ?_ ?_
+    · rw [Prod.fst_sum]
+    · rw [Prod.snd_sum]
+  rw [hf]
+
+/-- Reduction modulo `N` can only merge masses of the tilted holding sum. -/
+theorem holdSumP_le_modPair (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (n N : ℕ) (v : ℕ × ℤ) :
+    holdSumP p hp0 hp1 n v ≤
+      TaoCollatz.iidSum ((holdP p hp0 hp1).map (TaoCollatz.modPair N)) n
+        (TaoCollatz.modPair N v) := by
+  rw [holdSumP_eq_iidSum]
+  calc
+    TaoCollatz.iidSum (holdP p hp0 hp1) n v ≤
+        ((TaoCollatz.iidSum (holdP p hp0 hp1) n).map (TaoCollatz.modPair N))
+          (TaoCollatz.modPair N v) := PMF.apply_le_map_apply _ _ _
+    _ = TaoCollatz.iidSum ((holdP p hp0 hp1).map (TaoCollatz.modPair N)) n
+          (TaoCollatz.modPair N v) := by
+        rw [TaoCollatz.iidSum_map (holdP p hp0 hp1) (TaoCollatz.modPair N)
+          (by simp [TaoCollatz.modPair])
+          (fun _ _ => by simp [TaoCollatz.modPair])]
+
+/-- The finite circle-method bound for the tilted holding sum. -/
+theorem holdSumP_toReal_le_charFn (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (n N : ℕ) [NeZero N] (v : ℕ × ℤ) :
+    (holdSumP p hp0 hp1 n v).toReal ≤
+      ((N : ℝ) ^ 2)⁻¹ * ∑ ξ : ZMod N × ZMod N,
+        ‖TaoCollatz.charFn ((holdP p hp0 hp1).map (TaoCollatz.modPair N)) ξ‖ ^ n := by
+  refine le_trans (ENNReal.toReal_mono
+    ((TaoCollatz.iidSum ((holdP p hp0 hp1).map (TaoCollatz.modPair N)) n).apply_ne_top _)
+    (holdSumP_le_modPair p hp0 hp1 n N v)) ?_
+  exact TaoCollatz.iidSum_apply_toReal_le
+    ((holdP p hp0 hp1).map (TaoCollatz.modPair N)) n (TaoCollatz.modPair N v)
+
+/-- At first coordinate two, conditioning away from `3` cancels the geometric
+survival factor.  This exposes the atom masses used by the circle method. -/
+theorem holdP_apply_two_toReal (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (b : ℕ) (hb3 : b ≠ 3) :
+    (holdP p hp0 hp1 (2, 3 + (b : ℤ))).toReal =
+      pairThreeProb p * (pascalP p hp0 hp1.le b).toReal := by
+  rw [holdP_apply_two, ENNReal.toReal_mul, geomP_toReal,
+    pascalNe3P_toReal, if_neg hb3]
+  simp only [OfNat.ofNat, reduceCtorEq, ↓reduceIte, Nat.reduceSub, pow_one]
+  have hne : 1 - pairThreeProb p ≠ 0 := by
+    have := pairThreeProb_lt_one p hp0 hp1
+    linarith
+  calc
+    pairThreeProb p * (1 - pairThreeProb p) *
+          ((1 - pairThreeProb p)⁻¹ * (pascalP p hp0 hp1.le b).toReal)
+        = pairThreeProb p * ((1 - pairThreeProb p) *
+            (1 - pairThreeProb p)⁻¹) * (pascalP p hp0 hp1.le b).toReal := by ring
+    _ = pairThreeProb p * (pascalP p hp0 hp1.le b).toReal := by
+      rw [mul_inv_cancel₀ hne, mul_one]
+
+/-- All four aperiodicity atoms retain a common mass `1/4000` throughout the
+campaign window.  The deliberately coarse rational floor is independent of `p`. -/
+theorem holdP_four_atoms_lower_window {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) :
+    let hp0' : 0 < p := by linarith
+    let hp1' : p < 1 := by linarith
+    (1 / 4000 : ℝ) ≤ (holdP p hp0' hp1' (1, 3)).toReal ∧
+    (1 / 4000 : ℝ) ≤ (holdP p hp0' hp1' (2, 5)).toReal ∧
+    (1 / 4000 : ℝ) ≤ (holdP p hp0' hp1' (2, 7)).toReal ∧
+    (1 / 4000 : ℝ) ≤ (holdP p hp0' hp1' (2, 8)).toReal := by
+  let hp0' : 0 < p := by linarith
+  let hp1' : p < 1 := by linarith
+  dsimp only
+  have hp_nonneg : 0 ≤ p := hp0'.le
+  have hpm : 0 ≤ p - 1 / 5 := sub_nonneg.mpr hp0
+  have hsp : 0 ≤ 3 / 5 - p := sub_nonneg.mpr hp1
+  have hqlo := (pairThreeProb_mem_window hp0 hp1).1
+  have hp2lo : (1 / 5 : ℝ) ^ 2 ≤ p ^ 2 := by nlinarith
+  have hp4lo : (1 / 5 : ℝ) ^ 4 ≤ p ^ 4 := by nlinarith [sq_nonneg (p ^ 2 - (1 / 5 : ℝ) ^ 2)]
+  have hp40 : 0 ≤ p ^ 4 := pow_nonneg hp_nonneg 4
+  have hone : 2 / 5 ≤ 1 - p := by linarith
+  have hone0 : 0 ≤ 1 - p := by linarith
+  rw [holdP_apply_one_three]
+  constructor
+  · linarith
+  constructor
+  · rw [show (5 : ℤ) = 3 + (2 : ℕ) from by norm_num,
+      holdP_apply_two_toReal p hp0' hp1' 2 (by norm_num), pascalP_toReal]
+    norm_num [pairThreeProb]
+    nlinarith [mul_nonneg hp40 hone0,
+      mul_le_mul_of_nonneg_left hone (sq_nonneg (p ^ 2))]
+  constructor
+  · rw [show (7 : ℤ) = 3 + (4 : ℕ) from by norm_num,
+      holdP_apply_two_toReal p hp0' hp1' 4 (by norm_num), pascalP_toReal]
+    norm_num [pairThreeProb]
+    nlinarith [mul_nonneg hp40 (pow_nonneg hone0 3),
+      pow_le_pow_left₀ (by norm_num : (0 : ℝ) ≤ 2 / 5) hone 3]
+  · rw [show (8 : ℤ) = 3 + (5 : ℕ) from by norm_num,
+      holdP_apply_two_toReal p hp0' hp1' 5 (by norm_num), pascalP_toReal]
+    norm_num [pairThreeProb]
+    nlinarith [mul_nonneg hp40 (pow_nonneg hone0 4),
+      pow_le_pow_left₀ (by norm_num : (0 : ℝ) ≤ 2 / 5) hone 4]
+
+/-- Uniform quadratic characteristic-function decay for the tilted holding law.
+This is the p-parametrized nondegeneracy input to Tao's Lemma 2.2(i). -/
+theorem charFn_holdP_decay_window {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5)
+    {N : ℕ} [NeZero N] (hN : 4 ≤ N) (ξ : ZMod N × ZMod N) :
+    let hp0' : 0 < p := by linarith
+    let hp1' : p < 1 := by linarith
+    ‖TaoCollatz.charFn
+        ((holdP p hp0' hp1').map (TaoCollatz.modPair N)) ξ‖ ^ 2 ≤
+      1 - (((TaoCollatz.nd ξ.1 : ℝ) / N) ^ 2 +
+        ((TaoCollatz.nd ξ.2 : ℝ) / N) ^ 2) / 8000000 := by
+  let hp0' : 0 < p := by linarith
+  let hp1' : p < 1 := by linarith
+  dsimp only
+  set r := (holdP p hp0' hp1').map (TaoCollatz.modPair N) with hr
+  have hmass : ∀ d : ℕ × ℤ,
+      (holdP p hp0' hp1' d).toReal ≤ (r (TaoCollatz.modPair N d)).toReal := fun d =>
+    ENNReal.toReal_mono (r.apply_ne_top _)
+      (PMF.apply_le_map_apply (holdP p hp0' hp1') (TaoCollatz.modPair N) d)
+  obtain ⟨h13, h25, h27, h28⟩ := holdP_four_atoms_lower_window hp0 hp1
+  have h := TaoCollatz.charFn_decay_of_atoms hN r (μ := (1 / 4000 : ℝ))
+    (by norm_num)
+    (h13.trans (hmass (1, 3))) (h25.trans (hmass (2, 5)))
+    (h27.trans (hmass (2, 7))) (h28.trans (hmass (2, 8))) ξ
+  simpa only [one_div, one_mul,
+    show (8000000 : ℝ)⁻¹ = 2 * (4000 : ℝ)⁻¹ ^ 2 by norm_num,
+    div_eq_mul_inv, mul_comm] using h
+
+/-- Uniform center-regime local bound for sums of tilted holding increments. -/
+theorem holdSumP_apply_le_center_window {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) (n : ℕ) (v : ℕ × ℤ) :
+    let hp0' : 0 < p := by linarith
+    let hp1' : p < 1 := by linarith
+    (holdSumP p hp0' hp1' n v).toReal ≤
+      (32 * 8000000 : ℝ) ^ 2 / (1 + (n : ℝ)) := by
+  let hp0' : 0 < p := by linarith
+  let hp1' : p < 1 := by linarith
+  dsimp only
+  rw [holdSumP_eq_iidSum]
+  exact TaoCollatz.iidSum_apply_le_center_of_decay
+    (holdP p hp0' hp1') (c := 8000000) (by norm_num)
+    (by intro N _ hN ξ; exact charFn_holdP_decay_window hp0 hp1 hN ξ) n v
 
 end TaoCollatz.Sec7P
