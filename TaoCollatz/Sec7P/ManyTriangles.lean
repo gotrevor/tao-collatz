@@ -19,6 +19,156 @@ namespace TaoCollatz.Sec7P
 
 open scoped ENNReal
 
+/-! ### The post-first-passage tilted walk -/
+
+/-- The tilted counterpart of Tao's `fpDistPlus`: first pass the height budget
+with law `fpDistP`, then append `k` independent `holdP` increments.  This is the
+law of the endpoint used by Lemma 7.10 after `k` further renewal steps. -/
+noncomputable def fpDistPlusP (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (s k : ℕ) : PMF (ℕ × ℤ) :=
+  (fpDistP p hp0 hp1 s).bind fun e =>
+    (holdSumP p hp0 hp1 k).map fun w => e + w
+
+/-- With no appended holding increments, `fpDistPlusP` is just `fpDistP`. -/
+theorem fpDistPlusP_zero (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1) (s : ℕ) :
+    fpDistPlusP p hp0 hp1 s 0 = fpDistP p hp0 hp1 s := by
+  have h : (fun e : ℕ × ℤ =>
+      (holdSumP p hp0 hp1 0).map fun w => e + w) =
+      fun e : ℕ × ℤ => PMF.pure e := by
+    funext e
+    rw [holdSumP_eq_iidSum, TaoCollatz.iidSum_zero, PMF.pure_map, add_zero]
+  rw [fpDistPlusP, h, PMF.bind_pure]
+
+/-- The real masses of `fpDistPlusP` sum to one. -/
+theorem fpDistPlusP_tsum_toReal (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (s k : ℕ) :
+    ∑' e : ℕ × ℤ, (fpDistPlusP p hp0 hp1 s k e).toReal = 1 := by
+  rw [← ENNReal.tsum_toReal_eq (fun e => PMF.apply_ne_top _ _),
+    (fpDistPlusP p hp0 hp1 s k).tsum_coe, ENNReal.toReal_one]
+
+/-- Any event under `fpDistPlusP` has real mass at most one. -/
+theorem fpDistPlusP_indicator_sum_le_one (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (s k : ℕ) (S : Set (ℕ × ℤ)) (f : ℕ × ℤ → ℕ × ℤ) :
+    ∑' e : ℕ × ℤ, (fpDistPlusP p hp0 hp1 s k e).toReal *
+      Set.indicator S 1 (f e) ≤ 1 := by
+  have hsum : Summable (fun e : ℕ × ℤ =>
+      (fpDistPlusP p hp0 hp1 s k e).toReal) :=
+    ENNReal.summable_toReal (by
+      rw [(fpDistPlusP p hp0 hp1 s k).tsum_coe]
+      exact ENNReal.one_ne_top)
+  have hle : ∀ e : ℕ × ℤ,
+      (fpDistPlusP p hp0 hp1 s k e).toReal * Set.indicator S 1 (f e)
+        ≤ (fpDistPlusP p hp0 hp1 s k e).toReal := by
+    intro e
+    refine mul_le_of_le_one_right ENNReal.toReal_nonneg ?_
+    by_cases h : f e ∈ S
+    · simp [Set.indicator_of_mem h]
+    · simp [Set.indicator_of_notMem h]
+  have hsumL : Summable (fun e : ℕ × ℤ =>
+      (fpDistPlusP p hp0 hp1 s k e).toReal * Set.indicator S 1 (f e)) :=
+    Summable.of_nonneg_of_le
+      (fun e => mul_nonneg ENNReal.toReal_nonneg
+        (Set.indicator_nonneg (fun _ _ => zero_le_one) _)) hle hsum
+  calc
+    ∑' e : ℕ × ℤ, (fpDistPlusP p hp0 hp1 s k e).toReal *
+        Set.indicator S 1 (f e)
+        ≤ ∑' e : ℕ × ℤ, (fpDistPlusP p hp0 hp1 s k e).toReal :=
+          Summable.tsum_le_tsum hle hsumL hsum
+    _ = 1 := fpDistPlusP_tsum_toReal p hp0 hp1 s k
+
+/-! ### Uniform tails for the appended tilted holding walk -/
+
+/-- Markov's inequality for a half-space of `holdSumP`, with an arbitrary
+finite exponential-moment bound.  Keeping this lemma separate lets all later
+Case-3 tails use the same window-uniform moment `tiltZ_holdP_le_window`. -/
+theorem holdSumP_halfspace_le_of_mgf {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1)
+    {l1 l2 M : ℝ}
+    (hZle : TaoCollatz.tiltZ (holdP p hp0 hp1)
+      (TaoCollatz.expW2 l1 l2) ≤ ENNReal.ofReal M)
+    (k : ℕ) (cond : ℕ × ℤ → Prop) [DecidablePred cond] (a : ℝ)
+    (hcond : ∀ d : ℕ × ℤ, cond d → a ≤ l1 * d.1 + l2 * d.2) :
+    (∑' d : ℕ × ℤ, if cond d then holdSumP p hp0 hp1 k d else 0)
+      ≤ ENNReal.ofReal (Real.exp (-a)) * ENNReal.ofReal M ^ k := by
+  rw [holdSumP_eq_iidSum]
+  have hZ0 := tiltZ_holdP_ne_zero p hp0 hp1 l1 l2
+  have hZt : TaoCollatz.tiltZ (holdP p hp0 hp1)
+      (TaoCollatz.expW2 l1 l2) ≠ ∞ :=
+    ne_top_of_le_ne_top ENNReal.ofReal_ne_top hZle
+  have hM :
+      (∑' d : ℕ × ℤ,
+          if cond d then TaoCollatz.iidSum (holdP p hp0 hp1) k d else 0)
+        ≤ ENNReal.ofReal (Real.exp (-a)) *
+          TaoCollatz.tiltZ (holdP p hp0 hp1) (TaoCollatz.expW2 l1 l2) ^ k := by
+    rw [← TaoCollatz.tiltZ_iidSum (holdP p hp0 hp1)
+      (TaoCollatz.expW2_zero l1 l2) (TaoCollatz.expW2_add l1 l2)
+      hZ0 hZt k, TaoCollatz.tiltZ, ← ENNReal.tsum_mul_left]
+    refine ENNReal.tsum_le_tsum fun d => ?_
+    split_ifs with h
+    · have hw : ENNReal.ofReal (Real.exp a) ≤ TaoCollatz.expW2 l1 l2 d := by
+        rw [TaoCollatz.expW2]
+        exact ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr (hcond d h))
+      calc
+        TaoCollatz.iidSum (holdP p hp0 hp1) k d =
+            ENNReal.ofReal (Real.exp (-a)) *
+              (ENNReal.ofReal (Real.exp a) *
+                TaoCollatz.iidSum (holdP p hp0 hp1) k d) := by
+              rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.exp_pos _).le,
+                ← Real.exp_add, neg_add_cancel, Real.exp_zero,
+                ENNReal.ofReal_one, one_mul]
+        _ ≤ ENNReal.ofReal (Real.exp (-a)) *
+              (TaoCollatz.iidSum (holdP p hp0 hp1) k d *
+                TaoCollatz.expW2 l1 l2 d) := by
+              rw [mul_comm (ENNReal.ofReal (Real.exp a))]
+              gcongr
+    · exact bot_le
+  refine hM.trans ?_
+  gcongr
+
+/-- The second-coordinate tail of `k` tilted holding increments.  The constant
+and rate are uniform on `p ∈ [1/5,3/5]`; no centering estimate is needed. -/
+theorem holdSumP_snd_tail_window {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) (k : ℕ) (y : ℝ) :
+    (∑' d : ℕ × ℤ,
+      if y ≤ (d.2 : ℝ) then holdSumP p (by linarith) (by linarith) k d else 0)
+      ≤ ENNReal.ofReal ((6 : ℝ) ^ k * Real.exp (-y / 1000)) := by
+  let hp0' : 0 < p := by linarith
+  let hp1' : p < 1 := by linarith
+  have h := holdSumP_halfspace_le_of_mgf hp0' hp1'
+    (tiltZ_holdP_le_box_window (p := p) (l1 := 0) (l2 := 1 / 1000)
+      hp0 hp1 (by norm_num) (by norm_num))
+    k (fun d => y ≤ (d.2 : ℝ))
+    (y / 1000) (fun d hd => by
+      have : y / 1000 ≤ (d.2 : ℝ) / 1000 := by linarith
+      norm_num
+      linarith)
+  refine h.trans_eq ?_
+  rw [← ENNReal.ofReal_pow (by norm_num : (0 : ℝ) ≤ 6),
+    ← ENNReal.ofReal_mul (Real.exp_pos _).le]
+  congr 1
+  ring
+
+/-- The first-coordinate counterpart of `holdSumP_snd_tail_window`. -/
+theorem holdSumP_fst_tail_window {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5) (k : ℕ) (y : ℝ) :
+    (∑' d : ℕ × ℤ,
+      if y ≤ (d.1 : ℝ) then holdSumP p (by linarith) (by linarith) k d else 0)
+      ≤ ENNReal.ofReal ((6 : ℝ) ^ k * Real.exp (-y / 1000)) := by
+  let hp0' : 0 < p := by linarith
+  let hp1' : p < 1 := by linarith
+  have h := holdSumP_halfspace_le_of_mgf hp0' hp1'
+    (tiltZ_holdP_le_box_window (p := p) (l1 := 1 / 1000) (l2 := 0)
+      hp0 hp1 (by norm_num) (by norm_num))
+    k (fun d => y ≤ (d.1 : ℝ))
+    (y / 1000) (fun d hd => by
+      have : y / 1000 ≤ (d.1 : ℝ) / 1000 := by linarith
+      norm_num
+      linarith)
+  refine h.trans_eq ?_
+  rw [← ENNReal.ofReal_pow (by norm_num : (0 : ℝ) ≤ 6),
+    ← ENNReal.ofReal_mul (Real.exp_pos _).le]
+  congr 1
+  ring
+
 /-- Phase points beyond the right edge of the half strip. -/
 def outStripSetP (n : ℕ) : Set (ℕ × ℤ) := {q : ℕ × ℤ | n / 2 < q.1}
 
