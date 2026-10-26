@@ -2003,3 +2003,22 @@ the finer-scale sibling) so `QP_fp_endpoint_le` can run at
 `whiteSetP`/`whiteStripP` and `epsP`; then port the algebraic
 `Q_black_edge_case2` assembly using `fpDistP_white_exit` and the already-proved
 `fpDistP_edgeWeight_le`.
+
+### Grind lap 22 (2026-10-26) — tilted Case-2 contraction landed ✅
+
+- Added the arbitrary-set depth supremum `QPmFor` and its admissible-point,
+  inverted, and nonnegativity interface. Added `stripFor` and the completely
+  law/white-set-parametric endpoint recurrence `QP_fp_endpoint_le_for`.
+- Added `Sec7P/BlackEdgeQ.lean` and proved `QP_black_edge_case2`, the full
+  (7.46)–(7.51) assembly at `whiteSetP`, `whiteStripP`, and `epsP`, uniformly
+  on the Pascal window. The white-exit mass and both thresholds are selected
+  before `p`.
+- The new generic endpoint and Case-2 theorems report exactly the trusted three
+  axioms. No new proof debt: **1 sorry + 0 orange nodes**; the sole sorry is
+  still the mandated-LAST target. Frozen declarations remain 46/46.
+
+**Next:** port the deep `ManyTriangles` encounter stack at
+`TriangleFamilyP`/`fpDistP`/`epsP`, then build `Sec7P/Case3.lean` with the
+operator's `t₁=24/25`, `t₂=49/50`, `(1−t₂)^{A+k}` probability targets,
+and exponent scaling `c=3`. Case 2 is closed; do not revisit it unless a
+downstream interface exposes a real mismatch.

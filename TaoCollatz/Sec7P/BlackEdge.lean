@@ -1374,6 +1374,137 @@ theorem edgeWeightP_of_deep (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
     edgeWeightP p hp0 hp1 A m e = 1 :=
   edgeWeightFor_of_deep (holdP p hp0 hp1) A hdeep
 
+/-- The part of an arbitrary damping set lying inside the renewal strip. -/
+def stripFor (half : ℕ) (W : Set (ℕ × ℤ)) : Set (ℕ × ℤ) :=
+  {q | q.1 ≤ half ∧ q ∈ W}
+
+/-- The arbitrary-set depth supremum contains the boundary value one. -/
+theorem one_le_QPmFor (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half : ℕ) (W : Set (ℕ × ℤ)) (ε A : ℝ)
+    (hA : 0 ≤ A) (hε : 0 ≤ ε) (m : ℕ) :
+    1 ≤ QPmFor p hp0 hp1 half W ε A m := by
+  have h := le_QPmFor p hp0 hp1 half W ε A hA hε m
+    (p1 := half + 1) (l := 0) (by omega) (by omega)
+  have hw : (max (half - (half + 1)) 1 : ℕ) = 1 := by omega
+  rw [hw, QP_boundary p hp0 hp1 half W ε (half + 1) 0 (by omega)] at h
+  simpa using h
+
+/-- Arbitrary-set version of Tao's endpoint step (7.46).  It isolates the
+probability law from the geometric choice of white set, so the finer `epsP`
+Case-2 argument can reuse the same recurrence proof. -/
+theorem QP_fp_endpoint_le_for (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half : ℕ) (W : Set (ℕ × ℤ)) (ε A : ℝ)
+    (hA : 0 ≤ A) (hε : 0 ≤ ε)
+    (m : ℕ) (hm1 : 1 ≤ m) (hmhalf : m ≤ half) (l : ℤ) (e : ℕ × ℤ) :
+    QP p hp0 hp1 half W ε (half - m + e.1) (l + e.2)
+      ≤ (1 - (1 - Real.exp (-ε ^ 3))
+            * Set.indicator (stripFor half W) 1
+                (half - m + e.1, l + e.2))
+        * (edgeWeightP p hp0 hp1 A m e *
+          QPmFor p hp0 hp1 half W ε A (m - 1)) := by
+  set j' := half - m + e.1 with hj'
+  set QM := QPmFor p hp0 hp1 half W ε A (m - 1) with hQM
+  have hQM0 : 0 ≤ QM := QPmFor_nonneg p hp0 hp1 _ _ _ _ _
+  have hQM1 : 1 ≤ QM := one_le_QPmFor p hp0 hp1 _ _ _ _ hA hε _
+  rcases Nat.lt_or_ge half j' with hout | hin
+  · rw [QP_boundary p hp0 hp1 half W ε j' (l + e.2) hout,
+      Set.indicator_of_notMem (fun hmem => absurd hmem.1 (by omega)) 1,
+      mul_zero, sub_zero, one_mul, edgeWeightP_of_deep p hp0 hp1 A (by omega), one_mul]
+    exact hQM1
+  · rw [QP_rec p hp0 hp1 half W ε j' (l + e.2) hin]
+    have hatom : ∀ d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+            QP p hp0 hp1 half W ε (j' + d.1) (l + e.2 + d.2)
+          ≤ (holdP p hp0 hp1 d).toReal *
+              (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) := by
+      intro d
+      rcases Nat.eq_zero_or_pos d.1 with h0 | hpos
+      · rw [holdP_zero_of_fst_zero p hp0 hp1 h0, ENNReal.toReal_zero,
+          zero_mul, zero_mul]
+      · apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+        have h1 : 1 ≤ j' + d.1 := by omega
+        have h2 : half - (m - 1) ≤ j' + d.1 := by omega
+        have hkey := QP_le_QPmFor p hp0 hp1 half W ε A hA hε (m - 1)
+          (l := l + e.2 + d.2) h1 h2
+        have heq : half - (j' + d.1) = m - e.1 - d.1 := by omega
+        rwa [heq] at hkey
+    have hwle : ∀ d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+            (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM)
+          ≤ (holdP p hp0 hp1 d).toReal * QM := by
+      intro d
+      apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+      calc
+        ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM
+            ≤ 1 * QM := mul_le_mul_of_nonneg_right
+              (Real.rpow_le_one_of_one_le_of_nonpos
+                (by exact_mod_cast Nat.le_max_right (m - e.1 - d.1) 1)
+                (by linarith)) hQM0
+        _ = QM := one_mul _
+    have hsumR : Summable fun d : ℕ × ℤ =>
+        (holdP p hp0 hp1 d).toReal *
+          (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) :=
+      Summable.of_nonneg_of_le
+        (fun d => mul_nonneg ENNReal.toReal_nonneg
+          (mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _) hQM0))
+        hwle ((holdP_summable_toReal p hp0 hp1).mul_right QM)
+    have hsumL : Summable fun d : ℕ × ℤ =>
+        (holdP p hp0 hp1 d).toReal *
+          QP p hp0 hp1 half W ε (j' + d.1) (l + e.2 + d.2) :=
+      Summable.of_nonneg_of_le
+        (fun d => mul_nonneg ENNReal.toReal_nonneg
+          (QP_nonneg p hp0 hp1 _ _ _ _ _))
+        (fun d => (hatom d).trans (hwle d))
+        ((holdP_summable_toReal p hp0 hp1).mul_right QM)
+    have htsum : ∑' d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+          QP p hp0 hp1 half W ε (j' + d.1) (l + e.2 + d.2)
+        ≤ edgeWeightP p hp0 hp1 A m e * QM := by
+      calc
+        ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+              QP p hp0 hp1 half W ε (j' + d.1) (l + e.2 + d.2)
+            ≤ ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+                (((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A) * QM) :=
+              hsumL.tsum_le_tsum hatom hsumR
+        _ = ∑' d : ℕ × ℤ,
+              ((holdP p hp0 hp1 d).toReal *
+                ((max (m - e.1 - d.1) 1 : ℕ) : ℝ) ^ (-A)) * QM :=
+              tsum_congr fun d => (mul_assoc _ _ _).symm
+        _ = edgeWeightP p hp0 hp1 A m e * QM := tsum_mul_right
+    have hS0 : 0 ≤ ∑' d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+          QP p hp0 hp1 half W ε (j' + d.1) (l + e.2 + d.2) :=
+      tsum_nonneg fun _ => mul_nonneg ENNReal.toReal_nonneg
+        (QP_nonneg p hp0 hp1 _ _ _ _ _)
+    have hdamp : Real.exp (-ε ^ 3 * Set.indicator W 1 (j', l + e.2)) =
+        1 - (1 - Real.exp (-ε ^ 3)) *
+          Set.indicator (stripFor half W) 1 (j', l + e.2) := by
+      by_cases hw : (j', l + e.2) ∈ W
+      · have e1 : Set.indicator W (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 1 :=
+          Set.indicator_of_mem hw 1
+        have hmem : (j', l + e.2) ∈ stripFor half W := ⟨hin, hw⟩
+        have e2 : Set.indicator (stripFor half W)
+            (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 1 :=
+          Set.indicator_of_mem hmem 1
+        rw [e1, e2, mul_one, mul_one]
+        ring
+      · have e1 : Set.indicator W (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 0 :=
+          Set.indicator_of_notMem hw 1
+        have e2 : Set.indicator (stripFor half W)
+            (1 : ℕ × ℤ → ℝ) (j', l + e.2) = 0 :=
+          Set.indicator_of_notMem (fun hmem => hw hmem.2) 1
+        rw [e1, e2, mul_zero, mul_zero, sub_zero, Real.exp_zero]
+    calc
+      Real.exp (-ε ^ 3 * Set.indicator W 1 (j', l + e.2)) *
+          ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+            QP p hp0 hp1 half W ε (j' + d.1) (l + e.2 + d.2)
+        ≤ Real.exp (-ε ^ 3 * Set.indicator W 1 (j', l + e.2)) *
+            (edgeWeightP p hp0 hp1 A m e * QM) :=
+          mul_le_mul_of_nonneg_left htsum (Real.exp_pos _).le
+      _ = (1 - (1 - Real.exp (-ε ^ 3)) *
+            Set.indicator (stripFor half W) 1 (j', l + e.2)) *
+          (edgeWeightP p hp0 hp1 A m e * QM) := by rw [hdamp]
+
 /-- The tilted depth supremum contains the boundary value one. -/
 theorem one_le_QPm (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
     (half n ξ : ℕ) (ε A : ℝ) (hA : 0 ≤ A) (hε : 0 ≤ ε) (m : ℕ) :

@@ -17,6 +17,77 @@ replaced by `QP p`.
 
 namespace TaoCollatz.Sec7P
 
+/-- The depth supremum with an arbitrary damping set.  This is the common
+law-independent interface used at both Tao's original `epsBW` white set and
+the finer `epsP` white set needed uniformly on the Pascal window. -/
+noncomputable def QPmFor (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half : ℕ) (W : Set (ℕ × ℤ)) (ε A : ℝ) (m : ℕ) : ℝ :=
+  ⨆ z : {z : ℕ × ℤ // 1 ≤ z.1 ∧ half - m ≤ z.1},
+    ((max (half - z.1.1) 1 : ℕ) : ℝ) ^ A *
+      QP p hp0 hp1 half W ε z.1.1 z.1.2
+
+/-- Every admissible weighted value is bounded by the arbitrary-set depth
+supremum. -/
+theorem le_QPmFor (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half : ℕ) (W : Set (ℕ × ℤ)) (ε A : ℝ)
+    (hA : 0 ≤ A) (hε : 0 ≤ ε) (m : ℕ)
+    {p1 : ℕ} {l : ℤ} (h1 : 1 ≤ p1) (h2 : half - m ≤ p1) :
+    ((max (half - p1) 1 : ℕ) : ℝ) ^ A *
+        QP p hp0 hp1 half W ε p1 l
+      ≤ QPmFor p hp0 hp1 half W ε A m := by
+  have hbdd : BddAbove (Set.range fun z :
+      {z : ℕ × ℤ // 1 ≤ z.1 ∧ half - m ≤ z.1} =>
+      ((max (half - z.1.1) 1 : ℕ) : ℝ) ^ A *
+        QP p hp0 hp1 half W ε z.1.1 z.1.2) := by
+    refine ⟨((max half 1 : ℕ) : ℝ) ^ A, ?_⟩
+    rintro x ⟨z, rfl⟩
+    calc
+      ((max (half - z.1.1) 1 : ℕ) : ℝ) ^ A *
+            QP p hp0 hp1 half W ε z.1.1 z.1.2
+          ≤ ((max half 1 : ℕ) : ℝ) ^ A * 1 := by
+            apply mul_le_mul _
+              (QP_le_one p hp0 hp1 _ _ _ hε _ _)
+              (QP_nonneg p hp0 hp1 _ _ _ _ _)
+              (Real.rpow_nonneg (by positivity) A)
+            apply Real.rpow_le_rpow (by positivity) _ hA
+            exact_mod_cast max_le_max (Nat.sub_le _ _) le_rfl
+      _ = ((max half 1 : ℕ) : ℝ) ^ A := mul_one _
+  exact le_ciSup hbdd ⟨(p1, l), h1, h2⟩
+
+/-- Inverted arbitrary-set supremum bound, used after one renewal step. -/
+theorem QP_le_QPmFor (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half : ℕ) (W : Set (ℕ × ℤ)) (ε A : ℝ)
+    (hA : 0 ≤ A) (hε : 0 ≤ ε) (m : ℕ)
+    {p1 : ℕ} {l : ℤ} (h1 : 1 ≤ p1) (h2 : half - m ≤ p1) :
+    QP p hp0 hp1 half W ε p1 l
+      ≤ ((max (half - p1) 1 : ℕ) : ℝ) ^ (-A) *
+        QPmFor p hp0 hp1 half W ε A m := by
+  have hwpos : (0 : ℝ) < ((max (half - p1) 1 : ℕ) : ℝ) := by
+    have h : (1 : ℕ) ≤ max (half - p1) 1 := le_max_right _ _
+    have h' : (1 : ℝ) ≤ ((max (half - p1) 1 : ℕ) : ℝ) := by exact_mod_cast h
+    linarith
+  have hApos : (0 : ℝ) < ((max (half - p1) 1 : ℕ) : ℝ) ^ A :=
+    Real.rpow_pos_of_pos hwpos A
+  have hle := le_QPmFor p hp0 hp1 half W ε A hA hε m (l := l) h1 h2
+  rw [Real.rpow_neg hwpos.le]
+  calc
+    QP p hp0 hp1 half W ε p1 l
+        = (((max (half - p1) 1 : ℕ) : ℝ) ^ A)⁻¹ *
+          (((max (half - p1) 1 : ℕ) : ℝ) ^ A *
+            QP p hp0 hp1 half W ε p1 l) := by
+              field_simp
+    _ ≤ (((max (half - p1) 1 : ℕ) : ℝ) ^ A)⁻¹ *
+          QPmFor p hp0 hp1 half W ε A m :=
+      mul_le_mul_of_nonneg_left hle (inv_nonneg.mpr hApos.le)
+
+/-- The arbitrary-set depth supremum is nonnegative. -/
+theorem QPmFor_nonneg (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (half : ℕ) (W : Set (ℕ × ℤ)) (ε A : ℝ) (m : ℕ) :
+    0 ≤ QPmFor p hp0 hp1 half W ε A m :=
+  Real.iSup_nonneg fun z =>
+    mul_nonneg (Real.rpow_nonneg (by positivity) _)
+      (QP_nonneg p hp0 hp1 _ _ _ _ _)
+
 /-- Paper (7.38) for the tilted renewal value: the weighted worst-case value at
 depth `m` from the far edge. -/
 noncomputable def QPm (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
