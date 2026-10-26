@@ -262,7 +262,7 @@ private theorem log_le_eps_mul_atP (ε : ℝ) (hε : 0 < ε) :
 noncomputable def K_geomPWindow (b : ℝ) : ℕ :=
   ⌈Real.log (b / 2)⁻¹ / Real.log (125 / 117)⌉₊
 
-private theorem geomPWindow_lt_at (b : ℝ) (hb : 0 < b) :
+theorem geomPWindow_lt_at (b : ℝ) (hb : 0 < b) :
     holdPSurvivalBound ^ K_geomPWindow b < b := by
   have hK := exp_neg_mul_le_atP (Real.log (125 / 117))
     (Real.log_pos (by norm_num)) (b / 2) (half_pos hb) (K_geomPWindow b)
@@ -283,7 +283,7 @@ noncomputable def T_powGeomPWindow (k : ℕ) (b : ℝ) : ℕ :=
   1 + (⌈(2 / (Real.log (125 / 117) / (2 * ((k : ℝ) + 1)))) ^ 2⌉₊ + 1) +
     ⌈Real.log (b / 2)⁻¹ / (Real.log (125 / 117) / 2)⌉₊
 
-private theorem pow_mul_geomPWindow_lt_at (k : ℕ) (b : ℝ) (hb : 0 < b) :
+theorem pow_mul_geomPWindow_lt_at (k : ℕ) (b : ℝ) (hb : 0 < b) :
     ∀ t : ℕ, T_powGeomPWindow k b ≤ t →
       (t : ℝ) ^ k * holdPSurvivalBound ^ t < b := by
   have hρ : (0 : ℝ) < Real.log (125 / 117) := Real.log_pos (by norm_num)
@@ -351,43 +351,20 @@ theorem one_le_C_holdP (A : ℝ) : 1 ≤ C_holdP A := by
 /-- Tao's three-region Case-1 expectation estimate with abstract uniform
 cutoffs.  The only law-specific input is the exact `Geom(q(p))` first marginal;
 its tails are bounded by the fixed base `117/125`. -/
-theorem holdP_weight_expect_core (A : ℝ) (hA : 0 < A)
+theorem holdP_weight_expect_core_gen (A : ℝ) (hA : 0 < A)
     (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
-    (hpL : 1 / 5 ≤ p) (hpU : p ≤ 3 / 5) (K M1 T : ℕ)
-    (hK : holdPSurvivalBound ^ K <
-      TaoCollatz.deltaBW / 3 * (2 : ℝ) ^ (-A))
-    (hM1 : (K : ℝ) * TaoCollatz.cHold A / (TaoCollatz.cHold A - 1) ≤ (M1 : ℝ))
+    (hpL : 1 / 5 ≤ p) (hpU : p ≤ 3 / 5)
+    (E δ c : ℝ) (hδ : 0 < δ) (hE1 : E = 1 + δ) (hc1 : 1 < c) (hcA : c ^ A = 1 + δ / 3)
+    (K M1 T : ℕ)
+    (hK : holdPSurvivalBound ^ K < δ / 3 * (2 : ℝ) ^ (-A))
+    (hM1 : (K : ℝ) * c / (c - 1) ≤ (M1 : ℝ))
     (hT : ∀ t : ℕ, T ≤ t →
-      (t : ℝ) ^ ⌈A⌉₊ * holdPSurvivalBound ^ t <
-        TaoCollatz.deltaBW / 3 * (3 : ℝ) ^ (-A)) :
+      (t : ℝ) ^ ⌈A⌉₊ * holdPSurvivalBound ^ t < δ / 3 * (3 : ℝ) ^ (-A)) :
     ∀ m : ℕ, K + M1 + 2 * T + 4 ≤ m →
       ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
           ((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A)
-        ≤ Real.exp ((TaoCollatz.epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A) := by
+        ≤ E * (m : ℝ) ^ (-A) := by
   intro m hm
-  set E := Real.exp ((TaoCollatz.epsBW : ℝ) ^ 3 / 2) with hEdef
-  have hεpos : (0 : ℝ) < (TaoCollatz.epsBW : ℝ) ^ 3 / 2 := by
-    have h0 : (0 : ℚ) < TaoCollatz.epsBW := by
-      unfold TaoCollatz.epsBW
-      norm_num
-    have h1 : (0 : ℝ) < (TaoCollatz.epsBW : ℝ) := by exact_mod_cast h0
-    positivity
-  have hδ : 0 < E - 1 := by
-    have h2 := Real.add_one_le_exp ((TaoCollatz.epsBW : ℝ) ^ 3 / 2)
-    rw [hEdef]
-    linarith
-  set δ := E - 1 with hδdef
-  have hE1 : E = 1 + δ := by rw [hδdef]; ring
-  have hδBW : TaoCollatz.deltaBW = δ := by
-    rw [hδdef, hEdef]
-    unfold TaoCollatz.deltaBW
-    rfl
-  rw [hδBW] at hK hT
-  set c := TaoCollatz.cHold A with hcdef
-  have hc1 : 1 < c := TaoCollatz.one_lt_cHold A hA
-  have hcA : c ^ A = 1 + δ / 3 := by
-    rw [hcdef, ← hδBW]
-    exact TaoCollatz.cHold_rpow A hA
   set kA := ⌈A⌉₊ with hkAdef
   have hm0 : (0 : ℝ) < (m : ℝ) := by
     have : 0 < m := by omega
@@ -615,6 +592,27 @@ theorem holdP_weight_expect_core (A : ℝ) (hA : 0 < A)
         δ / 3 * (m : ℝ) ^ (-A) := add_le_add (add_le_add hb1 hb2) hb3
     _ = (1 + δ) * (m : ℝ) ^ (-A) := by ring
     _ = E * (m : ℝ) ^ (-A) := by rw [← hE1]
+
+/-- Tao's three-region Case-1 expectation estimate at the fixed-law scale
+`δ = deltaBW`, `c = cHold A` (the original core; now a specialization of the
+`δ`-generic `holdP_weight_expect_core_gen`). -/
+theorem holdP_weight_expect_core (A : ℝ) (hA : 0 < A)
+    (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (hpL : 1 / 5 ≤ p) (hpU : p ≤ 3 / 5) (K M1 T : ℕ)
+    (hK : holdPSurvivalBound ^ K <
+      TaoCollatz.deltaBW / 3 * (2 : ℝ) ^ (-A))
+    (hM1 : (K : ℝ) * TaoCollatz.cHold A / (TaoCollatz.cHold A - 1) ≤ (M1 : ℝ))
+    (hT : ∀ t : ℕ, T ≤ t →
+      (t : ℝ) ^ ⌈A⌉₊ * holdPSurvivalBound ^ t <
+        TaoCollatz.deltaBW / 3 * (3 : ℝ) ^ (-A)) :
+    ∀ m : ℕ, K + M1 + 2 * T + 4 ≤ m →
+      ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+          ((max (m - d.1) 1 : ℕ) : ℝ) ^ (-A)
+        ≤ Real.exp ((TaoCollatz.epsBW : ℝ) ^ 3 / 2) * (m : ℝ) ^ (-A) :=
+  holdP_weight_expect_core_gen A hA p hp0 hp1 hpL hpU
+    (Real.exp ((TaoCollatz.epsBW : ℝ) ^ 3 / 2)) TaoCollatz.deltaBW (TaoCollatz.cHold A)
+    TaoCollatz.deltaBW_pos (by unfold TaoCollatz.deltaBW; ring)
+    (TaoCollatz.one_lt_cHold A hA) (TaoCollatz.cHold_rpow A hA) K M1 T hK hM1 hT
 
 /-- The tilted Case-1 expectation at an explicit threshold independent of `p`. -/
 theorem holdP_weight_expect_explicitC (A : ℝ) (hA : 0 < A) :

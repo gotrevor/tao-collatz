@@ -56,6 +56,7 @@ import TaoCollatz.Sec7P.ManyTriangles
 import TaoCollatz.Sec7P.BlackEdge
 import TaoCollatz.Sec7P.BlackEdgeQ
 import TaoCollatz.Sec7P.Case3
+import TaoCollatz.Sec7P.Prop73
 import TaoCollatz.Sec7P.Statement
 import TaoCollatz.Sec3.Reduction
 import TaoCollatz.Statement
