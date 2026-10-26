@@ -2605,6 +2605,370 @@ theorem encExpectP_block_le (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
       Summable.of_nonneg_of_le hnnR hboundR (hsum.mul_right _)
     exact Summable.tsum_le_tsum hterm hsumL hsumR
 
+/-- Entered-state induction for tilted Lemma 7.9.  Assuming a uniform lower
+bound `p₀` for the `whiteStripP` mass of every deep first-passage exit, a fresh
+state just entering a family triangle is bounded by the same fixed-point chain
+value as in the p-free proof.  The arithmetic is law-independent; all dependence
+on `p` is confined to `fpDistP` and the four fold-coupling lemmas above. -/
+theorem encExpectP_entered_le (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (g : ℕ) (ε p₀ : ℝ)
+    (hε : 0 ≤ ε) (hp₀1 : p₀ ≤ 1)
+    (hsmall : (1 - p₀) * (Real.exp ε + 1) ≤ 1)
+    (hXe1 : Real.exp (ε - 1) * TaoCollatz.encChainX ε p₀ ≤ 1)
+    (hwhite : ∀ w : ℕ × ℤ, 1 ≤ w.1 → w.1 + g ≤ n / 2 →
+      ∀ t ∈ F.T, (w.1 - 1, w.2) ∈ TaoCollatz.triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - w.2 →
+      p₀ ≤ ∑' e : ℕ × ℤ, (fpDistP p hp0 hp1 s e).toReal *
+        Set.indicator (whiteStripP n ξ) 1 (w + e)) :
+    ∀ (R T : ℕ) (w : ℕ × ℤ), 1 ≤ w.1 → w.1 + g ≤ n / 2 →
+      ∀ t ∈ F.T, (w.1 - 1, w.2) ∈ TaoCollatz.triangle t.1 t.2.1 t.2.2 →
+      encExpectP p hp0 hp1 F R g ε T ⟨w, t.2.1, 0, 0, 0⟩ ≤
+        TaoCollatz.encChainX ε p₀ := by
+  classical
+  have hX1 : 1 ≤ TaoCollatz.encChainX ε p₀ :=
+    TaoCollatz.one_le_encChainX hε hp₀1 hsmall
+  have hX0 : 0 ≤ TaoCollatz.encChainX ε p₀ := le_trans zero_le_one hX1
+  have hfix := TaoCollatz.encChainX_fixed hsmall
+  have hexpX1 : 1 ≤ Real.exp ε * TaoCollatz.encChainX ε p₀ := by
+    nlinarith [Real.one_le_exp hε]
+  intro R
+  induction R with
+  | zero =>
+    intro T w hw1 hwg t ht hmem
+    rw [encExpectP_of_count_ge p hp0 hp1 F 0 g ε hε T _ (Nat.zero_le _)]
+    calc
+      TaoCollatz.encVal ε 0
+          (⟨w, t.2.1, 0, 0, 0⟩ : TaoCollatz.EncState) = 1 := by
+        simp [TaoCollatz.encVal]
+      _ ≤ TaoCollatz.encChainX ε p₀ := hX1
+  | succ ρ IH =>
+    intro T w hw1 hwg t ht hmem
+    have hfreshIH : ∀ (T' : ℕ) (q : ℕ × ℤ), 1 ≤ q.1 → q.1 + g ≤ n / 2 →
+        ∀ hcov : (q.1 - 1) + 1 ≤ n / 2 ∧ blackP n ξ (q.1 - 1) q.2,
+        encExpectP p hp0 hp1 F ρ g ε T'
+          ⟨q, (F.coveringTriangle (q.1 - 1, q.2) hcov).2.1, 0, 0, 0⟩ ≤
+            TaoCollatz.encChainX ε p₀ :=
+      fun T' q h1 h2 hcov =>
+        IH T' q h1 h2 _ (F.coveringTriangle_mem hcov)
+          (F.coveringTriangle_covers hcov)
+    have hwt : w.2 ≤ t.2.1 := hmem.2.1
+    set s : ℕ := (t.2.1 - w.2).toNat with hsdef
+    have hsZ : (s : ℤ) = t.2.1 - w.2 := Int.toNat_of_nonneg (by omega)
+    set f : ℕ × ℤ → ℝ := fun e =>
+      if w + e ∈ whiteStripP n ξ then 1
+      else Real.exp ε * TaoCollatz.encChainX ε p₀ with hfdef
+    have hf1' : ∀ e, (1 : ℝ) ≤ f e := by
+      intro e
+      rw [hfdef]
+      dsimp only
+      split
+      · exact le_refl 1
+      · exact hexpX1
+    have hf0 : ∀ e, 0 ≤ f e := fun e => le_trans zero_le_one (hf1' e)
+    have hfB : ∀ e, f e ≤ Real.exp ε * TaoCollatz.encChainX ε p₀ := by
+      intro e
+      rw [hfdef]
+      dsimp only
+      split
+      · exact hexpX1
+      · exact le_refl _
+    have hstep : ∀ e : ℕ × ℤ, (s : ℤ) < e.2 → ∀ T' : ℕ, T' < T →
+        encExpectP p hp0 hp1 F (ρ + 1) g ε T'
+          (encStepP F (ρ + 1) g ⟨w, t.2.1, 0, 0, 0⟩ e) ≤ f e := by
+      intro e he T' hT'
+      by_cases hq : 1 ≤ (w + e).1 ∧ (w + e).1 + g ≤ n / 2
+          ∧ blackP n ξ ((w + e).1 - 1) (w + e).2 ∧ t.2.1 < (w + e).2
+      · set σ'' := encStepP F (ρ + 1) g ⟨w, t.2.1, 0, 0, 0⟩ e with hσ''
+        have hcnt : σ''.count = 1 := by
+          rw [hσ'', encStepP, dif_pos hq]
+        have hpos'' : σ''.pos = w + e := by
+          rw [hσ'', encStepP, dif_pos hq]
+        have hcov'' : ((w + e).1 - 1) + 1 ≤ n / 2 ∧
+            blackP n ξ ((w + e).1 - 1) (w + e).2 := ⟨by omega, hq.2.2.1⟩
+        have hbar'' : σ''.barrier =
+            (F.coveringTriangle ((w + e).1 - 1, (w + e).2) hcov'').2.1 := by
+          rw [hσ'', encStepP, dif_pos hq]
+        have hnorm := encExpectP_normalize_init p hp0 hp1 F (ρ + 1) g ε hε T' σ''
+          (by rw [hcnt]; omega)
+        have hcont : encExpectP p hp0 hp1 F (ρ + 1 - 1) g ε T'
+            ⟨σ''.pos, σ''.barrier, 0, 0, 0⟩ ≤ TaoCollatz.encChainX ε p₀ := by
+          rw [hpos'', hbar'']
+          simpa using hfreshIH T' (w + e) hq.1 hq.2.1 hcov''
+        by_cases hW : w + e ∈ whiteStripP n ξ
+        · have hbk1 : σ''.banked = 1 := by
+            rw [hσ'', encStepP, dif_pos hq]
+            simp [hW]
+          have hcw1 : σ''.cumWhite = 1 := by
+            rw [hσ'', encStepP, dif_pos hq]
+            simp [hW]
+          rw [hcnt, hbk1, hcw1, max_self] at hnorm
+          have hfe : f e = 1 := by
+            rw [hfdef]
+            simp [hW]
+          rw [hfe]
+          refine le_trans hnorm (le_trans
+            (mul_le_mul_of_nonneg_left hcont (by positivity)) ?_)
+          have hee : Real.exp (ε * ((1 : ℕ) : ℝ)) * Real.exp (-((1 : ℕ) : ℝ)) *
+              TaoCollatz.encChainX ε p₀ =
+                Real.exp (ε - 1) * TaoCollatz.encChainX ε p₀ := by
+            rw [← Real.exp_add,
+              show ε * ((1 : ℕ) : ℝ) + -((1 : ℕ) : ℝ) = ε - 1 by
+                push_cast
+                ring]
+          rw [hee]
+          exact hXe1
+        · have hbk0 : σ''.banked = 0 := by
+            rw [hσ'', encStepP, dif_pos hq]
+            simp [hW]
+          have hcw0 : σ''.cumWhite = 0 := by
+            rw [hσ'', encStepP, dif_pos hq]
+            simp [hW]
+          rw [hcnt, hbk0, hcw0, max_self] at hnorm
+          have hfe : f e = Real.exp ε * TaoCollatz.encChainX ε p₀ := by
+            rw [hfdef]
+            simp [hW]
+          rw [hfe]
+          refine le_trans hnorm (le_trans
+            (mul_le_mul_of_nonneg_left hcont (by positivity)) ?_)
+          have hee : Real.exp (ε * ((1 : ℕ) : ℝ)) * Real.exp (-((0 : ℕ) : ℝ)) *
+              TaoCollatz.encChainX ε p₀ =
+                Real.exp ε * TaoCollatz.encChainX ε p₀ := by
+            rw [← Real.exp_add]
+            norm_num
+          rw [hee]
+      · by_cases hW : w + e ∈ whiteStripP n ξ
+        · have hsx : encStepP F (ρ + 1) g ⟨w, t.2.1, 0, 0, 0⟩ e =
+              ⟨w + e, t.2.1, 0, 1, 0⟩ := by
+            rw [encStepP, dif_neg (by exact hq)]
+            simp [hW]
+          rw [hsx]
+          have hwander := encExpectP_wander_le p hp0 hp1 F ρ g ε hε
+            (TaoCollatz.encChainX ε p₀) hfreshIH 1 T' (w + e) t.2.1 1
+            (le_refl 1)
+          refine le_trans hwander ?_
+          have hfe : f e = 1 := by
+            rw [hfdef]
+            simp [hW]
+          rw [hfe]
+          refine max_le (le_refl 1) ?_
+          have hee : Real.exp ε * Real.exp (-((1 : ℕ) : ℝ)) *
+              TaoCollatz.encChainX ε p₀ =
+                Real.exp (ε - 1) * TaoCollatz.encChainX ε p₀ := by
+            rw [← Real.exp_add,
+              show ε + -((1 : ℕ) : ℝ) = ε - 1 by
+                push_cast
+                ring]
+          rw [hee]
+          exact hXe1
+        · have hsx : encStepP F (ρ + 1) g ⟨w, t.2.1, 0, 0, 0⟩ e =
+              ⟨w + e, t.2.1, 0, 0, 0⟩ := by
+            rw [encStepP, dif_neg (by exact hq)]
+            simp [hW]
+          rw [hsx]
+          have hwander := encExpectP_wander_le p hp0 hp1 F ρ g ε hε
+            (TaoCollatz.encChainX ε p₀) hfreshIH 0 T' (w + e) t.2.1 0
+            (le_refl 0)
+          refine le_trans hwander ?_
+          have hfe : f e = Real.exp ε * TaoCollatz.encChainX ε p₀ := by
+            rw [hfdef]
+            simp [hW]
+          rw [hfe]
+          refine max_le hexpX1 ?_
+          have hee : Real.exp ε * Real.exp (-((0 : ℕ) : ℝ)) *
+              TaoCollatz.encChainX ε p₀ =
+                Real.exp ε * TaoCollatz.encChainX ε p₀ := by
+            rw [← Real.exp_add]
+            norm_num
+          rw [hee]
+    have hval1 : TaoCollatz.encVal ε (ρ + 1)
+        (⟨w, t.2.1, 0, 0, 0⟩ : TaoCollatz.EncState) = 1 := by
+      simp [TaoCollatz.encVal]
+    have hbridge := encExpectP_block_le p hp0 hp1 F (ρ + 1) g ε hε s
+      ⟨w, t.2.1, 0, 0, 0⟩ (show (s : ℤ) = t.2.1 - w.2 from hsZ)
+      T f hf0 (Real.exp ε * TaoCollatz.encChainX ε p₀) hfB
+      (fun e => hval1.trans_le (hf1' e)) hstep
+    refine le_trans hbridge ?_
+    have hmass : Summable (fun e : ℕ × ℤ =>
+        (fpDistP p hp0 hp1 s e).toReal) :=
+      ENNReal.summable_toReal (by
+        rw [(fpDistP p hp0 hp1 s).tsum_coe]
+        exact ENNReal.one_ne_top)
+    have hWsum : Summable (fun e : ℕ × ℤ =>
+        (fpDistP p hp0 hp1 s e).toReal *
+          Set.indicator (whiteStripP n ξ) 1 (w + e)) := by
+      refine Summable.of_nonneg_of_le
+        (fun e => mul_nonneg ENNReal.toReal_nonneg
+          (Set.indicator_nonneg (fun _ _ => zero_le_one) _)) (fun e => ?_) hmass
+      refine mul_le_of_le_one_right ENNReal.toReal_nonneg ?_
+      by_cases hW : w + e ∈ whiteStripP n ξ
+      · simp [Set.indicator_of_mem hW]
+      · simp [Set.indicator_of_notMem hW]
+    have hfid : (fun e : ℕ × ℤ => (fpDistP p hp0 hp1 s e).toReal * f e) =
+        fun e : ℕ × ℤ =>
+          Real.exp ε * TaoCollatz.encChainX ε p₀ *
+              (fpDistP p hp0 hp1 s e).toReal -
+            (Real.exp ε * TaoCollatz.encChainX ε p₀ - 1) *
+              ((fpDistP p hp0 hp1 s e).toReal *
+                Set.indicator (whiteStripP n ξ) 1 (w + e)) := by
+      funext e
+      by_cases hW : w + e ∈ whiteStripP n ξ
+      · rw [hfdef]
+        simp only [if_pos hW, Set.indicator_of_mem hW, Pi.one_apply]
+        ring
+      · rw [hfdef]
+        simp only [if_neg hW, Set.indicator_of_notMem hW]
+        ring
+    rw [show ∑' e : ℕ × ℤ, (fpDistP p hp0 hp1 s e).toReal * f e =
+        ∑' e : ℕ × ℤ,
+          (Real.exp ε * TaoCollatz.encChainX ε p₀ *
+              (fpDistP p hp0 hp1 s e).toReal -
+            (Real.exp ε * TaoCollatz.encChainX ε p₀ - 1) *
+              ((fpDistP p hp0 hp1 s e).toReal *
+                Set.indicator (whiteStripP n ξ) 1 (w + e))) from by rw [hfid],
+      Summable.tsum_sub (hmass.mul_left _) (hWsum.mul_left _),
+      tsum_mul_left, tsum_mul_left,
+      ← ENNReal.tsum_toReal_eq
+        (fun e => (fpDistP p hp0 hp1 s).apply_ne_top e),
+      (fpDistP p hp0 hp1 s).tsum_coe, ENNReal.toReal_one, mul_one]
+    have hwm := hwhite w hw1 hwg t ht hmem s hsZ
+    nlinarith [hwm, hexpX1, hfix]
+
+/-- Uniform tilted Lemma-7.9 assembly from a window-uniform deep white-exit
+kernel.  The smallness choice and encounter-depth gate are made before `p`;
+the only law-specific input is the first-passage white mass supplied by
+`fpDistP_white_exit_deep`. -/
+theorem many_triangles_whiteP_core (p₀ : ℝ) (Cthr : ℕ)
+    (hp₀ : 51 / 100 ≤ p₀)
+    (hkernel : ∀ (p : ℝ) (hpL : 1 / 5 ≤ p) (hpU : p ≤ 3 / 5),
+      ∀ n ξ : ℕ, ¬3 ∣ ξ →
+      ∀ F : TriangleFamilyP n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ TaoCollatz.triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      p₀ ≤ ∑' e : ℕ × ℤ,
+        (fpDistP p (by linarith [hpL]) (by linarith [hpU]) s e).toReal *
+          Set.indicator (whiteStripP n ξ) 1
+            (n / 2 - m + e.1, l + e.2)) :
+    ∀ ε : ℝ, 0 < ε → ε ≤ min (1 / 100) ((2 * min p₀ 1 - 1) / 2) →
+    ∀ (p : ℝ) (hpL : 1 / 5 ≤ p) (hpU : p ≤ 3 / 5),
+    ∀ n ξ : ℕ, ¬3 ∣ ξ → ∀ F : TriangleFamilyP n ξ,
+    ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (j' : ℕ) (l' : ℤ),
+    encExpectP p (by linarith [hpL]) (by linarith [hpU]) F R Cthr ε T
+      (encInitP j' l') ≤ Real.exp (2 * ε) := by
+  set p₁ : ℝ := min p₀ 1 with hp₁def
+  have hp₁ : 1 / 2 < p₁ := lt_min (by linarith) (by norm_num)
+  have hp₁1 : p₁ ≤ 1 := min_le_right _ _
+  intro ε hε hεε₀ p hpL hpU n ξ hξ F R hR T j' l'
+  have hpPos : 0 < p := by linarith
+  have hpLt : p < 1 := by linarith
+  have hε100 : ε ≤ 1 / 100 := le_trans hεε₀ (min_le_left _ _)
+  have hεp : ε ≤ (2 * p₁ - 1) / 2 := le_trans hεε₀ (min_le_right _ _)
+  have hε1 : ε < 1 := by linarith
+  have hkey : Real.exp ε * (1 - ε) ≤ 1 := by
+    have h := Real.add_one_le_exp (-ε)
+    calc
+      Real.exp ε * (1 - ε) = Real.exp ε * (-ε + 1) := by ring
+      _ ≤ Real.exp ε * Real.exp (-ε) :=
+        mul_le_mul_of_nonneg_left h (Real.exp_pos ε).le
+      _ = 1 := by
+        rw [← Real.exp_add]
+        simp
+  have hsmall : (1 - p₁) * (Real.exp ε + 1) ≤ 1 := by
+    have h2 : (Real.exp ε + 1) * (1 - ε) ≤ 2 - ε := by
+      nlinarith
+    have h3 : (1 - p₁) * (2 - ε) ≤ 1 - ε := by
+      have hprod : ε * p₁ ≤ ε * 1 :=
+        mul_le_mul_of_nonneg_left hp₁1 hε.le
+      nlinarith
+    have h4 : (1 - p₁) * (Real.exp ε + 1) * (1 - ε) ≤ 1 * (1 - ε) := by
+      have := mul_le_mul_of_nonneg_left h2 (show (0 : ℝ) ≤ 1 - p₁ by linarith)
+      calc
+        (1 - p₁) * (Real.exp ε + 1) * (1 - ε) =
+            (1 - p₁) * ((Real.exp ε + 1) * (1 - ε)) := by ring
+        _ ≤ (1 - p₁) * (2 - ε) := this
+        _ ≤ 1 - ε := h3
+        _ = 1 * (1 - ε) := (one_mul _).symm
+    exact le_of_mul_le_mul_right h4 (by linarith)
+  have hXe : TaoCollatz.encChainX ε p₁ ≤ Real.exp ε :=
+    TaoCollatz.encChainX_le_exp hε.le hsmall
+  have hX1 : 1 ≤ TaoCollatz.encChainX ε p₁ :=
+    TaoCollatz.one_le_encChainX hε.le hp₁1 hsmall
+  have hX0 : 0 ≤ TaoCollatz.encChainX ε p₁ := le_trans zero_le_one hX1
+  have hXe1 : Real.exp (ε - 1) * TaoCollatz.encChainX ε p₁ ≤ 1 := by
+    calc
+      Real.exp (ε - 1) * TaoCollatz.encChainX ε p₁ ≤
+          Real.exp (ε - 1) * Real.exp ε :=
+        mul_le_mul_of_nonneg_left hXe (Real.exp_pos _).le
+      _ = Real.exp (ε - 1 + ε) := (Real.exp_add _ _).symm
+      _ ≤ 1 := by
+        rw [Real.exp_le_one_iff]
+        linarith
+  have hwhite : ∀ w : ℕ × ℤ, 1 ≤ w.1 → w.1 + Cthr ≤ n / 2 →
+      ∀ t ∈ F.T, (w.1 - 1, w.2) ∈ TaoCollatz.triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - w.2 →
+      p₁ ≤ ∑' e : ℕ × ℤ, (fpDistP p hpPos hpLt s e).toReal *
+        Set.indicator (whiteStripP n ξ) 1 (w + e) := by
+    intro w hw1 hwg t ht hmem s hsZ
+    have hm : n / 2 - (n / 2 - w.1) = w.1 := by omega
+    have h := hkernel p hpL hpU n ξ hξ F (n / 2 - w.1)
+      (by omega) (by omega) w.2 (by omega) t ht
+      (by
+        rw [show n / 2 - (n / 2 - w.1) - 1 = w.1 - 1 by omega]
+        exact hmem)
+      s hsZ
+    refine le_trans (min_le_left _ _) (h.trans_eq (tsum_congr fun e => ?_))
+    rw [hm]
+    rfl
+  have hY := encExpectP_entered_le p hpPos hpLt F Cthr ε p₁ hε.le hp₁1
+    hsmall hXe1 hwhite
+  have hfresh : ∀ (T' : ℕ) (q : ℕ × ℤ), 1 ≤ q.1 → q.1 + Cthr ≤ n / 2 →
+      ∀ hcov : (q.1 - 1) + 1 ≤ n / 2 ∧ blackP n ξ (q.1 - 1) q.2,
+      encExpectP p hpPos hpLt F (R - 1) Cthr ε T'
+        ⟨q, (F.coveringTriangle (q.1 - 1, q.2) hcov).2.1, 0, 0, 0⟩ ≤
+          TaoCollatz.encChainX ε p₁ :=
+    fun T' q h1 h2 hcov =>
+      hY (R - 1) T' q h1 h2 _ (F.coveringTriangle_mem hcov)
+        (F.coveringTriangle_covers hcov)
+  have hwander := encExpectP_wander_le p hpPos hpLt F (R - 1) Cthr ε hε.le
+    (TaoCollatz.encChainX ε p₁) hfresh 0 T (j', l') l' 0 (le_refl 0)
+  rw [show R - 1 + 1 = R by omega] at hwander
+  change encExpectP p hpPos hpLt F R Cthr ε T
+    (⟨(j', l'), l', 0, 0, 0⟩ : TaoCollatz.EncState) ≤ Real.exp (2 * ε)
+  refine le_trans hwander ?_
+  refine max_le (Real.one_le_exp (by positivity)) ?_
+  calc
+    Real.exp ε * Real.exp (-((0 : ℕ) : ℝ)) * TaoCollatz.encChainX ε p₁ =
+        Real.exp ε * TaoCollatz.encChainX ε p₁ := by norm_num
+    _ ≤ Real.exp ε * Real.exp ε :=
+      mul_le_mul_of_nonneg_left hXe (Real.exp_pos _).le
+    _ = Real.exp (2 * ε) := by
+      rw [← Real.exp_add]
+      ring_nf
+
+/-- Window-uniform tilted Lemma 7.9: many deep triangle encounters force enough
+`whiteStripP` visits to offset the encounter reward.  Both the epsilon cap and
+the depth gate are chosen before the tilt parameter `p`. -/
+theorem many_triangles_whiteP :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
+    ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+    ∀ (p : ℝ) (hpL : 1 / 5 ≤ p) (hpU : p ≤ 3 / 5),
+    ∀ n ξ : ℕ, ¬3 ∣ ξ → ∀ F : TriangleFamilyP n ξ,
+    ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (j' : ℕ) (l' : ℤ),
+    encExpectP p (by linarith [hpL]) (by linarith [hpU]) F R g ε T
+      (encInitP j' l') ≤ Real.exp (2 * ε) := by
+  obtain ⟨p₀, hp₀, Cthr, hkernel⟩ := fpDistP_white_exit_deep
+  let ε₀ : ℝ := min (1 / 100) ((2 * min p₀ 1 - 1) / 2)
+  have hε₀ : 0 < ε₀ := by
+    dsimp only [ε₀]
+    exact lt_min (by norm_num) (by
+      have h1 : (51 : ℝ) / 100 ≤ min p₀ 1 := le_min hp₀ (by norm_num)
+      linarith)
+  refine ⟨ε₀, hε₀, ?_, Cthr, ?_⟩
+  · dsimp only [ε₀]
+    exact min_le_left _ _
+  · dsimp only [ε₀]
+    exact many_triangles_whiteP_core p₀ Cthr hp₀ hkernel
+
 /-! ### The moving-centre slope budget in Lemma 7.10 -/
 
 /-- The tilted counterpart of Tao's numerical inequality (7.64).  At every
