@@ -77,6 +77,127 @@ theorem fpDistPlusP_indicator_sum_le_one (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
           Summable.tsum_le_tsum hle hsumL hsum
     _ = 1 := fpDistPlusP_tsum_toReal p hp0 hp1 s k
 
+/-- A reusable union bound for events under the post-first-passage convolution.
+If an event at `f + w` forces an event of the first-passage endpoint `f` or of
+the appended holding walk `w`, its mass is bounded by the two marginal event
+masses.  This is the common probabilistic glue in both parts of Tao's (7.61). -/
+theorem fpDistPlusP_event_le_add (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    (s k : ℕ) (E Ef Ew : ℕ × ℤ → Prop)
+    [DecidablePred E] [DecidablePred Ef] [DecidablePred Ew]
+    (hsplit : ∀ f w : ℕ × ℤ, E (f + w) → Ef f ∨ Ew w) :
+    (∑' e : ℕ × ℤ, if E e then fpDistPlusP p hp0 hp1 s k e else 0) ≤
+      (∑' f : ℕ × ℤ, if Ef f then fpDistP p hp0 hp1 s f else 0) +
+        ∑' w : ℕ × ℤ, if Ew w then holdSumP p hp0 hp1 k w else 0 := by
+  classical
+  have hexp :
+      (∑' e : ℕ × ℤ, if E e then fpDistPlusP p hp0 hp1 s k e else 0) =
+        ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+          if E (f + w) then
+            fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0 := by
+    have h1 : ∀ e : ℕ × ℤ,
+        (if E e then fpDistPlusP p hp0 hp1 s k e else 0) =
+          ∑' (f : ℕ × ℤ) (w : ℕ × ℤ), if e = f + w then
+            (if E e then
+              fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0)
+            else 0 := by
+      intro e
+      by_cases he : E e
+      · rw [if_pos he, fpDistPlusP, PMF.bind_apply]
+        refine tsum_congr fun f => ?_
+        rw [PMF.map_apply, ← ENNReal.tsum_mul_left]
+        refine tsum_congr fun w => ?_
+        by_cases hew : e = f + w
+        · rw [if_pos hew, if_pos hew, if_pos he]
+        · rw [if_neg hew, if_neg hew, mul_zero]
+      · rw [if_neg he]
+        have hz : ∀ f w : ℕ × ℤ, (if e = f + w then
+            (if E e then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0)
+          else 0) = 0 := by
+          intro f w
+          rw [if_neg he]
+          exact ite_self 0
+        symm
+        simp only [hz, tsum_zero]
+    calc
+      (∑' e : ℕ × ℤ, if E e then fpDistPlusP p hp0 hp1 s k e else 0) =
+          ∑' (e : ℕ × ℤ) (f : ℕ × ℤ) (w : ℕ × ℤ), if e = f + w then
+            (if E e then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0)
+          else 0 := tsum_congr h1
+      _ = ∑' (f : ℕ × ℤ) (e : ℕ × ℤ) (w : ℕ × ℤ), if e = f + w then
+            (if E e then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0)
+          else 0 := ENNReal.tsum_comm
+      _ = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ) (e : ℕ × ℤ), if e = f + w then
+            (if E e then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0)
+          else 0 := tsum_congr fun f => ENNReal.tsum_comm
+      _ = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ), if E (f + w) then
+            fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0 := by
+          refine tsum_congr fun f => tsum_congr fun w => ?_
+          rw [tsum_eq_single (f + w) (fun e he => if_neg he), if_pos rfl]
+  have hpt : ∀ f w : ℕ × ℤ,
+      (if E (f + w) then
+          fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0) ≤
+        (if Ef f then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0) +
+          (if Ew w then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0) := by
+    intro f w
+    by_cases he : E (f + w)
+    · rw [if_pos he]
+      rcases hsplit f w he with hf | hw
+      · rw [if_pos hf]
+        exact le_self_add
+      · rw [if_pos hw]
+        exact le_add_self
+    · rw [if_neg he]
+      exact zero_le
+  have hfirst : ∀ f : ℕ × ℤ,
+      (∑' w : ℕ × ℤ,
+        if Ef f then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0) =
+          if Ef f then fpDistP p hp0 hp1 s f else 0 := by
+    intro f
+    by_cases hf : Ef f
+    · simp only [if_pos hf]
+      rw [ENNReal.tsum_mul_left, (holdSumP p hp0 hp1 k).tsum_coe, mul_one]
+    · simp only [if_neg hf, tsum_zero]
+  have hsecond :
+      (∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+        if Ew w then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0) =
+          ∑' w : ℕ × ℤ, if Ew w then holdSumP p hp0 hp1 k w else 0 := by
+    have h1 : ∀ f w : ℕ × ℤ,
+        (if Ew w then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0) =
+          fpDistP p hp0 hp1 s f *
+            (if Ew w then holdSumP p hp0 hp1 k w else 0) := by
+      intro f w
+      rw [mul_ite, mul_zero]
+    calc
+      (∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+          if Ew w then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0) =
+          ∑' f : ℕ × ℤ, fpDistP p hp0 hp1 s f *
+            ∑' w : ℕ × ℤ, if Ew w then holdSumP p hp0 hp1 k w else 0 := by
+              refine tsum_congr fun f => ?_
+              simp only [h1]
+              exact ENNReal.tsum_mul_left
+      _ = (∑' f : ℕ × ℤ, fpDistP p hp0 hp1 s f) *
+            ∑' w : ℕ × ℤ, if Ew w then holdSumP p hp0 hp1 k w else 0 :=
+          ENNReal.tsum_mul_right
+      _ = ∑' w : ℕ × ℤ, if Ew w then holdSumP p hp0 hp1 k w else 0 := by
+          rw [(fpDistP p hp0 hp1 s).tsum_coe, one_mul]
+  rw [hexp]
+  calc
+    (∑' (f : ℕ × ℤ) (w : ℕ × ℤ), if E (f + w) then
+        fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0) ≤
+        ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+          ((if Ef f then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0) +
+            (if Ew w then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0)) :=
+      ENNReal.tsum_le_tsum fun f => ENNReal.tsum_le_tsum (hpt f)
+    _ = (∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+          if Ef f then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0) +
+        ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+          if Ew w then fpDistP p hp0 hp1 s f * holdSumP p hp0 hp1 k w else 0 := by
+        rw [← ENNReal.tsum_add]
+        exact tsum_congr fun f => ENNReal.tsum_add
+    _ = (∑' f : ℕ × ℤ, if Ef f then fpDistP p hp0 hp1 s f else 0) +
+        ∑' w : ℕ × ℤ, if Ew w then holdSumP p hp0 hp1 k w else 0 := by
+      rw [hsecond, tsum_congr hfirst]
+
 /-! ### Uniform tails for the appended tilted holding walk -/
 
 /-- Markov's inequality for a half-space of `holdSumP`, with an arbitrary
@@ -704,6 +825,333 @@ theorem fpDistP_col_dev :
               Real.exp (-c * D))) :=
   ⟨c_fpColDevP, c_fpColDevP_pos, C_fpColDevP, C_fpColDevP_pos,
     fpDistP_col_dev_explicitC⟩
+
+/-! ### Uniform tails after appended tilted holding steps -/
+
+/-- The coarse estimate `6^k ≤ exp(2k)` used to absorb the uniform holding-law
+moment bound.  Its deliberately generous exponent keeps the downstream (7.61)
+threshold linear and independent of `p`. -/
+theorem six_pow_le_exp_two_mul (k : ℕ) :
+    (6 : ℝ) ^ k ≤ Real.exp (2 * (k : ℝ)) := by
+  have he1 : (2.7 : ℝ) < Real.exp 1 := by
+    linarith [Real.exp_one_gt_d9]
+  have he2 : Real.exp 2 = Real.exp 1 * Real.exp 1 := by
+    rw [← Real.exp_add]
+    norm_num
+  have h6 : (6 : ℝ) ≤ Real.exp 2 := by
+    rw [he2]
+    nlinarith
+  calc
+    (6 : ℝ) ^ k ≤ (Real.exp 2) ^ k :=
+      pow_le_pow_left₀ (by norm_num) h6 k
+    _ = Real.exp ((k : ℝ) * 2) := (Real.exp_nat_mul 2 k).symm
+    _ = Real.exp (2 * (k : ℝ)) := by ring_nf
+
+/-- Uniform decay rate for the tilted post-passage height tail. -/
+noncomputable def c_fpHeightTailP : ℝ := min (c_fpHeightP / 2) (1 / 5000)
+
+/-- Uniform multiplicative constant for the tilted post-passage height tail. -/
+noncomputable def C_fpHeightTailP : ℝ := C_fpHeightP + 1
+
+theorem c_fpHeightTailP_pos : 0 < c_fpHeightTailP := by
+  unfold c_fpHeightTailP
+  exact lt_min (div_pos c_fpHeightP_pos two_pos) (by norm_num)
+
+theorem C_fpHeightTailP_pos : 0 < C_fpHeightTailP := by
+  unfold C_fpHeightTailP
+  linarith [C_fpHeightP_pos]
+
+/-- The height part of Tao's (7.61), uniformly for the tilted law.  The
+first-passage overshoot and appended holding walk are split at `H/2`; the
+margin `10000(1+k) ≤ H` absorbs the latter's uniform `6^k` moment factor. -/
+theorem fpDistPlusP_height_tail_explicitC :
+    ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ s k : ℕ, ∀ H : ℝ, 10000 * (1 + (k : ℝ)) ≤ H →
+      ∑' e : ℕ × ℤ, (fpDistPlusP p (by linarith) (by linarith) s k e).toReal *
+          Set.indicator {q : ℕ × ℤ | (s : ℝ) + H ≤ (q.2 : ℝ)} 1 e
+        ≤ C_fpHeightTailP * Real.exp (-c_fpHeightTailP * H) := by
+  classical
+  intro p hp0 hp1 s k H hH
+  let hp0' : 0 < p := by linarith
+  let hp1' : p < 1 := by linarith
+  set cst : ℝ := min (c_fpHeightP / 2) (1 / 5000) with hcst
+  have hcst0 : 0 < cst :=
+    lt_min (div_pos c_fpHeightP_pos two_pos) (by norm_num)
+  have hH0 : 0 < H := lt_of_lt_of_le (by positivity) hH
+  set T : ℝ≥0∞ :=
+    ∑' e : ℕ × ℤ, if (s : ℝ) + H ≤ (e.2 : ℝ) then
+      fpDistPlusP p hp0' hp1' s k e else 0 with hT
+  have hLHS :
+      (∑' e : ℕ × ℤ, (fpDistPlusP p hp0' hp1' s k e).toReal *
+        Set.indicator {q : ℕ × ℤ | (s : ℝ) + H ≤ (q.2 : ℝ)} 1 e) =
+          T.toReal := by
+    rw [hT, ENNReal.tsum_toReal_eq (fun e => by
+      split_ifs
+      exacts [PMF.apply_ne_top _ _, ENNReal.zero_ne_top])]
+    refine tsum_congr fun e => ?_
+    by_cases he : (s : ℝ) + H ≤ (e.2 : ℝ)
+    · rw [if_pos he, Set.indicator_apply,
+        if_pos (show e ∈ {q : ℕ × ℤ | (s : ℝ) + H ≤ (q.2 : ℝ)} from he),
+        Pi.one_apply, mul_one]
+    · rw [if_neg he, Set.indicator_apply,
+        if_neg (show e ∉ {q : ℕ × ℤ | (s : ℝ) + H ≤ (q.2 : ℝ)} from he),
+        mul_zero, ENNReal.toReal_zero]
+  have hsplit : ∀ f w : ℕ × ℤ,
+      (s : ℝ) + H ≤ ((f + w).2 : ℝ) →
+        (s : ℝ) + H / 2 ≤ (f.2 : ℝ) ∨ H / 2 ≤ (w.2 : ℝ) := by
+    intro f w hfw
+    have hcast : ((f + w).2 : ℝ) = (f.2 : ℝ) + (w.2 : ℝ) := by
+      rw [Prod.snd_add]
+      push_cast
+      ring
+    rw [hcast] at hfw
+    by_cases hf : (s : ℝ) + H / 2 ≤ (f.2 : ℝ)
+    · exact Or.inl hf
+    · right
+      push Not at hf
+      linarith
+  have hconv := fpDistPlusP_event_le_add p hp0' hp1' s k
+    (fun e => (s : ℝ) + H ≤ (e.2 : ℝ))
+    (fun f => (s : ℝ) + H / 2 ≤ (f.2 : ℝ))
+    (fun w => H / 2 ≤ (w.2 : ℝ)) hsplit
+  have hfp := fpDistP_height_tail_explicitC p hp0 hp1 s (H / 2) (by linarith)
+  have hhold := holdSumP_snd_tail_window hp0 hp1 k (H / 2)
+  have hTle : T ≤
+      ENNReal.ofReal (C_fpHeightP * Real.exp (-c_fpHeightP * (H / 2))) +
+        ENNReal.ofReal ((6 : ℝ) ^ k * Real.exp (-(H / 2) / 1000)) := by
+    rw [hT]
+    exact hconv.trans (add_le_add hfp hhold)
+  have hholdReal :
+      (6 : ℝ) ^ k * Real.exp (-(H / 2) / 1000) ≤
+        Real.exp (-(1 / 5000 : ℝ) * H) := by
+    calc
+      (6 : ℝ) ^ k * Real.exp (-(H / 2) / 1000) ≤
+          Real.exp (2 * (k : ℝ)) * Real.exp (-(H / 2) / 1000) :=
+        mul_le_mul_of_nonneg_right (six_pow_le_exp_two_mul k) (Real.exp_pos _).le
+      _ = Real.exp (2 * (k : ℝ) - H / 2000) := by
+        rw [← Real.exp_add]
+        congr 1
+        ring
+      _ ≤ Real.exp (-(1 / 5000 : ℝ) * H) := by
+        apply Real.exp_le_exp.mpr
+        nlinarith
+  have hreal :
+      C_fpHeightP * Real.exp (-c_fpHeightP * (H / 2)) +
+          (6 : ℝ) ^ k * Real.exp (-(H / 2) / 1000) ≤
+        (C_fpHeightP + 1) * Real.exp (-cst * H) := by
+    have hc1 : cst ≤ c_fpHeightP / 2 := min_le_left _ _
+    have hc2 : cst ≤ 1 / 5000 := min_le_right _ _
+    have h1 : Real.exp (-c_fpHeightP * (H / 2)) ≤ Real.exp (-cst * H) := by
+      apply Real.exp_le_exp.mpr
+      nlinarith
+    have h2 : Real.exp (-(1 / 5000 : ℝ) * H) ≤ Real.exp (-cst * H) := by
+      apply Real.exp_le_exp.mpr
+      nlinarith
+    calc
+      C_fpHeightP * Real.exp (-c_fpHeightP * (H / 2)) +
+          (6 : ℝ) ^ k * Real.exp (-(H / 2) / 1000) ≤
+          C_fpHeightP * Real.exp (-cst * H) + Real.exp (-cst * H) :=
+        add_le_add (mul_le_mul_of_nonneg_left h1 C_fpHeightP_pos.le)
+          (hholdReal.trans h2)
+      _ = (C_fpHeightP + 1) * Real.exp (-cst * H) := by ring
+  rw [hLHS]
+  refine ENNReal.toReal_le_of_le_ofReal
+    (mul_pos C_fpHeightTailP_pos (Real.exp_pos _)).le ?_
+  calc
+    T ≤ _ := hTle
+    _ ≤ ENNReal.ofReal ((C_fpHeightP + 1) * Real.exp (-cst * H)) := by
+      rw [← ENNReal.ofReal_add
+        (mul_nonneg C_fpHeightP_pos.le (Real.exp_pos _).le)
+        (mul_nonneg (pow_nonneg (by norm_num) _) (Real.exp_pos _).le)]
+      exact ENNReal.ofReal_le_ofReal hreal
+    _ = ENNReal.ofReal (C_fpHeightTailP *
+        Real.exp (-c_fpHeightTailP * H)) := by
+      unfold C_fpHeightTailP c_fpHeightTailP
+      rw [← hcst]
+
+/-- Existential interface for the tilted post-passage height tail. -/
+theorem fpDistPlusP_height_tail :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ),
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ s k : ℕ, ∀ H : ℝ, 10000 * (1 + (k : ℝ)) ≤ H →
+      ∑' e : ℕ × ℤ, (fpDistPlusP p (by linarith) (by linarith) s k e).toReal *
+          Set.indicator {q : ℕ × ℤ | (s : ℝ) + H ≤ (q.2 : ℝ)} 1 e
+        ≤ C * Real.exp (-c * H) :=
+  ⟨c_fpHeightTailP, c_fpHeightTailP_pos,
+    C_fpHeightTailP, C_fpHeightTailP_pos, fpDistPlusP_height_tail_explicitC⟩
+
+/-- Uniform decay rate for the tilted post-passage column tail. -/
+noncomputable def c_fpColTailP : ℝ := min c_fpColDevP (1 / 2000)
+
+/-- Uniform multiplicative constant for the tilted post-passage column tail. -/
+noncomputable def C_fpColTailP : ℝ := C_fpColDevP + 1
+
+theorem c_fpColTailP_pos : 0 < c_fpColTailP := by
+  unfold c_fpColTailP
+  exact lt_min c_fpColDevP_pos (by norm_num)
+
+theorem C_fpColTailP_pos : 0 < C_fpColTailP := by
+  unfold C_fpColTailP
+  linarith [C_fpColDevP_pos]
+
+/-- The column part of Tao's (7.61), with the first-passage centre moved from
+`s/4` to the correct tilted value `p s/2`.  The event is split between a
+deviation of the first-passage endpoint by `D` and a holding-walk displacement
+by `D`; the same uniform linear margin absorbs the latter's `6^k` factor. -/
+theorem fpDistPlusP_col_tail_explicitC :
+    ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ s k : ℕ, ∀ D : ℝ, 10000 * (1 + (k : ℝ)) ≤ D →
+      ∑' e : ℕ × ℤ, (fpDistPlusP p (by linarith) (by linarith) s k e).toReal *
+          Set.indicator {q : ℕ × ℤ |
+            2 * D ≤ |(q.1 : ℝ) - p / 2 * (s : ℝ)|} 1 e
+        ≤ C_fpColTailP *
+          (Real.exp (-c_fpColTailP * D ^ 2 / (1 + (s : ℝ))) +
+            Real.exp (-c_fpColTailP * D)) := by
+  classical
+  intro p hp0 hp1 s k D hD
+  let hp0' : 0 < p := by linarith
+  let hp1' : p < 1 := by linarith
+  set cst : ℝ := min c_fpColDevP (1 / 2000) with hcst
+  have hcst0 : 0 < cst := lt_min c_fpColDevP_pos (by norm_num)
+  have hD0 : 0 < D := lt_of_lt_of_le (by positivity) hD
+  set T : ℝ≥0∞ :=
+    ∑' e : ℕ × ℤ, if 2 * D ≤ |(e.1 : ℝ) - p / 2 * (s : ℝ)| then
+      fpDistPlusP p hp0' hp1' s k e else 0 with hT
+  have hLHS :
+      (∑' e : ℕ × ℤ, (fpDistPlusP p hp0' hp1' s k e).toReal *
+        Set.indicator {q : ℕ × ℤ |
+          2 * D ≤ |(q.1 : ℝ) - p / 2 * (s : ℝ)|} 1 e) = T.toReal := by
+    rw [hT, ENNReal.tsum_toReal_eq (fun e => by
+      split_ifs
+      exacts [PMF.apply_ne_top _ _, ENNReal.zero_ne_top])]
+    refine tsum_congr fun e => ?_
+    by_cases he : 2 * D ≤ |(e.1 : ℝ) - p / 2 * (s : ℝ)|
+    · rw [if_pos he, Set.indicator_apply,
+        if_pos (show e ∈ {q : ℕ × ℤ |
+          2 * D ≤ |(q.1 : ℝ) - p / 2 * (s : ℝ)|} from he),
+        Pi.one_apply, mul_one]
+    · rw [if_neg he, Set.indicator_apply,
+        if_neg (show e ∉ {q : ℕ × ℤ |
+          2 * D ≤ |(q.1 : ℝ) - p / 2 * (s : ℝ)|} from he),
+        mul_zero, ENNReal.toReal_zero]
+  have hsplit : ∀ f w : ℕ × ℤ,
+      2 * D ≤ |((f + w).1 : ℝ) - p / 2 * (s : ℝ)| →
+        D ≤ |(f.1 : ℝ) - p / 2 * (s : ℝ)| ∨ D ≤ (w.1 : ℝ) := by
+    intro f w hfw
+    have hcast : ((f + w).1 : ℝ) = (f.1 : ℝ) + (w.1 : ℝ) := by
+      rw [Prod.fst_add]
+      push_cast
+      ring
+    by_cases hf : D ≤ |(f.1 : ℝ) - p / 2 * (s : ℝ)|
+    · exact Or.inl hf
+    · right
+      push Not at hf
+      rw [hcast] at hfw
+      have htri : |(f.1 : ℝ) + (w.1 : ℝ) - p / 2 * (s : ℝ)| ≤
+          |(f.1 : ℝ) - p / 2 * (s : ℝ)| + (w.1 : ℝ) := by
+        have heq : (f.1 : ℝ) + (w.1 : ℝ) - p / 2 * (s : ℝ) =
+            ((f.1 : ℝ) - p / 2 * (s : ℝ)) + (w.1 : ℝ) := by ring
+        rw [heq]
+        calc
+          |((f.1 : ℝ) - p / 2 * (s : ℝ)) + (w.1 : ℝ)| ≤
+              |(f.1 : ℝ) - p / 2 * (s : ℝ)| + |(w.1 : ℝ)| := abs_add_le _ _
+          _ = |(f.1 : ℝ) - p / 2 * (s : ℝ)| + (w.1 : ℝ) := by
+            rw [Nat.abs_cast]
+      linarith
+  have hconv := fpDistPlusP_event_le_add p hp0' hp1' s k
+    (fun e => 2 * D ≤ |(e.1 : ℝ) - p / 2 * (s : ℝ)|)
+    (fun f => D ≤ |(f.1 : ℝ) - p / 2 * (s : ℝ)|)
+    (fun w => D ≤ (w.1 : ℝ)) hsplit
+  have hfp := fpDistP_col_dev_explicitC p hp0 hp1 s D hD0.le
+  have hhold := holdSumP_fst_tail_window hp0 hp1 k D
+  have hTle : T ≤ ENNReal.ofReal
+        (C_fpColDevP * (Real.exp (-c_fpColDevP * D ^ 2 / (1 + (s : ℝ))) +
+          Real.exp (-c_fpColDevP * D))) +
+      ENNReal.ofReal ((6 : ℝ) ^ k * Real.exp (-D / 1000)) := by
+    rw [hT]
+    exact hconv.trans (add_le_add hfp hhold)
+  have hholdReal : (6 : ℝ) ^ k * Real.exp (-D / 1000) ≤
+      Real.exp (-(1 / 2000 : ℝ) * D) := by
+    calc
+      (6 : ℝ) ^ k * Real.exp (-D / 1000) ≤
+          Real.exp (2 * (k : ℝ)) * Real.exp (-D / 1000) :=
+        mul_le_mul_of_nonneg_right (six_pow_le_exp_two_mul k) (Real.exp_pos _).le
+      _ = Real.exp (2 * (k : ℝ) - D / 1000) := by
+        rw [← Real.exp_add]
+        congr 1
+        ring
+      _ ≤ Real.exp (-(1 / 2000 : ℝ) * D) := by
+        apply Real.exp_le_exp.mpr
+        nlinarith
+  have hreal :
+      C_fpColDevP * (Real.exp (-c_fpColDevP * D ^ 2 / (1 + (s : ℝ))) +
+          Real.exp (-c_fpColDevP * D)) +
+          (6 : ℝ) ^ k * Real.exp (-D / 1000) ≤
+        (C_fpColDevP + 1) *
+          (Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) +
+            Real.exp (-cst * D)) := by
+    have hc1 : cst ≤ c_fpColDevP := min_le_left _ _
+    have hc2 : cst ≤ 1 / 2000 := min_le_right _ _
+    have hden : 0 < 1 + (s : ℝ) := by positivity
+    have h1 : Real.exp (-c_fpColDevP * D ^ 2 / (1 + (s : ℝ))) ≤
+        Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) := by
+      apply Real.exp_le_exp.mpr
+      apply div_le_div_of_nonneg_right ?_ hden.le
+      nlinarith [sq_nonneg D,
+        mul_le_mul_of_nonneg_right hc1 (sq_nonneg D)]
+    have h2 : Real.exp (-c_fpColDevP * D) ≤ Real.exp (-cst * D) := by
+      apply Real.exp_le_exp.mpr
+      nlinarith
+    have h3 : Real.exp (-(1 / 2000 : ℝ) * D) ≤ Real.exp (-cst * D) := by
+      apply Real.exp_le_exp.mpr
+      nlinarith
+    have he1 : 0 ≤ Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) :=
+      (Real.exp_pos _).le
+    have he2 : 0 ≤ Real.exp (-cst * D) := (Real.exp_pos _).le
+    calc
+      C_fpColDevP * (Real.exp (-c_fpColDevP * D ^ 2 / (1 + (s : ℝ))) +
+          Real.exp (-c_fpColDevP * D)) +
+          (6 : ℝ) ^ k * Real.exp (-D / 1000) ≤
+          C_fpColDevP * (Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) +
+            Real.exp (-cst * D)) + Real.exp (-cst * D) :=
+        add_le_add
+          (mul_le_mul_of_nonneg_left (add_le_add h1 h2) C_fpColDevP_pos.le)
+          (hholdReal.trans h3)
+      _ ≤ (C_fpColDevP + 1) *
+          (Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) +
+            Real.exp (-cst * D)) := by nlinarith
+  rw [hLHS]
+  refine ENNReal.toReal_le_of_le_ofReal
+    (mul_nonneg C_fpColTailP_pos.le
+      (add_nonneg (Real.exp_pos _).le (Real.exp_pos _).le)) ?_
+  calc
+    T ≤ _ := hTle
+    _ ≤ ENNReal.ofReal ((C_fpColDevP + 1) *
+        (Real.exp (-cst * D ^ 2 / (1 + (s : ℝ))) +
+          Real.exp (-cst * D))) := by
+      rw [← ENNReal.ofReal_add
+        (mul_nonneg C_fpColDevP_pos.le
+          (add_nonneg (Real.exp_pos _).le (Real.exp_pos _).le))
+        (mul_nonneg (pow_nonneg (by norm_num) _) (Real.exp_pos _).le)]
+      exact ENNReal.ofReal_le_ofReal hreal
+    _ = ENNReal.ofReal (C_fpColTailP *
+        (Real.exp (-c_fpColTailP * D ^ 2 / (1 + (s : ℝ))) +
+          Real.exp (-c_fpColTailP * D))) := by
+      unfold C_fpColTailP c_fpColTailP
+      rw [← hcst]
+
+/-- Existential interface for the tilted post-passage column tail. -/
+theorem fpDistPlusP_col_tail :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ),
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ s k : ℕ, ∀ D : ℝ, 10000 * (1 + (k : ℝ)) ≤ D →
+      ∑' e : ℕ × ℤ, (fpDistPlusP p (by linarith) (by linarith) s k e).toReal *
+          Set.indicator {q : ℕ × ℤ |
+            2 * D ≤ |(q.1 : ℝ) - p / 2 * (s : ℝ)|} 1 e
+        ≤ C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) +
+          Real.exp (-c * D)) :=
+  ⟨c_fpColTailP, c_fpColTailP_pos,
+    C_fpColTailP, C_fpColTailP_pos, fpDistPlusP_col_tail_explicitC⟩
 
 /-- Phase points beyond the right edge of the half strip. -/
 def outStripSetP (n : ℕ) : Set (ℕ × ℤ) := {q : ℕ × ℤ | n / 2 < q.1}
