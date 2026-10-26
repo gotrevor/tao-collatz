@@ -2122,6 +2122,154 @@ theorem encExpectP_anti (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
     exact Summable.tsum_le_tsum
       (fun d => mul_le_mul_of_nonneg_left (hstep d) ENNReal.toReal_nonneg) hsum2 hsum1
 
+/-- Affine normalization of a tilted encounter state.  Two folds driven by the
+same `holdP p` path and agreeing in their geometric fields stay coupled after
+removing `c` already-spent encounters and `w` already-seen white points.  This
+is the law-parametric CLAIM-G input to the Lemma-7.9 entered-state induction. -/
+theorem encExpectP_normalize (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R' g : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (c w k : ℕ) (T : ℕ) :
+    ∀ σ τ : TaoCollatz.EncState, σ.pos = τ.pos → σ.barrier = τ.barrier →
+      σ.count = τ.count + c → σ.cumWhite = τ.cumWhite + w →
+      ((σ.banked = k ∧ τ.banked = 0) ∨ σ.banked = τ.banked + w) →
+      encExpectP p hp0 hp1 F (R' + c) g ε T σ ≤
+        Real.exp (ε * c) * max (Real.exp (-(k : ℝ))) (Real.exp (-(w : ℝ))) *
+          encExpectP p hp0 hp1 F R' g ε T τ := by
+  set M : ℝ := max (Real.exp (-(k : ℝ))) (Real.exp (-(w : ℝ))) with hM
+  have hM0 : 0 < M := lt_max_of_lt_left (Real.exp_pos _)
+  induction T with
+  | zero =>
+    intro σ τ hpos hbar hcnt hcw hbk
+    rw [encExpectP_zero, encExpectP_zero, TaoCollatz.encVal, TaoCollatz.encVal]
+    have hmin : min σ.count (R' + c) = min τ.count R' + c := by
+      omega
+    have hbank : Real.exp (-(σ.banked : ℝ)) ≤ M * Real.exp (-(τ.banked : ℝ)) := by
+      rcases hbk with ⟨hσk, hτ0⟩ | hoff
+      · rw [hσk, hτ0, hM]
+        simp only [Nat.cast_zero, neg_zero, Real.exp_zero, mul_one]
+        exact le_max_left _ _
+      · rw [hoff]
+        push_cast
+        rw [neg_add, Real.exp_add, mul_comm (Real.exp (-(τ.banked : ℝ)))]
+        exact mul_le_mul_of_nonneg_right (hM ▸ le_max_right _ _)
+          (Real.exp_pos _).le
+    calc
+      Real.exp (-(σ.banked : ℝ) + ε * min σ.count (R' + c)) =
+          Real.exp (-(σ.banked : ℝ)) * Real.exp (ε * min τ.count R') *
+            Real.exp (ε * c) := by
+        rw [hmin, ← Real.exp_add, ← Real.exp_add]
+        push_cast
+        ring_nf
+      _ ≤ (M * Real.exp (-(τ.banked : ℝ))) * Real.exp (ε * min τ.count R') *
+          Real.exp (ε * c) :=
+        mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_right hbank (Real.exp_pos _).le)
+          (Real.exp_pos _).le
+      _ = Real.exp (ε * c) * M *
+          Real.exp (-(τ.banked : ℝ) + ε * min τ.count R') := by
+        rw [Real.exp_add]
+        ring
+  | succ T IH =>
+    intro σ τ hpos hbar hcnt hcw hbk
+    rw [encExpectP_succ p hp0 hp1 F (R' + c) g ε hε T σ,
+      encExpectP_succ p hp0 hp1 F R' g ε hε T τ]
+    have hstep : ∀ d : ℕ × ℤ,
+        encExpectP p hp0 hp1 F (R' + c) g ε T (encStepP F (R' + c) g σ d) ≤
+          Real.exp (ε * c) * M *
+            encExpectP p hp0 hp1 F R' g ε T (encStepP F R' g τ d) := by
+      intro d
+      obtain ⟨p₁, b₁, c₁, w₁, k₁⟩ := σ
+      obtain ⟨p₂, b₂, c₂, w₂, k₂⟩ := τ
+      simp only at hpos hbar hcnt hcw
+      subst hpos hbar hcnt hcw
+      simp only [encStepP]
+      by_cases hq : 1 ≤ (p₁ + d).1 ∧ (p₁ + d).1 + g ≤ n / 2
+          ∧ blackP n ξ ((p₁ + d).1 - 1) (p₁ + d).2 ∧ b₁ < (p₁ + d).2
+      · simp only [dif_pos hq]
+        refine IH _ _ rfl rfl (by dsimp only; omega) (by dsimp only; omega) ?_
+        by_cases hcR : c₂ < R'
+        · refine Or.inr ?_
+          dsimp only
+          rw [if_pos (show c₂ + c < R' + c by omega), if_pos hcR]
+          omega
+        · dsimp only
+          rw [if_neg (show ¬c₂ + c < R' + c by omega), if_neg hcR]
+          simpa using hbk
+      · simp only [dif_neg hq]
+        refine IH _ _ rfl rfl (by dsimp only) (by dsimp only; omega) ?_
+        dsimp only
+        simpa using hbk
+    have hnnσ : ∀ d : ℕ × ℤ,
+        0 ≤ (holdP p hp0 hp1 d).toReal *
+          encExpectP p hp0 hp1 F (R' + c) g ε T (encStepP F (R' + c) g σ d) :=
+      fun d => mul_nonneg ENNReal.toReal_nonneg
+        (encExpectP_nonneg p hp0 hp1 _ _ _ ε T _)
+    have hboundσ : ∀ d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+            encExpectP p hp0 hp1 F (R' + c) g ε T (encStepP F (R' + c) g σ d) ≤
+          (holdP p hp0 hp1 d).toReal * Real.exp (ε * ((R' + c : ℕ) : ℝ)) :=
+      fun d => mul_le_mul_of_nonneg_left
+        (encExpectP_le p hp0 hp1 F (R' + c) g ε hε T _) ENNReal.toReal_nonneg
+    have hsumH : Summable (fun d : ℕ × ℤ => (holdP p hp0 hp1 d).toReal) :=
+      holdP_summable_toReal p hp0 hp1
+    have hsumσ : Summable (fun d : ℕ × ℤ =>
+        (holdP p hp0 hp1 d).toReal *
+          encExpectP p hp0 hp1 F (R' + c) g ε T (encStepP F (R' + c) g σ d)) :=
+      Summable.of_nonneg_of_le hnnσ hboundσ (hsumH.mul_right _)
+    have hboundτ : ∀ d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+            encExpectP p hp0 hp1 F R' g ε T (encStepP F R' g τ d) ≤
+          (holdP p hp0 hp1 d).toReal * Real.exp (ε * (R' : ℝ)) :=
+      fun d => mul_le_mul_of_nonneg_left
+        (encExpectP_le p hp0 hp1 F R' g ε hε T _) ENNReal.toReal_nonneg
+    have hsumτ : Summable (fun d : ℕ × ℤ =>
+        (holdP p hp0 hp1 d).toReal *
+          encExpectP p hp0 hp1 F R' g ε T (encStepP F R' g τ d)) :=
+      Summable.of_nonneg_of_le
+        (fun d => mul_nonneg ENNReal.toReal_nonneg
+          (encExpectP_nonneg p hp0 hp1 _ _ _ ε T _))
+        hboundτ (hsumH.mul_right _)
+    calc
+      ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+          encExpectP p hp0 hp1 F (R' + c) g ε T (encStepP F (R' + c) g σ d) ≤
+          ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+            (Real.exp (ε * c) * M *
+              encExpectP p hp0 hp1 F R' g ε T (encStepP F R' g τ d)) := by
+        refine Summable.tsum_le_tsum
+          (fun d => mul_le_mul_of_nonneg_left (hstep d) ENNReal.toReal_nonneg)
+          hsumσ ?_
+        have heq : (fun d : ℕ × ℤ => (holdP p hp0 hp1 d).toReal *
+            (Real.exp (ε * c) * M *
+              encExpectP p hp0 hp1 F R' g ε T (encStepP F R' g τ d))) =
+            fun d : ℕ × ℤ => Real.exp (ε * c) * M *
+              ((holdP p hp0 hp1 d).toReal *
+                encExpectP p hp0 hp1 F R' g ε T (encStepP F R' g τ d)) := by
+          funext d
+          ring
+        rw [heq]
+        exact hsumτ.mul_left _
+      _ = Real.exp (ε * c) * M *
+          ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+            encExpectP p hp0 hp1 F R' g ε T (encStepP F R' g τ d) := by
+        rw [← tsum_mul_left]
+        exact tsum_congr fun d => by ring
+
+/-- Fresh-state specialization of `encExpectP_normalize`: a mid-flight tilted
+state is reduced to the same position and barrier with zeroed encounter and
+white counters, at the remaining encounter budget. -/
+theorem encExpectP_normalize_init (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) (σ : TaoCollatz.EncState) (hc : σ.count ≤ R) :
+    encExpectP p hp0 hp1 F R g ε T σ ≤
+      Real.exp (ε * σ.count) *
+        max (Real.exp (-(σ.banked : ℝ))) (Real.exp (-(σ.cumWhite : ℝ))) *
+          encExpectP p hp0 hp1 F (R - σ.count) g ε T
+            ⟨σ.pos, σ.barrier, 0, 0, 0⟩ := by
+  have h := encExpectP_normalize p hp0 hp1 F (R - σ.count) g ε hε
+    σ.count σ.cumWhite σ.banked T σ ⟨σ.pos, σ.barrier, 0, 0, 0⟩
+    rfl rfl (by dsimp only; omega) (by dsimp only; omega) (Or.inl ⟨rfl, rfl⟩)
+  rwa [show R - σ.count + σ.count = R by omega] at h
+
 /-- Once the walk lies beyond the gated encounter line, its tilted fold is
 frozen: future first coordinates only increase, so no later step can encounter
 a triangle. -/
@@ -2156,6 +2304,118 @@ theorem encExpectP_of_edge (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
     rw [tsum_congr fun d => by rw [hstep d], tsum_mul_right,
       holdP_tsum_toReal p hp0 hp1, one_mul]
 
+/-- Wander bound between tilted encounter blocks.  If every freshly entered
+state with budget `R'` is bounded by `Z`, a state which has not yet encountered
+and already carries at least `w₀` white points is bounded by
+`max 1 (exp ε * exp (-w₀) * Z)`.  The proof is uniform in the law parameter: it
+uses only total mass one of `holdP p` and the pathwise normalization coupling. -/
+theorem encExpectP_wander_le (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R' g : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (Z : ℝ)
+    (hfresh : ∀ (T' : ℕ) (q : ℕ × ℤ), 1 ≤ q.1 → q.1 + g ≤ n / 2 →
+      ∀ hcov : (q.1 - 1) + 1 ≤ n / 2 ∧ blackP n ξ (q.1 - 1) q.2,
+      encExpectP p hp0 hp1 F R' g ε T'
+        ⟨q, (F.coveringTriangle (q.1 - 1, q.2) hcov).2.1, 0, 0, 0⟩ ≤ Z)
+    (w₀ : ℕ) (T : ℕ) :
+    ∀ (q : ℕ × ℤ) (b : ℤ) (w : ℕ), w₀ ≤ w →
+      encExpectP p hp0 hp1 F (R' + 1) g ε T ⟨q, b, 0, w, 0⟩ ≤
+        max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) := by
+  classical
+  induction T with
+  | zero =>
+    intro q b w hw
+    rw [encExpectP_zero]
+    refine le_max_of_le_left ?_
+    rw [TaoCollatz.encVal]
+    simp
+  | succ T IH =>
+    intro q b w hw
+    rw [encExpectP_succ p hp0 hp1 F (R' + 1) g ε hε T _]
+    have hstep : ∀ d : ℕ × ℤ,
+        encExpectP p hp0 hp1 F (R' + 1) g ε T
+            (encStepP F (R' + 1) g ⟨q, b, 0, w, 0⟩ d) ≤
+          max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) := by
+      intro d
+      by_cases hq : 1 ≤ (q + d).1 ∧ (q + d).1 + g ≤ n / 2
+          ∧ blackP n ξ ((q + d).1 - 1) (q + d).2 ∧ b < (q + d).2
+      · have hq' : 1 ≤ (q + d).1 ∧ (q + d).1 + g ≤ n / 2
+            ∧ blackP n ξ ((q + d).1 - 1) (q + d).2 ∧ b < (q + d).2 := hq
+        set σ' := encStepP F (R' + 1) g ⟨q, b, 0, w, 0⟩ d with hσ'
+        have hcnt : σ'.count = 1 := by
+          rw [hσ', encStepP, dif_pos hq']
+        have hcw : w₀ ≤ σ'.cumWhite := by
+          rw [hσ', encStepP, dif_pos hq']
+          dsimp only
+          omega
+        have hbk : σ'.banked = σ'.cumWhite := by
+          rw [hσ', encStepP, dif_pos hq']
+          dsimp only
+          rw [if_pos (show (0 : ℕ) < R' + 1 by omega)]
+        have hnorm := encExpectP_normalize_init p hp0 hp1 F (R' + 1) g ε hε T σ'
+          (by rw [hcnt]; omega)
+        refine le_max_of_le_right (le_trans hnorm ?_)
+        rw [hbk, max_self, hcnt]
+        have h2 : Real.exp (-(σ'.cumWhite : ℝ)) ≤ Real.exp (-(w₀ : ℝ)) := by
+          apply Real.exp_le_exp.mpr
+          have hle : (w₀ : ℝ) ≤ (σ'.cumWhite : ℝ) := Nat.cast_le.mpr hcw
+          linarith
+        have hpos' : σ'.pos = q + d := by
+          rw [hσ', encStepP, dif_pos hq']
+        have hcov : ((q + d).1 - 1) + 1 ≤ n / 2 ∧
+            blackP n ξ ((q + d).1 - 1) (q + d).2 :=
+          ⟨by omega, hq'.2.2.1⟩
+        have hbar' : σ'.barrier =
+            (F.coveringTriangle ((q + d).1 - 1, (q + d).2) hcov).2.1 := by
+          rw [hσ', encStepP, dif_pos hq']
+        have h3 : encExpectP p hp0 hp1 F (R' + 1 - 1) g ε T
+            ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩ ≤ Z := by
+          rw [hpos', hbar']
+          simpa using hfresh T (q + d) hq'.1 hq'.2.1 hcov
+        have hE0 : 0 ≤ encExpectP p hp0 hp1 F (R' + 1 - 1) g ε T
+            ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩ :=
+          encExpectP_nonneg p hp0 hp1 _ _ _ ε T _
+        have hexp1 : Real.exp (ε * ((1 : ℕ) : ℝ)) = Real.exp ε := by
+          norm_num
+        calc
+          Real.exp (ε * ((1 : ℕ) : ℝ)) * Real.exp (-(σ'.cumWhite : ℝ)) *
+              encExpectP p hp0 hp1 F (R' + 1 - 1) g ε T
+                ⟨σ'.pos, σ'.barrier, 0, 0, 0⟩ ≤
+            Real.exp (ε * ((1 : ℕ) : ℝ)) * Real.exp (-(w₀ : ℝ)) * Z :=
+              mul_le_mul (mul_le_mul_of_nonneg_left h2 (Real.exp_pos _).le) h3 hE0
+                (mul_nonneg (Real.exp_pos _).le (Real.exp_pos _).le)
+          _ = Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z := by
+            rw [hexp1]
+      · have hs : encStepP F (R' + 1) g ⟨q, b, 0, w, 0⟩ d =
+            ⟨q + d, b, 0,
+              w + (if q + d ∈ whiteStripP n ξ then 1 else 0), 0⟩ := by
+          rw [encStepP, dif_neg (by exact hq)]
+        rw [hs]
+        exact IH (q + d) b _ (by omega)
+    have hM0 : 0 ≤ max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) :=
+      le_max_of_le_left zero_le_one
+    have hsumH : Summable (fun d : ℕ × ℤ => (holdP p hp0 hp1 d).toReal) :=
+      holdP_summable_toReal p hp0 hp1
+    have hsumL : Summable (fun d : ℕ × ℤ => (holdP p hp0 hp1 d).toReal *
+        encExpectP p hp0 hp1 F (R' + 1) g ε T
+          (encStepP F (R' + 1) g ⟨q, b, 0, w, 0⟩ d)) :=
+      Summable.of_nonneg_of_le
+        (fun d => mul_nonneg ENNReal.toReal_nonneg
+          (encExpectP_nonneg p hp0 hp1 _ _ _ ε T _))
+        (fun d => mul_le_mul_of_nonneg_left
+          (encExpectP_le p hp0 hp1 _ _ _ ε hε T _) ENNReal.toReal_nonneg)
+        (hsumH.mul_right _)
+    calc
+      ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+          encExpectP p hp0 hp1 F (R' + 1) g ε T
+            (encStepP F (R' + 1) g ⟨q, b, 0, w, 0⟩ d) ≤
+        ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+          max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) :=
+            Summable.tsum_le_tsum
+              (fun d => mul_le_mul_of_nonneg_left (hstep d) ENNReal.toReal_nonneg)
+              hsumL (hsumH.mul_right _)
+      _ = max 1 (Real.exp ε * Real.exp (-(w₀ : ℝ)) * Z) := by
+        rw [tsum_mul_right, holdP_tsum_toReal p hp0 hp1, one_mul]
+
 /-- Translation covariance of one tilted encounter step.  This is the reindexing
 identity used by the first-passage block bridge. -/
 theorem encStepP_shift {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ)
@@ -2189,6 +2449,161 @@ theorem encStepP_shift {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ)
         if_pos (show σ.pos + d + e ∈ whiteStripP n ξ by rw [hpe]; exact hw), hpe]
     · rw [if_neg hw,
         if_neg (show σ.pos + d + e ∉ whiteStripP n ξ by rw [hpe]; exact hw), hpe]
+
+/-- First-passage block bridge for the tilted encounter fold.  Before the
+current height barrier is cleared, no encounter is possible; dropping the
+intermediate white increments by `encExpectP_anti` identifies the remaining
+recursion with `fpDistP p`.  Thus any bounded observable dominating every
+clearing-step continuation also dominates the whole finite-horizon fold. -/
+theorem encExpectP_block_le (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) :
+    ∀ s : ℕ, ∀ σ : TaoCollatz.EncState, (s : ℤ) = σ.barrier - σ.pos.2 →
+    ∀ T : ℕ,
+    ∀ f : ℕ × ℤ → ℝ, (∀ e, 0 ≤ f e) → ∀ B : ℝ, (∀ e, f e ≤ B) →
+    (∀ e : ℕ × ℤ, TaoCollatz.encVal ε R σ ≤ f e) →
+    (∀ e : ℕ × ℤ, (s : ℤ) < e.2 → ∀ T' : ℕ, T' < T →
+      encExpectP p hp0 hp1 F R g ε T' (encStepP F R g σ e) ≤ f e) →
+    encExpectP p hp0 hp1 F R g ε T σ ≤
+      ∑' e : ℕ × ℤ, (fpDistP p hp0 hp1 s e).toReal * f e := by
+  intro s
+  induction s using Nat.strong_induction_on with
+  | _ s IH =>
+    intro σ hs T f hg0 B hgB hf1 hg
+    classical
+    have hB : 0 ≤ B := le_trans (hg0 (0, 0)) (hgB (0, 0))
+    rcases T with _ | T'
+    · rw [encExpectP_zero]
+      have hsum0 : Summable (fun e : ℕ × ℤ =>
+          (fpDistP p hp0 hp1 s e).toReal) :=
+        ENNReal.summable_toReal (by
+          rw [(fpDistP p hp0 hp1 s).tsum_coe]
+          exact ENNReal.one_ne_top)
+      have hle0 : ∀ e : ℕ × ℤ,
+          (fpDistP p hp0 hp1 s e).toReal * TaoCollatz.encVal ε R σ ≤
+            (fpDistP p hp0 hp1 s e).toReal * f e :=
+        fun e => mul_le_mul_of_nonneg_left (hf1 e) ENNReal.toReal_nonneg
+      have hsumR0 : Summable (fun e : ℕ × ℤ =>
+          (fpDistP p hp0 hp1 s e).toReal * f e) :=
+        Summable.of_nonneg_of_le
+          (fun e => mul_nonneg ENNReal.toReal_nonneg (hg0 e))
+          (fun e => mul_le_mul_of_nonneg_left (hgB e) ENNReal.toReal_nonneg)
+          (hsum0.mul_right B)
+      calc
+        TaoCollatz.encVal ε R σ =
+            ∑' e : ℕ × ℤ, (fpDistP p hp0 hp1 s e).toReal *
+              TaoCollatz.encVal ε R σ := by
+          rw [tsum_mul_right,
+            ← ENNReal.tsum_toReal_eq
+              (fun e => (fpDistP p hp0 hp1 s).apply_ne_top e),
+            (fpDistP p hp0 hp1 s).tsum_coe, ENNReal.toReal_one, one_mul]
+        _ ≤ ∑' e : ℕ × ℤ, (fpDistP p hp0 hp1 s e).toReal * f e :=
+          Summable.tsum_le_tsum hle0 (hsum0.mul_right _) hsumR0
+    rw [encExpectP_succ p hp0 hp1 F R g ε hε T' σ]
+    conv_rhs => rw [fpDistP]
+    rw [TaoCollatz.tsum_bind_toReal (holdP p hp0 hp1) _ f hg0 hgB]
+    have hterm : ∀ d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+            encExpectP p hp0 hp1 F R g ε T' (encStepP F R g σ d) ≤
+          (holdP p hp0 hp1 d).toReal *
+            ∑' e, (((if d.2 ≤ 0 ∨ (s : ℤ) < d.2 then PMF.pure d
+              else (fpDistP p hp0 hp1 (s - d.2.toNat)).map
+                fun e => (d.1 + e.1, d.2 + e.2)) : PMF (ℕ × ℤ)) e).toReal *
+              f e := by
+      intro d
+      rcases eq_or_ne (holdP p hp0 hp1 d) 0 with h0 | h0
+      · rw [h0]
+        simp
+      have hd3 : 3 ≤ d.2 :=
+        holdP_support_snd_ge p hp0 hp1 d (by rwa [PMF.mem_support_iff])
+      apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+      rcases lt_or_ge (s : ℤ) d.2 with hover | hunder
+      · rw [if_pos (Or.inr hover)]
+        calc
+          encExpectP p hp0 hp1 F R g ε T' (encStepP F R g σ d) ≤ f d :=
+            hg d hover T' (by omega)
+          _ = ∑' e, ((PMF.pure d : PMF (ℕ × ℤ)) e).toReal * f e := by
+            rw [tsum_eq_single d (fun e he => by
+              rw [PMF.pure_apply, if_neg he]
+              simp)]
+            rw [PMF.pure_apply, if_pos rfl]
+            simp
+      · rw [if_neg (by push Not; exact ⟨by omega, hunder⟩)]
+        have hnc : ¬(1 ≤ (σ.pos + d).1 ∧ (σ.pos + d).1 + g ≤ n / 2
+            ∧ blackP n ξ ((σ.pos + d).1 - 1) (σ.pos + d).2
+            ∧ σ.barrier < (σ.pos + d).2) := by
+          rintro ⟨-, -, -, hbar⟩
+          have : (σ.pos + d).2 = σ.pos.2 + d.2 := rfl
+          omega
+        have hstep : encStepP F R g σ d =
+            ⟨σ.pos + d, σ.barrier, σ.count,
+              σ.cumWhite + (if σ.pos + d ∈ whiteStripP n ξ then 1 else 0),
+              σ.banked⟩ := by
+          rw [encStepP, dif_neg hnc]
+        have hdrop :
+            encExpectP p hp0 hp1 F R g ε T' (encStepP F R g σ d) ≤
+              encExpectP p hp0 hp1 F R g ε T'
+                ⟨σ.pos + d, σ.barrier, σ.count, σ.cumWhite, σ.banked⟩ := by
+          rw [hstep]
+          exact encExpectP_anti p hp0 hp1 F R g ε hε T' _ _
+            rfl rfl rfl (Nat.le_add_right _ _) (le_refl _)
+        set s'' : ℕ := s - d.2.toNat with hs''
+        have hrec :
+            encExpectP p hp0 hp1 F R g ε T'
+                ⟨σ.pos + d, σ.barrier, σ.count, σ.cumWhite, σ.banked⟩ ≤
+              ∑' e', (fpDistP p hp0 hp1 s'' e').toReal * f (d + e') := by
+          refine IH s'' (by omega) _ ?_ T' _ (fun e' => hg0 _) B
+            (fun e' => hgB _) (fun e' => hf1 (d + e')) ?_
+          · show (s'' : ℤ) = σ.barrier - (σ.pos + d).2
+            have : (σ.pos + d).2 = σ.pos.2 + d.2 := rfl
+            omega
+          · intro e' he' T'' hT''
+            rw [encStepP_shift]
+            refine hg (d + e') ?_ T'' (by omega)
+            have h2 : (d + e').2 = d.2 + e'.2 := rfl
+            omega
+        rw [TaoCollatz.tsum_map_toReal _ _ f hg0]
+        exact le_trans (le_trans hdrop hrec)
+          (le_of_eq (tsum_congr fun e' => by rfl))
+    have hsum : Summable (fun d : ℕ × ℤ => (holdP p hp0 hp1 d).toReal) :=
+      holdP_summable_toReal p hp0 hp1
+    have hnnL : ∀ d : ℕ × ℤ,
+        0 ≤ (holdP p hp0 hp1 d).toReal *
+          encExpectP p hp0 hp1 F R g ε T' (encStepP F R g σ d) :=
+      fun d => mul_nonneg ENNReal.toReal_nonneg
+        (encExpectP_nonneg p hp0 hp1 F R g ε T' _)
+    have hboundL : ∀ d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+            encExpectP p hp0 hp1 F R g ε T' (encStepP F R g σ d) ≤
+          (holdP p hp0 hp1 d).toReal * Real.exp (ε * R) :=
+      fun d => mul_le_mul_of_nonneg_left
+        (encExpectP_le p hp0 hp1 F R g ε hε T' _) ENNReal.toReal_nonneg
+    have hsumL : Summable (fun d : ℕ × ℤ =>
+        (holdP p hp0 hp1 d).toReal *
+          encExpectP p hp0 hp1 F R g ε T' (encStepP F R g σ d)) :=
+      Summable.of_nonneg_of_le hnnL hboundL (hsum.mul_right _)
+    have hnnR : ∀ d : ℕ × ℤ,
+        0 ≤ (holdP p hp0 hp1 d).toReal *
+          ∑' e, (((if d.2 ≤ 0 ∨ (s : ℤ) < d.2 then PMF.pure d
+            else (fpDistP p hp0 hp1 (s - d.2.toNat)).map
+              fun e => (d.1 + e.1, d.2 + e.2)) : PMF (ℕ × ℤ)) e).toReal * f e :=
+      fun d => mul_nonneg ENNReal.toReal_nonneg (tsum_nonneg fun e =>
+        mul_nonneg ENNReal.toReal_nonneg (hg0 e))
+    have hboundR : ∀ d : ℕ × ℤ,
+        (holdP p hp0 hp1 d).toReal *
+            ∑' e, (((if d.2 ≤ 0 ∨ (s : ℤ) < d.2 then PMF.pure d
+              else (fpDistP p hp0 hp1 (s - d.2.toNat)).map
+                fun e => (d.1 + e.1, d.2 + e.2)) : PMF (ℕ × ℤ)) e).toReal * f e ≤
+          (holdP p hp0 hp1 d).toReal * B :=
+      fun d => mul_le_mul_of_nonneg_left
+        (TaoCollatz.tsum_toReal_mul_le _ f hg0 hgB) ENNReal.toReal_nonneg
+    have hsumR : Summable (fun d : ℕ × ℤ =>
+        (holdP p hp0 hp1 d).toReal *
+          ∑' e, (((if d.2 ≤ 0 ∨ (s : ℤ) < d.2 then PMF.pure d
+            else (fpDistP p hp0 hp1 (s - d.2.toNat)).map
+              fun e => (d.1 + e.1, d.2 + e.2)) : PMF (ℕ × ℤ)) e).toReal * f e) :=
+      Summable.of_nonneg_of_le hnnR hboundR (hsum.mul_right _)
+    exact Summable.tsum_le_tsum hterm hsumL hsumR
 
 /-! ### The moving-centre slope budget in Lemma 7.10 -/
 
