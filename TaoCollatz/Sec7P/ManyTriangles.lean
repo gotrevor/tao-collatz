@@ -395,6 +395,316 @@ theorem fpDistP_height_tail :
   ⟨c_fpHeightP, c_fpHeightP_pos, C_fpHeightP, C_fpHeightP_pos,
     fpDistP_height_tail_explicitC⟩
 
+/-! ### Uniform first-passage column tail -/
+
+/-- Column deviation for the tilted first-passage endpoint.  The proof is the
+same row-summation argument as the fixed-law engine, but its centre is the
+moving value `p s / 2`; the Gaussian row estimate is uniform in that centre. -/
+theorem fpDistP_col_dev_core {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5)
+    (cL CL K : ℝ) (hcL : 0 < cL) (hCL : 0 < CL) (hK : 0 < K)
+    (hbd : ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+      (fpDistP p (by linarith) (by linarith) s (j, l)).toReal
+        ≤ CL * (Real.exp (-cL * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+            * TaoCollatz.Gweight (1 + s)
+              (cL * ((j : ℝ) - p / 2 * s)))
+    (hrow : ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ N : ℕ,
+      ∑ j ∈ Finset.range N,
+          TaoCollatz.Gweight t (cL / 2 * ((j : ℝ) - μ))
+        ≤ K * Real.sqrt t) :
+    ∀ s : ℕ, ∀ D : ℝ, 0 ≤ D →
+      ∑' e : ℕ × ℤ,
+        (if D ≤ |(e.1 : ℝ) - p / 2 * (s : ℝ)| then
+          fpDistP p (by linarith) (by linarith) s e else 0)
+        ≤ ENNReal.ofReal
+            (CL * K * (Real.exp (-cL) / (1 - Real.exp (-cL)))
+              * (Real.exp (-min (cL ^ 2 / 2) (cL / 2) * D ^ 2 /
+                    (1 + (s : ℝ)))
+                + Real.exp (-min (cL ^ 2 / 2) (cL / 2) * D))) := by
+  let hp0' : 0 < p := by linarith
+  let hp1' : p < 1 := by linarith
+  let fpLaw := fpDistP p hp0' hp1'
+  have he1 : Real.exp (-cL) < 1 := by
+    rw [Real.exp_lt_one_iff]
+    linarith
+  have hgd : (0 : ℝ) < 1 - Real.exp (-cL) := by
+    linarith [Real.exp_pos (-cL)]
+  set geo : ℝ := Real.exp (-cL) / (1 - Real.exp (-cL)) with hgeo
+  have hgeo0 : 0 < geo := div_pos (Real.exp_pos _) hgd
+  set cc : ℝ := min (cL ^ 2 / 2) (cL / 2) with hcc
+  have hcc0 : 0 < cc := lt_min (by positivity) (by positivity)
+  intro s D hD
+  have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
+  have hsq : (0 : ℝ) < Real.sqrt (1 + (s : ℝ)) :=
+    Real.sqrt_pos.mpr h1s
+  set t : ℝ := 1 + (s : ℝ) with ht
+  set pref : ℝ :=
+    Real.exp (-(cL * D) ^ 2 / (2 * t)) + Real.exp (-(cL * D) / 2)
+    with hpref
+  have hpref0 : 0 < pref := by positivity
+  set A : ℕ → ℝ := fun j =>
+    CL * TaoCollatz.Gweight t
+      (cL / 2 * ((j : ℝ) - p / 2 * (s : ℝ))) / Real.sqrt t with hA
+  set B : ℤ → ℝ := fun l =>
+    if (s : ℤ) < l then
+      Real.exp (-cL * ((l : ℝ) - (s : ℝ))) else 0 with hB
+  have hAnn : ∀ j, 0 ≤ A j := fun j =>
+    div_nonneg (mul_nonneg hCL.le (TaoCollatz.Gweight_nonneg _ _)) hsq.le
+  have hBnn : ∀ l, 0 ≤ B l := by
+    intro l
+    rw [hB]
+    dsimp only
+    split_ifs
+    exacts [(Real.exp_pos _).le, le_rfl]
+  have hGw : ∀ x : ℝ, cL * D ≤ |x| →
+      TaoCollatz.Gweight t x ≤ pref * TaoCollatz.Gweight t (x / 2) := by
+    intro x hx
+    have ht0 : (0 : ℝ) < t := h1s
+    have hx2 : (cL * D) ^ 2 ≤ x ^ 2 := by
+      have h0 : 0 ≤ cL * D := by positivity
+      nlinarith [abs_nonneg x, sq_abs x]
+    have hg1 : Real.exp (-x ^ 2 / t)
+        ≤ Real.exp (-(cL * D) ^ 2 / (2 * t)) *
+            Real.exp (-(x / 2) ^ 2 / t) := by
+      rw [← Real.exp_add]
+      apply Real.exp_le_exp.mpr
+      rw [div_add_div _ _ (by positivity : (2 : ℝ) * t ≠ 0)
+        (by positivity : t ≠ 0)]
+      rw [div_le_div_iff₀ (by positivity) (by positivity)]
+      nlinarith [mul_nonneg (sub_nonneg.mpr hx2) (mul_pos ht0 ht0).le,
+        sq_nonneg x, mul_pos ht0 ht0]
+    have hg2 : Real.exp (-|x|)
+        ≤ Real.exp (-(cL * D) / 2) * Real.exp (-|x / 2|) := by
+      rw [← Real.exp_add]
+      apply Real.exp_le_exp.mpr
+      rw [abs_div]
+      have : |(2 : ℝ)| = 2 := by norm_num
+      rw [this]
+      linarith
+    have hGnn1 : (0 : ℝ) ≤ Real.exp (-(x / 2) ^ 2 / t) :=
+      (Real.exp_pos _).le
+    have hGnn2 : (0 : ℝ) ≤ Real.exp (-|x / 2|) :=
+      (Real.exp_pos _).le
+    have hp1 : Real.exp (-(cL * D) ^ 2 / (2 * t)) ≤ pref := by
+      rw [hpref]
+      linarith [Real.exp_pos (-(cL * D) / 2)]
+    have hp2 : Real.exp (-(cL * D) / 2) ≤ pref := by
+      rw [hpref]
+      linarith [Real.exp_pos (-(cL * D) ^ 2 / (2 * t))]
+    unfold TaoCollatz.Gweight
+    calc
+      Real.exp (-x ^ 2 / t) + Real.exp (-|x|)
+          ≤ Real.exp (-(cL * D) ^ 2 / (2 * t)) *
+              Real.exp (-(x / 2) ^ 2 / t)
+            + Real.exp (-(cL * D) / 2) * Real.exp (-|x / 2|) :=
+              add_le_add hg1 hg2
+      _ ≤ pref * Real.exp (-(x / 2) ^ 2 / t) +
+            pref * Real.exp (-|x / 2|) :=
+          add_le_add (mul_le_mul_of_nonneg_right hp1 hGnn1)
+            (mul_le_mul_of_nonneg_right hp2 hGnn2)
+      _ = pref * (Real.exp (-(x / 2) ^ 2 / t) +
+            Real.exp (-|x / 2|)) := by ring
+  have hpt : ∀ e : ℕ × ℤ,
+      (if D ≤ |(e.1 : ℝ) - p / 2 * (s : ℝ)| then fpLaw s e else 0)
+        ≤ ENNReal.ofReal pref *
+          (ENNReal.ofReal (A e.1) * ENNReal.ofReal (B e.2)) := by
+    intro e
+    obtain ⟨j, l⟩ := e
+    by_cases hDj : D ≤ |(j : ℝ) - p / 2 * (s : ℝ)|
+    · rw [if_pos hDj]
+      by_cases hsl : (s : ℤ) < l
+      · have hxD : cL * D ≤
+            |cL * ((j : ℝ) - p / 2 * (s : ℝ))| := by
+          rw [abs_mul, abs_of_pos hcL]
+          exact mul_le_mul_of_nonneg_left hDj hcL.le
+        have hGle := hGw (cL * ((j : ℝ) - p / 2 * (s : ℝ))) hxD
+        have hhalf : cL * ((j : ℝ) - p / 2 * (s : ℝ)) / 2 =
+            cL / 2 * ((j : ℝ) - p / 2 * (s : ℝ)) := by ring
+        rw [hhalf] at hGle
+        have hfac : (0 : ℝ) ≤
+            CL * (Real.exp (-cL * ((l : ℝ) - (s : ℝ))) /
+              Real.sqrt t) :=
+          mul_nonneg hCL.le (div_nonneg (Real.exp_pos _).le hsq.le)
+        have hRe : (fpLaw s (j, l)).toReal ≤ pref * (A j * B l) := by
+          rw [hA, hB]
+          dsimp only
+          rw [if_pos hsl]
+          calc
+            (fpLaw s (j, l)).toReal ≤
+                CL * (Real.exp (-cL * ((l : ℝ) - (s : ℝ))) /
+                    Real.sqrt t) *
+                  TaoCollatz.Gweight t
+                    (cL * ((j : ℝ) - p / 2 * (s : ℝ))) := hbd s j l
+            _ ≤ CL * (Real.exp (-cL * ((l : ℝ) - (s : ℝ))) /
+                    Real.sqrt t) *
+                  (pref * TaoCollatz.Gweight t
+                    (cL / 2 * ((j : ℝ) - p / 2 * (s : ℝ)))) :=
+                mul_le_mul_of_nonneg_left hGle hfac
+            _ = pref * (CL * TaoCollatz.Gweight t
+                    (cL / 2 * ((j : ℝ) - p / 2 * (s : ℝ))) /
+                  Real.sqrt t *
+                    Real.exp (-cL * ((l : ℝ) - (s : ℝ)))) := by ring
+        calc
+          fpLaw s (j, l) = ENNReal.ofReal ((fpLaw s (j, l)).toReal) :=
+            (ENNReal.ofReal_toReal (PMF.apply_ne_top _ _)).symm
+          _ ≤ ENNReal.ofReal (pref * (A j * B l)) :=
+            ENNReal.ofReal_le_ofReal hRe
+          _ = ENNReal.ofReal pref *
+                (ENNReal.ofReal (A j) * ENNReal.ofReal (B l)) := by
+            rw [ENNReal.ofReal_mul hpref0.le,
+              ENNReal.ofReal_mul (hAnn j)]
+      · have h0 : fpLaw s (j, l) = 0 := by
+          by_contra h
+          exact hsl (fpDistP_support_snd_gt p hp0' hp1' s (j, l)
+            (by rwa [PMF.mem_support_iff]))
+        rw [h0]
+        exact zero_le
+    · rw [if_neg hDj]
+      exact zero_le
+  have hfact :
+      (∑' e : ℕ × ℤ, ENNReal.ofReal (A e.1) * ENNReal.ofReal (B e.2)) =
+        (∑' j : ℕ, ENNReal.ofReal (A j)) *
+          (∑' l : ℤ, ENNReal.ofReal (B l)) := by
+    rw [ENNReal.tsum_prod']
+    simp_rw [ENNReal.tsum_mul_left]
+    rw [ENNReal.tsum_mul_right]
+  have hAle : (∑' j : ℕ, ENNReal.ofReal (A j)) ≤
+      ENNReal.ofReal (CL * K) := by
+    rw [ENNReal.tsum_eq_iSup_sum]
+    refine iSup_le fun F => ?_
+    set M : ℕ := F.sup id + 1 with hM
+    have hFsub : F ⊆ Finset.range M := fun j hj =>
+      Finset.mem_range.mpr
+        (Nat.lt_succ_of_le (Finset.le_sup (f := id) hj))
+    have hreal : ∑ j ∈ Finset.range M, A j ≤ CL * K := by
+      have hrw := hrow t
+        (by rw [ht]; linarith [Nat.cast_nonneg (α := ℝ) s])
+        (p / 2 * (s : ℝ)) M
+      calc
+        ∑ j ∈ Finset.range M, A j =
+            CL / Real.sqrt t *
+              ∑ j ∈ Finset.range M, TaoCollatz.Gweight t
+                (cL / 2 * ((j : ℝ) - p / 2 * (s : ℝ))) := by
+              rw [Finset.mul_sum]
+              exact Finset.sum_congr rfl fun j _ => by rw [hA]; ring
+        _ ≤ CL / Real.sqrt t * (K * Real.sqrt t) :=
+          mul_le_mul_of_nonneg_left hrw (by positivity)
+        _ = CL * K := by field_simp
+    calc
+      ∑ j ∈ F, ENNReal.ofReal (A j) ≤
+          ∑ j ∈ Finset.range M, ENNReal.ofReal (A j) :=
+        Finset.sum_le_sum_of_subset hFsub
+      _ = ENNReal.ofReal (∑ j ∈ Finset.range M, A j) :=
+        (ENNReal.ofReal_sum_of_nonneg fun j _ => hAnn j).symm
+      _ ≤ ENNReal.ofReal (CL * K) := ENNReal.ofReal_le_ofReal hreal
+  have hBsum := TaoCollatz.hasSum_int_shift_exp hcL s
+  have hBle : (∑' l : ℤ, ENNReal.ofReal (B l)) = ENNReal.ofReal geo := by
+    rw [← ENNReal.ofReal_tsum_of_nonneg hBnn hBsum.summable,
+      hBsum.tsum_eq]
+  have hprefle : pref ≤
+      Real.exp (-cc * D ^ 2 / (1 + (s : ℝ))) +
+        Real.exp (-cc * D) := by
+    have h1 : Real.exp (-(cL * D) ^ 2 / (2 * t)) ≤
+        Real.exp (-cc * D ^ 2 / (1 + (s : ℝ))) := by
+      apply Real.exp_le_exp.mpr
+      rw [ht, div_le_div_iff₀ (by positivity) (by positivity)]
+      have hcc1 : cc ≤ cL ^ 2 / 2 := min_le_left _ _
+      nlinarith [sq_nonneg D, sq_nonneg (cL * D),
+        Nat.cast_nonneg (α := ℝ) s,
+        mul_le_mul_of_nonneg_right hcc1 (sq_nonneg D)]
+    have h2 : Real.exp (-(cL * D) / 2) ≤ Real.exp (-cc * D) := by
+      apply Real.exp_le_exp.mpr
+      have hcc2 : cc ≤ cL / 2 := min_le_right _ _
+      nlinarith [mul_le_mul_of_nonneg_right hcc2 hD]
+    rw [hpref]
+    exact add_le_add h1 h2
+  calc
+    ∑' e : ℕ × ℤ,
+        (if D ≤ |(e.1 : ℝ) - p / 2 * (s : ℝ)| then fpLaw s e else 0)
+        ≤ ∑' e : ℕ × ℤ, ENNReal.ofReal pref *
+            (ENNReal.ofReal (A e.1) * ENNReal.ofReal (B e.2)) :=
+          ENNReal.tsum_le_tsum hpt
+    _ = ENNReal.ofReal pref *
+          ((∑' j : ℕ, ENNReal.ofReal (A j)) *
+            (∑' l : ℤ, ENNReal.ofReal (B l))) := by
+        rw [ENNReal.tsum_mul_left, hfact]
+    _ ≤ ENNReal.ofReal pref *
+          (ENNReal.ofReal (CL * K) * ENNReal.ofReal geo) := by
+        exact mul_le_mul_right (mul_le_mul' hAle (le_of_eq hBle)) _
+    _ = ENNReal.ofReal (CL * K * geo * pref) := by
+        rw [← ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ CL * K),
+          ← ENNReal.ofReal_mul hpref0.le]
+        congr 1
+        ring
+    _ ≤ ENNReal.ofReal (CL * K * geo *
+          (Real.exp (-cc * D ^ 2 / (1 + (s : ℝ))) +
+            Real.exp (-cc * D))) := by
+        exact ENNReal.ofReal_le_ofReal
+          (mul_le_mul_of_nonneg_left hprefle (by positivity))
+
+/-- Uniform decay rate for the tilted first-passage column deviation. -/
+noncomputable def c_fpColDevP : ℝ :=
+  min (c_fpLocationP ^ 2 / 2) (c_fpLocationP / 2)
+
+/-- Uniform multiplicative constant for the tilted first-passage column tail. -/
+noncomputable def C_fpColDevP : ℝ :=
+  C_fpLocationP * TaoCollatz.K_rowG (c_fpLocationP / 2) *
+    (Real.exp (-c_fpLocationP) / (1 - Real.exp (-c_fpLocationP)))
+
+theorem c_fpColDevP_pos : 0 < c_fpColDevP := by
+  have hc := c_fpLocationP_pos
+  unfold c_fpColDevP
+  exact lt_min (by positivity) (by positivity)
+
+theorem C_fpColDevP_pos : 0 < C_fpColDevP := by
+  have hc := c_fpLocationP_pos
+  have he1 : Real.exp (-c_fpLocationP) < 1 := by
+    rw [Real.exp_lt_one_iff]
+    linarith
+  have hK := TaoCollatz.K_rowG_pos
+    (c := c_fpLocationP / 2) (by positivity)
+  unfold C_fpColDevP
+  exact mul_pos (mul_pos C_fpLocationP_pos hK)
+    (div_pos (Real.exp_pos _) (by linarith))
+
+/-- Window-uniform first-passage column deviation with explicit constants. -/
+theorem fpDistP_col_dev_explicitC :
+    ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ s : ℕ, ∀ D : ℝ, 0 ≤ D →
+      ∑' e : ℕ × ℤ,
+        (if D ≤ |(e.1 : ℝ) - p / 2 * (s : ℝ)| then
+          fpDistP p (by linarith) (by linarith) s e else 0)
+        ≤ ENNReal.ofReal
+            (C_fpColDevP *
+              (Real.exp (-c_fpColDevP * D ^ 2 / (1 + (s : ℝ))) +
+                Real.exp (-c_fpColDevP * D))) := by
+  intro p hp0 hp1
+  have h := fpDistP_col_dev_core hp0 hp1 c_fpLocationP C_fpLocationP
+    (TaoCollatz.K_rowG (c_fpLocationP / 2))
+    c_fpLocationP_pos C_fpLocationP_pos
+    (TaoCollatz.K_rowG_pos (div_pos c_fpLocationP_pos two_pos))
+    (fpDistP_location_bound_explicitC p (by linarith) (by linarith) hp0 hp1)
+    (TaoCollatz.sum_range_Gweight_le_explicitC
+      (div_pos c_fpLocationP_pos two_pos))
+  intro s D hD
+  have hs := h s D hD
+  unfold C_fpColDevP c_fpColDevP
+  exact hs
+
+/-- Existential interface for the tilted first-passage column deviation. -/
+theorem fpDistP_col_dev :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ),
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ s : ℕ, ∀ D : ℝ, 0 ≤ D →
+      ∑' e : ℕ × ℤ,
+        (if D ≤ |(e.1 : ℝ) - p / 2 * (s : ℝ)| then
+          fpDistP p (by linarith) (by linarith) s e else 0)
+        ≤ ENNReal.ofReal
+            (C * (Real.exp (-c * D ^ 2 / (1 + (s : ℝ))) +
+              Real.exp (-c * D))) :=
+  ⟨c_fpColDevP, c_fpColDevP_pos, C_fpColDevP, C_fpColDevP_pos,
+    fpDistP_col_dev_explicitC⟩
+
 /-- Phase points beyond the right edge of the half strip. -/
 def outStripSetP (n : ℕ) : Set (ℕ × ℤ) := {q : ℕ × ℤ | n / 2 < q.1}
 
