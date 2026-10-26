@@ -2022,6 +2022,174 @@ theorem encStepP_count_le {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ)
   unfold encStepP
   split <;> dsimp only <;> omega
 
+/-- Once the tilted encounter count has reached `R`, the banked white count and
+the truncated encounter count are frozen, so every remaining horizon has the
+same terminal value.  This is the saturated base case of the Lemma-7.9 block
+induction. -/
+theorem encExpectP_of_count_ge (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) (σ : TaoCollatz.EncState) (hc : R ≤ σ.count) :
+    encExpectP p hp0 hp1 F R g ε T σ = TaoCollatz.encVal ε R σ := by
+  induction T generalizing σ with
+  | zero => exact encExpectP_zero p hp0 hp1 F R g ε σ
+  | succ T IH =>
+    rw [encExpectP_succ p hp0 hp1 F R g ε hε T σ]
+    have hval : ∀ d : ℕ × ℤ,
+        encExpectP p hp0 hp1 F R g ε T (encStepP F R g σ d) =
+          TaoCollatz.encVal ε R σ := by
+      intro d
+      rw [IH (encStepP F R g σ d) (le_trans hc (encStepP_count_le F R g σ d))]
+      have hmin : min (encStepP F R g σ d).count R = min σ.count R := by
+        have h1 := encStepP_count_le F R g σ d
+        omega
+      have hbank : (encStepP F R g σ d).banked = σ.banked := by
+        unfold encStepP
+        split
+        · dsimp only
+          rw [if_neg (by omega)]
+        · rfl
+      rw [TaoCollatz.encVal, TaoCollatz.encVal, hbank, hmin]
+    rw [tsum_congr fun d => by rw [hval d], tsum_mul_right,
+      holdP_tsum_toReal p hp0 hp1, one_mul]
+
+/-- White-count coupling for the tilted fold.  If two states agree in their
+geometric fields and encounter count, increasing `cumWhite` and `banked` can
+only decrease the future expectation.  This permits the block bridge to drop
+mid-block white increments exactly as in Tao's fixed-law proof. -/
+theorem encExpectP_anti (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) :
+    ∀ σ₁ σ₂ : TaoCollatz.EncState, σ₁.pos = σ₂.pos →
+      σ₁.barrier = σ₂.barrier → σ₁.count = σ₂.count →
+      σ₁.cumWhite ≤ σ₂.cumWhite → σ₁.banked ≤ σ₂.banked →
+      encExpectP p hp0 hp1 F R g ε T σ₂ ≤ encExpectP p hp0 hp1 F R g ε T σ₁ := by
+  induction T with
+  | zero =>
+    intro σ₁ σ₂ hpos hbar hcnt hcw hbk
+    rw [encExpectP_zero, encExpectP_zero, TaoCollatz.encVal, TaoCollatz.encVal, hcnt]
+    apply Real.exp_le_exp.mpr
+    have : (σ₁.banked : ℝ) ≤ (σ₂.banked : ℝ) := Nat.cast_le.mpr hbk
+    linarith
+  | succ T IH =>
+    intro σ₁ σ₂ hpos hbar hcnt hcw hbk
+    rw [encExpectP_succ p hp0 hp1 F R g ε hε T σ₁,
+      encExpectP_succ p hp0 hp1 F R g ε hε T σ₂]
+    have hstep : ∀ d : ℕ × ℤ,
+        encExpectP p hp0 hp1 F R g ε T (encStepP F R g σ₂ d) ≤
+          encExpectP p hp0 hp1 F R g ε T (encStepP F R g σ₁ d) := by
+      intro d
+      obtain ⟨p₁, b₁, c₁, w₁, k₁⟩ := σ₁
+      obtain ⟨p₂, b₂, c₂, w₂, k₂⟩ := σ₂
+      simp only at hpos hbar hcnt hcw hbk
+      subst hpos hbar hcnt
+      simp only [encStepP]
+      by_cases hq : 1 ≤ (p₁ + d).1 ∧ (p₁ + d).1 + g ≤ n / 2
+          ∧ blackP n ξ ((p₁ + d).1 - 1) (p₁ + d).2 ∧ b₁ < (p₁ + d).2
+      · simp only [dif_pos hq]
+        refine IH _ _ rfl rfl rfl ?_ ?_
+        · simpa using hcw
+        · by_cases hcR : c₁ < R
+          · simpa [hcR] using hcw
+          · simpa [hcR] using hbk
+      · simp only [dif_neg hq]
+        refine IH _ _ rfl rfl rfl ?_ ?_
+        · simpa using hcw
+        · simpa using hbk
+    have hnn : ∀ (σ : TaoCollatz.EncState) (d : ℕ × ℤ),
+        0 ≤ (holdP p hp0 hp1 d).toReal *
+          encExpectP p hp0 hp1 F R g ε T (encStepP F R g σ d) :=
+      fun σ d => mul_nonneg ENNReal.toReal_nonneg
+        (encExpectP_nonneg p hp0 hp1 F R g ε T _)
+    have hbound : ∀ (σ : TaoCollatz.EncState) (d : ℕ × ℤ),
+        (holdP p hp0 hp1 d).toReal *
+            encExpectP p hp0 hp1 F R g ε T (encStepP F R g σ d) ≤
+          (holdP p hp0 hp1 d).toReal * Real.exp (ε * R) :=
+      fun σ d => mul_le_mul_of_nonneg_left
+        (encExpectP_le p hp0 hp1 F R g ε hε T _) ENNReal.toReal_nonneg
+    have hsumE : Summable (fun d : ℕ × ℤ =>
+        (holdP p hp0 hp1 d).toReal * Real.exp (ε * R)) :=
+      (ENNReal.summable_toReal (by
+        rw [(holdP p hp0 hp1).tsum_coe]
+        exact ENNReal.one_ne_top)).mul_right _
+    have hsum1 : Summable (fun d : ℕ × ℤ =>
+        (holdP p hp0 hp1 d).toReal *
+          encExpectP p hp0 hp1 F R g ε T (encStepP F R g σ₁ d)) :=
+      Summable.of_nonneg_of_le (hnn σ₁) (hbound σ₁) hsumE
+    have hsum2 : Summable (fun d : ℕ × ℤ =>
+        (holdP p hp0 hp1 d).toReal *
+          encExpectP p hp0 hp1 F R g ε T (encStepP F R g σ₂ d)) :=
+      Summable.of_nonneg_of_le (hnn σ₂) (hbound σ₂) hsumE
+    exact Summable.tsum_le_tsum
+      (fun d => mul_le_mul_of_nonneg_left (hstep d) ENNReal.toReal_nonneg) hsum2 hsum1
+
+/-- Once the walk lies beyond the gated encounter line, its tilted fold is
+frozen: future first coordinates only increase, so no later step can encounter
+a triangle. -/
+theorem encExpectP_of_edge (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) :
+    ∀ σ : TaoCollatz.EncState, n / 2 < σ.pos.1 + g →
+      encExpectP p hp0 hp1 F R g ε T σ = TaoCollatz.encVal ε R σ := by
+  classical
+  induction T with
+  | zero => intro σ _; exact encExpectP_zero p hp0 hp1 F R g ε σ
+  | succ T IH =>
+    intro σ hedge
+    rw [encExpectP_succ p hp0 hp1 F R g ε hε T σ]
+    have hstep : ∀ d : ℕ × ℤ,
+        encExpectP p hp0 hp1 F R g ε T (encStepP F R g σ d) =
+          TaoCollatz.encVal ε R σ := by
+      intro d
+      have hq : ¬(1 ≤ (σ.pos + d).1 ∧ (σ.pos + d).1 + g ≤ n / 2
+          ∧ blackP n ξ ((σ.pos + d).1 - 1) (σ.pos + d).2
+          ∧ σ.barrier < (σ.pos + d).2) := by
+        rintro ⟨-, hle, -, -⟩
+        have : (σ.pos + d).1 = σ.pos.1 + d.1 := rfl
+        omega
+      have hs : encStepP F R g σ d =
+          ⟨σ.pos + d, σ.barrier, σ.count,
+            σ.cumWhite + (if σ.pos + d ∈ whiteStripP n ξ then 1 else 0),
+            σ.banked⟩ := by
+        rw [encStepP, dif_neg hq]
+      rw [hs, IH _ (by dsimp only; show n / 2 < σ.pos.1 + d.1 + g; omega)]
+      rfl
+    rw [tsum_congr fun d => by rw [hstep d], tsum_mul_right,
+      holdP_tsum_toReal p hp0 hp1, one_mul]
+
+/-- Translation covariance of one tilted encounter step.  This is the reindexing
+identity used by the first-passage block bridge. -/
+theorem encStepP_shift {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ)
+    (σ : TaoCollatz.EncState) (d e : ℕ × ℤ) :
+    encStepP F R g
+        ⟨σ.pos + d, σ.barrier, σ.count, σ.cumWhite, σ.banked⟩ e =
+      encStepP F R g σ (d + e) := by
+  have hpe : σ.pos + d + e = σ.pos + (d + e) := add_assoc _ _ _
+  unfold encStepP
+  by_cases hq : 1 ≤ (σ.pos + (d + e)).1 ∧
+      (σ.pos + (d + e)).1 + g ≤ n / 2
+      ∧ blackP n ξ ((σ.pos + (d + e)).1 - 1) (σ.pos + (d + e)).2
+      ∧ σ.barrier < (σ.pos + (d + e)).2
+  · rw [dif_pos hq, dif_pos (show 1 ≤ (σ.pos + d + e).1 ∧
+        (σ.pos + d + e).1 + g ≤ n / 2
+        ∧ blackP n ξ ((σ.pos + d + e).1 - 1) (σ.pos + d + e).2
+        ∧ σ.barrier < (σ.pos + d + e).2 by rw [hpe]; exact hq)]
+    by_cases hw : σ.pos + (d + e) ∈ whiteStripP n ξ
+    · rw [if_pos hw,
+        if_pos (show σ.pos + d + e ∈ whiteStripP n ξ by rw [hpe]; exact hw)]
+      simp only [hpe]
+    · rw [if_neg hw,
+        if_neg (show σ.pos + d + e ∉ whiteStripP n ξ by rw [hpe]; exact hw)]
+      simp only [hpe]
+  · rw [dif_neg hq, dif_neg (show ¬(1 ≤ (σ.pos + d + e).1 ∧
+        (σ.pos + d + e).1 + g ≤ n / 2
+        ∧ blackP n ξ ((σ.pos + d + e).1 - 1) (σ.pos + d + e).2
+        ∧ σ.barrier < (σ.pos + d + e).2) by rw [hpe]; exact hq)]
+    by_cases hw : σ.pos + (d + e) ∈ whiteStripP n ξ
+    · rw [if_pos hw,
+        if_pos (show σ.pos + d + e ∈ whiteStripP n ξ by rw [hpe]; exact hw), hpe]
+    · rw [if_neg hw,
+        if_neg (show σ.pos + d + e ∉ whiteStripP n ξ by rw [hpe]; exact hw), hpe]
+
 /-! ### The moving-centre slope budget in Lemma 7.10 -/
 
 /-- The tilted counterpart of Tao's numerical inequality (7.64).  At every
