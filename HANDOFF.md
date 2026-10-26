@@ -1,64 +1,87 @@
-# HANDOFF — tilted Lemma 7.10 apex confinement closed 🌀 (grind lap, 2026-10-26)
+# HANDOFF — tilted Lemma 7.10 closed 🌀 (reflection lap, 2026-10-26)
 
 Branch `ren/sec7p-pascal`. The calibration gate remains discharged (believed
-clean, judge to verify), directive step 2 and the complete Case-2 contraction
-remain closed, and the sole Sec7P proof debt remains the mandated-LAST
+clean, judge to verify), directive step 2 and Case 2 remain closed, and the full
+tilted Lemma 7.10 / X10 stack now lands in both rpow and paper-deep-regime
+forms. The sole Sec7P proof debt remains the mandated-LAST
 `pascal_damping_decay` pin: **1 sorry + 0 orange nodes**.
 
 ## Concrete advance
 
-- Proved `tilted_apex_face_budget`, the moving-centre version of Tao's (7.64):
-  `(p s/2 + 2s^0.6) log 9 ≤ s log 2` uniformly for `p ≤ 3/5` and
-  `s ≥ 10^8`. The `24/25` slope margin leaves exactly the uniform room needed
-  for the localization error.
-- Proved `apex_size_budget_of_deep`, sharpening the fixed-law proof's coarse
-  encounter estimate from `A²(1+k) ≤ 3s/25` to `A²(1+k) ≤ s/100`. This is
-  forced by the lower endpoint `p=1/5`, whose moving centre is only `s/10`;
-  the stronger estimate follows directly from `m^0.4 ≤ m^0.8 < s`.
-- Proved `tilted_apex_horizontal_room`, which absorbs the localization and
-  encounter-scale errors beneath `(p/2)s` uniformly for `p ≥ 1/5`.
-- Ported the full deterministic (7.63)–(7.65) intersection argument as
-  `encounter_apex_proximityP_rpow_at` over `TriangleFamilyP`, and added the
-  uniform existential interface `encounter_apex_proximityP_rpow`. The two
-  slope-sensitive sites now close across the entire Pascal window.
-- All five new declarations report exactly the trusted three axioms. No frozen
-  declaration, p-free source, blueprint, judge file, direction file, status
-  file, or tool file changed.
+- The reflection audit caught a cargo-culted handoff instruction: the
+  post-passage column *tail* `fpDistPlusP_col_tail_explicitC` cannot control
+  the central qualifying band in X10b. The required input is the pointwise
+  moving-centre marginal `fpDistP_col_le_explicitC`, convolved with
+  `holdSumP`; the p-free banded-`Gweight` engine then remains valid for every
+  translated centre.
+- Proved the finer-family (7.65) geometry
+  `apex_gapP`, `apex_separationP`, and
+  `qualifying_apex_separatedP`.
+- Proved tilted X10b through
+  `encounter_separated_sumP_core`,
+  `encounter_separated_sumP_explicitC`, and
+  `encounter_separated_sumP`, with the constant chosen before the Pascal
+  parameter.
+- Proved `fpDistPlusP_support_snd_gt` and assembled all three escape/proximity
+  pieces into `triangle_encounter_le_rpowP`.
+- The tilted tails require `10000(1+k)` admissibility, so the fixed-law
+  threshold `A₀=5` does not transfer. The uniform choice `A₀=100` closes
+  both tail calls; this correction is encoded in the theorem interface.
+- Proved the original (7.60)-shaped deep-regime interface
+  `triangle_encounter_leP` via the logarithmic-to-rpow bridge.
+- Proof commits: `1f3ce8f`, `9615056`, `3935a18`. No frozen declaration,
+  p-free source, blueprint, judge file, direction file, status file, or tool
+  file changed.
+
+## Reflection audit
+
+- The frozen headline statement is still byte-identical to the plant and the
+  target remains semantically the uniform Pascal-window damping estimate, with
+  `C` selected before `p`.
+- The sole scoped proof debt is still the final pin. Every new load-bearing
+  declaration queried this lap reports exactly
+  `[Classical.choice, Quot.sound, propext]`.
+- The current decomposition is still route-faithful: X10 is now closed without
+  assuming a false vertical localization or replacing summability by a
+  non-probabilistic shortcut. The next missing abstraction is the tilted
+  finite encounter fold for Lemma 7.9 (X9), not another X10 tail estimate.
 
 ## Exact verification run
 
 ```text
+~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
+  --target TaoCollatz.Sec7P.Statement \
+  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay
+  Build completed successfully (3313 jobs).
+  proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
+  axiom set: [Classical.choice, Quot.sound, propext]
+  FORMALIZE-TIER GREEN
+
 lake build TaoCollatz.Sec7P.ManyTriangles
   Build completed successfully (3323 jobs).
 
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --target TaoCollatz.Sec7P.ManyTriangles \
-  --axioms TaoCollatz.Sec7P.tilted_apex_face_budget \
-  --axioms TaoCollatz.Sec7P.apex_size_budget_of_deep \
-  --axioms TaoCollatz.Sec7P.tilted_apex_horizontal_room \
-  --axioms TaoCollatz.Sec7P.encounter_apex_proximityP_rpow_at \
-  --axioms TaoCollatz.Sec7P.encounter_apex_proximityP_rpow
+  --axioms TaoCollatz.Sec7P.encounter_separated_sumP \
+  --axioms TaoCollatz.Sec7P.triangle_encounter_le_rpowP \
+  --axioms TaoCollatz.Sec7P.triangle_encounter_leP
   Build completed successfully (3323 jobs).
-  all five axiom sets: [Classical.choice, Quot.sound, propext]
-  FORMALIZE-TIER GREEN
-
-~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --target TaoCollatz.Sec7P.Statement \
-  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
-  --axioms TaoCollatz.Sec7P.encounter_apex_proximityP_rpow
-  Build completed successfully (3313 jobs).
-  proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
-  both axiom sets: [Classical.choice, Quot.sound, propext]
+  all axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --import TaoCollatz \
   --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
-  --axioms TaoCollatz.Sec7P.encounter_apex_proximityP_rpow
+  --axioms TaoCollatz.Sec7P.encounter_separated_sumP \
+  --axioms TaoCollatz.Sec7P.triangle_encounter_le_rpowP \
+  --axioms TaoCollatz.Sec7P.triangle_encounter_leP
   Build completed successfully (8768 jobs).
   proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
-  both axiom sets: [Classical.choice, Quot.sound, propext]
+  all four axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
+
+pre-commit full lake build (each of the three proof commits)
+  Build completed successfully (8768 jobs).
 
 ./tools/tao_stmt_diff.py eb40bf3fbd956024e99ce3817f42dc467057c1cf HEAD
   character-identical (46/46)
@@ -76,30 +99,26 @@ git diff --check
 ## Campaign state
 
 `sec7p: calibration proof landed (believed clean, judge to verify); prob-layer
-3/3 closed; Prop 7.3@p modules 3/10 complete plus the Case-3 endpoint-tail and
-apex-confinement layers; Sec7P sorries 1; differ 46/46 yes; blockers: none
-operator-level.`
+3/3 closed; Prop 7.3@p modules 3/10 complete plus full Case-2 and Lemma-7.10
+layers; Sec7P sorries 1; differ 46/46 yes; blockers: none operator-level.`
 
 ## Current blocker
 
-The thin tilted slope margin in apex confinement is no longer a blocker. The
-key correction was to use the actual deep-regime estimate
-`A²(1+k) ≤ s/100`; carrying the fixed-law proof's coarse `3s/25` estimate
-would falsely exhaust the horizontal centre at `p=1/5`.
-
-The immediate missing theorem is the separated-encounter row sum (X10b). Its
-geometry is p-free after centring, but its distributional input must be the
-new moving-centre tail `fpDistPlusP_col_tail_explicitC`. Once X10b is ported,
-the two endpoint tails plus X10a/X10b feed the tilted
-`triangle_encounter_le_rpow` assembly.
+Tilted Lemma 7.10 is no longer a blocker. The immediate missing theorem is the
+window-uniform analogue of Lemma 7.9, `many_triangles_white` (X9). The
+existing finite encounter fold is specialized to `hold`, `whiteStrip`, and
+`TriangleFamily`; it must be copied/generalized to `holdP p`,
+`whiteStripP`, and `TriangleFamilyP`, consuming the already proved uniform
+white-exit theorem. Only after X9 is present can the few-white/Case-3 stack
+consume both X9 and the newly closed X10.
 
 ## Next highest-value attack
 
-1. Port `encounter_separated_sum_core` and its explicit/existential interfaces
-   to `TriangleFamilyP`, using the existing p-free `Gweight` integer-row
-   engines and `fpDistPlusP_col_tail_explicitC` at centre `p s/2`.
-2. Assemble tilted `triangle_encounter_le_rpow`, then the pinned (7.60)-shaped
-   `triangle_encounter_le` interface needed by the few-white stack.
-3. Build `Sec7P/Case3.lean` with `t₁=24/25`, `t₂=49/50`,
-   `(1-t₂)^(A+k)` probability targets, and exponent scaling `c=3`. Assemble
-   p-uniform Proposition 7.3, and discharge `pascal_damping_decay` LAST.
+1. Port the finite encounter state/fold and its expectation recursion to
+   `Sec7P/ManyTriangles.lean`, proving a p-uniform
+   `many_triangles_whiteP` from `fpDistP_white_exit`.
+2. Create `Sec7P/Case3.lean` with `t₁=24/25`, `t₂=49/50`,
+   `(1-t₂)^(A+k)` probability targets, and exponent scaling `c=3`;
+   feed it `many_triangles_whiteP` and `triangle_encounter_leP`.
+3. Assemble p-uniform Proposition 7.3 and discharge
+   `pascal_damping_decay` LAST.

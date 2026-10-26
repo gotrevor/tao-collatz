@@ -2066,3 +2066,25 @@ operator's `24/25` slope threshold.
 p-free integer `Gweight` summation engines, but feed the moving-centre endpoint
 input `fpDistPlusP_col_tail_explicitC`. Then assemble the tilted
 `triangle_encounter_le_rpow` before beginning `Sec7P/Case3.lean`.
+
+### Reflection lap 25 (2026-10-26) — tilted Lemma 7.10 / X10 closed ✅
+
+- Re-ran the binding calibration gate before edits; the half-decay theorem
+  remains trust-base-clean and the frozen declaration differ remains 46/46.
+- The reflection audit corrected the inherited X10b route: the central
+  qualifying band needs the pointwise moving-centre marginal
+  `fpDistP_col_le_explicitC`, convolved with `holdSumP`; the post-passage
+  column-tail theorem does not bound that event.
+- Proved the tilted separated-encounter sum, appended-walk support lemma, full
+  rpow encounter bound, and the original (7.60)-shaped paper-deep-regime
+  interface. Thus the entire window-uniform Lemma 7.10 / X10 stack is closed.
+- Rejected the fixed-law threshold `A₀=5`: the tilted tails require
+  `10000(1+k)` admissibility. The uniform choice `A₀=100` is now explicit in
+  the proof.
+- Every queried declaration reports exactly
+  `[Classical.choice, Quot.sound, propext]`. No new proof debt: Sec7P remains
+  **1 sorry + 0 orange nodes**, with the mandated-LAST pin the sole sorry.
+
+**Next:** port the finite encounter fold to `holdP`, `whiteStripP`, and
+`TriangleFamilyP`, proving the window-uniform Lemma 7.9 / X9 theorem
+`many_triangles_whiteP`; then build `Sec7P/Case3.lean` from X9 and X10.
