@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Trevor Morris
 -/
 import TaoCollatz.Sec7P.Bridge
+import TaoCollatz.Sec7P.Prop73
 
 /-!
 # §7 at the pair-sum law `Pascal(p)`: the campaign pins (Sec7P)
@@ -35,8 +36,10 @@ strictly between `p·log₂ 3` and `1`.
   convention bridge (`fPair`/`xArg`/`pascalWeight` ↔ `fCond`/`xArg`/`pascal`).
 * `pascal_damping_decay` — the campaign target, uniform on `p ∈ [1/5, 3/5]`.
 
-The remaining target carries a `warningAsError` shield covering exactly its planted
-`sorry`; its discharge removes the `sorry` and shield together.
+Both pins are discharged: the calibration pin from the proved §7 library through the
+convention bridge, and the campaign target from the tilted Proposition 7.3
+(`renewal_white_encountersP`, `Sec7P/Prop73.lean`) through the same bridge at general
+`p` (`pascalWeight_bridge`) and the finer-scale damping bound `prod_fCond_le_dampingP`.
 -/
 
 namespace TaoCollatz.Sec7P
@@ -131,14 +134,66 @@ theorem pascalDamping_half_decay :
     _ ≤ TaoCollatz.C_renewalWhite A * (n : ℝ) ^ (-A) :=
       TaoCollatz.renewal_white_encounters_at A hA n ξ hξ hn
 
-set_option warningAsError false in
 -- RATIFY-SEC7P
-/-- ⚠️ **CAMPAIGN PIN — `sorry` until the Sec7P campaign discharges it.**  Tao's damping bound
-at `Pascal(p)`, uniformly on `p ∈ [1/5, 3/5]`: the body of `PascalDampingDecay` in
-`collatz-moonshot`, verbatim. -/
+/-- **CAMPAIGN PIN (target).**  Tao's damping bound at `Pascal(p)`, uniformly on
+`p ∈ [1/5, 3/5]`: the body of `PascalDampingDecay` in `collatz-moonshot`, verbatim.
+Discharged from the tilted Proposition 7.3 `renewal_white_encountersP` (constant chosen
+before `p`) through the general-`p` weight bridge `pascalWeight_bridge`, the `p`-free
+character/prefix bridges, and the finer-scale Lemma 7.2 product bound
+`prod_fCond_le_dampingP`. -/
 theorem pascal_damping_decay :
     ∀ A > (0 : ℝ), ∃ C > (0 : ℝ), ∀ p : ℝ, 1 / 5 ≤ p → p ≤ 3 / 5 → ∀ n ξ : ℕ, 1 ≤ n → ¬ 3 ∣ ξ →
       pascalDamping n p ξ ≤ C * (n : ℝ) ^ (-A) := by
-  sorry
+  classical
+  intro A hA
+  obtain ⟨C, hC, hren⟩ := renewal_white_encountersP A hA
+  refine ⟨C, hC, ?_⟩
+  intro p hp0 hp1 n ξ hn hξ
+  have hp0' : 0 < p := by linarith
+  have hp1' : p ≤ 1 := by linarith
+  have hpair : pascalDamping n p ξ =
+      (PMF.iid (pascalP p hp0' hp1') (n / 2)).expect fun b =>
+        ∏ j : Fin (n / 2),
+          ‖TaoCollatz.fCond n ξ
+            (TaoCollatz.xArg n (j : ℕ) (TaoCollatz.pre b ((j : ℕ) + 1))) (b j)‖ := by
+    unfold pascalDamping PMF.expect
+    apply tsum_congr
+    intro b
+    rw [PMF.iid_apply_eq_prod, ENNReal.toReal_prod]
+    simp_rw [pascalWeight, pascalWeight_bridge p hp0' hp1']
+    congr 1
+    apply Finset.prod_congr rfl
+    intro j hj
+    rw [prefix_filter_eq_pre]
+    unfold fPair TaoCollatz.fCond xArg TaoCollatz.xArg charZ
+    congr 2
+    apply Finset.sum_congr rfl
+    intro a ha
+    rw [show (ξ : ZMod (3 ^ n)) * 3 ^ (2 * (j : ℕ)) *
+        (2 : ZMod (3 ^ n))⁻¹ ^ TaoCollatz.pre b ((j : ℕ) + 1) * (2 ^ a + 3) =
+        (ξ : ZMod (3 ^ n)) * (3 ^ (2 * (j : ℕ)) *
+          (2 : ZMod (3 ^ n))⁻¹ ^ TaoCollatz.pre b ((j : ℕ) + 1) * (2 ^ a + 3)) by ring]
+    exact charZ_argument_bridge n ξ _
+  rw [hpair]
+  have hε0 : (0 : ℝ) ≤ (epsP : ℝ) := by exact_mod_cast epsP_pos.le
+  calc
+    (PMF.iid (pascalP p hp0' hp1') (n / 2)).expect (fun b =>
+        ∏ j : Fin (n / 2),
+          ‖TaoCollatz.fCond n ξ
+            (TaoCollatz.xArg n (j : ℕ) (TaoCollatz.pre b ((j : ℕ) + 1))) (b j)‖)
+      ≤ (PMF.iid (pascalP p hp0' hp1') (n / 2)).expect (fun b =>
+          Real.exp (-((epsP : ℝ) ^ 3) *
+            ((Finset.univ.filter fun j : Fin (n / 2) =>
+              b j = 3 ∧ whiteP n ξ (j : ℕ)
+                ((TaoCollatz.pre b ((j : ℕ) + 1) : ℤ))).card : ℝ))) := by
+        apply TaoCollatz.expect_mono_le
+        · intro b
+          exact Finset.prod_nonneg fun j _ => norm_nonneg _
+        · exact prod_fCond_le_dampingP n ξ
+        · intro b
+          rw [Real.exp_le_one_iff]
+          exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr (pow_nonneg hε0 3))
+            (Nat.cast_nonneg _)
+    _ ≤ C * (n : ℝ) ^ (-A) := hren p hp0 hp1 n ξ hξ hn
 
 end TaoCollatz.Sec7P
