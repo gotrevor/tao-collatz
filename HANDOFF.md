@@ -1,52 +1,44 @@
-# HANDOFF — tilted Case-3 tail foundation landed 🌀 (review lap, 2026-10-26)
+# HANDOFF — tilted post-passage tails closed 🌀 (grind lap, 2026-10-26)
 
 Branch `ren/sec7p-pascal`. The calibration gate remains discharged (believed
 clean, judge to verify), directive step 2 and the complete Case-2 contraction
 remain closed, and the sole Sec7P proof debt remains the mandated-LAST
 `pascal_damping_decay` pin: **1 sorry + 0 orange nodes**.
 
-## Adversarial route review
-
-- Ran the binding calibration gate before edits. The half-decay theorem still
-  reports exactly `[propext, Classical.choice, Quot.sound]`, the focused build
-  was green, the frozen declaration differ reported 46/46 character-identical,
-  and the blueprint audit was green.
-- Reconstructed the remaining route from the frozen target, current imports,
-  recent commits, p-free `Sec7/ManyTriangles.lean`/`Case3.lean`, and the actual
-  Sec7P declarations. The final pin still reduces through the general Pascal
-  weight bridge, `prod_fCond_le_dampingP`, and a p-uniform Proposition 7.3;
-  no raw-valuation pairing detour or statement edit is needed.
-- Confirmed that Case 2 is genuinely on that route and closed. The decisive
-  missing input is the Case-3 many-triangle stack. The highest-value bottom-up
-  attack is therefore the endpoint tail layer used in (7.61), before the
-  deterministic encounter geometry and `Case3` damping-column assembly.
-
 ## Concrete advance
 
-- Added the post-first-passage law `fpDistPlusP`, its zero-step identity, its
-  real-mass identity, and a reusable event-mass bound.
-- Added a law-parametric exponential Markov bound for `holdSumP`, then proved
-  window-uniform first- and second-coordinate tails for the appended tilted
-  holding walk. These use the established small-box moment bound and have no
-  new proof debt.
-- Reused only the p-free row-summation and integer geometric-series engines
-  from `Sec7/ManyTriangles.lean`; no p-free source was edited.
-- Proved `fpDistP_height_tail_core` and its explicit/existential interfaces.
-  Tao's height-overshoot summation transfers uniformly because the row engine
-  is uniform in the real horizontal centre `p s / 2`.
-- Proved `fpDistP_col_dev_core` and its explicit/existential interfaces. The
-  Gaussian-plus-exponential tail is centred at the correct moving value
-  `p s / 2`; exponent-halving leaves a row weight at rate `c/2`, and the same
-  p-free row engine controls it uniformly.
-- All new headline interfaces report exactly the trusted three axioms. No
+- Factored the convolution bookkeeping for the post-first-passage law into the
+  reusable `fpDistPlusP_event_le_add`: any endpoint event that splits into a
+  first-passage event or an appended-walk event is bounded by the two marginal
+  masses. This removes duplicate `bind`/`map`/`tsum` rearrangements from the two
+  parts of Tao's (7.61).
+- Proved `six_pow_le_exp_two_mul`, the coarse absorption
+  `6^k ≤ exp(2k)` used with the established uniform tilted holding-walk MGF.
+- Proved `fpDistPlusP_height_tail_explicitC` and its existential interface.
+  The first-passage overshoot and holding-walk height are split at `H/2`; the
+  deliberately coarse uniform margin `10000(1+k) ≤ H` absorbs `6^k`.
+- Proved `fpDistPlusP_col_tail_explicitC` and its existential interface. Its
+  centre is the required p-dependent value `p s/2`, not the fixed-law `s/4`;
+  the same linear margin absorbs the appended first-coordinate walk.
+- The new headline interfaces report exactly the trusted three axioms. No
   frozen declaration, p-free source, blueprint, judge file, direction file,
-  status file, or tool file changed. Proof commits: `506cf77`, `efdc082`,
-  `2d5379a`.
+  status file, or tool file changed. Proof commit: `fcbf156`.
 
 ## Exact verification run
 
 ```text
-# Calibration, before edits
+lake build TaoCollatz.Sec7P.ManyTriangles
+  Build completed successfully (3323 jobs).
+
+~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
+  --target TaoCollatz.Sec7P.ManyTriangles \
+  --axioms TaoCollatz.Sec7P.fpDistPlusP_event_le_add \
+  --axioms TaoCollatz.Sec7P.fpDistPlusP_height_tail \
+  --axioms TaoCollatz.Sec7P.fpDistPlusP_col_tail
+  Build completed successfully (3323 jobs).
+  all three axiom sets: [Classical.choice, Quot.sound, propext]
+  FORMALIZE-TIER GREEN
+
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --target TaoCollatz.Sec7P.Statement \
   --axioms TaoCollatz.Sec7P.pascalDamping_half_decay
@@ -55,54 +47,20 @@ remain closed, and the sole Sec7P proof debt remains the mandated-LAST
   axioms: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
-./tools/tao_stmt_diff.py eb40bf3fbd956024e99ce3817f42dc467057c1cf HEAD
-  character-identical (46/46)
-
-./tools/blueprint_audit.py
-  26 nodes proved + axiom-clean; 0 orange; 0 drift; 0 false-green
-
-lake build TaoCollatz.Sec7P.ManyTriangles
-  Build completed successfully (3323 jobs).
-
-~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --target TaoCollatz.Sec7P.ManyTriangles \
-  --axioms TaoCollatz.Sec7P.fpDistPlusP_indicator_sum_le_one \
-  --axioms TaoCollatz.Sec7P.holdSumP_snd_tail_window \
-  --axioms TaoCollatz.Sec7P.holdSumP_fst_tail_window
-  Build completed successfully (3323 jobs).
-  all three axiom sets: [Classical.choice, Quot.sound, propext]
-  FORMALIZE-TIER GREEN
-
-~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --target TaoCollatz.Sec7P.ManyTriangles \
-  --axioms TaoCollatz.Sec7P.fpDistP_height_tail_explicitC \
-  --axioms TaoCollatz.Sec7P.fpDistP_height_tail
-  Build completed successfully (3323 jobs).
-  both axiom sets: [Classical.choice, Quot.sound, propext]
-  FORMALIZE-TIER GREEN
-
-~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --target TaoCollatz.Sec7P.ManyTriangles \
-  --axioms TaoCollatz.Sec7P.fpDistP_col_dev_explicitC \
-  --axioms TaoCollatz.Sec7P.fpDistP_col_dev
-  Build completed successfully (3323 jobs).
-  both axiom sets: [Classical.choice, Quot.sound, propext]
-  FORMALIZE-TIER GREEN
-
-# Each of the three proof commits also ran the pre-commit full build.
-
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --import TaoCollatz \
   --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
-  --axioms TaoCollatz.Sec7P.fpDistPlusP_indicator_sum_le_one \
-  --axioms TaoCollatz.Sec7P.holdSumP_snd_tail_window \
-  --axioms TaoCollatz.Sec7P.holdSumP_fst_tail_window \
-  --axioms TaoCollatz.Sec7P.fpDistP_height_tail \
-  --axioms TaoCollatz.Sec7P.fpDistP_col_dev
+  --axioms TaoCollatz.Sec7P.fpDistPlusP_event_le_add \
+  --axioms TaoCollatz.Sec7P.fpDistPlusP_height_tail \
+  --axioms TaoCollatz.Sec7P.fpDistPlusP_col_tail
   Build completed successfully (8768 jobs).
   proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
-  all six axiom sets: [Classical.choice, Quot.sound, propext]
+  all four axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
+
+# Proof commit pre-commit hook
+lake build
+  Build completed successfully (8768 jobs).
 
 ./tools/tao_stmt_diff.py eb40bf3fbd956024e99ce3817f42dc467057c1cf HEAD
   character-identical (46/46)
@@ -121,33 +79,30 @@ git diff --check
 
 `sec7p: calibration proof landed (believed clean, judge to verify); prob-layer
 3/3 closed; Prop 7.3@p modules 3/10 complete plus the Case-3 endpoint-tail
-foundation; Sec7P sorries 1; differ 46/46 yes; blockers: none operator-level.`
+layer; Sec7P sorries 1; differ 46/46 yes; blockers: none operator-level.`
 
 ## Current blocker
 
-The one-passage analytic tail layer is no longer a blocker: both vertical and
-horizontal first-passage deviations are now uniform in `p`, and both appended
-holding coordinates have explicit tails.
+The convolution seam is no longer a blocker: both (7.61) endpoint tails now
+hold uniformly on the full p-window with constants chosen before `p`.
 
-The remaining load-bearing route is still Case 3. The next missing seam is to
-convolve those bounds into `fpDistPlusP` height and column tails. After that,
-the p-dependent centre and the finer `TriangleFamilyP` scale must be threaded
-through apex proximity, separated encounters, `triangle_encounter_le_rpow`,
-and finally the `Case3` damping-column assembly. This is substantial formal
-work but not an operator blocker.
+The remaining load-bearing route is the deterministic/probabilistic Lemma 7.10
+stack. The immediate missing theorem is tilted apex proximity: port
+`encounter_apex_proximity_rpow_at` to `TriangleFamilyP`, replace every `s/4`
+centre by `p s/2`, and replace the fixed numeric slope argument by
+`slope_margin hp1`. The proof's (7.64) intersection contradiction is the first
+place where the thin `p log₂ 3 < 1` margin must be rechecked end to end.
 
 ## Next highest-value attack
 
-1. Prove a reusable convolution-event split for `fpDistPlusP`, then specialize
-   it to height and column tails. The current raw holding bounds are
-   `6^k exp(-y/1000)`; absorb `6^k` via `6^k ≤ exp(2k)` under a deliberately
-   coarse linear margin (for example `10000(1+k) ≤ H`). Case 3 may enlarge
-   its eventual absolute `A₀`, so sharp constants are unnecessary.
-2. Port the deterministic apex-proximity and separated-encounter stack to
-   `TriangleFamilyP`, replacing every `s/4` centre by `p s/2`. Recheck all four
-   slope sites against the operator margin `p log₂ 3 < 24/25`; do not import a
-   fixed-law statement whose centre is baked into its conclusion.
-3. Assemble `triangle_encounter_le_rpow`, then port `Sec7P/Case3.lean` with
-   `t₁=24/25`, `t₂=49/50`, `(1-t₂)^(A+k)` targets, and exponent scaling
-   `c=3`. Only then assemble the p-uniform Proposition 7.3 and discharge
-   `pascal_damping_decay` LAST.
+1. Port `encounter_apex_proximity_rpow_at` (or first its underlying deterministic
+   `encounter_apex_proximity`) to `TriangleFamilyP`. Keep `p` for the tilt and
+   rename Tao's appended-step count to `k`; the transverse hypothesis is
+   `|e.1 - p s/2| ≤ 2 s^0.6`. Use `Sec7P.slope_margin` for the (7.64) budget.
+2. Port the separated-encounter row summation at the same moving centre. The
+   p-free integer `Gweight` engines can be reused unchanged, while the endpoint
+   distribution input is now `fpDistPlusP_col_tail_explicitC`.
+3. Assemble tilted `triangle_encounter_le_rpow`, then port `Sec7P/Case3.lean`
+   with `t₁=24/25`, `t₂=49/50`, `(1-t₂)^(A+k)` targets, and exponent scaling
+   `c=3`. Only after the p-uniform Proposition 7.3 is assembled should
+   `pascal_damping_decay` be discharged LAST.
