@@ -1,140 +1,75 @@
-# HANDOFF — tilted Lemma 7.9 proof landed 🌀 (review lap, 2026-10-26)
+# HANDOFF — Sec7P campaign target discharged 🌀 (grind lap 27, 2026-10-26)
 
-Branch `ren/sec7p-pascal`. The calibration gate remains discharged (believed
-clean, judge to verify). This review lap reconstructed the checked-in route from
-the frozen target through Proposition 7.3 and confirmed that the live crux was
-the finite tilted Lemma-7.9 fold, not downstream scaffolding. The full X9 fold
-and its window-uniform public theorem now have proofs. The sole Sec7P proof debt
-remains the mandated-LAST `pascal_damping_decay` pin: **1 sorry + 0 orange
-nodes**.
+Branch `ren/sec7p-pascal`, HEAD `eb2e5e9` (+ this docs commit). **Both Sec7P pins
+now have proofs**: the calibration pin (earlier laps) and the campaign target
+`pascal_damping_decay` (this lap). `TaoCollatz/Sec7P` is sorry-free:
+**0 sorries + 0 orange nodes**. The watched set is 46/46 character-identical.
+All claims are *believed clean, judge to verify*.
 
-## Concrete advance
+## What landed this lap
 
-- Proved `encExpectP_normalize` and `encExpectP_normalize_init`, the affine
-  coupling which removes already-spent encounters and white credit from a
-  mid-flight tilted fold state.
-- Proved `encExpectP_wander_le`, converting a uniform freshly-entered-state
-  bound into the between-encounters wander bound under the same `holdP p` law.
-- Proved `encExpectP_block_le`, the decisive path-to-`fpDistP` first-passage
-  bridge. It uses the already-proved white-count antitonicity to drop mid-block
-  white increments and reuses the generic p-free PMF Fubini/reindex lemmas.
-- Proved `encExpectP_entered_le`, the encounter-budget induction driven by the
-  uniform deep white-exit kernel.
-- Proved `many_triangles_whiteP_core` and the public
-  `many_triangles_whiteP`. Its epsilon cap and depth gate are both selected
-  before `p`, so the theorem is genuinely uniform on `[1/5,3/5]`.
-- Proof commits: `482dad8`, `79e06ac`. No frozen declaration, p-free source,
-  blueprint, judge file, direction file, status file, or tool file changed.
-
-## Fresh-mind review finding
-
-The route remains coherent. The frozen target still reduces to a uniform
-Proposition-7.3 estimate; Case 2 is present in `BlackEdgeQ.lean`; X10 is present
-as `triangle_encounter_leP`; and this lap supplied X9 as
-`many_triangles_whiteP`. The next missing route edge is therefore the tilted
-`Case3.lean` consumer which combines X9 and X10, followed by the standard
-black-edge split, monotonicity, renewal, and damping bridge. No theorem-shape
-drift or hidden alternative obligation was found.
-
-The review also checked the quantifier discipline of the new X9 interface:
-`∃ ε₀, ∃ g, ∀ ε, ∀ p ∈ [1/5,3/5], ...`. Thus neither constant depends on `p`.
+1. **`Sec7P/Case3.lean` (new, ≈2600 lines)** — tilted Case 3 of Proposition 7.8,
+   `QP_black_edge_case3`, uniform on `p ∈ [1/5, 3/5]`, in the exact shape of
+   `QP_black_edge_case2`. Ported bottom-up from `Sec7/Case3.lean` with the operator's
+   corrections: bad column at `t₂ = 49/50` (moving centre `(p/2)·s ≤ 0.96(m+2)`,
+   deviation `D = m/200`), probability targets `50^{−A−k}`, depth gate `g ≤ m/50`,
+   X10 threshold `A ≥ 100`. The E∗ numeric reuses the fixed-law base-16 lemma at the
+   rescaled exponent `A₁ = log₁₀50·(A+3) − 3` (`10^{−A₁−3} = 50^{−A−3}` exactly), so no
+   new heavy constant chase was needed.
+2. **`Sec7P/Prop73.lean` (new)** — Case 1 at the finer `epsP` scale (via the now
+   `δ`-generic `holdP_weight_expect_core_gen` in `Monotone.lean`), the black-edge
+   case split `QP_black_edgeP`, `prop_7_8P`, `QPmFor_le_rpow`, `QP_polynomial_decayP`,
+   the column recursion `RcolP` with `bridge_vectorP`, the one-column self-similarity
+   `holdP_tsum_step` (`(1 − q(p))·pascalNe3P` exact), `bridge_renewalP`, and
+   **`renewal_white_encountersP`** (tilted Proposition 7.3, constant before `p`).
+3. **`Sec7P/Statement.lean`** — `pascal_damping_decay` discharged; `sorry` and its
+   `warningAsError` shield removed together. Import of `Sec7P.Prop73` added. The pin's
+   statement is byte-identical (differ 46/46).
 
 ## Exact verification run
 
 ```text
-~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --target TaoCollatz.Sec7P.Statement \
-  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay
-  Build completed successfully (3313 jobs).
-  proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
-  pascalDamping_half_decay: [Classical.choice, Quot.sound, propext]
-  FORMALIZE-TIER GREEN
-
-lake build TaoCollatz.Sec7P.ManyTriangles
-  Build completed successfully (3323 jobs).
-
-~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --target TaoCollatz.Sec7P.ManyTriangles \
-  --axioms TaoCollatz.Sec7P.encExpectP_normalize \
-  --axioms TaoCollatz.Sec7P.encExpectP_normalize_init \
-  --axioms TaoCollatz.Sec7P.encExpectP_wander_le \
-  --axioms TaoCollatz.Sec7P.encExpectP_block_le
-  Build completed successfully (3323 jobs).
-  all axiom sets: [Classical.choice, Quot.sound, propext]
-  FORMALIZE-TIER GREEN
-
-~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --target TaoCollatz.Sec7P.ManyTriangles \
-  --axioms TaoCollatz.Sec7P.encExpectP_entered_le \
-  --axioms TaoCollatz.Sec7P.many_triangles_whiteP_core \
-  --axioms TaoCollatz.Sec7P.many_triangles_whiteP
-  Build completed successfully (3323 jobs).
-  all axiom sets: [Classical.choice, Quot.sound, propext]
-  FORMALIZE-TIER GREEN
-
-pre-commit full lake build (for each proof commit)
-  Build completed successfully (8768 jobs).
-
-~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
-  --import TaoCollatz \
-  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
-  --axioms TaoCollatz.Sec7P.many_triangles_whiteP \
-  --axioms TaoCollatz.Sec7P.triangle_encounter_leP
-  Build completed successfully (8768 jobs).
-  proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
-  all axiom sets: [Classical.choice, Quot.sound, propext]
-  FORMALIZE-TIER GREEN
-
+lake build TaoCollatz.Sec7P.Statement        Build completed successfully (3329 jobs).
+#print axioms TaoCollatz.Sec7P.pascal_damping_decay
+  [propext, Classical.choice, Quot.sound]
+#print axioms TaoCollatz.Sec7P.pascalDamping_half_decay
+  [propext, Classical.choice, Quot.sound]
+#print axioms TaoCollatz.Sec7P.renewal_white_encountersP
+  [propext, Classical.choice, Quot.sound]
+lean-green --import TaoCollatz --axioms {pascal_damping_decay, pascalDamping_half_decay,
+  renewal_white_encountersP, QP_black_edge_case3, prop_7_8P}
+  Build completed successfully (8770 jobs).  all axiom sets: trust base.  FORMALIZE-TIER GREEN
 ./tools/tao_stmt_diff.py eb40bf3fbd956024e99ce3817f42dc467057c1cf HEAD
-  character-identical (46/46)
-
+  No pinned statement changed. All ratifications survive this range. (46/46)
 ./tools/blueprint_audit.py
-  26 nodes proved + axiom-clean; 0 orange; 0 drift; 0 false-green
-
-rg -n '\\bsorry\\b' TaoCollatz/Sec7P
-  exactly the Statement.lean campaign prose/pin and line 142 proof debt
-
-git diff --check
-  clean
+  26 nodes proved + axiom-clean · 0 orange · 0 drift · 0 false-green
+rg -n '\bsorry\b' TaoCollatz/Sec7P          (empty)
+git diff --check                            clean
+pre-commit full lake build on every proof commit: OK (8770 jobs)
 ```
 
 ## Campaign state
 
-`sec7p: calibration proof landed (believed clean, judge to verify); prob-layer
-3/3 closed; Prop 7.3@p modules 4/10 complete, with full Case 2 and X9/X10
-layers proved; Sec7P sorries 1; differ 46/46 yes; blockers: none
-operator-level.`
+`sec7p: calibration proof landed; prob-layer 3/3; Prop 7.3@p modules 10/10
+(Case3, Prop73 added this lap); Sec7P sorries 0; differ 46/46 yes; blockers: none
+operator-level.` The `--done-when sorry-free:TaoCollatz/Sec7P` condition is met;
+`box done` was issued at the end of this lap.
 
-## Current blocker
+## Owed to the judge / host
 
-The mathematical frontier has moved from Lemma 7.9 to tilted Case 3. There is
-no operator blocker. `TaoCollatz/Sec7P/Case3.lean` does not yet exist, and the
-p-free file is about 3.5k lines. It must be generalized to `holdP`, `fpDistP`,
-`encStepP`, `whiteSetP`, `TriangleFamilyP`, and `epsP`, with every threshold
-uniform in `p`.
+- **Push.** `git-safe push` fails on this box (`cannot run ssh: No such file or
+  directory`). The host must push `ren/sec7p-pascal` (commits `a0a21cb` … `eb2e5e9`
+  plus the docs commit).
+- **Ratification reads.** Both pins carry `-- RATIFY-SEC7P-HALF` / `-- RATIFY-SEC7P`
+  and are unchanged; the judge's dated `#print axioms` run is what makes the discharge
+  true. New load-bearing nodes are listed in `SEC7P-PLAN.md` §4.
+- **Legibility note.** `Monotone.lean`'s `holdP_weight_expect_core` is now a thin
+  specialization of `holdP_weight_expect_core_gen` (δ-generic); no statement changed.
+- **Post-campaign coordinator items** (not lap work): blueprint reconciliation of the
+  Sec7P nodes; the moonshot `require` at this SHA.
 
-The operator addendum is load-bearing here: Tao's `0.9` factors may not be
-copied. Use `t₁ = 24/25`, `t₂ = 49/50`; replace every `10^(-A-k)` probability
-target by `(1-t₂)^(A+k)`; and use exponent scaling `c=3`, since
-`4^3 = 64 > (1-t₂)⁻¹ = 50`. Lemma 7.9's slope invocation is at every depth,
-not only the shallow range.
+## If resumed
 
-## Next highest-value attack
-
-Create `TaoCollatz/Sec7P/Case3.lean` and add its import to `TaoCollatz.lean`.
-Port the first dependency tranche in this order:
-
-1. reuse the p-free law-independent `pathSum` arithmetic; port only the
-   `encStepP`/fold state invariants and the `QP_le_walk_damped` /
-   `QP_le_damped_iter` recursion;
-2. prove the tilted iid endpoint identities
-   (`iid_pathSum_lawP`, `fpDistP_walk_eq_fpDistPlusP`);
-3. port `bigTriangle_walk_le_rpow` from `triangle_encounter_le_rpowP` and the
-   Markov layer from `many_triangles_whiteP`;
-4. only then port the deterministic encounter/finite-union closure with the
-   `24/25`, `49/50`, `(1-t₂)^(A+k)`, and `c=3` corrections;
-5. assemble `QP_black_edge_case3`, combine it with
-   `QP_black_edge_case2`, and continue to tilted Proposition 7.3.
-
-After the tilted Proposition-7.3 and damping assembly land, discharge
-`pascal_damping_decay` LAST.
+Nothing is open in `TaoCollatz/Sec7P`. Do not touch `Sec7/`. If the judge finds a
+mismatch in a pin, the fix is a `JUDGE-FLAG:` in `PENDING_WORK.md`, never an edit to
+the frozen statement.

@@ -98,4 +98,11 @@ Modules that never mention the gap law (`Prob/Basic`, `CharFn`, `CharFn1`, `Loca
 | node | Lean name | file | state |
 |---|---|---|---|
 | SEC7P-HALF | `pascalDamping_half_decay` | `Sec7P/Statement.lean` | proof landed; trust-base axioms evidence, judge to verify |
-| SEC7P | `pascal_damping_decay` | `Sec7P/Statement.lean` | pinned (`sorry`) |
+| SEC7P | `pascal_damping_decay` | `Sec7P/Statement.lean` | proof landed 2026-10-26 (`eb2e5e9`); trust-base axioms evidence, judge to verify |
+| SEC7P-C2 | `QP_black_edge_case2` | `Sec7P/BlackEdgeQ.lean` | proved (Case 2 at `whiteSetP`/`epsP`) |
+| SEC7P-X9 | `many_triangles_whiteP` | `Sec7P/ManyTriangles.lean` | proved (tilted Lemma 7.9) |
+| SEC7P-X10 | `triangle_encounter_leP` | `Sec7P/ManyTriangles.lean` | proved (tilted Lemma 7.10) |
+| SEC7P-C3 | `QP_black_edge_case3` | `Sec7P/Case3.lean` | proved (Case 3 at `t₂ = 49/50`, base-50 targets) |
+| SEC7P-78 | `prop_7_8P` | `Sec7P/Prop73.lean` | proved (Prop 7.8 at `whiteSetP`/`epsP`/`QPmFor`) |
+| SEC7P-737 | `QP_polynomial_decayP` | `Sec7P/Prop73.lean` | proved ((7.37) at `Pascal(p)`) |
+| SEC7P-73 | `renewal_white_encountersP` | `Sec7P/Prop73.lean` | proved (Prop 7.3 at `Pascal(p)`, constant before `p`) |

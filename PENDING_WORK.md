@@ -2088,3 +2088,41 @@ input `fpDistPlusP_col_tail_explicitC`. Then assemble the tilted
 **Next:** port the finite encounter fold to `holdP`, `whiteStripP`, and
 `TriangleFamilyP`, proving the window-uniform Lemma 7.9 / X9 theorem
 `many_triangles_whiteP`; then build `Sec7P/Case3.lean` from X9 and X10.
+
+### Grind lap 27 (2026-10-26) — tilted Case 3, Prop 7.8, Prop 7.3 landed; TARGET DISCHARGED ✅
+
+- Re-ran the calibration gate first (half-decay trust-base-clean, differ 46/46), then
+  built `Sec7P/Case3.lean` bottom-up as the handoff ordered: `encStepP` fold invariants,
+  the (7.53) iterate `QP_le_damped_iter`, the prefix law `fpDistP_walk_eq_fpDistPlusP`,
+  the tilted big-triangle walk bound (X10, `A ≥ 100`), the Markov bound over X9, the
+  deterministic (7.67) claim `deterministic_encounter_claimP_at` (reusing the p-free
+  `encWindowIter`), the E∗ union `estar_union_le_rpowP_core`, the base-`50` Markov join
+  `fewWhite_num_closureP`, the three-way split `few_white_pointwise_splitP` at
+  `t₂ = 49/50` with depth gate `g ≤ m/50`, the three (7.56) mass terms, (7.55), (7.54),
+  and the gate `QP_black_edge_case3`.
+- **Operator addendum honored.**  Bad column at `(49/50)·m` (the moving centre
+  `(p/2)·s ≤ 0.96(m+2)` at `p ≤ 3/5`, deviation `D = m/200`, rate `c/424000`); every
+  `10^{-A-k}` target is `50^{-A-k}`; column weight on the good column `≤ 50^A m^{-A}`.
+- **E∗ numeric without a new constant chase.**  Instead of re-proving the heavy
+  base-16 lemma at `c = 3`, the fixed-law `estar_scaled_numeric_at` is invoked at
+  `A₁ = log₁₀50·(A+3) − 3 > 0`, where `10^{-A₁-3} = 50^{-A-3}` exactly
+  (`ten_rpow_A1_scaleP`); the E∗ exponent is `Ascaled_fewEstarP A = 2A₁ + A₀`.
+- `Sec7P/Prop73.lean`: Case 1 at the finer scale needs the holding-weight expectation at
+  slack `e^{epsP³/2}`; the fixed-law core was made `δ`-generic
+  (`holdP_weight_expect_core_gen`, `Monotone.lean`; the old core is now a specialization)
+  and instantiated at `deltaP`.  Then `QP_white_case1P`, `QP_black_edgeP` (case split
+  through `exists_triangleFamilyP` + `budgetP_le_of_mem_triangle`), `prop_7_8P`,
+  `QPmFor_le_rpow`, `QP_polynomial_decayP`, the two bridges (`RcolP`, `bridge_vectorP`,
+  `holdP_tsum_step` with the `(1−q)·pascalNe3P` exact mass, `bridge_renewalP`), and
+  `renewal_white_encountersP`.
+- `Statement.lean`: `pascal_damping_decay` discharged (shield + `sorry` removed) through
+  `pascalWeight_bridge` at general `p` and `prod_fCond_le_dampingP`.
+- Evidence: `#print axioms` on `pascal_damping_decay`, `pascalDamping_half_decay`,
+  `renewal_white_encountersP`, `QP_black_edge_case3`, `prop_7_8P` = trust base only
+  (believed clean, judge to verify); `tao_stmt_diff` 46/46; `blueprint_audit` clean;
+  `rg sorry TaoCollatz/Sec7P` empty.  **Sec7P: 0 sorries + 0 orange nodes.**
+- Commits `a0a21cb`, `862da2e`, `9570e8c`, `fbbfdbd`, `87cced3`, `f09bd06`, `101510f`,
+  `eb2e5e9`.  **Pushes failed from this box** (`cannot run ssh`): the host must push
+  `ren/sec7p-pascal`.
+- No frozen declaration, `Sec7/` file, blueprint, judge file, `DIRECTION.md`, `STATUS.md`,
+  or `tools/` file changed.
