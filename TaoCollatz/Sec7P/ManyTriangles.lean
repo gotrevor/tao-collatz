@@ -3167,4 +3167,172 @@ theorem triangle_encounter_le_rpowP :
   ⟨C_encTriP, C_encTriP_pos, c_encTriP, c_encTriP_pos, 100, by norm_num,
     triangle_encounter_le_rpowP_explicitC⟩
 
+-- HEARTBEAT: the logarithmic-to-rpow regime bridge retains the fixed-law
+-- proof's nonlinear shallow/deep split.
+set_option maxHeartbeats 800000 in
+/-- Convert the tilted rpow-form encounter estimate to Tao's original
+`m / log² m < s` deep-regime interface. -/
+theorem triangle_encounter_leP_core (C c A₀ : ℝ)
+    (hC : 0 < C) (_hc : 0 < c) (hA₀ : 1 ≤ A₀)
+    (hEng : ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (tilt : ℝ) (htilt0 : 1 / 5 ≤ tilt) (htilt1 : tilt ≤ 3 / 5),
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamilyP n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (k s' : ℕ), 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlusP tilt (by linarith) (by linarith) s k e).toReal
+          * Set.indicator (bigTriangleSetP F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+        ≤ C * A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ)
+          + C * Real.exp (-c * A ^ 2 * (1 + (k : ℝ)))) :
+    ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (tilt : ℝ) (htilt0 : 1 / 5 ≤ tilt) (htilt1 : tilt ≤ 3 / 5),
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamilyP n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) / Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+      ∀ (k s' : ℕ), 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlusP tilt (by linarith) (by linarith) s k e).toReal
+          * Set.indicator (bigTriangleSetP F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+        ≤ max C ((10 : ℝ) ^ (11 : ℕ)) * A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ)
+          + max C ((10 : ℝ) ^ (11 : ℕ))
+              * Real.exp (-c * A ^ 2 * (1 + (k : ℝ))) := by
+  classical
+  intro A hA tilt htilt0 htilt1 n ξ hξ F t₀ ht₀ j l hmem s hs hdeep k s' hs'1 hs'm
+  set m : ℕ := n / 2 - j with hmdef
+  have hs'0 : (0 : ℝ) < (s' : ℝ) := by exact_mod_cast hs'1
+  have hCle : C ≤ max C ((10 : ℝ) ^ (11 : ℕ)) := le_max_left _ _
+  have h11le : (10 : ℝ) ^ (11 : ℕ) ≤ max C ((10 : ℝ) ^ (11 : ℕ)) := le_max_right _ _
+  have hmaxC0 : (0 : ℝ) < max C ((10 : ℝ) ^ (11 : ℕ)) := lt_of_lt_of_le hC hCle
+  by_cases hM27 : ((10 : ℝ) ^ (27 : ℕ)) ≤ (m : ℝ)
+  · -- deep regime: bridge `m/log²m < s ⟹ m^{0.8} < s`, then apply the engine
+    have hm0R : (0 : ℝ) < (m : ℝ) := lt_of_lt_of_le (by norm_num) hM27
+    have hlogsq : Real.log (m : ℝ) ^ 2 ≤ (m : ℝ) ^ (0.2 : ℝ) := TaoCollatz.log_sq_le_rpow hM27
+    have hlogpos : (0 : ℝ) < Real.log (m : ℝ) := by
+      refine Real.log_pos ?_
+      calc (1 : ℝ) < 10 ^ (27 : ℕ) := by norm_num
+        _ ≤ (m : ℝ) := hM27
+    have hm08 : (m : ℝ) ^ (0.8 : ℝ) ≤ (m : ℝ) / Real.log (m : ℝ) ^ 2 := by
+      rw [le_div_iff₀ (pow_pos hlogpos 2)]
+      calc (m : ℝ) ^ (0.8 : ℝ) * Real.log (m : ℝ) ^ 2
+          ≤ (m : ℝ) ^ (0.8 : ℝ) * (m : ℝ) ^ (0.2 : ℝ) :=
+            mul_le_mul_of_nonneg_left hlogsq (Real.rpow_nonneg hm0R.le _)
+        _ = (m : ℝ) := by rw [← Real.rpow_add hm0R]; norm_num
+    have hbridge : (m : ℝ) ^ (0.8 : ℝ) < (s : ℝ) := lt_of_le_of_lt hm08 hdeep
+    have heng := hEng A hA tilt htilt0 htilt1 n ξ hξ F t₀ ht₀ j l hmem s hs hbridge k s' hs'1 hs'm
+    refine le_trans heng ?_
+    have hd : (0 : ℝ) ≤ A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ) := div_nonneg (by positivity) hs'0.le
+    have he : (0 : ℝ) ≤ Real.exp (-c * A ^ 2 * (1 + (k : ℝ))) := (Real.exp_pos _).le
+    have t1 : C * A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ)
+        = C * (A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ)) := by ring
+    have t2 : max C ((10 : ℝ) ^ (11 : ℕ)) * A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ)
+        = max C ((10 : ℝ) ^ (11 : ℕ)) * (A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ)) := by ring
+    rw [t1, t2]
+    exact add_le_add (mul_le_mul_of_nonneg_right hCle hd)
+      (mul_le_mul_of_nonneg_right hCle he)
+  · -- shallow regime: `m < 10²⁷`, LHS ≤ 1 ≤ RHS
+    push Not at hM27
+    have hLHS1 : ∑' e : ℕ × ℤ, (fpDistPlusP tilt (by linarith) (by linarith) s k e).toReal
+        * Set.indicator (bigTriangleSetP F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+        ≤ 1 := fpDistPlusP_indicator_sum_le_one tilt (by linarith) (by linarith) s k _ _
+    have hAge1 : (1 : ℝ) ≤ A := le_trans hA₀ hA
+    have hp1 : (1 : ℝ) ≤ 1 + (k : ℝ) := by
+      have hpp : (0 : ℝ) ≤ (k : ℝ) := Nat.cast_nonneg k
+      linarith
+    have hAsq1 : (1 : ℝ) ≤ A ^ 2 := by nlinarith [hAge1, sq_nonneg (A - 1)]
+    have hA1 : (1 : ℝ) ≤ A ^ 2 * (1 + (k : ℝ)) := by
+      nlinarith [hAsq1, hp1,
+        mul_nonneg (sub_nonneg.mpr hAsq1) (by linarith [hp1] : (0 : ℝ) ≤ 1 + (k : ℝ))]
+    have hs'lt : (s' : ℝ) < (10 : ℝ) ^ (11 : ℕ) := by
+      have h1 : (m : ℝ) ^ (0.4 : ℝ) ≤ ((10 : ℝ) ^ (27 : ℕ)) ^ (0.4 : ℝ) :=
+        Real.rpow_le_rpow (by positivity) hM27.le (by norm_num)
+      have h2 : ((10 : ℝ) ^ (27 : ℕ)) ^ (0.4 : ℝ) = (10 : ℝ) ^ (10.8 : ℝ) := by
+        rw [← Real.rpow_natCast (10 : ℝ) 27, ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 10)]
+        norm_num
+      have h3 : (10 : ℝ) ^ (10.8 : ℝ) < (10 : ℝ) ^ ((11 : ℕ) : ℝ) :=
+        Real.rpow_lt_rpow_of_exponent_lt (by norm_num) (by norm_num)
+      have h4 : (10 : ℝ) ^ ((11 : ℕ) : ℝ) = (10 : ℝ) ^ (11 : ℕ) := Real.rpow_natCast (10 : ℝ) 11
+      calc (s' : ℝ) ≤ (m : ℝ) ^ (0.4 : ℝ) := hs'm
+        _ ≤ ((10 : ℝ) ^ (27 : ℕ)) ^ (0.4 : ℝ) := h1
+        _ = (10 : ℝ) ^ (10.8 : ℝ) := h2
+        _ < (10 : ℝ) ^ ((11 : ℕ) : ℝ) := h3
+        _ = (10 : ℝ) ^ (11 : ℕ) := h4
+    have hs'maxC : (s' : ℝ) ≤ max C ((10 : ℝ) ^ (11 : ℕ)) :=
+      le_of_lt (lt_of_lt_of_le hs'lt h11le)
+    have hfrac : (1 : ℝ) ≤ max C ((10 : ℝ) ^ (11 : ℕ)) * A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ) := by
+      have hnum : (s' : ℝ) ≤ max C ((10 : ℝ) ^ (11 : ℕ)) * A ^ 2 * (1 + (k : ℝ)) := by
+        nlinarith [hs'maxC, hA1, hmaxC0.le,
+          mul_nonneg hmaxC0.le (sub_nonneg.mpr hA1)]
+      rw [le_div_iff₀ hs'0]
+      linarith [hnum]
+    have hexp_nn : (0 : ℝ) ≤ max C ((10 : ℝ) ^ (11 : ℕ))
+        * Real.exp (-c * A ^ 2 * (1 + (k : ℝ))) :=
+      mul_nonneg hmaxC0.le (Real.exp_pos _).le
+    calc ∑' e : ℕ × ℤ, (fpDistPlusP tilt (by linarith) (by linarith) s k e).toReal
+            * Set.indicator (bigTriangleSetP F s') (1 : ℕ × ℤ → ℝ) (j + e.1, l + e.2)
+          ≤ 1 := hLHS1
+      _ ≤ max C ((10 : ℝ) ^ (11 : ℕ)) * A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ) := hfrac
+      _ ≤ max C ((10 : ℝ) ^ (11 : ℕ)) * A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ)
+            + max C ((10 : ℝ) ^ (11 : ℕ)) * Real.exp (-c * A ^ 2 * (1 + (k : ℝ))) :=
+          le_add_of_nonneg_right hexp_nn
+
+/-- Constant for the tilted Lemma 7.10 interface in Tao's original
+`m / log² m < s` regime. -/
+noncomputable def C_triEncP : ℝ := max C_encTriP ((10 : ℝ) ^ (11 : ℕ))
+
+theorem C_triEncP_pos : 0 < C_triEncP := by
+  unfold C_triEncP
+  exact lt_of_lt_of_le C_encTriP_pos (le_max_left _ _)
+
+/-- Explicit-constant tilted Lemma 7.10 in the paper's deep regime. -/
+theorem triangle_encounter_leP_explicitC :
+    ∀ (A : ℝ), 100 ≤ A →
+      ∀ (tilt : ℝ) (htilt0 : 1 / 5 ≤ tilt) (htilt1 : tilt ≤ 3 / 5),
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamilyP n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) /
+            Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+      ∀ (k s' : ℕ), 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+      ∑' e : ℕ × ℤ,
+          (fpDistPlusP tilt (by linarith) (by linarith) s k e).toReal
+            * Set.indicator (bigTriangleSetP F s') (1 : ℕ × ℤ → ℝ)
+              (j + e.1, l + e.2)
+        ≤ C_triEncP * A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ)
+          + C_triEncP * Real.exp (-c_encTriP * A ^ 2 * (1 + (k : ℝ))) := by
+  have h := triangle_encounter_leP_core C_encTriP c_encTriP 100
+    C_encTriP_pos c_encTriP_pos (by norm_num)
+    triangle_encounter_le_rpowP_explicitC
+  unfold C_triEncP
+  exact h
+
+/-- **Tilted Lemma 7.10 (paper form).**  Uniformly over the Pascal window,
+large finer-scale triangles are rarely encountered after a deep crossing. -/
+theorem triangle_encounter_leP :
+    ∃ C > (0 : ℝ), ∃ c > (0 : ℝ), ∃ A₀ : ℝ, 1 ≤ A₀ ∧
+      ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (tilt : ℝ) (htilt0 : 1 / 5 ≤ tilt) (htilt1 : tilt ≤ 3 / 5),
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamilyP n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) /
+            Real.log ((n / 2 - j : ℕ) : ℝ) ^ 2 < (s : ℝ) →
+      ∀ (k s' : ℕ), 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+      ∑' e : ℕ × ℤ,
+          (fpDistPlusP tilt (by linarith) (by linarith) s k e).toReal
+            * Set.indicator (bigTriangleSetP F s') (1 : ℕ × ℤ → ℝ)
+              (j + e.1, l + e.2)
+        ≤ C * A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ)
+          + C * Real.exp (-c * A ^ 2 * (1 + (k : ℝ))) :=
+  ⟨C_triEncP, C_triEncP_pos, c_encTriP, c_encTriP_pos, 100, by norm_num,
+    triangle_encounter_leP_explicitC⟩
+
 end TaoCollatz.Sec7P
