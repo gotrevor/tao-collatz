@@ -1,53 +1,85 @@
-# HANDOFF — tilted encounter coupling and freeze layer closed 🌀 (grind lap, 2026-10-26)
+# HANDOFF — tilted Lemma 7.9 proof landed 🌀 (review lap, 2026-10-26)
 
 Branch `ren/sec7p-pascal`. The calibration gate remains discharged (believed
-clean, judge to verify). This lap advanced the finite tilted Lemma-7.9 fold
-through its saturated-state, white-count coupling, edge-freeze, and translation
-prerequisites. The sole Sec7P proof debt remains the mandated-LAST
-`pascal_damping_decay` pin: **1 sorry + 0 orange nodes**.
+clean, judge to verify). This review lap reconstructed the checked-in route from
+the frozen target through Proposition 7.3 and confirmed that the live crux was
+the finite tilted Lemma-7.9 fold, not downstream scaffolding. The full X9 fold
+and its window-uniform public theorem now have proofs. The sole Sec7P proof debt
+remains the mandated-LAST `pascal_damping_decay` pin: **1 sorry + 0 orange
+nodes**.
 
 ## Concrete advance
 
-- Proved `encExpectP_of_count_ge`: once the encounter count reaches `R`, the
-  truncated count and banked white total are frozen, so every later horizon
-  collapses to `encVal`.
-- Proved `encExpectP_anti`: increasing `cumWhite` and `banked` while preserving
-  the geometric state can only decrease the tilted fold expectation. This is
-  the coupling needed to discard mid-block white increments in the path-to-
-  first-passage bridge.
-- Proved `encExpectP_of_edge`: after the first coordinate crosses the gated
-  encounter line, no later increment can encounter a triangle, hence the fold
-  is frozen.
-- Proved `encStepP_shift`: stepping a translated state agrees with stepping the
-  original state by the composite displacement. This is the reindexing identity
-  used by `encExpectP_block_le`.
-- Proof commit: `af25432`. No frozen declaration, p-free source, blueprint,
-  judge file, direction file, status file, or tool file changed.
+- Proved `encExpectP_normalize` and `encExpectP_normalize_init`, the affine
+  coupling which removes already-spent encounters and white credit from a
+  mid-flight tilted fold state.
+- Proved `encExpectP_wander_le`, converting a uniform freshly-entered-state
+  bound into the between-encounters wander bound under the same `holdP p` law.
+- Proved `encExpectP_block_le`, the decisive path-to-`fpDistP` first-passage
+  bridge. It uses the already-proved white-count antitonicity to drop mid-block
+  white increments and reuses the generic p-free PMF Fubini/reindex lemmas.
+- Proved `encExpectP_entered_le`, the encounter-budget induction driven by the
+  uniform deep white-exit kernel.
+- Proved `many_triangles_whiteP_core` and the public
+  `many_triangles_whiteP`. Its epsilon cap and depth gate are both selected
+  before `p`, so the theorem is genuinely uniform on `[1/5,3/5]`.
+- Proof commits: `482dad8`, `79e06ac`. No frozen declaration, p-free source,
+  blueprint, judge file, direction file, status file, or tool file changed.
+
+## Fresh-mind review finding
+
+The route remains coherent. The frozen target still reduces to a uniform
+Proposition-7.3 estimate; Case 2 is present in `BlackEdgeQ.lean`; X10 is present
+as `triangle_encounter_leP`; and this lap supplied X9 as
+`many_triangles_whiteP`. The next missing route edge is therefore the tilted
+`Case3.lean` consumer which combines X9 and X10, followed by the standard
+black-edge split, monotonicity, renewal, and damping bridge. No theorem-shape
+drift or hidden alternative obligation was found.
+
+The review also checked the quantifier discipline of the new X9 interface:
+`∃ ε₀, ∃ g, ∀ ε, ∀ p ∈ [1/5,3/5], ...`. Thus neither constant depends on `p`.
 
 ## Exact verification run
 
 ```text
+~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
+  --target TaoCollatz.Sec7P.Statement \
+  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay
+  Build completed successfully (3313 jobs).
+  proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
+  pascalDamping_half_decay: [Classical.choice, Quot.sound, propext]
+  FORMALIZE-TIER GREEN
+
 lake build TaoCollatz.Sec7P.ManyTriangles
   Build completed successfully (3323 jobs).
 
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --target TaoCollatz.Sec7P.ManyTriangles \
-  --axioms TaoCollatz.Sec7P.encExpectP_of_count_ge \
-  --axioms TaoCollatz.Sec7P.encExpectP_anti \
-  --axioms TaoCollatz.Sec7P.encExpectP_of_edge \
-  --axioms TaoCollatz.Sec7P.encStepP_shift
+  --axioms TaoCollatz.Sec7P.encExpectP_normalize \
+  --axioms TaoCollatz.Sec7P.encExpectP_normalize_init \
+  --axioms TaoCollatz.Sec7P.encExpectP_wander_le \
+  --axioms TaoCollatz.Sec7P.encExpectP_block_le
   Build completed successfully (3323 jobs).
   all axiom sets: [Classical.choice, Quot.sound, propext]
   FORMALIZE-TIER GREEN
 
-pre-commit full lake build
+~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
+  --target TaoCollatz.Sec7P.ManyTriangles \
+  --axioms TaoCollatz.Sec7P.encExpectP_entered_le \
+  --axioms TaoCollatz.Sec7P.many_triangles_whiteP_core \
+  --axioms TaoCollatz.Sec7P.many_triangles_whiteP
+  Build completed successfully (3323 jobs).
+  all axiom sets: [Classical.choice, Quot.sound, propext]
+  FORMALIZE-TIER GREEN
+
+pre-commit full lake build (for each proof commit)
   Build completed successfully (8768 jobs).
 
 ~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
   --import TaoCollatz \
   --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
-  --axioms TaoCollatz.Sec7P.encExpectP_anti \
-  --axioms TaoCollatz.Sec7P.encStepP_shift
+  --axioms TaoCollatz.Sec7P.many_triangles_whiteP \
+  --axioms TaoCollatz.Sec7P.triangle_encounter_leP
   Build completed successfully (8768 jobs).
   proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
   all axiom sets: [Classical.choice, Quot.sound, propext]
@@ -69,36 +101,40 @@ git diff --check
 ## Campaign state
 
 `sec7p: calibration proof landed (believed clean, judge to verify); prob-layer
-3/3 closed; Prop 7.3@p modules 3/10 complete plus full Case-2 and Lemma-7.10
-layers, X9 deep white-exit and fold coupling/freeze prerequisites closed; Sec7P
-sorries 1; differ 46/46 yes; blockers: none operator-level.`
+3/3 closed; Prop 7.3@p modules 4/10 complete, with full Case 2 and X9/X10
+layers proved; Sec7P sorries 1; differ 46/46 yes; blockers: none
+operator-level.`
 
 ## Current blocker
 
-The remaining X9 work is the law-parametrized fold induction itself. The next
-missing declaration in source order is the affine normalization coupling
-`encExpectP_normalize`, followed by its fresh-state specialization. Those feed
-the wander bound; the already proved `encExpectP_anti` and `encStepP_shift` then
-unlock the decisive first-passage block bridge `encExpectP_block_le`.
+The mathematical frontier has moved from Lemma 7.9 to tilted Case 3. There is
+no operator blocker. `TaoCollatz/Sec7P/Case3.lean` does not yet exist, and the
+p-free file is about 3.5k lines. It must be generalized to `holdP`, `fpDistP`,
+`encStepP`, `whiteSetP`, `TriangleFamilyP`, and `epsP`, with every threshold
+uniform in `p`.
 
-The transfer is still structurally identical to the p-free source. Every PMF
-mass or recursion site must use the common parameters `p hp0 hp1`; the entered-
-state closure must consume `fpDistP_white_exit_deep` at that same `p`.
+The operator addendum is load-bearing here: Tao's `0.9` factors may not be
+copied. Use `t₁ = 24/25`, `t₂ = 49/50`; replace every `10^(-A-k)` probability
+target by `(1-t₂)^(A+k)`; and use exponent scaling `c=3`, since
+`4^3 = 64 > (1-t₂)⁻¹ = 50`. Lemma 7.9's slope invocation is at every depth,
+not only the shallow range.
 
 ## Next highest-value attack
 
-Continue `TaoCollatz/Sec7P/ManyTriangles.lean` in this order:
+Create `TaoCollatz/Sec7P/Case3.lean` and add its import to `TaoCollatz.lean`.
+Port the first dependency tranche in this order:
 
-1. port `encExpect_normalize` and `encExpect_normalize_init` to
-   `encExpectP_normalize` / `_init`;
-2. port the wander lemma using `holdP_tsum_toReal`;
-3. reuse the generic p-free `TaoCollatz.tsum_toReal_mul_le`,
-   `TaoCollatz.tsum_bind_toReal`, and `TaoCollatz.tsum_map_toReal`, then prove
-   `encExpectP_block_le` with `fpDistP` and `encStepP_shift`;
-4. prove the entered-state induction with `fpDistP_white_exit_deep`, then close
-   `many_triangles_whiteP`;
-5. create `Sec7P/Case3.lean` with `t₁=24/25`, `t₂=49/50`,
-   `(1-t₂)^(A+k)` probability targets, and exponent scaling `c=3`.
+1. reuse the p-free law-independent `pathSum` arithmetic; port only the
+   `encStepP`/fold state invariants and the `QP_le_walk_damped` /
+   `QP_le_damped_iter` recursion;
+2. prove the tilted iid endpoint identities
+   (`iid_pathSum_lawP`, `fpDistP_walk_eq_fpDistPlusP`);
+3. port `bigTriangle_walk_le_rpow` from `triangle_encounter_le_rpowP` and the
+   Markov layer from `many_triangles_whiteP`;
+4. only then port the deterministic encounter/finite-union closure with the
+   `24/25`, `49/50`, `(1-t₂)^(A+k)`, and `c=3` corrections;
+5. assemble `QP_black_edge_case3`, combine it with
+   `QP_black_edge_case2`, and continue to tilted Proposition 7.3.
 
-After the tilted Case-3 and Proposition-7.3 assembly land, discharge
+After the tilted Proposition-7.3 and damping assembly land, discharge
 `pascal_damping_decay` LAST.
