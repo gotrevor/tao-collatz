@@ -893,4 +893,482 @@ theorem deterministic_encounter_claimP_at (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
   rw [encFoldAtP_top] at hmono
   exact le_trans (key R (le_refl R)) hmono
 
+/-! ### X11a: the E∗ union bound at `Pascal(p)` -/
+
+/-- **E∗ union threshold** for the tilted bound: the tilted X10 threshold `100`
+joined with the `r = exp(−c·A²) ≤ ½` regime `A ≥ √(log2/c)`. -/
+noncomputable def A0_estarUnionP : ℝ := max 100 (Real.sqrt (Real.log 2 / c_encTriP))
+
+theorem one_le_A0_estarUnionP : 1 ≤ A0_estarUnionP := by
+  unfold A0_estarUnionP; exact le_trans (by norm_num) (le_max_left _ _)
+
+/-- **E∗ union constant** for the tilted bound. -/
+noncomputable def C_estarUnionP : ℝ := 4 * C_encTriP
+
+theorem C_estarUnionP_pos : 0 < C_estarUnionP := by
+  have := C_encTriP_pos; unfold C_estarUnionP; linarith
+
+open scoped Classical in
+/-- **X11a E∗ union bound `_core`** at `Pascal(p)`: the per-`k` big-triangle walk
+bound abstracted over its constant `C`, rate `c`, and threshold `A₀`, yielding
+`4·C·A²·4^{−A} + 4·C·exp(−c·A²)` for `A ≥ max A₀ √(log2/c)`, uniformly in `p`. -/
+theorem estar_union_le_rpowP_core (C c A₀ : ℝ) (hC : 0 < C) (hc : 0 < c) (hA₀ : 1 ≤ A₀)
+    (hX10 : ∀ (A : ℝ), A₀ ≤ A →
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamilyP n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (T k s' : ℕ), k ≤ T → 1 ≤ s' →
+        (s' : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ) →
+        (∑' e : ℕ × ℤ, fpDistP p (by linarith) (by linarith) s e *
+          ∑' v : Fin T → ℕ × ℤ, (holdP p (by linarith) (by linarith)).iid T v *
+          Set.indicator (bigTriangleSetP F s') (1 : ℕ × ℤ → ℝ≥0∞)
+            (j + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2)).toReal
+          ≤ C * A ^ 2 * (1 + (k : ℝ)) / (s' : ℝ)
+            + C * Real.exp (-c * A ^ 2 * (1 + (k : ℝ)))) :
+    ∀ (A : ℝ), max A₀ (Real.sqrt (Real.log 2 / c)) ≤ A →
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamilyP n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (T : ℕ),
+        (∀ k, k ≤ T →
+          ((⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+        (Finset.range (T + 1)).sum (fun k =>
+          (∑' e : ℕ × ℤ, fpDistP p (by linarith) (by linarith) s e *
+            ∑' v : Fin T → ℕ × ℤ, (holdP p (by linarith) (by linarith)).iid T v *
+            Set.indicator (bigTriangleSetP F ⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊)
+              (1 : ℕ × ℤ → ℝ≥0∞)
+              (j + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2)).toReal)
+          ≤ 4 * C * A ^ 2 * (4 : ℝ) ^ (-A) + 4 * C * Real.exp (-c * A ^ 2) := by
+  intro A hA p hp0 hp1 n ξ hξ F t₀ ht₀ j l hmem s hs hdeep T hreg
+  have hA0 : A₀ ≤ A := le_trans (le_max_left _ _) hA
+  have hA1 : (1 : ℝ) ≤ A := le_trans hA₀ hA0
+  have hAsqrt : Real.sqrt (Real.log 2 / c) ≤ A := le_trans (le_max_right _ _) hA
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hdiv_nonneg : (0 : ℝ) ≤ Real.log 2 / c := le_of_lt (div_pos hlog2 hc)
+  have hAsq : Real.log 2 / c ≤ A ^ 2 := by
+    have h1 : Real.sqrt (Real.log 2 / c) ^ 2 = Real.log 2 / c := Real.sq_sqrt hdiv_nonneg
+    have h3 : (0 : ℝ) ≤ Real.sqrt (Real.log 2 / c) := Real.sqrt_nonneg _
+    nlinarith [h1, hAsqrt, h3]
+  have hcA2 : Real.log 2 ≤ c * A ^ 2 := by
+    have := mul_le_mul_of_nonneg_left hAsq (le_of_lt hc)
+    rwa [mul_div_cancel₀ _ (ne_of_gt hc)] at this
+  have hr : Real.exp (-c * A ^ 2) ≤ 1 / 2 := by
+    have hle : Real.exp (-c * A ^ 2) ≤ Real.exp (-Real.log 2) := by
+      apply Real.exp_le_exp.mpr; nlinarith [hcA2]
+    rw [Real.exp_neg, Real.exp_log (by norm_num : (0 : ℝ) < 2)] at hle
+    linarith [hle, (by norm_num : (2 : ℝ)⁻¹ = 1 / 2)]
+  have hxfour : ∀ k : ℕ, (4 : ℝ) ≤ (4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3 := by
+    intro k
+    have h4A : (4 : ℝ) ≤ (4 : ℝ) ^ A := by
+      calc (4 : ℝ) = (4 : ℝ) ^ (1 : ℝ) := (Real.rpow_one 4).symm
+        _ ≤ (4 : ℝ) ^ A := Real.rpow_le_rpow_of_exponent_le (by norm_num) hA1
+    have hk0 : (0 : ℝ) ≤ (k : ℝ) := Nat.cast_nonneg k
+    have h13 : (1 : ℝ) ≤ (1 + (k : ℝ)) ^ 3 := by
+      nlinarith [hk0, mul_nonneg hk0 hk0, mul_nonneg (mul_nonneg hk0 hk0) hk0]
+    nlinarith [h4A, h13]
+  have hbig : ∀ k ∈ Finset.range (T + 1),
+      (∑' e : ℕ × ℤ, fpDistP p (by linarith) (by linarith) s e *
+        ∑' v : Fin T → ℕ × ℤ, (holdP p (by linarith) (by linarith)).iid T v *
+        Set.indicator (bigTriangleSetP F ⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊)
+          (1 : ℕ × ℤ → ℝ≥0∞)
+          (j + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2)).toReal
+        ≤ C * A ^ 2 * (1 + (k : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+          + C * Real.exp (-c * A ^ 2 * (1 + (k : ℝ))) := by
+    intro k hk
+    have hkT : k ≤ T := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
+    have h1s' : 1 ≤ ⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ := by
+      apply Nat.le_floor
+      push_cast
+      linarith [hxfour k]
+    exact hX10 A hA0 p hp0 hp1 n ξ hξ F t₀ ht₀ j l hmem s hs hdeep T k _ hkT h1s' (hreg k hkT)
+  refine le_trans (Finset.sum_le_sum hbig) ?_
+  rw [Finset.sum_add_distrib]
+  apply add_le_add
+  · have hpoly : ∀ k ∈ Finset.range (T + 1),
+        C * A ^ 2 * (1 + (k : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+          ≤ 2 * C * A ^ 2 * (4 : ℝ) ^ (-A) * (1 / (1 + (k : ℝ)) ^ 2) := by
+      intro k _
+      have hq : (0 : ℝ) < 1 + (k : ℝ) := by positivity
+      have hPpos : (0 : ℝ) < (4 : ℝ) ^ A := Real.rpow_pos_of_pos (by norm_num) A
+      have hx4 : (4 : ℝ) ≤ (4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3 := hxfour k
+      have hfloor : (4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3 / 2
+          ≤ ((⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) := by
+        have hlt := Nat.lt_floor_add_one ((4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3)
+        linarith [hlt, hx4]
+      have step1 : (1 + (k : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+          ≤ (1 + (k : ℝ)) / ((4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3 / 2) := by
+        gcongr
+      have step2 : (1 + (k : ℝ)) / ((4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3 / 2)
+          = 2 * (4 : ℝ) ^ (-A) * (1 / (1 + (k : ℝ)) ^ 2) := by
+        rw [Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 4)]
+        have hPne : (4 : ℝ) ^ A ≠ 0 := ne_of_gt hPpos
+        have hqne : (1 + (k : ℝ)) ≠ 0 := ne_of_gt hq
+        field_simp
+      calc C * A ^ 2 * (1 + (k : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+          = C * A ^ 2 * ((1 + (k : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)) := by
+            ring
+        _ ≤ C * A ^ 2 * ((1 + (k : ℝ)) / ((4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3 / 2)) :=
+            mul_le_mul_of_nonneg_left step1 (mul_nonneg hC.le (sq_nonneg A))
+        _ = C * A ^ 2 * (2 * (4 : ℝ) ^ (-A) * (1 / (1 + (k : ℝ)) ^ 2)) := by rw [step2]
+        _ = 2 * C * A ^ 2 * (4 : ℝ) ^ (-A) * (1 / (1 + (k : ℝ)) ^ 2) := by ring
+    calc (Finset.range (T + 1)).sum (fun k =>
+            C * A ^ 2 * (1 + (k : ℝ)) / ((⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ : ℕ) : ℝ))
+        ≤ (Finset.range (T + 1)).sum (fun k =>
+            2 * C * A ^ 2 * (4 : ℝ) ^ (-A) * (1 / (1 + (k : ℝ)) ^ 2)) := Finset.sum_le_sum hpoly
+      _ = 2 * C * A ^ 2 * (4 : ℝ) ^ (-A)
+            * (Finset.range (T + 1)).sum (fun k => 1 / (1 + (k : ℝ)) ^ 2) := by
+          rw [← Finset.mul_sum]
+      _ ≤ 2 * C * A ^ 2 * (4 : ℝ) ^ (-A) * 2 :=
+          mul_le_mul_of_nonneg_left (sum_inv_sq_le_two T)
+            (mul_nonneg (mul_nonneg (mul_nonneg (by norm_num) hC.le) (sq_nonneg A))
+              (Real.rpow_nonneg (by norm_num) _))
+      _ = 4 * C * A ^ 2 * (4 : ℝ) ^ (-A) := by ring
+  · have hexp : ∀ k ∈ Finset.range (T + 1),
+        C * Real.exp (-c * A ^ 2 * (1 + (k : ℝ)))
+          = C * Real.exp (-c * A ^ 2) ^ (1 + k) := by
+      intro k _
+      have h : Real.exp (-c * A ^ 2 * (1 + (k : ℝ))) = Real.exp (-c * A ^ 2) ^ (1 + k) := by
+        rw [← Real.exp_nat_mul]
+        congr 1
+        push_cast; ring
+      rw [h]
+    calc (Finset.range (T + 1)).sum (fun k => C * Real.exp (-c * A ^ 2 * (1 + (k : ℝ))))
+        = (Finset.range (T + 1)).sum (fun k => C * Real.exp (-c * A ^ 2) ^ (1 + k)) :=
+          Finset.sum_congr rfl hexp
+      _ = C * (Finset.range (T + 1)).sum (fun k => Real.exp (-c * A ^ 2) ^ (1 + k)) := by
+          rw [← Finset.mul_sum]
+      _ ≤ C * (2 * Real.exp (-c * A ^ 2)) :=
+          mul_le_mul_of_nonneg_left
+            (sum_geom_pow_le (Real.exp (-c * A ^ 2)) (le_of_lt (Real.exp_pos _)) hr T) hC.le
+      _ ≤ 4 * C * Real.exp (-c * A ^ 2) := by nlinarith [hC.le, Real.exp_pos (-c * A ^ 2)]
+
+open scoped Classical in
+/-- **X11a E∗ union bound** at `Pascal(p)`, explicit constants
+`C_estarUnionP`/`c_encTriP`, threshold `A0_estarUnionP`; uniform on the window. -/
+theorem estar_union_le_rpowP_explicitC :
+    ∀ (A : ℝ), A0_estarUnionP ≤ A →
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamilyP n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ), (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l →
+        ((n / 2 - j : ℕ) : ℝ) ^ (0.8 : ℝ) < (s : ℝ) →
+      ∀ (T : ℕ),
+        (∀ k, k ≤ T →
+          ((⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ : ℕ) : ℝ) ≤ ((n / 2 - j : ℕ) : ℝ) ^ (0.4 : ℝ)) →
+        (Finset.range (T + 1)).sum (fun k =>
+          (∑' e : ℕ × ℤ, fpDistP p (by linarith) (by linarith) s e *
+            ∑' v : Fin T → ℕ × ℤ, (holdP p (by linarith) (by linarith)).iid T v *
+            Set.indicator (bigTriangleSetP F ⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊)
+              (1 : ℕ × ℤ → ℝ≥0∞)
+              (j + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2)).toReal)
+          ≤ C_estarUnionP * A ^ 2 * (4 : ℝ) ^ (-A)
+            + C_estarUnionP * Real.exp (-c_encTriP * A ^ 2) := by
+  have h := estar_union_le_rpowP_core C_encTriP c_encTriP 100 C_encTriP_pos c_encTriP_pos
+    (by norm_num) bigTriangle_walk_le_rpowP_explicitC
+  unfold C_estarUnionP A0_estarUnionP
+  exact h
+
+/-! ### X11c ingredients — the reaches-`R` / few-white → F∗ join, base `50` -/
+
+/-- **The `encVal` lower bound on the reaches-`R` few-white event** for the tilted fold. -/
+theorem encVal_ge_of_reachesP {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g K : ℕ) (ε : ℝ)
+    (q₀ : ℕ × ℤ) (L : List (ℕ × ℤ))
+    (hreach : R ≤ (L.foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).count)
+    (hwhite : (L.foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).cumWhite ≤ K) :
+    Real.exp (-(K : ℝ) + ε * R)
+      ≤ encVal ε R (L.foldl (encStepP F R g) (encInitP q₀.1 q₀.2)) := by
+  set σ := L.foldl (encStepP F R g) (encInitP q₀.1 q₀.2) with hσ
+  rw [encVal]
+  apply Real.exp_le_exp.mpr
+  have hbank : σ.banked ≤ σ.cumWhite := by
+    rw [hσ]; exact encFoldP_banked_le F R g L (encInitP q₀.1 q₀.2) (by simp [encInitP])
+  have hbk : (σ.banked : ℝ) ≤ (K : ℝ) := by exact_mod_cast le_trans hbank hwhite
+  have hmin : min σ.count R = R := min_eq_right hreach
+  rw [hmin]
+  linarith [hbk]
+
+open scoped Classical in
+/-- **The reaches-`R` few-white mass bound** (the Markov join) for the tilted fold. -/
+theorem reaches_fewWhite_mass_leP_core (ε₀ : ℝ) (g : ℕ)
+    (hmark : ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamilyP n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (lam : ℝ), 0 < lam →
+        ∑' v : Fin T → ℕ × ℤ, ((holdP p (by linarith) (by linarith)).iid T v).toReal *
+          (if lam ≤ encVal ε R ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2))
+            then (1 : ℝ) else 0)
+        ≤ Real.exp (2 * ε) / lam) :
+    ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamilyP n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
+        ∑' v : Fin T → ℕ × ℤ, ((holdP p (by linarith) (by linarith)).iid T v).toReal *
+          (if R ≤ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).count
+              ∧ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).cumWhite ≤ K
+            then (1 : ℝ) else 0)
+          ≤ Real.exp (2 * ε) / Real.exp (-(K : ℝ) + ε * R) := by
+  intro ε hεpos hεle p hp0 hp1 n ξ hξ F R hR T q₀ K
+  set hold := holdP p (by linarith) (by linarith) with hholddef
+  have hlam : (0 : ℝ) < Real.exp (-(K : ℝ) + ε * R) := Real.exp_pos _
+  have hsum : Summable (fun v : Fin T → ℕ × ℤ => (hold.iid T v).toReal) :=
+    ENNReal.summable_toReal (by rw [(hold.iid T).tsum_coe]; exact ENNReal.one_ne_top)
+  have hle : ∀ v : Fin T → ℕ × ℤ,
+      (hold.iid T v).toReal *
+        (if R ≤ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).count
+            ∧ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).cumWhite ≤ K
+          then (1 : ℝ) else 0)
+        ≤ (hold.iid T v).toReal *
+          (if Real.exp (-(K : ℝ) + ε * R)
+              ≤ encVal ε R ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2))
+            then (1 : ℝ) else 0) := by
+    intro v
+    apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+    by_cases hev : R ≤ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).count
+        ∧ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).cumWhite ≤ K
+    · rw [if_pos hev]
+      split_ifs with henc
+      · exact le_refl 1
+      · exact absurd (encVal_ge_of_reachesP F R g K ε q₀ (List.ofFn v) hev.1 hev.2) henc
+    · rw [if_neg hev]; positivity
+  have hbound : ∀ v : Fin T → ℕ × ℤ,
+      (hold.iid T v).toReal *
+        (if Real.exp (-(K : ℝ) + ε * R)
+            ≤ encVal ε R ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2))
+          then (1 : ℝ) else 0) ≤ (hold.iid T v).toReal := by
+    intro v
+    calc (hold.iid T v).toReal * (if Real.exp (-(K : ℝ) + ε * R)
+            ≤ encVal ε R ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2))
+          then (1 : ℝ) else 0)
+        ≤ (hold.iid T v).toReal * 1 := by
+          apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
+          split_ifs <;> norm_num
+      _ = (hold.iid T v).toReal := mul_one _
+  have hsumR : Summable (fun v : Fin T → ℕ × ℤ => (hold.iid T v).toReal *
+      (if Real.exp (-(K : ℝ) + ε * R)
+          ≤ encVal ε R ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2))
+        then (1 : ℝ) else 0)) :=
+    Summable.of_nonneg_of_le
+      (fun v => mul_nonneg ENNReal.toReal_nonneg (by positivity)) hbound hsum
+  have hsumL : Summable (fun v : Fin T → ℕ × ℤ => (hold.iid T v).toReal *
+      (if R ≤ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).count
+          ∧ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).cumWhite ≤ K
+        then (1 : ℝ) else 0)) :=
+    Summable.of_nonneg_of_le
+      (fun v => mul_nonneg ENNReal.toReal_nonneg (by positivity))
+      (fun v => le_trans (hle v) (hbound v)) hsum
+  exact le_trans (Summable.tsum_le_tsum hle hsumL hsumR)
+    (hmark ε hεpos hεle p hp0 hp1 n ξ hξ F R hR T q₀ (Real.exp (-(K : ℝ) + ε * R)) hlam)
+
+/-- **The (7.56) numerical closure at base `50`** (operator addendum: `(1 − t₂)^{A+k}`
+targets at `t₂ = 49/50`): with `εR ≥ K + (A+3)·log 50 + 2`, the Markov ratio
+`e^{2ε}/e^{−K+εR} ≤ 50^{−(A+1)}`. -/
+theorem fewWhite_num_closureP (A ε : ℝ) (hε1 : ε ≤ 1) (K R : ℕ)
+    (hRbound : (K : ℝ) + (A + 3) * Real.log 50 + 2 ≤ ε * R) :
+    Real.exp (2 * ε) / Real.exp (-(K : ℝ) + ε * R) ≤ (50 : ℝ) ^ (-(A + 1)) := by
+  rw [← Real.exp_sub]
+  have hlog : (0 : ℝ) < Real.log 50 := Real.log_pos (by norm_num)
+  have h1 : (A + 3) * Real.log 50 = (A + 1) * Real.log 50 + 2 * Real.log 50 := by ring
+  have hstep : 2 * ε - (-(K : ℝ) + ε * R) ≤ -(A + 1) * Real.log 50 := by
+    nlinarith [hRbound, hε1, hlog, h1]
+  calc Real.exp (2 * ε - (-(K : ℝ) + ε * R))
+      ≤ Real.exp (-(A + 1) * Real.log 50) := Real.exp_le_exp.mpr hstep
+    _ = (50 : ℝ) ^ (-(A + 1)) := by
+        rw [Real.rpow_def_of_pos (by norm_num : (0 : ℝ) < 50)]
+        congr 1; ring
+
+open scoped Classical in
+/-- **The full (7.56) reaches-`R`/few-white bound** at `Pascal(p)`, base `50`: the tilt
+cap `ε₀` and depth gate `g` are those of `fstar_markovP`, chosen before `p`. -/
+theorem reaches_fewWhite_mass_le_fiftyP :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ε₀ ≤ 1 / 100 ∧ ∃ g : ℕ,
+      ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ → ∀ A : ℝ,
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ → ∀ F : TriangleFamilyP n ξ,
+      ∀ R : ℕ, 1 ≤ R → ∀ (T : ℕ) (q₀ : ℕ × ℤ) (K : ℕ),
+        (K : ℝ) + (A + 3) * Real.log 50 + 2 ≤ ε * R →
+        ∑' v : Fin T → ℕ × ℤ, ((holdP p (by linarith) (by linarith)).iid T v).toReal *
+          (if R ≤ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).count
+              ∧ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).cumWhite ≤ K
+            then (1 : ℝ) else 0)
+          ≤ (50 : ℝ) ^ (-(A + 1)) := by
+  obtain ⟨ε₀, hε₀, hε₀le, g, hmark⟩ := fstar_markovP
+  refine ⟨ε₀, hε₀, hε₀le, g, ?_⟩
+  intro ε hεpos hεle A p hp0 hp1 n ξ hξ F R hR T q₀ K hRbound
+  exact le_trans
+    (reaches_fewWhite_mass_leP_core ε₀ g hmark ε hεpos hεle p hp0 hp1 n ξ hξ F R hR T q₀ K)
+    (fewWhite_num_closureP A ε (by linarith) K R hRbound)
+
+/-- **E∗ containment** (the floor bridge) for the finer family. -/
+theorem bigTriangle_of_encounterP {n ξ : ℕ} (F : TriangleFamilyP n ξ) (A : ℝ) (k : ℕ)
+    (q : ℕ × ℤ) (t : ℕ × ℤ × ℝ) (ht : t ∈ F.T) (hmem : q ∈ triangle t.1 t.2.1 t.2.2)
+    (hbig : (4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3 ≤ t.2.2) :
+    q ∈ bigTriangleSetP F ⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ := by
+  refine ⟨t, ht, ?_, hmem⟩
+  calc ((⌊(4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3⌋₊ : ℕ) : ℝ)
+      ≤ (4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3 := Nat.floor_le (by positivity)
+    _ ≤ t.2.2 := hbig
+
+open scoped Classical in
+/-- **The pointwise dichotomy for the (7.56) white-count split**, tilted fold: for a
+deep in-strip walk whose forward white count is `≤ K`, EITHER the fold reaches `R`
+(with `cumWhite ≤ K+1`) OR the path hits a big finer triangle (E∗). -/
+theorem few_white_pointwise_dichotomyP (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ)
+    (g R K : ℕ) (A : ℝ) (hA : 1 ≤ A) (P : ℕ) (hP : encWindowIter A (K + 1) R ≤ P)
+    (q₀ : ℕ × ℤ) (hq₀ : 1 ≤ q₀.1) (v : Fin P → ℕ × ℤ)
+    (hv : ∀ i, v i ∈ (holdP p hp0 hp1).support)
+    (hdepth : ∀ k, k ≤ P → (q₀ + pathSum v k).1 + g ≤ n / 2)
+    (hmyNw : (∑ k ∈ Finset.range P,
+        (if q₀ + pathSum v k ∈ whiteStripP n ξ then (1 : ℕ) else 0)) ≤ K) :
+    (R ≤ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).count
+        ∧ ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).cumWhite ≤ K + 1)
+    ∨ (∃ k, k ≤ P ∧ ∃ t ∈ F.T,
+        ((q₀ + pathSum v k).1 - 1, (q₀ + pathSum v k).2) ∈ triangle t.1 t.2.1 t.2.2
+        ∧ (4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3 ≤ t.2.2) := by
+  classical
+  have hpos : (encInitP q₀.1 q₀.2).pos = q₀ := rfl
+  have hcum : ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).cumWhite
+      = ∑ k ∈ Finset.range P,
+          (if q₀ + pathSum v (k + 1) ∈ whiteStripP n ξ then (1 : ℕ) else 0) := by
+    rw [encFoldP_cumWhite F R g P v (encInitP q₀.1 q₀.2), hpos]
+    simp only [encInitP, zero_add]
+  have hSple : (∑ k ∈ Finset.range P,
+      (if q₀ + pathSum v (k + 1) ∈ whiteStripP n ξ then (1 : ℕ) else 0)) ≤ K + 1 := by
+    have e1 : (∑ k ∈ Finset.range (P + 1),
+          (if q₀ + pathSum v k ∈ whiteStripP n ξ then (1 : ℕ) else 0))
+        = (∑ k ∈ Finset.range P,
+            (if q₀ + pathSum v (k + 1) ∈ whiteStripP n ξ then (1 : ℕ) else 0))
+          + (if q₀ + pathSum v 0 ∈ whiteStripP n ξ then (1 : ℕ) else 0) :=
+      Finset.sum_range_succ' _ P
+    have e2 : (∑ k ∈ Finset.range (P + 1),
+          (if q₀ + pathSum v k ∈ whiteStripP n ξ then (1 : ℕ) else 0))
+        = (∑ k ∈ Finset.range P,
+            (if q₀ + pathSum v k ∈ whiteStripP n ξ then (1 : ℕ) else 0))
+          + (if q₀ + pathSum v P ∈ whiteStripP n ξ then (1 : ℕ) else 0) :=
+      Finset.sum_range_succ _ P
+    have hb : (if q₀ + pathSum v P ∈ whiteStripP n ξ then (1 : ℕ) else 0) ≤ 1 := by
+      split_ifs <;> omega
+    omega
+  have hcumK : ((List.ofFn v).foldl (encStepP F R g) (encInitP q₀.1 q₀.2)).cumWhite ≤ K + 1 := by
+    rw [hcum]; exact hSple
+  by_cases hE : ∀ k, k ≤ P → ∀ t ∈ F.T,
+      ((q₀ + pathSum v k).1 - 1, (q₀ + pathSum v k).2) ∈ triangle t.1 t.2.1 t.2.2 →
+      t.2.2 < (4 : ℝ) ^ A * (1 + (k : ℝ)) ^ 3
+  · exact Or.inl ⟨deterministic_encounter_claimP_at p hp0 hp1 n ξ F g R (K + 1) A hA P hP q₀
+      hq₀ v hv hdepth hE hSple, hcumK⟩
+  · refine Or.inr ?_
+    push Not at hE
+    obtain ⟨k, hk, t, ht, hmem, hbig⟩ := hE
+    exact ⟨k, hk, t, ht, hmem, hbig⟩
+
+open scoped Classical in
+/-- **The pointwise THREE-way split for (7.56)** at `Pascal(p)`, with the operator's
+bad-column threshold `t₂ = 49/50` and depth gate `g ≤ m/50`: the few-white indicator
+is dominated by the reach-`R` indicator, the E∗ union, and the bad-column indicator
+`{(49/50)·m ≤ e.1 + (pathSum v P).1}`. -/
+theorem few_white_pointwise_splitP (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ)
+    (m : ℕ) (hmn : m ≤ n / 2) (hpos : 1 ≤ n / 2 - m) (l : ℤ)
+    (g R K : ℕ) (A' : ℝ) (hA' : 1 ≤ A') (P : ℕ) (hP : encWindowIter A' (K + 1) R ≤ P)
+    (hg : (g : ℝ) ≤ (1 / 50 : ℝ) * (m : ℝ))
+    (e : ℕ × ℤ) (v : Fin P → ℕ × ℤ) (hv : ∀ i, v i ∈ (holdP p hp0 hp1).support) :
+    ENNReal.ofReal (if (∑ k ∈ Finset.range P,
+          Set.indicator (whiteSetP n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+            (n / 2 - m + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2))
+        ≤ (K : ℝ)
+      then (1 : ℝ) else 0)
+    ≤ ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStepP F R g)
+            (encInitP (n / 2 - m + e.1) (l + e.2))).count
+          ∧ ((List.ofFn v).foldl (encStepP F R g)
+            (encInitP (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1
+        then (1 : ℝ) else 0)
+      + (∑ k ∈ Finset.range (P + 1),
+          Set.indicator (bigTriangleSetP F ⌊(4 : ℝ) ^ A' * (1 + (k : ℝ)) ^ 3⌋₊)
+            (1 : ℕ × ℤ → ℝ≥0∞)
+            (n / 2 - m - 1 + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2))
+      + ENNReal.ofReal (if (49 / 50 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+          then (1 : ℝ) else 0) := by
+  classical
+  set q₀ : ℕ × ℤ := (n / 2 - m + e.1, l + e.2) with hq₀def
+  have hq1 : q₀.1 = n / 2 - m + e.1 := rfl
+  set Nw : ℝ := ∑ k ∈ Finset.range P,
+      Set.indicator (whiteSetP n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2}) 1
+        (n / 2 - m + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2) with hNwdef
+  set T1 : ℝ≥0∞ := ENNReal.ofReal (if R ≤ ((List.ofFn v).foldl (encStepP F R g)
+        (encInitP (n / 2 - m + e.1) (l + e.2))).count
+      ∧ ((List.ofFn v).foldl (encStepP F R g)
+        (encInitP (n / 2 - m + e.1) (l + e.2))).cumWhite ≤ K + 1 then (1 : ℝ) else 0) with hT1def
+  set T2 : ℝ≥0∞ := ∑ k ∈ Finset.range (P + 1),
+      Set.indicator (bigTriangleSetP F ⌊(4 : ℝ) ^ A' * (1 + (k : ℝ)) ^ 3⌋₊)
+        (1 : ℕ × ℤ → ℝ≥0∞)
+        (n / 2 - m - 1 + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2) with hT2def
+  set T3 : ℝ≥0∞ := ENNReal.ofReal (if (49 / 50 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+      then (1 : ℝ) else 0) with hT3def
+  by_cases hfew : Nw ≤ (K : ℝ)
+  · rw [if_pos hfew, ENNReal.ofReal_one]
+    by_cases hcol : (49 / 50 : ℝ) * (m : ℝ) ≤ ((e.1 + (pathSum v P).1 : ℕ) : ℝ)
+    · have hT3one : T3 = 1 := by rw [hT3def, if_pos hcol, ENNReal.ofReal_one]
+      calc (1 : ℝ≥0∞) = T3 := hT3one.symm
+        _ ≤ T1 + T2 + T3 := self_le_add_left _ _
+    · have hset : whiteSetP n ξ ∩ {q : ℕ × ℤ | q.1 ≤ n / 2} = whiteStripP n ξ := by
+        ext q; simp only [whiteStripP, Set.mem_inter_iff, Set.mem_ofPred_eq]; tauto
+      have hcast : Nw = ((∑ k ∈ Finset.range P,
+              (if q₀ + pathSum v k ∈ whiteStripP n ξ then (1 : ℕ) else 0) : ℕ) : ℝ) := by
+        rw [hNwdef, Nat.cast_sum]
+        refine Finset.sum_congr rfl fun k _ => ?_
+        have hpt : (n / 2 - m + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2)
+            = q₀ + pathSum v k := rfl
+        rw [hpt, hset, Set.indicator_apply, Pi.one_apply, Nat.cast_ite, Nat.cast_one,
+          Nat.cast_zero]
+      have hNatK : (∑ k ∈ Finset.range P,
+          (if q₀ + pathSum v k ∈ whiteStripP n ξ then (1 : ℕ) else 0)) ≤ K := by
+        have h := hfew; rw [hcast] at h; exact_mod_cast h
+      have hadv : (e.1 + (pathSum v P).1 : ℕ) + g ≤ m := by
+        have hlt : ((e.1 + (pathSum v P).1 : ℕ) : ℝ) < 49 / 50 * (m : ℝ) := not_le.mp hcol
+        have hsum : ((e.1 + (pathSum v P).1 : ℕ) : ℝ) + (g : ℝ) ≤ (m : ℝ) := by
+          nlinarith [hlt, hg]
+        exact_mod_cast hsum
+      have hqone : 1 ≤ q₀.1 := by rw [hq1]; omega
+      have hendpt : q₀.1 + (pathSum v P).1 + g ≤ n / 2 := by rw [hq1]; omega
+      have hdepth : ∀ k, k ≤ P → (q₀ + pathSum v k).1 + g ≤ n / 2 :=
+        pathSum_depth_le v q₀ g (n / 2) hendpt
+      have hdich := few_white_pointwise_dichotomyP p hp0 hp1 F g R K A' hA' P hP q₀ hqone v hv
+        hdepth hNatK
+      rcases hdich with ⟨hreach, hcw⟩ | ⟨k, hk, t, ht, hmem, hbig⟩
+      · have hT1one : T1 = 1 := by
+          rw [hT1def, if_pos ⟨hreach, hcw⟩, ENNReal.ofReal_one]
+        calc (1 : ℝ≥0∞) = T1 := hT1one.symm
+          _ ≤ T1 + T2 := self_le_add_right _ _
+          _ ≤ T1 + T2 + T3 := self_le_add_right _ _
+      · have hpt : ((q₀ + pathSum v k).1 - 1, (q₀ + pathSum v k).2)
+            = (n / 2 - m - 1 + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2) := by
+          have h1 : (q₀ + pathSum v k).1 = n / 2 - m + e.1 + (pathSum v k).1 := rfl
+          have h2 : (q₀ + pathSum v k).2 = l + e.2 + (pathSum v k).2 := rfl
+          refine Prod.ext_iff.mpr ⟨?_, h2⟩
+          rw [h1]; omega
+        have hbigmem : (n / 2 - m - 1 + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2)
+            ∈ bigTriangleSetP F ⌊(4 : ℝ) ^ A' * (1 + (k : ℝ)) ^ 3⌋₊ := by
+          rw [← hpt]; exact bigTriangle_of_encounterP F A' k _ t ht hmem hbig
+        have hone : Set.indicator (bigTriangleSetP F ⌊(4 : ℝ) ^ A' * (1 + (k : ℝ)) ^ 3⌋₊)
+            (1 : ℕ × ℤ → ℝ≥0∞)
+            (n / 2 - m - 1 + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2) = 1 := by
+          rw [Set.indicator_of_mem hbigmem]; rfl
+        have hT2ge : (1 : ℝ≥0∞) ≤ T2 := by
+          have hsingle := Finset.single_le_sum (f := fun k : ℕ =>
+            Set.indicator (bigTriangleSetP F ⌊(4 : ℝ) ^ A' * (1 + (k : ℝ)) ^ 3⌋₊)
+              (1 : ℕ × ℤ → ℝ≥0∞)
+              (n / 2 - m - 1 + e.1 + (pathSum v k).1, l + e.2 + (pathSum v k).2))
+            (fun i _ => zero_le) (Finset.mem_range.mpr (Nat.lt_succ_of_le hk))
+          rw [hone] at hsingle
+          rw [hT2def]; exact hsingle
+        calc (1 : ℝ≥0∞) ≤ T2 := hT2ge
+          _ ≤ T1 + T2 := self_le_add_left _ _
+          _ ≤ T1 + T2 + T3 := self_le_add_right _ _
+  · rw [if_neg hfew, ENNReal.ofReal_zero]
+    exact zero_le
+
 end TaoCollatz.Sec7P
