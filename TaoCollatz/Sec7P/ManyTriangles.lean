@@ -1171,6 +1171,43 @@ def phaseInFamilyP {n ξ : ℕ} (F : TriangleFamilyP n ξ) : Set (ℕ × ℤ) :=
   {q : ℕ × ℤ | ∃ t ∈ F.T,
     ((q.1 - 1, q.2) : ℕ × ℤ) ∈ triangle t.1 t.2.1 t.2.2}
 
+/-- Every finer-scale black strip point lies in a unique family triangle. -/
+theorem TriangleFamilyP.existsUnique_cover {n ξ : ℕ} (F : TriangleFamilyP n ξ)
+    {q : ℕ × ℤ} (hq : q.1 + 1 ≤ n / 2 ∧ blackP n ξ q.1 q.2) :
+    ∃! t : ℕ × ℤ × ℝ, t ∈ F.T ∧ q ∈ triangle t.1 t.2.1 t.2.2 := by
+  have hmem : q ∈ {p : ℕ × ℤ | p.1 + 1 ≤ n / 2 ∧ blackP n ξ p.1 p.2} := hq
+  rw [F.cover] at hmem
+  simp only [Set.mem_iUnion, exists_prop] at hmem
+  obtain ⟨t, ht, hqt⟩ := hmem
+  refine ⟨t, ⟨ht, hqt⟩, ?_⟩
+  rintro t' ⟨ht', hqt'⟩
+  by_contra hne
+  exact F.not_mem_two ht' ht hne hqt' hqt
+
+/-- The unique finer-scale family triangle covering a black strip point. -/
+noncomputable def TriangleFamilyP.coveringTriangle {n ξ : ℕ}
+    (F : TriangleFamilyP n ξ) (q : ℕ × ℤ)
+    (hq : q.1 + 1 ≤ n / 2 ∧ blackP n ξ q.1 q.2) : ℕ × ℤ × ℝ :=
+  (F.existsUnique_cover hq).exists.choose
+
+theorem TriangleFamilyP.coveringTriangle_mem {n ξ : ℕ} (F : TriangleFamilyP n ξ)
+    {q : ℕ × ℤ} (hq : q.1 + 1 ≤ n / 2 ∧ blackP n ξ q.1 q.2) :
+    F.coveringTriangle q hq ∈ F.T :=
+  (F.existsUnique_cover hq).exists.choose_spec.1
+
+theorem TriangleFamilyP.coveringTriangle_covers {n ξ : ℕ} (F : TriangleFamilyP n ξ)
+    {q : ℕ × ℤ} (hq : q.1 + 1 ≤ n / 2 ∧ blackP n ξ q.1 q.2) :
+    q ∈ triangle (F.coveringTriangle q hq).1 (F.coveringTriangle q hq).2.1
+      (F.coveringTriangle q hq).2.2 :=
+  (F.existsUnique_cover hq).exists.choose_spec.2
+
+theorem TriangleFamilyP.eq_coveringTriangle {n ξ : ℕ} (F : TriangleFamilyP n ξ)
+    {q : ℕ × ℤ} (hq : q.1 + 1 ≤ n / 2 ∧ blackP n ξ q.1 q.2)
+    {t : ℕ × ℤ × ℝ} (ht : t ∈ F.T) (hqt : q ∈ triangle t.1 t.2.1 t.2.2) :
+    t = F.coveringTriangle q hq :=
+  (F.existsUnique_cover hq).unique ⟨ht, hqt⟩
+    ⟨F.coveringTriangle_mem hq, F.coveringTriangle_covers hq⟩
+
 /-- The finer-family version of Tao's (7.52) triangle budget.  A triangle
 point at horizontal depth at most `m+1` below the strip edge has vertical
 budget `O(m)`.  This deterministic estimate is independent of the holding
@@ -1850,6 +1887,140 @@ theorem fpDistP_white_exit_deep :
       Summable.tsum_le_tsum
         (fun e => mul_le_mul_of_nonneg_left (hptw e) ENNReal.toReal_nonneg)
         hsumLHS (hsummand (whiteStripP n ξ))
+
+/-! ### Tilted Lemma 7.9: finite encounter fold -/
+
+open scoped Classical in
+/-- One step of Tao's finite Lemma-7.9 encounter fold for the finer triangle
+family.  The state and terminal value are law-independent, so this port reuses
+`TaoCollatz.EncState` and `TaoCollatz.encVal`; only the color, cover, and step
+law change. -/
+noncomputable def encStepP {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ)
+    (σ : TaoCollatz.EncState) (d : ℕ × ℤ) : TaoCollatz.EncState :=
+  if hq : 1 ≤ (σ.pos + d).1 ∧ (σ.pos + d).1 + g ≤ n / 2
+      ∧ blackP n ξ ((σ.pos + d).1 - 1) (σ.pos + d).2
+      ∧ σ.barrier < (σ.pos + d).2 then
+    { pos := σ.pos + d
+      barrier := (F.coveringTriangle ((σ.pos + d).1 - 1, (σ.pos + d).2)
+        ⟨show (σ.pos + d).1 - 1 + 1 ≤ n / 2 by omega, hq.2.2.1⟩).2.1
+      count := σ.count + 1
+      cumWhite := σ.cumWhite + (if σ.pos + d ∈ whiteStripP n ξ then 1 else 0)
+      banked := if σ.count < R then
+          σ.cumWhite + (if σ.pos + d ∈ whiteStripP n ξ then 1 else 0)
+        else σ.banked }
+  else
+    { pos := σ.pos + d, barrier := σ.barrier, count := σ.count,
+      cumWhite := σ.cumWhite + (if σ.pos + d ∈ whiteStripP n ξ then 1 else 0),
+      banked := σ.banked }
+
+/-- Initial state of the tilted encounter fold. -/
+def encInitP (j' : ℕ) (l' : ℤ) : TaoCollatz.EncState :=
+  ⟨(j', l'), l', 0, 0, 0⟩
+
+/-- The finite-horizon (7.57) expectation driven by `holdP p`. -/
+noncomputable def encExpectP (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ) (ε : ℝ)
+    (T : ℕ) (σ : TaoCollatz.EncState) : ℝ :=
+  ((holdP p hp0 hp1).iid T).expect fun v =>
+    TaoCollatz.encVal ε R ((List.ofFn v).foldl (encStepP F R g) σ)
+
+theorem encExpectP_zero (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ) (ε : ℝ)
+    (σ : TaoCollatz.EncState) :
+    encExpectP p hp0 hp1 F R g ε 0 σ = TaoCollatz.encVal ε R σ := by
+  rw [encExpectP, PMF.expect_iid_zero]
+  simp
+
+/-- Head-peel recursion for the tilted finite encounter fold. -/
+theorem encExpectP_succ (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) (σ : TaoCollatz.EncState) :
+    encExpectP p hp0 hp1 F R g ε (T + 1) σ =
+      ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+        encExpectP p hp0 hp1 F R g ε T (encStepP F R g σ d) := by
+  set c : ℝ := Real.exp (ε * R) with hc
+  have hc0 : 0 < c := Real.exp_pos _
+  have hkey : ∀ (m : ℕ) (τ : TaoCollatz.EncState),
+      encExpectP p hp0 hp1 F R g ε m τ * c⁻¹ =
+        ((holdP p hp0 hp1).iid m).expect fun v =>
+          TaoCollatz.encVal ε R ((List.ofFn v).foldl (encStepP F R g) τ) * c⁻¹ := by
+    intro m τ
+    rw [encExpectP, PMF.expect, PMF.expect, ← tsum_mul_right]
+    exact tsum_congr fun v => by ring
+  have h0 : ∀ (m : ℕ) (τ : TaoCollatz.EncState) (v : Fin m → ℕ × ℤ),
+      0 ≤ TaoCollatz.encVal ε R ((List.ofFn v).foldl (encStepP F R g) τ) * c⁻¹ :=
+    fun m τ v => mul_nonneg (TaoCollatz.encVal_pos ε R _).le (by positivity)
+  have h1 : ∀ (m : ℕ) (τ : TaoCollatz.EncState) (v : Fin m → ℕ × ℤ),
+      TaoCollatz.encVal ε R ((List.ofFn v).foldl (encStepP F R g) τ) * c⁻¹ ≤ 1 := by
+    intro m τ v
+    rw [← mul_inv_cancel₀ hc0.ne']
+    exact mul_le_mul_of_nonneg_right (TaoCollatz.encVal_le ε hε R _) (by positivity)
+  have hmain : encExpectP p hp0 hp1 F R g ε (T + 1) σ * c⁻¹ =
+      ∑' d : ℕ × ℤ, (holdP p hp0 hp1 d).toReal *
+        (encExpectP p hp0 hp1 F R g ε T (encStepP F R g σ d) * c⁻¹) := by
+    rw [hkey (T + 1) σ,
+      PMF.expect_iid_succ (holdP p hp0 hp1) T _ (h0 (T + 1) σ) (h1 (T + 1) σ)]
+    refine tsum_congr fun d => ?_
+    rw [hkey T (encStepP F R g σ d)]
+    congr 1
+    refine congrArg _ (funext fun w => ?_)
+    have hlist : List.ofFn (Fin.cons d w : Fin (T + 1) → ℕ × ℤ) =
+        d :: List.ofFn w := by
+      rw [List.ofFn_succ]
+      congr 1
+    rw [hlist, List.foldl_cons]
+  have hfin := congrArg (· * c) hmain
+  simp only [mul_assoc, inv_mul_cancel₀ hc0.ne', mul_one] at hfin
+  rw [hfin, ← tsum_mul_right]
+  exact tsum_congr fun d => by
+    rw [mul_assoc, mul_assoc, inv_mul_cancel₀ hc0.ne', mul_one]
+
+/-- Trivial `exp(εR)` envelope for the tilted fold expectation. -/
+theorem encExpectP_le (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ) (ε : ℝ)
+    (hε : 0 ≤ ε) (T : ℕ) (σ : TaoCollatz.EncState) :
+    encExpectP p hp0 hp1 F R g ε T σ ≤ Real.exp (ε * R) := by
+  have hsum : Summable (fun v : Fin T → ℕ × ℤ =>
+      (((holdP p hp0 hp1).iid T) v).toReal) :=
+    ENNReal.summable_toReal (by
+      rw [((holdP p hp0 hp1).iid T).tsum_coe]
+      exact ENNReal.one_ne_top)
+  have hle : ∀ v : Fin T → ℕ × ℤ,
+      (((holdP p hp0 hp1).iid T) v).toReal *
+          TaoCollatz.encVal ε R ((List.ofFn v).foldl (encStepP F R g) σ) ≤
+        (((holdP p hp0 hp1).iid T) v).toReal * Real.exp (ε * R) :=
+    fun v => mul_le_mul_of_nonneg_left (TaoCollatz.encVal_le ε hε R _)
+      ENNReal.toReal_nonneg
+  have hsumR : Summable (fun v : Fin T → ℕ × ℤ =>
+      (((holdP p hp0 hp1).iid T) v).toReal * Real.exp (ε * R)) := hsum.mul_right _
+  have hsumL : Summable (fun v : Fin T → ℕ × ℤ =>
+      (((holdP p hp0 hp1).iid T) v).toReal *
+        TaoCollatz.encVal ε R ((List.ofFn v).foldl (encStepP F R g) σ)) :=
+    Summable.of_nonneg_of_le
+      (fun v => mul_nonneg ENNReal.toReal_nonneg (TaoCollatz.encVal_pos ε R _).le)
+      hle hsumR
+  calc
+    encExpectP p hp0 hp1 F R g ε T σ ≤
+        ∑' v : Fin T → ℕ × ℤ,
+          (((holdP p hp0 hp1).iid T) v).toReal * Real.exp (ε * R) :=
+      Summable.tsum_le_tsum hle hsumL hsumR
+    _ = Real.exp (ε * R) := by
+      rw [tsum_mul_right,
+        ← ENNReal.tsum_toReal_eq (fun v => PMF.apply_ne_top _ _),
+        ((holdP p hp0 hp1).iid T).tsum_coe, ENNReal.toReal_one, one_mul]
+
+theorem encExpectP_nonneg (p : ℝ) (hp0 : 0 < p) (hp1 : p < 1)
+    {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ) (ε : ℝ)
+    (T : ℕ) (σ : TaoCollatz.EncState) :
+    0 ≤ encExpectP p hp0 hp1 F R g ε T σ :=
+  tsum_nonneg fun _ =>
+    mul_nonneg ENNReal.toReal_nonneg (TaoCollatz.encVal_pos ε R _).le
+
+theorem encStepP_count_le {n ξ : ℕ} (F : TriangleFamilyP n ξ) (R g : ℕ)
+    (σ : TaoCollatz.EncState) (d : ℕ × ℤ) :
+    σ.count ≤ (encStepP F R g σ d).count := by
+  unfold encStepP
+  split <;> dsimp only <;> omega
 
 /-! ### The moving-centre slope budget in Lemma 7.10 -/
 
