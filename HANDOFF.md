@@ -90,7 +90,31 @@ lake build TaoCollatz.Sec7P.ManyTriangles
   FORMALIZE-TIER GREEN
 
 # Each of the three proof commits also ran the pre-commit full build.
-# Final repository-wide verification is recorded by the completing lap output.
+
+~/personal/bin/lean-green ~/src/tao-collatz-sec7p \
+  --import TaoCollatz \
+  --axioms TaoCollatz.Sec7P.pascalDamping_half_decay \
+  --axioms TaoCollatz.Sec7P.fpDistPlusP_indicator_sum_le_one \
+  --axioms TaoCollatz.Sec7P.holdSumP_snd_tail_window \
+  --axioms TaoCollatz.Sec7P.holdSumP_fst_tail_window \
+  --axioms TaoCollatz.Sec7P.fpDistP_height_tail \
+  --axioms TaoCollatz.Sec7P.fpDistP_col_dev
+  Build completed successfully (8768 jobs).
+  proof debt: exactly TaoCollatz/Sec7P/Statement.lean:139:8
+  all six axiom sets: [Classical.choice, Quot.sound, propext]
+  FORMALIZE-TIER GREEN
+
+./tools/tao_stmt_diff.py eb40bf3fbd956024e99ce3817f42dc467057c1cf HEAD
+  character-identical (46/46)
+
+./tools/blueprint_audit.py
+  26 nodes proved + axiom-clean; 0 orange; 0 drift; 0 false-green
+
+rg -n '\\bsorry\\b' TaoCollatz/Sec7P
+  exactly the Statement.lean campaign prose/pin and line 142 proof debt
+
+git diff --check
+  clean
 ```
 
 ## Campaign state
