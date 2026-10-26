@@ -2022,3 +2022,23 @@ the finer-scale sibling) so `QP_fp_endpoint_le` can run at
 operator's `t₁=24/25`, `t₂=49/50`, `(1−t₂)^{A+k}` probability targets,
 and exponent scaling `c=3`. Case 2 is closed; do not revisit it unless a
 downstream interface exposes a real mismatch.
+
+### Review lap 23 (2026-10-26) — tilted Case-3 endpoint tails landed ✅
+
+- Re-ran the calibration gate before edits and independently reconstructed the
+  remaining reduction. The route still runs through p-uniform Proposition 7.3;
+  all 46 frozen declarations remain byte-identical and the final pin stays LAST.
+- Added `fpDistPlusP`, its mass/event interface, and uniform coordinate tails
+  for the appended `holdP` walk.
+- Proved window-uniform first-passage height and column-deviation tails. The
+  latter is centred at `p s/2`, not the fixed-law `s/4`; both reuse only p-free
+  row/geometric summation engines.
+- Every new headline theorem reports exactly the trusted three axioms. No new
+  debt: **1 sorry + 0 orange nodes**. Proof commits: `506cf77`, `efdc082`,
+  `2d5379a`.
+
+**Next:** convolve the first-passage and appended-walk tails into
+`fpDistPlusP_height_tail`/`fpDistPlusP_col_tail`, absorbing the deliberately
+coarse `6^k` moment factor under a linear-in-`k` margin. Then port apex
+proximity and separated encounters with moving centre `p s/2` and the
+operator's `24/25` slope threshold.
