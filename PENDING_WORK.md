@@ -2042,3 +2042,27 @@ downstream interface exposes a real mismatch.
 coarse `6^k` moment factor under a linear-in-`k` margin. Then port apex
 proximity and separated encounters with moving centre `p s/2` and the
 operator's `24/25` slope threshold.
+
+### Grind lap 24 (2026-10-26) — tilted Lemma 7.10 apex confinement landed ✅
+
+- Proved the two uniform moving-centre budgets that replace the fixed-law
+  `s/4` arithmetic in Tao's (7.64): `tilted_apex_face_budget` uses
+  `slope_margin` to reserve a `1/25` error budget at `p ≤ 3/5`, while
+  `tilted_apex_horizontal_room` uses the lower endpoint `p ≥ 1/5`.
+- Sharpened the deep-regime encounter scale to
+  `A²(1+k) ≤ s/100` in `apex_size_budget_of_deep`. This is the necessary
+  correction to the fixed-law proof's coarse `3s/25` estimate: the latter is
+  too large for the moving centre at `p=1/5`, even though the underlying
+  `m^0.4 < m^0.8 < s` hypotheses give the stronger bound directly.
+- Ported the full deterministic intersection argument as
+  `encounter_apex_proximityP_rpow_at`, over `TriangleFamilyP` and centre
+  `(p/2)s`, plus its existential uniform interface. Both slope-sensitive sites
+  now close on the entire window. All five new declarations report exactly
+  `[Classical.choice, Quot.sound, propext]`.
+- No new proof debt: Sec7P remains **1 sorry + 0 orange nodes**; the only sorry
+  is still the mandated-LAST target. Frozen declarations remain 46/46.
+
+**Next:** port `encounter_separated_sum_core` to `TriangleFamilyP`. Reuse the
+p-free integer `Gweight` summation engines, but feed the moving-centre endpoint
+input `fpDistPlusP_col_tail_explicitC`. Then assemble the tilted
+`triangle_encounter_le_rpow` before beginning `Sec7P/Case3.lean`.
