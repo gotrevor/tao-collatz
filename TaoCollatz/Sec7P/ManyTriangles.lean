@@ -2011,4 +2011,577 @@ theorem encounter_apex_proximityP_rpow :
   ⟨C_apexProx, C_apexProx_ge_one, S_apexProx,
     encounter_apex_proximityP_rpow_at⟩
 
+/-! ### Tilted X10b: separated apex bands -/
+
+/-- The apex-gap inequality for the finer triangle family.  This is the
+law-independent geometric core of Tao's (7.65): a lattice point belonging to
+one family triangle cannot also belong to a distinct family triangle. -/
+theorem apex_gapP {n ξ : ℕ} (F : TriangleFamilyP n ξ) {t' t'' : ℕ × ℤ × ℝ}
+    (ht' : t' ∈ F.T) (ht'' : t'' ∈ F.T) (hne : t' ≠ t'')
+    (hj : t'.1 ≤ t''.1) {lstar : ℤ} (hl' : lstar ≤ t'.2.1)
+    (hmem'' : ((t''.1, lstar) : ℕ × ℤ) ∈ triangle t''.1 t''.2.1 t''.2.2) :
+    t'.2.2 < ((t''.1 : ℝ) - t'.1) * Real.log 9 +
+      ((t'.2.1 : ℝ) - lstar) * Real.log 2 := by
+  have hnot : ((t''.1, lstar) : ℕ × ℤ) ∉ triangle t'.1 t'.2.1 t'.2.2 :=
+    fun hmem' => F.not_mem_two ht' ht'' hne hmem' hmem''
+  rw [triangle, Set.mem_ofPred_eq] at hnot
+  push Not at hnot
+  exact hnot hj hl'
+
+/-- The (7.65) apex-separation inequality for `TriangleFamilyP`.  Its proof is
+identical to the fixed-scale argument because the finer scale enters only
+through `TriangleFamilyP.not_mem_two`. -/
+theorem apex_separationP {n ξ : ℕ} (F : TriangleFamilyP n ξ)
+    {t' t'' : ℕ × ℤ × ℝ}
+    (ht' : t' ∈ F.T) (ht'' : t'' ∈ F.T) (hne : t' ≠ t'') (hj : t'.1 ≤ t''.1)
+    {lZ : ℤ} {δ : ℝ} {s' : ℕ}
+    (h765 : (t'.2.1 : ℝ) - lZ ≤ t'.2.2 / Real.log 2 + δ)
+    (hl' : lZ + ((s' / 2 : ℕ) : ℤ) ≤ t'.2.1)
+    (hmem'' : ((t''.1, lZ + ((s' / 2 : ℕ) : ℤ)) : ℕ × ℤ)
+      ∈ triangle t''.1 t''.2.1 t''.2.2) :
+    (((s' / 2 : ℕ) : ℝ) - δ) * Real.log 2 <
+      ((t''.1 : ℝ) - t'.1) * Real.log 9 := by
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hgap := apex_gapP F ht' ht'' hne hj hl' hmem''
+  have hcast : ((lZ + ((s' / 2 : ℕ) : ℤ) : ℤ) : ℝ) =
+      (lZ : ℝ) + ((s' / 2 : ℕ) : ℝ) := by
+    rw [Int.cast_add, Int.cast_natCast]
+  rw [hcast] at hgap
+  have hexp : ((t'.2.1 : ℝ) - ((lZ : ℝ) + ((s' / 2 : ℕ) : ℝ))) * Real.log 2
+      = ((t'.2.1 : ℝ) - lZ) * Real.log 2 -
+        ((s' / 2 : ℕ) : ℝ) * Real.log 2 := by ring
+  rw [hexp] at hgap
+  have h765' : ((t'.2.1 : ℝ) - lZ) * Real.log 2 ≤
+      t'.2.2 + δ * Real.log 2 := by
+    have h := mul_le_mul_of_nonneg_right h765 hlog2.le
+    rwa [add_mul, div_mul_cancel₀ _ hlog2.ne'] at h
+  have hgoal : (((s' / 2 : ℕ) : ℝ) - δ) * Real.log 2 =
+      ((s' / 2 : ℕ) : ℝ) * Real.log 2 - δ * Real.log 2 := by ring
+  rw [hgoal]
+  linarith [hgap, h765']
+
+/-- Qualifying apexes in the finer family are `s'/10`-separated.  The witness
+row is `lΔ + ⌊s'/2⌋`; the quantitative extraction is independent of the
+Pascal parameter and of the finer cutoff. -/
+theorem qualifying_apex_separatedP {n ξ : ℕ} (F : TriangleFamilyP n ξ)
+    (lΔ : ℤ) (s' : ℕ) (W : ℝ) (hW : 1 ≤ W) (hWs : 100 * W ≤ (s' : ℝ)) :
+    ∀ t' ∈ F.T, ∀ t'' ∈ F.T, t' ≠ t'' →
+      (s' : ℝ) ≤ t'.2.2 → |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (lΔ : ℝ)| ≤ W →
+      (s' : ℝ) ≤ t''.2.2 → |(t''.2.1 : ℝ) - t''.2.2 / Real.log 2 - (lΔ : ℝ)| ≤ W →
+      (s' : ℝ) / 10 ≤ |(t'.1 : ℝ) - (t''.1 : ℝ)| := by
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog2lo : (0.6931471803 : ℝ) < Real.log 2 := Real.log_two_gt_d9
+  have hlog2hi : Real.log 2 < 0.6931471808 := Real.log_two_lt_d9
+  have hlog9hi : Real.log 9 < 2.4 := by
+    have h32 : Real.log (3 / 2) ≤ 3 / 2 - 1 :=
+      Real.log_le_sub_one_of_pos (by norm_num)
+    have h3 : Real.log 3 = Real.log 2 + Real.log (3 / 2) := by
+      rw [← Real.log_mul (by norm_num) (by norm_num)]
+      norm_num
+    have h9 : Real.log 9 = 2 * Real.log 3 := by
+      rw [show (9 : ℝ) = 3 ^ 2 by norm_num, Real.log_pow]
+      push_cast
+      ring
+    rw [h9, h3]
+    linarith
+  have hlog9pos : (0 : ℝ) < Real.log 9 := Real.log_pos (by norm_num)
+  have core : ∀ t' ∈ F.T, ∀ t'' ∈ F.T, t' ≠ t'' → t'.1 ≤ t''.1 →
+      (s' : ℝ) ≤ t'.2.2 → |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (lΔ : ℝ)| ≤ W →
+      (s' : ℝ) ≤ t''.2.2 → |(t''.2.1 : ℝ) - t''.2.2 / Real.log 2 - (lΔ : ℝ)| ≤ W →
+      (s' : ℝ) / 10 ≤ (t''.1 : ℝ) - (t'.1 : ℝ) := by
+    intro t' ht' t'' ht'' hne hj hs' hw' hs'' hw''
+    have hs'100 : (100 : ℝ) ≤ (s' : ℝ) := le_trans (by linarith) hWs
+    have hfl_le : ((s' / 2 : ℕ) : ℝ) ≤ (s' : ℝ) / 2 := by
+      have := Nat.cast_div_le (m := s') (n := 2) (α := ℝ)
+      push_cast at this
+      linarith
+    have hfl_ge : (s' : ℝ) / 2 - 1 ≤ ((s' / 2 : ℕ) : ℝ) := by
+      have h1 : s' / 2 + s' / 2 + 1 ≥ s' := by omega
+      have h2 : (s' : ℝ) ≤ ((s' / 2 : ℕ) : ℝ) + ((s' / 2 : ℕ) : ℝ) + 1 := by
+        exact_mod_cast h1
+      linarith
+    have htip : ∀ u : ℕ × ℤ × ℝ, (s' : ℝ) ≤ u.2.2 →
+        |(u.2.1 : ℝ) - u.2.2 / Real.log 2 - (lΔ : ℝ)| ≤ W →
+        (lΔ : ℤ) + ((s' / 2 : ℕ) : ℤ) ≤ u.2.1 := by
+      intro u hsu hwu
+      have h1 : (lΔ : ℝ) + u.2.2 / Real.log 2 - W ≤ (u.2.1 : ℝ) := by
+        have := (abs_le.mp hwu).1
+        linarith
+      have h2 : (s' : ℝ) / Real.log 2 ≤ u.2.2 / Real.log 2 := by gcongr
+      have h3 : (s' : ℝ) * 1.4 ≤ (s' : ℝ) / Real.log 2 := by
+        rw [le_div_iff₀ hlog2]
+        nlinarith [Nat.cast_nonneg (α := ℝ) s', hlog2hi]
+      have h4 : ((lΔ : ℝ) + ((s' / 2 : ℕ) : ℝ)) ≤ (u.2.1 : ℝ) := by
+        nlinarith [hfl_le]
+      have h5 : ((lΔ + ((s' / 2 : ℕ) : ℤ) : ℤ) : ℝ) ≤ (u.2.1 : ℝ) := by
+        rw [Int.cast_add, Int.cast_natCast]
+        linarith
+      exact_mod_cast h5
+    have hWfl : W ≤ ((s' / 2 : ℕ) : ℝ) := by linarith [hfl_ge]
+    have hmem'' : ((t''.1, lΔ + ((s' / 2 : ℕ) : ℤ)) : ℕ × ℤ)
+        ∈ triangle t''.1 t''.2.1 t''.2.2 := by
+      refine ⟨le_refl _, htip t'' hs'' hw'', ?_⟩
+      have hup : (t''.2.1 : ℝ) ≤ (lΔ : ℝ) + t''.2.2 / Real.log 2 + W := by
+        have := (abs_le.mp hw'').2
+        linarith
+      have hdiff : (t''.2.1 : ℝ) - ((lΔ : ℝ) + ((s' / 2 : ℕ) : ℝ))
+          ≤ t''.2.2 / Real.log 2 := by linarith
+      have hkey : ((t''.2.1 : ℝ) - ((lΔ : ℝ) + ((s' / 2 : ℕ) : ℝ))) * Real.log 2
+          ≤ t''.2.2 := by
+        calc
+          ((t''.2.1 : ℝ) - ((lΔ : ℝ) + ((s' / 2 : ℕ) : ℝ))) * Real.log 2
+              ≤ (t''.2.2 / Real.log 2) * Real.log 2 :=
+                mul_le_mul_of_nonneg_right hdiff hlog2.le
+          _ = t''.2.2 := div_mul_cancel₀ _ hlog2.ne'
+      show ((t''.1 : ℝ) - (t''.1 : ℝ)) * Real.log 9
+          + ((t''.2.1 : ℝ) - ((lΔ + ((s' / 2 : ℕ) : ℤ) : ℤ) : ℝ)) * Real.log 2
+          ≤ t''.2.2
+      rw [Int.cast_add, Int.cast_natCast]
+      have hzero : ((t''.1 : ℝ) - (t''.1 : ℝ)) * Real.log 9 = 0 := by ring
+      linarith [hkey, hzero]
+    have h765 : (t'.2.1 : ℝ) - ((lΔ : ℤ) : ℝ) ≤ t'.2.2 / Real.log 2 + W := by
+      have := (abs_le.mp hw').2
+      linarith
+    have hgap := apex_separationP F ht' ht'' hne hj
+      (lZ := lΔ) (δ := W) (s' := s') h765 (htip t' hs' hw') hmem''
+    have hs'0 : (0 : ℝ) ≤ (s' : ℝ) := Nat.cast_nonneg _
+    have hcoef : 0.48 * (s' : ℝ) ≤ ((s' / 2 : ℕ) : ℝ) - W := by
+      linarith [hfl_ge]
+    have hB : (s' : ℝ) * 0.33 ≤ (((s' / 2 : ℕ) : ℝ) - W) * Real.log 2 := by
+      have h1 : (0.48 * (s' : ℝ)) * 0.6931471803
+          ≤ (((s' / 2 : ℕ) : ℝ) - W) * Real.log 2 :=
+        mul_le_mul hcoef hlog2lo.le (by norm_num) (by linarith)
+      nlinarith
+    have hA : (s' : ℝ) / 10 * Real.log 9 ≤ (s' : ℝ) * 0.24 := by
+      have h1 : (s' : ℝ) / 10 * Real.log 9 ≤ (s' : ℝ) / 10 * 2.4 :=
+        mul_le_mul_of_nonneg_left hlog9hi.le (by positivity)
+      linarith
+    have hfinal : (s' : ℝ) / 10 * Real.log 9 ≤
+        ((t''.1 : ℝ) - (t'.1 : ℝ)) * Real.log 9 := by
+      have := hgap
+      nlinarith
+    have := le_of_mul_le_mul_right
+      (by linarith [hfinal] :
+        (s' : ℝ) / 10 * Real.log 9 ≤ ((t''.1 : ℝ) - (t'.1 : ℝ)) * Real.log 9)
+      hlog9pos
+    linarith
+  intro t' ht' t'' ht'' hne hs' hw' hs'' hw''
+  rcases le_total t'.1 t''.1 with hj | hj
+  · have h := core t' ht' t'' ht'' hne hj hs' hw' hs'' hw''
+    rw [abs_sub_comm, abs_of_nonneg (by linarith)]
+    linarith
+  · have h := core t'' ht'' t' ht' (Ne.symm hne) hj hs'' hw'' hs' hw'
+    rw [abs_of_nonneg (by linarith)]
+    linarith
+
+/-- **Tilted X10b — the separated-band sum.**  This is the
+fixed-law summation kernel with exactly two law-dependent substitutions:
+the first-passage marginal is centred at `tilt * s / 2`, and the appended
+walk has law `holdSumP tilt k`.  The integer-row and banded-`Gweight`
+engines remain p-free. -/
+theorem encounter_separated_sumP_core (cB C' K : ℝ)
+    (_hcB : 0 < cB) (hC' : 0 < C') (hK : 0 < K)
+    (hcol : ∀ (tilt : ℝ) (hp0 : 1 / 5 ≤ tilt) (hp1 : tilt ≤ 3 / 5), ∀ (s j : ℕ),
+      ∑' l : ℤ, (fpDistP tilt (by linarith) (by linarith) s (j, l)).toReal
+        ≤ C' * (TaoCollatz.Gweight (1 + (s : ℝ)) (cB * ((j : ℝ) - tilt / 2 * (s : ℝ)))
+                  / Real.sqrt (1 + (s : ℝ))))
+    (hband : ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ D : ℝ, 2 ≤ D → ∀ W : ℝ, 1 ≤ W →
+      ∀ S : Set ℤ, (∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)|) →
+      ∑' x : {x : ℤ | ∃ σ ∈ S, |(x : ℝ) - (σ : ℝ)| ≤ W},
+          ENNReal.ofReal (TaoCollatz.Gweight t (cB * (((x : ℤ) : ℝ) - μ)))
+        ≤ ENNReal.ofReal ((2 * W + 1)
+            * (4 + K * Real.sqrt t / (⌊D / 2⌋₊ : ℝ)))) :
+    ∀ (tilt : ℝ) (hp0 : 1 / 5 ≤ tilt) (hp1 : tilt ≤ 3 / 5),
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ →
+      ∀ (F : TriangleFamilyP n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → 0 ≤ s →
+      ∀ (k s' : ℕ) (W : ℝ), 1 ≤ W → 100 * W ≤ (s' : ℝ) →
+      ((s' : ℝ)) ^ 2 ≤ 1 + (s : ℝ) →
+      ∑' e : ℕ × ℤ, (fpDistPlusP tilt (by linarith) (by linarith) s k e).toReal
+          * Set.indicator {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+              ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+              ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} 1 (j + e.1, l + e.2)
+        ≤ (12 * C' + 120 * C' * K) * W / (s' : ℝ) := by
+  classical
+  intro tilt hp0 hp1 n ξ hξ F t₀ ht₀ j l hmemt₀ s hs _ k s' W hW hWs hreg
+  set Event : Set (ℕ × ℤ) := {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+      ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+      ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} with hEvent
+  -- basic numerics
+  have hs'100 : (100 : ℝ) ≤ (s' : ℝ) := le_trans (by linarith) hWs
+  have hs'0 : (0 : ℝ) < (s' : ℝ) := by linarith
+  have hsq1 : (1 : ℝ) ≤ 1 + (s : ℝ) := by
+    have : (0 : ℝ) ≤ (s : ℕ) := Nat.cast_nonneg _
+    linarith
+  have hsqpos : (0 : ℝ) < Real.sqrt (1 + (s : ℝ)) :=
+    Real.sqrt_pos.mpr (by linarith)
+  have hs'sqrt : (s' : ℝ) ≤ Real.sqrt (1 + (s : ℝ)) := by
+    rw [show (s' : ℝ) = Real.sqrt ((s' : ℝ) ^ 2) from (Real.sqrt_sq hs'0.le).symm]
+    exact Real.sqrt_le_sqrt hreg
+  -- the s'/10 separation constant and its floor bound
+  set D : ℝ := (s' : ℝ) / 10 with hD
+  have hD2 : (2 : ℝ) ≤ D := by rw [hD]; linarith
+  have hfl40 : (s' : ℝ) / 40 ≤ (⌊D / 2⌋₊ : ℝ) := by
+    have h1 : D / 2 - 1 < (⌊D / 2⌋₊ : ℝ) := Nat.sub_one_lt_floor _
+    rw [hD] at h1
+    linarith
+  have hfl0 : (0 : ℝ) < (⌊D / 2⌋₊ : ℝ) := by linarith
+  -- the per-column envelope, ℝ≥0∞ form
+  set G : ℕ → ℝ≥0∞ := fun x => ENNReal.ofReal (C' *
+      (TaoCollatz.Gweight (1 + (s : ℝ)) (cB * ((x : ℝ) - tilt / 2 * (s : ℝ)))
+        / Real.sqrt (1 + (s : ℝ)))) with hG
+  have hcolE : ∀ x : ℕ, ∑' y : ℤ, fpDistP tilt (by linarith) (by linarith) s (x, y) ≤ G x := by
+    intro x
+    have hne : ∑' y : ℤ, fpDistP tilt (by linarith) (by linarith) s (x, y) ≠ ⊤ := by
+      refine ne_top_of_le_ne_top (b := 1) ENNReal.one_ne_top ?_
+      calc ∑' y : ℤ, fpDistP tilt (by linarith) (by linarith) s (x, y)
+          ≤ ∑' e : ℕ × ℤ, fpDistP tilt (by linarith) (by linarith) s e :=
+            ENNReal.tsum_comp_le_tsum_of_injective
+              (fun a b hab => (Prod.mk.injEq _ _ _ _).mp hab |>.2 ▸ by
+                cases hab; rfl) _
+        _ = 1 := (fpDistP tilt (by linarith) (by linarith) s).tsum_coe
+    rw [← ENNReal.ofReal_toReal hne]
+    refine ENNReal.ofReal_le_ofReal ?_
+    rw [ENNReal.tsum_toReal_eq (fun y => PMF.apply_ne_top _ _)]
+    exact hcol tilt hp0 hp1 s x
+  -- the T ∈ ℝ≥0∞ reformulation of the LHS
+  set T : ℝ≥0∞ :=
+    ∑' e : ℕ × ℤ, (if (j + e.1, l + e.2) ∈ Event then fpDistPlusP tilt (by linarith) (by linarith) s k e else 0)
+    with hT
+  have hLHS : ∑' e : ℕ × ℤ, (fpDistPlusP tilt (by linarith) (by linarith) s k e).toReal
+      * Set.indicator Event 1 (j + e.1, l + e.2) = T.toReal := by
+    rw [hT, ENNReal.tsum_toReal_eq (fun e => by
+      split_ifs
+      exacts [PMF.apply_ne_top _ _, ENNReal.zero_ne_top])]
+    refine tsum_congr fun e => ?_
+    by_cases he : (j + e.1, l + e.2) ∈ Event
+    · rw [if_pos he, Set.indicator_apply, if_pos he, Pi.one_apply, mul_one]
+    · rw [if_neg he, Set.indicator_apply, if_neg he, mul_zero, ENNReal.toReal_zero]
+  -- expand the convolution (the fpDistPlus_col_tail glue pattern)
+  have hexp : T = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+      (if (j + (f + w).1, l + (f + w).2) ∈ Event
+        then fpDistP tilt (by linarith) (by linarith) s f * holdSumP tilt (by linarith) (by linarith) k w else 0) := by
+    rw [hT]
+    have h1 : ∀ e : ℕ × ℤ,
+        (if (j + e.1, l + e.2) ∈ Event then fpDistPlusP tilt (by linarith) (by linarith) s k e else 0)
+        = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ), (if e = f + w then
+            (if (j + e.1, l + e.2) ∈ Event
+              then fpDistP tilt (by linarith) (by linarith) s f * holdSumP tilt (by linarith) (by linarith) k w else 0)
+          else 0) := by
+      intro e
+      by_cases he : (j + e.1, l + e.2) ∈ Event
+      · rw [if_pos he, fpDistPlusP, PMF.bind_apply]
+        refine tsum_congr fun f => ?_
+        rw [PMF.map_apply, ← ENNReal.tsum_mul_left]
+        refine tsum_congr fun w => ?_
+        by_cases hew : e = f + w
+        · rw [if_pos hew, if_pos hew, if_pos he]
+        · rw [if_neg hew, if_neg hew, mul_zero]
+      · rw [if_neg he]
+        have hz : ∀ f w : ℕ × ℤ, (if e = f + w then
+            (if (j + e.1, l + e.2) ∈ Event
+              then fpDistP tilt (by linarith) (by linarith) s f * holdSumP tilt (by linarith) (by linarith) k w else 0)
+          else 0) = 0 := by
+          intro f w
+          rw [if_neg he]
+          exact ite_self 0
+        symm
+        simp only [hz, tsum_zero]
+    calc ∑' e : ℕ × ℤ,
+        (if (j + e.1, l + e.2) ∈ Event then fpDistPlusP tilt (by linarith) (by linarith) s k e else 0)
+        = ∑' (e : ℕ × ℤ) (f : ℕ × ℤ) (w : ℕ × ℤ), (if e = f + w then
+            (if (j + e.1, l + e.2) ∈ Event
+              then fpDistP tilt (by linarith) (by linarith) s f * holdSumP tilt (by linarith) (by linarith) k w else 0)
+          else 0) := tsum_congr h1
+      _ = ∑' (f : ℕ × ℤ) (e : ℕ × ℤ) (w : ℕ × ℤ), (if e = f + w then
+            (if (j + e.1, l + e.2) ∈ Event
+              then fpDistP tilt (by linarith) (by linarith) s f * holdSumP tilt (by linarith) (by linarith) k w else 0)
+          else 0) := ENNReal.tsum_comm
+      _ = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ) (e : ℕ × ℤ), (if e = f + w then
+            (if (j + e.1, l + e.2) ∈ Event
+              then fpDistP tilt (by linarith) (by linarith) s f * holdSumP tilt (by linarith) (by linarith) k w else 0)
+          else 0) := tsum_congr fun f => ENNReal.tsum_comm
+      _ = ∑' (f : ℕ × ℤ) (w : ℕ × ℤ),
+            (if (j + (f + w).1, l + (f + w).2) ∈ Event
+              then fpDistP tilt (by linarith) (by linarith) s f * holdSumP tilt (by linarith) (by linarith) k w else 0) := by
+          refine tsum_congr fun f => tsum_congr fun w => ?_
+          rw [tsum_eq_single (f + w) (fun e he => if_neg he), if_pos rfl]
+  -- per Hold displacement w: the first-passage column mass over the band union
+  have hinner : ∀ w : ℕ × ℤ,
+      ∑' f : ℕ × ℤ, (if (j + (f + w).1, l + (f + w).2) ∈ Event
+          then fpDistP tilt (by linarith) (by linarith) s f * holdSumP tilt (by linarith) (by linarith) k w else 0)
+      ≤ holdSumP tilt (by linarith) (by linarith) k w * ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+          * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) := by
+    intro w
+    -- membership depends on the column only
+    have hmem_iff : ∀ f : ℕ × ℤ, ((j + (f + w).1, l + (f + w).2) ∈ Event
+        ↔ (∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+            ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+            ∧ |((j + f.1 + w.1 : ℕ) : ℝ) - (t'.1 : ℝ)| ≤ W)) := by
+      intro f
+      rw [hEvent]
+      constructor
+      · rintro ⟨t', ht', h1, h2, h3⟩
+        exact ⟨t', ht', h1, h2, by
+          simpa [Prod.fst_add, Nat.add_assoc] using h3⟩
+      · rintro ⟨t', ht', h1, h2, h3⟩
+        exact ⟨t', ht', h1, h2, by
+          simpa [Prod.fst_add, Nat.add_assoc] using h3⟩
+    -- the qualifying-apex set, shifted by j + w.1
+    set S : Set ℤ := {σ : ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+        ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+        ∧ (t'.1 : ℤ) - (j : ℤ) - (w.1 : ℤ) = σ} with hS
+    have hSsep : ∀ σ ∈ S, ∀ σ' ∈ S, σ ≠ σ' → D ≤ |(σ : ℝ) - (σ' : ℝ)| := by
+      rintro σ ⟨t', ht', h1, h2, hσ⟩ σ' ⟨t'', ht'', h1', h2', hσ'⟩ hne
+      have hcolne : t'.1 ≠ t''.1 := by
+        intro hcc
+        apply hne
+        omega
+      have htne : t' ≠ t'' := fun hcc => hcolne (by rw [hcc])
+      have := qualifying_apex_separatedP F t₀.2.1 s' W hW hWs
+        t' ht' t'' ht'' htne h1 h2 h1' h2'
+      have hval : (σ : ℝ) - (σ' : ℝ) = (t'.1 : ℝ) - (t''.1 : ℝ) := by
+        have h4 : ((σ - σ' : ℤ) : ℝ) = (((t'.1 : ℤ) - (t''.1 : ℤ) : ℤ) : ℝ) := by
+          congr 1
+          omega
+        push_cast at h4
+        linarith
+      rw [hD, hval]
+      linarith
+    -- the column condition puts the (integer) column in the W-band union of S
+    have hcond_mem : ∀ x : ℕ,
+        (∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+            ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+            ∧ |((j + x + w.1 : ℕ) : ℝ) - (t'.1 : ℝ)| ≤ W) →
+        ((x : ℤ) ∈ {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W}) := by
+      rintro x ⟨t', ht', h1, h2, h3⟩
+      refine ⟨(t'.1 : ℤ) - (j : ℤ) - (w.1 : ℤ), ⟨t', ht', h1, h2, rfl⟩, ?_⟩
+      have hcast : ((x : ℤ) : ℝ) - (((t'.1 : ℤ) - (j : ℤ) - (w.1 : ℤ) : ℤ) : ℝ)
+          = ((j + x + w.1 : ℕ) : ℝ) - (t'.1 : ℝ) := by
+        push_cast
+        ring
+      rw [hcast]
+      exact h3
+    -- pull the iid factor out and marginalise the first-passage law column-wise
+    have hsum1 : ∑' f : ℕ × ℤ, (if (j + (f + w).1, l + (f + w).2) ∈ Event
+        then fpDistP tilt (by linarith) (by linarith) s f * holdSumP tilt (by linarith) (by linarith) k w else 0)
+        = holdSumP tilt (by linarith) (by linarith) k w * ∑' f : ℕ × ℤ,
+            (if (j + (f + w).1, l + (f + w).2) ∈ Event then fpDistP tilt (by linarith) (by linarith) s f else 0) := by
+      rw [← ENNReal.tsum_mul_left]
+      refine tsum_congr fun f => ?_
+      split_ifs
+      · ring
+      · rw [mul_zero]
+    rw [hsum1]
+    refine mul_le_mul_of_nonneg_left ?_ zero_le
+    -- column marginal
+    have hsum2 : ∑' f : ℕ × ℤ,
+        (if (j + (f + w).1, l + (f + w).2) ∈ Event then fpDistP tilt (by linarith) (by linarith) s f else 0)
+        ≤ ∑' x : ℕ, (if (x : ℤ) ∈ {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W}
+            then G x else 0) := by
+      rw [ENNReal.tsum_prod']
+      refine ENNReal.tsum_le_tsum fun x => ?_
+      by_cases hx : (∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+          ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+          ∧ |((j + x + w.1 : ℕ) : ℝ) - (t'.1 : ℝ)| ≤ W)
+      · rw [if_pos (hcond_mem x hx)]
+        calc ∑' y : ℤ, (if (j + ((x, y) + w).1, l + ((x, y) + w).2) ∈ Event
+              then fpDistP tilt (by linarith) (by linarith) s (x, y) else 0)
+            ≤ ∑' y : ℤ, fpDistP tilt (by linarith) (by linarith) s (x, y) :=
+              ENNReal.tsum_le_tsum fun y => by
+                split_ifs
+                exacts [le_rfl, zero_le]
+          _ ≤ G x := hcolE x
+      · have hz : ∀ y : ℤ, (if (j + ((x, y) + w).1, l + ((x, y) + w).2) ∈ Event
+            then fpDistP tilt (by linarith) (by linarith) s (x, y) else 0) = 0 := by
+          intro y
+          rw [if_neg (fun hc => hx ((hmem_iff (x, y)).mp hc))]
+        rw [tsum_congr hz, tsum_zero]
+        exact zero_le
+    refine hsum2.trans ?_
+    -- indicator → subtype over the band union, then the banded engine
+    have hsub : ∑' x : ℕ, (if (x : ℤ) ∈ {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W}
+        then G x else 0)
+        ≤ ∑' u : {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W},
+            ENNReal.ofReal (C' / Real.sqrt (1 + (s : ℝ)))
+              * ENNReal.ofReal (TaoCollatz.Gweight (1 + (s : ℝ))
+                  (cB * (((u : ℤ) : ℝ) - tilt / 2 * (s : ℝ)))) := by
+      set A : Set ℕ := {x : ℕ | (x : ℤ) ∈ {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W}}
+        with hA
+      have hstep : ∑' x : ℕ, (if (x : ℤ) ∈ {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W}
+          then G x else 0) = ∑' a : A, G a.1 := by
+        rw [tsum_subtype A G]
+        exact tsum_congr fun x => by
+          rw [Set.indicator_apply]
+          exact if_congr Iff.rfl rfl rfl
+      rw [hstep]
+      set φ : A → {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W} :=
+        fun a => ⟨(a.1 : ℤ), a.2⟩ with hφ
+      have hφinj : Function.Injective φ := by
+        intro a b hab
+        have : (a.1 : ℤ) = (b.1 : ℤ) := congrArg Subtype.val hab
+        exact Subtype.ext (by exact_mod_cast this)
+      have hval : ∀ a : A, G a.1
+          = ENNReal.ofReal (C' / Real.sqrt (1 + (s : ℝ)))
+            * ENNReal.ofReal (TaoCollatz.Gweight (1 + (s : ℝ))
+                (cB * ((((φ a) : ℤ) : ℝ) - tilt / 2 * (s : ℝ)))) := by
+        intro a
+        rw [hG, ← ENNReal.ofReal_mul (by positivity)]
+        have : (((φ a) : ℤ) : ℝ) = ((a.1 : ℕ) : ℝ) := by
+          simp [hφ]
+        rw [this]
+        ring_nf
+      calc ∑' a : A, G a.1
+          = ∑' a : A, (ENNReal.ofReal (C' / Real.sqrt (1 + (s : ℝ)))
+              * ENNReal.ofReal (TaoCollatz.Gweight (1 + (s : ℝ))
+                  (cB * ((((φ a) : ℤ) : ℝ) - tilt / 2 * (s : ℝ))))) := tsum_congr hval
+        _ ≤ _ := ENNReal.tsum_comp_le_tsum_of_injective hφinj _
+    refine hsub.trans ?_
+    rw [ENNReal.tsum_mul_left]
+    calc ENNReal.ofReal (C' / Real.sqrt (1 + (s : ℝ)))
+        * ∑' u : {y : ℤ | ∃ σ ∈ S, |(y : ℝ) - (σ : ℝ)| ≤ W},
+            ENNReal.ofReal (TaoCollatz.Gweight (1 + (s : ℝ)) (cB * (((u : ℤ) : ℝ) - tilt / 2 * (s : ℝ))))
+        ≤ ENNReal.ofReal (C' / Real.sqrt (1 + (s : ℝ)))
+          * ENNReal.ofReal ((2 * W + 1)
+              * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ))) := by
+          refine mul_le_mul_of_nonneg_left ?_ zero_le
+          exact hband (1 + (s : ℝ)) hsq1 (tilt / 2 * (s : ℝ)) D hD2 W hW S hSsep
+      _ = ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+          * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) := by
+          rw [← ENNReal.ofReal_mul (by positivity)]
+  -- sum over the Hold displacement: total iid mass is 1
+  have hTle : T ≤ ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+      * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) := by
+    rw [hexp, ENNReal.tsum_comm]
+    calc ∑' (w : ℕ × ℤ) (f : ℕ × ℤ),
+        (if (j + (f + w).1, l + (f + w).2) ∈ Event
+          then fpDistP tilt (by linarith) (by linarith) s f * holdSumP tilt (by linarith) (by linarith) k w else 0)
+        ≤ ∑' w : ℕ × ℤ, holdSumP tilt (by linarith) (by linarith) k w
+            * ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+              * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) :=
+          ENNReal.tsum_le_tsum hinner
+      _ = (∑' w : ℕ × ℤ, holdSumP tilt (by linarith) (by linarith) k w)
+            * ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+              * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) :=
+          ENNReal.tsum_mul_right
+      _ = ENNReal.ofReal ((C' / Real.sqrt (1 + (s : ℝ)))
+            * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))) := by
+          rw [(holdSumP tilt (by linarith) (by linarith) k).tsum_coe, one_mul]
+  -- final numeric bookkeeping
+  have hnum : (C' / Real.sqrt (1 + (s : ℝ)))
+      * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))
+      ≤ (12 * C' + 120 * C' * K) * W / (s' : ℝ) := by
+    have h2W : 2 * W + 1 ≤ 3 * W := by linarith
+    have hinv : 1 / Real.sqrt (1 + (s : ℝ)) ≤ 1 / (s' : ℝ) :=
+      one_div_le_one_div_of_le hs'0 hs'sqrt
+    have hfli : K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)
+        ≤ 40 * K * Real.sqrt (1 + (s : ℝ)) / (s' : ℝ) := by
+      rw [div_le_div_iff₀ hfl0 hs'0]
+      have := mul_le_mul_of_nonneg_left hfl40
+        (by positivity : (0 : ℝ) ≤ 40 * (K * Real.sqrt (1 + (s : ℝ))))
+      nlinarith [hfl40, mul_nonneg hK.le hsqpos.le]
+    -- expand: LHS ≤ (C'/√)·3W·4 + (C'/√)·3W·(40K√/s')
+    have hsqinv : C' / Real.sqrt (1 + (s : ℝ)) ≤ C' / (s' : ℝ) := by
+      rw [div_le_div_iff₀ hsqpos hs'0]
+      nlinarith [hs'sqrt, hC'.le]
+    have hterm1 : (C' / Real.sqrt (1 + (s : ℝ))) * ((2 * W + 1) * 4)
+        ≤ 12 * C' * W / (s' : ℝ) := by
+      have h1 : (C' / Real.sqrt (1 + (s : ℝ))) * ((2 * W + 1) * 4)
+          ≤ (C' / (s' : ℝ)) * (3 * W * 4) := by
+        refine mul_le_mul hsqinv (by linarith) (by positivity) (by positivity)
+      calc (C' / Real.sqrt (1 + (s : ℝ))) * ((2 * W + 1) * 4)
+          ≤ (C' / (s' : ℝ)) * (3 * W * 4) := h1
+        _ = 12 * C' * W / (s' : ℝ) := by ring
+    have hterm2 : (C' / Real.sqrt (1 + (s : ℝ)))
+        * ((2 * W + 1) * (K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))
+        ≤ 120 * C' * K * W / (s' : ℝ) := by
+      have h1 : (2 * W + 1) * (K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ))
+          ≤ 3 * W * (40 * K * Real.sqrt (1 + (s : ℝ)) / (s' : ℝ)) := by
+        refine mul_le_mul h2W hfli (by positivity) (by positivity)
+      have h2 : (C' / Real.sqrt (1 + (s : ℝ)))
+          * (3 * W * (40 * K * Real.sqrt (1 + (s : ℝ)) / (s' : ℝ)))
+          = 120 * C' * K * W / (s' : ℝ)
+            * (Real.sqrt (1 + (s : ℝ)) / Real.sqrt (1 + (s : ℝ))) := by
+        field_simp
+        ring
+      calc (C' / Real.sqrt (1 + (s : ℝ)))
+          * ((2 * W + 1) * (K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))
+          ≤ (C' / Real.sqrt (1 + (s : ℝ)))
+            * (3 * W * (40 * K * Real.sqrt (1 + (s : ℝ)) / (s' : ℝ))) :=
+            mul_le_mul_of_nonneg_left h1 (by positivity)
+        _ = 120 * C' * K * W / (s' : ℝ)
+            * (Real.sqrt (1 + (s : ℝ)) / Real.sqrt (1 + (s : ℝ))) := h2
+        _ = 120 * C' * K * W / (s' : ℝ) := by
+            rw [div_self hsqpos.ne', mul_one]
+    calc (C' / Real.sqrt (1 + (s : ℝ)))
+        * ((2 * W + 1) * (4 + K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ)))
+        = (C' / Real.sqrt (1 + (s : ℝ))) * ((2 * W + 1) * 4)
+          + (C' / Real.sqrt (1 + (s : ℝ)))
+            * ((2 * W + 1) * (K * Real.sqrt (1 + (s : ℝ)) / (⌊D / 2⌋₊ : ℝ))) := by
+          ring
+      _ ≤ 12 * C' * W / (s' : ℝ) + 120 * C' * K * W / (s' : ℝ) :=
+          add_le_add hterm1 hterm2
+      _ = (12 * C' + 120 * C' * K) * W / (s' : ℝ) := by ring
+  rw [hLHS]
+  refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
+  exact hTle.trans (ENNReal.ofReal_le_ofReal hnum)
+
+/-- Uniform constant for the tilted separated-band estimate. -/
+noncomputable def C_encSepP : ℝ :=
+  12 * C_fpColP +
+    120 * C_fpColP * TaoCollatz.K_intG c_fpLocationP
+
+theorem C_encSepP_pos : 0 < C_encSepP := by
+  have h1 := C_fpColP_pos
+  have h2 := TaoCollatz.K_intG_pos c_fpLocationP_pos
+  unfold C_encSepP
+  nlinarith
+
+/-- Explicit-constant interface for tilted X10b.  Its constants are selected
+before the Pascal parameter. -/
+theorem encounter_separated_sumP_explicitC :
+    ∀ (tilt : ℝ) (hp0 : 1 / 5 ≤ tilt) (hp1 : tilt ≤ 3 / 5),
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamilyP n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → 0 ≤ s →
+      ∀ (k s' : ℕ) (W : ℝ), 1 ≤ W → 100 * W ≤ (s' : ℝ) →
+      ((s' : ℝ)) ^ 2 ≤ 1 + (s : ℝ) →
+      ∑' e : ℕ × ℤ,
+          (fpDistPlusP tilt (by linarith) (by linarith) s k e).toReal
+            * Set.indicator {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+                ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+                ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} 1 (j + e.1, l + e.2)
+        ≤ C_encSepP * W / (s' : ℝ) := by
+  have h := encounter_separated_sumP_core
+    c_fpLocationP C_fpColP (TaoCollatz.K_intG c_fpLocationP)
+    c_fpLocationP_pos C_fpColP_pos
+    (TaoCollatz.K_intG_pos c_fpLocationP_pos)
+    (fun tilt hp0 hp1 =>
+      fpDistP_col_le_explicitC tilt (by linarith) (by linarith) hp0 hp1)
+    (TaoCollatz.banded_Gweight_tsum_le_explicitC c_fpLocationP_pos)
+  unfold C_encSepP
+  exact h
+
+/-- **Tilted X10b — separated encounter bands.**  Uniformly over the Pascal
+window, the endpoint mass in qualifying `W`-bands is `O(W/s')`. -/
+theorem encounter_separated_sumP :
+    ∃ C₃ > (0 : ℝ), ∃ S₀ : ℕ,
+      ∀ (tilt : ℝ) (hp0 : 1 / 5 ≤ tilt) (hp1 : tilt ≤ 3 / 5),
+      ∀ (n ξ : ℕ), ¬ 3 ∣ ξ → ∀ (F : TriangleFamilyP n ξ),
+      ∀ t₀ ∈ F.T, ∀ (j : ℕ) (l : ℤ),
+        (j, l) ∈ triangle t₀.1 t₀.2.1 t₀.2.2 →
+      ∀ (s : ℕ), (s : ℤ) = t₀.2.1 - l → S₀ ≤ s →
+      ∀ (k s' : ℕ) (W : ℝ), 1 ≤ W → 100 * W ≤ (s' : ℝ) →
+      ((s' : ℝ)) ^ 2 ≤ 1 + (s : ℝ) →
+      ∑' e : ℕ × ℤ,
+          (fpDistPlusP tilt (by linarith) (by linarith) s k e).toReal
+            * Set.indicator {q : ℕ × ℤ | ∃ t' ∈ F.T, (s' : ℝ) ≤ t'.2.2
+                ∧ |(t'.2.1 : ℝ) - t'.2.2 / Real.log 2 - (t₀.2.1 : ℝ)| ≤ W
+                ∧ |(q.1 : ℝ) - (t'.1 : ℝ)| ≤ W} 1 (j + e.1, l + e.2)
+        ≤ C₃ * W / (s' : ℝ) :=
+  ⟨C_encSepP, C_encSepP_pos, 0, encounter_separated_sumP_explicitC⟩
+
 end TaoCollatz.Sec7P
