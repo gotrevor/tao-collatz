@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Trevor Morris
 -/
 import TaoCollatz.Sec7P.Localization
+import TaoCollatz.Sec7.ManyTriangles
 
 /-!
 # Finer-scale many-triangle geometry for the tilted holding law
@@ -168,6 +169,231 @@ theorem holdSumP_fst_tail_window {p : ℝ}
     ← ENNReal.ofReal_mul (Real.exp_pos _).le]
   congr 1
   ring
+
+/-! ### Uniform first-passage height tail -/
+
+/-- Sum the tilted Lemma-7.7 envelope over both endpoint coordinates.  The
+horizontal centre `p s / 2` is harmless because Tao's row-sum engine is
+uniform in its real centre; the height factor supplies exponential overshoot
+decay exactly as in the fixed-law proof. -/
+theorem fpDistP_height_tail_core {p : ℝ}
+    (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5)
+    (cL CL K : ℝ) (hcL : 0 < cL) (hCL : 0 < CL) (hK : 0 < K)
+    (hbd : ∀ (s : ℕ) (j : ℕ) (l : ℤ),
+      (fpDistP p (by linarith) (by linarith) s (j, l)).toReal
+        ≤ CL * (Real.exp (-cL * ((l : ℝ) - s)) / Real.sqrt (1 + s))
+            * TaoCollatz.Gweight (1 + s) (cL * ((j : ℝ) - p / 2 * s)))
+    (hrow : ∀ t : ℝ, 1 ≤ t → ∀ μ : ℝ, ∀ N : ℕ,
+      ∑ j ∈ Finset.range N, TaoCollatz.Gweight t (cL * ((j : ℝ) - μ))
+        ≤ K * Real.sqrt t) :
+    ∀ s : ℕ, ∀ y : ℝ, 0 ≤ y →
+      ∑' e : ℕ × ℤ,
+        (if (s : ℝ) + y ≤ (e.2 : ℝ) then
+          fpDistP p (by linarith) (by linarith) s e else 0)
+        ≤ ENNReal.ofReal
+            (CL * K * (Real.exp (-(cL / 2)) / (1 - Real.exp (-(cL / 2))))
+              * Real.exp (-(cL / 2) * y)) := by
+  let hp0' : 0 < p := by linarith
+  let hp1' : p < 1 := by linarith
+  let fpLaw := fpDistP p hp0' hp1'
+  have hc2 : (0 : ℝ) < cL / 2 := by positivity
+  have he1 : Real.exp (-(cL / 2)) < 1 := by
+    rw [Real.exp_lt_one_iff]
+    linarith
+  have hgd : (0 : ℝ) < 1 - Real.exp (-(cL / 2)) := by
+    linarith [Real.exp_pos (-(cL / 2))]
+  set geo : ℝ := Real.exp (-(cL / 2)) / (1 - Real.exp (-(cL / 2))) with hgeo
+  have hgeo0 : 0 < geo := div_pos (Real.exp_pos _) hgd
+  intro s y hy
+  have h1s : (0 : ℝ) < 1 + (s : ℝ) := by positivity
+  have hsq : (0 : ℝ) < Real.sqrt (1 + (s : ℝ)) := Real.sqrt_pos.mpr h1s
+  set A : ℕ → ℝ := fun j =>
+    CL * TaoCollatz.Gweight (1 + (s : ℝ))
+        (cL * ((j : ℝ) - p / 2 * (s : ℝ))) /
+      Real.sqrt (1 + (s : ℝ)) with hA
+  set B : ℤ → ℝ := fun l =>
+    if (s : ℤ) < l then
+      Real.exp (-(cL / 2) * ((l : ℝ) - (s : ℝ))) else 0 with hB
+  have hAnn : ∀ j, 0 ≤ A j := fun j =>
+    div_nonneg (mul_nonneg hCL.le (TaoCollatz.Gweight_nonneg _ _)) hsq.le
+  have hBnn : ∀ l, 0 ≤ B l := by
+    intro l
+    rw [hB]
+    dsimp only
+    split_ifs
+    exacts [(Real.exp_pos _).le, le_rfl]
+  have hpt : ∀ e : ℕ × ℤ,
+      (if (s : ℝ) + y ≤ (e.2 : ℝ) then fpLaw s e else 0)
+        ≤ ENNReal.ofReal (Real.exp (-(cL / 2) * y)) *
+          (ENNReal.ofReal (A e.1) * ENNReal.ofReal (B e.2)) := by
+    intro e
+    obtain ⟨j, l⟩ := e
+    by_cases hyl : (s : ℝ) + y ≤ (((j, l) : ℕ × ℤ).2 : ℝ)
+    · rw [if_pos hyl]
+      by_cases hsl : (s : ℤ) < l
+      · have hls : y ≤ (l : ℝ) - (s : ℝ) := by linarith
+        have hfac : (0 : ℝ) ≤ CL * TaoCollatz.Gweight (1 + (s : ℝ))
+            (cL * ((j : ℝ) - p / 2 * (s : ℝ))) /
+              Real.sqrt (1 + (s : ℝ)) :=
+          div_nonneg (mul_nonneg hCL.le (TaoCollatz.Gweight_nonneg _ _)) hsq.le
+        have hsplit : Real.exp (-cL * ((l : ℝ) - (s : ℝ))) ≤
+            Real.exp (-(cL / 2) * y) *
+              Real.exp (-(cL / 2) * ((l : ℝ) - (s : ℝ))) := by
+          rw [← Real.exp_add]
+          apply Real.exp_le_exp.mpr
+          nlinarith
+        have hRe : (fpLaw s (j, l)).toReal ≤
+            Real.exp (-(cL / 2) * y) * (A j * B l) := by
+          rw [hA, hB]
+          dsimp only
+          rw [if_pos hsl]
+          calc
+            (fpLaw s (j, l)).toReal ≤
+                CL * (Real.exp (-cL * ((l : ℝ) - (s : ℝ))) /
+                    Real.sqrt (1 + (s : ℝ))) *
+                  TaoCollatz.Gweight (1 + (s : ℝ))
+                    (cL * ((j : ℝ) - p / 2 * (s : ℝ))) := hbd s j l
+            _ = Real.exp (-cL * ((l : ℝ) - (s : ℝ))) *
+                  (CL * TaoCollatz.Gweight (1 + (s : ℝ))
+                    (cL * ((j : ℝ) - p / 2 * (s : ℝ))) /
+                      Real.sqrt (1 + (s : ℝ))) := by ring
+            _ ≤ (Real.exp (-(cL / 2) * y) *
+                    Real.exp (-(cL / 2) * ((l : ℝ) - (s : ℝ)))) *
+                  (CL * TaoCollatz.Gweight (1 + (s : ℝ))
+                    (cL * ((j : ℝ) - p / 2 * (s : ℝ))) /
+                      Real.sqrt (1 + (s : ℝ))) :=
+                mul_le_mul_of_nonneg_right hsplit hfac
+            _ = Real.exp (-(cL / 2) * y) *
+                  (CL * TaoCollatz.Gweight (1 + (s : ℝ))
+                    (cL * ((j : ℝ) - p / 2 * (s : ℝ))) /
+                      Real.sqrt (1 + (s : ℝ)) *
+                    Real.exp (-(cL / 2) * ((l : ℝ) - (s : ℝ)))) := by ring
+        calc
+          fpLaw s (j, l) = ENNReal.ofReal ((fpLaw s (j, l)).toReal) :=
+            (ENNReal.ofReal_toReal (PMF.apply_ne_top _ _)).symm
+          _ ≤ ENNReal.ofReal (Real.exp (-(cL / 2) * y) * (A j * B l)) :=
+            ENNReal.ofReal_le_ofReal hRe
+          _ = ENNReal.ofReal (Real.exp (-(cL / 2) * y)) *
+                (ENNReal.ofReal (A j) * ENNReal.ofReal (B l)) := by
+            rw [ENNReal.ofReal_mul (Real.exp_pos _).le,
+              ENNReal.ofReal_mul (hAnn j)]
+      · have h0 : fpLaw s (j, l) = 0 := by
+          by_contra h
+          exact hsl (fpDistP_support_snd_gt p hp0' hp1' s (j, l)
+            (by rwa [PMF.mem_support_iff]))
+        rw [h0]
+        exact zero_le
+    · rw [if_neg hyl]
+      exact zero_le
+  have hfact :
+      (∑' e : ℕ × ℤ, ENNReal.ofReal (A e.1) * ENNReal.ofReal (B e.2)) =
+        (∑' j : ℕ, ENNReal.ofReal (A j)) *
+          (∑' l : ℤ, ENNReal.ofReal (B l)) := by
+    rw [ENNReal.tsum_prod']
+    simp_rw [ENNReal.tsum_mul_left]
+    rw [ENNReal.tsum_mul_right]
+  have hAle : (∑' j : ℕ, ENNReal.ofReal (A j)) ≤ ENNReal.ofReal (CL * K) := by
+    rw [ENNReal.tsum_eq_iSup_sum]
+    refine iSup_le fun F => ?_
+    set M : ℕ := F.sup id + 1 with hM
+    have hFsub : F ⊆ Finset.range M := fun j hj =>
+      Finset.mem_range.mpr (Nat.lt_succ_of_le (Finset.le_sup (f := id) hj))
+    have hreal : ∑ j ∈ Finset.range M, A j ≤ CL * K := by
+      have hrw := hrow (1 + (s : ℝ))
+        (by linarith [Nat.cast_nonneg (α := ℝ) s])
+        (p / 2 * (s : ℝ)) M
+      calc
+        ∑ j ∈ Finset.range M, A j =
+            CL / Real.sqrt (1 + (s : ℝ)) *
+              ∑ j ∈ Finset.range M, TaoCollatz.Gweight (1 + (s : ℝ))
+                (cL * ((j : ℝ) - p / 2 * (s : ℝ))) := by
+              rw [Finset.mul_sum]
+              exact Finset.sum_congr rfl fun j _ => by rw [hA]; ring
+        _ ≤ CL / Real.sqrt (1 + (s : ℝ)) *
+              (K * Real.sqrt (1 + (s : ℝ))) :=
+            mul_le_mul_of_nonneg_left hrw (by positivity)
+        _ = CL * K := by field_simp
+    calc
+      ∑ j ∈ F, ENNReal.ofReal (A j) ≤
+          ∑ j ∈ Finset.range M, ENNReal.ofReal (A j) :=
+        Finset.sum_le_sum_of_subset hFsub
+      _ = ENNReal.ofReal (∑ j ∈ Finset.range M, A j) :=
+        (ENNReal.ofReal_sum_of_nonneg fun j _ => hAnn j).symm
+      _ ≤ ENNReal.ofReal (CL * K) := ENNReal.ofReal_le_ofReal hreal
+  have hBsum := TaoCollatz.hasSum_int_shift_exp hc2 s
+  have hBle : (∑' l : ℤ, ENNReal.ofReal (B l)) = ENNReal.ofReal geo := by
+    rw [← ENNReal.ofReal_tsum_of_nonneg hBnn hBsum.summable, hBsum.tsum_eq]
+  calc
+    ∑' e : ℕ × ℤ, (if (s : ℝ) + y ≤ (e.2 : ℝ) then fpLaw s e else 0)
+        ≤ ∑' e : ℕ × ℤ, ENNReal.ofReal (Real.exp (-(cL / 2) * y)) *
+            (ENNReal.ofReal (A e.1) * ENNReal.ofReal (B e.2)) :=
+          ENNReal.tsum_le_tsum hpt
+    _ = ENNReal.ofReal (Real.exp (-(cL / 2) * y)) *
+          ((∑' j : ℕ, ENNReal.ofReal (A j)) *
+            (∑' l : ℤ, ENNReal.ofReal (B l))) := by
+        rw [ENNReal.tsum_mul_left, hfact]
+    _ ≤ ENNReal.ofReal (Real.exp (-(cL / 2) * y)) *
+          (ENNReal.ofReal (CL * K) * ENNReal.ofReal geo) := by
+        exact mul_le_mul_right (mul_le_mul' hAle (le_of_eq hBle)) _
+    _ = ENNReal.ofReal (CL * K * geo * Real.exp (-(cL / 2) * y)) := by
+        rw [← ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ CL * K),
+          ← ENNReal.ofReal_mul (Real.exp_pos _).le]
+        congr 1
+        ring
+
+/-- Uniform decay rate for the tilted first-passage height overshoot. -/
+noncomputable def c_fpHeightP : ℝ := c_fpLocationP / 2
+
+/-- Uniform multiplicative constant for the tilted first-passage height tail. -/
+noncomputable def C_fpHeightP : ℝ :=
+  C_fpLocationP * TaoCollatz.K_rowG c_fpLocationP *
+    (Real.exp (-(c_fpLocationP / 2)) /
+      (1 - Real.exp (-(c_fpLocationP / 2))))
+
+theorem c_fpHeightP_pos : 0 < c_fpHeightP := by
+  unfold c_fpHeightP
+  exact div_pos c_fpLocationP_pos two_pos
+
+theorem C_fpHeightP_pos : 0 < C_fpHeightP := by
+  have hc := c_fpLocationP_pos
+  have he1 : Real.exp (-(c_fpLocationP / 2)) < 1 := by
+    rw [Real.exp_lt_one_iff]
+    linarith
+  unfold C_fpHeightP
+  exact mul_pos (mul_pos C_fpLocationP_pos (TaoCollatz.K_rowG_pos hc))
+    (div_pos (Real.exp_pos _) (by linarith))
+
+/-- Window-uniform first-passage height tail with explicit shared constants. -/
+theorem fpDistP_height_tail_explicitC :
+    ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ s : ℕ, ∀ y : ℝ, 0 ≤ y →
+      ∑' e : ℕ × ℤ,
+        (if (s : ℝ) + y ≤ (e.2 : ℝ) then
+          fpDistP p (by linarith) (by linarith) s e else 0)
+        ≤ ENNReal.ofReal (C_fpHeightP * Real.exp (-c_fpHeightP * y)) := by
+  intro p hp0 hp1
+  have h := fpDistP_height_tail_core hp0 hp1
+    c_fpLocationP C_fpLocationP (TaoCollatz.K_rowG c_fpLocationP)
+    c_fpLocationP_pos C_fpLocationP_pos
+    (TaoCollatz.K_rowG_pos c_fpLocationP_pos)
+    (fpDistP_location_bound_explicitC p (by linarith) (by linarith) hp0 hp1)
+    (TaoCollatz.sum_range_Gweight_le_explicitC c_fpLocationP_pos)
+  intro s y hy
+  have hs := h s y hy
+  unfold C_fpHeightP c_fpHeightP
+  exact hs
+
+/-- Existential interface for the tilted first-passage height tail. -/
+theorem fpDistP_height_tail :
+    ∃ c > (0 : ℝ), ∃ C > (0 : ℝ),
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ s : ℕ, ∀ y : ℝ, 0 ≤ y →
+      ∑' e : ℕ × ℤ,
+        (if (s : ℝ) + y ≤ (e.2 : ℝ) then
+          fpDistP p (by linarith) (by linarith) s e else 0)
+        ≤ ENNReal.ofReal (C * Real.exp (-c * y)) :=
+  ⟨c_fpHeightP, c_fpHeightP_pos, C_fpHeightP, C_fpHeightP_pos,
+    fpDistP_height_tail_explicitC⟩
 
 /-- Phase points beyond the right edge of the half strip. -/
 def outStripSetP (n : ℕ) : Set (ℕ × ℤ) := {q : ℕ × ℤ | n / 2 < q.1}
