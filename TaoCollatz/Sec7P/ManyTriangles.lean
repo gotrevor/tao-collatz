@@ -22,6 +22,16 @@ open scoped ENNReal
 /-- Phase points beyond the right edge of the half strip. -/
 def outStripSetP (n : ℕ) : Set (ℕ × ℤ) := {q : ℕ × ℤ | n / 2 < q.1}
 
+/-- Finer-scale white points in renewal coordinates.  The phase coordinate is
+one column behind the renewal coordinate, exactly as in Tao's `whiteSet`. -/
+def whiteSetP (n ξ : ℕ) : Set (ℕ × ℤ) :=
+  {q : ℕ × ℤ | 1 ≤ q.1 ∧ whiteP n ξ (q.1 - 1) q.2}
+
+/-- Finer-scale white renewal points which have not crossed the right edge of
+the half strip. -/
+def whiteStripP (n ξ : ℕ) : Set (ℕ × ℤ) :=
+  {q : ℕ × ℤ | q.1 ≤ n / 2 ∧ q ∈ whiteSetP n ξ}
+
 /-- Phase points whose predecessor column lies in a finer-scale family triangle. -/
 def phaseInFamilyP {n ξ : ℕ} (F : TriangleFamilyP n ξ) : Set (ℕ × ℤ) :=
   {q : ℕ × ℤ | ∃ t ∈ F.T,
@@ -211,5 +221,209 @@ theorem fpDistP_any_triangle_le :
     ENNReal.toReal_mono (by finiteness) (hPB.trans hBle)
   norm_num at hto ⊢
   exact hto
+
+/-- The Case-2 first-passage endpoint crosses the right edge with mass at most
+`1/8`, uniformly in the Pascal parameter.  This is an immediate consequence of
+the stronger fixed-tilt tail `fpDistP_fst_tail_le`, whose event `m < 4e₁`
+contains the actual overshoot event `m < e₁`. -/
+theorem fpDistP_out_of_strip_le :
+    ∃ Cthr : ℕ, ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ n m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      ∀ l : ℤ, ∀ s : ℕ, (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      ∑' e : ℕ × ℤ,
+        (fpDistP p (by linarith [hp0]) (by linarith [hp1]) s e).toReal *
+          Set.indicator (outStripSetP n) 1
+            (n / 2 - m + e.1, l + e.2) ≤ 1 / 8 := by
+  obtain ⟨C, hC⟩ := fpDistP_fst_tail_le (1 : ℝ) (by norm_num)
+    (1 / 8 : ℝ) (by norm_num)
+  refine ⟨max C 1, ?_⟩
+  intro p hp0 hp1 n m hm hmn l s hs
+  let fpLaw := fpDistP p (by linarith [hp0]) (by linarith [hp1]) s
+  have htail := hC p hp0 hp1 m (le_trans (le_max_left C 1) hm) s hs
+  have hm1 : 1 ≤ m := le_trans (le_max_right C 1) hm
+  have hind : ∀ e : ℕ × ℤ,
+      Set.indicator (outStripSetP n) 1
+          (n / 2 - m + e.1, l + e.2) =
+        (if m < e.1 then (1 : ℝ) else 0) := by
+    intro e
+    have hiff : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ outStripSetP n ↔
+        m < e.1 := by
+      simp only [outStripSetP, Set.mem_ofPred_eq]
+      omega
+    by_cases h : m < e.1
+    · rw [Set.indicator_of_mem (hiff.mpr h), Pi.one_apply, if_pos h]
+    · rw [Set.indicator_of_notMem (fun he => h (hiff.mp he)), if_neg h]
+  simp_rw [hind]
+  have hmass : Summable (fun e : ℕ × ℤ => (fpLaw e).toReal) :=
+    ENNReal.summable_toReal (by rw [fpLaw.tsum_coe]; exact ENNReal.one_ne_top)
+  have hsmall : Summable (fun e : ℕ × ℤ =>
+      (fpLaw e).toReal * (if m < e.1 then (1 : ℝ) else 0)) := by
+    refine Summable.of_nonneg_of_le
+      (fun e => mul_nonneg ENNReal.toReal_nonneg (by split_ifs <;> norm_num))
+      (fun e => ?_) hmass
+    by_cases he : m < e.1 <;> simp [he, ENNReal.toReal_nonneg]
+  have hlarge : Summable (fun e : ℕ × ℤ =>
+      (fpLaw e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0)) := by
+    refine Summable.of_nonneg_of_le
+      (fun e => mul_nonneg ENNReal.toReal_nonneg (by split_ifs <;> norm_num))
+      (fun e => ?_) hmass
+    by_cases he : m < 4 * e.1 <;> simp [he, ENNReal.toReal_nonneg]
+  have hsub : (∑' e : ℕ × ℤ,
+      (fpLaw e).toReal * (if m < e.1 then (1 : ℝ) else 0)) ≤
+      ∑' e : ℕ × ℤ,
+        (fpLaw e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0) := by
+    refine hsmall.tsum_le_tsum (fun e => ?_) hlarge
+    by_cases he : m < e.1
+    · rw [if_pos he, if_pos (by omega : m < 4 * e.1)]
+    · rw [if_neg he]
+      by_cases he4 : m < 4 * e.1 <;> simp [he4, ENNReal.toReal_nonneg]
+  have hrpow : (m : ℝ) ^ (-(1 : ℝ)) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hm1) (by norm_num)
+  change (∑' e : ℕ × ℤ,
+      (fpLaw e).toReal * (if m < e.1 then (1 : ℝ) else 0)) ≤ 1 / 8
+  calc
+    _ ≤ ∑' e : ℕ × ℤ,
+        (fpLaw e).toReal * (if m < 4 * e.1 then (1 : ℝ) else 0) := hsub
+    _ ≤ (1 / 8 : ℝ) * (m : ℝ) ^ (-(1 : ℝ)) := htail
+    _ ≤ 1 / 8 := by nlinarith
+
+/-- Tao's Case-2 white-exit estimate at the finer Sec7P scale.  Outside an
+exceptional mass `1/8 + 1/8`, an endpoint is in the strip and outside every
+finer family triangle; the exact cover then makes its predecessor phase point
+`whiteP`.  All constants are chosen before `p`. -/
+theorem fpDistP_white_exit :
+    ∃ p₀ > (0 : ℝ), ∃ Cthr : ℕ,
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
+      ∀ F : TriangleFamilyP n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      (s : ℝ) ≤ (m : ℝ) / Real.log m ^ 2 →
+      p₀ ≤ ∑' e : ℕ × ℤ,
+        (fpDistP p (by linarith [hp0]) (by linarith [hp1]) s e).toReal *
+          Set.indicator (whiteStripP n ξ) 1
+            (n / 2 - m + e.1, l + e.2) := by
+  obtain ⟨Cthr, hOut⟩ := fpDistP_out_of_strip_le
+  refine ⟨3 / 4, by norm_num, Cthr, ?_⟩
+  intro p hp0 hp1 n ξ hξ F m hm hmn l hl t ht htmem s hs hbudget
+  let fpLaw := fpDistP p (by linarith [hp0]) (by linarith [hp1]) s
+  have hout := hOut p hp0 hp1 n m hm hmn l s hbudget
+  have htri := fpDistP_any_triangle_le p hp0 hp1 n ξ F m hmn l hl t ht htmem s hs
+  have hmass : Summable (fun e : ℕ × ℤ => (fpLaw e).toReal) :=
+    ENNReal.summable_toReal (by rw [fpLaw.tsum_coe]; exact ENNReal.one_ne_top)
+  have hsummand : ∀ (S : Set (ℕ × ℤ)),
+      Summable (fun e : ℕ × ℤ => (fpLaw e).toReal *
+        Set.indicator S 1 (n / 2 - m + e.1, l + e.2)) := by
+    intro S
+    refine Summable.of_nonneg_of_le
+      (fun e => mul_nonneg ENNReal.toReal_nonneg
+        (Set.indicator_nonneg (fun _ _ => zero_le_one) _)) (fun e => ?_) hmass
+    refine mul_le_of_le_one_right ENNReal.toReal_nonneg ?_
+    by_cases he : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ S
+    · simp [Set.indicator_of_mem he]
+    · simp [Set.indicator_of_notMem he]
+  have hptw : ∀ e : ℕ × ℤ,
+      (1 : ℝ) - Set.indicator (outStripSetP n) 1
+            (n / 2 - m + e.1, l + e.2)
+          - Set.indicator (phaseInFamilyP F) 1
+            (n / 2 - m + e.1, l + e.2)
+        ≤ Set.indicator (whiteStripP n ξ) 1
+            (n / 2 - m + e.1, l + e.2) := by
+    intro e
+    have hWnn : (0 : ℝ) ≤ Set.indicator (whiteStripP n ξ) 1
+        (n / 2 - m + e.1, l + e.2) :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) _
+    have hOnn : (0 : ℝ) ≤ Set.indicator (outStripSetP n) 1
+        (n / 2 - m + e.1, l + e.2) :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) _
+    have hPnn : (0 : ℝ) ≤ Set.indicator (phaseInFamilyP F) 1
+        (n / 2 - m + e.1, l + e.2) :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) _
+    have hq1 : 1 ≤ n / 2 - m + e.1 := by omega
+    by_cases hO : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ outStripSetP n
+    · rw [Set.indicator_of_mem hO]
+      simp only [Pi.one_apply]
+      linarith
+    · by_cases hP : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ phaseInFamilyP F
+      · rw [Set.indicator_of_mem hP]
+        simp only [Pi.one_apply]
+        linarith
+      · have hle : n / 2 - m + e.1 ≤ n / 2 := by
+          simp only [outStripSetP, Set.mem_ofPred_eq, not_lt] at hO
+          exact hO
+        have hWmem : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈
+            whiteStripP n ξ := by
+          refine ⟨hle, hq1, ?_⟩
+          intro hblack
+          apply hP
+          have hcov : ((n / 2 - m + e.1 - 1, l + e.2) : ℕ × ℤ) ∈
+              {q : ℕ × ℤ | q.1 + 1 ≤ n / 2 ∧ blackP n ξ q.1 q.2} :=
+            ⟨by omega, hblack⟩
+          rw [F.cover] at hcov
+          simp only [Set.mem_iUnion, exists_prop] at hcov
+          obtain ⟨t', ht', hmem'⟩ := hcov
+          exact ⟨t', ht', hmem'⟩
+        rw [Set.indicator_of_mem hWmem, Set.indicator_of_notMem hO,
+          Set.indicator_of_notMem hP]
+        simp
+  have hsumLHS : Summable (fun e : ℕ × ℤ => (fpLaw e).toReal *
+      ((1 : ℝ) - Set.indicator (outStripSetP n) 1
+          (n / 2 - m + e.1, l + e.2)
+        - Set.indicator (phaseInFamilyP F) 1
+          (n / 2 - m + e.1, l + e.2))) :=
+    ((hmass.sub (hsummand (outStripSetP n))).sub (hsummand (phaseInFamilyP F))).congr
+      (fun e => by ring)
+  have hexpand : (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+      ((1 : ℝ) - Set.indicator (outStripSetP n) 1
+          (n / 2 - m + e.1, l + e.2)
+        - Set.indicator (phaseInFamilyP F) 1
+          (n / 2 - m + e.1, l + e.2))) =
+      1 - (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+        Set.indicator (outStripSetP n) 1
+          (n / 2 - m + e.1, l + e.2))
+        - (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+          Set.indicator (phaseInFamilyP F) 1
+            (n / 2 - m + e.1, l + e.2)) := by
+    have h1 : ∀ e : ℕ × ℤ, (fpLaw e).toReal *
+        ((1 : ℝ) - Set.indicator (outStripSetP n) 1
+            (n / 2 - m + e.1, l + e.2)
+          - Set.indicator (phaseInFamilyP F) 1
+            (n / 2 - m + e.1, l + e.2)) =
+        (fpLaw e).toReal
+          - (fpLaw e).toReal * Set.indicator (outStripSetP n) 1
+              (n / 2 - m + e.1, l + e.2)
+          - (fpLaw e).toReal * Set.indicator (phaseInFamilyP F) 1
+              (n / 2 - m + e.1, l + e.2) := by
+      intro e
+      ring
+    simp_rw [h1]
+    rw [Summable.tsum_sub (hmass.sub (hsummand (outStripSetP n)))
+        (hsummand (phaseInFamilyP F)),
+      Summable.tsum_sub hmass (hsummand (outStripSetP n)),
+      ← ENNReal.tsum_toReal_eq (fun e => PMF.apply_ne_top fpLaw e),
+      fpLaw.tsum_coe, ENNReal.toReal_one]
+  change (3 : ℝ) / 4 ≤ ∑' e : ℕ × ℤ, (fpLaw e).toReal *
+    Set.indicator (whiteStripP n ξ) 1
+      (n / 2 - m + e.1, l + e.2)
+  calc
+    (3 : ℝ) / 4 = 1 - 1 / 8 - 1 / 8 := by norm_num
+    _ ≤ 1 - (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+          Set.indicator (outStripSetP n) 1
+            (n / 2 - m + e.1, l + e.2))
+        - (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+          Set.indicator (phaseInFamilyP F) 1
+            (n / 2 - m + e.1, l + e.2)) := by linarith
+    _ = ∑' e : ℕ × ℤ, (fpLaw e).toReal *
+        ((1 : ℝ) - Set.indicator (outStripSetP n) 1
+            (n / 2 - m + e.1, l + e.2)
+          - Set.indicator (phaseInFamilyP F) 1
+            (n / 2 - m + e.1, l + e.2)) := hexpand.symm
+    _ ≤ ∑' e : ℕ × ℤ, (fpLaw e).toReal *
+        Set.indicator (whiteStripP n ξ) 1
+          (n / 2 - m + e.1, l + e.2) :=
+      Summable.tsum_le_tsum
+        (fun e => mul_le_mul_of_nonneg_left (hptw e) ENNReal.toReal_nonneg)
+        hsumLHS (hsummand (whiteStripP n ξ))
 
 end TaoCollatz.Sec7P

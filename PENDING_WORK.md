@@ -1980,3 +1980,26 @@ to turn the proved `Y=12000` numeric into the first-passage vertical tail.
 **Next:** derive the Case-2 out-of-strip tail from `fpDistP_fst_tail_le`, port
 the `whiteP` cover/indicator assembly, and close the tilted white-exit theorem;
 then feed it into `QP_black_edge_case2`.
+
+### Grind lap 21 (2026-10-26) — tilted Case-2 white exit landed ✅
+
+- Re-ran the binding calibration gate before edits: the half-decay theorem is
+  trust-base-clean and the frozen declaration differ remains 46/46.
+- Added the renewal-coordinate sets `whiteSetP` and `whiteStripP`, carrying the
+  same one-column phase shift as Tao's original `whiteSet`.
+- Proved `fpDistP_out_of_strip_le` uniformly on `[1/5,3/5]`.  Rather than copy
+  the older Gaussian-column summation, the proof specializes the already
+  established fixed-tilt tail `fpDistP_fst_tail_le` at `A=1`, `δ=1/8`; its
+  event `m < 4e₁` contains the true overshoot event `m < e₁`.
+- Ported the exact cover/indicator bookkeeping and proved
+  `fpDistP_white_exit`: outside the `1/8` out-of-strip mass and `1/8`
+  foreign-triangle mass, the endpoint is `whiteP` and in-strip.  The uniform
+  exit mass is `p₀=3/4`.
+- Both new theorems kernel-check with exactly the trust-base axioms.  No new
+  proof debt: **1 sorry + 0 orange nodes**.
+
+**Next:** parameterize the `QPm`/endpoint-step layer by the white set (or add
+the finer-scale sibling) so `QP_fp_endpoint_le` can run at
+`whiteSetP`/`whiteStripP` and `epsP`; then port the algebraic
+`Q_black_edge_case2` assembly using `fpDistP_white_exit` and the already-proved
+`fpDistP_edgeWeight_le`.
