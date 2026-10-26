@@ -1171,6 +1171,67 @@ def phaseInFamilyP {n ξ : ℕ} (F : TriangleFamilyP n ξ) : Set (ℕ × ℤ) :=
   {q : ℕ × ℤ | ∃ t ∈ F.T,
     ((q.1 - 1, q.2) : ℕ × ℤ) ∈ triangle t.1 t.2.1 t.2.2}
 
+/-- The finer-family version of Tao's (7.52) triangle budget.  A triangle
+point at horizontal depth at most `m+1` below the strip edge has vertical
+budget `O(m)`.  This deterministic estimate is independent of the holding
+law; it is restated for `TriangleFamilyP` because the campaign keeps the
+finer triangle family separate from the frozen Sec7 family. -/
+theorem budgetP_le_of_mem_triangle {n ξ : ℕ} (F : TriangleFamilyP n ξ)
+    {t : ℕ × ℤ × ℝ} (ht : t ∈ F.T) {j : ℕ} {l : ℤ}
+    (hmem : (j, l) ∈ triangle t.1 t.2.1 t.2.2) {m : ℕ}
+    (hjm : n / 2 ≤ j + 1 + m) :
+    ((t.2.1 - l).toNat : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 := by
+  obtain ⟨hj0, hl0, hlin⟩ := hmem
+  have hsz0 : 0 ≤ t.2.2 := F.size_nonneg t ht
+  have hlog9 : (0 : ℝ) < Real.log 9 := Real.log_pos (by norm_num)
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  set K : ℕ := ⌊t.2.2 / Real.log 9⌋₊ with hK
+  have hKle : (K : ℝ) * Real.log 9 ≤ t.2.2 := by
+    have hfl : (K : ℝ) ≤ t.2.2 / Real.log 9 := Nat.floor_le (by positivity)
+    calc
+      (K : ℝ) * Real.log 9 ≤ t.2.2 / Real.log 9 * Real.log 9 :=
+        mul_le_mul_of_nonneg_right hfl hlog9.le
+      _ = t.2.2 := div_mul_cancel₀ _ hlog9.ne'
+  have hqmem : ((t.1 + K, t.2.1) : ℕ × ℤ) ∈ triangle t.1 t.2.1 t.2.2 := by
+    refine ⟨Nat.le_add_right _ _, le_rfl, ?_⟩
+    push_cast
+    have h : ((t.1 : ℝ) + K - t.1) * Real.log 9 = (K : ℝ) * Real.log 9 := by ring
+    rw [h]
+    simpa using hKle
+  have hconf := F.confined t ht _ hqmem
+  have hsep : (0 : ℝ) ≤ (1 / 10 : ℝ) * Real.log (1 / (epsP : ℝ)) :=
+    (lt_trans (by norm_num) twenty_thousand_lt_sepP).le
+  have h3 : (t.1 : ℝ) + K + 1 ≤ (n : ℝ) / 2 := by
+    push_cast at hconf
+    linarith
+  have h4 : (n : ℝ) / 2 ≤ ((n / 2 : ℕ) : ℝ) + 1 / 2 := by
+    have hn : n ≤ 2 * (n / 2) + 1 := by omega
+    have : (n : ℝ) ≤ 2 * ((n / 2 : ℕ) : ℝ) + 1 := by exact_mod_cast hn
+    linarith
+  have h5 : ((n / 2 : ℕ) : ℝ) ≤ (j : ℝ) + 1 + m := by exact_mod_cast hjm
+  have hK1 : t.2.2 < ((K : ℝ) + 1) * Real.log 9 := by
+    have hlt : t.2.2 / Real.log 9 < (K : ℝ) + 1 := by
+      have := Nat.lt_floor_add_one (t.2.2 / Real.log 9)
+      exact_mod_cast this
+    calc
+      t.2.2 = t.2.2 / Real.log 9 * Real.log 9 := (div_mul_cancel₀ _ hlog9.ne').symm
+      _ < ((K : ℝ) + 1) * Real.log 9 := mul_lt_mul_of_pos_right hlt hlog9
+  have htn : (((t.2.1 - l).toNat : ℕ) : ℝ) = (t.2.1 : ℝ) - l := by
+    have h := Int.toNat_of_nonneg (by omega : (0 : ℤ) ≤ t.2.1 - l)
+    have : (((t.2.1 - l).toNat : ℕ) : ℤ) = t.2.1 - l := h
+    exact_mod_cast this
+  have hj0R : (t.1 : ℝ) ≤ (j : ℝ) := by exact_mod_cast hj0
+  have h6 : (K : ℝ) + 1 - j + t.1 ≤ (m : ℝ) + 2 := by linarith
+  calc
+    ((t.2.1 - l).toNat : ℝ) * Real.log 2
+        = ((t.2.1 : ℝ) - l) * Real.log 2 := by rw [htn]
+    _ ≤ t.2.2 - ((j : ℝ) - t.1) * Real.log 9 := by linarith [hlin]
+    _ ≤ ((K : ℝ) + 1) * Real.log 9 - ((j : ℝ) - t.1) * Real.log 9 := by
+      linarith
+    _ = ((K : ℝ) + 1 - j + t.1) * Real.log 9 := by ring
+    _ ≤ ((m : ℝ) + 2) * Real.log 9 :=
+      mul_le_mul_of_nonneg_right h6 hlog9.le
+
 /-- A first-passage endpoint clears the apex of its starting triangle. -/
 theorem endpoint_notMem_start_triangleP {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1)
     {s : ℕ} {l lΔ : ℤ} (hs : (s : ℤ) = lΔ - l)
@@ -1421,6 +1482,97 @@ theorem fpDistP_out_of_strip_le :
     _ ≤ (1 / 8 : ℝ) * (m : ℝ) ^ (-(1 : ℝ)) := htail
     _ ≤ 1 / 8 := by nlinarith
 
+/-- The deep-regime counterpart of `fpDistP_out_of_strip_le`, uniform over
+the Pascal window.  Triangle membership gives Tao's linear budget (7.52).
+The strict inequality `5 log 9 < 16 log 2` then shows that, sufficiently deep
+in the strip, every endpoint crossing the right edge lies in the fixed bad
+localization event from `fpDistP_localization_le_eighth`.  This is the fourth
+slope-sensitive site in the tilted transfer of Lemma 7.9. -/
+theorem fpDistP_out_of_strip_deep_le :
+    ∃ Cthr : ℕ, ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
+      ∀ F : TriangleFamilyP n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      ∑' e : ℕ × ℤ,
+        (fpDistP p (by linarith [hp0]) (by linarith [hp1]) s e).toReal *
+          Set.indicator (outStripSetP n) 1
+            (n / 2 - m + e.1, l + e.2) ≤ 1 / 8 := by
+  refine ⟨500000, ?_⟩
+  intro p hp0 hp1 n ξ hξ F m hm hmn l hl t ht htmem s hs
+  classical
+  let fpLaw := fpDistP p (by linarith [hp0]) (by linarith [hp1]) s
+  let escaped : ℕ × ℤ → Prop := fun e =>
+    ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ outStripSetP n
+  let bad : ℕ × ℤ → Prop := fun e =>
+    (s : ℝ) + 12000 ≤ (e.2 : ℝ) ∨
+      (300 : ℝ) ≤ 16 * (e.1 : ℝ) - 5 * (e.2 : ℝ)
+  have hbudget : (s : ℝ) * Real.log 2 ≤ ((m : ℝ) + 2) * Real.log 9 := by
+    have hb := budgetP_le_of_mem_triangle F ht htmem (m := m) (by omega)
+    have hcast : ((t.2.1 - l).toNat : ℝ) = (s : ℝ) := by
+      have : (t.2.1 - l).toNat = s := by omega
+      exact_mod_cast this
+    rwa [hcast] at hb
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog : 40 * Real.log 9 ≤ 127 * Real.log 2 := by
+    have hp : (9 : ℝ) ^ (40 : ℕ) ≤ (2 : ℝ) ^ (127 : ℕ) := by norm_num
+    have h := Real.log_le_log (by positivity : (0 : ℝ) < (9 : ℝ) ^ (40 : ℕ)) hp
+    rw [Real.log_pow, Real.log_pow] at h
+    push_cast at h
+    exact h
+  have hslope : 40 * (s : ℝ) ≤ 127 * ((m : ℝ) + 2) := by
+    have h1 : 40 * (s : ℝ) * Real.log 2 ≤
+        40 * ((m : ℝ) + 2) * Real.log 9 := by nlinarith
+    have h2 : 40 * ((m : ℝ) + 2) * Real.log 9 ≤
+        127 * ((m : ℝ) + 2) * Real.log 2 := by
+      have hm0 : (0 : ℝ) ≤ (m : ℝ) + 2 := by positivity
+      nlinarith [mul_le_mul_of_nonneg_left hlog hm0]
+    nlinarith
+  have hmR : (500000 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm
+  have hescape_bad : ∀ e : ℕ × ℤ, escaped e → bad e := by
+    intro e he
+    by_cases hv : (s : ℝ) + 12000 ≤ (e.2 : ℝ)
+    · exact Or.inl hv
+    · right
+      have he1 : m < e.1 := by
+        simp only [escaped, outStripSetP, Set.mem_ofPred_eq] at he
+        omega
+      have he1R : (m : ℝ) + 1 ≤ (e.1 : ℝ) := by exact_mod_cast he1
+      push Not at hv
+      nlinarith
+  set P : ℝ≥0∞ := ∑' e : ℕ × ℤ, if escaped e then fpLaw e else 0 with hP
+  set B : ℝ≥0∞ := ∑' e : ℕ × ℤ, if bad e then fpLaw e else 0 with hB
+  have hPB : P ≤ B := by
+    rw [hP, hB]
+    refine ENNReal.tsum_le_tsum fun e => ?_
+    by_cases he : escaped e
+    · rw [if_pos he, if_pos (hescape_bad e he)]
+    · rw [if_neg he]
+      exact bot_le
+  have hBle : B ≤ (1 : ℝ≥0∞) / 8 := by
+    rw [hB]
+    exact fpDistP_localization_le_eighth hp0 hp1 s
+  have hLHS :
+      (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+        Set.indicator (outStripSetP n) 1
+          (n / 2 - m + e.1, l + e.2)) = P.toReal := by
+    rw [hP, ENNReal.tsum_toReal_eq (fun e => by
+      split_ifs
+      exacts [PMF.apply_ne_top _ _, ENNReal.zero_ne_top])]
+    refine tsum_congr fun e => ?_
+    by_cases he : escaped e
+    · rw [if_pos he, Set.indicator_of_mem he, Pi.one_apply, mul_one]
+    · rw [if_neg he, Set.indicator_of_notMem he, mul_zero, ENNReal.toReal_zero]
+  change (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+    Set.indicator (outStripSetP n) 1
+      (n / 2 - m + e.1, l + e.2)) ≤ 1 / 8
+  rw [hLHS]
+  have hto : P.toReal ≤ ((1 : ℝ≥0∞) / 8).toReal :=
+    ENNReal.toReal_mono (by finiteness) (hPB.trans hBle)
+  norm_num at hto ⊢
+  exact hto
+
 /-- Tao's Case-2 white-exit estimate at the finer Sec7P scale.  Outside an
 exceptional mass `1/8 + 1/8`, an endpoint is in the strip and outside every
 finer family triangle; the exact cover then makes its predecessor phase point
@@ -1443,6 +1595,145 @@ theorem fpDistP_white_exit :
   intro p hp0 hp1 n ξ hξ F m hm hmn l hl t ht htmem s hs hbudget
   let fpLaw := fpDistP p (by linarith [hp0]) (by linarith [hp1]) s
   have hout := hOut p hp0 hp1 n m hm hmn l s hbudget
+  have htri := fpDistP_any_triangle_le p hp0 hp1 n ξ F m hmn l hl t ht htmem s hs
+  have hmass : Summable (fun e : ℕ × ℤ => (fpLaw e).toReal) :=
+    ENNReal.summable_toReal (by rw [fpLaw.tsum_coe]; exact ENNReal.one_ne_top)
+  have hsummand : ∀ (S : Set (ℕ × ℤ)),
+      Summable (fun e : ℕ × ℤ => (fpLaw e).toReal *
+        Set.indicator S 1 (n / 2 - m + e.1, l + e.2)) := by
+    intro S
+    refine Summable.of_nonneg_of_le
+      (fun e => mul_nonneg ENNReal.toReal_nonneg
+        (Set.indicator_nonneg (fun _ _ => zero_le_one) _)) (fun e => ?_) hmass
+    refine mul_le_of_le_one_right ENNReal.toReal_nonneg ?_
+    by_cases he : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ S
+    · simp [Set.indicator_of_mem he]
+    · simp [Set.indicator_of_notMem he]
+  have hptw : ∀ e : ℕ × ℤ,
+      (1 : ℝ) - Set.indicator (outStripSetP n) 1
+            (n / 2 - m + e.1, l + e.2)
+          - Set.indicator (phaseInFamilyP F) 1
+            (n / 2 - m + e.1, l + e.2)
+        ≤ Set.indicator (whiteStripP n ξ) 1
+            (n / 2 - m + e.1, l + e.2) := by
+    intro e
+    have hWnn : (0 : ℝ) ≤ Set.indicator (whiteStripP n ξ) 1
+        (n / 2 - m + e.1, l + e.2) :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) _
+    have hOnn : (0 : ℝ) ≤ Set.indicator (outStripSetP n) 1
+        (n / 2 - m + e.1, l + e.2) :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) _
+    have hPnn : (0 : ℝ) ≤ Set.indicator (phaseInFamilyP F) 1
+        (n / 2 - m + e.1, l + e.2) :=
+      Set.indicator_nonneg (fun _ _ => zero_le_one) _
+    have hq1 : 1 ≤ n / 2 - m + e.1 := by omega
+    by_cases hO : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ outStripSetP n
+    · rw [Set.indicator_of_mem hO]
+      simp only [Pi.one_apply]
+      linarith
+    · by_cases hP : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈ phaseInFamilyP F
+      · rw [Set.indicator_of_mem hP]
+        simp only [Pi.one_apply]
+        linarith
+      · have hle : n / 2 - m + e.1 ≤ n / 2 := by
+          simp only [outStripSetP, Set.mem_ofPred_eq, not_lt] at hO
+          exact hO
+        have hWmem : ((n / 2 - m + e.1, l + e.2) : ℕ × ℤ) ∈
+            whiteStripP n ξ := by
+          refine ⟨hle, hq1, ?_⟩
+          intro hblack
+          apply hP
+          have hcov : ((n / 2 - m + e.1 - 1, l + e.2) : ℕ × ℤ) ∈
+              {q : ℕ × ℤ | q.1 + 1 ≤ n / 2 ∧ blackP n ξ q.1 q.2} :=
+            ⟨by omega, hblack⟩
+          rw [F.cover] at hcov
+          simp only [Set.mem_iUnion, exists_prop] at hcov
+          obtain ⟨t', ht', hmem'⟩ := hcov
+          exact ⟨t', ht', hmem'⟩
+        rw [Set.indicator_of_mem hWmem, Set.indicator_of_notMem hO,
+          Set.indicator_of_notMem hP]
+        simp
+  have hsumLHS : Summable (fun e : ℕ × ℤ => (fpLaw e).toReal *
+      ((1 : ℝ) - Set.indicator (outStripSetP n) 1
+          (n / 2 - m + e.1, l + e.2)
+        - Set.indicator (phaseInFamilyP F) 1
+          (n / 2 - m + e.1, l + e.2))) :=
+    ((hmass.sub (hsummand (outStripSetP n))).sub (hsummand (phaseInFamilyP F))).congr
+      (fun e => by ring)
+  have hexpand : (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+      ((1 : ℝ) - Set.indicator (outStripSetP n) 1
+          (n / 2 - m + e.1, l + e.2)
+        - Set.indicator (phaseInFamilyP F) 1
+          (n / 2 - m + e.1, l + e.2))) =
+      1 - (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+        Set.indicator (outStripSetP n) 1
+          (n / 2 - m + e.1, l + e.2))
+        - (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+          Set.indicator (phaseInFamilyP F) 1
+            (n / 2 - m + e.1, l + e.2)) := by
+    have h1 : ∀ e : ℕ × ℤ, (fpLaw e).toReal *
+        ((1 : ℝ) - Set.indicator (outStripSetP n) 1
+            (n / 2 - m + e.1, l + e.2)
+          - Set.indicator (phaseInFamilyP F) 1
+            (n / 2 - m + e.1, l + e.2)) =
+        (fpLaw e).toReal
+          - (fpLaw e).toReal * Set.indicator (outStripSetP n) 1
+              (n / 2 - m + e.1, l + e.2)
+          - (fpLaw e).toReal * Set.indicator (phaseInFamilyP F) 1
+              (n / 2 - m + e.1, l + e.2) := by
+      intro e
+      ring
+    simp_rw [h1]
+    rw [Summable.tsum_sub (hmass.sub (hsummand (outStripSetP n)))
+        (hsummand (phaseInFamilyP F)),
+      Summable.tsum_sub hmass (hsummand (outStripSetP n)),
+      ← ENNReal.tsum_toReal_eq (fun e => PMF.apply_ne_top fpLaw e),
+      fpLaw.tsum_coe, ENNReal.toReal_one]
+  change (3 : ℝ) / 4 ≤ ∑' e : ℕ × ℤ, (fpLaw e).toReal *
+    Set.indicator (whiteStripP n ξ) 1
+      (n / 2 - m + e.1, l + e.2)
+  calc
+    (3 : ℝ) / 4 = 1 - 1 / 8 - 1 / 8 := by norm_num
+    _ ≤ 1 - (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+          Set.indicator (outStripSetP n) 1
+            (n / 2 - m + e.1, l + e.2))
+        - (∑' e : ℕ × ℤ, (fpLaw e).toReal *
+          Set.indicator (phaseInFamilyP F) 1
+            (n / 2 - m + e.1, l + e.2)) := by linarith
+    _ = ∑' e : ℕ × ℤ, (fpLaw e).toReal *
+        ((1 : ℝ) - Set.indicator (outStripSetP n) 1
+            (n / 2 - m + e.1, l + e.2)
+          - Set.indicator (phaseInFamilyP F) 1
+            (n / 2 - m + e.1, l + e.2)) := hexpand.symm
+    _ ≤ ∑' e : ℕ × ℤ, (fpLaw e).toReal *
+        Set.indicator (whiteStripP n ξ) 1
+          (n / 2 - m + e.1, l + e.2) :=
+      Summable.tsum_le_tsum
+        (fun e => mul_le_mul_of_nonneg_left (hptw e) ENNReal.toReal_nonneg)
+        hsumLHS (hsummand (whiteStripP n ξ))
+
+/-- The deep-regime white-exit estimate required by tilted Lemma 7.9.  Unlike
+`fpDistP_white_exit`, this statement has no `s ≤ m/log²m` hypothesis: triangle
+membership itself supplies the linear (7.52) budget, and
+`fpDistP_out_of_strip_deep_le` uses the strict tilted slope margin.  The mass
+`3/4` and depth threshold are uniform over `p ∈ [1/5,3/5]`. -/
+theorem fpDistP_white_exit_deep :
+    ∃ p₀ : ℝ, 51 / 100 ≤ p₀ ∧ ∃ Cthr : ℕ,
+      ∀ (p : ℝ) (hp0 : 1 / 5 ≤ p) (hp1 : p ≤ 3 / 5),
+      ∀ n ξ : ℕ, ¬ 3 ∣ ξ →
+      ∀ F : TriangleFamilyP n ξ, ∀ m : ℕ, Cthr ≤ m → m ≤ n / 2 →
+      ∀ l : ℤ, 1 ≤ n / 2 - m →
+      ∀ t ∈ F.T, (n / 2 - m - 1, l) ∈ triangle t.1 t.2.1 t.2.2 →
+      ∀ s : ℕ, (s : ℤ) = t.2.1 - l →
+      p₀ ≤ ∑' e : ℕ × ℤ,
+        (fpDistP p (by linarith [hp0]) (by linarith [hp1]) s e).toReal *
+          Set.indicator (whiteStripP n ξ) 1
+            (n / 2 - m + e.1, l + e.2) := by
+  obtain ⟨Cthr, hOut⟩ := fpDistP_out_of_strip_deep_le
+  refine ⟨3 / 4, by norm_num, Cthr, ?_⟩
+  intro p hp0 hp1 n ξ hξ F m hm hmn l hl t ht htmem s hs
+  let fpLaw := fpDistP p (by linarith [hp0]) (by linarith [hp1]) s
+  have hout := hOut p hp0 hp1 n ξ hξ F m hm hmn l hl t ht htmem s hs
   have htri := fpDistP_any_triangle_le p hp0 hp1 n ξ F m hmn l hl t ht htmem s hs
   have hmass : Summable (fun e : ℕ × ℤ => (fpLaw e).toReal) :=
     ENNReal.summable_toReal (by rw [fpLaw.tsum_coe]; exact ENNReal.one_ne_top)
