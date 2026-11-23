@@ -111,7 +111,8 @@ review:
     solution proves the challenge's anchor statements against byte-identical definitions, replays
     through the Lean kernel AND the independent `nanoda` kernel (`enable_nanoda: true`), and enforces
     the axiom whitelist, all under a `landrun` sandbox. Local pre-flight of the statement-identity
-    portion: `scripts/comparator-probe` (macOS-friendly; the full gate is CI-only). The residual
+    portion: `comparator-probe` from the comparator-harness skill
+    (github.com/gotrevor/lean-agent-skills; macOS-friendly; the full gate is CI-only). The residual
     risk comparator cannot address is statement faithfulness: a human must read
     `Comparator/TaoCollatz/Challenge.lean`'s DEFINITIONS against Tao 2019 and agree they say what the
     paper says. That file is small on purpose.

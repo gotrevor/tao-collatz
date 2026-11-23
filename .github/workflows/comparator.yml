@@ -24,7 +24,8 @@ name: Comparator
 # the non-vacuity anchors. See Comparator/TaoCollatz/Challenge.lean.
 #
 # Linux-only by construction (landrun needs Landlock). No local/macOS path — for a local pre-flight
-# of the statement-identity check, run `scripts/comparator-probe`.
+# of the statement-identity check, run `comparator-probe` from the comparator-harness skill
+# (github.com/gotrevor/lean-agent-skills), from this repo's root.
 
 on:
   push:
